@@ -5,17 +5,16 @@ from PyQt5 import QtWidgets, uic, QtCore
 from PyQt5.Qt import *
 from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QMessageBox
+from PyQt5 import QtGui
 
 class MainWindow(QMainWindow):
     switch_window = QtCore.pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("mainwindow.ui", self)
-        self.frame.setStyleSheet("background-image: url('machine.jpg'); background-repeat: no-repeat; background-position: center;")
+        loadUi("src/alfa_CR6/mainwindow.ui", self)
         self.dialog_1_btn.clicked.connect(self.onDialog1BtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
-
 
     def onDialog1BtnClicked(self):
         dlg = Dialog1(self)
@@ -31,13 +30,13 @@ class Login(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("login.ui", self)
+        loadUi("src/alfa_CR6/login.ui", self)
         self.login_btn.clicked.connect(self.onLoginBtnClicked)
 
 
     def onLoginBtnClicked(self):
         msg = QMessageBox()
-        if self.user_edit.text() == 'mario' and self.pass_edit.text() == '000':
+        if self.user_edit.text() == '' and self.pass_edit.text() == '':
             self.user_edit.clear()
             self.pass_edit.clear()
             window = MainWindow()
@@ -67,13 +66,13 @@ class Controller:
 class Dialog1(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("dialog.ui", self)
+        loadUi("src/alfa_CR6/dialog.ui", self)
 
 
 class ChromeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("chrome.ui", self)
+        loadUi("src/alfa_CR6/chrome.ui", self)
         view = QWebEngineView(self)
         view.setUrl(QUrl("http://www.google.com"))
         view.resize(1440, 730)

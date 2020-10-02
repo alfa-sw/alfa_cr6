@@ -39,24 +39,25 @@
     <property name="text">
      <string>CHROME</string>
     </property>
+    <property name="icon">
+     <iconset theme="icons/chrome.png">
+      <normaloff>.</normaloff>.</iconset>
+    </property>
    </widget>
-   <widget class="QFrame" name="frame">
+   <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>1440</width>
-      <height>750</height>
+      <width>1441</width>
+      <height>791</height>
      </rect>
     </property>
-    <property name="styleSheet">
-     <string notr="true">background-image: url(&quot;./machine.jpg&quot;)</string>
+    <property name="text">
+     <string/>
     </property>
-    <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Raised</enum>
+    <property name="pixmap">
+     <pixmap>images/machine.jpg</pixmap>
     </property>
    </widget>
   </widget>
