@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1024</width>
-    <height>750</height>
+    <width>1440</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="pushButton">
+  <widget class="QPushButton" name="cancel_btn">
    <property name="geometry">
     <rect>
-     <x>920</x>
-     <y>690</y>
+     <x>1350</x>
+     <y>750</y>
      <width>81</width>
      <height>41</height>
     </rect>
