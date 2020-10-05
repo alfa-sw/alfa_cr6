@@ -6,7 +6,6 @@ from PyQt5.Qt import *
 from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QMessageBox
 from PyQt5 import QtGui
-from PyQt5.QtGui import QPixmap
 
 class MainWindow(QMainWindow):
     switch_window = QtCore.pyqtSignal(str)

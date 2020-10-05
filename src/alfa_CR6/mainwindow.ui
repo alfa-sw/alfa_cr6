@@ -13,35 +13,84 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <widget class="QWidget" name="mainWidget">
    <widget class="QPushButton" name="dialog_1_btn">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>800</y>
-      <width>121</width>
-      <height>71</height>
+      <x>15</x>
+      <y>820</y>
+      <width>60</width>
+      <height>60</height>
      </rect>
     </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: transparent;</string>
+    </property>
     <property name="text">
-     <string>DIALOG 1</string>
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normaloff>images/conf.png</normaloff>images/conf.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>50</width>
+      <height>50</height>
+     </size>
     </property>
    </widget>
    <widget class="QPushButton" name="chrome_btn">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
-      <x>170</x>
-      <y>800</y>
-      <width>121</width>
-      <height>71</height>
+      <x>112</x>
+      <y>820</y>
+      <width>60</width>
+      <height>60</height>
      </rect>
     </property>
+    <property name="mouseTracking">
+     <bool>false</bool>
+    </property>
+    <property name="tabletTracking">
+     <bool>false</bool>
+    </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: transparent;</string>
+    </property>
     <property name="text">
-     <string>CHROME</string>
+     <string/>
     </property>
     <property name="icon">
-     <iconset theme="icons/chrome.png">
-      <normaloff>.</normaloff>.</iconset>
+     <iconset>
+      <normaloff>images/chorme.png</normaloff>images/chorme.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>50</width>
+      <height>50</height>
+     </size>
+    </property>
+    <property name="checkable">
+     <bool>false</bool>
+    </property>
+    <property name="autoRepeat">
+     <bool>false</bool>
+    </property>
+    <property name="autoExclusive">
+     <bool>false</bool>
     </property>
    </widget>
    <widget class="QLabel" name="label">
@@ -50,7 +99,7 @@
       <x>0</x>
       <y>0</y>
       <width>1441</width>
-      <height>791</height>
+      <height>811</height>
      </rect>
     </property>
     <property name="text">
@@ -58,6 +107,25 @@
     </property>
     <property name="pixmap">
      <pixmap>images/machine.jpg</pixmap>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>1360</x>
+      <y>825</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap>images/green.svg</pixmap>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>
