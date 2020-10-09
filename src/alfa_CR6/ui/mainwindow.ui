@@ -34,7 +34,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>images/conf.png</normaloff>images/conf.png</iconset>
+      <normaloff>../images/conf.png</normaloff>../images/conf.png</iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -75,7 +75,7 @@
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>images/chorme.png</normaloff>images/chorme.png</iconset>
+      <normaloff>../images/chorme.png</normaloff>../images/chorme.png</iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -106,7 +106,7 @@
      <string/>
     </property>
     <property name="pixmap">
-     <pixmap>images/machine.jpg</pixmap>
+     <pixmap>../images/machine.jpg</pixmap>
     </property>
    </widget>
    <widget class="QLabel" name="label_2">
@@ -122,7 +122,7 @@
      <string/>
     </property>
     <property name="pixmap">
-     <pixmap>images/green.svg</pixmap>
+     <pixmap>../images/green.svg</pixmap>
     </property>
     <property name="scaledContents">
      <bool>true</bool>

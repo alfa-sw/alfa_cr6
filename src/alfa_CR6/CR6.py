@@ -1,4 +1,5 @@
 import sys
+import os
 from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton
 from PyQt5 import QtWidgets, uic, QtCore
@@ -8,12 +9,15 @@ from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdi
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmap
 
+PATH=os.path.dirname(os.path.abspath(__file__))
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 class MainWindow(QMainWindow):
     switch_window = QtCore.pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("src/alfa_CR6/mainwindow.ui", self)
+        loadUi(PATH+"/ui/mainwindow.ui", self)
         self.dialog_1_btn.clicked.connect(self.onDialog1BtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
 
@@ -31,7 +35,7 @@ class Login(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("src/alfa_CR6/login.ui", self)
+        loadUi(PATH+"/ui/login.ui", self)
         self.login_btn.clicked.connect(self.onLoginBtnClicked)
 
 
@@ -67,13 +71,13 @@ class Controller:
 class Dialog1(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("src/alfa_CR6/dialog.ui", self)
+        loadUi(PATH+"/ui/dialog.ui", self)
 
 
 class ChromeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi("src/alfa_CR6/chrome.ui", self)
+        loadUi(PATH+"/ui/chrome.ui", self)
         view = QWebEngineView(self)
         view.setUrl(QUrl("http://www.google.com"))
         view.resize(1440, 730)
@@ -84,6 +88,11 @@ class ChromeDialog(QDialog):
     def onCancelBtnClicked(self):
         self.hide()
 
+def init():
+    app = QApplication(sys.argv)
+    controller = Controller()
+    controller.show_login()
+    sys.exit(app.exec_())
 
 
 if __name__ == "__main__":

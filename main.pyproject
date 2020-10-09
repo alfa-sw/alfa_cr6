@@ -1,8 +1,10 @@
 {
     "files": [
-        "src/alfa_CR6/dialog.ui", "src/alfa_CR6/images", "src/alfa_CR6/__init__.py",
-        "src/alfa_CR6/mainwindow.ui", "src/alfa_CR6/icons", "src/alfa_CR6/CR6.py", "src/alfa_CR6/chrome.ui",
-        "src/alfa_CR6/login.ui", "src/alfa_CR6/images/machine.jpg"
+        "src/alfa_CR6/ui/dialog.ui", "src/alfa_CR6/__init__.py", "src/alfa_CR6/__main__.py",
+        "src/alfa_CR6/ui/mainwindow.ui", "src/alfa_CR6/icons", "src/alfa_CR6/CR6.py", "src/alfa_CR6/ui/chrome.ui",
+        "src/alfa_CR6/ui/login.ui", "src/alfa_CR6/images/machine.jpg", "src/alfa_CR6/images/chorme.png",
+        "src/alfa_CR6/images/conf.png","src/alfa_CR6/images/machine.png", "src/alfa_CR6/images/green.svg "
+
     ]
 }
 
