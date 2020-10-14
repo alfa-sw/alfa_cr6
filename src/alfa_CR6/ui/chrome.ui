@@ -7,25 +7,12 @@
     <x>0</x>
     <y>0</y>
     <width>1440</width>
-    <height>800</height>
+    <height>811</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="cancel_btn">
-   <property name="geometry">
-    <rect>
-     <x>1350</x>
-     <y>750</y>
-     <width>81</width>
-     <height>41</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Cancel</string>
-   </property>
-  </widget>
  </widget>
  <resources/>
  <connections/>

@@ -14,20 +14,33 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 class MainWindow(QMainWindow):
     switch_window = QtCore.pyqtSignal(str)
+    browser=False
 
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(PATH+"/ui/mainwindow.ui", self)
         self.dialog_1_btn.clicked.connect(self.onDialog1BtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
+        self.bar1.mousePressEvent=self.onDialog1BtnClicked
+        self.tabs.setCurrentIndex(0)
 
-    def onDialog1BtnClicked(self):
+
+
+    def onDialog1BtnClicked(self, other):
         dlg = Dialog1(self)
         dlg.exec()
 
     def onChromeBtnClicked(self):
-        dlg = ChromeDialog(self)
-        dlg.exec()
+        if self.browser:
+            self.browser=False
+            self.tabs.setCurrentIndex(0)
+            self.mainlayout.removeWidget(self.view)
+        else:
+            self.browser=True
+            self.view = ChromeWidget(self)
+            self.mainlayout.addWidget(self.view)
+            self.tabs.setCurrentIndex(1)
+
 
 
 class Login(QMainWindow):
@@ -74,19 +87,14 @@ class Dialog1(QDialog):
         loadUi(PATH+"/ui/dialog.ui", self)
 
 
-class ChromeDialog(QDialog):
+class ChromeWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(PATH+"/ui/chrome.ui", self)
         view = QWebEngineView(self)
         view.setUrl(QUrl("http://www.google.com"))
-        view.resize(1440, 730)
-        view.show()
-        self.cancel_btn.clicked.connect(self.onCancelBtnClicked)
-
-
-    def onCancelBtnClicked(self):
-        self.hide()
+        view.resize(1440, 811)
+        #view.show()
 
 def init():
     app = QApplication(sys.argv)
