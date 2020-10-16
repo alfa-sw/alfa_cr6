@@ -8,15 +8,13 @@ from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QMessageBox
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmap
-from Controller import Controller
-from Login import Login
 
 
-PATH=os.path.dirname(os.path.abspath(__file__))
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    controller = Controller(PATH)
-    controller.show_login()
-    sys.exit(app.exec_())
+class ChromeWidget(QWidget):
+    def __init__(self, path, parent=None):
+        super().__init__(parent)
+        loadUi(path+"/ui/chrome.ui", self)
+        view = QWebEngineView(self)
+        view.setUrl(QUrl("http://www.google.com"))
+        view.resize(1440, 811)
