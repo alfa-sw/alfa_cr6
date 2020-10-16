@@ -16,7 +16,15 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <widget class="QWidget" name="mainWidget">
+  <widget class="QWidget" name="mainWidget" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1451</width>
+     <height>901</height>
+    </rect>
+   </property>
    <widget class="QWidget" name="bottom_menuwidget" native="true">
     <property name="geometry">
      <rect>
@@ -430,9 +438,9 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>3</number>
     </property>
-    <widget class="QWidget" name="page1">
+    <widget class="QWidget" name="main">
      <widget class="QLabel" name="m_image">
       <property name="geometry">
        <rect>
@@ -806,7 +814,7 @@
       </property>
      </widget>
     </widget>
-    <widget class="QWidget" name="page2">
+    <widget class="QWidget" name="chrome">
      <widget class="QWidget" name="verticalLayoutWidget">
       <property name="geometry">
        <rect>
@@ -819,7 +827,7 @@
       <layout class="QVBoxLayout" name="mainlayout"/>
      </widget>
     </widget>
-    <widget class="QWidget" name="page3">
+    <widget class="QWidget" name="modal_action">
      <widget class="QWidget" name="verticalLayoutWidget_2">
       <property name="geometry">
        <rect>
@@ -845,6 +853,19 @@
        </rect>
       </property>
       <layout class="QVBoxLayout" name="modal_stats"/>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="modal_visual">
+     <widget class="QWidget" name="verticalLayoutWidget_4">
+      <property name="geometry">
+       <rect>
+        <x>-1</x>
+        <y>-1</y>
+        <width>1441</width>
+        <height>821</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout"/>
      </widget>
     </widget>
    </widget>

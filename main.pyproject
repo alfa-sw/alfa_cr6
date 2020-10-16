@@ -4,7 +4,7 @@
         "src/alfa_CR6/ui/mainwindow.ui", "src/alfa_CR6/icons", "src/alfa_CR6/cr6.py", "src/alfa_CR6/ui/chrome.ui",
         "src/alfa_CR6/ui/login.ui", "src/alfa_CR6/images/machine.jpg", "src/alfa_CR6/images/chorme.png",
         "src/alfa_CR6/images/conf.png","src/alfa_CR6/images/machine.png", "src/alfa_CR6/images/green.svg ",
-        "src/alfa_CR6/login.py", "src/alfa_CR6/controller.py", "src/alfa_CR6/chromewidget.py"
+        "src/alfa_CR6/login.py", "src/alfa_CR6/controller.py", "src/alfa_CR6/chromewidget.py", "src/alfa_CR6/definitions.py"
 
     ]
 }

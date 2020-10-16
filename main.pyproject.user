@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.13.2, 2020-10-16T16:16:01. -->
+<!-- Written by QtCreator 4.13.2, 2020-10-16T17:34:20. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -337,6 +337,7 @@
     <value type="bool" key="RunConfiguration.UseMultiProcess">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
+    <value type="bool" key="RunConfiguration.UseTerminal">false</value>
     <value type="QString" key="RunConfiguration.WorkingDirectory"></value>
     <value type="QString" key="RunConfiguration.WorkingDirectory.default">/Users/gaber/maestro3/alpha/alpha_mod/src/alfa_CR6</value>
    </valuemap>

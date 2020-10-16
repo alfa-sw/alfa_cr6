@@ -23,6 +23,9 @@
       <height>901</height>
      </rect>
     </property>
+    <property name="currentIndex">
+     <number>1</number>
+    </property>
     <widget class="QWidget" name="login">
      <widget class="QPushButton" name="login_btn">
       <property name="geometry">
