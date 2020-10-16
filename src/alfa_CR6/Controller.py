@@ -9,9 +9,4 @@ class Controller:
 
     def show_login(self):
         self.login = Login(self.path)
-        self.login.switch_window.connect(self.show_main)
         self.login.show()
-
-    def show_main(self):
-        self.window = MainWindow(self.path)
-        self.window.show()

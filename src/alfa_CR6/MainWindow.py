@@ -1,10 +1,10 @@
 # This Python file uses the following encoding: utf-8
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import QWidget
 from PyQt5.uic import loadUi
 from alfa_CR6.chromewidget import ChromeWidget
 
 
-class MainWindow(QMainWindow):
+class MainWindow(QWidget):
     browser=False
     view=None
     path=None
