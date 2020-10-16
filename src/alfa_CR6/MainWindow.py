@@ -1,6 +1,4 @@
 # This Python file uses the following encoding: utf-8
-from PyQt5 import QtCore
-from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.uic import loadUi
 from alfa_CR6.chromewidget import ChromeWidget

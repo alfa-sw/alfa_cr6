@@ -1,13 +1,7 @@
-import sys
-import os
 from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton
-from PyQt5 import QtWidgets, uic, QtCore
-from PyQt5.Qt import *
-from PyQt5.QtWebEngineWidgets import *
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QMessageBox
-from PyQt5 import QtGui
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QMainWindow
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QMessageBox
 from alfa_CR6.mainwindow import MainWindow
 
 class Login(QMainWindow):
@@ -27,7 +21,6 @@ class Login(QMainWindow):
             self.user_edit.clear()
             self.pass_edit.clear()
             window = MainWindow(self.path)
-            form = window
             window.show()
             self.switch_window.emit()
 
