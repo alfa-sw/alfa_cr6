@@ -8,7 +8,7 @@ from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLabel, QLineEdit, QGridLayout, QMessageBox
 from PyQt5 import QtGui
 from PyQt5.QtGui import QPixmap
-from MainWindow import MainWindow
+from alfa_CR6.mainwindow import MainWindow
 
 class Login(QMainWindow):
     switch_window = QtCore.pyqtSignal()

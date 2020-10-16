@@ -8,7 +8,7 @@ def main():
     }
     setup (
         name='alfa_CR6',
-        version='1.1',
+        version='1.2',
         description='ALFA CR& Project',
         packages=packages_,
         package_dir=package_dir,

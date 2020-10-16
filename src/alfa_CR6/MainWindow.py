@@ -3,7 +3,7 @@ from PyQt5 import QtCore
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.uic import loadUi
-from ChromeWidget import ChromeWidget
+from alfa_CR6.chromewidget import ChromeWidget
 
 
 class MainWindow(QMainWindow):
