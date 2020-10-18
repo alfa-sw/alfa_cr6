@@ -9,18 +9,19 @@ def main():
     }
     setup(
         name='alfa_CR6',
-        version='1.2',
-        description='ALFA CR& Project',
+        version='0.1rc1',
+        description='UI for alfa CR6',
         packages=packages_,
         package_dir=package_dir,
         package_data={'alfa_CR6/ui': glob.glob('src/alfa_CR6/ui/*')},
-        data_files=[('alfa_CR6/ui', list(glob.glob('src/alfa_CR6/ui/*'))),
-                    ('alfa_CR6/ui', list(glob.glob('src/alfa_CR6/ui/*.ui'))),
-                    ('alfa_CR6/images', list(glob.glob('src/alfa_CR6/icons/*'))),
-                    ('alfa_CR6/icons', list(glob.glob('src/alfa_CR6/images/*'))),
-
-                    ],
+        data_files=[
+            ('alfa_CR6/ui', list(glob.glob('src/alfa_CR6/ui/*'))),
+            ('alfa_CR6/ui', list(glob.glob('src/alfa_CR6/ui/*.ui'))),
+            ('alfa_CR6/images', list(glob.glob('src/alfa_CR6/icons/*'))),
+            ('alfa_CR6/icons', list(glob.glob('src/alfa_CR6/images/*'))),
+        ],
         include_package_data=True,
+        scripts=['scripts/alfa_cr6'],
     )
 
 

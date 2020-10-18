@@ -1,0 +1,4 @@
+
+from alfa_CR6.cr6 import main
+
+main()
