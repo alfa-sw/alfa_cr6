@@ -1,8 +1,0 @@
-README.md
-setup.py
-alfa_CR6.egg-info/PKG-INFO
-alfa_CR6.egg-info/SOURCES.txt
-alfa_CR6.egg-info/dependency_links.txt
-alfa_CR6.egg-info/top_level.txt
-src/alfa_CR6/CR6.py
-src/alfa_CR6/__init__.py
