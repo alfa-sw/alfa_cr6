@@ -1,4 +1,6 @@
-## ALFA CR6 1.0.0 
+## alfa_CR6
+
+UI for alfa CR6
 
 ### Prerequisiti per la esecuzione del pacchetto (sia sui target che su host):
 
@@ -23,17 +25,18 @@
 
 ### Install in edit-mode per sviluppo su host:
 
-NOTA: VERSION_NUMBER e' il n. di versione contenuto nel file setup.py.
-
     host$ cd ${PROJECT_ROOT}
     host$ . /opt/alfa_cr6/venv/bin/activate
-    host$ pip install -e ${PROJECT_ROOT} ${PROJECT_ROOT}/dist/alfa_CR6-VERSION_NUMBER-py3-none-any.whl
+    host$ pip uninstall -y alfa_CR6
+    host$ pip install -e ${PROJECT_ROOT} 
 
 ### Install su target:
 
-    host$ scp user@host:${PROJECT_ROOT}/dist/alfa_CR6-VERSION_NUMBER-py3-none-any.whl user@target:${DEPLOY_PATH}
+NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file setup.py.
+
+    host$ scp user@host:${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH}
     target$ . /opt/alfa_cr6/venv/bin/activate
-    target$ pip install ${DEPLOY_PATH}/alfa_CR6-VERSION_NUMBER-py3-none-any.whl
+    target$ pip install ${DEPLOY_PATH}/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl
 
 ### Run su target e host:
 
