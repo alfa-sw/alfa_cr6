@@ -19,7 +19,7 @@ class Login(QMainWindow):
         if self.user_edit.text() == '' and self.pass_edit.text() == '':
             self.user_edit.clear()
             self.pass_edit.clear()
-            mainView = MainWindow(self.path)
+            mainView = MainWindow(self)
             self.mainwindowlayout.addWidget(mainView)
             self.tab_login.setCurrentIndex(1)
 

@@ -8,7 +8,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi(PATH+"/ui/mainwindow.ui", self)
+        loadUi(parent.path+"/ui/mainwindow.ui", self)
         self.dialog_1_btn.clicked.connect(self.onDialog1BtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
         self.bar1.mousePressEvent=self.onDialog1BtnClicked
