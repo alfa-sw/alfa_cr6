@@ -1,4 +1,4 @@
-from alfa_CR6.mainwindow import MainWindow
+
 from alfa_CR6.login import Login
 
 class Controller:

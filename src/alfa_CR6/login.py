@@ -2,7 +2,7 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
-from alfa_CR6.mainwindow import MainWindow
+from alfa_CR6.main_window import MainWindow
 
 class Login(QMainWindow):
     path=None

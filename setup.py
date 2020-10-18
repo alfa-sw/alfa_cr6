@@ -1,6 +1,13 @@
+
+import os
 import glob
+
 from setuptools import setup, find_packages
 
+here = os.path.abspath(os.path.dirname(__file__))
+
+with open(os.path.join(here, '__version__'), encoding='utf-8') as f:
+    __version__ = f.read().strip()
 
 def main():
     packages_ = find_packages(where='src')
@@ -9,19 +16,18 @@ def main():
     }
     setup(
         name='alfa_CR6',
-        version='0.1rc1',
+        version=__version__,
         description='UI for alfa CR6',
-        packages=packages_,
-        package_dir=package_dir,
-        package_data={'alfa_CR6/ui': glob.glob('src/alfa_CR6/ui/*')},
+        packages = find_packages('src'),
+        package_dir = {'': 'src'},
         data_files=[
-            ('alfa_CR6/ui', list(glob.glob('src/alfa_CR6/ui/*'))),
+            # ~ ('alfa_CR6/ui', list(glob.glob('src/alfa_CR6/ui/*'))),
             ('alfa_CR6/ui', list(glob.glob('src/alfa_CR6/ui/*.ui'))),
             ('alfa_CR6/images', list(glob.glob('src/alfa_CR6/icons/*'))),
             ('alfa_CR6/icons', list(glob.glob('src/alfa_CR6/images/*'))),
         ],
         include_package_data=True,
-        scripts=['scripts/alfa_cr6'],
+        scripts=['bin/alfa_CR6'],
     )
 
 
