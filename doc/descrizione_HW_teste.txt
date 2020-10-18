@@ -1,0 +1,125 @@
+
+OGGETTO: descrizione architettura HW dei sensori/attuatori del sistema, dicome, cioe', sono distribuiti 
+    i sensori/attuatori rispetto alle TESTE (cioe' le unita' fornite di scheda Linux-RBPi).
+    NOmenclatura e termminolgie riferita al doc Specifiche_Funzionamento_Car_Refinishing_REV10.pdf e allo schema in "cr6_layout.png"
+
+CONFIGURAZIONE A. (6 TESTE)
+
+    Legenda:
+
+        STEP_1 – STEP_12  Posizioni sulle Rulliere
+        FTC_1 - FTC_10  Fotocellule presenza sulle Rulliere
+        CP_1 – CP_6  Sensore Ultrasuoni presenza Barattolo in Dispensazione
+        MS_1, MS_2  Microswitch tutto Alto e tutto Basso del Sollevatore 1
+        MS_3, MS_4  Microswitch tutto Alto e tutto Basso del Sollevatore 2 (di Scarico)
+        MS_5, MS_6  Microswitch individuazione Barattolo in Ingresso
+        MU_1 – MU_8  Motore unidirezionale Rulliere DC
+        MB_2, MB_3  Motore bidirezionale Sollevatori DC
+        MB_1  Motore bidirezionale Rulliera DC
+        MU_9  Motore unidirezionale Rulliera di Scarico DC
+
+    TESTA 1: SCHEDA MMT comunicazione seriale 232
+
+        Gestione Tavola e Dosaggio come THOR 2.0
+        Gestione Spazzola: “OUT_24V_IN” (CN9)
+        NO Riscaldatore
+        Gestione Ingresso OFF-LINE, uscita LED
+        NO BHL (Laser)
+        Gestione Microswitch 1, individuazione barattolo ‘MS_5’: “LEV_SENS” (CN3)
+        Gestione Microswitch 2, individuazione barattolo ‘MS_6: “INT_CAR” (CN28)
+        Gestione Rulliera di Ingresso ‘STEP_1’:
+        Movimento monodirezionale CW ’MU_1’
+        Uscita “NEB IN” (CN4), 24V, max 2.5A di carico
+        Gestione Fotocellula presenza Barattolo sulla Rulliera di ingresso ‘ FTC1’:“FO_GEN2” (CN27)
+        Gestione Rulliera Testa 1 ‘STEP_2’:
+        Movimento monodirezionale CW ’MU_2’
+        Uscita “AIR PUMP” (CN6), 24V, max 2.5A di carico
+        Gestione Fotocellula Rulliera in posizione di Dosaggio ‘ FTC_2’: “IO_GEN1”(CN29)
+        Gestione Barattolo Can Presence NPN ‘CP_1’: “FO_CPR” (CN20)
+
+    TESTA 2: SCHEDA MMT comunicazione seriale 232
+
+        Gestione Tavola e Dosaggio come THOR 2.0
+        Gestione Spazzola: “OUT_24V_IN” (CN9)
+        Gestione Riscaldatore: uscita “RELAY” (CN8), 24V
+        NO OFF-LINE, NO LED
+        NO BHL (Laser)
+        Gestione Sollevatore di Scarico ‘STEP_11’: motore DC, movimento bidirezionale ‘MB_3’
+        Uscita “BRUSH” (CN18), 24V, max 5.0A di carico
+        Gestione Microswitch Sollevatore Alto ‘MS_4’ ‘STEP_11’: “LEV_SENS” (CN3)
+        Gestione Microswitch Sollevatore Basso ‘MS_3’ ‘STEP_10’: “INT_CAR” (CN28)
+        Gestione Rulliera Sollevatore di Scarico‘ STEP_10’:
+        Movimento monodirezionale CCW ’MU_8’ (rulliera sollevatore)
+        Uscita “NEB IN” (CN4), 24V, max 2.5A di carico
+        Gestione Fotocellula presenza barattolo sulla Rulliera del Sollevatore ‘ FTC_9’: “FO_GEN2” (CN27)
+        Gestione Rulliera Testa 2 ‘STEP_9’:
+        Movimento monodirezionale CCW ’MU_7’
+        Uscita “AIR PUMP” (CN6), 24V, max 2.5A di carico
+        Gestione Fotocellula Rulliera in posizione di Dosaggio ‘ FTC8’: “IO_GEN1” (CN29)
+        Gestione Rulliera di Scarico ‘STEP_12’:
+        Movimento monodirezionale CCW ’MU_9’
+        Uscita “LED ON OFF” (CN10), 24V, collegata a relè G2R-1-S (10A)
+        Gestione Fotocellula presenza barattolo sulla Rulliera di scarico ‘ FTC_10’: “BUTTON” (CN31)
+        Gestione Barattolo Can Presence NPN ‘CP_2’ “FO_CPR” (CN20)
+
+    TESTA 3: SCHEDA MMT comunicazione seriale 232
+
+        Gestione Tavola e Dosaggio come THOR 2.0
+        Gestione Spazzola: “OUT_24V_IN” (CN9)
+        NO Riscaldatore
+        NO OFF-LINE, NO LED
+        NO BHL (Laser)
+        Gestione Rulliera Testa 3 ‘STEP_3’:
+        Movimento monodirezionale CW ’MU_3’
+        Uscita “AIR PUMP” (CN6), 24V, max 2.5A di carico
+        Gestione Fotocellula Rulliera in posizione di Dosaggio ‘ FTC_3’: “IO_GEN1” (CN29)
+        Gestione Barattolo Can Presence NPN ‘CP_3’ “FO_CPR” (CN20)
+
+    TESTA 4: SCHEDA MMT comunicazione seriale 232
+
+        Gestione Tavola e Dosaggio come THOR 2.0
+        Gestione Spazzola: “OUT_24V_IN” (CN9)
+        Gestione Riscaldatore: uscita “RELAY” (CN8), 24V
+        NO OFF-LINE, NO LED
+        NO BHL (Laser)
+        Gestione Rulliera Testa 4 ‘STEP_8’:
+        Movimento monodirezionale CCW ’MU_6’
+        Uscita “AIR PUMP” (CN6), 24V, max 2.5A di carico
+        Gestione Fotocellula Rulliera in posizione di Dosaggio ‘ FTC_7’: “IO_GEN1”(CN29)
+        Gestione Barattolo Can Presence NPN ‘CP_4’ “FO_CPR” (CN20)
+
+    TESTA 5: SCHEDA MMT comunicazione seriale 232
+
+        Gestione Tavola e Dosaggio come THOR 2.0
+        Gestione Spazzola: “OUT_24V_IN” (CN9)
+        NO Riscaldatore
+        NO OFF-LINE, NO LED
+        NO BHL (Laser)
+        Gestione Rulliera Sollevatore di Carico ‘STEP_5’:
+        Movimento bidirezionale ’MB_1’
+        Uscita “BRUSH” (CN18), 24V, max 5.0A di carico
+        Gestione Fotocellula presenza barattolo sulla Rulliera del Sollevatore di
+        Carico‘FTC_5’: “FO_GEN2” (CN27)
+        Gestione Rulliera Testa 5 ‘STEP_4’:
+        Movimento monodirezionale CW ’MU_4’
+        Uscita “AIR PUMP” (CN6), 24V, max 2.5A di carico
+        Gestione Fotocellula Rulliera in posizione di Dosaggio ‘ FTC_4’: “IO_GEN1” (CN29)
+        Gestione Barattolo Can Presence NPN ‘CP_5’ “FO_CPR” (CN20)
+
+    TESTA 6: SCHEDA MMT comunicazione seriale 232
+
+        Gestione Tavola e Dosaggio come THOR 2.0
+        Gestione Spazzola: “OUT_24V_IN” (CN9)
+        Gestione Riscaldatore: uscita “RELAY” (CN8), 24V
+        NO OFF-LINE, NO LED
+        NO BHL (Laser)
+        Gestione Sollevatore di Carico:
+        motore DC, movimento bidirezionale ‘MB_2’
+        Uscita “BRUSH” (CN18), 24V, max 5.0A di carico
+        Gestione Microswitch Sollevatore Alto ‘MS_1’, ‘STEP_5’: “LEV_SENS” (CN3)
+        Gestione Microswitch Sollevatore Basso ‘MS_2’, ‘STEP_6’: “INT_CAR” (CN28)
+        Gestione Rulliera Testa 6 ‘STEP_7’:
+        Movimento monodirezionale CCW ’MU_5’
+        Uscita “AIR PUMP” (CN6), 24V, max 2.5A di carico
+        Gestione Fotocellula Rulliera in posizione di Dosaggio ‘ FTC_6’: “IO_GEN1”(CN29)
+        Gestione Barattolo Can Presence NPN ‘CP_6’ “FO_CPR” (CN20)
