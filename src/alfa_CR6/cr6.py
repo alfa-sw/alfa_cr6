@@ -9,9 +9,11 @@
 import sys
 import os
 import logging
+import traceback
+import asyncio
 import subprocess
 
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 from alfa_CR6.login import Login
 
@@ -22,10 +24,16 @@ class CR6(QApplication):
 
         super().__init__(*args, **kwargs)
 
-        self.path = os.path.dirname(os.path.abspath(__file__))
+        self.run_flag = True
+        self.ui_path = os.path.dirname(os.path.abspath(__file__)) + '/ui'
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-        self.login = Login(self.path)
+        self.login = Login()
+
+    def exit(self):    # pylint: disable=no-self-use
+
+        logging.warning("")
+        super().exit()
 
     def get_version(self):    # pylint: disable=no-self-use
 
@@ -48,7 +56,20 @@ def main():
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=logging.WARNING, format=fmt_)
 
+    async def qt_loop(app):
+        while app.run_flag:
+            app.processEvents()
+            await asyncio.sleep(0.02)
+        asyncio.get_event_loop().stop()
+
     cr6 = CR6(sys.argv)
     logging.warning("version: {}".format(cr6.get_version()))
     cr6.login.show()
-    sys.exit(cr6.exec_())
+
+    qt_loop_task = asyncio.ensure_future(qt_loop(cr6))
+    evt_loop = asyncio.get_event_loop()
+    try:
+        evt_loop.run_forever()
+    finally:
+        evt_loop.run_until_complete(evt_loop.shutdown_asyncgens())
+        evt_loop.close()
