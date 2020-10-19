@@ -1,0 +1,72 @@
+{
+  "status_level": "STANDBY",
+  "cycle_step": 0,
+  "error_code": 0,
+  "cover_reserve": [
+    0
+  ],
+  "cover_availability": [
+    1
+  ],
+  "cover_enabled": [
+    0,
+    1
+  ],
+  "container_reserve": [
+    2
+  ],
+  "container_availability": [
+    0,
+    2
+  ],
+  "container_enabled": [
+    1,
+    2
+  ],
+  "color_reserve": [],
+  "container_presence": true,
+  "autocap_status": true,
+  "canlift_status": false,
+  "doors_status": true,
+  "clamp_position": 0,
+  "recirculation_status": [],
+  "stirring_status": [],
+  "slave_status": [],
+  "can_on_plate": true,
+  "can_lifter_current_height": 419.4304,
+  "can_lifter_range": 838.8608,
+  "current_temperature": 49.6,
+  "current_rel_humidity": 433.6,
+  "water_level": true,
+  "critical_temperature": true,
+  "temperature": 49.6,
+  "bases_carriage": false,
+  "circuit_engaged": 16,
+  "table_steps_position": 47115,
+  "autotest_cycles_number": 1280,
+  "table_cleaning_status": [
+    9
+  ],
+  "panel_table_status": true,
+  "photocells_status": 61,
+  "can_available": true,
+  "mixer_door_status": true,
+  "slave_enable_mask": [
+    1,
+    11,
+    18,
+    19,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29
+  ],
+  "jar_photocells_status": 289,
+  "error_message": "NO_ALARM",
+  "timestamp": 1603142218.2367265,
+  "message_id": 1001758,
+  "last_update": "2020-10-19 23:16:58 CEST"
+}
+
