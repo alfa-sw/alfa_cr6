@@ -8,7 +8,7 @@ UI for alfa CR6
     * python3
     * python3-pyqt5
 
-2. un virtualenv nel path "/opt/alfa_cr6/", i.e. creato con:
+2. un virtualenv nel path "/opt/alfa_cr6/venv", i.e. creato con:
 
     $ virtualenv -p /usr/bin/python3 /opt/alfa_cr6/venv
 
@@ -32,7 +32,7 @@ UI for alfa CR6
 
 ### Install su target:
 
-NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file ${PROJECT_ROOT}/__version__.
+NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file `${PROJECT_ROOT}/__version__`.
 
     host$ scp user@host:${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH}
     target$ . /opt/alfa_cr6/venv/bin/activate
@@ -43,17 +43,17 @@ NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file ${PROJECT_ROOT}/_
     $ . /opt/alfa_cr6/venv/bin/activate
     $ alfa_CR6
 
-### Code styling and linting
-
-1. autopep8 (pypi.org/project/autopep8):
-
-    autopep8 -a -a -a -i --max-line-length 120 $(FilePath)
-    
-2. pylint (pypi.org/project/pylint): 
-
-    pylint3 -f parseable $(FilePath)
-
-### credenziali vuote login
-
 username: "", password: ""
 
+
+### Code styling and linting
+
+1. [autopep8](https://pypi.org/project/autopep8):
+
+    `autopep8 -a -a -a -i --max-line-length 120 $(FilePath)`
+    
+2. [pylint](https://pypi.org/project/pylint): 
+
+    `pylint3 -f parseable $(FilePath)`
+
+    see also pylint directives embedded in source files 
