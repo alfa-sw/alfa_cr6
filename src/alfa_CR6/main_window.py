@@ -5,10 +5,12 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication, QScrollArea, QVBoxLayout
 from PyQt5.uic import loadUi
 from alfa_CR6.chrome_widget import ChromeWidget
 from alfa_CR6.definitions import BUTTONS
+from alfa_CR6.machine_status_0 import FILE_JSON
 
 class MainWindow(QWidget):
     browser=False
@@ -31,10 +33,28 @@ class MainWindow(QWidget):
     def onBarPressed(self, number):
         self.tabs.setCurrentIndex(2)
         self.bottom_tab.setCurrentIndex(0)
+
+        self.widgetAction = QWidget()
+        self.widgetStatus = QWidget()
+        self.vboxStatus = QVBoxLayout()
+        self.vboxAction = QVBoxLayout()
+        self.vboxAction.setAlignment(Qt.AlignTop)
+
         for button in BUTTONS[number]['commands']:
-            self.modal_commands.addWidget(QPushButton(button["nome"]))
-        for button in BUTTONS[number]['visual']:
-            self.modal_visual.addWidget(QLabel("roba dal json"))
+                btn = QPushButton(button["nome"])
+                self.vboxAction.addWidget(btn)
+
+        for key, value in FILE_JSON.items():
+                self.vboxStatus.addWidget(QLabel(key + ' : ' + str(value)))
+
+        self.widgetAction.setLayout(self.vboxAction)
+        self.scrollAreaAction.setWidgetResizable(True)
+        self.scrollAreaAction.setWidget(self.widgetAction)
+
+        self.widgetStatus.setLayout(self.vboxStatus)
+        self.scrollAreaStatus.setWidgetResizable(True)
+        self.scrollAreaStatus.setWidget(self.widgetStatus)
+
         if self.browser:
             self.mainlayout.removeWidget(self.view)
             self.browser=False

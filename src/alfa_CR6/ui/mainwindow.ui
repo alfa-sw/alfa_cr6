@@ -438,7 +438,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="main">
      <widget class="QLabel" name="m_image">
@@ -828,31 +828,51 @@
      </widget>
     </widget>
     <widget class="QWidget" name="modal_action">
-     <widget class="QWidget" name="verticalLayoutWidget_2">
+     <widget class="QScrollArea" name="scrollAreaStatus">
       <property name="geometry">
        <rect>
-        <x>-1</x>
-        <y>-1</y>
-        <width>621</width>
-        <height>821</height>
+        <x>710</x>
+        <y>10</y>
+        <width>711</width>
+        <height>791</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="modal_commands">
-       <property name="spacing">
-        <number>0</number>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_4">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>709</width>
+         <height>789</height>
+        </rect>
        </property>
-      </layout>
+      </widget>
      </widget>
-     <widget class="QWidget" name="verticalLayoutWidget_3">
+     <widget class="QScrollArea" name="scrollAreaAction">
       <property name="geometry">
        <rect>
-        <x>619</x>
-        <y>-1</y>
-        <width>821</width>
-        <height>821</height>
+        <x>40</x>
+        <y>10</y>
+        <width>661</width>
+        <height>791</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="modal_stats"/>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_3">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>659</width>
+         <height>789</height>
+        </rect>
+       </property>
+      </widget>
      </widget>
     </widget>
     <widget class="QWidget" name="modal_visual">

@@ -1,11 +1,13 @@
-BTTONS_COMMON=[{"nome":"pulsante",  "act":"ovunque"}]
+BUTTONS_COMMON=[{"nome":"pulsante",  "act":"ovunque"}]
 
 BUTTONS=[{"commands":
     [
     {"nome":"start rulliera", "act":"azione che va al supervisore 1"},
-            ]+BTTONS_COMMON,
-     "visual":[]},
+            ]+BUTTONS_COMMON,
+     "visual":[
+
+     ]},
       {"commands":[{"nome":"start qualcosaltro", "act":"azione che va al supervisore 2"},
-             ]+BTTONS_COMMON,
+             ]+BUTTONS_COMMON,
         "visual":[]}
          ]
