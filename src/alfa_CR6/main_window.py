@@ -44,7 +44,15 @@ class MainWindow(QWidget):
                 btn = QPushButton(button["nome"])
                 self.vboxAction.addWidget(btn)
 
-        for key, value in FILE_JSON.items():
+        # ~ TODO: 1. handle the machine:status of the six heads
+        # ~ TODO: 2. this approach considers the status as a static thing, but 
+        # ~          the status have to be dynamically refreshed, so we must 
+        # ~          change it, e.g. having the 6 persistent viewboxes created at start time 
+        # ~          and and always refreshing the view, for the ones that are are visible
+        # ~ get the machine:status of the first head
+        machine_status = QApplication.instance().head_status_dict.get(0, {})
+
+        for key, value in machine_status.items():
                 self.vboxStatus.addWidget(QLabel(key + ' : ' + str(value)))
 
         self.widgetAction.setLayout(self.vboxAction)
