@@ -51,7 +51,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>../images/conf.png</normaloff>../images/conf.png</iconset>
+       <normaloff>../images/home.png</normaloff>../images/home.png</iconset>
      </property>
      <property name="iconSize">
       <size>

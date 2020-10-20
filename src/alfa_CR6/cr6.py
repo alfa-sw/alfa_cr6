@@ -52,3 +52,6 @@ def main():
     logging.warning("version: {}".format(cr6.get_version()))
     cr6.login.show()
     sys.exit(cr6.exec_())
+
+if __name__=="__main__":
+    main()
