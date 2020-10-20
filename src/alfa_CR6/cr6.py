@@ -19,6 +19,8 @@ import websockets                         # pylint: disable=import-error
 
 from alfa_CR6.login import Login
 
+WS_IP = '127.0.0.1'
+MOCKUP_FILE_PATH = '/opt/alfa_cr6/var'
 
 class CR6_application(QApplication):
 
@@ -67,7 +69,7 @@ class CR6_application(QApplication):
     async def ws_client_task(self):
 
         try:
-            ws_ip = '127.0.0.1'
+            ws_ip = WS_IP 
             uri = f"ws://{ ws_ip }:11000/device:machine:status"
             async with websockets.connect(uri) as websocket:
                 while self.run_flag:
@@ -86,13 +88,13 @@ class CR6_application(QApplication):
             logging.error(traceback.format_exc())
             raise Exception
 
-    async def mokup_task(self):
+    async def mockup_task(self):
 
         try:
 
             while self.run_flag:
                 for head_index in range(6):
-                    status_file_name = f'/opt/alfa_cr6/var/machine_status_{ head_index }.json'
+                    status_file_name = f'{ MOCKUP_FILE_PATH }/machine_status_{ head_index }.json'
                     try:
                         with open(status_file_name) as f:
                             status = json.load(f)
@@ -111,11 +113,12 @@ class CR6_application(QApplication):
 
         self.login.show()
 
-        _tasks = [
-            asyncio.ensure_future(self.qt_loop_task()),
-            asyncio.ensure_future(self.ws_client_task()),
-            asyncio.ensure_future(self.mokup_task()),
-        ]
+        _tasks = [asyncio.ensure_future(self.qt_loop_task()),]
+            
+        if WS_IP:
+            _tasks += [asyncio.ensure_future(self.ws_client_task()),]
+        if MOCKUP_FILE_PATH:
+            _tasks += [asyncio.ensure_future(self.mockup_task()),]
 
         try:
             asyncio.get_event_loop().run_forever()

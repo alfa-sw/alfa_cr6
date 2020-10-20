@@ -41,7 +41,7 @@ NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file ${PROJECT_ROOT}/_
 ### Run su target e host:
 
     $ . /opt/alfa_cr6/venv/bin/activate
-    $ alfa_cr6
+    $ alfa_CR6
 
 ### credenziali vuote login
 
