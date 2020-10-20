@@ -12,7 +12,10 @@ from PyQt5 import QtCore
 
 from alfa_CR6.main_window import MainWindow
 
+
 class Login(QMainWindow):
+    path = None
+
     path = None
 
     def __init__(self, parent=None):
@@ -26,7 +29,7 @@ class Login(QMainWindow):
         if self.user_edit.text() == '' and self.pass_edit.text() == '':
             self.user_edit.clear()
             self.pass_edit.clear()
-            mainView = MainWindow(self)
+            mainView = MainWindow()
             self.mainwindowlayout.addWidget(mainView)
             self.tab_login.setCurrentIndex(1)
 
