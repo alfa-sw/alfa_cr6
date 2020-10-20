@@ -43,11 +43,17 @@ NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file ${PROJECT_ROOT}/_
     $ . /opt/alfa_cr6/venv/bin/activate
     $ alfa_CR6
 
+### Code styling and linting
+
+1. autopep8 (pypi.org/project/autopep8):
+
+    autopep8 -a -a -a -i --max-line-length 120 $(FilePath)
+    
+2. pylint (pypi.org/project/pylint): 
+
+    pylint3 -f parseable $(FilePath)
+
 ### credenziali vuote login
 
 username: "", password: ""
 
-### Cleanup automatico codice
-
-1. autoflake <files> --remove-all-unused-imports --remove-unused-variables
-2. autopep8 <files> --aggressive --aggressive
