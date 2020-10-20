@@ -14,6 +14,7 @@ from alfa_CR6.main_window import MainWindow
 
 
 class Login(QMainWindow):
+    path = None
 
     path = None
 

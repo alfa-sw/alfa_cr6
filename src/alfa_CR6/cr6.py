@@ -146,3 +146,6 @@ def main():
     app = CR6_application(sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
     app.run_forever()
+
+if __name__=="__main__":
+    main()
