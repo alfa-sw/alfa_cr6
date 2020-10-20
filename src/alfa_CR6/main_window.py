@@ -1,5 +1,11 @@
-# This Python file uses the following encoding: utf-8
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel
+# coding: utf-8
+
+# pylint: disable=missing-docstring
+# pylint: disable=logging-format-interpolation
+# pylint: disable=line-too-long
+# pylint: disable=invalid-name
+
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication
 from PyQt5.uic import loadUi
 from alfa_CR6.chrome_widget import ChromeWidget
 from alfa_CR6.definitions import BUTTONS
@@ -11,8 +17,7 @@ class MainWindow(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.path = parent.path
-        loadUi(parent.path+"/ui/mainwindow.ui", self)
+        loadUi(QApplication.instance().ui_path + "/mainwindow.ui", self)
         self.dialog_1_btn.clicked.connect(self.onDialog1BtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
         self.tabs.setCurrentIndex(0)

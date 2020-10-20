@@ -32,6 +32,7 @@ def main():
             'PyQt5',
             'PyQt5-sip',
             'PyQtWebEngine',
+            'websockets',
         ],
     )
 
