@@ -32,7 +32,7 @@ UI for alfa CR6
 
 ### Install su target:
 
-NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file setup.py.
+NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file ${PROJECT_ROOT}/__version__.
 
     host$ scp user@host:${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH}
     target$ . /opt/alfa_cr6/venv/bin/activate
