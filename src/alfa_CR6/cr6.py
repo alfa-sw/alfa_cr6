@@ -63,9 +63,11 @@ class CR6_application(QApplication):
 
     def handle_head_status(self, head_index, status):     # pylint: disable=no-self-use
 
-        logging.debug("head_index:{}".format(head_index))
-        logging.debug("status:{}".format(status))
-        self.head_status_dict[head_index] = status
+        if not self.head_status_dict.get(head_index) or json.dumps(self.head_status_dict[head_index]) != json.dumps(self.head_status_dict[head_index]):
+            logging.warning("head_index:{}".format(head_index))
+            logging.warning("status:{}".format(status))
+
+            self.head_status_dict[head_index] = status
 
     async def qt_loop_task(self):
 
