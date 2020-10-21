@@ -10,12 +10,10 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QMessageBox, QMainWindow  # pylint: disable=no-name-in-module
 from PyQt5 import QtCore
 
-from alfa_CR6.tintometro import Tintometro
+from alfa_CR6.sinottico import Sinottico
 
 
 class Login(QMainWindow):
-    path = None
-
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/login.ui", self)
@@ -27,8 +25,8 @@ class Login(QMainWindow):
         if self.user_edit.text() == '' and self.pass_edit.text() == '':
             self.user_edit.clear()
             self.pass_edit.clear()
-            view_tintometro = Tintometro()
-            self.mainwindowlayout.addWidget(view_tintometro)
+            view_sinottico = Sinottico()
+            self.mainwindowlayout.addWidget(view_sinottico)
             self.tab_login.setCurrentIndex(1)
 
         else:

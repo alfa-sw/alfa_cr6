@@ -16,7 +16,7 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <widget class="QWidget" name="tintometro" native="true">
+  <widget class="QWidget" name="sinottico" native="true">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -92,7 +92,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>../images/chorme.png</normaloff>../images/chorme.png</iconset>
+       <normaloff>../images/chrome.png</normaloff>../images/chrome.png</iconset>
      </property>
      <property name="iconSize">
       <size>
@@ -110,7 +110,7 @@
       <bool>false</bool>
      </property>
     </widget>
-    <widget class="QLabel" name="status_tintometro">
+    <widget class="QLabel" name="status_sinottico">
      <property name="geometry">
       <rect>
        <x>1370</x>
@@ -139,7 +139,7 @@
       </rect>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="numeric_keyboard">
       <widget class="QWidget" name="horizontalLayoutWidget">
@@ -431,16 +431,16 @@
    <widget class="QStackedWidget" name="tabs">
     <property name="geometry">
      <rect>
-      <x>10</x>
+      <x>0</x>
       <y>-10</y>
-      <width>1451</width>
+      <width>1461</width>
       <height>811</height>
      </rect>
     </property>
     <property name="currentIndex">
      <number>0</number>
     </property>
-    <widget class="QWidget" name="tabTintometroImage">
+    <widget class="QWidget" name="tabSinotticoImage">
      <widget class="QLabel" name="tintometro_image">
       <property name="geometry">
        <rect>
@@ -655,7 +655,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QWidget" name="position_input" native="true">
+     <widget class="QWidget" name="jar_input" native="true">
       <property name="geometry">
        <rect>
         <x>109</x>
@@ -665,7 +665,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="position_output" native="true">
+     <widget class="QWidget" name="jar_output" native="true">
       <property name="geometry">
        <rect>
         <x>20</x>
