@@ -10,7 +10,16 @@ UI for alfa CR6
 
 2. un virtualenv nel path "/opt/alfa_cr6/venv", i.e. creato con:
 
-    $ virtualenv -p /usr/bin/python3 /opt/alfa_cr6/venv
+    <pre>$ virtualenv -p /usr/bin/python3 /opt/alfa_cr6/venv</pre>
+
+    (**opzionale**) installare virtualenv nel caso in cui non fosse installata sulla piattaforma
+
+    <pre>$ pip3 install virtualenv </pre>
+
+    (**opzionale**) se su host non esiste il folder /opt/alfa_cr6 occorre crearne uno
+
+    <pre>sudo mkdir /opt/alfa_cr6 && sudo chown pi /opt/alfa_cr6</pre>
+
 
 ### Prerequisiti per lo sviluppo (su host):
     
