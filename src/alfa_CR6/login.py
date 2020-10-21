@@ -10,12 +10,10 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QMessageBox, QMainWindow  # pylint: disable=no-name-in-module
 from PyQt5 import QtCore
 
-from alfa_CR6.main_window import MainWindow
+from alfa_CR6.tintometro import Tintometro
 
 
 class Login(QMainWindow):
-    path = None
-
     path = None
 
     def __init__(self, parent=None):
@@ -29,8 +27,8 @@ class Login(QMainWindow):
         if self.user_edit.text() == '' and self.pass_edit.text() == '':
             self.user_edit.clear()
             self.pass_edit.clear()
-            mainView = MainWindow()
-            self.mainwindowlayout.addWidget(mainView)
+            view_tintometro = Tintometro()
+            self.mainwindowlayout.addWidget(view_tintometro)
             self.tab_login.setCurrentIndex(1)
 
         else:

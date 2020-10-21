@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QWidget" name="MainWindow">
+ <class>container</class>
+ <widget class="QWidget" name="container">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,12 +11,12 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Tintometro</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <widget class="QWidget" name="mainWidget" native="true">
+  <widget class="QWidget" name="tintometro" native="true">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -34,7 +34,7 @@
       <height>91</height>
      </rect>
     </property>
-    <widget class="QPushButton" name="dialog_1_btn">
+    <widget class="QPushButton" name="home_btn">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -110,7 +110,7 @@
       <bool>false</bool>
      </property>
     </widget>
-    <widget class="QLabel" name="led">
+    <widget class="QLabel" name="status_tintometro">
      <property name="geometry">
       <rect>
        <x>1370</x>
@@ -139,9 +139,9 @@
       </rect>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
-     <widget class="QWidget" name="browser">
+     <widget class="QWidget" name="numeric_keyboard">
       <widget class="QWidget" name="horizontalLayoutWidget">
        <property name="geometry">
         <rect>
@@ -431,8 +431,8 @@
    <widget class="QStackedWidget" name="tabs">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>0</y>
+      <x>10</x>
+      <y>-10</y>
       <width>1451</width>
       <height>811</height>
      </rect>
@@ -440,8 +440,8 @@
     <property name="currentIndex">
      <number>0</number>
     </property>
-    <widget class="QWidget" name="main">
-     <widget class="QLabel" name="m_image">
+    <widget class="QWidget" name="tabTintometroImage">
+     <widget class="QLabel" name="tintometro_image">
       <property name="geometry">
        <rect>
         <x>0</x>
@@ -457,7 +457,7 @@
        <pixmap>../images/machine.jpg</pixmap>
       </property>
      </widget>
-     <widget class="QWidget" name="bar1" native="true">
+     <widget class="QWidget" name="STEP_2" native="true">
       <property name="geometry">
        <rect>
         <x>479</x>
@@ -467,7 +467,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="bar2" native="true">
+     <widget class="QWidget" name="STEP_9" native="true">
       <property name="geometry">
        <rect>
         <x>479</x>
@@ -477,7 +477,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="bar3" native="true">
+     <widget class="QWidget" name="STEP_3" native="true">
       <property name="geometry">
        <rect>
         <x>750</x>
@@ -487,7 +487,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="bar4" native="true">
+     <widget class="QWidget" name="STEP_8" native="true">
       <property name="geometry">
        <rect>
         <x>749</x>
@@ -497,7 +497,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="bar5" native="true">
+     <widget class="QWidget" name="STEP_4" native="true">
       <property name="geometry">
        <rect>
         <x>1020</x>
@@ -507,7 +507,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="bar6" native="true">
+     <widget class="QWidget" name="STEP_7" native="true">
       <property name="geometry">
        <rect>
         <x>1020</x>
@@ -517,7 +517,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="prebar1" native="true">
+     <widget class="QWidget" name="pre_STEP_2" native="true">
       <property name="geometry">
        <rect>
         <x>389</x>
@@ -527,7 +527,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="prebar2" native="true">
+     <widget class="QWidget" name="pre_STEP_9" native="true">
       <property name="geometry">
        <rect>
         <x>399</x>
@@ -537,7 +537,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="prebar3" native="true">
+     <widget class="QWidget" name="pre_STEP_3" native="true">
       <property name="geometry">
        <rect>
         <x>660</x>
@@ -547,7 +547,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="prebar4" native="true">
+     <widget class="QWidget" name="pre_STEP_8" native="true">
       <property name="geometry">
        <rect>
         <x>670</x>
@@ -557,7 +557,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="prebar5" native="true">
+     <widget class="QWidget" name="pre_STEP_4" native="true">
       <property name="geometry">
        <rect>
         <x>930</x>
@@ -567,7 +567,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="prebar6" native="true">
+     <widget class="QWidget" name="pre_STEP_7" native="true">
       <property name="geometry">
        <rect>
         <x>950</x>
@@ -577,7 +577,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton">
+     <widget class="QPushButton" name="refilll_HEAD_1_STEP_2">
       <property name="geometry">
        <rect>
         <x>370</x>
@@ -590,7 +590,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_2">
+     <widget class="QPushButton" name="refilll_HEAD_3_STEP_3">
       <property name="geometry">
        <rect>
         <x>650</x>
@@ -603,7 +603,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_3">
+     <widget class="QPushButton" name="refilll_HEAD_5_STEP_4">
       <property name="geometry">
        <rect>
         <x>920</x>
@@ -616,7 +616,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_4">
+     <widget class="QPushButton" name="refilll_HEAD_2_STEP_9">
       <property name="geometry">
        <rect>
         <x>370</x>
@@ -629,7 +629,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_5">
+     <widget class="QPushButton" name="refilll_HEAD_4_STEP_8">
       <property name="geometry">
        <rect>
         <x>650</x>
@@ -642,7 +642,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_6">
+     <widget class="QPushButton" name="refilll_HEAD_6_STEP_7">
       <property name="geometry">
        <rect>
         <x>930</x>
@@ -655,7 +655,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QWidget" name="ingress" native="true">
+     <widget class="QWidget" name="position_input" native="true">
       <property name="geometry">
        <rect>
         <x>109</x>
@@ -665,7 +665,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="egress" native="true">
+     <widget class="QWidget" name="position_output" native="true">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -675,7 +675,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="barout2" native="true">
+     <widget class="QWidget" name="STEP_1" native="true">
       <property name="geometry">
        <rect>
         <x>280</x>
@@ -685,7 +685,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="barout1" native="true">
+     <widget class="QWidget" name="STEP_12" native="true">
       <property name="geometry">
        <rect>
         <x>220</x>
@@ -695,7 +695,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="barout3" native="true">
+     <widget class="QWidget" name="STEP_11" native="true">
       <property name="geometry">
        <rect>
         <x>290</x>
@@ -705,7 +705,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="barout4" native="true">
+     <widget class="QWidget" name="STEP_10" native="true">
       <property name="geometry">
        <rect>
         <x>280</x>
@@ -715,7 +715,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="bartopleft" native="true">
+     <widget class="QWidget" name="STEP_5" native="true">
       <property name="geometry">
        <rect>
         <x>1200</x>
@@ -725,7 +725,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="barbottomleft" native="true">
+     <widget class="QWidget" name="STEP_6" native="true">
       <property name="geometry">
        <rect>
         <x>1200</x>
@@ -735,7 +735,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_7">
+     <widget class="QPushButton" name="view_status_HEAD_1_STEP_2">
       <property name="geometry">
        <rect>
         <x>380</x>
@@ -748,7 +748,7 @@
        <string>Visualizza stato testa 1</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_8">
+     <widget class="QPushButton" name="view_status_HEAD_3_STEP_3">
       <property name="geometry">
        <rect>
         <x>660</x>
@@ -761,7 +761,7 @@
        <string>Visualizza stato testa 3</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_9">
+     <widget class="QPushButton" name="view_status_HEAD_5_STEP_4">
       <property name="geometry">
        <rect>
         <x>940</x>
@@ -774,7 +774,7 @@
        <string>Visualizza stato testa 5</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_10">
+     <widget class="QPushButton" name="view_status_HEAD_2_STEP_9">
       <property name="geometry">
        <rect>
         <x>390</x>
@@ -787,7 +787,7 @@
        <string>Visualizza stato testa 2</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_11">
+     <widget class="QPushButton" name="view_status_HEAD_4_STEP_8">
       <property name="geometry">
        <rect>
         <x>670</x>
@@ -800,7 +800,7 @@
        <string>Visualizza stato testa 4</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_12">
+     <widget class="QPushButton" name="view_status_HEAD_6_STEP_7">
       <property name="geometry">
        <rect>
         <x>940</x>
@@ -824,10 +824,10 @@
         <height>811</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="mainlayout"/>
+      <layout class="QVBoxLayout" name="chromeLayout"/>
      </widget>
     </widget>
-    <widget class="QWidget" name="modal_action">
+    <widget class="QWidget" name="modalAction">
      <widget class="QScrollArea" name="scrollAreaStatus">
       <property name="geometry">
        <rect>
@@ -840,7 +840,7 @@
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents_4">
+      <widget class="QWidget" name="listStatus">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -863,7 +863,7 @@
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents_3">
+      <widget class="QWidget" name="listActions">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -875,7 +875,7 @@
       </widget>
      </widget>
     </widget>
-    <widget class="QWidget" name="modal_visual">
+    <widget class="QWidget" name="modalVisual">
      <widget class="QWidget" name="verticalLayoutWidget_4">
       <property name="geometry">
        <rect>

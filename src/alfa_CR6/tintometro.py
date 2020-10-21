@@ -12,25 +12,22 @@ from alfa_CR6.chrome_widget import ChromeWidget
 from alfa_CR6.definitions import BUTTONS
 from alfa_CR6.machine_status_0 import FILE_JSON
 
-class MainWindow(QWidget):
+class Tintometro(QWidget):
     browser=False
     view=None
     path=None
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        loadUi(QApplication.instance().ui_path + "/mainwindow.ui", self)
-        self.dialog_1_btn.clicked.connect(self.onDialog1BtnClicked)
+        loadUi(QApplication.instance().ui_path + "/tintometro.ui", self)
+        self.home_btn.clicked.connect(self.onHomeBtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
         self.tabs.setCurrentIndex(0)
         self.bottom_tab.setCurrentIndex(1)
 
-        self.bar1.mousePressEvent=lambda event:  self.onBarPressed(1)
-        self.bar2.mousePressEvent=lambda event:  self.onBarPressed(2)
+        self.STEP_2.mousePressEvent=lambda event:  self.onStepPressed(1)
 
-
-
-    def onBarPressed(self, number):
+    def onStepPressed(self, number):
         self.tabs.setCurrentIndex(2)
         self.bottom_tab.setCurrentIndex(0)
 
@@ -68,7 +65,7 @@ class MainWindow(QWidget):
             self.browser=False
 
 
-    def onDialog1BtnClicked(self, other):
+    def onHomeBtnClicked(self, other):
         self.tabs.setCurrentIndex(0)
         self.bottom_tab.setCurrentIndex(1)
         if self.browser:
