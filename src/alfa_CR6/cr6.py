@@ -19,13 +19,20 @@ import websockets                         # pylint: disable=import-error
 
 from alfa_CR6.login import Login
 
+# ~ this dictionary keeps the url of the websocket servers 
+# ~ to which the application connects its websocket clients,
+# ~ if it is empty, no websocket client is started
 WS_URL_DICT = {
     1: "ws://127.0.0.1:11000/device:machine:status",
 }
 
+# ~ this dictionary keeps the path to the files where 
+# ~ the application looks for the mockup version of
+# ~ the machine:status structures in json format,
+# ~ if it is empty, no mockup file is searched for 
 MOCKUP_FILE_PATH_DICT = {
-    1: '/opt/alfa_cr6/var/machine_status_0.json',
-    2: '/opt/alfa_cr6/var/machine_status_1.json',
+    # ~ 1: '/opt/alfa_cr6/var/machine_status_0.json',
+    # ~ 2: '/opt/alfa_cr6/var/machine_status_1.json',
 }
 
 LOG_LEVEL = logging.INFO
@@ -62,12 +69,12 @@ class CR6_application(QApplication):
         return ver
 
     def handle_head_status(self, head_index, status):     # pylint: disable=no-self-use
+        old_status = self.head_status_dict.get(head_index, {})
+        diff =  { k : v for k, v in status.items() if v != old_status.get(k) }
+        logging.warning("head_index:{}".format(head_index))
+        logging.warning("diff:{}".format(diff))
 
-        if not self.head_status_dict.get(head_index) or json.dumps(self.head_status_dict[head_index]) != json.dumps(self.head_status_dict[head_index]):
-            logging.warning("head_index:{}".format(head_index))
-            logging.warning("status:{}".format(status))
-
-            self.head_status_dict[head_index] = status
+        self.head_status_dict[head_index] = status
 
     async def qt_loop_task(self):
 
