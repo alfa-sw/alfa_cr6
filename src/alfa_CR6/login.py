@@ -10,26 +10,22 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QMessageBox, QMainWindow  # pylint: disable=no-name-in-module
 from PyQt5 import QtCore
 
-from alfa_CR6.tintometro import Tintometro
+from alfa_CR6.sinottico import Sinottico
 
 
 class Login(QMainWindow):
-    path = None
-
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/login.ui", self)
         self.login_btn.clicked.connect(self.onLoginBtnClicked)
-        self.tab_login.setCurrentIndex(0)
+        self.tab_login.setCurrentWidget(self.login)
 
     def onLoginBtnClicked(self):
         msg = QMessageBox()
         if self.user_edit.text() == '' and self.pass_edit.text() == '':
             self.user_edit.clear()
             self.pass_edit.clear()
-            view_tintometro = Tintometro()
-            self.mainwindowlayout.addWidget(view_tintometro)
-            self.tab_login.setCurrentIndex(1)
+            self.tab_login.setCurrentWidget(self.mainwindow)
 
         else:
             msg.setText('Incorrect Password')
