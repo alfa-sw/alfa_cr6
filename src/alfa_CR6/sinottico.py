@@ -21,12 +21,12 @@ class Sinottico(QWidget):
         loadUi(QApplication.instance().ui_path + "/sinottico.ui", self)
         self.home_btn.clicked.connect(self.onHomeBtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
-        self.tabs.setCurrentWidget(self.tabSinotticoImage)
+        self.project_stack.setCurrentWidget(self.image_sinottico)
 
         self.STEP_2.mousePressEvent=lambda event:  self.onStep2Pressed()
 
     def onStep2Pressed(self):
-        self.tabs.setCurrentWidget(self.modalAction)
+        self.project_stack.setCurrentWidget(self.modal_action)
 
         self.widgetAction = QWidget()
         self.widgetStatus = QWidget()
@@ -50,33 +50,33 @@ class Sinottico(QWidget):
                 self.vboxStatus.addWidget(QLabel(key + ' : ' + str(value)))
 
         self.widgetAction.setLayout(self.vboxAction)
-        self.scrollAreaAction.setWidgetResizable(True)
-        self.scrollAreaAction.setWidget(self.widgetAction)
+        self.scroll_area_action.setWidgetResizable(True)
+        self.scroll_area_action.setWidget(self.widgetAction)
 
         self.widgetStatus.setLayout(self.vboxStatus)
-        self.scrollAreaStatus.setWidgetResizable(True)
-        self.scrollAreaStatus.setWidget(self.widgetStatus)
+        self.scroll_area_status.setWidgetResizable(True)
+        self.scroll_area_status.setWidget(self.widgetStatus)
 
         if self.browser:
-            self.chromeLayout.removeWidget(self.view)
+            self.chrome_layout.removeWidget(self.view)
             self.browser=False
 
 
     def onHomeBtnClicked(self, other):
-        self.tabs.setCurrentWidget(self.tabSinotticoImage)
+        self.project_stack.setCurrentWidget(self.image_sinottico)
         if self.browser:
-            self.chromeLayout.removeWidget(self.view)
+            self.chrome_layout.removeWidget(self.view)
             self.browser=False
 
 
     def onChromeBtnClicked(self):
         if self.browser:
             self.browser=False
-            self.tabs.setCurrentWidget(self.tabSinotticoImage)
-            self.chromeLayout.removeWidget(self.view)
+            self.project_stack.setCurrentWidget(self.image_sinottico)
+            self.chrome_layout.removeWidget(self.view)
         else:
             self.browser=True
             self.view = ChromeWidget(self)
-            self.chromeLayout.addWidget(self.view)
-            self.tabs.setCurrentWidget(self.chrome)
+            self.chrome_layout.addWidget(self.view)
+            self.project_stack.setCurrentWidget(self.chrome)
 
