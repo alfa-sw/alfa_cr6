@@ -29,9 +29,6 @@ def main():
         include_package_data=True,
         scripts=['bin/alfa_CR6'],
         install_requires = [
-            'PyQt5',
-            'PyQt5-sip',
-            'PyQtWebEngine',
             'websockets',
         ],
     )

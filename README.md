@@ -8,9 +8,9 @@ UI for alfa CR6
     * python3
     * python3-pyqt5
 
-2. un virtualenv nel path "/opt/alfa_cr6/venv", i.e. creato con:
+2. un virtualenv nel path "/opt/alfa_cr6/venv" permettendo al virtualenv di vedere tutti i pacchetti (debian) globali, i.e. creato con:
 
-    <pre>$ virtualenv -p /usr/bin/python3 /opt/alfa_cr6/venv</pre>
+    <pre>$ virtualenv --system-site-packages -p /usr/bin/python3 /opt/alfa_cr6/venv</pre>
 
     (**opzionale**) installare virtualenv nel caso in cui non fosse installata sulla piattaforma
 
