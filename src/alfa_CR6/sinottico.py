@@ -9,8 +9,6 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication, QScrollArea, QVBoxLayout
 from PyQt5.uic import loadUi
 from alfa_CR6.chrome_widget import ChromeWidget
-from alfa_CR6.definitions import BUTTONS
-from alfa_CR6.machine_status_0 import FILE_JSON
 
 class Sinottico(QWidget):
     browser=False
@@ -26,40 +24,28 @@ class Sinottico(QWidget):
         self.STEP_2.mousePressEvent=lambda event:  self.onStep2Pressed()
 
     def onStep2Pressed(self):
-        self.project_stack.setCurrentWidget(self.modal_action)
+        self.project_stack.setCurrentWidget(self.modal_STEP_2_HEAD_1)
 
-        self.widgetAction = QWidget()
-        self.widgetStatus = QWidget()
-        self.vboxStatus = QVBoxLayout()
-        self.vboxAction = QVBoxLayout()
-        self.vboxAction.setAlignment(Qt.AlignTop)
-
-        for button in BUTTONS[1]['commands']:
-                btn = QPushButton(button["nome"])
-                self.vboxAction.addWidget(btn)
+        self.v_layout_action.setAlignment(Qt.AlignTop)
 
         # ~ TODO: 1. handle the machine:status of the six heads
-        # ~ TODO: 2. this approach considers the status as a static thing, but 
-        # ~          the status have to be dynamically refreshed, so we must 
-        # ~          change it, e.g. having the 6 persistent viewboxes created at start time 
+        # ~ TODO: 2. this approach considers the status as a static thing, but
+        # ~          the status have to be dynamically refreshed, so we must
+        # ~          change it, e.g. having the 6 persistent viewboxes created at start time
         # ~          and and always refreshing the view, for the ones that are are visible
         # ~ get the machine:status of the first head
         machine_status = QApplication.instance().head_status_dict.get(0, {})
 
         for key, value in machine_status.items():
-                self.vboxStatus.addWidget(QLabel(key + ' : ' + str(value)))
+                self.v_layout_status.addWidget(QLabel(key + ' : ' + str(value)))
 
-        self.widgetAction.setLayout(self.vboxAction)
+        self.scroll_area_action.setLayout(self.v_layout_action)
         self.scroll_area_action.setWidgetResizable(True)
-        self.scroll_area_action.setWidget(self.widgetAction)
+        self.scroll_area_action.setWidget(self.list_actions)
 
-        self.widgetStatus.setLayout(self.vboxStatus)
+        self.scroll_area_status.setLayout(self.v_layout_status)
         self.scroll_area_status.setWidgetResizable(True)
-        self.scroll_area_status.setWidget(self.widgetStatus)
-
-        if self.browser:
-            self.chrome_layout.removeWidget(self.view)
-            self.browser=False
+        self.scroll_area_status.setWidget(self.list_status)
 
 
     def onHomeBtnClicked(self, other):
