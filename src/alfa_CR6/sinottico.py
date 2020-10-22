@@ -39,13 +39,7 @@ class Sinottico(QWidget):
         for key, value in machine_status.items():
                 self.v_layout_status.addWidget(QLabel(key + ' : ' + str(value)))
 
-        self.scroll_area_action.setLayout(self.v_layout_action)
-        self.scroll_area_action.setWidgetResizable(True)
-        self.scroll_area_action.setWidget(self.list_actions)
 
-        self.scroll_area_status.setLayout(self.v_layout_status)
-        self.scroll_area_status.setWidgetResizable(True)
-        self.scroll_area_status.setWidget(self.list_status)
 
 
     def onHomeBtnClicked(self, other):

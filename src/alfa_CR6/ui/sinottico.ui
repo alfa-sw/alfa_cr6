@@ -16,7 +16,7 @@
   <property name="styleSheet">
    <string notr="true"/>
   </property>
-  <widget class="QWidget" name="sinottico" native="true">
+  <widget class="QWidget" name="project" native="true">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -555,12 +555,68 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>20</y>
-          <width>671</width>
+          <y>0</y>
+          <width>691</width>
           <height>761</height>
          </rect>
         </property>
-        <layout class="QVBoxLayout" name="v_layout_status"/>
+        <layout class="QVBoxLayout" name="v_layout_status">
+         <property name="spacing">
+          <number>-1</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Stato FTC_2</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="status_sinottico_2">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap>../images/green.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>false</bool>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Stato CP_1</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="status_sinottico_3">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="pixmap">
+            <pixmap>../images/green.svg</pixmap>
+           </property>
+           <property name="scaledContents">
+            <bool>false</bool>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </widget>
      </widget>
@@ -588,9 +644,9 @@
        <widget class="QWidget" name="verticalLayoutWidget_2">
         <property name="geometry">
          <rect>
-          <x>-10</x>
-          <y>19</y>
-          <width>661</width>
+          <x>0</x>
+          <y>0</y>
+          <width>651</width>
           <height>761</height>
          </rect>
         </property>
@@ -601,6 +657,9 @@
          </size>
         </property>
         <layout class="QVBoxLayout" name="v_layout_action">
+         <property name="spacing">
+          <number>-1</number>
+         </property>
          <item>
           <widget class="QPushButton" name="btn__board_dosage">
            <property name="minimumSize">
@@ -616,7 +675,7 @@
             </size>
            </property>
            <property name="text">
-            <string>Gestione tavola e dosaggio come THOR 2.0</string>
+            <string>Start rulliera (MU_1)</string>
            </property>
           </widget>
          </item>
@@ -635,7 +694,7 @@
             </size>
            </property>
            <property name="text">
-            <string>Gestione spazzola: &quot;OUT_24V_IN&quot; (CN9)</string>
+            <string>Stop rulliera</string>
            </property>
           </widget>
          </item>
@@ -654,140 +713,7 @@
             </size>
            </property>
            <property name="text">
-            <string>NO Riscaldatore</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_offline_input">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Gestione Ingresso OFF-LINE, uscita LED</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_no_BHL">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>NO BHL (Laser)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_microswitch_1">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Gestione Microswitch 1, individuazione barat. &quot;MS_5&quot;: &quot;LEV_SENS&quot; (CN3)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_microswitch_2">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Gestione Microswitch 2, individuazione barat. &quot;MS_6&quot;: &quot;INT_CAR&quot; (CN28)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_jar_input">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Gestione Rulliera di ingresso &quot;STEP 1&quot;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_FTC1">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Gestione Fotocellula presenza barat. sulla rulliera di ingresso &quot;FTC1&quot;: &quot;FO_GEN2&quot;</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_can_presence">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Gestione barat. Can Presence NPN &quot;CP_1&quot;: &quot;FO_CPR&quot; (CN20)</string>
+            <string>Start &quot;STEP 2&quot; (va fino alla copertura di FTC_2)</string>
            </property>
           </widget>
          </item>
