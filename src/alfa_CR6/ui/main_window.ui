@@ -11,10 +11,10 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Tintometro</string>
+   <string>Sinottico</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QStackedWidget" name="tab_login">
+   <widget class="QStackedWidget" name="main_window_stack">
     <property name="geometry">
      <rect>
       <x>-1</x>
@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="login">
      <widget class="QPushButton" name="login_btn">
@@ -112,7 +112,7 @@
       </property>
      </widget>
     </widget>
-    <widget class="QWidget" name="mainwindow">
+    <widget class="QWidget" name="project">
      <widget class="QWidget" name="verticalLayoutWidget">
       <property name="geometry">
        <rect>
@@ -122,7 +122,7 @@
         <height>901</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="mainwindowlayout"/>
+      <layout class="QVBoxLayout" name="project_layout"/>
      </widget>
     </widget>
    </widget>

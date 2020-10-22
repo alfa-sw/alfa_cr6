@@ -130,7 +130,7 @@
      </property>
     </widget>
    </widget>
-   <widget class="QStackedWidget" name="tabs">
+   <widget class="QStackedWidget" name="project_stack">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -142,7 +142,7 @@
     <property name="currentIndex">
      <number>0</number>
     </property>
-    <widget class="QWidget" name="tabSinotticoImage">
+    <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
       <property name="geometry">
        <rect>
@@ -526,11 +526,11 @@
         <height>811</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="chromeLayout"/>
+      <layout class="QVBoxLayout" name="chrome_layout"/>
      </widget>
     </widget>
-    <widget class="QWidget" name="modalAction">
-     <widget class="QScrollArea" name="scrollAreaStatus">
+    <widget class="QWidget" name="modal_action">
+     <widget class="QScrollArea" name="scroll_area_status">
       <property name="geometry">
        <rect>
         <x>710</x>
@@ -542,7 +542,7 @@
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="listStatus">
+      <widget class="QWidget" name="list_status">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -553,7 +553,7 @@
        </property>
       </widget>
      </widget>
-     <widget class="QScrollArea" name="scrollAreaAction">
+     <widget class="QScrollArea" name="scroll_area_action">
       <property name="geometry">
        <rect>
         <x>40</x>
@@ -565,7 +565,7 @@
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="listActions">
+      <widget class="QWidget" name="list_actions">
        <property name="geometry">
         <rect>
          <x>0</x>
@@ -577,7 +577,7 @@
       </widget>
      </widget>
     </widget>
-    <widget class="QWidget" name="modalVisual">
+    <widget class="QWidget" name="modal_visual">
      <widget class="QWidget" name="verticalLayoutWidget_4">
       <property name="geometry">
        <rect>

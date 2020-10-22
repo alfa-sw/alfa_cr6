@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import websockets                         # pylint: disable=import-error
 
-from alfa_CR6.login import Login
+from alfa_CR6.main_window import MainWindow
 from alfa_CR6.sinottico import Sinottico
 
 # ~ this dictionary keeps the url of the websocket servers 
@@ -51,15 +51,14 @@ class CR6_application(QApplication):
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
         self.init_widgets()
-#         self.login = Login()
 
         self.head_status_dict = {}
 
 
     def init_widgets(self):
-        self.login = Login()
+        self.main_window = MainWindow()
         self.sinottico = Sinottico()
-        self.login.mainwindowlayout.addWidget(self.sinottico)
+        self.main_window.project_layout.addWidget(self.sinottico)
 
 
     def get_version(self):                                 # pylint: disable=no-self-use
@@ -140,7 +139,7 @@ class CR6_application(QApplication):
 
     def run_forever(self):
 
-        self.login.show()
+        self.main_window.show()
 
         _tasks = [asyncio.ensure_future(self.qt_loop_task()), ]
 
