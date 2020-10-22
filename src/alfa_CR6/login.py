@@ -18,16 +18,14 @@ class Login(QMainWindow):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/login.ui", self)
         self.login_btn.clicked.connect(self.onLoginBtnClicked)
-        self.tab_login.setCurrentIndex(0)
+        self.tab_login.setCurrentWidget(self.login)
 
     def onLoginBtnClicked(self):
         msg = QMessageBox()
         if self.user_edit.text() == '' and self.pass_edit.text() == '':
             self.user_edit.clear()
             self.pass_edit.clear()
-            view_sinottico = Sinottico()
-            self.mainwindowlayout.addWidget(view_sinottico)
-            self.tab_login.setCurrentIndex(1)
+            self.tab_login.setCurrentWidget(self.mainwindow)
 
         else:
             msg.setText('Incorrect Password')
