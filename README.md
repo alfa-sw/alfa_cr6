@@ -6,15 +6,16 @@
 
 1. sistema linux con installati i pacchetti debian: 
     * python3
-    * python3-pyqt5
     * virtualenv
+    * python3-pyqt5
+    * python3-pyqt5.qtwebengine
 
-    $ apt install python3 python3-pyqt5 virtualenv
+    $ apt install -y python3 virtualenv python3-pyqt5 python3-pyqt5.qtwebengine
 
-2. un virtualenv nel path "/opt/alfa_cr6/venv":
+2. un virtualenv nel path "/opt/alfa_cr6/venv", con accesso ai pacchetti di sistema, i.e. creato con:
 
     $ mkdir /opt/alfa_cr6                              
-    $ virtualenv -p /usr/bin/python3 /opt/alfa_cr6/venv    
+    $ virtualenv --system-site-packages -p /usr/bin/python3 /opt/alfa_cr6/venv
 
 #### 2. Prerequisiti per lo sviluppo (su host):
     
