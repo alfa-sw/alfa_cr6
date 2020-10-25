@@ -22,31 +22,37 @@ from alfa_CR6.main_window import MainWindow
 LOG_LEVEL = logging.INFO
 # ~ LOG_LEVEL = logging.WARNING
 
+# ~ this is the path to the sqlite db used for persistent data,
+# ~ if it is empty or None, no sqlite db is open
+# ~ DB_FILE_PATH = '/opt/alfa_cr6/data'
+DB_FILE_PATH = None
+
 # ~ this dictionary keeps the url of the websocket servers
 # ~ to which the application connects its websocket clients,
 # ~ if it is empty, no websocket client is started
-WS_URL_DICT = {
-    # ~ 1: "ws://127.0.0.1:11000/device:machine:status",
-}
+WS_URL_LIST = [
+    # ~ "ws://127.0.0.1:11000/device:machine:status",
+]
 
 # ~ this dictionary keeps the path to the files where
 # ~ the application looks for the mockup version of
 # ~ the machine:status structures in json format,
 # ~ if it is empty, no mockup file is searched for
-MOCKUP_FILE_PATH_DICT = {
-    1: '/opt/alfa_cr6/var/machine_status_0.json',
-    # ~ 2: '/opt/alfa_cr6/var/machine_status_1.json',
-}
+MOCKUP_FILE_PATH_LIST = [
+    # ~ '/opt/alfa_cr6/var/machine_status_0.json',
+    # ~ '/opt/alfa_cr6/var/machine_status_1.json',
+]
 
 BARCODE_DEVICE_NAME_LIST = [
-    # ~ '/dev/input/event7',
-    # ~ '/dev/input/event8',
+    '/dev/input/event7',
+    '/dev/input/event8',
 ]
 
 
 class Jar(object):
 
-    def __init__(self, barcode):
+    def __init__(self, barcode, parent):
+        self.parent = parent
         self.barcode = barcode
 
         self.machine_head = None
@@ -119,37 +125,30 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.__init_tasks()
 
+        if DB_FILE_PATH:
+
+            from alfa_CR6.models import init_models
+
+            if not os.path.exists(DB_FILE_PATH):
+                os.makedirs(DB_FILE_PATH)
+            self.db_session = init_models(f'sqlite:///{ DB_FILE_PATH }/cr6_V1.sqlite')
+
         self.main_window = MainWindow()
 
     def __init_tasks(self):
 
         self.__tasks = [self.__qt_loop_task(), ]
 
-        for barcode_device_name in BARCODE_DEVICE_NAME_LIST:
-            self.__tasks += [self.__barcode_read_task(barcode_device_name), ]
+        for dev_index, barcode_device_name in enumerate(BARCODE_DEVICE_NAME_LIST):
+            self.__tasks += [self.__barcode_read_task(dev_index, barcode_device_name), ]
 
-        for head_index, ws_url in WS_URL_DICT.items():
+        for head_index, ws_url in enumerate(WS_URL_LIST):
             self.__tasks += [self.__ws_client_task(head_index, ws_url), ]
 
-        for head_index, status_file_name in MOCKUP_FILE_PATH_DICT.items():
+        for head_index, status_file_name in enumerate(MOCKUP_FILE_PATH_LIST):
             self.__tasks += [self.__mockup_task(head_index, status_file_name), ]
 
-
-    def __on_barcode_read(self, barcode):     # pylint: disable=no-self-use
-
-        logging.warning("barcode:{}".format(barcode))
-        self.jar_dict[barcode] = Jar(barcode)
-
-    def __on_head_status_changed(self, head_index, status):     # pylint: disable=no-self-use
-
-        old_status = self.head_status_dict.get(head_index, {})
-        diff = {k: v for k, v in status.items() if v != old_status.get(k)}
-        logging.warning("head_index:{}".format(head_index))
-        logging.warning("diff:{}".format(diff))
-
-        self.head_status_dict[head_index] = status
-
-    async def __barcode_read_task(self, barcode_device_name):
+    async def __barcode_read_task(self, dev_index, barcode_device_name):
 
         buffer = ''
         try:
@@ -165,10 +164,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
                 if event.type == evdev.ecodes.EV_KEY and keyEvent.keystate == 0:  # key_up = 0
                     # ~ if event.type == evdev.ecodes.EV_KEY and event.value == 0: # key_up = 0
-                    logging.warning("code:{} | {} | {}".format(event.code, chr(event.code), evdev.ecodes.KEY[event.code]))
+                    # ~ logging.warning("code:{} | {} | {}".format(event.code, chr(event.code), evdev.ecodes.KEY[event.code]))
                     # ~ logging.warning("code:{} | {} | {}".format(event.code,  keyEvent.keycode, evdev.ecodes.KEY[event.code]))
                     if keyEvent.keycode == 'KEY_ENTER':
-                        self.__on_barcode_read(buffer)
+                        self.__on_barcode_read(dev_index, buffer)
                         buffer = ''
                     else:
                         buffer += self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode, '*')
@@ -205,7 +204,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                     elif msg_dict.get('type') == 'device:machine:status':
                         status = msg_dict.get('value')
                         status = dict(status)
-                        self._on_head_status_changed(head_index, status)
+                        self.__on_head_status_changed(head_index, status)
 
         except asyncio.CancelledError:
             pass
@@ -218,7 +217,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                     with open(status_file_name) as f:
                         status = json.load(f)
                         status = dict(status)
-                        self._on_head_status_changed(head_index, status)
+                        self.__on_head_status_changed(head_index, status)
                 except Exception as e:       # pylint: disable=broad-except
                     logging.debug(e)
 
@@ -234,6 +233,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         for t in self.__runners:
             try:
                 t.cancel()
+
                 async def _coro(_):
                     await _
                 asyncio.get_event_loop().run_until_complete(_coro(t))
@@ -242,6 +242,23 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         asyncio.get_event_loop().run_until_complete(asyncio.get_event_loop().shutdown_asyncgens())
         asyncio.get_event_loop().close()
+
+    def __on_barcode_read(self, dev_index, barcode):     # pylint: disable=no-self-use
+
+        logging.warning("dev_index:{}, barcode:{}".format(dev_index, barcode))
+        self.jar_dict[barcode] = Jar(barcode, self)
+
+    def __on_head_status_changed(self, head_index, status):     # pylint: disable=no-self-use
+
+        old_status = self.head_status_dict.get(head_index, {})
+        diff = {k: v for k, v in status.items() if v != old_status.get(k)}
+        logging.warning("head_index:{}".format(head_index))
+        logging.warning("diff:{}".format(diff))
+
+        self.head_status_dict[head_index] = status
+
+        for k, v in self.jar_dict.items():
+            v.update()
 
     def get_version(self):                                 # pylint: disable=no-self-use
 
