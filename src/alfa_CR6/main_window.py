@@ -9,12 +9,18 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QMessageBox, QMainWindow  # pylint: disable=no-name-in-module
 from PyQt5 import QtCore
 
+from alfa_CR6.sinottico import Sinottico
+
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/main_window.ui", self)
         self.login_btn.clicked.connect(self.onLoginBtnClicked)
         self.main_window_stack.setCurrentWidget(self.login)
+
+        self.sinottico = Sinottico(self)
+        self.project_layout.addWidget(self.sinottico)
+
 
     def onLoginBtnClicked(self):
         msg = QMessageBox()

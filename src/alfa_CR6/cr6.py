@@ -18,7 +18,6 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 import websockets                         # pylint: disable=import-error
 
 from alfa_CR6.main_window import MainWindow
-from alfa_CR6.sinottico import Sinottico
 
 LOG_LEVEL = logging.INFO
 # ~ LOG_LEVEL = logging.WARNING
@@ -118,8 +117,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.__tasks = []
         self.__runners = []
 
-        self.__init_widgets()
         self.__init_tasks()
+
+        self.main_window = MainWindow()
 
     def __init_tasks(self):
 
@@ -134,11 +134,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         for head_index, status_file_name in MOCKUP_FILE_PATH_DICT.items():
             self.__tasks += [self.__mockup_task(head_index, status_file_name), ]
 
-    def __init_widgets(self):
-
-        self.main_window = MainWindow()
-        self.sinottico = Sinottico()
-        self.main_window.project_layout.addWidget(self.sinottico)
 
     def __on_barcode_read(self, barcode):     # pylint: disable=no-self-use
 
