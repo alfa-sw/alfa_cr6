@@ -12,6 +12,7 @@ import traceback
 import asyncio
 import subprocess
 import json
+import types
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
@@ -19,51 +20,61 @@ import websockets                         # pylint: disable=import-error
 
 from alfa_CR6.main_window import MainWindow
 
-LOG_LEVEL = logging.INFO
-# ~ LOG_LEVEL = logging.WARNING
-
-# ~ this is the path to the sqlite db used for persistent data,
-# ~ if it is empty or None, no sqlite db is open
-# ~ DB_FILE_PATH = '/opt/alfa_cr6/data'
-DB_FILE_PATH = None
-
-# ~ this dictionary keeps the url of the websocket servers
-# ~ to which the application connects its websocket clients,
-# ~ if it is empty, no websocket client is started
-WS_URL_LIST = [
-    # ~ "ws://127.0.0.1:11000/device:machine:status",
-]
-
-# ~ this dictionary keeps the path to the files where
-# ~ the application looks for the mockup version of
-# ~ the machine:status structures in json format,
-# ~ if it is empty, no mockup file is searched for
-MOCKUP_FILE_PATH_LIST = [
-    # ~ '/opt/alfa_cr6/var/machine_status_0.json',
-    # ~ '/opt/alfa_cr6/var/machine_status_1.json',
-]
-
-BARCODE_DEVICE_NAME_LIST = [
-    '/dev/input/event7',
-    '/dev/input/event8',
-]
+RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 
 
-class Jar(object):
+def _get_version():
 
-    def __init__(self, barcode, parent):
-        self.parent = parent
-        self.barcode = barcode
+    __version = None
 
-        self.machine_head = None
-        self.status = None
-        self.position = None
+    try:
+        pth = os.path.abspath(os.path.dirname(sys.executable))
+        cmd = '{}/pip show alfa_CR6'.format(pth)
+        for line in subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout.decode().split('\n'):
+            if 'Version' in line:
+                ver = line.split(":")[1]
+                __version = ver.strip()
+    except Exception as exc:  # pylint: disable=broad-except
+        logging.error(exc)
 
-    def update(self):
-        pass
+    return __version
 
-    def move(self):
-        pass
+
+settings = types.SimpleNamespace(
+    LOG_LEVEL=logging.INFO,
+    # ~ LOG_LEVEL = logging.WARNING,
+
+    LOGS_PATH=os.path.join(RUNTIME_FILES_ROOT, 'log'),
+    TMP_PATH=os.path.join(RUNTIME_FILES_ROOT, 'tmp'),
+    CONF_PATH=os.path.join(RUNTIME_FILES_ROOT, 'conf'),
+
+    # here is defined the path to the sqlite db used for persistent data,
+    # if it is empty or None, no sqlite db is open
+    SQLITE_CONNECT_STRING="sqlite:///" + \
+    os.path.join(RUNTIME_FILES_ROOT, 'data', 'cr6.V' + _get_version().split('.')[1] + '.sqlite'),
+    # ~ SQLITE_CONNECT_STRING=None,
+
+    # this dictionary keeps the url of the websocket servers
+    # to which the application connects its websocket clients,
+    # if it is empty, no websocket client is started
+    WS_URL_LIST=[
+        # ~ "ws://127.0.0.1:11000/device:machine:status",
+    ],
+
+    # this dictionary keeps the path to the files where
+    # the application looks for the mockup version of
+    # the machine:status structures in json format,
+    # if it is empty, no mockup file is searched for
+    MOCKUP_FILE_PATH_LIST=[
+        # ~ '/opt/alfa_cr6/var/machine_status_0.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_1.json',
+    ],
+
+    BARCODE_DEVICE_NAME_LIST=[
+        '/dev/input/event7',
+        '/dev/input/event8',
+    ],
+)
 
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
@@ -114,9 +125,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.run_flag = True
         self.ui_path = os.path.dirname(os.path.abspath(__file__)) + '/ui'
+        self.db_session = None
 
         self.head_status_dict = {}
-        self.jar_dict = {}
 
         self.__version = None
         self.__barcode_device = None
@@ -125,13 +136,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.__init_tasks()
 
-        if DB_FILE_PATH:
+        if settings.SQLITE_CONNECT_STRING:
 
             from alfa_CR6.models import init_models
-
-            if not os.path.exists(DB_FILE_PATH):
-                os.makedirs(DB_FILE_PATH)
-            self.db_session = init_models(f'sqlite:///{ DB_FILE_PATH }/cr6_V1.sqlite')
+            self.db_session = init_models(settings.SQLITE_CONNECT_STRING)
 
         self.main_window = MainWindow()
 
@@ -139,13 +147,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.__tasks = [self.__qt_loop_task(), ]
 
-        for dev_index, barcode_device_name in enumerate(BARCODE_DEVICE_NAME_LIST):
+        for dev_index, barcode_device_name in enumerate(settings.BARCODE_DEVICE_NAME_LIST):
             self.__tasks += [self.__barcode_read_task(dev_index, barcode_device_name), ]
 
-        for head_index, ws_url in enumerate(WS_URL_LIST):
+        for head_index, ws_url in enumerate(settings.WS_URL_LIST):
             self.__tasks += [self.__ws_client_task(head_index, ws_url), ]
 
-        for head_index, status_file_name in enumerate(MOCKUP_FILE_PATH_LIST):
+        for head_index, status_file_name in enumerate(settings.MOCKUP_FILE_PATH_LIST):
             self.__tasks += [self.__mockup_task(head_index, status_file_name), ]
 
     async def __barcode_read_task(self, dev_index, barcode_device_name):
@@ -230,7 +238,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __close(self, ):
 
-        for t in self.__runners:
+        for t in self.__runners[:]:
             try:
                 t.cancel()
 
@@ -240,13 +248,26 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             except asyncio.CancelledError:
                 logging.info(f"{ t } has been canceled now.")
 
+            self.__runners.remove(t)
+
         asyncio.get_event_loop().run_until_complete(asyncio.get_event_loop().shutdown_asyncgens())
         asyncio.get_event_loop().close()
 
     def __on_barcode_read(self, dev_index, barcode):     # pylint: disable=no-self-use
 
+        from alfa_CR6.models import Order, Jar
+
         logging.warning("dev_index:{}, barcode:{}".format(dev_index, barcode))
-        self.jar_dict[barcode] = Jar(barcode, self)
+        order = self.db_session.query(Order).filter_by(barcode=barcode).filter_by(status='NEW').first()
+        if order:
+            try:
+                jar = Jar(order=order)
+                logging.warning(f"jar:{ jar }, barcode:{ barcode }")
+                self.db_session.add(jar)
+                self.db_session.commit()
+            except BaseException:
+                logging.error(traceback.format_exc())
+                self.db_session.rollback()
 
     def __on_head_status_changed(self, head_index, status):     # pylint: disable=no-self-use
 
@@ -260,19 +281,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         for k, v in self.jar_dict.items():
             v.update()
 
-    def get_version(self):                                 # pylint: disable=no-self-use
+    def get_version(self):
 
         if not self.__version:
-            try:
-                pth = os.path.abspath(os.path.dirname(sys.executable))
-                cmd = '{}/pip show alfa_CR6'.format(pth)
-                for line in subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout.decode().split('\n'):
-                    if 'Version' in line:
-                        ver = line.split(":")[1]
-                        self.__version = ver.strip()
-            except Exception as exc:  # pylint: disable=broad-except
-                logging.error(exc)
-
+            self.__version = _get_version()
         return self.__version
 
     def run_forever(self):
@@ -297,9 +309,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 def main():
 
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
-    logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format=fmt_)
-
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    logging.basicConfig(stream=sys.stdout, level=settings.LOG_LEVEL, format=fmt_)
 
     app = CR6_application(sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))

@@ -1,0 +1,5 @@
+
+python -c "from PyQt5.QtWidgets import QStyleFactory ; print(QStyleFactory.keys())"
+
+
+python -c "from PyQt5.QtWidgets import QApplication; a = QApplication([]); QApplication.aboutQt(); a.exec()"

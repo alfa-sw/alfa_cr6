@@ -9,7 +9,7 @@
     * python3-pyqt5.qtwebengine
     * python3-evdev [readthedocs](https://python-evdev.readthedocs.io)  (barcode reader)
 
-	$ apt install -y python3 virtualenv python3-pyqt5 python3-pyqt5.qtwebengine python-evdev
+    $ apt install -y python3 virtualenv python3-pyqt5 python3-pyqt5.qtwebengine python-evdev
 
 2. permessi di accesso ai /dev/input all'utente che esegue l'applicazione, per l'accesso al lettore di barcode.
     Su Ubuntu, il comando:
@@ -25,7 +25,7 @@
 
 
 #### B. Prerequisiti per lo sviluppo (su host):
-    
+
 1. "Prerequisiti per la esecuzione del pacchetto"
     .
 
@@ -36,9 +36,9 @@
 
 1. build the wheel 
 
-	NOTA: il n. di versione e' derivato dal contenuto nel file `${PROJECT_ROOT}/__version__`.
+    NOTA: il n. di versione e' derivato dal contenuto nel file `${PROJECT_ROOT}/__version__`.
 
-	host$ cd ${PROJECT_ROOT}               
+    host$ cd ${PROJECT_ROOT}               
     host$ . /opt/alfa_cr6/venv/bin/activate
     host$ python setup.py bdist_wheel      
 
@@ -53,7 +53,7 @@
 
 1. install su target:
 
-	NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file `${PROJECT_ROOT}/__version__`.
+    NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file `${PROJECT_ROOT}/__version__`.
 
     host$ scp user@host:${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH}  
     target$ . /opt/alfa_cr6/venv/bin/activate                                                                       
@@ -79,4 +79,4 @@
 
     $ pylint3 -f parseable $(FilePath)
 
-	see also pylint directives embedded in source files 
+    see also pylint directives embedded in source files 
