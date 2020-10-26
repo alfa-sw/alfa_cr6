@@ -30,6 +30,7 @@ def main():
         scripts=['bin/alfa_CR6'],
         install_requires = [
             'websockets',
+            'SQLAlchemy',
         ],
     )
 
