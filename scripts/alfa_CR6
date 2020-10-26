@@ -1,12 +1,5 @@
 #!/usr/bin/env python
 
-print("*******")
-import os
-os.system("which python")
-# ~ os.system("python -c 'from alfa_CR6.cr6 import main; main()'")
-print(os.environ["VIRTUAL_ENV"])
-print("*******")
-
 from alfa_CR6.cr6 import main
 
 main()
