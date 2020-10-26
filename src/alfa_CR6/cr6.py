@@ -23,6 +23,23 @@ from alfa_CR6.main_window import MainWindow
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 
 
+def _get_version():
+
+    __version = None
+
+    try:
+        pth = os.path.abspath(os.path.dirname(sys.executable))
+        cmd = '{}/pip show alfa_CR6'.format(pth)
+        for line in subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout.decode().split('\n'):
+            if 'Version' in line:
+                ver = line.split(":")[1]
+                __version = ver.strip()
+    except Exception as exc:  # pylint: disable=broad-except
+        logging.error(exc)
+
+    return __version
+
+
 settings = types.SimpleNamespace(
     LOG_LEVEL=logging.INFO,
     # ~ LOG_LEVEL = logging.WARNING,
@@ -33,8 +50,9 @@ settings = types.SimpleNamespace(
 
     # here is defined the path to the sqlite db used for persistent data,
     # if it is empty or None, no sqlite db is open
-    # ~ SQLITE_CONNECT_STRING = "sqlite:///" + os.path.join(RUNTIME_FILES_ROOT, 'data',  'cr6_V1.sqlite'),
-    SQLITE_CONNECT_STRING=None,
+    SQLITE_CONNECT_STRING="sqlite:///" + \
+    os.path.join(RUNTIME_FILES_ROOT, 'data', 'cr6.V' + _get_version().split('.')[1] + '.sqlite'),
+    # ~ SQLITE_CONNECT_STRING=None,
 
     # this dictionary keeps the url of the websocket servers
     # to which the application connects its websocket clients,
@@ -57,22 +75,6 @@ settings = types.SimpleNamespace(
         '/dev/input/event8',
     ],
 )
-
-class Jar(object):
-
-    def __init__(self, barcode, parent):
-        self.parent = parent
-        self.barcode = barcode
-
-        self.machine_head = None
-        self.status = None
-        self.position = None
-
-    def update(self):
-        pass
-
-    def move(self):
-        pass
 
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
@@ -123,9 +125,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.run_flag = True
         self.ui_path = os.path.dirname(os.path.abspath(__file__)) + '/ui'
+        self.db_session = None
 
         self.head_status_dict = {}
-        self.jar_dict = {}
 
         self.__version = None
         self.__barcode_device = None
@@ -236,7 +238,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __close(self, ):
 
-        for t in self.__runners:
+        for t in self.__runners[:]:
             try:
                 t.cancel()
 
@@ -246,13 +248,26 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             except asyncio.CancelledError:
                 logging.info(f"{ t } has been canceled now.")
 
+            self.__runners.remove(t)
+
         asyncio.get_event_loop().run_until_complete(asyncio.get_event_loop().shutdown_asyncgens())
         asyncio.get_event_loop().close()
 
     def __on_barcode_read(self, dev_index, barcode):     # pylint: disable=no-self-use
 
+        from alfa_CR6.models import Order, Jar
+
         logging.warning("dev_index:{}, barcode:{}".format(dev_index, barcode))
-        self.jar_dict[barcode] = Jar(barcode, self)
+        order = self.db_session.query(Order).filter_by(barcode=barcode).filter_by(status='NEW').first()
+        if order:
+            try:
+                jar = Jar(order=order)
+                logging.warning(f"jar:{ jar }, barcode:{ barcode }")
+                self.db_session.add(jar)
+                self.db_session.commit()
+            except BaseException:
+                logging.error(traceback.format_exc())
+                self.db_session.rollback()
 
     def __on_head_status_changed(self, head_index, status):     # pylint: disable=no-self-use
 
@@ -266,19 +281,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         for k, v in self.jar_dict.items():
             v.update()
 
-    def get_version(self):                                 # pylint: disable=no-self-use
+    def get_version(self):
 
         if not self.__version:
-            try:
-                pth = os.path.abspath(os.path.dirname(sys.executable))
-                cmd = '{}/pip show alfa_CR6'.format(pth)
-                for line in subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout.decode().split('\n'):
-                    if 'Version' in line:
-                        ver = line.split(":")[1]
-                        self.__version = ver.strip()
-            except Exception as exc:  # pylint: disable=broad-except
-                logging.error(exc)
-
+            self.__version = _get_version()
         return self.__version
 
     def run_forever(self):
@@ -308,6 +314,7 @@ def main():
     app = CR6_application(sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
     app.run_forever()
+
 
 if __name__ == "__main__":
     main()
