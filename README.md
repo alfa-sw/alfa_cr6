@@ -61,19 +61,17 @@
 
 #### E. Run:
 
-1. run  su target e host
+1. run  su target e host:
 
-    $ . /opt/alfa_cr6/venv/bin/activate
-    $ alfa_CR6                         
+    $ . /opt/alfa_cr6/venv/bin/activate ; alfa_CR6                         
 
     username: "", password: ""
 
 #### F. Run test suite:
 
-1. run test su target e host
+1. run test su target e host:
 
-    $ . /opt/alfa_cr6/venv/bin/activate
-    $ alfa_CR6_test                         
+    $ . /opt/alfa_cr6/venv/bin/activate ; alfa_CR6_test                         
 
 #### G. Code styling and linting
 
