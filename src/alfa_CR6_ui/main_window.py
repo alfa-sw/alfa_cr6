@@ -9,7 +9,7 @@ from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QMessageBox, QMainWindow  # pylint: disable=no-name-in-module
 from PyQt5 import QtCore
 
-from alfa_CR6.sinottico import Sinottico
+from alfa_CR6_ui.sinottico import Sinottico
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):

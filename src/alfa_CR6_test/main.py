@@ -4,18 +4,18 @@ import sys
 import logging
 import asyncio
 
-import alfa_CR6.cr6
+import alfa_CR6_backend.cr6
 
 fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt_)
 
 
-# ~ alfa_CR6.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_V1_test.sqlite"
-alfa_CR6.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
-alfa_CR6.cr6.settings.WS_URL_LIST = [
+# ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_V1_test.sqlite"
+alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
+alfa_CR6_backend.cr6.settings.WS_URL_LIST = [
     # ~ "ws://127.0.0.1:11000/device:machine:status",
 ]
-alfa_CR6.cr6.settings.MOCKUP_FILE_PATH_LIST = [
+alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
     '/opt/alfa_cr6/tmp/machine_status_0.json',
     '/opt/alfa_cr6/tmp/machine_status_1.json',
     '/opt/alfa_cr6/tmp/machine_status_2.json',
@@ -23,18 +23,17 @@ alfa_CR6.cr6.settings.MOCKUP_FILE_PATH_LIST = [
     '/opt/alfa_cr6/tmp/machine_status_4.json',
     '/opt/alfa_cr6/tmp/machine_status_5.json',
 ]
-alfa_CR6.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
+alfa_CR6_backend.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
     # ~ '/dev/input/event7',
     # ~ '/dev/input/event8',
 ]
 
-APP = alfa_CR6.cr6.CR6_application(sys.argv)
+APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
 
 
 def _test_create_db_objects():
 
-    import alfa_CR6.models
-    from alfa_CR6.models import Order, Jar
+    from alfa_CR6_backend.models import Order, Jar
 
     [APP.db_session.add(Order(barcode="%03d" % i)) for i in range(10)]
 

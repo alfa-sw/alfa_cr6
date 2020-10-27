@@ -8,7 +8,7 @@
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication, QScrollArea, QVBoxLayout
 from PyQt5.uic import loadUi
-from alfa_CR6.chrome_widget import ChromeWidget
+from alfa_CR6_ui.chrome_widget import ChromeWidget
 
 class Sinottico(QWidget):
     browser=False
