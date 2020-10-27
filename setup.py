@@ -39,6 +39,7 @@ def main():
         install_requires=[
             'websockets',
             'SQLAlchemy',
+            'jsonschema',
         ],
     )
 

@@ -19,6 +19,7 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 import websockets                         # pylint: disable=import-error
 
 from alfa_CR6.main_window import MainWindow
+from alfa_CR6.models import Order, Jar
 
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 
@@ -231,9 +232,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                     with open(status_file_name) as f:
                         status = json.load(f)
                         status = dict(status)
+                        
                         self.__on_head_status_changed(head_index, status)
                 except Exception as e:       # pylint: disable=broad-except
-                    logging.info(e)
+                    logging.error(traceback.format_exc())
 
                 await asyncio.sleep(1)
 
@@ -277,18 +279,24 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __update_jars(self):
 
-        logging.warning("TBI")
+        if self.db_session:
+            jars = self.db_session.query(Jar).filter(Jar.status!='DELIVERED').all()
+            for j in jars:
+                j.move()
+            
 
     def __on_head_status_changed(self, head_index, status):     
 
         old_status = self.head_status_dict.get(head_index, {})
         diff = {k: v for k, v in status.items() if v != old_status.get(k)}
-        logging.warning("head_index:{}".format(head_index))
-        logging.warning("diff:{}".format(diff))
 
-        self.head_status_dict[head_index] = status
+        if diff:
 
-        self.__update_jars()
+            logging.warning("head_index:{}".format(head_index))
+            logging.warning("diff:{}".format(diff))
+
+            self.head_status_dict[head_index] = status
+            self.__update_jars()
 
     def get_version(self):
 

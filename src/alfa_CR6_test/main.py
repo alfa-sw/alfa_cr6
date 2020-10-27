@@ -36,14 +36,11 @@ def _test_create_db_objects():
     import alfa_CR6.models
     from alfa_CR6.models import Order, Jar
 
-    for _bcode in ["%03d" % i for i in range(10)]:
-
-        order = Order(barcode=_bcode)
-        APP.db_session.add(order)
-        jar = Jar(order=order)
-        APP.db_session.add(jar)
+    [APP.db_session.add(Order(barcode="%03d" % i)) for i in range(10)]
 
     APP.db_session.commit()
+
+    APP._CR6_application__on_barcode_read(0, '001')
 
     order_cnt = APP.db_session.query(Order).count()
     jar_cnt = APP.db_session.query(Jar).count()
@@ -51,7 +48,7 @@ def _test_create_db_objects():
     logging.info(f"order_cnt:{order_cnt}, jar_cnt:{jar_cnt}.")
 
     assert order_cnt == 10
-    assert jar_cnt == 10
+    assert jar_cnt == 1
 
 
 def _test_run(delay):
