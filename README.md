@@ -68,8 +68,14 @@
 
     username: "", password: ""
 
+#### F. Run test suite:
 
-#### F. Code styling and linting
+1. run test su target e host
+
+    $ . /opt/alfa_cr6/venv/bin/activate
+    $ alfa_CR6_test                         
+
+#### G. Code styling and linting
 
 1. [autopep8](https://pypi.org/project/autopep8):
 
