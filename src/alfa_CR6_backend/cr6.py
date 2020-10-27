@@ -18,11 +18,11 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import websockets                         # pylint: disable=import-error
 
-from alfa_CR6.main_window import MainWindow
-from alfa_CR6.models import Order, Jar
+from alfa_CR6_ui.main_window import MainWindow
+from alfa_CR6_backend.models import Order, Jar
 
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
-
+HERE = os.path.dirname(os.path.abspath(__file__))
 
 def _get_version():
 
@@ -48,6 +48,8 @@ settings = types.SimpleNamespace(
     LOGS_PATH=os.path.join(RUNTIME_FILES_ROOT, 'log'),
     TMP_PATH=os.path.join(RUNTIME_FILES_ROOT, 'tmp'),
     CONF_PATH=os.path.join(RUNTIME_FILES_ROOT, 'conf'),
+    
+    UI_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'ui'),
 
     # here is defined the path to the sqlite db used for persistent data,
     # if it is empty or None, no sqlite db is open
@@ -125,7 +127,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         super().__init__(*args, **kwargs)
 
         self.run_flag = True
-        self.ui_path = os.path.dirname(os.path.abspath(__file__)) + '/ui'
+        self.ui_path = settings.UI_PATH
         self.db_session = None
 
         self.head_status_dict = {}
@@ -141,7 +143,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         if settings.SQLITE_CONNECT_STRING:
 
-            from alfa_CR6.models import init_models
+            from alfa_CR6_backend.models import init_models
             self.db_session = init_models(settings.SQLITE_CONNECT_STRING)
 
         self.__init_tasks()
@@ -263,7 +265,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __on_barcode_read(self, dev_index, barcode):     # pylint: disable=no-self-use
 
-        from alfa_CR6.models import Order, Jar
+        from alfa_CR6_backend.models import Order, Jar
 
         logging.warning("dev_index:{}, barcode:{}".format(dev_index, barcode))
         order = self.db_session.query(Order).filter_by(barcode=barcode).filter_by(status='NEW').first()
