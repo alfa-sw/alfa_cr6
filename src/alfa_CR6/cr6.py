@@ -71,8 +71,8 @@ settings = types.SimpleNamespace(
     ],
 
     BARCODE_DEVICE_NAME_LIST=[
-        '/dev/input/event7',
-        '/dev/input/event8',
+        # ~ '/dev/input/event7',
+        # ~ '/dev/input/event8',
     ],
 )
 

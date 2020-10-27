@@ -27,7 +27,7 @@ def main():
             ('alfa_CR6/icons', list(glob.glob('src/alfa_CR6/images/*'))),
         ],
         include_package_data=True,
-        scripts=['bin/alfa_CR6'],
+        scripts=['bin/alfa_CR6', 'bin/alfa_CR6_test', ],
         install_requires = [
             'websockets',
             'SQLAlchemy',
