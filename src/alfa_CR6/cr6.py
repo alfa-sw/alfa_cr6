@@ -50,9 +50,9 @@ settings = types.SimpleNamespace(
 
     # here is defined the path to the sqlite db used for persistent data,
     # if it is empty or None, no sqlite db is open
-    SQLITE_CONNECT_STRING="sqlite:///" + \
-    os.path.join(RUNTIME_FILES_ROOT, 'data', 'cr6.V' + _get_version().split('.')[1] + '.sqlite'),
-    # ~ SQLITE_CONNECT_STRING=None,
+    # ~ SQLITE_CONNECT_STRING="sqlite:///" + \
+    # ~ os.path.join(RUNTIME_FILES_ROOT, 'data', 'cr6.V' + _get_version().split('.')[1] + '.sqlite'),
+    SQLITE_CONNECT_STRING=None,
 
     # this dictionary keeps the url of the websocket servers
     # to which the application connects its websocket clients,
@@ -134,12 +134,16 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.__tasks = []
         self.__runners = []
 
-        self.__init_tasks()
+        for pth in [settings.LOGS_PATH, settings.TMP_PATH, settings.CONF_PATH]:
+            if not os.path.exists(pth):
+                os.makedirs(pth)
 
         if settings.SQLITE_CONNECT_STRING:
 
             from alfa_CR6.models import init_models
             self.db_session = init_models(settings.SQLITE_CONNECT_STRING)
+
+        self.__init_tasks()
 
         self.main_window = MainWindow()
 
@@ -155,6 +159,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         for head_index, status_file_name in enumerate(settings.MOCKUP_FILE_PATH_LIST):
             self.__tasks += [self.__mockup_task(head_index, status_file_name), ]
+
+        logging.info(f"self.__tasks:{self.__tasks}")
 
     async def __barcode_read_task(self, dev_index, barcode_device_name):
 
@@ -227,7 +233,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                         status = dict(status)
                         self.__on_head_status_changed(head_index, status)
                 except Exception as e:       # pylint: disable=broad-except
-                    logging.debug(e)
+                    logging.info(e)
 
                 await asyncio.sleep(1)
 
@@ -269,7 +275,11 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 logging.error(traceback.format_exc())
                 self.db_session.rollback()
 
-    def __on_head_status_changed(self, head_index, status):     # pylint: disable=no-self-use
+    def __update_jars(self):
+
+        logging.warning("TBI")
+
+    def __on_head_status_changed(self, head_index, status):     
 
         old_status = self.head_status_dict.get(head_index, {})
         diff = {k: v for k, v in status.items() if v != old_status.get(k)}
@@ -278,8 +288,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.head_status_dict[head_index] = status
 
-        for k, v in self.jar_dict.items():
-            v.update()
+        self.__update_jars()
 
     def get_version(self):
 

@@ -35,6 +35,11 @@ class ModelCr6(object):
 
     json_properties_schema = "{}"
 
+class User(Base, ModelCr6):
+
+    __tablename__ = 'user'
+    role = Column(Unicode, default='OPERATOR')
+
 class Order(Base, ModelCr6):
 
     __tablename__ = 'order'
@@ -54,11 +59,6 @@ class Jar(Base, ModelCr6):
 
 
 def init_models(sqlite_connect_string):
-
-    if sqlite_connect_string.split("sqlite:///")[1:]:
-        pth = os.path.dirname(os.path.abspath(sqlite_connect_string.split("sqlite:///")[1]))
-        if not os.path.exists(pth):
-            os.makedirs(pth)
 
     engine = create_engine(sqlite_connect_string)
     Base.metadata.create_all(engine)

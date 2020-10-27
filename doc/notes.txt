@@ -3,3 +3,16 @@ python -c "from PyQt5.QtWidgets import QStyleFactory ; print(QStyleFactory.keys(
 
 
 python -c "from PyQt5.QtWidgets import QApplication; a = QApplication([]); QApplication.aboutQt(); a.exec()"
+
+
+### rebuild wheel
+    export PROJECT_ROOT=/opt/PROJECTS/alfa_cr6/ ; cd ${PROJECT_ROOT};. /opt/alfa_cr6/venv/bin/activate; python setup.py bdist_wheel 
+
+### reinstall in edit mode
+    export PROJECT_ROOT=/opt/PROJECTS/alfa_cr6/ ; cd ${PROJECT_ROOT};. /opt/alfa_cr6/venv/bin/activate;pip uninstall -y alfa_CR6; pip install -e ./
+
+### run
+    . /opt/alfa_cr6/venv/bin/activate; alfa_CR6
+
+### run test
+    . /opt/alfa_cr6/venv/bin/activate; alfa_CR6_test

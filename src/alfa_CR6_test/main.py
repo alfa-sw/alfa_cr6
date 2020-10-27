@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# coding: utf-8
 
 import sys
 import logging
@@ -16,8 +16,12 @@ alfa_CR6.cr6.settings.WS_URL_LIST = [
     # ~ "ws://127.0.0.1:11000/device:machine:status",
 ]
 alfa_CR6.cr6.settings.MOCKUP_FILE_PATH_LIST = [
-    # ~ '/opt/alfa_cr6/var/machine_status_0.json',
-    # ~ '/opt/alfa_cr6/var/machine_status_1.json',
+    '/opt/alfa_cr6/tmp/machine_status_0.json',
+    '/opt/alfa_cr6/tmp/machine_status_1.json',
+    '/opt/alfa_cr6/tmp/machine_status_2.json',
+    '/opt/alfa_cr6/tmp/machine_status_3.json',
+    '/opt/alfa_cr6/tmp/machine_status_4.json',
+    '/opt/alfa_cr6/tmp/machine_status_5.json',
 ]
 alfa_CR6.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
     # ~ '/dev/input/event7',
