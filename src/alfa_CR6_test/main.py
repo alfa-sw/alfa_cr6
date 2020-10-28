@@ -1,5 +1,11 @@
 # coding: utf-8
 
+# pylint: disable=missing-docstring
+# pylint: disable=logging-format-interpolation
+# pylint: disable=line-too-long
+# pylint: disable=invalid-name
+
+import os
 import sys
 import logging
 import asyncio
@@ -9,19 +15,21 @@ import alfa_CR6_backend.cr6
 fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt_)
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+FIXTURES = os.path.join(HERE, 'fixtures')
 
-# ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_V1_test.sqlite"
+# ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
 alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
 alfa_CR6_backend.cr6.settings.WS_URL_LIST = [
     # ~ "ws://127.0.0.1:11000/device:machine:status",
 ]
 alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
-    '/opt/alfa_cr6/tmp/machine_status_0.json',
-    '/opt/alfa_cr6/tmp/machine_status_1.json',
-    '/opt/alfa_cr6/tmp/machine_status_2.json',
-    '/opt/alfa_cr6/tmp/machine_status_3.json',
-    '/opt/alfa_cr6/tmp/machine_status_4.json',
-    '/opt/alfa_cr6/tmp/machine_status_5.json',
+    FIXTURES + '/machine_status_0.json',
+    FIXTURES + '/machine_status_1.json',
+    FIXTURES + '/machine_status_2.json',
+    FIXTURES + '/machine_status_3.json',
+    FIXTURES + '/machine_status_4.json',
+    FIXTURES + '/machine_status_5.json',
 ]
 alfa_CR6_backend.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
     # ~ '/dev/input/event7',

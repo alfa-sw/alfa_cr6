@@ -36,14 +36,13 @@ class ModelCr6(object):
 
     json_properties_schema = {}
 
-    def validate_json_properties(self):
+    def validate_json_properties(self, instance):
 
-        ret = False
+        ret = None
 
         try:
-            _inst = json.loads(self.json_properties)
-            validate(instance=_inst, schema=self.json_properties_schema)
-            ret = True
+            validate(instance=instance, schema=self.json_properties_schema)
+            ret = json.dumps(instance, indent=2)
         except Exception:                           # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
@@ -113,11 +112,18 @@ class Jar(Base, ModelCr6):
 
     def move(self):
 
-        r = self.validate_json_properties()
+        r = self.validate_json_properties(self.json_properties)
         logging.warning(f"TBI r:{r}, { self }")
 
 
 def init_models(sqlite_connect_string):
+
+    toks = sqlite_connect_string.split('sqlite:///') 
+    pth = toks[1:] and toks[1]
+    if pth:
+        pth = os.path.dirname(os.path.abspath(pth))
+        if not os.path.exists(pth):
+            os.makedirs(pth)
 
     engine = create_engine(sqlite_connect_string)
     Base.metadata.create_all(engine)

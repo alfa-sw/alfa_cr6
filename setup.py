@@ -27,9 +27,9 @@ def main():
         packages=find_packages(where='src'),
         package_dir={'': 'src'},
         data_files=[
-            ('alfa_CR6_ui/ui', list(glob.glob('src/alfa_CR6/ui/*.ui'))),
-            ('alfa_CR6_ui/images', list(glob.glob('src/alfa_CR6/icons/*'))),
-            ('alfa_CR6_ui/icons', list(glob.glob('src/alfa_CR6/images/*'))),
+            ('alfa_CR6_ui/ui', list(glob.glob('src/alfa_CR6_ui/ui/*.ui'))),
+            ('alfa_CR6_ui/images', list(glob.glob('src/alfa_CR6_ui/images/*'))),
+            ('alfa_CR6_test/fixtures', list(glob.glob('src/alfa_CR6_test/fixtures/*'))),
         ],
         include_package_data=True,
         scripts=[
