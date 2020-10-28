@@ -72,6 +72,10 @@ settings = types.SimpleNamespace(
     MOCKUP_FILE_PATH_LIST=[
          '/opt/alfa_cr6/var/machine_status_0.json',
          '/opt/alfa_cr6/var/machine_status_1.json',
+         '/opt/alfa_cr6/var/machine_status_2.json',
+         '/opt/alfa_cr6/var/machine_status_3.json',
+         '/opt/alfa_cr6/var/machine_status_4.json',
+         '/opt/alfa_cr6/var/machine_status_5.json',
     ],
 
     BARCODE_DEVICE_NAME_LIST=[
