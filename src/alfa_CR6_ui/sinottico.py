@@ -19,12 +19,17 @@ class Sinottico(QWidget):
         loadUi(QApplication.instance().ui_path + "/sinottico.ui", self)
         self.home_btn.clicked.connect(self.onHomeBtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
-        self.project_stack.setCurrentWidget(self.image_sinottico)
+        self.main_view_stack.setCurrentWidget(self.image_sinottico)
 
-        self.STEP_2.mousePressEvent=lambda event:  self.onStep2Pressed()
+        self.rulliera_input.mousePressEvent = lambda event: self.rullieraInputPressed()
+
+        #self.STEP_2.mousePressEvent=lambda event:  self.onStep2Pressed()
+
+    def rullieraInputPressed(self):
+        self.main_view_stack.setCurrentWidget(self.modal_rulliera_input)
 
     def onStep2Pressed(self):
-        self.project_stack.setCurrentWidget(self.modal_STEP_2_HEAD_1)
+        self.main_view_stack.setCurrentWidget(self.modal_STEP_2_HEAD_1)
 
         self.v_layout_action.setAlignment(Qt.AlignTop)
 
@@ -43,7 +48,7 @@ class Sinottico(QWidget):
 
 
     def onHomeBtnClicked(self, other):
-        self.project_stack.setCurrentWidget(self.image_sinottico)
+        self.main_view_stack.setCurrentWidget(self.image_sinottico)
         if self.browser:
             self.chrome_layout.removeWidget(self.view)
             self.browser=False
@@ -52,11 +57,11 @@ class Sinottico(QWidget):
     def onChromeBtnClicked(self):
         if self.browser:
             self.browser=False
-            self.project_stack.setCurrentWidget(self.image_sinottico)
+            self.main_view_stack.setCurrentWidget(self.image_sinottico)
             self.chrome_layout.removeWidget(self.view)
         else:
             self.browser=True
             self.view = ChromeWidget(self)
             self.chrome_layout.addWidget(self.view)
-            self.project_stack.setCurrentWidget(self.chrome)
+            self.main_view_stack.setCurrentWidget(self.chrome)
 

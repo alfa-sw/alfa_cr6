@@ -130,7 +130,7 @@
      </property>
     </widget>
    </widget>
-   <widget class="QStackedWidget" name="project_stack">
+   <widget class="QStackedWidget" name="main_view_stack">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -219,7 +219,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="pre_STEP_2" native="true">
+     <widget class="QWidget" name="rulliera_t1" native="true">
       <property name="geometry">
        <rect>
         <x>389</x>
@@ -229,7 +229,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="pre_STEP_9" native="true">
+     <widget class="QWidget" name="rulliera_t2" native="true">
       <property name="geometry">
        <rect>
         <x>399</x>
@@ -239,7 +239,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="pre_STEP_3" native="true">
+     <widget class="QWidget" name="rulliera_t3" native="true">
       <property name="geometry">
        <rect>
         <x>660</x>
@@ -249,7 +249,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="pre_STEP_8" native="true">
+     <widget class="QWidget" name="rulliera_t4" native="true">
       <property name="geometry">
        <rect>
         <x>670</x>
@@ -259,7 +259,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="pre_STEP_4" native="true">
+     <widget class="QWidget" name="rulliera_t5" native="true">
       <property name="geometry">
        <rect>
         <x>930</x>
@@ -269,7 +269,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="pre_STEP_7" native="true">
+     <widget class="QWidget" name="rulliera_t6" native="true">
       <property name="geometry">
        <rect>
         <x>950</x>
@@ -357,7 +357,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QWidget" name="jar_input" native="true">
+     <widget class="QWidget" name="rulliera_input" native="true">
       <property name="geometry">
        <rect>
         <x>109</x>
@@ -367,7 +367,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="jar_output" native="true">
+     <widget class="QWidget" name="rulliera_output" native="true">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -529,7 +529,7 @@
       <layout class="QVBoxLayout" name="chrome_layout"/>
      </widget>
     </widget>
-    <widget class="QWidget" name="modal_STEP_2_HEAD_1">
+    <widget class="QWidget" name="modal_rulliera_input">
      <widget class="QScrollArea" name="scroll_area_status">
       <property name="geometry">
        <rect>
@@ -551,76 +551,9 @@
          <height>789</height>
         </rect>
        </property>
-       <widget class="QWidget" name="verticalLayoutWidget_3">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>0</y>
-          <width>691</width>
-          <height>761</height>
-         </rect>
-        </property>
-        <layout class="QVBoxLayout" name="v_layout_status">
-         <property name="spacing">
-          <number>-1</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Stato FTC_2</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="status_sinottico_2">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="pixmap">
-            <pixmap>../images/green.svg</pixmap>
-           </property>
-           <property name="scaledContents">
-            <bool>false</bool>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>Stato CP_1</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="status_sinottico_3">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="pixmap">
-            <pixmap>../images/green.svg</pixmap>
-           </property>
-           <property name="scaledContents">
-            <bool>false</bool>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
       </widget>
      </widget>
-     <widget class="QScrollArea" name="scroll_area_action">
+     <widget class="QScrollArea" name="scroll_area_rulliera">
       <property name="geometry">
        <rect>
         <x>40</x>
@@ -644,35 +577,28 @@
        <widget class="QWidget" name="verticalLayoutWidget_2">
         <property name="geometry">
          <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>651</width>
-          <height>761</height>
+          <x>-1</x>
+          <y>2</y>
+          <width>661</width>
+          <height>100230</height>
          </rect>
         </property>
-        <property name="minimumSize">
-         <size>
-          <width>50</width>
-          <height>50</height>
-         </size>
-        </property>
-        <layout class="QVBoxLayout" name="v_layout_action">
+        <layout class="QVBoxLayout" name="verticalLayout_2">
          <property name="spacing">
           <number>-1</number>
          </property>
+         <property name="bottomMargin">
+          <number>100000</number>
+         </property>
          <item>
-          <widget class="QPushButton" name="btn__board_dosage">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
+          <widget class="QPushButton" name="pushButton_2">
+           <property name="enabled">
+            <bool>true</bool>
            </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
+           <property name="font">
+            <font>
+             <pointsize>25</pointsize>
+            </font>
            </property>
            <property name="text">
             <string>Start rulliera (MU_1)</string>
@@ -680,40 +606,50 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="btn_brushes">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
+          <widget class="QPushButton" name="pushButton_5">
+           <property name="font">
+            <font>
+             <pointsize>25</pointsize>
+            </font>
            </property>
            <property name="text">
-            <string>Stop rulliera</string>
+            <string>Stop Rulliera</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="btn_no_healer">
-           <property name="minimumSize">
-            <size>
-             <width>50</width>
-             <height>50</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>2000</width>
-             <height>50</height>
-            </size>
+          <widget class="QPushButton" name="pushButton_4">
+           <property name="font">
+            <font>
+             <pointsize>25</pointsize>
+            </font>
            </property>
            <property name="text">
-            <string>Start &quot;STEP 2&quot; (va fino alla copertura di FTC_2)</string>
+            <string>Start “step 1 “</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_3">
+           <property name="font">
+            <font>
+             <pointsize>25</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Start “step1 -step2”</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="font">
+            <font>
+             <pointsize>25</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>Lettura barcode</string>
            </property>
           </widget>
          </item>

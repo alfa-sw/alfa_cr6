@@ -1,5 +1,8 @@
 # coding: utf-8
 
+# pylint: disable=missing-docstring
+# pylint: disable=invalid-name
+
 import os
 import glob
 
