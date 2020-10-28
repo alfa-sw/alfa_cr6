@@ -24,21 +24,22 @@ from alfa_CR6_backend.models import Order, Jar
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+
 def _get_version():
 
-    __version = None
+    _ver = None
 
     try:
         pth = os.path.abspath(os.path.dirname(sys.executable))
         cmd = '{}/pip show alfa_CR6'.format(pth)
         for line in subprocess.run(cmd.split(), stdout=subprocess.PIPE).stdout.decode().split('\n'):
             if 'Version' in line:
-                ver = line.split(":")[1]
-                __version = ver.strip()
+                _ver = line.split(":")[1]
+                _ver = _ver.strip()
     except Exception as exc:  # pylint: disable=broad-except
         logging.error(exc)
 
-    return __version
+    return _ver
 
 
 settings = types.SimpleNamespace(
@@ -48,7 +49,7 @@ settings = types.SimpleNamespace(
     LOGS_PATH=os.path.join(RUNTIME_FILES_ROOT, 'log'),
     TMP_PATH=os.path.join(RUNTIME_FILES_ROOT, 'tmp'),
     CONF_PATH=os.path.join(RUNTIME_FILES_ROOT, 'conf'),
-    
+
     UI_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'ui'),
 
     # here is defined the path to the sqlite db used for persistent data,
@@ -69,8 +70,8 @@ settings = types.SimpleNamespace(
     # the machine:status structures in json format,
     # if it is empty, no mockup file is searched for
     MOCKUP_FILE_PATH_LIST=[
-        # ~ '/opt/alfa_cr6/var/machine_status_0.json',
-        # ~ '/opt/alfa_cr6/var/machine_status_1.json',
+         '/opt/alfa_cr6/var/machine_status_0.json',
+         '/opt/alfa_cr6/var/machine_status_1.json',
     ],
 
     BARCODE_DEVICE_NAME_LIST=[
@@ -234,9 +235,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                     with open(status_file_name) as f:
                         status = json.load(f)
                         status = dict(status)
-                        
+
                         self.__on_head_status_changed(head_index, status)
-                except Exception as e:       # pylint: disable=broad-except
+                except Exception:       # pylint: disable=broad-except
                     logging.error(traceback.format_exc())
 
                 await asyncio.sleep(1)
@@ -265,8 +266,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __on_barcode_read(self, dev_index, barcode):     # pylint: disable=no-self-use
 
-        from alfa_CR6_backend.models import Order, Jar
-
         logging.warning("dev_index:{}, barcode:{}".format(dev_index, barcode))
         order = self.db_session.query(Order).filter_by(barcode=barcode).filter_by(status='NEW').first()
         if order:
@@ -282,12 +281,11 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     def __update_jars(self):
 
         if self.db_session:
-            jars = self.db_session.query(Jar).filter(Jar.status!='DELIVERED').all()
+            jars = self.db_session.query(Jar).filter(Jar.status != 'DELIVERED').all()
             for j in jars:
                 j.move()
-            
 
-    def __on_head_status_changed(self, head_index, status):     
+    def __on_head_status_changed(self, head_index, status):
 
         old_status = self.head_status_dict.get(head_index, {})
         diff = {k: v for k, v in status.items() if v != old_status.get(k)}

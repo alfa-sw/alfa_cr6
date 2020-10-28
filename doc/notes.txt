@@ -4,6 +4,9 @@ python -c "from PyQt5.QtWidgets import QStyleFactory ; print(QStyleFactory.keys(
 
 python -c "from PyQt5.QtWidgets import QApplication; a = QApplication([]); QApplication.aboutQt(); a.exec()"
 
+### create virtualenv
+
+    mkdir /opt/alfa_cr6; virtualenv --system-site-packages -p /usr/bin/python3 /opt/alfa_cr6/venv
 
 ### rebuild wheel
     export PROJECT_ROOT=/opt/PROJECTS/alfa_cr6/ ; cd ${PROJECT_ROOT};. /opt/alfa_cr6/venv/bin/activate; python setup.py bdist_wheel 
