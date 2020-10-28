@@ -69,8 +69,8 @@ settings = types.SimpleNamespace(
     # the machine:status structures in json format,
     # if it is empty, no mockup file is searched for
     MOCKUP_FILE_PATH_LIST=[
-        # ~ '/opt/alfa_cr6/var/machine_status_0.json',
-        # ~ '/opt/alfa_cr6/var/machine_status_1.json',
+         '/opt/alfa_cr6/var/machine_status_0.json',
+         '/opt/alfa_cr6/var/machine_status_1.json',
     ],
 
     BARCODE_DEVICE_NAME_LIST=[
