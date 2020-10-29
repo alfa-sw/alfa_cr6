@@ -87,12 +87,10 @@ settings = types.SimpleNamespace(
 
 class MachineHead(object):
 
-    def __init__(self, websocket_client):
+    def __init__(self, websocket_client=None):
 
         self.websocket_client = websocket_client
         self.status = {}
-
-        logging.warning("{}, {}".format(self.websocket_client, dir(self.websocket_client)))
 
     def on_cmd_answer(self, answer):
 
@@ -109,19 +107,19 @@ class MachineHead(object):
                 self.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
                 self.send_command(cmd_name="PURGE", params={'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}, type_='macro')
         """
+        if self.websocket_client:
+            try:
+                msg = {
+                    'type': type_,
+                    'channel': channel,
+                    'msg_out_dict': {'command': cmd_name, 'params': params},
+                }
+                logging.warning(f"cmd_name:{cmd_name}, params:{params}, channel:{channel}")
+                t = self.websocket_client.send(json.dumps(msg))
+                asyncio.ensure_future(t)
 
-        try:
-            msg = {
-                'type': type_,
-                'channel': channel,
-                'msg_out_dict': {'command': cmd_name, 'params': params},
-            }
-            logging.warning(f"cmd_name:{cmd_name}, params:{params}, channel:{channel}")
-            t = self.websocket_client.send(json.dumps(msg))
-            asyncio.ensure_future(t)
-
-        except Exception:                           # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
+            except Exception:                           # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
 
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
@@ -282,7 +280,11 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                         status = json.load(f)
                         status = dict(status)
 
+                        if not self.machine_head_dict.get(head_index):
+                            self.machine_head_dict[head_index] = MachineHead()
+
                         self.__on_head_status_changed(head_index, status)
+
                 except Exception:       # pylint: disable=broad-except
                     logging.error(traceback.format_exc())
 
@@ -337,20 +339,22 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __on_head_status_changed(self, head_index, status):
 
-        old_status = self.machine_head_dict[head_index].status
+        if self.machine_head_dict.get(head_index):
 
-        diff = {k: v for k, v in status.items() if v != old_status.get(k)}
+            old_status = self.machine_head_dict[head_index].status
 
-        if diff:
+            diff = {k: v for k, v in status.items() if v != old_status.get(k)}
 
-            logging.warning("head_index:{}".format(head_index))
-            logging.warning("diff:{}".format(diff))
+            if diff:
 
-            self.machine_head_dict[head_index].update_status(status)
+                # ~ logging.warning("head_index:{}".format(head_index))
+                # ~ logging.warning("diff:{}".format(diff))
 
-            self.__update_jars()
+                self.machine_head_dict[head_index].update_status(status)
 
-            self.main_window.sinottico.update_data(head_index, status)
+                self.__update_jars()
+
+                self.main_window.sinottico.update_data(head_index, status)
 
     def get_version(self):
 
