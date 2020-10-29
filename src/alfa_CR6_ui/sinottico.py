@@ -32,16 +32,17 @@ class Sinottico(QWidget):
     def rullieraInputPressed(self):
         self.main_view_stack.setCurrentWidget(self.modal_rulliera_input)
 
-    def update_data(self, head_index):
+    def update_data(self, head_index, status):
 
-        logging.info("head_index:{}".format(head_index))
+        logging.info("head_index:{}, status:{}".format(head_index, status))
 
         for i in reversed(range(self.rulliera_input_data.count())):
             self.rulliera_input_data.itemAt(i).widget().setParent(None)
-        machine_status = QApplication.instance().head_status_dict.get(0, {})
-        for key, value in machine_status.items():
-            self.alabel=QLabel(key + ' : ' + str(value))
-            self.rulliera_input_data.addWidget(self.alabel)
+
+        if head_index == 0:
+            for key, value in status.items():
+                self.alabel=QLabel(key + ' : ' + str(value))
+                self.rulliera_input_data.addWidget(self.alabel)
 
     def onHomeBtnClicked(self, other):
         self.main_view_stack.setCurrentWidget(self.image_sinottico)

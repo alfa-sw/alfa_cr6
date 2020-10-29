@@ -70,12 +70,12 @@ settings = types.SimpleNamespace(
     # the machine:status structures in json format,
     # if it is empty, no mockup file is searched for
     MOCKUP_FILE_PATH_LIST=[
-         '/opt/alfa_cr6/var/machine_status_0.json',
-         '/opt/alfa_cr6/var/machine_status_1.json',
-         '/opt/alfa_cr6/var/machine_status_2.json',
-         '/opt/alfa_cr6/var/machine_status_3.json',
-         '/opt/alfa_cr6/var/machine_status_4.json',
-         '/opt/alfa_cr6/var/machine_status_5.json',
+        '/opt/alfa_cr6/var/machine_status_0.json',
+        '/opt/alfa_cr6/var/machine_status_1.json',
+        '/opt/alfa_cr6/var/machine_status_2.json',
+        '/opt/alfa_cr6/var/machine_status_3.json',
+        '/opt/alfa_cr6/var/machine_status_4.json',
+        '/opt/alfa_cr6/var/machine_status_5.json',
     ],
 
     BARCODE_DEVICE_NAME_LIST=[
@@ -83,6 +83,45 @@ settings = types.SimpleNamespace(
         # ~ '/dev/input/event8',
     ],
 )
+
+
+class MachineHead(object):
+
+    def __init__(self, websocket_client):
+
+        self.websocket_client = websocket_client
+        self.status = {}
+
+        logging.warning("{}, {}".format(self.websocket_client, dir(self.websocket_client)))
+
+    def on_cmd_answer(self, answer):
+
+        logging.warning(f"self:{self}, answer:{answer}")
+
+    def update_status(self, status):
+
+        self.status = status
+
+    def send_command(self, cmd_name: str, params: dict, type_='command', channel='machine'):
+        """ param 'type_' can be 'command' or 'macro'
+
+            examples:
+                self.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
+                self.send_command(cmd_name="PURGE", params={'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}, type_='macro')
+        """
+
+        try:
+            msg = {
+                'type': type_,
+                'channel': channel,
+                'msg_out_dict': {'command': cmd_name, 'params': params},
+            }
+            logging.warning(f"cmd_name:{cmd_name}, params:{params}, channel:{channel}")
+            t = self.websocket_client.send(json.dumps(msg))
+            asyncio.ensure_future(t)
+
+        except Exception:                           # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
 
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
@@ -135,7 +174,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.ui_path = settings.UI_PATH
         self.db_session = None
 
-        self.head_status_dict = {}
+        self.machine_head_dict = {}
 
         self.__version = None
         self.__barcode_device = None
@@ -216,6 +255,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         try:
             async with websockets.connect(ws_url) as websocket:
+                self.machine_head_dict[head_index] = MachineHead(websocket)
                 while self.run_flag:
 
                     msg = await websocket.recv()
@@ -227,6 +267,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                         status = msg_dict.get('value')
                         status = dict(status)
                         self.__on_head_status_changed(head_index, status)
+                    elif msg_dict.get('type') == 'answer':
+                        self.__on_head_answer_received(head_index, answer=msg_dict.get('value'))
 
         except asyncio.CancelledError:
             pass
@@ -289,9 +331,14 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             for j in jars:
                 j.move()
 
+    def __on_head_answer_received(self, head_index, answer):
+
+        self.machine_head_dict[head_index].on_cmd_answer(answer)
+
     def __on_head_status_changed(self, head_index, status):
 
-        old_status = self.head_status_dict.get(head_index, {})
+        old_status = self.machine_head_dict[head_index].status
+
         diff = {k: v for k, v in status.items() if v != old_status.get(k)}
 
         if diff:
@@ -299,10 +346,11 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             logging.warning("head_index:{}".format(head_index))
             logging.warning("diff:{}".format(diff))
 
-            self.head_status_dict[head_index] = status
+            self.machine_head_dict[head_index].update_status(status)
+
             self.__update_jars()
 
-            self.main_window.sinottico.update_data(head_index)
+            self.main_window.sinottico.update_data(head_index, status)
 
     def get_version(self):
 

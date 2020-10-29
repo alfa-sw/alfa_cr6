@@ -8,6 +8,7 @@
 import os
 import sys
 import logging
+import traceback
 import asyncio
 
 import alfa_CR6_backend.cr6
@@ -58,6 +59,17 @@ def _test_create_db_objects():
     assert jar_cnt == 1
 
 
+def _test_send_purge_macro(delay):
+
+    def _():
+        try:
+            pars = {'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}
+            APP.machine_head_dict[0].send_command(cmd_name="PURGE", params=pars, type_='macro')
+        except:
+            logging.error(traceback.format_exc())
+
+    asyncio.get_event_loop().call_later(1 * delay / 5., _)
+
 def _test_run_gui(delay):
 
     asyncio.get_event_loop().call_later(1 * delay / 3., APP.main_window.login_btn.click)
@@ -72,8 +84,9 @@ def test_all():
         logging.warning("Stopping execution.")
         raise KeyboardInterrupt
 
-    delay = 3.  # secs
+    delay = 10.  # secs
     asyncio.get_event_loop().call_later(delay, _stop)
 
     _test_create_db_objects()
+    _test_send_purge_macro(delay)
     _test_run_gui(delay)
