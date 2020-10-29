@@ -9,7 +9,7 @@
     * python3-pyqt5.qtwebengine
     * python3-evdev [readthedocs](https://python-evdev.readthedocs.io)  (barcode reader)
 
-    $ apt install -y python3 virtualenv python3-pyqt5 python3-pyqt5.qtwebengine python-evdev
+    $ apt install -y python3 virtualenv python3-pyqt5 python3-pyqt5.qtwebengine python3-evdev
 
 2. permessi di accesso ai /dev/input all'utente che esegue l'applicazione, per l'accesso al lettore di barcode.
     Su Ubuntu, il comando:
