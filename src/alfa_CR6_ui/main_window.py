@@ -20,6 +20,7 @@ class MainWindow(QMainWindow):
 
         self.sinottico = Sinottico(self)
         self.project_layout.addWidget(self.sinottico)
+        self.showFullScreen()
 
 
     def onLoginBtnClicked(self):

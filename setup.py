@@ -43,6 +43,8 @@ def main():
             'websockets',
             'SQLAlchemy',
             'jsonschema',
+            'python-barcode',
+            'Pillow'
         ],
     )
 

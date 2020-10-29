@@ -27,22 +27,31 @@ class Sinottico(QWidget):
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
 
-        self.rulliera_input.mousePressEvent = lambda event: self.rullieraInputPressed()
+        self.jar_input.mousePressEvent = lambda event: self.jarInputPressed()
 
-    def rullieraInputPressed(self):
-        self.main_view_stack.setCurrentWidget(self.modal_rulliera_input)
+    def jarInputPressed(self):
+        self.main_view_stack.setCurrentWidget(self.modal_jar_input)
 
     def update_data(self, head_index, status):
 
         logging.info("head_index:{}, status:{}".format(head_index, status))
 
-        for i in reversed(range(self.rulliera_input_data.count())):
-            self.rulliera_input_data.itemAt(i).widget().setParent(None)
+        for i in reversed(range(self.jar_input_data.count())):
+            self.jar_input_data.itemAt(i).widget().setParent(None)
 
         if head_index == 0:
             for key, value in status.items():
-                self.alabel=QLabel(key + ' : ' + str(value))
-                self.rulliera_input_data.addWidget(self.alabel)
+            
+                if key == 'status_level':
+                  self.alabel=QLabel('Stato FTC_1')
+                  self.alabel3=QLabel('Stato MS_5')
+                  self.alabel4=QLabel('Stato MS_6')
+                  self.alabel5=QLabel('BAR CODE')
+
+                  self.jar_input_data.addWidget(self.alabel)
+                  self.jar_input_data.addWidget(self.alabel3)
+                  self.jar_input_data.addWidget(self.alabel4)
+                  self.jar_input_data.addWidget(self.alabel5)
 
     def onHomeBtnClicked(self, other):
         self.main_view_stack.setCurrentWidget(self.image_sinottico)

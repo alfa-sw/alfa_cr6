@@ -73,7 +73,7 @@ def _test_send_purge_macro(delay):
 def _test_run_gui(delay):
 
     asyncio.get_event_loop().call_later(1 * delay / 3., APP.main_window.login_btn.click)
-    asyncio.get_event_loop().call_later(2 * delay / 3., APP.main_window.sinottico.rullieraInputPressed)
+    asyncio.get_event_loop().call_later(2 * delay / 3., APP.main_window.sinottico.jarInputPressed)
 
     APP.run_forever()
 
