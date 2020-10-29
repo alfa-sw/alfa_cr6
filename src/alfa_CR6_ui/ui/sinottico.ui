@@ -140,7 +140,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -219,7 +219,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="rulliera_t1" native="true">
+     <widget class="QWidget" name="jar_t1" native="true">
       <property name="geometry">
        <rect>
         <x>389</x>
@@ -229,7 +229,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="rulliera_t2" native="true">
+     <widget class="QWidget" name="jar_t2" native="true">
       <property name="geometry">
        <rect>
         <x>399</x>
@@ -239,7 +239,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="rulliera_t3" native="true">
+     <widget class="QWidget" name="jar_t3" native="true">
       <property name="geometry">
        <rect>
         <x>660</x>
@@ -249,7 +249,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="rulliera_t4" native="true">
+     <widget class="QWidget" name="jar_t4" native="true">
       <property name="geometry">
        <rect>
         <x>670</x>
@@ -259,7 +259,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="rulliera_t5" native="true">
+     <widget class="QWidget" name="jar_t5" native="true">
       <property name="geometry">
        <rect>
         <x>930</x>
@@ -269,7 +269,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="rulliera_t6" native="true">
+     <widget class="QWidget" name="jar_t6" native="true">
       <property name="geometry">
        <rect>
         <x>950</x>
@@ -357,7 +357,7 @@
        <string>Refill</string>
       </property>
      </widget>
-     <widget class="QWidget" name="rulliera_input" native="true">
+     <widget class="QWidget" name="jar_input" native="true">
       <property name="geometry">
        <rect>
         <x>109</x>
@@ -367,7 +367,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="rulliera_output" native="true">
+     <widget class="QWidget" name="jar_output" native="true">
       <property name="geometry">
        <rect>
         <x>20</x>
@@ -529,7 +529,7 @@
       <layout class="QVBoxLayout" name="chrome_layout"/>
      </widget>
     </widget>
-    <widget class="QWidget" name="modal_rulliera_input">
+    <widget class="QWidget" name="modal_jar_input">
      <widget class="QScrollArea" name="scroll_area_status">
       <property name="geometry">
        <rect>
@@ -560,7 +560,7 @@
           <height>781</height>
          </rect>
         </property>
-        <layout class="QVBoxLayout" name="rulliera_input_data">
+        <layout class="QVBoxLayout" name="jar_input_data">
          <property name="spacing">
           <number>0</number>
          </property>
@@ -568,7 +568,7 @@
        </widget>
       </widget>
      </widget>
-     <widget class="QScrollArea" name="scroll_area_rulliera">
+     <widget class="QScrollArea" name="scroll_area_jar">
       <property name="geometry">
        <rect>
         <x>40</x>
@@ -606,7 +606,7 @@
           <number>100000</number>
          </property>
          <item>
-          <widget class="QPushButton" name="pushButton_2">
+          <widget class="QPushButton" name="btn_start_jar">
            <property name="enabled">
             <bool>true</bool>
            </property>
@@ -621,7 +621,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_5">
+          <widget class="QPushButton" name="btn_stop_jar">
            <property name="font">
             <font>
              <pointsize>25</pointsize>
@@ -633,7 +633,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_4">
+          <widget class="QPushButton" name="btn_start_step_1">
            <property name="font">
             <font>
              <pointsize>25</pointsize>
@@ -645,7 +645,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_3">
+          <widget class="QPushButton" name="btn_start_step_1_to_2">
            <property name="font">
             <font>
              <pointsize>25</pointsize>
@@ -657,7 +657,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="btn_read_barcode">
            <property name="font">
             <font>
              <pointsize>25</pointsize>
