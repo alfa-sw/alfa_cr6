@@ -39,19 +39,45 @@ class Sinottico(QWidget):
         for i in reversed(range(self.jar_input_data.count())):
             self.jar_input_data.itemAt(i).widget().setParent(None)
 
-        if head_index == 0:
-            for key, value in status.items():
-            
-                if key == 'status_level':
-                  self.alabel=QLabel('Stato FTC_1')
-                  self.alabel3=QLabel('Stato MS_5')
-                  self.alabel4=QLabel('Stato MS_6')
-                  self.alabel5=QLabel('BAR CODE')
+        machine_status = status
 
-                  self.jar_input_data.addWidget(self.alabel)
-                  self.jar_input_data.addWidget(self.alabel3)
-                  self.jar_input_data.addWidget(self.alabel4)
-                  self.jar_input_data.addWidget(self.alabel5)
+        self.label_FTC_1=QLabel('Stato FTC_1')
+        self.label_FTC_1.setAlignment(Qt.AlignCenter)
+        self.led_FTC_1=QLabel('')
+        self.label_MS_5=QLabel('Stato MS_5')
+        self.label_MS_5.setAlignment(Qt.AlignCenter)
+        self.led_MS_5=QLabel('')
+        self.label_MS_6=QLabel('Stato MS_6')
+        self.label_MS_6.setAlignment(Qt.AlignCenter)
+        self.led_MS_6=QLabel('')
+#         self.label_barcode=QLabel('BAR CODE')
+#         self.label_barcode.setAlignment(Qt.AlignCenter)
+
+        self.jar_input_data.addWidget(self.label_FTC_1)
+        self.jar_input_data.addWidget(self.led_FTC_1)
+        self.jar_input_data.addWidget(self.label_MS_5)
+        self.jar_input_data.addWidget(self.led_MS_5)
+        self.jar_input_data.addWidget(self.label_MS_6)
+        self.jar_input_data.addWidget(self.led_MS_6)
+#         self.jar_input_data.addWidget(self.label_barcode)
+
+        for key, value in machine_status.items():
+            if key == 'jar_photocells_status':
+                self.led_FTC_1.setText('jar_photocells_status: ' + str(value))
+                self.led_FTC_1.setAlignment(Qt.AlignCenter)
+
+            if key == 'bases_carriage':
+                if value == True:
+                    self.led_MS_6.setStyleSheet("background-image : url(" + QApplication.instance().images_path + "/green.svg); background-repeat:no-repeat; background-position:center;")
+                else:
+                    self.led_MS_6.setStyleSheet("background-image : url(" + QApplication.instance().images_path + "/grey.png); background-repeat:no-repeat; background-position:center;")
+
+            if key == 'water_level':
+                if value == True:
+                    self.led_MS_5.setStyleSheet("background-image : url(" + QApplication.instance().images_path + "/green.svg); background-repeat:no-repeat; background-position:center;")
+                else:
+                    self.led_MS_5.setStyleSheet("background-image : url(" + QApplication.instance().images_path + "/grey.png); background-repeat:no-repeat; background-position:center;")
+
 
     def onHomeBtnClicked(self, other):
         self.main_view_stack.setCurrentWidget(self.image_sinottico)

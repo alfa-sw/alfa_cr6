@@ -140,7 +140,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -284,12 +284,25 @@
        <rect>
         <x>370</x>
         <y>140</y>
-        <width>91</width>
-        <height>41</height>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
       <property name="text">
-       <string>Refill</string>
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>40</width>
+        <height>40</height>
+       </size>
       </property>
      </widget>
      <widget class="QPushButton" name="refilll_HEAD_3_STEP_3">
@@ -297,12 +310,22 @@
        <rect>
         <x>650</x>
         <y>140</y>
-        <width>91</width>
-        <height>41</height>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
-       <string>Refill</string>
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>40</width>
+        <height>40</height>
+       </size>
       </property>
      </widget>
      <widget class="QPushButton" name="refilll_HEAD_5_STEP_4">
@@ -310,12 +333,22 @@
        <rect>
         <x>920</x>
         <y>140</y>
-        <width>91</width>
-        <height>41</height>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
-       <string>Refill</string>
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>40</width>
+        <height>40</height>
+       </size>
       </property>
      </widget>
      <widget class="QPushButton" name="refilll_HEAD_2_STEP_9">
@@ -323,12 +356,22 @@
        <rect>
         <x>370</x>
         <y>470</y>
-        <width>112</width>
-        <height>41</height>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
-       <string>Refill</string>
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>40</width>
+        <height>40</height>
+       </size>
       </property>
      </widget>
      <widget class="QPushButton" name="refilll_HEAD_4_STEP_8">
@@ -336,12 +379,22 @@
        <rect>
         <x>650</x>
         <y>471</y>
-        <width>112</width>
-        <height>41</height>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
-       <string>Refill</string>
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>40</width>
+        <height>40</height>
+       </size>
       </property>
      </widget>
      <widget class="QPushButton" name="refilll_HEAD_6_STEP_7">
@@ -349,12 +402,22 @@
        <rect>
         <x>930</x>
         <y>471</y>
-        <width>112</width>
-        <height>41</height>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
-       <string>Refill</string>
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>40</width>
+        <height>40</height>
+       </size>
       </property>
      </widget>
      <widget class="QWidget" name="jar_input" native="true">
@@ -564,6 +627,66 @@
          <property name="spacing">
           <number>0</number>
          </property>
+         <item>
+          <widget class="QLabel" name="FTC1_status">
+           <property name="text">
+            <string>Stato FTC_1</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="FTC_1_led">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="MS_5_status">
+           <property name="text">
+            <string>Stato MS_5</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="MS_5_led">
+           <property name="text">
+            <string>led</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="MS_6_status">
+           <property name="text">
+            <string>Stato MS_6</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="MS_6_led">
+           <property name="text">
+            <string>led</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </widget>

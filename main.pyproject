@@ -1,6 +1,6 @@
 {
     "files": [
-        "src/alfa_CR6_backend/__init__.py", "src/alfa_CR6_backend/__main__.py", "src/alfa_CR6_ui/sinottico.py",
+        "src/alfa_CR6_backend/__init__.py", "src/alfa_CR6_backend/__main__.py", "src/alfa_CR6_ui/sinottico.py","src/alfa_CR6_ui/keyboard.py",
         "src/alfa_CR6_ui/ui/sinottico.ui", "src/alfa_CR6_ui/icons", "src/alfa_CR6_backend/cr6.py", "src/alfa_CR6_ui/ui/chrome.ui",
         "src/alfa_CR6_ui/ui/main_window.ui", "src/alfa_CR6_ui/images/machine.jpg", "src/alfa_CR6_ui/images/chrome.png",
         "src/alfa_CR6_ui/images/home.png","src/alfa_CR6_ui/images/machine.png", "src/alfa_CR6_ui/images/green.svg ",

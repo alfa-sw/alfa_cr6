@@ -43,6 +43,7 @@ def main():
             'websockets',
             'SQLAlchemy',
             'jsonschema',
+            'pyautogui',
             'python-barcode',
             'Pillow'
         ],

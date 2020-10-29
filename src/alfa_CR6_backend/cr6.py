@@ -51,6 +51,7 @@ settings = types.SimpleNamespace(
     CONF_PATH=os.path.join(RUNTIME_FILES_ROOT, 'conf'),
 
     UI_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'ui'),
+    IMAGE_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'images'),
 
     # here is defined the path to the sqlite db used for persistent data,
     # if it is empty or None, no sqlite db is open
@@ -170,6 +171,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.run_flag = True
         self.ui_path = settings.UI_PATH
+        self.images_path = settings.IMAGE_PATH
         self.db_session = None
 
         self.machine_head_dict = {}
