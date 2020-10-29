@@ -21,15 +21,15 @@ FIXTURES = os.path.join(HERE, 'fixtures')
 # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
 alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
 alfa_CR6_backend.cr6.settings.WS_URL_LIST = [
-    # ~ "ws://127.0.0.1:11000/device:machine:status",
+    "ws://127.0.0.1:11000/device:machine:status",
 ]
 alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
-    FIXTURES + '/machine_status_0.json',
-    FIXTURES + '/machine_status_1.json',
-    FIXTURES + '/machine_status_2.json',
-    FIXTURES + '/machine_status_3.json',
-    FIXTURES + '/machine_status_4.json',
-    FIXTURES + '/machine_status_5.json',
+    # ~ FIXTURES + '/machine_status_0.json',
+    # ~ FIXTURES + '/machine_status_1.json',
+    # ~ FIXTURES + '/machine_status_2.json',
+    # ~ FIXTURES + '/machine_status_3.json',
+    # ~ FIXTURES + '/machine_status_4.json',
+    # ~ FIXTURES + '/machine_status_5.json',
 ]
 alfa_CR6_backend.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
     # ~ '/dev/input/event7',
@@ -58,10 +58,10 @@ def _test_create_db_objects():
     assert jar_cnt == 1
 
 
-def _test_run(delay):
+def _test_run_gui(delay):
 
     asyncio.get_event_loop().call_later(1 * delay / 3., APP.main_window.login_btn.click)
-    asyncio.get_event_loop().call_later(2 * delay / 3., APP.main_window.sinottico.onStep2Pressed)
+    asyncio.get_event_loop().call_later(2 * delay / 3., APP.main_window.sinottico.rullieraInputPressed)
 
     APP.run_forever()
 
@@ -76,4 +76,4 @@ def test_all():
     asyncio.get_event_loop().call_later(delay, _stop)
 
     _test_create_db_objects()
-    _test_run(delay)
+    _test_run_gui(delay)

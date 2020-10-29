@@ -551,6 +551,21 @@
          <height>789</height>
         </rect>
        </property>
+       <widget class="QWidget" name="verticalLayoutWidget_3">
+        <property name="geometry">
+         <rect>
+          <x>-1</x>
+          <y>9</y>
+          <width>711</width>
+          <height>781</height>
+         </rect>
+        </property>
+        <layout class="QVBoxLayout" name="rulliera_input_data">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+        </layout>
+       </widget>
       </widget>
      </widget>
      <widget class="QScrollArea" name="scroll_area_rulliera">
@@ -580,7 +595,7 @@
           <x>-1</x>
           <y>2</y>
           <width>661</width>
-          <height>100230</height>
+          <height>100260</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
