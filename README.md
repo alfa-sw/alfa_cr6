@@ -18,6 +18,12 @@
 
     aggiunge lo user [NOME_UTENTE] al gruppo "input", che ha i permessi voluti.
 
+    Su debian /dev/uinput deve essere accessibile in scrittura all'utente (l'owner e' root:root di default)
+
+    $ sudo usermod -a -G input [NOME_UTENTE]
+    $ sudo chgrp input /dev/uinput
+    $ sudo chmod 770 /dev/uinput
+
 3. un virtualenv nel path "/opt/alfa_cr6/venv", con accesso ai pacchetti di sistema, i.e. creato con:
 
     $ mkdir /opt/alfa_cr6                              
