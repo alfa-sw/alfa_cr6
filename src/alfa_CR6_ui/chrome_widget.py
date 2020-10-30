@@ -21,7 +21,7 @@ class ChromeWidget(QWidget):
             self.on_downloadRequested
         )
         view = QWebEngineView(self)
-        view.setUrl(QUrl("http://www.google.com"))
+        view.setUrl(QUrl("http://kccrefinish.co.kr"))
         view.resize(1440, 811)
 
     @QtCore.pyqtSlot("QWebEngineDownloadItem*")
