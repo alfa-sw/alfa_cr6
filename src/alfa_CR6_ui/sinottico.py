@@ -34,7 +34,7 @@ class Sinottico(QWidget):
 
     def update_data(self, head_index, status):
 
-        logging.info("head_index:{}, status:{}".format(head_index, status))
+        logging.debug("head_index:{}, status:{}".format(head_index, status))
 
         for i in reversed(range(self.jar_input_data.count())):
             self.jar_input_data.itemAt(i).widget().setParent(None)

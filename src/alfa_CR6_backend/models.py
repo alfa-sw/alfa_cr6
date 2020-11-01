@@ -11,26 +11,60 @@ import logging
 import traceback
 import json
 import uuid
+from datetime import date
 from datetime import datetime
 
-from sqlalchemy import (create_engine, Column, Unicode, Integer, DateTime, ForeignKey, UniqueConstraint)
+from sqlalchemy import (create_engine, Column, Unicode, Integer, BigInteger, DateTime, ForeignKey, UniqueConstraint)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import (sessionmaker, relationship, backref)
+from sqlalchemy.orm import (sessionmaker, relationship)
 
-from jsonschema import validate
+from jsonschema import validate   # pylint: disable=import-error
 
 Base = declarative_base()
+
+
+global_session = None
+
+
+def compile_barcode(order_nr, index):
+    return int(order_nr) + int(index) % 1000
+
+def decompile_barcode(barcode):
+    order_nr = 1000 * (int(barcode) // int(1000))
+    index = int(barcode) % 1000
+    return int(order_nr), int(index)
+
+
+def generate_order_nr():
+
+    global global_session         # pylint: disable=global-statement
+
+    today = date.today()
+    midnight = datetime.combine(today, datetime.min.time())
+    daily_cntr = 1
+
+    order = global_session.query(Order).filter(Order.date_created >= midnight).order_by(Order.order_nr.desc()).first()
+    logging.warning(f"order:{order}")
+    if order:
+        daily_cntr = (order.order_nr / 1000) % 1000
+
+    order_nr = (today.year % 100 * 10000 + today.month * 100 + today.day) * 1000 + daily_cntr + 1
+    order_nr = int(order_nr * 1000)
+
+    logging.warning(f"order_nr:{order_nr}")
+
+    return order_nr
 
 
 def generate_id():
     return str(uuid.uuid4())
 
 
-class ModelCr6(object):
+class ModelCr6(object):         # pylint: disable=too-few-public-methods
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
-    date_created = Column(DateTime, default=datetime.utcnow)
-    date_modified = Column(DateTime, default=datetime.utcnow)
+    date_created = Column(DateTime, default=datetime.now)
+    date_modified = Column(DateTime, default=datetime.now)
     json_properties = Column(Unicode, default="{}")
     description = Column(Unicode(200))
 
@@ -48,7 +82,8 @@ class ModelCr6(object):
 
         return ret
 
-class User(Base, ModelCr6):
+
+class User(Base, ModelCr6):     # pylint: disable=too-few-public-methods
 
     __tablename__ = 'user'
 
@@ -89,36 +124,41 @@ class Event(Base, ModelCr6):  # pylint: disable=too-few-public-methods
         return "{}_{}".format(self.name, self.date_created)
 
 
-class Order(Base, ModelCr6):
+class Order(Base, ModelCr6):    # pylint: disable=too-few-public-methods
 
     __tablename__ = 'order'
-    barcode = Column(Unicode(20), unique=True, nullable=False)
+    order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
     status = Column(Unicode, default='NEW')
+    jars = relationship("Jar")
 
     def __str__(self):
-        return f"<Order object. status:{self.status}, barcode:{self.barcode}>"
+        return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
 
 
-class Jar(Base, ModelCr6):
+class Jar(Base, ModelCr6):      # pylint: disable=too-few-public-methods
 
     __tablename__ = 'jar'
-    status = Column(Unicode, default='NEW')
-    position = Column(Unicode, default='FTC_1')
-    order_id = Column(Unicode, ForeignKey('order.id'), unique=True, nullable=False)
-    order = relationship("Order", backref=backref("jar", uselist=False))
+    status = Column(Unicode, default='NEW', doc="one of ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]")
+    index = Column(Integer, default=0, doc="position of this jar inside the order")
+    size = Column(Integer, nullable=False, doc="one of [0x0, 0x1, 0x2, 0x3] corresponging to the combinations of MICROSWITCH 1 and 2")
+    position = Column(Unicode, doc="one of [None, 'FTC_01', ..., 'FTC_10']")
+
+    order_id = Column(Unicode, ForeignKey('order.id'), nullable=False)
+    order = relationship("Order", back_populates='jars')
 
     def __str__(self):
-        return f"<Jar object. status:{self.status}, position:{self.position}, order.barcode:{self.order.barcode}>"
+        # ~ return f"<Jar object. status:{self.status}, position:{self.position}, barcode:{self.barcode}>"
+        return f"<Jar object. status:{self.status}, position:{self.position}, {self.order.order_nr}:{self.index}>"
 
-    def move(self):
-
-        r = self.validate_json_properties(self.json_properties)
-        logging.warning(f"TBI r:{r}, { self }")
-
+    @property
+    def barcode(self):
+        return compile_barcode(self.order.order_nr, self.index)
 
 def init_models(sqlite_connect_string):
 
-    toks = sqlite_connect_string.split('sqlite:///') 
+    global global_session  # pylint: disable=global-statement
+
+    toks = sqlite_connect_string.split('sqlite:///')
     pth = toks[1:] and toks[1]
     if pth:
         pth = os.path.dirname(os.path.abspath(pth))
@@ -128,6 +168,6 @@ def init_models(sqlite_connect_string):
     engine = create_engine(sqlite_connect_string)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
-    session = Session()
+    global_session = Session()
 
-    return session
+    return global_session
