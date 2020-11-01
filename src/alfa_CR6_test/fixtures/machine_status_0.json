@@ -48,7 +48,7 @@
     9
   ],
   "panel_table_status": true,
-  "photocells_status": 61,
+  "photocells_status": 0,
   "can_available": true,
   "mixer_door_status": true,
   "slave_enable_mask": [

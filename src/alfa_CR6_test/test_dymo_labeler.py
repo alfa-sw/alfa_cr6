@@ -125,7 +125,7 @@ def print_label():
         logging.critical('IMPOSSIBILE TO CREATE THE LABEL')
 
 
-def parse_options(args=sys.argv[1:]):   # pylint: disable=dangerous-default-value
+def parse_options(args):   # pylint: disable=dangerous-default-value
 
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
 
@@ -142,11 +142,11 @@ def parse_options(args=sys.argv[1:]):   # pylint: disable=dangerous-default-valu
     return parser.parse_args(args)
 
 
-def main():
+def test_all(args=["-t", "check"]):
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt_)
 
-    options = parse_options()
+    options = parse_options(args)
     logging.debug("options:{}".format(options))
 
     if options.test == 'check':
@@ -163,7 +163,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_all(sys.argv[1:])
 
 # useful links
 #
