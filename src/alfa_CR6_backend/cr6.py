@@ -17,7 +17,11 @@ import types
 
 from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
 
-import evdev                                # pylint: disable=import-error
+try:
+    import evdev                                # pylint: disable=import-error
+    has_evdev=True
+except:
+    has_evdev=False
 import websockets                           # pylint: disable=import-error
 
 
@@ -268,6 +272,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     async def __barcode_read_task(self, dev_index, barcode_device_name):
 
         buffer = ''
+        if not has_evdev:
+            return
         try:
 
             self.__barcode_device = evdev.InputDevice(barcode_device_name)
