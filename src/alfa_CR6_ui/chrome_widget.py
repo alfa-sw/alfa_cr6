@@ -11,6 +11,7 @@ from PyQt5 import QtCore
 from PyQt5.Qt import QUrl      # pylint: disable=no-name-in-module
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile          # pylint: disable=import-error, no-name-in-module
 from PyQt5.QtWidgets import QWidget, QFileDialog, QApplication                          # pylint: disable=no-name-in-module
+import os
 
 
 class ChromeWidget(QWidget):
@@ -26,12 +27,10 @@ class ChromeWidget(QWidget):
 
     @QtCore.pyqtSlot("QWebEngineDownloadItem*")
     def on_downloadRequested(self, download):
-        #TODO: use fixed path instead of asking the user
-        old_path = download.url().path()  # download.path()
-        # suffix = QtCore.QFileInfo(old_path).suffix()
-        path, _ = QFileDialog.getSaveFileName(
-            self, "Save File", old_path, "*.json"
-        )
-        if path:
-            download.setPath(path)
-            download.accept()
+        path="/opt/alfa_cr6/data/kcc"
+        fname = download.url().path().split("/")[-1]
+        if not os.path.exists(path):
+            os.makedirs(path)
+        download.setPath(path+'/'+fname+'.json')
+        download.accept()
+        #TODO add callback and feedback on successful download
