@@ -9,9 +9,39 @@ import logging
 import asyncio 
 
 from PyQt5.QtCore import *
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication, QScrollArea, QVBoxLayout
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication
 from PyQt5.uic import loadUi
 from alfa_CR6_ui.chrome_widget import ChromeWidget
+from collections import namedtuple
+
+Button=namedtuple('Button', 'label action target')
+StatusItem=namedtuple('StatusItem', 'label path type flagno source')
+
+
+
+defs={
+        'jar_input':{
+            "buttons":[
+                Button('Start rulliera (MU_1)', 'start_r', 'm1'),
+                Button('Stop rulliera', 'stop_r', 'm1'),
+                Button('Start "step 1"', 'start_s', 'm1'),
+                Button('Start "step 1 -step2"', 'start_s12', 'm1'),
+                Button('Lettura barcode', 'read', 'barcode'),
+                ],
+            "status":[
+                StatusItem('status', 'status_level', 'string', -1, 'm1'),
+                StatusItem('photocell 1', 'photocells_status', 'flag', 0, 'm1'),
+                StatusItem('photocell 2', 'photocells_status', 'flag', 1, 'm1'),
+                StatusItem('photocell 3', 'photocells_status', 'flag', 2, 'm1'),
+                StatusItem('photocell 4', 'photocells_status', 'flag', 3, 'm1'),
+                StatusItem('photocell 5', 'photocells_status', 'flag', 4, 'm1'),
+                StatusItem('photocell 6', 'photocells_status', 'flag', 5, 'm1'),
+                StatusItem('photocell 7', 'photocells_status', 'flag', 6, 'm1'),
+                StatusItem('photocell 8', 'photocells_status', 'flag', 7, 'm1'),
+                ]
+            }
+        }
 
 class Sinottico(QWidget):
     browser=False
@@ -38,45 +68,34 @@ class Sinottico(QWidget):
 
         for i in reversed(range(self.jar_input_data.count())):
             self.jar_input_data.itemAt(i).widget().setParent(None)
+        for i in reversed(range(self.jar_input_buttons.count())):
+            self.jar_input_buttons.itemAt(i).widget().setParent(None)
 
         machine_status = status
 
-        self.label_FTC_1=QLabel('Stato FTC_1')
-        self.label_FTC_1.setAlignment(Qt.AlignCenter)
-        self.led_FTC_1=QLabel('')
-        self.label_MS_5=QLabel('Stato MS_5')
-        self.label_MS_5.setAlignment(Qt.AlignCenter)
-        self.led_MS_5=QLabel('')
-        self.label_MS_6=QLabel('Stato MS_6')
-        self.label_MS_6.setAlignment(Qt.AlignCenter)
-        self.led_MS_6=QLabel('')
-#         self.label_barcode=QLabel('BAR CODE')
-#         self.label_barcode.setAlignment(Qt.AlignCenter)
+        for button in defs['jar_input']['buttons']:
+            btn=QPushButton(button.label)
+            self.jar_input_buttons.addWidget(btn)
 
-        self.jar_input_data.addWidget(self.label_FTC_1)
-        self.jar_input_data.addWidget(self.led_FTC_1)
-        self.jar_input_data.addWidget(self.label_MS_5)
-        self.jar_input_data.addWidget(self.led_MS_5)
-        self.jar_input_data.addWidget(self.label_MS_6)
-        self.jar_input_data.addWidget(self.led_MS_6)
-#         self.jar_input_data.addWidget(self.label_barcode)
-
-        for key, value in machine_status.items():
-            if key == 'jar_photocells_status':
-                self.led_FTC_1.setText('jar_photocells_status: ' + str(value))
-                self.led_FTC_1.setAlignment(Qt.AlignCenter)
-
-            if key == 'bases_carriage':
-                if value == True:
-                    self.led_MS_6.setStyleSheet("background-image : url(" + QApplication.instance().images_path + "/green.svg); background-repeat:no-repeat; background-position:center;")
-                else:
-                    self.led_MS_6.setStyleSheet("background-image : url(" + QApplication.instance().images_path + "/grey.png); background-repeat:no-repeat; background-position:center;")
-
-            if key == 'water_level':
-                if value == True:
-                    self.led_MS_5.setStyleSheet("background-image : url(" + QApplication.instance().images_path + "/green.svg); background-repeat:no-repeat; background-position:center;")
-                else:
-                    self.led_MS_5.setStyleSheet("background-image : url(" + QApplication.instance().images_path + "/grey.png); background-repeat:no-repeat; background-position:center;")
+        for n, statusItem in enumerate(defs['jar_input']['status']):
+            label=QLabel(statusItem.label)
+            label.setFixedHeight(25)
+            result=QLabel('')
+            if (statusItem.type=='string'):
+                result=QLabel(machine_status[statusItem.path])
+                result.setFixedHeight(25)
+            elif (statusItem.type=='flag'):
+                on=machine_status[statusItem.path] >> statusItem.flagno & 1
+                result=QLabel('')
+                p= "/grey.png"
+                if (on):
+                    p= "/green.svg"
+                pixmap=QPixmap(QApplication.instance().images_path + p)
+                pscaled=pixmap.scaled(25, 25, Qt.KeepAspectRatio)
+                result.setPixmap(pscaled)
+                result.setFixedHeight(25)
+            self.jar_input_data.addWidget(label, n, 0)
+            self.jar_input_data.addWidget(result, n, 1)
 
 
     def onHomeBtnClicked(self, other):

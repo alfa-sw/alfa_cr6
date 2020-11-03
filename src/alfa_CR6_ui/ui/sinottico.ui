@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1440</width>
-    <height>900</height>
+    <width>1960</width>
+    <height>1024</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
      <rect>
       <x>0</x>
       <y>810</y>
-      <width>1441</width>
+      <width>1591</width>
       <height>91</height>
      </rect>
     </property>
@@ -133,9 +133,9 @@
    <widget class="QStackedWidget" name="main_view_stack">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>10</x>
       <y>-10</y>
-      <width>1461</width>
+      <width>1961</width>
       <height>811</height>
      </rect>
     </property>
@@ -593,207 +593,47 @@
      </widget>
     </widget>
     <widget class="QWidget" name="modal_jar_input">
-     <widget class="QScrollArea" name="scroll_area_status">
+     <widget class="QWidget" name="gridLayoutWidget">
       <property name="geometry">
        <rect>
-        <x>710</x>
+        <x>709</x>
         <y>10</y>
-        <width>711</width>
-        <height>791</height>
+        <width>731</width>
+        <height>10091</height>
        </rect>
       </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="list_status">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>709</width>
-         <height>789</height>
-        </rect>
+      <layout class="QGridLayout" name="jar_input_data">
+       <property name="bottomMargin">
+        <number>10000</number>
        </property>
-       <widget class="QWidget" name="verticalLayoutWidget_3">
-        <property name="geometry">
-         <rect>
-          <x>-1</x>
-          <y>9</y>
-          <width>711</width>
-          <height>781</height>
-         </rect>
-        </property>
-        <layout class="QVBoxLayout" name="jar_input_data">
-         <property name="spacing">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="FTC1_status">
-           <property name="text">
-            <string>Stato FTC_1</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="FTC_1_led">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="MS_5_status">
-           <property name="text">
-            <string>Stato MS_5</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="MS_5_led">
-           <property name="text">
-            <string>led</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="MS_6_status">
-           <property name="text">
-            <string>Stato MS_6</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="MS_6_led">
-           <property name="text">
-            <string>led</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </widget>
+       <property name="horizontalSpacing">
+        <number>0</number>
+       </property>
+       <property name="verticalSpacing">
+        <number>75</number>
+       </property>
+      </layout>
      </widget>
-     <widget class="QScrollArea" name="scroll_area_jar">
+     <widget class="QWidget" name="verticalLayoutWidget_2">
       <property name="geometry">
        <rect>
-        <x>40</x>
+        <x>20</x>
         <y>10</y>
         <width>661</width>
-        <height>791</height>
+        <height>100261</height>
        </rect>
       </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="list_actions">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>659</width>
-         <height>789</height>
-        </rect>
+      <layout class="QVBoxLayout" name="jar_input_buttons" stretch="">
+       <property name="spacing">
+        <number>0</number>
        </property>
-       <widget class="QWidget" name="verticalLayoutWidget_2">
-        <property name="geometry">
-         <rect>
-          <x>-1</x>
-          <y>2</y>
-          <width>661</width>
-          <height>100260</height>
-         </rect>
-        </property>
-        <layout class="QVBoxLayout" name="verticalLayout_2">
-         <property name="spacing">
-          <number>-1</number>
-         </property>
-         <property name="bottomMargin">
-          <number>100000</number>
-         </property>
-         <item>
-          <widget class="QPushButton" name="btn_start_jar">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>25</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Start rulliera (MU_1)</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_stop_jar">
-           <property name="font">
-            <font>
-             <pointsize>25</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Stop Rulliera</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_start_step_1">
-           <property name="font">
-            <font>
-             <pointsize>25</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Start “step 1 “</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_start_step_1_to_2">
-           <property name="font">
-            <font>
-             <pointsize>25</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Start “step1 -step2”</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="btn_read_barcode">
-           <property name="font">
-            <font>
-             <pointsize>25</pointsize>
-            </font>
-           </property>
-           <property name="text">
-            <string>Lettura barcode</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </widget>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>100000</number>
+       </property>
+      </layout>
      </widget>
     </widget>
     <widget class="QWidget" name="modal_status_HEAD_1">
