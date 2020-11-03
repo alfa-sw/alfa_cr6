@@ -13,6 +13,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication
 from PyQt5.uic import loadUi
 from alfa_CR6_ui.chrome_widget import ChromeWidget
+from alfa_CR6_ui.keyboard import Keyboard
 from collections import namedtuple
 
 Button=namedtuple('Button', 'label action target')
@@ -58,6 +59,8 @@ class Sinottico(QWidget):
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
 
         self.jar_input.mousePressEvent = lambda event: self.jarInputPressed()
+        self.keyboard=Keyboard()
+        self.keyboard_position.addWidget(self.keyboard)
 
     def jarInputPressed(self):
         self.main_view_stack.setCurrentWidget(self.modal_jar_input)

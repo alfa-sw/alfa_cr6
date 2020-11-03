@@ -19,21 +19,21 @@
      <rect>
       <x>-1</x>
       <y>-1</y>
-      <width>1921</width>
-      <height>901</height>
+      <width>1920</width>
+      <height>1080</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="login">
      <widget class="QPushButton" name="login_btn">
       <property name="geometry">
        <rect>
         <x>510</x>
-        <y>410</y>
-        <width>461</width>
-        <height>101</height>
+        <y>550</y>
+        <width>861</width>
+        <height>131</height>
        </rect>
       </property>
       <property name="font">
@@ -86,7 +86,7 @@
        <rect>
         <x>710</x>
         <y>200</y>
-        <width>271</width>
+        <width>641</width>
         <height>41</height>
        </rect>
       </property>
@@ -101,7 +101,7 @@
        <rect>
         <x>710</x>
         <y>290</y>
-        <width>271</width>
+        <width>641</width>
         <height>41</height>
        </rect>
       </property>
@@ -111,6 +111,17 @@
        </font>
       </property>
      </widget>
+     <widget class="QWidget" name="verticalLayoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>870</y>
+        <width>1921</width>
+        <height>211</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="keyboard_position"/>
+     </widget>
     </widget>
     <widget class="QWidget" name="project">
      <widget class="QWidget" name="verticalLayoutWidget">
@@ -119,23 +130,12 @@
         <x>0</x>
         <y>0</y>
         <width>1921</width>
-        <height>901</height>
+        <height>1081</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="project_layout"/>
      </widget>
     </widget>
-   </widget>
-   <widget class="QWidget" name="verticalLayoutWidget_2">
-    <property name="geometry">
-     <rect>
-      <x>-11</x>
-      <y>899</y>
-      <width>1931</width>
-      <height>181</height>
-     </rect>
-    </property>
-    <layout class="QVBoxLayout" name="keyboard_position"/>
    </widget>
   </widget>
  </widget>
