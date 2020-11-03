@@ -19,6 +19,8 @@ from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
 
 import evdev                                # pylint: disable=import-error
 import websockets                           # pylint: disable=import-error
+import aiohttp
+import async_timeout
 
 
 from alfa_CR6_ui.main_window import MainWindow
@@ -65,8 +67,8 @@ settings = types.SimpleNamespace(
     # this dictionary keeps the url of the websocket servers
     # to which the application connects its websocket clients,
     # if it is empty, no websocket client is started
-    WS_URL_LIST=[
-        # ~ "ws://127.0.0.1:11000/device:machine:status",
+    MACHINE_HEAD_IPADD_LIST=[
+        # ~ "127.0.0.1",
     ],
 
     # this dictionary keeps the path to the files where
@@ -74,12 +76,12 @@ settings = types.SimpleNamespace(
     # the machine:status structures in json format,
     # if it is empty, no mockup file is searched for
     MOCKUP_FILE_PATH_LIST=[
-        '/opt/alfa_cr6/var/machine_status_0.json',
-        '/opt/alfa_cr6/var/machine_status_1.json',
-        '/opt/alfa_cr6/var/machine_status_2.json',
-        '/opt/alfa_cr6/var/machine_status_3.json',
-        '/opt/alfa_cr6/var/machine_status_4.json',
-        '/opt/alfa_cr6/var/machine_status_5.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_0.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_1.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_2.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_3.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_4.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_5.json',
     ],
 
     BARCODE_DEVICE_NAME_LIST=[
@@ -94,34 +96,42 @@ def handle_exception():
     logging.error(traceback.format_exc())
 
 
-async def wait_for_condition(condition, timeout=5, timestep=.5, on_timeout=None):
+async def wait_for_condition(condition, timeout=5, timestep=.5):
     t0 = time.time()
     while time.time() - t0 < timeout:
         if condition():
             return True
         await asyncio.sleep(timestep)
-    if on_timeout:
-        on_timeout()
     return False
 
 
 class MachineHead(object):
 
-    def __init__(self, websocket_client=None):
+    def __init__(self, websocket=None, ip_add=None):
 
-        self.websocket_client = websocket_client
+        self.websocket = websocket
+        self.ip_add = ip_add
+        self.aiohttp_clientsession = None
         self.status = {}
         self.photocells_status = {}
         self.jar_photocells_status = {}
         self.jar_size_detect = None
+        self.pipe_list = []
 
     def on_cmd_answer(self, answer):
 
         logging.warning(f"self:{self}, answer:{answer}")
 
+    def update_pipes(self, status):
+
+        ret = await self.machine_head_dict[0].call_api_rest('pipe', 'GET', {})
+        self.pipe_list = ret['objects']
+
     def update_status(self, status):
 
         logging.debug("status:{}".format(status))
+
+        # ~ see doc/machine_status_jsonschema.py
 
         self.status = status
 
@@ -152,6 +162,37 @@ class MachineHead(object):
 
         self.jar_size_detect = (status['jar_photocells_status'] & 0x200 + status['jar_photocells_status'] & 0x400) >> 9
 
+    async def call_api_rest(self, path: str, method: str, data: dict, timeout=5):
+
+        url = "http://{}:{}/{}/{}".format(self.ip_add, 8080, 'apiV1', path)
+        
+        if self.aiohttp_clientsession is None:
+            self.aiohttp_clientsession = aiohttp.ClientSession()
+
+        r_json_as_dict = ""
+        try:
+
+            with async_timeout.timeout(timeout):
+                if method.upper() == 'GET':
+                    context_mngr = self.aiohttp_clientsession.get
+                    args = [url]
+                elif method.upper() == 'POST': 
+                    context_mngr = self.aiohttp_clientsession.post
+                    args = [url, data]
+
+                async with context_mngr(*args) as response:
+                    r = response
+                    r_json_as_dict = await r.json()
+
+                assert r.reason == 'OK', f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
+
+        except Exception:                           # pylint: disable=broad-except
+            handle_exception()
+
+        logging.warning(f"{ r_json_as_dict }")
+        logging.warning(f"{type(r_json_as_dict)}")
+        return r_json_as_dict
+
     def send_command(self, cmd_name: str, params: dict, type_='command', channel='machine'):
         """ param 'type_' can be 'command' or 'macro'
 
@@ -159,20 +200,30 @@ class MachineHead(object):
                 self.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
                 self.send_command(cmd_name="PURGE", params={'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}, type_='macro')
         """
-        if self.websocket_client:
+        if self.websocket:
             try:
                 msg = {
                     'type': type_,
                     'channel': channel,
                     'msg_out_dict': {'command': cmd_name, 'params': params},
                 }
-                logging.warning(f"cmd_name:{cmd_name}, params:{params}, channel:{channel}")
-                t = self.websocket_client.send(json.dumps(msg))
+                logging.info(f"cmd_name:{cmd_name}, params:{params}, channel:{channel}")
+                t = self.websocket.send(json.dumps(msg))
                 asyncio.ensure_future(t)
 
             except Exception:                           # pylint: disable=broad-except
                 handle_exception()
 
+    def move_jar(self, to_step):
+
+        # TODO: understand CAN_MOVEMENT cmd
+
+        # ~ Values: 0 = Stop Movement, 1 = Start Movement, 2 = Start Movement till Photocell transition LIGHT - DARK
+        {'Dispensing_Roller' :2, 'Lifter_Roller' :0, 'Input_Roller':2, 'Lifter':0, 'Output_Roller':0},
+
+        # ~ params = converter[to_step]
+        # ~ self.send_command('CAN_MOVEMENT', params)    
+        pass
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
 
@@ -227,7 +278,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.images_path = settings.IMAGE_PATH
         self.db_session = None
 
-        self.__inner_loop_task_step = 0.02 # secs
+        self.__inner_loop_task_step = 0.02  # secs
 
         self.machine_head_dict = {}
 
@@ -257,8 +308,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         for dev_index, barcode_device_name in enumerate(settings.BARCODE_DEVICE_NAME_LIST):
             self.__tasks += [self.__barcode_read_task(dev_index, barcode_device_name), ]
 
-        for head_index, ws_url in enumerate(settings.WS_URL_LIST):
-            self.__tasks += [self.__ws_client_task(head_index, ws_url), ]
+        for head_index, ip_add in enumerate(settings.MACHINE_HEAD_IPADD_LIST):
+            self.__tasks += [self.__ws_client_task(head_index, ip_add), ]
 
         for head_index, status_file_name in enumerate(settings.MOCKUP_FILE_PATH_LIST):
             self.__tasks += [self.__mockup_task(head_index, status_file_name), ]
@@ -306,8 +357,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         # ~ logging.info("len(self.__jar_runners):{}".format(len(self.__jar_runners)))
         # ~ logging.debug(["{}.".format(r) for r in self.__jar_runners.values()])
 
-        pass
-
     async def __inner_loop_task(self):
 
         try:
@@ -326,11 +375,14 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except Exception:                           # pylint: disable=broad-except
             handle_exception()
 
-    async def __ws_client_task(self, head_index, ws_url):
+    async def __ws_client_task(self, head_index, ip_add):
+
+        ws_url = f"ws://{ ip_add }:11000/device:machine:status"
 
         try:
+            self.machine_head_dict[head_index] = MachineHead(websocket=None, ip_add=ip_add)
             async with websockets.connect(ws_url) as websocket:
-                self.machine_head_dict[head_index] = MachineHead(websocket)
+                self.machine_head_dict[head_index].websocket = websocket
                 while self.run_flag:
 
                     msg = await websocket.recv()
@@ -347,6 +399,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         except asyncio.CancelledError:
             pass
+        finally:
+            if self.machine_head_dict[head_index].aiohttp_clientsession:
+                await self.machine_head_dict[head_index].aiohttp_clientsession.close()
 
     async def __mockup_task(self, head_index, status_file_name):
 
@@ -374,7 +429,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __close(self, ):
 
-        for t in self.__runners[:] + [r for r in  self.__jar_runners.values()]:
+        for t in self.__runners[:] + [r for r in self.__jar_runners.values()]:
             try:
                 t.cancel()
 
@@ -404,10 +459,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             def condition():
                 return self.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL']
 
-            def on_timeout():
-                assert False, "timeout waiting for JAR_INPUT_ROLLER_PHOTOCELL engagement"
-
-            await wait_for_condition(condition=condition, timeout=3, on_timeout=on_timeout)
+            ret = await wait_for_condition(condition=condition, timeout=3)
+            assert ret, "timeout waiting for JAR_INPUT_ROLLER_PHOTOCELL engagement"
 
             sz = self.machine_head_dict[0].jar_size_detect
             assert jar.size == sz, "{} != {}".format(jar.size, sz)
@@ -416,21 +469,16 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             t = self.__jar_task(jar)
             self.__jar_runners[barcode] = asyncio.ensure_future(t)
 
-            logging.info("t:{}".format(t))
+            logging.info("{} {} t:{}".format(len(self.__jar_runners), barcode, t))
 
         except Exception:                           # pylint: disable=broad-except
             handle_exception()
 
     async def __jar_task(self, jar):
 
-        logging.debug("jar:{}".format(jar))
-
         try:
             jar.status = 'PROGRESS'
-            jar.position = 'FTC_1'
-
-            # TODO: get order details (formula) and resolve it in terms of machine_heads and pipes
-            # ~ save the stuff in jar.json_properties
+            jar.position = 'step_1'
 
             # TODO: if available, move to step_2:
             # ~ while (step_2 not available): wait, if timeout: set jar.status = ERROR
@@ -441,16 +489,21 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             # ~ while (roller_status is moving): wait, if timeout: set jar.status = ERROR
             # ~ while (not FTC_2): wait, if timeout: set jar.status = ERROR
             # ~ set jar.position = 'FTC_2'
-            
-            # TODO: move through the sequence of positions till the end:
-            # ~ for p in [f"FTC_{i}" for i in range(2,12)]:
-                # ~ if due, do; then, if available, move on or set jar.status = ERROR
-            # ~ if FTC_12 deliver and set jar.status = DONE
 
-            await asyncio.sleep(2)    # TODO: remove this
+            # TODO: move through the sequence of positions till the end:
+            # ~ for p in [f"FTC_{i}" for i in range(2,10)]:
+            # ~ if due, do; then, if available, move on or set jar.status = ERROR
+            # ~ if FTC_10 deliver and set jar.status = DONE
+
+            await asyncio.sleep(1.2)    # TODO: remove this
 
         except asyncio.CancelledError:
             jar.status = 'ERROR'
+
+        except Exception:                           # pylint: disable=broad-except
+            handle_exception()
+
+        logging.warning("jar:{}".format(jar))
 
     def __on_head_answer_received(self, head_index, answer):
 

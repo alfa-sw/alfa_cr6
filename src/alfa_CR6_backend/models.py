@@ -141,7 +141,7 @@ class Jar(Base, ModelCr6):      # pylint: disable=too-few-public-methods
     status = Column(Unicode, default='NEW', doc="one of ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]")
     index = Column(Integer, default=0, doc="position of this jar inside the order")
     size = Column(Integer, nullable=False, doc="one of [0x0, 0x1, 0x2, 0x3] corresponging to the combinations of MICROSWITCH 1 and 2")
-    position = Column(Unicode, doc="one of [None, 'FTC_01', ..., 'FTC_10']")
+    position = Column(Unicode, doc="one of [None, 'step_1', 'step_1,step_2', 'step_2', 'step_2,step_3', ..., 'step_11,step_12', 'step_12']")
 
     order_id = Column(Unicode, ForeignKey('order.id'), nullable=False)
     order = relationship("Order", back_populates='jars')

@@ -28,8 +28,8 @@ FIXTURES = os.path.join(HERE, 'fixtures')
 def set_settings():
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
     alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
-    alfa_CR6_backend.cr6.settings.WS_URL_LIST = [
-        # ~ "ws://127.0.0.1:11000/device:machine:status",
+    alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST=[
+        "127.0.0.1",
     ]
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
         FIXTURES + '/machine_status_0.json',
@@ -48,7 +48,7 @@ def test_all():
     set_settings()
 
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
-
+    
     for i in range(3):
         order = Order(status="NEW", order_nr=201030000000 + i * 1000)
         APP.db_session.add(order) 
@@ -80,10 +80,14 @@ def test_all():
         t = APP._CR6_application__on_barcode_read(0, b_code)
         asyncio.ensure_future(t)
         
-    asyncio.get_event_loop().call_later(.5, _action, 201030000001)
-    asyncio.get_event_loop().call_later(1., _action, 201030001001)
-    asyncio.get_event_loop().call_later(1.5, _action, 201030002001)
-    asyncio.get_event_loop().call_later(2.5, _action, 201030002002)
+    asyncio.get_event_loop().call_later(0.3, APP.main_window.close)
+
+    asyncio.get_event_loop().call_later(0.5, _action, 201030000001)
+    asyncio.get_event_loop().call_later(1.0, _action, 201030001001)
+    asyncio.get_event_loop().call_later(1.3, _action, 201030001002)
+    asyncio.get_event_loop().call_later(2.0, _action, 201030002000)
+    asyncio.get_event_loop().call_later(2.2, _action, 201030002001)
+    asyncio.get_event_loop().call_later(2.4, _action, 201030002002)
 
     asyncio.get_event_loop().call_later(4., _stop)
 
