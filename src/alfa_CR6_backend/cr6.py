@@ -19,12 +19,12 @@ from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
 
 import evdev                                # pylint: disable=import-error
 import websockets                           # pylint: disable=import-error
-import aiohttp
-import async_timeout
+import aiohttp                              # pylint: disable=import-error
+import async_timeout                        # pylint: disable=import-error
 
 
 from alfa_CR6_ui.main_window import MainWindow
-from alfa_CR6_backend.models import Order, Jar, decompile_barcode
+from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -88,24 +88,55 @@ settings = types.SimpleNamespace(
         # ~ '/dev/input/event7',
         # ~ '/dev/input/event8',
     ],
+
+    STORE_EXCEPTIONS_TO_DB_AS_DEFAULT=False,
 )
 
 
-def handle_exception():
-    # TODO: send alarm msg to the Gui surface
+def parse_json_order(path_to_json_file, json_schema_name):
+
+    # TODO implement parser(s)
+
+    properties = {}
+    with open(path_to_json_file) as f:
+
+        properties = json.load(f)
+        if json_schema_name == "KCC":
+            sz = properties.get('total', '100')
+            sz = '1000' if sz.lower() == '1l' else sz
+        properties['size_cc'] = int(sz)
+
+        return properties
+
+
+def handle_exception(e, ui_msg=None, db_event=None):
+
+    # TODO: send alarm msg to Gui surface
+
     logging.error(traceback.format_exc())
 
+    if db_event is None:
+        db_event = settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT
 
-async def wait_for_condition(condition, timeout=5, timestep=.5):
-    t0 = time.time()
-    while time.time() - t0 < timeout:
-        if condition():
-            return True
-        await asyncio.sleep(timestep)
-    return False
+    if db_event:
+        a = QApplication.instance()
+        if a and a.db_session:
+            try:
+                evnt = Event(
+                    name=e,
+                    level='ERROR',
+                    severity='',
+                    source='CR6_application',
+                    description=traceback.format_exc())
+                a.db_session.add(evnt)
+                a.db_session.commit()
+            except BaseException:
+                a.db_session.rollback()
+                logging.error(traceback.format_exc())
 
 
-class MachineHead(object):
+
+class MachineHead(object):           # pylint: disable=too-many-instance-attributes
 
     def __init__(self, websocket=None, ip_add=None):
 
@@ -122,61 +153,67 @@ class MachineHead(object):
 
         logging.warning(f"self:{self}, answer:{answer}")
 
-    def update_pipes(self, status):
+    async def update_pipes(self):
 
-        ret = await self.machine_head_dict[0].call_api_rest('pipe', 'GET', {})
-        self.pipe_list = ret['objects']
+        ret = await self.call_api_rest('pipe', 'GET', {})
+        self.pipe_list = ret.get('objects', [])
+
+        # ~ logging.debug(f"{self.pipe_list}")
 
     def update_status(self, status):
 
-        logging.debug("status:{}".format(status))
+        # ~ logging.warning("status:{}".format(status))
 
         # ~ see doc/machine_status_jsonschema.py
 
         self.status = status
 
-        self.photocells_status = {
-            'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001,
-            'THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL': status['photocells_status'] & 0x002,
-            'THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL': status['photocells_status'] & 0x004,
-            'THOR TABLE_PHOTOCELL': status['photocells_status'] & 0x008,
-            'THOR VALVE_OPEN_PHOTOCELL': status['photocells_status'] & 0x010,
-            'THOR AUTOCAP_CLOSE_PHOTOCELL': status['photocells_status'] & 0x020,
-            'THOR AUTOCAP_OPEN_PHOTOCELL': status['photocells_status'] & 0x040,
-            'THOR BRUSH_PHOTOCELL': status['photocells_status'] & 0x080,
-        }
+        if status.get('photocells_status'):
+            self.photocells_status = {
+                'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001,
+                'THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL': status['photocells_status'] & 0x002,
+                'THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL': status['photocells_status'] & 0x004,
+                'THOR TABLE_PHOTOCELL': status['photocells_status'] & 0x008,
+                'THOR VALVE_OPEN_PHOTOCELL': status['photocells_status'] & 0x010,
+                'THOR AUTOCAP_CLOSE_PHOTOCELL': status['photocells_status'] & 0x020,
+                'THOR AUTOCAP_OPEN_PHOTOCELL': status['photocells_status'] & 0x040,
+                'THOR BRUSH_PHOTOCELL': status['photocells_status'] & 0x080,
+            }
 
-        self.jar_photocells_status = {
-            'JAR_INPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x001,
-            'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x002,
-            'JAR_OUTPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x004,
-            'LOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x008,
-            'LOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x010,
-            'UNLOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x020,
-            'UNLOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x040,
-            'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x080,
-            'JAR_DISPENSING_POSITION_PHOTOCELL': status['jar_photocells_status'] & 0x100,
-            'JAR_DETECTION_MICROSWITCH_1': status['jar_photocells_status'] & 0x200,
-            'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400,
-        }
+        if status.get('jar_photocells_status'):
+            self.jar_photocells_status = {
+                'JAR_INPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x001,
+                'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x002,
+                'JAR_OUTPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x004,
+                'LOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x008,
+                'LOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x010,
+                'UNLOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x020,
+                'UNLOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x040,
+                'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x080,
+                'JAR_DISPENSING_POSITION_PHOTOCELL': status['jar_photocells_status'] & 0x100,
+                'JAR_DETECTION_MICROSWITCH_1': status['jar_photocells_status'] & 0x200,
+                'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400,
+            }
 
-        self.jar_size_detect = (status['jar_photocells_status'] & 0x200 + status['jar_photocells_status'] & 0x400) >> 9
+            self.jar_size_detect = (
+                status['jar_photocells_status'] & 0x200 +
+                status['jar_photocells_status'] & 0x400) >> 9
 
     async def call_api_rest(self, path: str, method: str, data: dict, timeout=5):
 
         url = "http://{}:{}/{}/{}".format(self.ip_add, 8080, 'apiV1', path)
-        
+
         if self.aiohttp_clientsession is None:
             self.aiohttp_clientsession = aiohttp.ClientSession()
 
-        r_json_as_dict = ""
+        r_json_as_dict = {}
         try:
 
             with async_timeout.timeout(timeout):
                 if method.upper() == 'GET':
                     context_mngr = self.aiohttp_clientsession.get
                     args = [url]
-                elif method.upper() == 'POST': 
+                elif method.upper() == 'POST':
                     context_mngr = self.aiohttp_clientsession.post
                     args = [url, data]
 
@@ -186,11 +223,11 @@ class MachineHead(object):
 
                 assert r.reason == 'OK', f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
 
-        except Exception:                           # pylint: disable=broad-except
-            handle_exception()
+        except Exception as e:                           # pylint: disable=broad-except
+            handle_exception(e)
 
-        logging.warning(f"{ r_json_as_dict }")
-        logging.warning(f"{type(r_json_as_dict)}")
+        # ~ logging.warning(f"{ r_json_as_dict }")
+        # ~ logging.warning(f"{type(r_json_as_dict)}")
         return r_json_as_dict
 
     def send_command(self, cmd_name: str, params: dict, type_='command', channel='machine'):
@@ -211,50 +248,38 @@ class MachineHead(object):
                 t = self.websocket.send(json.dumps(msg))
                 asyncio.ensure_future(t)
 
-            except Exception:                           # pylint: disable=broad-except
-                handle_exception()
+            except Exception as e:                           # pylint: disable=broad-except
+                handle_exception(e)
 
-    def move_jar(self, to_step):
+    async def close(self):
 
-        # TODO: understand CAN_MOVEMENT cmd
+        if self.aiohttp_clientsession:
+            await self.aiohttp_clientsession.close()
 
-        # ~ Values: 0 = Stop Movement, 1 = Start Movement, 2 = Start Movement till Photocell transition LIGHT - DARK
-        {'Dispensing_Roller' :2, 'Lifter_Roller' :0, 'Input_Roller':2, 'Lifter':0, 'Output_Roller':0},
+    def can_movement(self, params=None):
 
-        # ~ params = converter[to_step]
-        # ~ self.send_command('CAN_MOVEMENT', params)    
-        pass
+        default = {'Dispensing_Roller': 0, 'Lifter_Roller': 0, 'Input_Roller': 0, 'Lifter': 0, 'Output_Roller': 0}
+        if params:
+            default.update(params)
+
+        self.send_command('CAN_MOVEMENT', default)
+
+    def dispense_position_busy(self):
+
+        flag = self.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL')    
+        return flag 
+
+    def dispense_position_available(self):
+
+        flag = not self.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL')    
+        flag = flag and not self.status.get('status_level') == 'JAR_POSITIONING'    
+        flag = flag and not self.status.get('container_presence')
+        return flag 
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
         'KEY_SPACE': ' ',
-        'KEY_Q': 'Q',
-        'KEY_W': 'W',
-        'KEY_E': 'E',
-        'KEY_R': 'R',
-        'KEY_T': 'T',
-        'KEY_Y': 'Y',
-        'KEY_U': 'U',
-        'KEY_I': 'I',
-        'KEY_O': 'O',
-        'KEY_P': 'P',
-        'KEY_A': 'A',
-        'KEY_S': 'S',
-        'KEY_D': 'D',
-        'KEY_F': 'F',
-        'KEY_G': 'G',
-        'KEY_H': 'H',
-        'KEY_J': 'J',
-        'KEY_K': 'K',
-        'KEY_L': 'L',
-        'KEY_Z': 'Z',
-        'KEY_X': 'X',
-        'KEY_C': 'C',
-        'KEY_V': 'V',
-        'KEY_B': 'B',
-        'KEY_N': 'N',
-        'KEY_M': 'M',
         'KEY_1': '1',
         'KEY_2': '2',
         'KEY_3': '3',
@@ -279,6 +304,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.db_session = None
 
         self.__inner_loop_task_step = 0.02  # secs
+        self.suspend_all_timeouts = False
 
         self.machine_head_dict = {}
 
@@ -340,31 +366,21 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         except asyncio.CancelledError:
             pass
-        except Exception:                           # pylint: disable=broad-except
-            handle_exception()
-
-    async def __clock_tick(self):
-
-        # TODO: check if machine_heads status is deprcated
-
-        # TODO: [for r in self.__jar_runners: check r.status]
-
-        for k in [k_ for k_ in self.__jar_runners]:
-            if self.__jar_runners[k].done():
-                self.__jar_runners[k].cancel()
-                del self.__jar_runners[k]
-
-        # ~ logging.info("len(self.__jar_runners):{}".format(len(self.__jar_runners)))
-        # ~ logging.debug(["{}.".format(r) for r in self.__jar_runners.values()])
+        except Exception as e:                           # pylint: disable=broad-except
+            handle_exception(e)
 
     async def __inner_loop_task(self):
+
+        _last_feed_jar_in_input_time = 0
 
         try:
             while self.run_flag:
 
                 self.processEvents()  # gui events
 
-                await self.__clock_tick()    # timer events
+                self.__clock_tick()    # timer events
+
+                _last_feed_jar_in_input_time = self.__feed_jar_in_input(_last_feed_jar_in_input_time)
 
                 await asyncio.sleep(self.__inner_loop_task_step)
 
@@ -372,8 +388,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         except asyncio.CancelledError:
             pass
-        except Exception:                           # pylint: disable=broad-except
-            handle_exception()
+        except Exception as e:                           # pylint: disable=broad-except
+            handle_exception(e)
 
     async def __ws_client_task(self, head_index, ip_add):
 
@@ -417,35 +433,28 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
                         self.__on_head_status_changed(head_index, status)
 
-                except Exception:       # pylint: disable=broad-except
-                    handle_exception()
+                except Exception as e:                           # pylint: disable=broad-except
+                    handle_exception(e)
 
                 await asyncio.sleep(1)
 
         except asyncio.CancelledError:
             pass
-        except Exception:                           # pylint: disable=broad-except
-            handle_exception()
+        except Exception as e:                           # pylint: disable=broad-except
+            handle_exception(e)
 
-    def __close(self, ):
+    async def __update_machine_head_pipes(self):     # pylint: disable=no-self-use
 
-        for t in self.__runners[:] + [r for r in self.__jar_runners.values()]:
-            try:
-                t.cancel()
-
-                async def _coro(_):
-                    await _
-                asyncio.get_event_loop().run_until_complete(_coro(t))
-            except asyncio.CancelledError:
-                logging.info(f"{ t } has been canceled now.")
-
-        self.__runners = []
-        self.__jar_runners = []
-
-        asyncio.get_event_loop().run_until_complete(asyncio.get_event_loop().shutdown_asyncgens())
-        asyncio.get_event_loop().close()
+        try:
+            for m in self.machine_head_dict.values():
+                if not m.pipe_list:
+                    await m.update_pipes()
+        except Exception as e:                           # pylint: disable=broad-except
+            handle_exception(e)
 
     async def __on_barcode_read(self, dev_index, barcode):     # pylint: disable=no-self-use
+
+        await self.__update_machine_head_pipes()
 
         try:
             logging.debug("dev_index:{}, barcode:{}".format(dev_index, barcode))
@@ -459,7 +468,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             def condition():
                 return self.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL']
 
-            ret = await wait_for_condition(condition=condition, timeout=3)
+            ret = await self.wait_for_condition(condition=condition, timeout=3)
             assert ret, "timeout waiting for JAR_INPUT_ROLLER_PHOTOCELL engagement"
 
             sz = self.machine_head_dict[0].jar_size_detect
@@ -471,12 +480,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
             logging.info("{} {} t:{}".format(len(self.__jar_runners), barcode, t))
 
-        except Exception:                           # pylint: disable=broad-except
-            handle_exception()
+        except Exception as e:                           # pylint: disable=broad-except
+            handle_exception(e)
 
     async def __jar_task(self, jar):
 
         try:
+
             jar.status = 'PROGRESS'
             jar.position = 'step_1'
 
@@ -490,20 +500,61 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             # ~ while (not FTC_2): wait, if timeout: set jar.status = ERROR
             # ~ set jar.position = 'FTC_2'
 
+            r = await self.wait_for_condition(self.machine_head_dict[0].dispense_position_available, timeout=3*60)
+            if not r: raise Exception("timeout waiting head 0 dispense_position_available")
+            self.machine_head_dict[0].can_movement({'Input_Roller': 0})
+            self.machine_head_dict[0].can_movement({'Input_Roller': 2})
+            self.machine_head_dict[0].can_movement({'Dispensing_Roller': 2})
+            jar.status = 'step_1,step_2'
+            await self.wait_for_condition(self.machine_head_dict[0].dispense_position_busy, timeout=3*60)
+            if not r: raise Exception("timeout waiting head 0 dispense_position_busy")
+
             # TODO: move through the sequence of positions till the end:
             # ~ for p in [f"FTC_{i}" for i in range(2,10)]:
             # ~ if due, do; then, if available, move on or set jar.status = ERROR
             # ~ if FTC_10 deliver and set jar.status = DONE
 
-            await asyncio.sleep(1.2)    # TODO: remove this
+            import random
+            await asyncio.sleep(2+random.randint(1, 5))    # TODO: remove this
+
+            jar.status = 'DONE'
 
         except asyncio.CancelledError:
             jar.status = 'ERROR'
+            jar.description = traceback.format_exc()
 
-        except Exception:                           # pylint: disable=broad-except
-            handle_exception()
+        except Exception as e:                           # pylint: disable=broad-except
+            jar.status = 'ERROR'
+            jar.description = traceback.format_exc()
+            handle_exception(e)
 
         logging.warning("jar:{}".format(jar))
+        self.db_session.commit()
+
+    def __feed_jar_in_input(self, last_time):
+
+        t = time.time()
+        if t - last_time > 10:
+            last_time = t
+            if self.machine_head_dict.get(0):
+                if not self.machine_head_dict[0].jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL'):
+                    self.machine_head_dict[0].can_movement({'Input_Roller': 0})
+                    self.machine_head_dict[0].can_movement({'Input_Roller': 2})
+        return last_time
+
+    def __clock_tick(self):
+
+        # TODO: check if machine_heads status is deprcated
+
+        # TODO: [for r in self.__jar_runners: check r.status]
+
+        for k in [k_ for k_ in self.__jar_runners]:
+            if self.__jar_runners[k].done():
+                self.__jar_runners[k].cancel()
+                del self.__jar_runners[k]
+
+        # ~ logging.info("len(self.__jar_runners):{}".format(len(self.__jar_runners)))
+        # ~ logging.debug(["{}.".format(r) for r in self.__jar_runners.values()])
 
     def __on_head_answer_received(self, head_index, answer):
 
@@ -519,6 +570,31 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 # ~ logging.warning("diff:{}".format(diff))
                 self.machine_head_dict[head_index].update_status(status)
                 self.main_window.sinottico.update_data(head_index, status)
+
+    def __close(self, ):
+
+        for m in self.machine_head_dict.values():
+            try:
+                asyncio.get_event_loop().run_until_complete(m.close())
+            except Exception as e:                           # pylint: disable=broad-except
+                handle_exception(e)
+
+        for t in self.__runners[:] + [r for r in self.__jar_runners.values()]:
+            try:
+                t.cancel()
+
+                async def _coro(_):
+                    await _
+                asyncio.get_event_loop().run_until_complete(_coro(t))
+                # ~ asyncio.get_event_loop().run_until_complete(t.cancel())
+            except asyncio.CancelledError:
+                logging.info(f"{ t } has been canceled now.")
+
+        self.__runners = []
+        self.__jar_runners = []
+
+        asyncio.get_event_loop().run_until_complete(asyncio.get_event_loop().shutdown_asyncgens())
+        asyncio.get_event_loop().close()
 
     def get_version(self):
 
@@ -538,12 +614,41 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except KeyboardInterrupt:
             pass
 
-        except Exception:                           # pylint: disable=broad-except
-            handle_exception()
+        except Exception as e:                           # pylint: disable=broad-except
+            handle_exception(e)
 
         finally:
             self.__close()
 
+    def create_order(self, path_to_json_file, json_schema_name="KCC", n_of_jars=1):
+
+        order = None
+        if self.db_session:
+            try:
+                properties = parse_json_order(path_to_json_file, json_schema_name)
+                order = Order(json_properties=json.dumps(properties))
+                self.db_session.add(order)
+                for j in range(n_of_jars):
+                    jar = Jar(order=order, index=j, size=0)
+                    self.db_session.add(jar)
+                self.db_session.commit()
+            except BaseException:
+                logging.error(traceback.format_exc())
+                order = None
+                self.db_session.rollback()
+
+        return order
+
+    async def wait_for_condition(self, condition, *args, timeout=5, timestep=.5):
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            if condition(*args):
+                return True
+            await asyncio.sleep(timestep)
+            if self.suspend_all_timeouts:
+                t0 += timestep
+            
+        return False
 
 def main():
 

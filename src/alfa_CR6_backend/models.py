@@ -44,14 +44,14 @@ def generate_order_nr():
     daily_cntr = 1
 
     order = global_session.query(Order).filter(Order.date_created >= midnight).order_by(Order.order_nr.desc()).first()
-    logging.warning(f"order:{order}")
+    # ~ logging.warning(f"order:{order}")
     if order:
         daily_cntr = (order.order_nr / 1000) % 1000
 
     order_nr = (today.year % 100 * 10000 + today.month * 100 + today.day) * 1000 + daily_cntr + 1
     order_nr = int(order_nr * 1000)
 
-    logging.warning(f"order_nr:{order_nr}")
+    # ~ logging.warning(f"order_nr:{order_nr}")
 
     return order_nr
 
