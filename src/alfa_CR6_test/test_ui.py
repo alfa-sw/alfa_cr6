@@ -25,8 +25,8 @@ def set_settings():
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
     alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = None # ":memory:"
 
-    alfa_CR6_backend.cr6.settings.WS_URL_LIST = [
-        # ~ "ws://127.0.0.1:11000/device:machine:status",
+    alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST=[
+        # ~ "127.0.0.1",
     ]
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
         FIXTURES + '/machine_status_0.json',
