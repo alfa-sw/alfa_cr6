@@ -44,7 +44,8 @@ def main():
             'SQLAlchemy',
             'jsonschema',
             'python-barcode',
-            'Pillow'
+            'Pillow',
+            'aiohttp',
         ],
     )
 

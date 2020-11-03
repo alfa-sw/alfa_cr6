@@ -7,20 +7,19 @@
     * virtualenv
     * python3-pyqt5
     * python3-pyqt5.qtwebengine
-    * python3-evdev [readthedocs](https://python-evdev.readthedocs.io)  (barcode reader)
+    * python3-evdev [readthedocs](https://python-evdev.readthedocs.io)  (barcode reader and virt kb)
 
     $ apt install -y python3 virtualenv python3-pyqt5 python3-pyqt5.qtwebengine python3-evdev
 
-2. permessi di accesso ai /dev/input all'utente che esegue l'applicazione, per l'accesso al lettore di barcode.
-    Su Ubuntu, il comando:
+2. permessi di accesso in lettura ai /dev/input all'utente che esegue l'applicazione, per l'accesso al 
+lettore di barcode e in scrittura a /dev/uinput per la virt. kb.
+    
+    aggiungi lo user [NOME_UTENTE] al gruppo "input":
 
     $ sudo usermod -a -G input [NOME_UTENTE]
 
-    aggiunge lo user [NOME_UTENTE] al gruppo "input", che ha i permessi voluti.
+    cambia gruppo e permissions al dev "/dev/uinput":
 
-    Su debian /dev/uinput deve essere accessibile in scrittura all'utente (l'owner e' root:root di default)
-
-    $ sudo usermod -a -G input [NOME_UTENTE]
     $ sudo chgrp input /dev/uinput
     $ sudo chmod 770 /dev/uinput
 
@@ -77,7 +76,9 @@
 
 1. run test su target e host:
 
-    $ . /opt/alfa_cr6/venv/bin/activate ; alfa_CR6_test                         
+    $ . /opt/alfa_cr6/venv/bin/activate ; alfa_CR6_test [OPTION]                        
+
+    per i valori di [OPTION] vedi "src/alfa_CR6_test/main.py".
 
 #### G. Code styling and linting
 
