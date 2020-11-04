@@ -19,6 +19,7 @@ from collections import namedtuple
 
 Button = namedtuple('Button', 'label action target')
 StatusItem = namedtuple('StatusItem', 'label path type flagno source current')
+StatusViewItem = namedtuple('StatusViewItem', 'path type source')
 
 
 class Sinottico(QWidget):
@@ -26,6 +27,7 @@ class Sinottico(QWidget):
     view = None
     visual = "none"
     defs = []
+    status_defs = []
 
     def __init__(self, parent=None):
 
@@ -91,6 +93,10 @@ class Sinottico(QWidget):
                         pscaled = self.get_pscaled(on)
                         statusItem.current[0].setPixmap(pscaled)
 
+        for status_obj in self.status_defs[head_index]:
+            if status_obj.type == "string":
+                status_obj.path.setText(machine_status[status_obj.source])
+
     def get_pscaled(self, on):
         p = "/grey.png"
         if (on):
@@ -121,6 +127,26 @@ class Sinottico(QWidget):
         return widget
 
     def init_defs(self):
+        self.status_defs = [
+            [  # head 1
+                StatusViewItem(self.view_status_HEAD_1_STEP_2, "string", "status_level")
+            ],
+            [  # head 2
+                StatusViewItem(self.view_status_HEAD_2_STEP_9, "string", "status_level")
+            ],
+            [  # head 3
+                StatusViewItem(self.view_status_HEAD_3_STEP_3, "string", "status_level")
+            ],
+            [  # head 4
+                StatusViewItem(self.view_status_HEAD_4_STEP_8, "string", "status_level")
+            ],
+            [  # head 5
+                StatusViewItem(self.view_status_HEAD_5_STEP_4, "string", "status_level")
+            ],
+            [  # head 6
+                StatusViewItem(self.view_status_HEAD_6_STEP_7, "string", "status_level")
+            ],
+        ]
         self.defs = [  # head 1
             [
                 {
