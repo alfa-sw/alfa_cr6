@@ -9,11 +9,12 @@ import logging
 import asyncio
 
 from PyQt5.QtCore import *
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication
 from PyQt5.uic import loadUi
 from alfa_CR6_ui.chrome_widget import ChromeWidget
 from alfa_CR6_ui.keyboard import Keyboard
+from alfa_CR6_ui.jar import Jar
 from collections import namedtuple
 
 Button = namedtuple('Button', 'label action target')
@@ -37,12 +38,11 @@ class Sinottico(QWidget):
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
 
-        self.jar_input.mousePressEvent = lambda event: self.jarInputPressed()
         self.keyboard = Keyboard()
         self.keyboard_position.addWidget(self.keyboard)
 
-    def jarInputPressed(self):
-        self.main_view_stack.setCurrentWidget(self.modal_jar_input)
+    def move_mainview(self, view):
+        self.main_view_stack.setCurrentWidget(view)
 
     def update_data(self, head_index, status):
 
@@ -55,8 +55,9 @@ class Sinottico(QWidget):
                 self.first_update = False
                 for button in update_obj['buttons']:
                     btn = QPushButton(button.label)
-                    update_obj['button_layout'].addWidget(btn)
-                    self.jar_input_buttons.addWidget(btn)
+                    btn.setFont(QFont('Times', 35))
+                    btn.setFixedHeight(50)
+                    update_obj['view'].buttons.addWidget(btn)
                 for n, statusItem in enumerate(update_obj['status']):
                     label = QLabel(statusItem.label)
                     label.setFixedHeight(25)
@@ -72,8 +73,8 @@ class Sinottico(QWidget):
                         result.setPixmap(pscaled)
                         result.setFixedHeight(25)
                         statusItem.current.append(result)
-                    update_obj['status_layout'].addWidget(label, n, 0)
-                    update_obj['status_layout'].addWidget(result, n, 1)
+                    update_obj['view'].status.addWidget(label, n, 0)
+                    update_obj['view'].status.addWidget(result, n, 1)
             else:
                 for statusItem in update_obj['status']:
                     if (statusItem.type == 'string'):
@@ -107,13 +108,17 @@ class Sinottico(QWidget):
             self.chrome_layout.addWidget(self.view)
             self.main_view_stack.setCurrentWidget(self.chrome)
 
+    def add_view(self, widget, clickarea):
+        self.main_view_stack.addWidget(widget)
+        clickarea.mousePressEvent = lambda event: self.move_mainview(widget)
+        return widget
+
     def init_defs(self):
         self.defs = [  # head 1
             [
                 {
                     # jar input
-                    "button_layout": self.jar_input_buttons,
-                    "status_layout": self.jar_input_data,
+                    "view": self.add_view(Jar(), self.jar_input),
                     "buttons": [
                         Button('Start rulliera (MU_1)', 'start_r', 'm1'),
                         Button('Stop rulliera', 'stop_r', 'm1'),
