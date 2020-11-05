@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1920</width>
-    <height>1024</height>
+    <height>1080</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,32 +34,6 @@
       <height>121</height>
      </rect>
     </property>
-    <widget class="QPushButton" name="home_btn">
-     <property name="geometry">
-      <rect>
-       <x>0</x>
-       <y>60</y>
-       <width>60</width>
-       <height>60</height>
-      </rect>
-     </property>
-     <property name="styleSheet">
-      <string notr="true">background-color: transparent;</string>
-     </property>
-     <property name="text">
-      <string/>
-     </property>
-     <property name="icon">
-      <iconset>
-       <normaloff>../images/home.png</normaloff>../images/home.png</iconset>
-     </property>
-     <property name="iconSize">
-      <size>
-       <width>50</width>
-       <height>50</height>
-      </size>
-     </property>
-    </widget>
     <widget class="QPushButton" name="chrome_btn">
      <property name="enabled">
       <bool>true</bool>
@@ -567,7 +541,7 @@
         <x>-1</x>
         <y>-1</y>
         <width>1921</width>
-        <height>901</height>
+        <height>891</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="chrome_layout"/>
@@ -635,12 +609,19 @@
     <property name="geometry">
      <rect>
       <x>60</x>
-      <y>900</y>
+      <y>890</y>
       <width>1791</width>
-      <height>121</height>
+      <height>191</height>
      </rect>
     </property>
-    <layout class="QVBoxLayout" name="keyboard_position"/>
+    <layout class="QVBoxLayout" name="keyboard_position" stretch="">
+     <property name="spacing">
+      <number>-1</number>
+     </property>
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMaximumSize</enum>
+     </property>
+    </layout>
    </widget>
    <widget class="QPushButton" name="chrome_btn_2">
     <property name="enabled">
@@ -690,6 +671,32 @@
     </property>
     <property name="autoExclusive">
      <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="home_btn">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>1010</y>
+      <width>60</width>
+      <height>60</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: transparent;</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normaloff>../images/home.png</normaloff>../images/home.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>50</width>
+      <height>50</height>
+     </size>
     </property>
    </widget>
   </widget>

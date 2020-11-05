@@ -12,6 +12,7 @@ from PyQt5 import QtCore
 from alfa_CR6_ui.sinottico import Sinottico
 from alfa_CR6_ui.keyboard import Keyboard
 
+
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -22,9 +23,8 @@ class MainWindow(QMainWindow):
         self.sinottico = Sinottico(self)
         self.project_layout.addWidget(self.sinottico)
         self.showFullScreen()
-        self.keyboard=Keyboard()
+        self.keyboard = Keyboard()
         self.keyboard_position.addWidget(self.keyboard)
-
 
     def onLoginBtnClicked(self):
         msg = QMessageBox()
