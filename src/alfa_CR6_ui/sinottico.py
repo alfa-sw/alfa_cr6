@@ -19,6 +19,7 @@ from collections import namedtuple
 
 Button = namedtuple('Button', 'label action target')
 StatusItem = namedtuple('StatusItem', 'label path type flagno source current')
+StatusViewItem = namedtuple('StatusViewItem', 'path type source')
 
 
 class Sinottico(QWidget):
@@ -26,7 +27,7 @@ class Sinottico(QWidget):
     view = None
     visual = "none"
     defs = []
-    first_update = True
+    status_defs = []
 
     def __init__(self, parent=None):
 
@@ -51,8 +52,8 @@ class Sinottico(QWidget):
         machine_status = status
 
         for update_obj in self.defs[head_index]:
-            if self.first_update:
-                self.first_update = False
+            if update_obj['first_update']:
+                update_obj['first_update'] = False
                 for button in update_obj['buttons']:
                     btn = QPushButton(button.label)
                     btn.setFont(QFont('Times', 35))
@@ -66,8 +67,12 @@ class Sinottico(QWidget):
                         result = QLabel(machine_status[statusItem.path])
                         result.setFixedHeight(25)
                         statusItem.current.append(result)
-                    elif (statusItem.type == 'flag'):
-                        on = machine_status[statusItem.path] >> statusItem.flagno & 1
+                    elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
+                        on = 0
+                        if statusItem.type == 'flag':
+                            on = machine_status[statusItem.path] >> statusItem.flagno & 1
+                        else:
+                            on = machine_status[statusItem.path]
                         result = QLabel('')
                         pscaled = self.get_pscaled(on)
                         result.setPixmap(pscaled)
@@ -79,10 +84,18 @@ class Sinottico(QWidget):
                 for statusItem in update_obj['status']:
                     if (statusItem.type == 'string'):
                         statusItem.current[0].setText(machine_status[statusItem.path])
-                    elif (statusItem.type == 'flag'):
-                        on = machine_status[statusItem.path] >> statusItem.flagno & 1
+                    elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
+                        on = 0
+                        if statusItem.type == 'flag':
+                            on = machine_status[statusItem.path] >> statusItem.flagno & 1
+                        else:
+                            on = machine_status[statusItem.path]
                         pscaled = self.get_pscaled(on)
                         statusItem.current[0].setPixmap(pscaled)
+
+        for status_obj in self.status_defs[head_index]:
+            if status_obj.type == "string":
+                status_obj.path.setText(machine_status[status_obj.source])
 
     def get_pscaled(self, on):
         p = "/grey.png"
@@ -114,10 +127,31 @@ class Sinottico(QWidget):
         return widget
 
     def init_defs(self):
+        self.status_defs = [
+            [  # head 1
+                StatusViewItem(self.view_status_HEAD_1_STEP_2, "string", "status_level")
+            ],
+            [  # head 2
+                StatusViewItem(self.view_status_HEAD_2_STEP_9, "string", "status_level")
+            ],
+            [  # head 3
+                StatusViewItem(self.view_status_HEAD_3_STEP_3, "string", "status_level")
+            ],
+            [  # head 4
+                StatusViewItem(self.view_status_HEAD_4_STEP_8, "string", "status_level")
+            ],
+            [  # head 5
+                StatusViewItem(self.view_status_HEAD_5_STEP_4, "string", "status_level")
+            ],
+            [  # head 6
+                StatusViewItem(self.view_status_HEAD_6_STEP_7, "string", "status_level")
+            ],
+        ]
         self.defs = [  # head 1
             [
                 {
                     # jar input
+                    "first_update": True,
                     "view": self.add_view(Jar(), self.jar_input),
                     "buttons": [
                         Button('Start rulliera (MU_1)', 'start_r', 'm1'),
@@ -127,29 +161,112 @@ class Sinottico(QWidget):
                         Button('Lettura barcode', 'read', 'barcode'),
                     ],
                     "status":[
-                        StatusItem('status', 'status_level', 'string', -1, 'm1', []),
-                        StatusItem('photocell 1', 'photocells_status', 'flag', 0, 'm1', []),
-                        StatusItem('photocell 2', 'photocells_status', 'flag', 1, 'm1', []),
-                        StatusItem('photocell 3', 'photocells_status', 'flag', 2, 'm1', []),
-                        StatusItem('photocell 4', 'photocells_status', 'flag', 3, 'm1', []),
-                        StatusItem('photocell 5', 'photocells_status', 'flag', 4, 'm1', []),
-                        StatusItem('photocell 6', 'photocells_status', 'flag', 5, 'm1', []),
-                        StatusItem('photocell 7', 'photocells_status', 'flag', 6, 'm1', []),
-                        StatusItem('photocell 8', 'photocells_status', 'flag', 7, 'm1', []),
+                        StatusItem('Stato FTC_1', 'photocells_status', 'flag', 0, 'm1', []),
+                        StatusItem('Stato MS_5', 'photocells_status', 'flag', 9, 'm1', []),
+                        StatusItem('Stato MS_5', 'photocells_status', 'flag', 10, 'm1', []),
+                        StatusItem('Barcode', 'status_level', 'string', -1, 'm1', []),  # TODO read actual barcode
                     ]
-                }, ],
+                },
+                {
+                    # jar head 1
+                    "first_update": True,
+                    "view": self.add_view(Jar(), self.jar_t1),
+                    "buttons": [
+                        Button('Start rulliera (MU_2)', 'start_r', 'm1'),
+                        Button('Stop rulliera', 'stop_r', 'm1'),
+                        Button('Start "step 2"', 'start_s', 'm1'),
+                        Button('Start "step 2 -step3"', 'start_s23', 'm1'),
+                    ],
+                    "status":[
+                        StatusItem('Stato FTC_2', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato CP_1', 'container_presence', 'bool', -1, 'm1', []),
+                    ]
+                },
+
+            ],
             [  # head 2
+                {
+                    # jar head 2
+                    "first_update": True,
+                    "view": self.add_view(Jar(), self.jar_t2),
+                    "buttons": [
+                        Button('Start rulliera (MU_7)', 'start_r', 'm1'),
+                        Button('Stop rulliera', 'stop_r', 'm1'),
+                        Button('Start "step 9"', 'start_s', 'm1'),
+                        Button('Start "step 9 -step10"', 'start_s910', 'm1'),
+                    ],
+                    "status":[
+                        StatusItem('Stato FTC_8', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato CP_2', 'container_presence', 'bool', -1, 'm1', []),
+                    ]
+                },
             ],
             [  # head 3
+                {
+                    # jar head 3
+                    "first_update": True,
+                    "view": self.add_view(Jar(), self.jar_t3),
+                    "buttons": [
+                        Button('Start rulliera (MU_3)', 'start_r', 'm1'),
+                        Button('Stop rulliera', 'stop_r', 'm1'),
+                        Button('Start "step 3"', 'start_s', 'm1'),
+                        Button('Start "step 3 -step4"', 'start_s34', 'm1'),
+                    ],
+                    "status":[
+                        StatusItem('Stato FTC_3', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato CP_3', 'container_presence', 'bool', -1, 'm1', []),
+                    ]
+                },
             ],
             [  # head 4
+                {
+                    # jar head 4
+                    "first_update": True,
+                    "view": self.add_view(Jar(), self.jar_t4),
+                    "buttons": [
+                        Button('Start rulliera (MU_6)', 'start_r', 'm1'),
+                        Button('Stop rulliera', 'stop_r', 'm1'),
+                        Button('Start "step 8"', 'start_s', 'm1'),
+                        Button('Start "step 8 -step4"', 'start_s34', 'm1'),
+                    ],
+                    "status":[
+                        StatusItem('Stato FTC_7', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato CP_4', 'container_presence', 'bool', -1, 'm1', []),
+                    ]
+                },
             ],
             [  # head 5
+                {
+                    # jar head 5
+                    "first_update": True,
+                    "view": self.add_view(Jar(), self.jar_t5),
+                    "buttons": [
+                        Button('Start rulliera (MU_4)', 'start_r', 'm1'),
+                        Button('Stop rulliera', 'stop_r', 'm1'),
+                        Button('Start "step 4"', 'start_s', 'm1'),
+                        Button('Start "step 4 -step5"', 'start_s34', 'm1'),
+                    ],
+                    "status":[
+                        StatusItem('Stato FTC_4', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato CP_5', 'container_presence', 'bool', -1, 'm1', []),
+                    ]
+                },
             ],
             [  # head 6
-            ],
-            [  # head 7
-            ],
-            [  # head 8
+                {
+                    # jar head 6
+                    "first_update": True,
+                    "view": self.add_view(Jar(), self.jar_t6),
+                    "buttons": [
+                        Button('Start rulliera (MU_5)', 'start_r', 'm1'),
+                        Button('Stop rulliera', 'stop_r', 'm1'),
+                        Button('Start "step 7"', 'start_s', 'm1'),
+                        Button('Start "step 7 -step8"', 'start_s34', 'm1'),
+                    ],
+                    "status":[
+                        StatusItem('Stato FTC_6', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato CP_6', 'container_presence', 'bool', -1, 'm1', []),
+                    ]
+                },
             ],
         ]

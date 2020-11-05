@@ -491,7 +491,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Visualizza stato testa 1</string>
+       <string/>
       </property>
      </widget>
      <widget class="QPushButton" name="view_status_HEAD_3_STEP_3">
@@ -504,7 +504,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Visualizza stato testa 3</string>
+       <string/>
       </property>
      </widget>
      <widget class="QPushButton" name="view_status_HEAD_5_STEP_4">
@@ -517,7 +517,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Visualizza stato testa 5</string>
+       <string/>
       </property>
      </widget>
      <widget class="QPushButton" name="view_status_HEAD_2_STEP_9">
@@ -530,7 +530,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Visualizza stato testa 2</string>
+       <string/>
       </property>
      </widget>
      <widget class="QPushButton" name="view_status_HEAD_4_STEP_8">
@@ -543,7 +543,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Visualizza stato testa 4</string>
+       <string/>
       </property>
      </widget>
      <widget class="QPushButton" name="view_status_HEAD_6_STEP_7">
@@ -556,7 +556,7 @@
        </rect>
       </property>
       <property name="text">
-       <string>Visualizza stato testa 6</string>
+       <string/>
       </property>
      </widget>
     </widget>
