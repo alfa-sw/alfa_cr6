@@ -111,7 +111,7 @@
        <string/>
       </property>
       <property name="pixmap">
-       <pixmap>../images/machine.jpg</pixmap>
+       <pixmap>../images/machine.png</pixmap>
       </property>
      </widget>
      <widget class="QWidget" name="STEP_2" native="true">
