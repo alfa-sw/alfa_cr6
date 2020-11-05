@@ -19,9 +19,9 @@ from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
 
 try:
     import evdev                                # pylint: disable=import-error
-    has_evdev=True
-except:
-    has_evdev=False
+    has_evdev = True
+except BaseException:
+    has_evdev = False
 import websockets                           # pylint: disable=import-error
 import aiohttp                              # pylint: disable=import-error
 import async_timeout                        # pylint: disable=import-error
@@ -54,7 +54,7 @@ def _get_version():
 settings = types.SimpleNamespace(
     # ~ LOG_LEVEL=logging.DEBUG,
     # ~ LOG_LEVEL=logging.INFO,
-    LOG_LEVEL = logging.WARNING,
+    LOG_LEVEL=logging.WARNING,
 
     LOGS_PATH=os.path.join(RUNTIME_FILES_ROOT, 'log'),
     TMP_PATH=os.path.join(RUNTIME_FILES_ROOT, 'tmp'),
@@ -139,7 +139,6 @@ def handle_exception(e, ui_msg=None, db_event=None):
             except BaseException:
                 a.db_session.rollback()
                 logging.error(traceback.format_exc())
-
 
 
 class MachineHead(object):           # pylint: disable=too-many-instance-attributes
@@ -264,6 +263,28 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
     def can_movement(self, params=None):
 
+        """ extracted from doc/Specifiche_Funzionamento_Car_Refinishing_REV12.pdf :
+        (Please, verify current version of the doc)
+
+        'Dispensing_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement, 2 = Start
+        Movement till Photocell transition LIGHT - DARK ','propertyOrder': 1, 'type': 'number', 'fmt': 'B'},
+
+        'Lifter_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement CW, 2 = Start
+        Movement CW till Photocell transition LIGHT - DARK, 3 = Start Movement CCW, 4 = Start Movement CCW
+        till Photocell transition DARK - LIGHT', 'propertyOrder': 2, 'type': 'number', 'fmt': 'B'},
+
+        'Input_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement, 2 = Start
+        Movement till Photocell transition LIGHT - DARK', 'propertyOrder': 3, 'type': 'number', 'fmt': 'B'},
+
+        'Lifter': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement Up till Photocell Up
+        transition LIGHT – DARK, 2 = Start Movement Down till Photocell Down transition LIGHT – DARK',
+        'propertyOrder': 4, 'type': 'number', 'fmt': 'B'},
+
+        'Output_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement CCW till
+        Photocell transition LIGHT – DARK, 2 = Start Movement CCW till Photocell transition DARK - LIGHT with a
+        Delay', 3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
+
+        """ 
         default = {'Dispensing_Roller': 0, 'Lifter_Roller': 0, 'Input_Roller': 0, 'Lifter': 0, 'Output_Roller': 0}
         if params:
             default.update(params)
@@ -272,15 +293,16 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
     def dispense_position_busy(self):
 
-        flag = self.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL')    
-        return flag 
+        flag = self.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL')
+        return flag
 
     def dispense_position_available(self):
 
-        flag = not self.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL')    
-        flag = flag and not self.status.get('status_level') == 'JAR_POSITIONING'    
+        flag = not self.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL')
+        flag = flag and not self.status.get('status_level') == 'JAR_POSITIONING'
         flag = flag and not self.status.get('container_presence')
-        return flag 
+        return flag
+
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
 
@@ -509,14 +531,16 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             # ~ while (not FTC_2): wait, if timeout: set jar.status = ERROR
             # ~ set jar.position = 'FTC_2'
 
-            r = await self.wait_for_condition(self.machine_head_dict[0].dispense_position_available, timeout=3*60)
-            if not r: raise Exception("timeout waiting head 0 dispense_position_available")
+            r = await self.wait_for_condition(self.machine_head_dict[0].dispense_position_available, timeout=3 * 60)
+            if not r:
+                raise Exception("timeout waiting head 0 dispense_position_available")
             self.machine_head_dict[0].can_movement({'Input_Roller': 0})
             self.machine_head_dict[0].can_movement({'Input_Roller': 2})
             self.machine_head_dict[0].can_movement({'Dispensing_Roller': 2})
             jar.status = 'step_1,step_2'
-            await self.wait_for_condition(self.machine_head_dict[0].dispense_position_busy, timeout=3*60)
-            if not r: raise Exception("timeout waiting head 0 dispense_position_busy")
+            await self.wait_for_condition(self.machine_head_dict[0].dispense_position_busy, timeout=3 * 60)
+            if not r:
+                raise Exception("timeout waiting head 0 dispense_position_busy")
 
             # TODO: move through the sequence of positions till the end:
             # ~ for p in [f"FTC_{i}" for i in range(2,10)]:
@@ -524,7 +548,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             # ~ if FTC_10 deliver and set jar.status = DONE
 
             import random
-            await asyncio.sleep(2+random.randint(1, 5))    # TODO: remove this
+            await asyncio.sleep(2 + random.randint(1, 5))    # TODO: remove this
 
             jar.status = 'DONE'
 
@@ -656,8 +680,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             await asyncio.sleep(timestep)
             if self.suspend_all_timeouts:
                 t0 += timestep
-            
+
         return False
+
 
 def main():
 
