@@ -27,14 +27,20 @@ def set_settings():
 
     alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST=[
         # ~ "127.0.0.1",
+        "192.168.15.156",
+        "192.168.15.19",
+        "192.168.15.60",
+        "192.168.15.61",
+        "192.168.15.62",
+        "192.168.15.170",
     ]
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
-        FIXTURES + '/machine_status_0.json',
-        FIXTURES + '/machine_status_1.json',
-        FIXTURES + '/machine_status_2.json',
-        FIXTURES + '/machine_status_3.json',
-        FIXTURES + '/machine_status_4.json',
-        FIXTURES + '/machine_status_5.json',
+        # ~ FIXTURES + '/machine_status_0.json',
+        # ~ FIXTURES + '/machine_status_1.json',
+        # ~ FIXTURES + '/machine_status_2.json',
+        # ~ FIXTURES + '/machine_status_3.json',
+        # ~ FIXTURES + '/machine_status_4.json',
+        # ~ FIXTURES + '/machine_status_5.json',
     ]
     alfa_CR6_backend.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
         # ~ '/dev/input/event7',
@@ -53,7 +59,7 @@ def test_all():
         raise KeyboardInterrupt
 
     asyncio.get_event_loop().call_later(1, APP.main_window.login_btn.click)
-    asyncio.get_event_loop().call_later(2, APP.main_window.sinottico.jarInputPressed)
+    # ~ asyncio.get_event_loop().call_later(2, APP.main_window.sinottico.jarInputPressed)
     asyncio.get_event_loop().call_later(3, _stop)
 
     APP.run_forever()
