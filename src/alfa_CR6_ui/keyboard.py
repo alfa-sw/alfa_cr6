@@ -61,21 +61,12 @@ class Keyboard(QWidget):
         if not has_evdev:
             return ""
 
-        ev_dict = {
-            'q': e.KEY_Q,
-            'w': e.KEY_W,
-            'e': e.KEY_E,
-            'r': e.KEY_R,
-            't': e.KEY_T,
-            'y': e.KEY_Y,
-            'u': e.KEY_U,
-            'i': e.KEY_I,
-            'o': e.KEY_O,
-            'p': e.KEY_P,
-            'c': e.KEY_C,
-            'd': e.KEY_D
+        ev_dict = {  # for chars not handled by e.kEY_<key>
         }
-        r = ev_dict.get(el, 0)
+        try:
+            r = e.ecodes['KEY_' + el.upper().split('\n')[-1]]
+        except BaseException:
+            r = ev_dict.get(el, 0)
         return r
 
     def on_pushButton_clicked(self, name):
