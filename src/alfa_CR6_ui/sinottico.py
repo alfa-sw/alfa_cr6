@@ -158,12 +158,11 @@ class Sinottico(QWidget):
                         Button('Stop rulliera', 'stop_r', 'm1'),
                         Button('Start "step 1"', 'start_s', 'm1'),
                         Button('Start "step 1 -step2"', 'start_s12', 'm1'),
-                        Button('Lettura barcode', 'read', 'barcode'),
                     ],
                     "status":[
-                        StatusItem('Stato FTC_1', 'photocells_status', 'flag', 0, 'm1', []),
-                        StatusItem('Stato MS_5', 'photocells_status', 'flag', 9, 'm1', []),
-                        StatusItem('Stato MS_5', 'photocells_status', 'flag', 10, 'm1', []),
+                        StatusItem('Stato FTC_1', 'jar_photocells_status', 'flag', 0, 'm1', []),
+                        StatusItem('Stato MS_5', 'jar_photocells_status', 'flag', 9, 'm1', []),
+                        StatusItem('Stato MS_6', 'jar_photocells_status', 'flag', 10, 'm1', []),
                         StatusItem('Barcode', 'status_level', 'string', -1, 'm1', []),  # TODO read actual barcode
                     ]
                 },
@@ -178,7 +177,7 @@ class Sinottico(QWidget):
                         Button('Start "step 2 -step3"', 'start_s23', 'm1'),
                     ],
                     "status":[
-                        StatusItem('Stato FTC_2', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato FTC_2', 'jar_photocells_status', 'flag', 8, 'm1', []),
                         StatusItem('Stato CP_1', 'container_presence', 'bool', -1, 'm1', []),
                     ]
                 },
@@ -196,7 +195,7 @@ class Sinottico(QWidget):
                         Button('Start "step 9 -step10"', 'start_s910', 'm1'),
                     ],
                     "status":[
-                        StatusItem('Stato FTC_8', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato FTC_8', 'jar_photocells_status', 'flag', 8, 'm1', []),
                         StatusItem('Stato CP_2', 'container_presence', 'bool', -1, 'm1', []),
                     ]
                 },
@@ -213,7 +212,7 @@ class Sinottico(QWidget):
                         Button('Start "step 3 -step4"', 'start_s34', 'm1'),
                     ],
                     "status":[
-                        StatusItem('Stato FTC_3', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato FTC_3', 'jar_photocells_status', 'flag', 8, 'm1', []),
                         StatusItem('Stato CP_3', 'container_presence', 'bool', -1, 'm1', []),
                     ]
                 },
@@ -230,7 +229,7 @@ class Sinottico(QWidget):
                         Button('Start "step 8 -step4"', 'start_s34', 'm1'),
                     ],
                     "status":[
-                        StatusItem('Stato FTC_7', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato FTC_7', 'jar_photocells_status', 'flag', 8, 'm1', []),
                         StatusItem('Stato CP_4', 'container_presence', 'bool', -1, 'm1', []),
                     ]
                 },
@@ -247,7 +246,7 @@ class Sinottico(QWidget):
                         Button('Start "step 4 -step5"', 'start_s34', 'm1'),
                     ],
                     "status":[
-                        StatusItem('Stato FTC_4', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato FTC_4', 'jar_photocells_status', 'flag', 8, 'm1', []),
                         StatusItem('Stato CP_5', 'container_presence', 'bool', -1, 'm1', []),
                     ]
                 },
@@ -264,7 +263,7 @@ class Sinottico(QWidget):
                         Button('Start "step 7 -step8"', 'start_s34', 'm1'),
                     ],
                     "status":[
-                        StatusItem('Stato FTC_6', 'photocells_status', 'flag', 8, 'm1', []),
+                        StatusItem('Stato FTC_6', 'jar_photocells_status', 'flag', 8, 'm1', []),
                         StatusItem('Stato CP_6', 'container_presence', 'bool', -1, 'm1', []),
                     ]
                 },
