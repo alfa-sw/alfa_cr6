@@ -27,10 +27,10 @@ class ChromeWidget(QWidget):
 
     @QtCore.pyqtSlot("QWebEngineDownloadItem*")
     def on_downloadRequested(self, download):
-        path="/opt/alfa_cr6/data/kcc"
+        path = "/opt/alfa_cr6/data/kcc"
         fname = download.url().path().split("/")[-1]
         if not os.path.exists(path):
             os.makedirs(path)
-        download.setPath(path+'/'+fname+'.json')
+        download.setPath(path + '/' + fname + '.json')
         download.accept()
-        #TODO add callback and feedback on successful download
+        # TODO add callback and feedback on successful download
