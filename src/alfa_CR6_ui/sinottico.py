@@ -35,6 +35,7 @@ class Sinottico(QWidget):
         loadUi(QApplication.instance().ui_path + "/sinottico.ui", self)
 
         self.init_defs()
+        self.add_data()
         self.home_btn.clicked.connect(self.onHomeBtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
@@ -45,15 +46,9 @@ class Sinottico(QWidget):
     def move_mainview(self, view):
         self.main_view_stack.setCurrentWidget(view)
 
-    def update_data(self, head_index, status):
-
-        logging.debug("head_index:{}, status:{}".format(head_index, status))
-
-        machine_status = status
-
-        for update_obj in self.defs[head_index]:
-            if update_obj['first_update']:
-                update_obj['first_update'] = False
+    def add_data(self):
+        for head_index in range(len(self.defs)):
+            for update_obj in self.defs[head_index]:
                 for button in update_obj['buttons']:
                     btn = QPushButton(button.label)
                     btn.setFont(QFont('Times', 35))
@@ -64,15 +59,11 @@ class Sinottico(QWidget):
                     label.setFixedHeight(25)
                     result = QLabel('')
                     if (statusItem.type == 'string'):
-                        result = QLabel(machine_status[statusItem.path])
+                        result = QLabel("")
                         result.setFixedHeight(25)
                         statusItem.current.append(result)
                     elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
                         on = 0
-                        if statusItem.type == 'flag':
-                            on = machine_status[statusItem.path] >> statusItem.flagno & 1
-                        else:
-                            on = machine_status[statusItem.path]
                         result = QLabel('')
                         pscaled = self.get_pscaled(on)
                         result.setPixmap(pscaled)
@@ -80,18 +71,25 @@ class Sinottico(QWidget):
                         statusItem.current.append(result)
                     update_obj['view'].status.addWidget(label, n, 0)
                     update_obj['view'].status.addWidget(result, n, 1)
-            else:
-                for statusItem in update_obj['status']:
-                    if (statusItem.type == 'string'):
-                        statusItem.current[0].setText(machine_status[statusItem.path])
-                    elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
-                        on = 0
-                        if statusItem.type == 'flag':
-                            on = machine_status[statusItem.path] >> statusItem.flagno & 1
-                        else:
-                            on = machine_status[statusItem.path]
-                        pscaled = self.get_pscaled(on)
-                        statusItem.current[0].setPixmap(pscaled)
+
+    def update_data(self, head_index, status):
+
+        logging.debug("head_index:{}, status:{}".format(head_index, status))
+
+        machine_status = status
+
+        for update_obj in self.defs[head_index]:
+            for statusItem in update_obj['status']:
+                if (statusItem.type == 'string'):
+                    statusItem.current[0].setText(machine_status[statusItem.path])
+                elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
+                    on = 0
+                    if statusItem.type == 'flag':
+                        on = machine_status[statusItem.path] >> statusItem.flagno & 1
+                    else:
+                        on = machine_status[statusItem.path]
+                    pscaled = self.get_pscaled(on)
+                    statusItem.current[0].setPixmap(pscaled)
 
         for status_obj in self.status_defs[head_index]:
             if status_obj.type == "string":
