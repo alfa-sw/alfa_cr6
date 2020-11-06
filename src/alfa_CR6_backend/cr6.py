@@ -16,6 +16,7 @@ import json
 import types
 
 from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
+from PyQt5.QtCore import pyqtSignal         # pylint: disable=no-name-in-module
 
 try:
     import evdev                                # pylint: disable=import-error
@@ -28,10 +29,13 @@ import async_timeout                        # pylint: disable=import-error
 
 
 from alfa_CR6_ui.main_window import MainWindow
+from alfa_CR6_ui.debug_status_view import DebugStatusView
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+DISABLE_FEED_JAR_IN_INPUT = True
 
 
 def _get_version():
@@ -143,7 +147,10 @@ def handle_exception(e, ui_msg=None, db_event=None):
 
 class MachineHead(object):           # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, websocket=None, ip_add=None):
+    def __init__(self, index, websocket=None, ip_add=None):
+
+        self.index = index
+        self.name = QApplication.instance().MACHINE_HEAD_INDEX_TO_NAME_MAP[index]
 
         self.websocket = websocket
         self.ip_add = ip_add
@@ -156,7 +163,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
     def on_cmd_answer(self, answer):
 
-        logging.warning(f"self:{self}, answer:{answer}")
+        QApplication.instance().onCmdAnswer.emit(self.index, answer)
+        logging.debug(f"self:{self}, answer:{answer}")
+
+    async def do_dispense(self, jar):
+
+        logging.warning("self:{}, index:{}, jar:{}".format(self, self.index, jar))
+        # TODO: check jar order and dispense, if due
+        return await asyncio.sleep(1)
 
     async def update_pipes(self):
 
@@ -175,29 +189,29 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         if status.get('photocells_status'):
             self.photocells_status = {
-                'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001,
-                'THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL': status['photocells_status'] & 0x002,
-                'THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL': status['photocells_status'] & 0x004,
-                'THOR TABLE_PHOTOCELL': status['photocells_status'] & 0x008,
-                'THOR VALVE_OPEN_PHOTOCELL': status['photocells_status'] & 0x010,
-                'THOR AUTOCAP_CLOSE_PHOTOCELL': status['photocells_status'] & 0x020,
-                'THOR AUTOCAP_OPEN_PHOTOCELL': status['photocells_status'] & 0x040,
-                'THOR BRUSH_PHOTOCELL': status['photocells_status'] & 0x080,
+                'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001 and 1,
+                'THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL': status['photocells_status'] & 0x002 and 1,
+                'THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL': status['photocells_status'] & 0x004 and 1,
+                'THOR TABLE_PHOTOCELL': status['photocells_status'] & 0x008 and 1,
+                'THOR VALVE_OPEN_PHOTOCELL': status['photocells_status'] & 0x010 and 1,
+                'THOR AUTOCAP_CLOSE_PHOTOCELL': status['photocells_status'] & 0x020 and 1,
+                'THOR AUTOCAP_OPEN_PHOTOCELL': status['photocells_status'] & 0x040 and 1,
+                'THOR BRUSH_PHOTOCELL': status['photocells_status'] & 0x080 and 1,
             }
 
         if status.get('jar_photocells_status'):
             self.jar_photocells_status = {
-                'JAR_INPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x001,
-                'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x002,
-                'JAR_OUTPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x004,
-                'LOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x008,
-                'LOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x010,
-                'UNLOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x020,
-                'UNLOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x040,
-                'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x080,
-                'JAR_DISPENSING_POSITION_PHOTOCELL': status['jar_photocells_status'] & 0x100,
-                'JAR_DETECTION_MICROSWITCH_1': status['jar_photocells_status'] & 0x200,
-                'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400,
+                'JAR_INPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x001 and 1,
+                'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x002 and 1,
+                'JAR_OUTPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x004 and 1,
+                'LOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x008 and 1,
+                'LOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x010 and 1,
+                'UNLOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x020 and 1,
+                'UNLOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x040 and 1,
+                'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x080 and 1,
+                'JAR_DISPENSING_POSITION_PHOTOCELL': status['jar_photocells_status'] & 0x100 and 1,
+                'JAR_DETECTION_MICROSWITCH_1': status['jar_photocells_status'] & 0x200 and 1,
+                'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400 and 1,
             }
 
             self.jar_size_detect = (
@@ -250,6 +264,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                     'msg_out_dict': {'command': cmd_name, 'params': params},
                 }
                 logging.info(f"cmd_name:{cmd_name}, params:{params}, channel:{channel}")
+                # ~ await self.websocket.send(json.dumps(msg))
                 t = self.websocket.send(json.dumps(msg))
                 asyncio.ensure_future(t)
 
@@ -261,8 +276,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         if self.aiohttp_clientsession:
             await self.aiohttp_clientsession.close()
 
-    def can_movement(self, params=None):
-
+    async def can_movement(self, params=None):
         """ extracted from doc/Specifiche_Funzionamento_Car_Refinishing_REV12.pdf :
         (Please, verify current version of the doc)
 
@@ -284,12 +298,42 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         Photocell transition LIGHT – DARK, 2 = Start Movement CCW till Photocell transition DARK - LIGHT with a
         Delay', 3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
 
-        """ 
+        """
         default = {'Dispensing_Roller': 0, 'Lifter_Roller': 0, 'Input_Roller': 0, 'Lifter': 0, 'Output_Roller': 0}
         if params:
             default.update(params)
 
         self.send_command('CAN_MOVEMENT', default)
+
+        logging.warning("CAN_MOVEMENT index:{}, {}".format(self.index, default))
+
+    def load_lifter_up(self):
+        flag = self.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+        return flag
+
+    def load_lifter_down(self):
+        flag = self.jar_photocells_status.get('LOAD_LIFTER_DOWN_PHOTOCELL')
+        return flag
+
+    def unload_lifter_available(self):
+
+        flag = not self.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL')
+        return flag
+
+    def unload_lifter_busy(self):
+
+        flag = self.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL')
+        return flag
+
+    def load_lifter_available(self):
+
+        flag = not self.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL')
+        return flag
+
+    def load_lifter_busy(self):
+
+        flag = self.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL')
+        return flag
 
     def dispense_position_busy(self):
 
@@ -299,9 +343,30 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     def dispense_position_available(self):
 
         flag = not self.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL')
-        flag = flag and not self.status.get('status_level') == 'JAR_POSITIONING'
-        flag = flag and not self.status.get('container_presence')
+        # ~ flag = flag and not self.status.get('status_level') == 'JAR_POSITIONING'
+        # ~ flag = flag and not self.status.get('container_presence')
         return flag
+
+    def output_roller_busy(self):
+
+        flag = self.jar_photocells_status.get('JAR_OUTPUT_ROLLER_PHOTOCELL')
+        return flag
+
+    def output_roller_available(self):
+
+        flag = not self.jar_photocells_status.get('JAR_OUTPUT_ROLLER_PHOTOCELL')
+        return flag
+
+    def input_roller_busy(self):
+
+        flag = self.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL')
+        return flag
+
+    def input_roller_available(self):
+
+        flag = not self.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL')
+        return flag
+
 
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
@@ -319,6 +384,18 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         'KEY_9': '9',
         'KEY_0': '0',
     }
+
+    MACHINE_HEAD_INDEX_TO_NAME_MAP = {
+        0: "A_TOP_LEFT",
+        1: "F_BOTM_LEFT",
+        2: "B_TOP_CENTER",
+        3: "E_BOTM_CENTER",
+        4: "C_TOP_RIGHT",
+        5: "D_BOTM_RIGHT",
+    }
+
+    onHeadStatusChanged = pyqtSignal(int)
+    onCmdAnswer = pyqtSignal(int, dict)
 
     def __init__(self, *args, **kwargs):
 
@@ -355,6 +432,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.__init_tasks()
 
         self.main_window = MainWindow()
+        # ~ self.debug_status_view = DebugStatusView()
+        self.debug_status_view = None
 
     def __init_tasks(self):
 
@@ -370,6 +449,28 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             self.__tasks += [self.__mockup_task(head_index, status_file_name), ]
 
         logging.debug(f"self.__tasks:{self.__tasks}")
+
+    def __close_tasks(self, ):
+
+        for m in self.machine_head_dict.values():
+            try:
+                asyncio.get_event_loop().run_until_complete(m.close())
+            except Exception as e:                           # pylint: disable=broad-except
+                handle_exception(e)
+
+        for t in self.__runners[:] + [r for r in self.__jar_runners.values()]:
+            try:
+                t.cancel()
+
+                async def _coro(_):
+                    await _
+                asyncio.get_event_loop().run_until_complete(_coro(t))
+                # ~ asyncio.get_event_loop().run_until_complete(t.cancel())
+            except asyncio.CancelledError:
+                logging.info(f"{ t } has been canceled now.")
+
+        self.__runners = []
+        self.__jar_runners = []
 
     async def __barcode_read_task(self, dev_index, barcode_device_name):
 
@@ -415,8 +516,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
                 await asyncio.sleep(self.__inner_loop_task_step)
 
-            asyncio.get_event_loop().stop()
-
         except asyncio.CancelledError:
             pass
         except Exception as e:                           # pylint: disable=broad-except
@@ -427,7 +526,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         ws_url = f"ws://{ ip_add }:11000/device:machine:status"
 
         try:
-            self.machine_head_dict[head_index] = MachineHead(websocket=None, ip_add=ip_add)
+            self.machine_head_dict[head_index] = MachineHead(head_index, websocket=None, ip_add=ip_add)
             async with websockets.connect(ws_url) as websocket:
                 self.machine_head_dict[head_index].websocket = websocket
                 while self.run_flag:
@@ -460,7 +559,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                         status = dict(status)
 
                         if not self.machine_head_dict.get(head_index):
-                            self.machine_head_dict[head_index] = MachineHead()
+                            self.machine_head_dict[head_index] = MachineHead(head_index)
 
                         self.__on_head_status_changed(head_index, status)
 
@@ -478,12 +577,14 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         try:
             for m in self.machine_head_dict.values():
-                if not m.pipe_list:
-                    await m.update_pipes()
+
+                # TODO: use cached vals, if present
+                await m.update_pipes()
         except Exception as e:                           # pylint: disable=broad-except
             handle_exception(e)
 
-    async def __on_barcode_read(self, dev_index, barcode):     # pylint: disable=no-self-use
+    async def __on_barcode_read(self, dev_index, barcode,         # pylint: disable=no-self-use
+                                skip_checks=False):     # debug only
 
         await self.__update_machine_head_pipes()
 
@@ -492,18 +593,16 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             order_nr, index = decompile_barcode(barcode)
             logging.debug("order_nr:{}, index:{}".format(order_nr, index))
 
-            q = self.db_session.query(Jar).filter(Jar.index == index)
-            q = q.join(Order).filter((Order.order_nr == order_nr))
-            jar = q.one()
+            if skip_checks:
+                q = self.db_session.query(Jar)
+                jar = q.first()
+            else:
+                q = self.db_session.query(Jar).filter(Jar.index == index)
+                q = q.join(Order).filter((Order.order_nr == order_nr))
+                jar = q.one()
 
-            def condition():
-                return self.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL']
-
-            ret = await self.wait_for_condition(condition=condition, timeout=3)
-            assert ret, "timeout waiting for JAR_INPUT_ROLLER_PHOTOCELL engagement"
-
-            sz = self.machine_head_dict[0].jar_size_detect
-            assert jar.size == sz, "{} != {}".format(jar.size, sz)
+                sz = self.machine_head_dict[0].jar_size_detect
+                assert jar.size == sz, "{} != {}".format(jar.size, sz)
 
             # let's run a task that will manage the jar through the entire path inside the system
             t = self.__jar_task(jar)
@@ -518,39 +617,44 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         try:
 
+            def condition():
+                return self.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL']
+            await self.wait_for_condition(condition=condition, timeout=3, msg="JAR_INPUT_ROLLER_PHOTOCELL engagement")
+
             jar.status = 'PROGRESS'
             jar.position = 'step_1'
 
-            # TODO: if available, move to step_2:
-            # ~ while (step_2 not available): wait, if timeout: set jar.status = ERROR
-            # ~ send roller_move comand
-            # ~ while (not roller_status is moving): wait
-            # ~ while (FTC_1): wait, if timeout: set jar.status = ERROR
-            # ~ set jar.position = 'moving between 1 and 2'
-            # ~ while (roller_status is moving): wait, if timeout: set jar.status = ERROR
-            # ~ while (not FTC_2): wait, if timeout: set jar.status = ERROR
-            # ~ set jar.position = 'FTC_2'
+            await self.wait_for_condition(self.machine_head_dict[0].dispense_position_available, timeout=5, msg="head 0 dispense_position_available")
 
-            r = await self.wait_for_condition(self.machine_head_dict[0].dispense_position_available, timeout=3 * 60)
-            if not r:
-                raise Exception("timeout waiting head 0 dispense_position_available")
             self.machine_head_dict[0].can_movement({'Input_Roller': 0})
-            self.machine_head_dict[0].can_movement({'Input_Roller': 2})
-            self.machine_head_dict[0].can_movement({'Dispensing_Roller': 2})
-            jar.status = 'step_1,step_2'
-            await self.wait_for_condition(self.machine_head_dict[0].dispense_position_busy, timeout=3 * 60)
-            if not r:
-                raise Exception("timeout waiting head 0 dispense_position_busy")
+            self.machine_head_dict[0].can_movement({'Input_Roller': 2, 'Dispensing_Roller': 2})
+            jar.position = 'step_1,step_2'
+            await self.wait_for_condition(self.machine_head_dict[0].dispense_position_busy, timeout=5, msg="head 0 dispense_position_busy")
+
+            await self.machine_head_dict[0].do_dispense(jar)
+
+            await self.wait_for_condition(self.machine_head_dict[2].dispense_position_available, timeout=3 * 60, msg="head 2 dispense_position_available")
+            self.machine_head_dict[0].can_movement({'Dispensing_Roller': 1})
+            self.machine_head_dict[2].can_movement({'Dispensing_Roller': 2})
+            await self.wait_for_condition(self.machine_head_dict[2].dispense_position_busy, timeout=3 * 60, msg="timeout waiting head 2 dispense_position_busy")
+            self.machine_head_dict[0].can_movement({'Dispensing_Roller': 0})
+
+            await self.machine_head_dict[2].do_dispense(jar)
+
+            await self.wait_for_condition(self.machine_head_dict[4].dispense_position_available, timeout=3 * 60, msg="head 4 dispense_position_available")
+            self.machine_head_dict[2].can_movement({'Dispensing_Roller': 1})
+            self.machine_head_dict[4].can_movement({'Dispensing_Roller': 2})
+            await self.wait_for_condition(self.machine_head_dict[4].dispense_position_busy, timeout=3 * 60, msg="head 4 dispense_position_busy")
+            self.machine_head_dict[2].can_movement({'Dispensing_Roller': 0})
+
+            await self.machine_head_dict[4].do_dispense(jar)
 
             # TODO: move through the sequence of positions till the end:
             # ~ for p in [f"FTC_{i}" for i in range(2,10)]:
             # ~ if due, do; then, if available, move on or set jar.status = ERROR
             # ~ if FTC_10 deliver and set jar.status = DONE
 
-            import random
-            await asyncio.sleep(2 + random.randint(1, 5))    # TODO: remove this
-
-            jar.status = 'DONE'
+            # ~ jar.status = 'DONE'
 
         except asyncio.CancelledError:
             jar.status = 'ERROR'
@@ -566,13 +670,15 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __feed_jar_in_input(self, last_time):
 
-        t = time.time()
-        if t - last_time > 10:
-            last_time = t
-            if self.machine_head_dict.get(0):
-                if not self.machine_head_dict[0].jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL'):
-                    self.machine_head_dict[0].can_movement({'Input_Roller': 0})
-                    self.machine_head_dict[0].can_movement({'Input_Roller': 2})
+        last_time = None
+        if not DISABLE_FEED_JAR_IN_INPUT:
+            t = time.time()
+            if t - last_time > 10:
+                last_time = t
+                if self.machine_head_dict.get(0):
+                    if not self.machine_head_dict[0].jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL'):
+                        self.machine_head_dict[0].can_movement({'Input_Roller': 0})
+                        self.machine_head_dict[0].can_movement({'Input_Roller': 2})
         return last_time
 
     def __clock_tick(self):
@@ -604,30 +710,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 self.machine_head_dict[head_index].update_status(status)
                 self.main_window.sinottico.update_data(head_index, status)
 
-    def __close(self, ):
+            self.onHeadStatusChanged.emit(head_index)
+
+    def get_machine_head_by_letter(self, letter):          # pylint: disable=inconsistent-return-statements
 
         for m in self.machine_head_dict.values():
-            try:
-                asyncio.get_event_loop().run_until_complete(m.close())
-            except Exception as e:                           # pylint: disable=broad-except
-                handle_exception(e)
-
-        for t in self.__runners[:] + [r for r in self.__jar_runners.values()]:
-            try:
-                t.cancel()
-
-                async def _coro(_):
-                    await _
-                asyncio.get_event_loop().run_until_complete(_coro(t))
-                # ~ asyncio.get_event_loop().run_until_complete(t.cancel())
-            except asyncio.CancelledError:
-                logging.info(f"{ t } has been canceled now.")
-
-        self.__runners = []
-        self.__jar_runners = []
-
-        asyncio.get_event_loop().run_until_complete(asyncio.get_event_loop().shutdown_asyncgens())
-        asyncio.get_event_loop().close()
+            if m. name[0] == letter:
+                return m
 
     def get_version(self):
 
@@ -651,7 +740,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             handle_exception(e)
 
         finally:
-            self.__close()
+
+            self.__close_tasks()
+
+        asyncio.get_event_loop().stop()
+        asyncio.get_event_loop().run_until_complete(asyncio.get_event_loop().shutdown_asyncgens())
+        asyncio.get_event_loop().close()
+
 
     def create_order(self, path_to_json_file, json_schema_name="KCC", n_of_jars=1):
 
@@ -672,16 +767,24 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return order
 
-    async def wait_for_condition(self, condition, *args, timeout=5, timestep=.5):
+    async def wait_for_condition(self, condition, *args, timeout=5, timestep=.5, msg=None):
+        ret = False
         t0 = time.time()
         while time.time() - t0 < timeout:
             if condition(*args):
-                return True
-            await asyncio.sleep(timestep)
-            if self.suspend_all_timeouts:
-                t0 += timestep
+                ret = True
+                break
+            else:
+                await asyncio.sleep(timestep)
+                if self.suspend_all_timeouts:
+                    t0 += timestep
 
-        return False
+        if not ret and msg:
+            raise Exception("Timeout on waiting for: {}.".format(msg))
+
+        logging.warning("ret:{} msg:{}".format(ret, msg))
+
+        return ret
 
 
 def main():

@@ -22,7 +22,7 @@ class Keyboard(QWidget):
         super().__init__(parent)
         with open(QApplication.instance().keyboard_path + "/it.json", 'r') as keyboard_json:
             keyboard_def = json.load(keyboard_json)
-        print(keyboard_def)
+        # ~ print(keyboard_def)
         yadd = 0
         for y, row in enumerate(keyboard_def):
             x = 0

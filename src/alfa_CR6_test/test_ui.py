@@ -13,6 +13,7 @@ import traceback
 import asyncio
 
 import alfa_CR6_backend.cr6
+from alfa_CR6_ui.debug_status_view import DebugStatusView
 
 fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=fmt_)
@@ -53,14 +54,15 @@ def test_all():
     set_settings()
 
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
+    APP.debug_status_view = DebugStatusView()
 
     def _stop():
         logging.warning("Stopping execution.")
         raise KeyboardInterrupt
 
-    asyncio.get_event_loop().call_later(1, APP.main_window.login_btn.click)
+    asyncio.get_event_loop().call_later(.5, APP.main_window.login_btn.click)
     # ~ asyncio.get_event_loop().call_later(2, APP.main_window.sinottico.jarInputPressed)
-    asyncio.get_event_loop().call_later(3, _stop)
+    # ~ asyncio.get_event_loop().call_later(3, _stop)
 
     APP.run_forever()
 
