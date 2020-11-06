@@ -17,9 +17,10 @@ from alfa_CR6_ui.keyboard import Keyboard
 from alfa_CR6_ui.jar import Jar
 from collections import namedtuple
 
-Button = namedtuple('Button', 'label action target')
+Button = namedtuple('Button', 'label actions')
 StatusItem = namedtuple('StatusItem', 'label path type flagno source current')
 StatusViewItem = namedtuple('StatusViewItem', 'path type source')
+Action = namedtuple('Action', 'target, key, param')
 
 
 class Sinottico(QWidget):
@@ -28,11 +29,13 @@ class Sinottico(QWidget):
     visual = "none"
     defs = []
     status_defs = []
+    machine_head_dict = {}
 
     def __init__(self, parent=None):
 
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/sinottico.ui", self)
+        self.machine_head_dict = QApplication.instance().machine_head_dict
 
         self.init_defs()
         self.add_data()
@@ -53,6 +56,7 @@ class Sinottico(QWidget):
                     btn = QPushButton(button.label)
                     btn.setFont(QFont('Times', 35))
                     btn.setFixedHeight(50)
+                    btn.clicked.connect((lambda x: lambda: self.jar_button(x))(button.actions))
                     update_obj['view'].buttons.addWidget(btn)
                 for n, statusItem in enumerate(update_obj['status']):
                     label = QLabel(statusItem.label)
@@ -124,6 +128,10 @@ class Sinottico(QWidget):
         clickarea.mousePressEvent = lambda event: self.move_mainview(widget)
         return widget
 
+    def jar_button(self, actions):
+        for action in actions:
+            self.machine_head_dict[action.target].can_movement({action.key: action.param})
+
     def init_defs(self):
         self.status_defs = [
             [  # head 1
@@ -152,10 +160,11 @@ class Sinottico(QWidget):
                     "first_update": True,
                     "view": self.add_view(Jar(), self.jar_input),
                     "buttons": [
-                        Button('Start rulliera (MU_1)', 'start_r', 'm1'),
-                        Button('Stop rulliera', 'stop_r', 'm1'),
-                        Button('Start "step 1"', 'start_s', 'm1'),
-                        Button('Start "step 1 -step2"', 'start_s12', 'm1'),
+                        Button('Start rulliera (MU_1)', [Action(0, 'Input_Roller', 1)]),
+                        Button('Stop rulliera', [Action(0, 'Input_Roller', 0)]),
+                        Button('Start "step 1"', [Action(0, 'Input_Roller', 2)]),
+                        Button('Start "step 1 -step2"', [Action(0, 'Input_Roller', 2),
+                                                         Action(0, 'Dispensing_Roller', 2)]),
                     ],
                     "status":[
                         StatusItem('Stato FTC_1', 'jar_photocells_status', 'flag', 0, 'm1', []),
@@ -169,10 +178,10 @@ class Sinottico(QWidget):
                     "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t1),
                     "buttons": [
-                        Button('Start rulliera (MU_2)', 'start_r', 'm1'),
-                        Button('Stop rulliera', 'stop_r', 'm1'),
-                        Button('Start "step 2"', 'start_s', 'm1'),
-                        Button('Start "step 2 -step3"', 'start_s23', 'm1'),
+                        Button('Start rulliera (MU_2)', 'start_r'),
+                        Button('Stop rulliera', 'stop_r'),
+                        Button('Start "step 2"', 'start_s'),
+                        Button('Start "step 2 -step3"', 'start_s23'),
                     ],
                     "status":[
                         StatusItem('Stato FTC_2', 'jar_photocells_status', 'flag', 8, 'm1', []),
@@ -187,10 +196,10 @@ class Sinottico(QWidget):
                     "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t2),
                     "buttons": [
-                        Button('Start rulliera (MU_7)', 'start_r', 'm1'),
-                        Button('Stop rulliera', 'stop_r', 'm1'),
-                        Button('Start "step 9"', 'start_s', 'm1'),
-                        Button('Start "step 9 -step10"', 'start_s910', 'm1'),
+                        Button('Start rulliera (MU_7)', 'start_r'),
+                        Button('Stop rulliera', 'stop_r'),
+                        Button('Start "step 9"', 'start_s'),
+                        Button('Start "step 9 -step10"', 'start_s910'),
                     ],
                     "status":[
                         StatusItem('Stato FTC_8', 'jar_photocells_status', 'flag', 8, 'm1', []),
@@ -204,10 +213,10 @@ class Sinottico(QWidget):
                     "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t3),
                     "buttons": [
-                        Button('Start rulliera (MU_3)', 'start_r', 'm1'),
-                        Button('Stop rulliera', 'stop_r', 'm1'),
-                        Button('Start "step 3"', 'start_s', 'm1'),
-                        Button('Start "step 3 -step4"', 'start_s34', 'm1'),
+                        Button('Start rulliera (MU_3)', 'start_r'),
+                        Button('Stop rulliera', 'stop_r'),
+                        Button('Start "step 3"', 'start_s'),
+                        Button('Start "step 3 -step4"', 'start_s34'),
                     ],
                     "status":[
                         StatusItem('Stato FTC_3', 'jar_photocells_status', 'flag', 8, 'm1', []),
@@ -221,10 +230,10 @@ class Sinottico(QWidget):
                     "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t4),
                     "buttons": [
-                        Button('Start rulliera (MU_6)', 'start_r', 'm1'),
-                        Button('Stop rulliera', 'stop_r', 'm1'),
-                        Button('Start "step 8"', 'start_s', 'm1'),
-                        Button('Start "step 8 -step4"', 'start_s34', 'm1'),
+                        Button('Start rulliera (MU_6)', 'start_r'),
+                        Button('Stop rulliera', 'stop_r'),
+                        Button('Start "step 8"', 'start_s'),
+                        Button('Start "step 8 -step4"', 'start_s34'),
                     ],
                     "status":[
                         StatusItem('Stato FTC_7', 'jar_photocells_status', 'flag', 8, 'm1', []),
@@ -238,10 +247,10 @@ class Sinottico(QWidget):
                     "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t5),
                     "buttons": [
-                        Button('Start rulliera (MU_4)', 'start_r', 'm1'),
-                        Button('Stop rulliera', 'stop_r', 'm1'),
-                        Button('Start "step 4"', 'start_s', 'm1'),
-                        Button('Start "step 4 -step5"', 'start_s34', 'm1'),
+                        Button('Start rulliera (MU_4)', 'start_r'),
+                        Button('Stop rulliera', 'stop_r'),
+                        Button('Start "step 4"', 'start_s'),
+                        Button('Start "step 4 -step5"', 'start_s34'),
                     ],
                     "status":[
                         StatusItem('Stato FTC_4', 'jar_photocells_status', 'flag', 8, 'm1', []),
@@ -255,10 +264,10 @@ class Sinottico(QWidget):
                     "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t6),
                     "buttons": [
-                        Button('Start rulliera (MU_5)', 'start_r', 'm1'),
-                        Button('Stop rulliera', 'stop_r', 'm1'),
-                        Button('Start "step 7"', 'start_s', 'm1'),
-                        Button('Start "step 7 -step8"', 'start_s34', 'm1'),
+                        Button('Start rulliera (MU_5)', 'start_r'),
+                        Button('Stop rulliera', 'stop_r'),
+                        Button('Start "step 7"', 'start_s'),
+                        Button('Start "step 7 -step8"', 'start_s34'),
                     ],
                     "status":[
                         StatusItem('Stato FTC_6', 'jar_photocells_status', 'flag', 8, 'm1', []),
