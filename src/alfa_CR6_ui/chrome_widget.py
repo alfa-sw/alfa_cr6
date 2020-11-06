@@ -15,14 +15,14 @@ import os
 
 
 class ChromeWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, url="http://kccrefinish.co.kr"):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/chrome.ui", self)
         QWebEngineProfile.defaultProfile().downloadRequested.connect(
             self.on_downloadRequested
         )
         view = QWebEngineView(self)
-        view.setUrl(QUrl("http://kccrefinish.co.kr"))
+        view.setUrl(QUrl(url))
         view.resize(1920, 900)
 
     @QtCore.pyqtSlot("QWebEngineDownloadItem*")

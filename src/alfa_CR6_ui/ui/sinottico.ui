@@ -533,6 +533,32 @@
        <string/>
       </property>
      </widget>
+     <widget class="QPushButton" name="out_btn_start">
+      <property name="geometry">
+       <rect>
+        <x>40</x>
+        <y>330</y>
+        <width>112</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>start</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="out_btn_out">
+      <property name="geometry">
+       <rect>
+        <x>11</x>
+        <y>461</y>
+        <width>81</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>out</string>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="chrome">
      <widget class="QWidget" name="verticalLayoutWidget">

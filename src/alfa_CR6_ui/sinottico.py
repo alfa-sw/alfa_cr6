@@ -42,12 +42,30 @@ class Sinottico(QWidget):
         self.home_btn.clicked.connect(self.onHomeBtnClicked)
         self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
+        self.connect_status()
 
         self.keyboard = Keyboard()
         self.keyboard_position.addWidget(self.keyboard)
 
     def move_mainview(self, view):
         self.main_view_stack.setCurrentWidget(view)
+
+    def connect_status(self):
+        service_pages = {
+            '192.168.15.156:8080/service_page/': self.view_status_HEAD_1_STEP_2,
+            '192.168.15.19:8080/service_page/': self.view_status_HEAD_2_STEP_9,
+            '192.168.15.60:8080/service_page/': self.view_status_HEAD_3_STEP_3,
+            '192.168.15.61:8080/service_page/': self.view_status_HEAD_4_STEP_8,
+            '192.168.15.62:8080/service_page/': self.view_status_HEAD_5_STEP_4,
+            '192.168.15.170:8080/service_page/': self.view_status_HEAD_6_STEP_7
+        }
+        for key, value in service_pages.items():
+            value.clicked.connect((lambda x: lambda: self.openChrome(x))(key))
+
+            start_act = [Action(0, 'Input_Roller', 2)]
+            stop_act = [Action(6, 'output_Roller', 2)]
+            self.out_btn_start.clicked.connect(lambda: self.jar_button(start_act))
+            self.out_btn_out.clicked.connect(lambda: self.jar_button(start_act))
 
     def add_data(self):
         for head_index in range(len(self.defs)):
@@ -112,16 +130,19 @@ class Sinottico(QWidget):
             self.chrome_layout.removeWidget(self.view)
             self.browser = False
 
+    def openChrome(self, target):
+        self.browser = True
+        self.view = ChromeWidget(self, url=target)
+        self.chrome_layout.addWidget(self.view)
+        self.main_view_stack.setCurrentWidget(self.chrome)
+
     def onChromeBtnClicked(self):
         if self.browser:
             self.browser = False
             self.main_view_stack.setCurrentWidget(self.image_sinottico)
             self.chrome_layout.removeWidget(self.view)
         else:
-            self.browser = True
-            self.view = ChromeWidget(self)
-            self.chrome_layout.addWidget(self.view)
-            self.main_view_stack.setCurrentWidget(self.chrome)
+            self.openChrome("http://kccrefinish.co.kr")
 
     def add_view(self, widget, clickarea):
         self.main_view_stack.addWidget(widget)
