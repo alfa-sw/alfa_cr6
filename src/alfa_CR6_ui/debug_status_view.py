@@ -32,42 +32,43 @@ class DebugStatusView():
         self.buttons_frame.setStyleSheet("background-color: rgb(220, 220, 220)")
         self.button_group = QButtonGroup(parent=self.buttons_frame)
         for i, n in enumerate([
-            '01-02',
-            '02-03',
-            '03-04',
-            '04-05',
-            '05-06',
-            '06-07',
-            '07-08',
-            '08-09',
-            '09-10',
-            '10-11',
-            '11-12',
-            'StopAll',
+            ('01-02',   'IN -> A'), 
+            ('02-03',   'A -> B'),
+            ('03-04',   'B -> C'),
+            ('04-05',   'C -> UP'),
+            ('05-06',   'UP -> DOWN'),
+            ('06-07',   'DOWN -> D'),
+            ('07-08',   'D -> E'),
+            ('08-09',   'E -> F'),
+            ('09-10',   'F -> DOWN'),
+            ('10-11',   'DOWN -> UP'),
+            ('11-12',   'UP -> OUT'),
+            ('StopAll', 'A -> B'),
         ]):
 
-            b = QPushButton(n, parent=self.buttons_frame)
+            b = QPushButton(n[0], parent=self.buttons_frame)
             b.setGeometry(20 + i * 144, 0, 140, 60)
+            b.setToolTip(n[1])
             self.button_group.addButton(b)
 
-        for i, n in enumerate([
-            'reset_tasks',
-            '*',
-            '*',
-            '*',
-            '*',
-            '*',
-            '*',
-            '*',
-            '*',
-            '*',
-            '*',
-            '*',
-        ]):
+        # ~ for i, n in enumerate([
+            # ~ 'reset_tasks',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+            # ~ '*',
+        # ~ ]):
 
-            b = QPushButton(n, parent=self.buttons_frame)
-            b.setGeometry(20 + i * 144, 70, 140, 60)
-            self.button_group.addButton(b)
+            # ~ b = QPushButton(n, parent=self.buttons_frame)
+            # ~ b.setGeometry(20 + i * 144, 70, 140, 60)
+            # ~ self.button_group.addButton(b)
 
         self.text_browser = QTextBrowser(parent=self.main_frame)
         self.text_browser.setGeometry(20, 0, 1800, 680)
@@ -192,15 +193,28 @@ class DebugStatusView():
             E = app.get_machine_head_by_letter('E')
             F = app.get_machine_head_by_letter('F')
 
+            ('01-02',   'IN -> A'), 
+            ('02-03',   'A -> B'),
+            ('03-04',   'B -> C'),
+            ('04-05',   'C -> UP'),
+            ('05-06',   'UP -> DOWN'),
+            ('06-07',   'DOWN -> D'),
+            ('07-08',   'D -> E'),
+            ('08-09',   'E -> F'),
+            ('09-10',   'F -> DOWN'),
+            ('10-11',   'DOWN -> UP'),
+            ('11-12',   'UP -> OUT'),
+            ('StopAll', 'A -> B'),
+
             logging.warning(f"cmd_string:{cmd_string}")
-            if '01-02' in cmd_string:  # ->A
+            if '01-02' in cmd_string:  # 'IN -> A'
 
                 # ~ await app.wait_for_condition(A.input_roller_busy)
                 # ~ await app.wait_for_condition(A.dispense_position_available)
                 await A.can_movement({'Input_Roller': 1, 'Dispensing_Roller': 2})
                 await app.wait_for_condition(A.dispense_position_busy)
 
-            if '02-03' in cmd_string:  # A->B
+            if '02-03' in cmd_string:  # 'A -> B'
 
                 await app.wait_for_condition(B.dispense_position_available)
                 await A.can_movement({'Dispensing_Roller': 1, 'Input_Roller': 1})
@@ -208,7 +222,7 @@ class DebugStatusView():
                 await app.wait_for_condition(B.dispense_position_busy)
                 await A.can_movement()
 
-            if '03-04' in cmd_string:  # B->C
+            if '03-04' in cmd_string:  # 'B -> C'
 
                 await app.wait_for_condition(C.dispense_position_available)
                 await B.can_movement({'Dispensing_Roller': 1})
@@ -216,54 +230,45 @@ class DebugStatusView():
                 await app.wait_for_condition(C.dispense_position_busy)
                 await B.can_movement()
 
-            if '04-05' in cmd_string:  # C -> load_lifter
+            if '04-05' in cmd_string:  # 'C -> UP'
 
-                await app.wait_for_condition(D.load_lifter_available)
-                C.can_movement({'Dispensing_Roller': 1})
-                D.can_movement({'Lifter_Roller': 2})
-                await app.wait_for_condition(D.load_lifter_busy)
-                C.can_movement()
-
-            if '04-05' in cmd_string:  # lifter up -> lifter down
-
-                await app.wait_for_condition(D.load_lifter_available)
                 await app.wait_for_condition(D.load_lifter_up)
-                C.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 2})
-                await app.wait_for_condition(D.load_lifter_busy)
-                C.can_movement()
+                await app.wait_for_condition(C.load_lifter_available)
+                await C.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 2})
+                await app.wait_for_condition(C.load_lifter_busy)
 
-            if '05-06' in cmd_string:  # lifter down -> D
+            if '05-06' in cmd_string:  # 'UP -> DOWN'
 
-                D.can_movement({'Lifter': 2})
+                await D.can_movement({'Lifter': 2})
                 await app.wait_for_condition(D.load_lifter_down)
 
-            if '06-07' in cmd_string:  # D -> E
+            if '06-07' in cmd_string:  #  'DOWN -> D'
 
                 await app.wait_for_condition(D.dispense_position_available)
-                C.can_movement({'Lifter_Roller': 3})
-                D.can_movement({'Dispensing_Roller': 2})
+                await C.can_movement({'Lifter_Roller': 3})
+                await D.can_movement({'Dispensing_Roller': 2})
                 await app.wait_for_condition(D.dispense_position_busy)
-                C.can_movement()
-                D.can_movement({'Lifter': 1})
+                await C.can_movement()
+                await D.can_movement({'Lifter': 1})
                 await app.wait_for_condition(D.load_lifter_up)
 
-            if '07-08' in cmd_string:  # E -> E
+            if '07-08' in cmd_string:  #  'D -> E'
 
                 await app.wait_for_condition(E.dispense_position_available)
-                D.can_movement({'Dispensing_Roller': 1})
-                E.can_movement({'Dispensing_Roller': 2})
+                await D.can_movement({'Dispensing_Roller': 1})
+                await E.can_movement({'Dispensing_Roller': 2})
                 await app.wait_for_condition(E.dispense_position_busy)
-                D.can_movement()
+                await D.can_movement()
 
-            if '08-09' in cmd_string:
+            if '08-09' in cmd_string:  #  'E -> F'
 
                 await app.wait_for_condition(F.dispense_position_available)
-                E.can_movement({'Dispensing_Roller': 1})
-                F.can_movement({'Dispensing_Roller': 2})
+                await E.can_movement({'Dispensing_Roller': 1})
+                await F.can_movement({'Dispensing_Roller': 2})
                 await app.wait_for_condition(F.dispense_position_busy)
-                E.can_movement()
+                await E.can_movement()
 
-            if '09-10' in cmd_string:
+            if '09-10' in cmd_string:  #  'F -> DOWN'
                 # ~ """
                 # ~ Da STEP_9 a STEP_10
                 # ~ ATTESA ASSENZA Barattolo sulla Rulliera del Sollevatore di Uscita 'jar_photocells_status' – bit7 (JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL)
@@ -276,9 +281,9 @@ class DebugStatusView():
                 # ~ """
                 await app.wait_for_condition(F.unload_lifter_available)
                 await app.wait_for_condition(F.unload_lifter_down)
-                F.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 5})
+                await F.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 5})
 
-            if '10-11' in cmd_string:
+            if '10-11' in cmd_string:  #  'DOWN -> UP'
 
                 # ~ """
                     # ~ Il FW gestisce automaticamente lo spostamento del Sollevatore di Uscita sul Tutto Alto: il movimento
@@ -286,7 +291,7 @@ class DebugStatusView():
                 # ~ """
                 pass
 
-            if '11-12' in cmd_string:
+            if '11-12' in cmd_string:  #  'UP -> OUT'
 
                 # ~ """
                 # ~ Da STEP_11 a STEP_12
@@ -317,9 +322,10 @@ class DebugStatusView():
                 # ~ """
 
                 await app.wait_for_condition(F.output_roller_available)
-                F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})
+                await F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})
+                await app.wait_for_condition(F.output_roller_busy)
 
-            if 'StopAll' in cmd_string:
+            if 'StopAll' in cmd_string:#
                 await A.can_movement()
                 await B.can_movement()
                 await C.can_movement()
