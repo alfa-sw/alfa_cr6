@@ -32,17 +32,17 @@ class DebugStatusView():
         self.buttons_frame.setStyleSheet("background-color: rgb(220, 220, 220)")
         self.button_group = QButtonGroup(parent=self.buttons_frame)
         for i, n in enumerate([
-            ('01-02',   'IN -> A'), 
-            ('02-03',   'A -> B'),
-            ('03-04',   'B -> C'),
-            ('04-05',   'C -> UP'),
-            ('05-06',   'UP -> DOWN'),
-            ('06-07',   'DOWN -> D'),
-            ('07-08',   'D -> E'),
-            ('08-09',   'E -> F'),
-            ('09-10',   'F -> DOWN'),
-            ('10-11',   'DOWN -> UP'),
-            ('11-12',   'UP -> OUT'),
+            ('01-02', 'IN -> A'),
+            ('02-03', 'A -> B'),
+            ('03-04', 'B -> C'),
+            ('04-05', 'C -> UP'),
+            ('05-06', 'UP -> DOWN'),
+            ('06-07', 'DOWN -> D'),
+            ('07-08', 'D -> E'),
+            ('08-09', 'E -> F'),
+            ('09-10', 'F -> DOWN'),
+            ('10-11', 'DOWN -> UP'),
+            ('11-12', 'UP -> OUT'),
             ('StopAll', 'A -> B'),
         ]):
 
@@ -51,24 +51,24 @@ class DebugStatusView():
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
-        # ~ for i, n in enumerate([
-            # ~ 'reset_tasks',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-            # ~ '*',
-        # ~ ]):
+        for i, n in enumerate([
+            'feed',
+            'deliver',
+            'complete',
+            'read BC',
+            '*',
+            '*',
+            '*',
+            '*',
+            '*',
+            '*',
+            '*',
+            '*',
+        ]):
 
-            # ~ b = QPushButton(n, parent=self.buttons_frame)
-            # ~ b.setGeometry(20 + i * 144, 70, 140, 60)
-            # ~ self.button_group.addButton(b)
+            b = QPushButton(n, parent=self.buttons_frame)
+            b.setGeometry(20 + i * 144, 70, 140, 60)
+            self.button_group.addButton(b)
 
         self.text_browser = QTextBrowser(parent=self.main_frame)
         self.text_browser.setGeometry(20, 0, 1800, 680)
@@ -100,15 +100,48 @@ class DebugStatusView():
         os.system("chromium-browser {} &".format(url.url()))
 
     def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use
-        # ~ logging.warning(f"{btn}")
-        
+        logging.warning(f"{btn}")
+
         # ~ if 'reset_tasks' in btn.text():
-            # ~ app = QApplication.instance()
-            # ~ app.reset_tasks()
+        # ~ app = QApplication.instance()
+        # ~ app.reset_tasks()
         # ~ else:
+
+        if 'read BC' in btn.text():
+            app = QApplication.instance()
+            t = app._CR6_application__on_barcode_read(0, 23456, skip_checks=True)
+            asyncio.ensure_future(t)
+            logging.warning(f"t:{t}")
+
+        elif 'complete' in btn.text():
+
+            async def coro():
+
+                for i in [
+                    '01-02',
+                    '02-03',
+                    '03-04',
+                    '04-05',
+                    '05-06',
+                    '06-07',
+                    '07-08',
+                    '08-09',
+                    '09-10',
+                    '10-11',
+                    '11-12',
+                ]:
+                    await self.move_task(i)
+                    await asyncio.sleep(1)
+
+            try:
+                t = coro()
+                asyncio.ensure_future(t)
+            except BaseException:
+                logging.error(traceback.format_exc())
+
+        else:
             try:
                 t = self.move_task(btn.text())
-                # ~ logging.warning(f"{t}")
                 asyncio.ensure_future(t)
             except BaseException:
                 logging.error(traceback.format_exc())
@@ -181,157 +214,60 @@ class DebugStatusView():
 
     async def move_task(self, cmd_string):
 
+        app = QApplication.instance()
+
         try:
 
-            # ~ app = self
-            app = QApplication.instance()
-
-            A = app.get_machine_head_by_letter('A')
-            B = app.get_machine_head_by_letter('B')
-            C = app.get_machine_head_by_letter('C')
-            D = app.get_machine_head_by_letter('D')
-            E = app.get_machine_head_by_letter('E')
-            F = app.get_machine_head_by_letter('F')
-
-            ('01-02',   'IN -> A'), 
-            ('02-03',   'A -> B'),
-            ('03-04',   'B -> C'),
-            ('04-05',   'C -> UP'),
-            ('05-06',   'UP -> DOWN'),
-            ('06-07',   'DOWN -> D'),
-            ('07-08',   'D -> E'),
-            ('08-09',   'E -> F'),
-            ('09-10',   'F -> DOWN'),
-            ('10-11',   'DOWN -> UP'),
-            ('11-12',   'UP -> OUT'),
-            ('StopAll', 'A -> B'),
-
             logging.warning(f"cmd_string:{cmd_string}")
-            if '01-02' in cmd_string:  # 'IN -> A'
+            if 'feed' in cmd_string:  # ' -> IN'
+                await app.feed_to_IN()
 
-                # ~ await app.wait_for_condition(A.input_roller_busy)
-                # ~ await app.wait_for_condition(A.dispense_position_available)
-                await A.can_movement({'Input_Roller': 1, 'Dispensing_Roller': 2})
-                await app.wait_for_condition(A.dispense_position_busy)
+            if '01-02' in cmd_string:  # 'IN -> A'
+                await app.move_IN_A()
 
             if '02-03' in cmd_string:  # 'A -> B'
 
-                await app.wait_for_condition(B.dispense_position_available)
-                await A.can_movement({'Dispensing_Roller': 1, 'Input_Roller': 1})
-                await B.can_movement({'Dispensing_Roller': 2})
-                await app.wait_for_condition(B.dispense_position_busy)
-                await A.can_movement()
+                await app.move_A_B()
 
             if '03-04' in cmd_string:  # 'B -> C'
 
-                await app.wait_for_condition(C.dispense_position_available)
-                await B.can_movement({'Dispensing_Roller': 1})
-                await C.can_movement({'Dispensing_Roller': 2})
-                await app.wait_for_condition(C.dispense_position_busy)
-                await B.can_movement()
+                await app.move_B_C()
 
             if '04-05' in cmd_string:  # 'C -> UP'
 
-                await app.wait_for_condition(D.load_lifter_up)
-                await app.wait_for_condition(C.load_lifter_available)
-                await C.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 2})
-                await app.wait_for_condition(C.load_lifter_busy)
+                await app.move_C_UP()
 
             if '05-06' in cmd_string:  # 'UP -> DOWN'
 
-                await D.can_movement({'Lifter': 2})
-                await app.wait_for_condition(D.load_lifter_down)
+                await app.move_UP_DOWN_LEFT()
 
-            if '06-07' in cmd_string:  #  'DOWN -> D'
+            if '06-07' in cmd_string:  # 'DOWN -> D'
 
-                await app.wait_for_condition(D.dispense_position_available)
-                await C.can_movement({'Lifter_Roller': 3})
-                await D.can_movement({'Dispensing_Roller': 2})
-                await app.wait_for_condition(D.dispense_position_busy)
-                await C.can_movement()
-                await D.can_movement({'Lifter': 1})
-                await app.wait_for_condition(D.load_lifter_up)
+                await app.move_DOWN_D()
 
-            if '07-08' in cmd_string:  #  'D -> E'
+            if '07-08' in cmd_string:  # 'D -> E'
 
-                await app.wait_for_condition(E.dispense_position_available)
-                await D.can_movement({'Dispensing_Roller': 1})
-                await E.can_movement({'Dispensing_Roller': 2})
-                await app.wait_for_condition(E.dispense_position_busy)
-                await D.can_movement()
+                await app.move_D_E()
 
-            if '08-09' in cmd_string:  #  'E -> F'
+            if '08-09' in cmd_string:  # 'E -> F'
 
-                await app.wait_for_condition(F.dispense_position_available)
-                await E.can_movement({'Dispensing_Roller': 1})
-                await F.can_movement({'Dispensing_Roller': 2})
-                await app.wait_for_condition(F.dispense_position_busy)
-                await E.can_movement()
+                await app.move_E_F()
 
-            if '09-10' in cmd_string:  #  'F -> DOWN'
-                # ~ """
-                # ~ Da STEP_9 a STEP_10
-                # ~ ATTESA ASSENZA Barattolo sulla Rulliera del Sollevatore di Uscita 'jar_photocells_status' – bit7 (JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL)
-                # ~ ATTESA PRESENZA del Sollevatore di Uscita sul Tutto Basso 'jar_photocells_status' – bit5 (UNLOAD_LIFTER_DOWN_PHOTOCELL)
-                # ~ Invio comando alla TESTA2 di spostamento Barattolo sulla Rulliera del Sollevatore di Uscita:
-                    # ~ “CAN_MOVEMENT”: 'Dispensing_Roller' = 1, 'Lifter_Roller' = 5 (Start Movement CCW till Photocell
-                    # ~ transition LIGHT - DARK), 'Input_Roller' = 0, 'Lifter' = 0, ‘Output_Roller’ = 0
-                    # ~ Il FW quando rileva la PRESENZA del Barattolo sulla Rulliera del Sollevatore di Uscita arresta il
-                    # ~ movimento della Rulliera di Dispensazione e di quella del Sollevatore di Uscita.
-                # ~ """
-                await app.wait_for_condition(F.unload_lifter_available)
-                await app.wait_for_condition(F.unload_lifter_down)
-                await F.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 5})
+            if '09-10' in cmd_string:  # 'F -> DOWN'
 
-            if '10-11' in cmd_string:  #  'DOWN -> UP'
+                await app.move_F_DOWN()
 
-                # ~ """
-                    # ~ Il FW gestisce automaticamente lo spostamento del Sollevatore di Uscita sul Tutto Alto: il movimento
-                    # ~ si arresta automaticamente quando risulta
-                # ~ """
-                pass
+            if '10-11' in cmd_string:  # 'DOWN -> UP'
 
-            if '11-12' in cmd_string:  #  'UP -> OUT'
+                await app.move_DOWN_UP_RIGHT()
 
-                # ~ """
-                # ~ Da STEP_11 a STEP_12
-                # ~ Se sulla Rulliera di Uscita NON è presente un Barattolo, il FW attiva la Rulliera del Sollevatore di Uscita
-                # ~ e la Rulliera di Uscita fino a copertura della Fotocellula sulla Rulliera di Uscita. A questo punto Il FW
-                # ~ arresta il movimento della Rulliera del Sollevatore di Uscita e della Rulliera di Uscita. Il FW gestisce
-                # ~ automaticamente lo spostamento del Sollevatore di Uscita sul Tutto Basso: il movimento si arresta
-                # ~ automaticamente quando risulta oscurato il sensore di Tutto Basso 'jar_photocells_status' – bit5
-                # ~ (UNLOAD_LIFTER_DOWN_PHOTOCELL).
+            if '11-12' in cmd_string:  # 'UP -> OUT'
 
-                # ~ Se invece sulla Rulliera di Uscita è presente un Barattolo il processo termina. In quest’ultimo caso:
+                await app.move_UP_OUT()
 
-                # ~ ▪ Interrogazione Stato TESTA2: verifica ATTESA ASSENZA Barattolo sulla Rulliera di Uscita
-                # ~ 'jar_photocells_status' – bit2 (JAR_OUTPUT_ROLLER_PHOTOCELL) e che 'status_level' !=
-                # ~ 'JAR_POSITIONING'
-                # ~ ▪ Invio comando alla TESTA2 di spostamento Barattolo dalla Rulliera del Sollevatore di Uscita e di
-                # ~ spostamento Rulliera di Uscita fino a oscuramento della Fotocellula:
-                # ~ “CAN_MOVEMENT”: 'Dispensing_Roller' = 0, 'Lifter_Roller' = 3 (Start Movement CCW),
-                # ~ 'Input_Roller' = 0, 'Lifter' = 0, ‘Output_Roller’ = 1 (Start Movement CCW till Photocell transition
-                # ~ LIGHT – DARK)
-                # ~ ▪ Interrogazione Stato TESTA2: verifica ATTESA PRESENZA Barattolo sulla rulliera di Uscita
-                # ~ 'jar_photocells_status' – bit2 (JAR_OUTPUT_ROLLER_PHOTOCELL):
-                # ~ Il FW arresta il movimento della Rulliera del Sollevatore di Uscita e della Rulliera di Uscita.
-                # ~ Il FW gestisce automaticamente lo spostamento del Sollevatore di Scarico sul Tutto Basso: il
-                # ~ movimento si arresta automaticamente quando risulta oscurato il sensore di Tutto Basso
-                # ~ 'jar_photocells_status' – bit5 (UNLOAD_LIFTER_DOWN_PHOTOCELL)
+            if 'StopAll' in cmd_string:
 
-                # ~ """
-
-                await app.wait_for_condition(F.output_roller_available)
-                await F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})
-                await app.wait_for_condition(F.output_roller_busy)
-
-            if 'StopAll' in cmd_string:#
-                await A.can_movement()
-                await B.can_movement()
-                await C.can_movement()
-                await D.can_movement()
-                await E.can_movement()
-                await F.can_movement()
+                await app.stop_all()
 
         except Exception:                           # pylint: disable=broad-except
             logging.error(traceback.format_exc())

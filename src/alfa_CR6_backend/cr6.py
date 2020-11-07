@@ -29,14 +29,10 @@ import async_timeout                        # pylint: disable=import-error
 
 
 from alfa_CR6_ui.main_window import MainWindow
-from alfa_CR6_ui.debug_status_view import DebugStatusView
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 HERE = os.path.dirname(os.path.abspath(__file__))
-
-DISABLE_FEED_JAR_IN_INPUT = True
-
 
 def _get_version():
 
@@ -100,6 +96,8 @@ settings = types.SimpleNamespace(
     ],
 
     STORE_EXCEPTIONS_TO_DB_AS_DEFAULT=False,
+    DEFAULT_WAIT_FOR_TIMEOUT=90,
+    DISABLE_FEED_JAR_IN_INPUT=True,
 )
 
 
@@ -119,25 +117,23 @@ def parse_json_order(path_to_json_file, json_schema_name):
         return properties
 
 
-def handle_exception(e, ui_msg=None, db_event=None):
+def handle_exception(e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):
 
     # TODO: send alarm msg to Gui surface
 
     logging.error(traceback.format_exc())
 
-    if db_event is None:
-        db_event = settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT
-
     if db_event:
         a = QApplication.instance()
         if a and a.db_session:
             try:
+                descr = "{} {}".format(ui_msg, traceback.format_exc())
                 evnt = Event(
                     name=e,
                     level='ERROR',
                     severity='',
                     source='CR6_application',
-                    description=traceback.format_exc())
+                    description=descr)
                 a.db_session.add(evnt)
                 a.db_session.commit()
             except BaseException:
@@ -145,7 +141,7 @@ def handle_exception(e, ui_msg=None, db_event=None):
                 logging.error(traceback.format_exc())
 
 
-class MachineHead(object):           # pylint: disable=too-many-instance-attributes
+class MachineHead(object):           # pylint: disable=too-many-instance-attributes,too-many-public-methods
 
     def __init__(self, index, websocket=None, ip_add=None):
 
@@ -307,6 +303,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         logging.warning("CAN_MOVEMENT index:{}, {}".format(self.index, default))
 
+    def unload_lifter_up(self):
+        flag = self.jar_photocells_status.get('UNLOAD_LIFTER_UP_PHOTOCELL')
+        return flag
+
+    def unload_lifter_down(self):
+        flag = self.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
+        return flag
+
     def load_lifter_up(self):
         flag = self.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
         return flag
@@ -366,7 +370,6 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         flag = not self.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL')
         return flag
-
 
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
@@ -432,7 +435,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.__init_tasks()
 
         self.main_window = MainWindow()
-        # ~ self.debug_status_view = DebugStatusView()
+
         self.debug_status_view = None
 
     def __init_tasks(self):
@@ -512,7 +515,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
                 self.__clock_tick()    # timer events
 
-                _last_feed_jar_in_input_time = self.__feed_jar_in_input(_last_feed_jar_in_input_time)
+                if not settings.DISABLE_FEED_JAR_IN_INPUT:
+                    _last_feed_jar_in_input_time = self.__feed_jar_in_input(_last_feed_jar_in_input_time)
 
                 await asyncio.sleep(self.__inner_loop_task_step)
 
@@ -586,7 +590,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     async def __on_barcode_read(self, dev_index, barcode,         # pylint: disable=no-self-use
                                 skip_checks=False):     # debug only
 
-        await self.__update_machine_head_pipes()
+        # ~ await self.__update_machine_head_pipes()
 
         try:
             logging.debug("dev_index:{}, barcode:{}".format(dev_index, barcode))
@@ -617,44 +621,42 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         try:
 
-            def condition():
-                return self.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL']
-            await self.wait_for_condition(condition=condition, timeout=3, msg="JAR_INPUT_ROLLER_PHOTOCELL engagement")
-
             jar.status = 'PROGRESS'
-            jar.position = 'step_1'
-
-            await self.wait_for_condition(self.machine_head_dict[0].dispense_position_available, timeout=5, msg="head 0 dispense_position_available")
-
-            self.machine_head_dict[0].can_movement({'Input_Roller': 0})
-            self.machine_head_dict[0].can_movement({'Input_Roller': 2, 'Dispensing_Roller': 2})
-            jar.position = 'step_1,step_2'
-            await self.wait_for_condition(self.machine_head_dict[0].dispense_position_busy, timeout=5, msg="head 0 dispense_position_busy")
-
-            await self.machine_head_dict[0].do_dispense(jar)
-
-            await self.wait_for_condition(self.machine_head_dict[2].dispense_position_available, timeout=3 * 60, msg="head 2 dispense_position_available")
-            self.machine_head_dict[0].can_movement({'Dispensing_Roller': 1})
-            self.machine_head_dict[2].can_movement({'Dispensing_Roller': 2})
-            await self.wait_for_condition(self.machine_head_dict[2].dispense_position_busy, timeout=3 * 60, msg="timeout waiting head 2 dispense_position_busy")
-            self.machine_head_dict[0].can_movement({'Dispensing_Roller': 0})
-
-            await self.machine_head_dict[2].do_dispense(jar)
-
-            await self.wait_for_condition(self.machine_head_dict[4].dispense_position_available, timeout=3 * 60, msg="head 4 dispense_position_available")
-            self.machine_head_dict[2].can_movement({'Dispensing_Roller': 1})
-            self.machine_head_dict[4].can_movement({'Dispensing_Roller': 2})
-            await self.wait_for_condition(self.machine_head_dict[4].dispense_position_busy, timeout=3 * 60, msg="head 4 dispense_position_busy")
-            self.machine_head_dict[2].can_movement({'Dispensing_Roller': 0})
-
-            await self.machine_head_dict[4].do_dispense(jar)
-
-            # TODO: move through the sequence of positions till the end:
-            # ~ for p in [f"FTC_{i}" for i in range(2,10)]:
-            # ~ if due, do; then, if available, move on or set jar.status = ERROR
-            # ~ if FTC_10 deliver and set jar.status = DONE
-
-            # ~ jar.status = 'DONE'
+            await self.move_IN_A()
+            jar.position = 'A'
+            await self.get_machine_head_by_letter('A').do_dispense(jar)
+            jar.position = 'A_B'
+            await self.move_A_B()
+            jar.position = 'B'
+            await self.get_machine_head_by_letter('B').do_dispense(jar)
+            jar.position = 'B_C'
+            await self.move_B_C()
+            jar.position = 'C'
+            await self.get_machine_head_by_letter('C').do_dispense(jar)
+            jar.position = 'C_UP'
+            await self.move_C_UP()
+            jar.position = 'UP_LEFT'
+            await self.move_UP_DOWN_LEFT()
+            jar.position = 'UP_DOWN_LEFT'
+            await self.move_DOWN_D()
+            jar.position = 'D'
+            await self.get_machine_head_by_letter('D').do_dispense(jar)
+            jar.position = 'D_E'
+            await self.move_D_E()
+            jar.position = 'E'
+            await self.get_machine_head_by_letter('E').do_dispense(jar)
+            jar.position = 'E_F'
+            await self.move_E_F()
+            jar.position = 'F'
+            await self.get_machine_head_by_letter('F').do_dispense(jar)
+            jar.position = 'F_DOWN'
+            await self.move_F_DOWN()
+            jar.position = 'DOWN_RIGHT'
+            await self.move_DOWN_UP_RIGHT()
+            jar.position = 'DOWN_UP_RIGHT'
+            await self.move_UP_OUT()
+            jar.position = 'OUT'
+            jar.status = 'DONE'
 
         except asyncio.CancelledError:
             jar.status = 'ERROR'
@@ -671,14 +673,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     def __feed_jar_in_input(self, last_time):
 
         last_time = None
-        if not DISABLE_FEED_JAR_IN_INPUT:
-            t = time.time()
-            if t - last_time > 10:
-                last_time = t
-                if self.machine_head_dict.get(0):
-                    if not self.machine_head_dict[0].jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL'):
-                        self.machine_head_dict[0].can_movement({'Input_Roller': 0})
-                        self.machine_head_dict[0].can_movement({'Input_Roller': 2})
+        t = time.time()
+        if t - last_time > 10:
+            last_time = t
+            if self.machine_head_dict.get(0):
+                if not self.machine_head_dict[0].jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL'):
+                    self.machine_head_dict[0].can_movement({'Input_Roller': 0})
+                    self.machine_head_dict[0].can_movement({'Input_Roller': 2})
         return last_time
 
     def __clock_tick(self):
@@ -702,13 +703,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     def __on_head_status_changed(self, head_index, status):
 
         if self.machine_head_dict.get(head_index):
-            old_status = self.machine_head_dict[head_index].status
-            diff = {k: v for k, v in status.items() if v != old_status.get(k)}
-            if diff:
+            # ~ old_status = self.machine_head_dict[head_index].status
+            # ~ diff = {k: v for k, v in status.items() if v != old_status.get(k)}
+            # ~ if diff:
                 # ~ logging.warning("head_index:{}".format(head_index))
                 # ~ logging.warning("diff:{}".format(diff))
-                self.machine_head_dict[head_index].update_status(status)
-                self.main_window.sinottico.update_data(head_index, status)
+            self.machine_head_dict[head_index].update_status(status)
+            self.main_window.sinottico.update_data(head_index, status)
 
             self.onHeadStatusChanged.emit(head_index)
 
@@ -747,7 +748,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         asyncio.get_event_loop().run_until_complete(asyncio.get_event_loop().shutdown_asyncgens())
         asyncio.get_event_loop().close()
 
-
     def create_order(self, path_to_json_file, json_schema_name="KCC", n_of_jars=1):
 
         order = None
@@ -767,7 +767,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return order
 
-    async def wait_for_condition(self, condition, *args, timeout=5, timestep=.5, msg=None):
+    async def wait_for(self, condition, *args,
+                       timeout=settings.DEFAULT_WAIT_FOR_TIMEOUT,
+                       timestep=.1,
+                       msg=None):
         ret = False
         t0 = time.time()
         while time.time() - t0 < timeout:
@@ -785,6 +788,151 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         logging.warning("ret:{} msg:{}".format(ret, msg))
 
         return ret
+
+    async def feed_to_IN(self):
+
+        A = self.get_machine_head_by_letter('A')
+
+        r = await self.wait_for(A.input_roller_busy, timeout=0.5)
+        if not r:
+            await self.wait_for(A.input_roller_available)
+            await A.can_movement({'Input_Roller': 2})
+            r = await self.wait_for(A.input_roller_busy, timeout=10)
+            if not r:
+                await A.can_movement()
+
+    async def move_IN_A(self):
+
+        A = self.get_machine_head_by_letter('A')
+
+        await A.can_movement({'Input_Roller': 1, 'Dispensing_Roller': 2})
+        await self.wait_for(A.dispense_position_busy)
+
+    async def move_A_B(self):
+
+        A = self.get_machine_head_by_letter('A')
+        B = self.get_machine_head_by_letter('B')
+
+        await self.wait_for(B.dispense_position_available)
+        await A.can_movement({'Dispensing_Roller': 1})
+        await B.can_movement({'Dispensing_Roller': 2})
+        await self.wait_for(B.dispense_position_busy)
+        await A.can_movement()
+
+    async def move_B_C(self):
+
+        B = self.get_machine_head_by_letter('B')
+        C = self.get_machine_head_by_letter('C')
+
+        await self.wait_for(C.dispense_position_available)
+        await B.can_movement({'Dispensing_Roller': 1})
+        await C.can_movement({'Dispensing_Roller': 2})
+        await self.wait_for(C.dispense_position_busy)
+        await B.can_movement()
+
+    async def move_C_UP(self):
+
+        C = self.get_machine_head_by_letter('C')
+        D = self.get_machine_head_by_letter('D')
+
+        await self.wait_for(D.load_lifter_up)
+        await self.wait_for(C.load_lifter_available)
+        await C.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 2})
+        await self.wait_for(C.load_lifter_busy)
+
+    async def move_UP_DOWN_LEFT(self):
+
+        D = self.get_machine_head_by_letter('D')
+
+        await D.can_movement({'Lifter': 2})
+        await self.wait_for(D.load_lifter_down)
+
+    async def move_DOWN_D(self):
+
+        C = self.get_machine_head_by_letter('C')
+        D = self.get_machine_head_by_letter('D')
+
+        await self.wait_for(D.dispense_position_available)
+        await C.can_movement({'Lifter_Roller': 3})
+        await D.can_movement({'Dispensing_Roller': 2})
+        await self.wait_for(D.dispense_position_busy)
+        await C.can_movement()
+        await D.can_movement({'Lifter': 1})
+
+    async def move_D_E(self):
+
+        D = self.get_machine_head_by_letter('D')
+        E = self.get_machine_head_by_letter('E')
+
+        await self.wait_for(E.dispense_position_available)
+        r = await self.wait_for(D.load_lifter_up, timeout=1)
+        if not r:
+            await D.can_movement()
+            await D.can_movement({'Lifter': 1, 'Dispensing_Roller': 1})
+        else:
+            await D.can_movement({'Dispensing_Roller': 1})
+        await E.can_movement({'Dispensing_Roller': 2})
+        await self.wait_for(E.dispense_position_busy)
+        await D.can_movement()
+        await D.can_movement({'Lifter': 1})
+
+    async def move_E_F(self):
+
+        E = self.get_machine_head_by_letter('E')
+        F = self.get_machine_head_by_letter('F')
+
+        await self.wait_for(F.dispense_position_available)
+        await E.can_movement({'Dispensing_Roller': 1})
+        await F.can_movement({'Dispensing_Roller': 2})
+        await self.wait_for(F.dispense_position_busy)
+        await E.can_movement()
+
+    async def move_F_DOWN(self):
+
+        F = self.get_machine_head_by_letter('F')
+
+        await self.wait_for(F.unload_lifter_available)
+        await self.wait_for(F.unload_lifter_down)
+        await F.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 5})
+
+    async def move_DOWN_UP_RIGHT(self):
+
+        F = self.get_machine_head_by_letter('F')
+
+        await self.wait_for(F.unload_lifter_busy)
+        await self.wait_for(F.unload_lifter_up)
+        r = await self.wait_for(F.output_roller_available, timeout=1)
+        if not r:
+            await F.can_movement()
+            await F.can_movement({'Output_Roller': 2})
+            await self.wait_for(F.output_roller_available)
+            await F.can_movement()
+            await F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})
+
+    async def move_UP_OUT(self):
+
+        F = self.get_machine_head_by_letter('F')
+
+        r = await self.wait_for(F.output_roller_available, timeout=5)
+        if not r:
+            await F.can_movement()
+            raise Exception("Output_Roller Full")
+        else:
+            await self.wait_for(F.output_roller_busy)
+            await F.can_movement()
+            await F.can_movement({'Lifter': 2, 'Output_Roller': 3})
+            await self.wait_for(F.output_roller_available)
+            await self.wait_for(F.unload_lifter_down)
+            await F.can_movement()
+
+    async def stop_all(self):
+
+        await self.get_machine_head_by_letter('A').can_movement()
+        await self.get_machine_head_by_letter('B').can_movement()
+        await self.get_machine_head_by_letter('C').can_movement()
+        await self.get_machine_head_by_letter('D').can_movement()
+        await self.get_machine_head_by_letter('E').can_movement()
+        await self.get_machine_head_by_letter('F').can_movement()
 
 
 def main():

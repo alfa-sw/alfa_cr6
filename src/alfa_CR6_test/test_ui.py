@@ -25,36 +25,37 @@ def set_settings():
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
     alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = None # ":memory:"
+    # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
 
     alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST=[
-        # ~ "127.0.0.1",
-        "192.168.15.156",
-        "192.168.15.19",
-        "192.168.15.60",
-        "192.168.15.61",
-        "192.168.15.62",
-        "192.168.15.170",
+        "127.0.0.1", 
+        # ~ "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", 
+        # ~ "192.168.15.156", "192.168.15.19", "192.168.15.60", "192.168.15.61", "192.168.15.62", "192.168.15.170",
     ]
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
         # ~ FIXTURES + '/machine_status_0.json',
-        # ~ FIXTURES + '/machine_status_1.json',
-        # ~ FIXTURES + '/machine_status_2.json',
-        # ~ FIXTURES + '/machine_status_3.json',
-        # ~ FIXTURES + '/machine_status_4.json',
-        # ~ FIXTURES + '/machine_status_5.json',
+        FIXTURES + '/machine_status_1.json',
+        FIXTURES + '/machine_status_2.json',
+        FIXTURES + '/machine_status_3.json',
+        FIXTURES + '/machine_status_4.json',
+        FIXTURES + '/machine_status_5.json',
     ]
     alfa_CR6_backend.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
         # ~ '/dev/input/event7',
         # ~ '/dev/input/event8',
     ]
+    alfa_CR6_backend.cr6.settings.DEFAULT_WAIT_FOR_TIMEOUT = 2
 
 
 def test_all():
 
     set_settings()
 
+    # ~ logging.warning(".")
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
+    # ~ logging.warning(".")
     APP.debug_status_view = DebugStatusView()
+    # ~ logging.warning(".")
 
     def _stop():
         logging.warning("Stopping execution.")
