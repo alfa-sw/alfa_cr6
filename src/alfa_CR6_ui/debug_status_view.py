@@ -5,6 +5,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=bad-continuation
+# pylint: disable=protected-access
 
 
 import os
@@ -15,7 +16,7 @@ import traceback
 import asyncio
 # ~ import json
 
-from PyQt5.QtWidgets import QApplication, QFrame, QTextBrowser, QTextEdit, QButtonGroup, QPushButton   # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication, QFrame, QTextBrowser, QButtonGroup, QPushButton   # pylint: disable=no-name-in-module
 
 
 class DebugStatusView():
@@ -28,26 +29,31 @@ class DebugStatusView():
         # ~ self.main_frame.setGeometry(0, 0, 1800, 1000)
 
         self.buttons_frame = QFrame(parent=self.main_frame)
-        self.buttons_frame.setGeometry(20, 680, 1800, 160)
-        self.buttons_frame.setStyleSheet("background-color: rgb(220, 220, 220)")
+        self.buttons_frame.setStyleSheet("""
+                QFrame {
+                    background-color: rgb(220, 220, 220);
+                    font-size: 16px;
+                    font-face: monospace;
+                    }
+                """)
         self.button_group = QButtonGroup(parent=self.buttons_frame)
         for i, n in enumerate([
-            ('01-02', 'IN -> A'),
-            ('02-03', 'A -> B'),
-            ('03-04', 'B -> C'),
-            ('04-05', 'C -> UP'),
-            ('05-06', 'UP -> DOWN'),
-            ('06-07', 'DOWN -> D'),
-            ('07-08', 'D -> E'),
-            ('08-09', 'E -> F'),
-            ('09-10', 'F -> DOWN'),
-            ('10-11', 'DOWN -> UP'),
-            ('11-12', 'UP -> OUT'),
-            ('StopAll', 'A -> B'),
+            ('move_01_02', 'IN -> A'),
+            ('move_02_03', 'A -> B'),
+            ('move_03_04', 'B -> C'),
+            ('move_04_05', 'C -> UP'),
+            ('move_05_06', 'UP -> DOWN'),
+            ('move_06_07', 'DOWN -> D'),
+            ('move_07_08', 'D -> E'),
+            ('move_08_09', 'E -> F'),
+            ('move_09_10', 'F -> DOWN'),
+            ('move_10_11', 'DOWN -> UP'),
+            ('move_11_12', 'UP -> OUT'),
+            ('stop_all', ''),
         ]):
 
             b = QPushButton(n[0], parent=self.buttons_frame)
-            b.setGeometry(20 + i * 144, 0, 140, 60)
+            b.setGeometry(20 + i * 152, 0, 150, 80)
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
@@ -56,34 +62,54 @@ class DebugStatusView():
             'deliver',
             'complete',
             'read BC',
+            'clear jars',
+            'refresh',
             '*',
             '*',
             '*',
             '*',
             '*',
-            '*',
-            '*',
-            '*',
+            'close',
         ]):
 
             b = QPushButton(n, parent=self.buttons_frame)
-            b.setGeometry(20 + i * 144, 70, 140, 60)
+            b.setGeometry(20 + i * 152, 90, 150, 80)
             self.button_group.addButton(b)
 
-        self.text_browser = QTextBrowser(parent=self.main_frame)
-        self.text_browser.setGeometry(20, 0, 1800, 680)
-        self.text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
-        self.text_browser.setStyleSheet("background-color: rgb(230, 230, 230)")
+        self.status_text_browser = QTextBrowser(parent=self.main_frame)
+        self.status_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
-        self.text_edit = QTextEdit(parent=self.main_frame)
-        self.text_edit.setGeometry(20, 840, 1800, 680)
-        self.text_edit.setFrameStyle(QFrame.Panel | QFrame.Raised)
-        self.text_edit.setStyleSheet("background-color: rgb(230, 230, 230)")
+        self.status_text_browser.setStyleSheet("""
+                QTextBrowser {
+                    background-color: rgb(230, 230, 230);
+                    font-size: 18px;
+                    font-face: monospace;
+                    }
+                """)
 
-        app.main_window.sinottico.main_view_stack.addWidget(self.main_frame)
-        app.main_window.sinottico.main_view_stack.setCurrentWidget(self.main_frame)
+        self.answer_text_browser = QTextBrowser(parent=self.main_frame)
+        self.answer_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
+        self.answer_text_browser.setStyleSheet("background-color: rgb(230, 230, 230)")
 
-        self.text_browser.anchorClicked.connect(self.on_text_browser_anchor_clicked)
+        self.answer_text_browser.setStyleSheet("""
+                QTextBrowser {
+                    background-color: rgb(230, 230, 230);
+                    font-size: 16px;
+                    font-face: monospace;
+                    }
+                """)
+
+        width = 1880
+        self.status_text_browser.setGeometry(10, 0, width, 600)
+        self.answer_text_browser.setGeometry(10, 600, width, 300)
+        self.buttons_frame.setGeometry(10, 900, width, 180)
+
+        # ~ app.main_window.sinottico.main_view_stack.addWidget(self.main_frame)
+        # ~ app.main_window.sinottico.main_view_stack.setCurrentWidget(self.main_frame)
+        app.main_window.main_window_stack.addWidget(self.main_frame)
+        app.main_window.main_window_stack.setCurrentWidget(self.main_frame)
+
+        self.status_text_browser.anchorClicked.connect(self.on_text_browser_anchor_clicked)
         self.button_group.buttonClicked.connect(self.on_button_group_clicked)
         app.onHeadStatusChanged.connect(self.show_status)
 
@@ -92,7 +118,7 @@ class DebugStatusView():
     def on_machine_cmd_answer(self, index, answer):       # pylint: disable=no-self-use
 
         logging.warning(f"index:{ index }, answer:{ answer }")
-        self.text_edit.append(f"index:{ index }, answer:{ answer }")
+        self.answer_text_browser.append(f"index:{ index }, answer:{ answer }")
 
     def on_text_browser_anchor_clicked(self, url):       # pylint: disable=no-self-use
 
@@ -107,8 +133,31 @@ class DebugStatusView():
         # ~ app.reset_tasks()
         # ~ else:
 
+        app = QApplication.instance()
+
+        if 'refresh' in btn.text():
+            self.show_status()
+
+        if 'close' in btn.text():
+            # ~ app.main_window.main_window_stack.setCurrentIndex(0)
+            app.main_window.main_window_stack.setCurrentWidget(app.main_window.project)
+
+        if 'clear jars' in btn.text():
+
+            for j in app._CR6_application__progressing_jars:
+                j.status = 'DONE'
+
+            for k in [_ for _ in app._CR6_application__jar_runners.keys()]:
+                t = app._CR6_application__jar_runners[k]
+                try:
+                    asyncio.ensure_future(t.cancel())
+                except asyncio.CancelledError:
+                    logging.info(f"{ t } has been canceled now.")
+
+            app._CR6_application__progressing_jars = []
+            app._CR6_application__jar_runners = {}
+
         if 'read BC' in btn.text():
-            app = QApplication.instance()
             t = app._CR6_application__on_barcode_read(0, 23456, skip_checks=True)
             asyncio.ensure_future(t)
             logging.warning(f"t:{t}")
@@ -118,20 +167,22 @@ class DebugStatusView():
             async def coro():
 
                 for i in [
-                    '01-02',
-                    '02-03',
-                    '03-04',
-                    '04-05',
-                    '05-06',
-                    '06-07',
-                    '07-08',
-                    '08-09',
-                    '09-10',
-                    '10-11',
-                    '11-12',
+                    'move_01_02',
+                    'move_02_03',
+                    'move_03_04',
+                    'move_04_05',
+                    'move_05_06',
+                    'move_06_07',
+                    'move_07_08',
+                    'move_08_09',
+                    'move_09_10',
+                    'move_10_11',
+                    'move_11_12',
                 ]:
-                    await self.move_task(i)
-                    await asyncio.sleep(1)
+                    if hasattr(app, i):
+                        t = getattr(app, i)
+                        await t()
+                        await asyncio.sleep(1)
 
             try:
                 t = coro()
@@ -141,49 +192,56 @@ class DebugStatusView():
 
         else:
             try:
-                t = self.move_task(btn.text())
-                asyncio.ensure_future(t)
+                if hasattr(app, btn.text()):
+                    coro = getattr(app, btn.text())
+                    t = coro()
+                    asyncio.ensure_future(t)
+                    logging.warning(f"t:{t}")
+                else:
+                    logging.warning(f"action not found! {btn.text()}")
+
             except BaseException:
                 logging.error(traceback.format_exc())
 
-    def show_status(self, _):
+    def show_status(self, _=None):
+
+        if not self.main_frame.isVisible():
+            return
 
         app = QApplication.instance()
 
         named_map = {m.name: m for m in app.machine_head_dict.values()}
         keys_ = named_map.keys()
 
-        html_ = """
-            <table>
-            <tr>
-            <td>
-            <br/># 'photocells_status' mask bit coding:
-            <br/># bit0: THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL
-            <br/># bit1: THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL
-            <br/># bit2: THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL
-            <br/># bit3: THOR TABLE_PHOTOCELL -
-            <br/># bit4: THOR VALVE_OPEN_PHOTOCELL
-            <br/># bit5: THOR AUTOCAP_CLOSE_PHOTOCELL
-            <br/># bit6: THOR AUTOCAP_OPEN_PHOTOCELL
-            <br/># bit7: THOR BRUSH_PHOTOCELL
-            </td>
-            <td>
-            <br/># 'jar photocells_status' mask bit coding:
-            <br/># bit0: JAR_INPUT_ROLLER_PHOTOCELL
-            <br/># bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL
-            <br/># bit2: JAR_OUTPUT_ROLLER_PHOTOCELL
-            <br/># bit3: LOAD_LIFTER_DOWN_PHOTOCELL
-            <br/># bit4: LOAD_LIFTER_UP_PHOTOCELL
-            <br/># bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL
-            <br/># bit6: UNLOAD_LIFTER_UP_PHOTOCELL
-            <br/># bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL
-            <br/># bit8: JAR_DISPENSING_POSITION_PHOTOCELL
-            <br/># bit9: JAR_DETECTION_MICROSWITCH_1
-            <br/># bit10:JAR_DETECTION_MICROSWITCH_2
-            </td>
-            </tr>
-            </table>
-        """
+        html_ = ''
+
+        html_ += '<table>'
+
+        html_ += '<tr>                                           '
+
+        html_ += '<td colspan="1">                                           '
+        html_ += '<br/># "jar photocells_status" mask bit coding:'
+        html_ += '<br/># bit0: JAR_INPUT_ROLLER_PHOTOCELL        '
+        html_ += '<br/># bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL  '
+        html_ += '<br/># bit2: JAR_OUTPUT_ROLLER_PHOTOCELL       '
+        html_ += '<br/># bit3: LOAD_LIFTER_DOWN_PHOTOCELL        '
+        html_ += '<br/># bit4: LOAD_LIFTER_UP_PHOTOCELL          '
+        html_ += '<br/># bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL      '
+        html_ += '<br/># bit6: UNLOAD_LIFTER_UP_PHOTOCELL        '
+        html_ += '<br/># bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL'
+        html_ += '<br/># bit8: JAR_DISPENSING_POSITION_PHOTOCELL '
+        html_ += '<br/># bit9: JAR_DETECTION_MICROSWITCH_1       '
+        html_ += '<br/># bit10:JAR_DETECTION_MICROSWITCH_2       '
+        html_ += '</td>                                          '
+
+        html_ += '<td colspan="2">                                          '
+        html_ += '<br/># progressing_jars:'
+        for i, j in enumerate(app._CR6_application__progressing_jars):
+            html_ += '<br/>{}:<code>"{}"</code>'.format(i, j)
+        html_ += '</td>                                          '
+
+        html_ += '</tr>                                          '
+        html_ += '</table>                                       '
 
         # ~ html_ += '<h3>CURRENT STATUS:</h3>'
         html_ += '<hr></hr>'
@@ -208,66 +266,7 @@ class DebugStatusView():
             html_ += '  <td align="center">{0:04b} {1:04b} {2:04b} 0x{3:04X} {3:05d}</td>'.format(
                 0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0), jar_ph_)
             html_ += '</tr>'
-        html_ += '<table>'
 
-        self.text_browser.setHtml(html_)
+        html_ += '</table>'
 
-    async def move_task(self, cmd_string):
-
-        app = QApplication.instance()
-
-        try:
-
-            logging.warning(f"cmd_string:{cmd_string}")
-            if 'feed' in cmd_string:  # ' -> IN'
-                await app.feed_to_IN()
-
-            if '01-02' in cmd_string:  # 'IN -> A'
-                await app.move_IN_A()
-
-            if '02-03' in cmd_string:  # 'A -> B'
-
-                await app.move_A_B()
-
-            if '03-04' in cmd_string:  # 'B -> C'
-
-                await app.move_B_C()
-
-            if '04-05' in cmd_string:  # 'C -> UP'
-
-                await app.move_C_UP()
-
-            if '05-06' in cmd_string:  # 'UP -> DOWN'
-
-                await app.move_UP_DOWN_LEFT()
-
-            if '06-07' in cmd_string:  # 'DOWN -> D'
-
-                await app.move_DOWN_D()
-
-            if '07-08' in cmd_string:  # 'D -> E'
-
-                await app.move_D_E()
-
-            if '08-09' in cmd_string:  # 'E -> F'
-
-                await app.move_E_F()
-
-            if '09-10' in cmd_string:  # 'F -> DOWN'
-
-                await app.move_F_DOWN()
-
-            if '10-11' in cmd_string:  # 'DOWN -> UP'
-
-                await app.move_DOWN_UP_RIGHT()
-
-            if '11-12' in cmd_string:  # 'UP -> OUT'
-
-                await app.move_UP_OUT()
-
-            if 'StopAll' in cmd_string:
-
-                await app.stop_all()
-
-        except Exception:                           # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
+        self.status_text_browser.setHtml(html_)

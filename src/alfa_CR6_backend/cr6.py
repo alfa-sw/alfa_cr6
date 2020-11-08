@@ -34,6 +34,7 @@ from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 HERE = os.path.dirname(os.path.abspath(__file__))
 
+
 def _get_version():
 
     _ver = None
@@ -75,6 +76,7 @@ settings = types.SimpleNamespace(
     # if it is empty, no websocket client is started
     MACHINE_HEAD_IPADD_LIST=[
         # ~ "127.0.0.1",
+        # ~ "192.168.15.156", "192.168.15.19", "192.168.15.60", "192.168.15.61", "192.168.15.62", "192.168.15.170",
     ],
 
     # this dictionary keeps the path to the files where
@@ -157,6 +159,36 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         self.jar_size_detect = None
         self.pipe_list = []
 
+        self.refresh_status_event = asyncio.Event()
+
+    async def wait_for_status(self, condition, *args,
+                              timeout=settings.DEFAULT_WAIT_FOR_TIMEOUT,
+                              timestep=.1,
+                              msg=None):
+
+        """ here we wait for a refresh_status_event be set and check the condition, till timeout """
+
+        logging.info("{} condition:{}, args:{}".format(self.name, condition.__name__, args))
+
+        t0 = time.time()
+        ret = condition(*args)
+        while not ret and time.time() - t0 < timeout:
+            await self.refresh_status_event.wait()
+            ret = condition(*args)
+            logging.debug("ret:{}, {:.3f}/{}".format(ret, time.time() - t0, timeout))
+            await asyncio.sleep(timestep)
+
+        if not ret and msg:
+            raise Exception("Timeout on waiting for: {}.".format(msg))
+        logging.warning("ret:{} msg:{}".format(ret, msg))
+        return ret
+
+    async def trigger_refresh_status_event(self):
+        self.refresh_status_event.set()
+        await asyncio.sleep(.1)  # let the waiters be notified
+        self.refresh_status_event.clear()
+        # ~ logging.warning("{} self.refresh_status_event:{}".format(self.name, self.refresh_status_event))
+
     def on_cmd_answer(self, answer):
 
         QApplication.instance().onCmdAnswer.emit(self.index, answer)
@@ -175,7 +207,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         # ~ logging.debug(f"{self.pipe_list}")
 
-    def update_status(self, status):
+    async def update_status(self, status):
 
         # ~ logging.warning("status:{}".format(status))
 
@@ -214,35 +246,32 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 status['jar_photocells_status'] & 0x200 +
                 status['jar_photocells_status'] & 0x400) >> 9
 
+        await self.trigger_refresh_status_event()
+
     async def call_api_rest(self, path: str, method: str, data: dict, timeout=5):
 
-        url = "http://{}:{}/{}/{}".format(self.ip_add, 8080, 'apiV1', path)
-
-        if self.aiohttp_clientsession is None:
-            self.aiohttp_clientsession = aiohttp.ClientSession()
-
         r_json_as_dict = {}
-        try:
+        if self.ip_add:
+            url = "http://{}:{}/{}/{}".format(self.ip_add, 8080, 'apiV1', path)
+            if self.aiohttp_clientsession is None:
+                self.aiohttp_clientsession = aiohttp.ClientSession()
+            r_json_as_dict = {}
+            try:
+                with async_timeout.timeout(timeout):
+                    if method.upper() == 'GET':
+                        context_mngr = self.aiohttp_clientsession.get
+                        args = [url]
+                    elif method.upper() == 'POST':
+                        context_mngr = self.aiohttp_clientsession.post
+                        args = [url, data]
 
-            with async_timeout.timeout(timeout):
-                if method.upper() == 'GET':
-                    context_mngr = self.aiohttp_clientsession.get
-                    args = [url]
-                elif method.upper() == 'POST':
-                    context_mngr = self.aiohttp_clientsession.post
-                    args = [url, data]
+                    async with context_mngr(*args) as response:
+                        r = response
+                        r_json_as_dict = await r.json()
 
-                async with context_mngr(*args) as response:
-                    r = response
-                    r_json_as_dict = await r.json()
-
-                assert r.reason == 'OK', f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
-
-        except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
-
-        # ~ logging.warning(f"{ r_json_as_dict }")
-        # ~ logging.warning(f"{type(r_json_as_dict)}")
+                    assert r.reason == 'OK', f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
+            except Exception as e:                           # pylint: disable=broad-except
+                handle_exception(e)
         return r_json_as_dict
 
     def send_command(self, cmd_name: str, params: dict, type_='command', channel='machine'):
@@ -422,6 +451,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.__tasks = []
         self.__runners = []
         self.__jar_runners = {}
+        self.__progressing_jars = []
 
         for pth in [settings.LOGS_PATH, settings.TMP_PATH, settings.CONF_PATH]:
             if not os.path.exists(pth):
@@ -532,24 +562,30 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         try:
             self.machine_head_dict[head_index] = MachineHead(head_index, websocket=None, ip_add=ip_add)
             async with websockets.connect(ws_url) as websocket:
+                # ~ websocket = await websockets.connect(ws_url)
+                # ~ if websocket:
                 self.machine_head_dict[head_index].websocket = websocket
+                logging.warning("{} {}".format(head_index, self.machine_head_dict[head_index].name))
                 while self.run_flag:
 
-                    msg = await websocket.recv()
-
+                    msg = await asyncio.wait_for(websocket.recv(), timeout=10)
+                    if not msg:
+                        msg = "{}"
                     msg_dict = dict(json.loads(msg))
-                    if msg_dict.get('type') == 'time':
-                        pass
+                    if not msg or msg_dict.get('type') == 'time':
+                        # let's refresh machine status anyway
+                        await self.machine_head_dict[head_index].trigger_refresh_status_event()
                     elif msg_dict.get('type') == 'device:machine:status':
                         status = msg_dict.get('value')
                         status = dict(status)
-                        self.__on_head_status_changed(head_index, status)
+                        await self.__on_head_status_changed(head_index, status)
                     elif msg_dict.get('type') == 'answer':
                         self.__on_head_answer_received(head_index, answer=msg_dict.get('value'))
-
         except asyncio.CancelledError:
             pass
         finally:
+            # ~ if websocket:
+                # ~ websocket.close()
             if self.machine_head_dict[head_index].aiohttp_clientsession:
                 await self.machine_head_dict[head_index].aiohttp_clientsession.close()
 
@@ -565,7 +601,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                         if not self.machine_head_dict.get(head_index):
                             self.machine_head_dict[head_index] = MachineHead(head_index)
 
-                        self.__on_head_status_changed(head_index, status)
+                        await self.__on_head_status_changed(head_index, status)
 
                 except Exception as e:                           # pylint: disable=broad-except
                     handle_exception(e)
@@ -590,7 +626,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     async def __on_barcode_read(self, dev_index, barcode,         # pylint: disable=no-self-use
                                 skip_checks=False):     # debug only
 
-        # ~ await self.__update_machine_head_pipes()
+        await self.__update_machine_head_pipes()
 
         try:
             logging.debug("dev_index:{}, barcode:{}".format(dev_index, barcode))
@@ -598,7 +634,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             logging.debug("order_nr:{}, index:{}".format(order_nr, index))
 
             if skip_checks:
-                q = self.db_session.query(Jar)
+                q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
                 jar = q.first()
             else:
                 q = self.db_session.query(Jar).filter(Jar.index == index)
@@ -608,11 +644,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 sz = self.machine_head_dict[0].jar_size_detect
                 assert jar.size == sz, "{} != {}".format(jar.size, sz)
 
-            # let's run a task that will manage the jar through the entire path inside the system
-            t = self.__jar_task(jar)
-            self.__jar_runners[barcode] = asyncio.ensure_future(t)
+            if jar:
+                # let's run a task that will manage the jar through the entire path inside the system
+                t = self.__jar_task(jar)
+                self.__jar_runners[barcode] = asyncio.ensure_future(t)
+                self.__progressing_jars.append(jar)
 
-            logging.info("{} {} t:{}".format(len(self.__jar_runners), barcode, t))
+                logging.info("{} {} t:{}".format(len(self.__jar_runners), barcode, t))
 
         except Exception as e:                           # pylint: disable=broad-except
             handle_exception(e)
@@ -620,41 +658,40 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     async def __jar_task(self, jar):
 
         try:
-
             jar.status = 'PROGRESS'
-            await self.move_IN_A()
+            await self.move_01_02()
             jar.position = 'A'
             await self.get_machine_head_by_letter('A').do_dispense(jar)
             jar.position = 'A_B'
-            await self.move_A_B()
+            await self.move_02_03()
             jar.position = 'B'
             await self.get_machine_head_by_letter('B').do_dispense(jar)
             jar.position = 'B_C'
-            await self.move_B_C()
+            await self.move_03_04()
             jar.position = 'C'
             await self.get_machine_head_by_letter('C').do_dispense(jar)
             jar.position = 'C_UP'
-            await self.move_C_UP()
+            await self.move_04_05()
             jar.position = 'UP_LEFT'
-            await self.move_UP_DOWN_LEFT()
+            await self.move_05_06()
             jar.position = 'UP_DOWN_LEFT'
-            await self.move_DOWN_D()
+            await self.move_06_07()
             jar.position = 'D'
             await self.get_machine_head_by_letter('D').do_dispense(jar)
             jar.position = 'D_E'
-            await self.move_D_E()
+            await self.move_07_08()
             jar.position = 'E'
             await self.get_machine_head_by_letter('E').do_dispense(jar)
             jar.position = 'E_F'
-            await self.move_E_F()
+            await self.move_08_09()
             jar.position = 'F'
             await self.get_machine_head_by_letter('F').do_dispense(jar)
             jar.position = 'F_DOWN'
-            await self.move_F_DOWN()
+            await self.move_09_10()
             jar.position = 'DOWN_RIGHT'
-            await self.move_DOWN_UP_RIGHT()
+            await self.move_10_11()
             jar.position = 'DOWN_UP_RIGHT'
-            await self.move_UP_OUT()
+            await self.move_11_12()
             jar.position = 'OUT'
             jar.status = 'DONE'
 
@@ -669,6 +706,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         logging.warning("jar:{}".format(jar))
         self.db_session.commit()
+        self.__progressing_jars.remove(jar)
 
     def __feed_jar_in_input(self, last_time):
 
@@ -700,7 +738,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.machine_head_dict[head_index].on_cmd_answer(answer)
 
-    def __on_head_status_changed(self, head_index, status):
+    async def __on_head_status_changed(self, head_index, status):
 
         if self.machine_head_dict.get(head_index):
             # ~ old_status = self.machine_head_dict[head_index].status
@@ -708,7 +746,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             # ~ if diff:
                 # ~ logging.warning("head_index:{}".format(head_index))
                 # ~ logging.warning("diff:{}".format(diff))
-            self.machine_head_dict[head_index].update_status(status)
+            await self.machine_head_dict[head_index].update_status(status)
             self.main_window.sinottico.update_data(head_index, status)
 
             self.onHeadStatusChanged.emit(head_index)
@@ -767,162 +805,140 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return order
 
-    async def wait_for(self, condition, *args,
-                       timeout=settings.DEFAULT_WAIT_FOR_TIMEOUT,
-                       timestep=.1,
-                       msg=None):
-        ret = False
-        t0 = time.time()
-        while time.time() - t0 < timeout:
-            if condition(*args):
-                ret = True
-                break
-            else:
-                await asyncio.sleep(timestep)
-                if self.suspend_all_timeouts:
-                    t0 += timestep
-
-        if not ret and msg:
-            raise Exception("Timeout on waiting for: {}.".format(msg))
-
-        logging.warning("ret:{} msg:{}".format(ret, msg))
-
-        return ret
-
-    async def feed_to_IN(self):
+    async def feed_to_IN(self):  #  'feed'
 
         A = self.get_machine_head_by_letter('A')
 
-        r = await self.wait_for(A.input_roller_busy, timeout=0.5)
+        r = await A.wait_for_status(A.input_roller_busy, timeout=0.5)
         if not r:
-            await self.wait_for(A.input_roller_available)
+            await A.wait_for_status(A.input_roller_available)
             await A.can_movement({'Input_Roller': 2})
-            r = await self.wait_for(A.input_roller_busy, timeout=10)
+            r = await A.wait_for_status(A.input_roller_busy, timeout=10)
             if not r:
                 await A.can_movement()
 
-    async def move_IN_A(self):
+    async def move_01_02(self):  # 'IN -> A'
 
         A = self.get_machine_head_by_letter('A')
 
         await A.can_movement({'Input_Roller': 1, 'Dispensing_Roller': 2})
-        await self.wait_for(A.dispense_position_busy)
+        await A.wait_for_status(A.dispense_position_busy, timeout=10)
 
-    async def move_A_B(self):
+    async def move_02_03(self):  # 'A -> B'
 
         A = self.get_machine_head_by_letter('A')
         B = self.get_machine_head_by_letter('B')
 
-        await self.wait_for(B.dispense_position_available)
+        await B.wait_for_status(B.dispense_position_available)
         await A.can_movement({'Dispensing_Roller': 1})
         await B.can_movement({'Dispensing_Roller': 2})
-        await self.wait_for(B.dispense_position_busy)
+        await B.wait_for_status(B.dispense_position_busy)
         await A.can_movement()
 
-    async def move_B_C(self):
+    async def move_03_04(self):  # 'B -> C'
 
         B = self.get_machine_head_by_letter('B')
         C = self.get_machine_head_by_letter('C')
 
-        await self.wait_for(C.dispense_position_available)
+        await C.wait_for_status(C.dispense_position_available)
         await B.can_movement({'Dispensing_Roller': 1})
         await C.can_movement({'Dispensing_Roller': 2})
-        await self.wait_for(C.dispense_position_busy)
+        await C.wait_for_status(C.dispense_position_busy)
         await B.can_movement()
 
-    async def move_C_UP(self):
+    async def move_04_05(self):  # 'C -> UP'
 
         C = self.get_machine_head_by_letter('C')
         D = self.get_machine_head_by_letter('D')
 
-        await self.wait_for(D.load_lifter_up)
-        await self.wait_for(C.load_lifter_available)
+        await D.wait_for_status(D.load_lifter_up)
+        await C.wait_for_status(C.load_lifter_available)
         await C.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 2})
-        await self.wait_for(C.load_lifter_busy)
+        await C.wait_for_status(C.load_lifter_busy)
 
-    async def move_UP_DOWN_LEFT(self):
+    async def move_05_06(self):  # 'UP -> DOWN'
 
         D = self.get_machine_head_by_letter('D')
 
         await D.can_movement({'Lifter': 2})
-        await self.wait_for(D.load_lifter_down)
+        await D.wait_for_status(D.load_lifter_down)
 
-    async def move_DOWN_D(self):
+    async def move_06_07(self):  # 'DOWN -> D'
 
         C = self.get_machine_head_by_letter('C')
         D = self.get_machine_head_by_letter('D')
 
-        await self.wait_for(D.dispense_position_available)
+        await D.wait_for_status(D.dispense_position_available)
         await C.can_movement({'Lifter_Roller': 3})
         await D.can_movement({'Dispensing_Roller': 2})
-        await self.wait_for(D.dispense_position_busy)
+        await D.wait_for_status(D.dispense_position_busy)
         await C.can_movement()
         await D.can_movement({'Lifter': 1})
 
-    async def move_D_E(self):
+    async def move_07_08(self):  # 'D -> E'
 
         D = self.get_machine_head_by_letter('D')
         E = self.get_machine_head_by_letter('E')
 
-        await self.wait_for(E.dispense_position_available)
-        r = await self.wait_for(D.load_lifter_up, timeout=1)
+        await E.wait_for_status(E.dispense_position_available)
+        r = await D.wait_for_status(D.load_lifter_up, timeout=1)
         if not r:
             await D.can_movement()
             await D.can_movement({'Lifter': 1, 'Dispensing_Roller': 1})
         else:
             await D.can_movement({'Dispensing_Roller': 1})
         await E.can_movement({'Dispensing_Roller': 2})
-        await self.wait_for(E.dispense_position_busy)
+        await E.wait_for_status(E.dispense_position_busy)
         await D.can_movement()
         await D.can_movement({'Lifter': 1})
 
-    async def move_E_F(self):
+    async def move_08_09(self):  # 'E -> F'
 
         E = self.get_machine_head_by_letter('E')
         F = self.get_machine_head_by_letter('F')
 
-        await self.wait_for(F.dispense_position_available)
+        await F.wait_for_status(F.dispense_position_available)
         await E.can_movement({'Dispensing_Roller': 1})
         await F.can_movement({'Dispensing_Roller': 2})
-        await self.wait_for(F.dispense_position_busy)
+        await F.wait_for_status(F.dispense_position_busy)
         await E.can_movement()
 
-    async def move_F_DOWN(self):
+    async def move_09_10(self):  # 'F -> DOWN'
 
         F = self.get_machine_head_by_letter('F')
 
-        await self.wait_for(F.unload_lifter_available)
-        await self.wait_for(F.unload_lifter_down)
+        await F.wait_for_status(F.unload_lifter_available)
+        await F.wait_for_status(F.unload_lifter_down)
         await F.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 5})
 
-    async def move_DOWN_UP_RIGHT(self):
+    async def move_10_11(self):  # 'DOWN -> UP'
 
         F = self.get_machine_head_by_letter('F')
 
-        await self.wait_for(F.unload_lifter_busy)
-        await self.wait_for(F.unload_lifter_up)
-        r = await self.wait_for(F.output_roller_available, timeout=1)
+        await F.wait_for_status(F.unload_lifter_busy)
+        await F.wait_for_status(F.unload_lifter_up)
+        r = await F.wait_for_status(F.output_roller_available, timeout=1)
         if not r:
             await F.can_movement()
             await F.can_movement({'Output_Roller': 2})
-            await self.wait_for(F.output_roller_available)
+            await F.wait_for_status(F.output_roller_available)
             await F.can_movement()
             await F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})
 
-    async def move_UP_OUT(self):
+    async def move_11_12(self):  # 'UP -> OUT'
 
         F = self.get_machine_head_by_letter('F')
 
-        r = await self.wait_for(F.output_roller_available, timeout=5)
+        r = await F.wait_for_status(F.output_roller_available, timeout=5)
         if not r:
             await F.can_movement()
             raise Exception("Output_Roller Full")
         else:
-            await self.wait_for(F.output_roller_busy)
+            await F.wait_for_status(F.output_roller_busy)
             await F.can_movement()
             await F.can_movement({'Lifter': 2, 'Output_Roller': 3})
-            await self.wait_for(F.output_roller_available)
-            await self.wait_for(F.unload_lifter_down)
+            await F.wait_for_status(F.output_roller_available)
+            await F.wait_for_status(F.unload_lifter_down)
             await F.can_movement()
 
     async def stop_all(self):

@@ -148,7 +148,7 @@ class Jar(Base, ModelCr6):      # pylint: disable=too-few-public-methods
 
     def __str__(self):
         # ~ return f"<Jar object. status:{self.status}, position:{self.position}, barcode:{self.barcode}>"
-        return f"<Jar object. status:{self.status}, position:{self.position}, {self.order.order_nr}:{self.index}>"
+        return f"[Jar object. status:{self.status}, position:{self.position}, {self.order.order_nr}:{self.index}]"
 
     @property
     def barcode(self):

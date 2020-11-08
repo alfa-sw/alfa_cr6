@@ -15,8 +15,8 @@ import asyncio
 import alfa_CR6_backend.cr6
 from alfa_CR6_ui.debug_status_view import DebugStatusView
 
-fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG, format=fmt_)
+
+LOG_LEV = logging.DEBUG
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(HERE, 'fixtures')
@@ -24,21 +24,21 @@ FIXTURES = os.path.join(HERE, 'fixtures')
 def set_settings():
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
-    alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = None # ":memory:"
-    # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
+    # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = None # ":memory:"
+    alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
 
     alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST=[
-        "127.0.0.1", 
-        # ~ "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", 
+        # ~ "127.0.0.1", 
+        "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", 
         # ~ "192.168.15.156", "192.168.15.19", "192.168.15.60", "192.168.15.61", "192.168.15.62", "192.168.15.170",
     ]
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
         # ~ FIXTURES + '/machine_status_0.json',
-        FIXTURES + '/machine_status_1.json',
-        FIXTURES + '/machine_status_2.json',
-        FIXTURES + '/machine_status_3.json',
-        FIXTURES + '/machine_status_4.json',
-        FIXTURES + '/machine_status_5.json',
+        # ~ FIXTURES + '/machine_status_1.json',
+        # ~ FIXTURES + '/machine_status_2.json',
+        # ~ FIXTURES + '/machine_status_3.json',
+        # ~ FIXTURES + '/machine_status_4.json',
+        # ~ FIXTURES + '/machine_status_5.json',
     ]
     alfa_CR6_backend.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
         # ~ '/dev/input/event7',
@@ -49,21 +49,20 @@ def set_settings():
 
 def test_all():
 
+    fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
+    logging.basicConfig(stream=sys.stdout, level=LOG_LEV, format=fmt_)
+
     set_settings()
 
-    # ~ logging.warning(".")
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
-    # ~ logging.warning(".")
+
     APP.debug_status_view = DebugStatusView()
-    # ~ logging.warning(".")
 
-    def _stop():
-        logging.warning("Stopping execution.")
-        raise KeyboardInterrupt
+    def show_debug_status_view():
+        APP.main_window.main_window_stack.setCurrentWidget(APP.debug_status_view.main_frame)
 
-    asyncio.get_event_loop().call_later(.5, APP.main_window.login_btn.click)
-    # ~ asyncio.get_event_loop().call_later(2, APP.main_window.sinottico.jarInputPressed)
-    # ~ asyncio.get_event_loop().call_later(3, _stop)
+    APP.main_window.sinottico.chrome_btn.clicked.disconnect()
+    APP.main_window.sinottico.chrome_btn.clicked.connect(show_debug_status_view)
 
     APP.run_forever()
 
