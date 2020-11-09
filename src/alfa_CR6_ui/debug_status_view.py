@@ -28,10 +28,32 @@ class DebugStatusView():
         self.main_frame = QFrame(parent=app.main_window.main_window_stack)
         # ~ self.main_frame.setGeometry(0, 0, 1800, 1000)
 
+        self.status_text_browser = QTextBrowser(parent=self.main_frame)
+        # ~ self.status_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+        self.status_text_browser.setStyleSheet("""
+                QTextBrowser {
+                    background-color: #FFFFF7;
+                    font-size: 18px;
+                    font-family: monospace;
+                    }
+                """)
+
+        self.answer_text_browser = QTextBrowser(parent=self.main_frame)
+        # ~ self.answer_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
+
+        self.answer_text_browser.setStyleSheet("""
+                QTextBrowser {
+                    background-color: #FFFFF7;
+                    font-size: 16px;
+                    font-family: monospace;
+                    }
+                """)
+
         self.buttons_frame = QFrame(parent=self.main_frame)
         self.buttons_frame.setStyleSheet("""
                 QFrame {
-                    background-color: rgb(220, 220, 220);
+                    background-color: #FFFFF7;
                     font-size: 16px;
                     font-family: monospace;
                     }
@@ -77,33 +99,10 @@ class DebugStatusView():
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
-        self.status_text_browser = QTextBrowser(parent=self.main_frame)
-        self.status_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
-
-        self.status_text_browser.setStyleSheet("""
-                QTextBrowser {
-                    background-color: rgb(230, 230, 230);
-                    font-size: 18px;
-                    font-family: monospace;
-                    }
-                """)
-
-        self.answer_text_browser = QTextBrowser(parent=self.main_frame)
-        self.answer_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
-        self.answer_text_browser.setStyleSheet("background-color: rgb(230, 230, 230)")
-
-        self.answer_text_browser.setStyleSheet("""
-                QTextBrowser {
-                    background-color: rgb(230, 230, 230);
-                    font-size: 16px;
-                    font-family: monospace;
-                    }
-                """)
-
         width = 1880
-        self.status_text_browser.setGeometry(10, 0, width, 560)
-        self.buttons_frame.setGeometry(10, 570, width, 180)
-        self.answer_text_browser.setGeometry(10, 760, width, 300)
+        self.status_text_browser.setGeometry(20, 0, width, 560)
+        self.buttons_frame.setGeometry(20, 570, width, 180)
+        self.answer_text_browser.setGeometry(20, 760, width, 300)
 
         # ~ app.main_window.sinottico.main_view_stack.addWidget(self.main_frame)
         # ~ app.main_window.sinottico.main_view_stack.setCurrentWidget(self.main_frame)
@@ -233,27 +232,38 @@ class DebugStatusView():
         html_ += '</table>                                       '
 
         html_ += '<hr></hr>'
+
         html_ += '<table width="100%" aligbcellpadding="80px" cellspacing="80px">'
-        html_ += '<tr bgcolor="#FFFFFF"><th align="left">index</th><th align="left">name</th><th align="left">addr</th>'
-        html_ += '<th align="left">level</th><th align="left">last update</th>'
-        html_ += '<th align="left">photocells_status</th><th align="left">jar_photocells_status</th></tr>'
+
+        html_ += '<tr bgcolor="#FFFFFF">'
+        html_ += '<th align="left">ord.</th>'
+        html_ += '<th align="left">name</th>'
+        html_ += '<th align="left">addr</th>'
+        html_ += '<th align="left">level</th>'
+        html_ += '<th align="left">jar_photocells_status</th>'
+        html_ += '<th align="left">photocells_status</th>'
+        html_ += '<th align="left">last update</th>'
+        html_ += '</tr>'
 
         for k in sorted(keys_):
-            html_ += '<tr>'
-            m = named_map[k]
 
+            m = named_map[k]
+            ord = m.index + 1
             photoc_ = m.status.get('photocells_status', -1)
             jar_ph_ = m.status.get('jar_photocells_status', -1)
 
-            html_ += '  <td>{}</td>'.format(m.index)
+            html_ += '<tr>'
+
+            html_ += '  <td>head {}</td>'.format(ord)
             html_ += '  <td>{}</td>'.format(m.name)
             html_ += '  <td><a href="http://{0}:8080/admin"> {0} </a></td>'.format(m.ip_add)
             html_ += '  <td>{}</td>'.format(m.status.get('status_level'))
-            html_ += '  <td>{}</td>'.format(m.status.get('last_update'))
-            html_ += '  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>'.format(
-                0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_)
             html_ += '  <td>{0:04b} {1:04b} {2:04b} | 0x{3:04X} {3:5d}</td>'.format(
                 0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0), jar_ph_)
+            html_ += '  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>'.format(
+                0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_)
+            html_ += '  <td>{}</td>'.format(m.status.get('last_update'))
+
             html_ += '</tr>'
 
         html_ += '</table>'
