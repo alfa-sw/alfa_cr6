@@ -118,29 +118,6 @@ def parse_json_order(path_to_json_file, json_schema_name):
         return properties
 
 
-def handle_exception(e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):
-
-    # TODO: send alarm msg to Gui surface
-
-    logging.error(traceback.format_exc())
-
-    if db_event:
-        a = QApplication.instance()
-        if a and a.db_session:
-            try:
-                descr = "{} {}".format(ui_msg, traceback.format_exc())
-                evnt = Event(
-                    name=e,
-                    level='ERROR',
-                    severity='',
-                    source='CR6_application',
-                    description=descr)
-                a.db_session.add(evnt)
-                a.db_session.commit()
-            except BaseException:
-                a.db_session.rollback()
-                logging.error(traceback.format_exc())
-
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes
 
@@ -169,6 +146,30 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     onHeadStatusChanged = pyqtSignal(int)
     onCmdAnswer = pyqtSignal(int, dict)
+
+    def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):
+
+        # TODO: send alarm msg to Gui surface
+
+        logging.error(traceback.format_exc())
+
+        if db_event:
+            a = QApplication.instance()
+            if a and a.db_session:
+                try:
+                    descr = "{} {}".format(ui_msg, traceback.format_exc())
+                    evnt = Event(
+                        name=e,
+                        level='ERROR',
+                        severity='',
+                        source='CR6_application',
+                        description=descr)
+                    a.db_session.add(evnt)
+                    a.db_session.commit()
+                except BaseException:
+                    a.db_session.rollback()
+                    logging.error(traceback.format_exc())
+
 
     def __init__(self, *args, **kwargs):
 
@@ -229,7 +230,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             try:
                 asyncio.get_event_loop().run_until_complete(m.close())
             except Exception as e:                           # pylint: disable=broad-except
-                handle_exception(e)
+                self.handle_exception(e)
 
         for t in self.__runners[:] + [r['task'] for r in self.__jar_runners.values()]:
             try:
@@ -272,7 +273,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except asyncio.CancelledError:
             pass
         except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
+            self.handle_exception(e)
 
     async def __inner_loop_task(self):
 
@@ -293,7 +294,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except asyncio.CancelledError:
             pass
         except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
+            self.handle_exception(e)
 
     async def __ws_client_task(self, head_index, ip_add):
 
@@ -346,13 +347,14 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                             old_status = status
                             await self.__on_head_status_changed(head_index, status)
                 except Exception as e:  # pylint: disable=broad-except
-                    handle_exception(e)
+                    self.handle_exception(e)
                 await asyncio.sleep(.2)
+                await self.machine_head_dict[head_index].trigger_refresh_status_event()
 
         except asyncio.CancelledError:
             pass
         except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
+            self.handle_exception(e)
 
     async def __update_machine_head_pipes(self):     # pylint: disable=no-self-use
 
@@ -362,7 +364,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 # TODO: use cached vals, if present
                 await m.update_pipes()
         except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
+            self.handle_exception(e)
 
     async def __on_barcode_read(self, dev_index, barcode,         # pylint: disable=no-self-use
                                 skip_checks=False):     # debug only
@@ -393,7 +395,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 logging.info("{} {} t:{}".format(len(self.__jar_runners), barcode, t))
 
         except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
+            self.handle_exception(e)
 
     async def __jar_task(self, jar):
 
@@ -442,7 +444,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except Exception as e:                           # pylint: disable=broad-except
             jar.status = 'ERROR'
             jar.description = traceback.format_exc()
-            handle_exception(e)
+            self.handle_exception(e)
 
         logging.warning("delivering jar:{}".format(jar))
         self.db_session.commit()
@@ -514,7 +516,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             pass
 
         except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
+            self.handle_exception(e)
 
         finally:
 
@@ -555,7 +557,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             if not r:
                 await A.can_movement()
         else:
-            logging.info("A.input_roller_busy is False, nothing to do.")
+            logging.info("A.input_roller_busy is True, nothing to do.")
 
     async def move_01_02(self):  # 'IN -> A'
 
@@ -698,7 +700,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             logging.warning(f"coroutine_name:{coroutine_name}, _future:{_future}")
 
         except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
+            self.handle_exception(e)
 
 
 def main():
