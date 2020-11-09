@@ -15,7 +15,6 @@ from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
 import aiohttp                              # pylint: disable=import-error
 import async_timeout                        # pylint: disable=import-error
 
-from alfa_CR6_backend.cr6 import handle_exception
 
 DEFAULT_WAIT_FOR_TIMEOUT = 90
 
@@ -37,6 +36,8 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         self.pipe_list = []
 
         self.refresh_status_event = asyncio.Event()
+
+        self.app = QApplication.instance()
 
     async def wait_for_status(self, condition, *args,
                               timeout=DEFAULT_WAIT_FOR_TIMEOUT,
@@ -148,7 +149,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
                     assert r.reason == 'OK', f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
             except Exception as e:                           # pylint: disable=broad-except
-                handle_exception(e)
+                self.app.handle_exception(e)
         return r_json_as_dict
 
     def send_command(self, cmd_name: str, params: dict, type_='command', channel='machine'):
@@ -175,7 +176,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                     json.dump(msg, f, indent=2)
 
         except Exception as e:                           # pylint: disable=broad-except
-            handle_exception(e)
+            self.app.handle_exception(e)
 
     async def close(self):
 
