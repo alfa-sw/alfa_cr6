@@ -203,6 +203,7 @@ class DebugStatusView():
 
         html_ = ''
 
+        html_ += '<small>app ver.: {}</small>'.format(app.get_version())
         html_ += '<table>'
 
         html_ += '<tr>                                           '
@@ -231,7 +232,6 @@ class DebugStatusView():
         html_ += '</tr>                                          '
         html_ += '</table>                                       '
 
-        # ~ html_ += '<h3>CURRENT STATUS:</h3>'
         html_ += '<hr></hr>'
         html_ += '<table width="100%" aligbcellpadding="80px" cellspacing="80px">'
         html_ += '<tr bgcolor="#FFFFFF"><th align="left">index</th><th align="left">name</th><th align="left">addr</th>'
