@@ -5,6 +5,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 
+import os
 import time
 import logging
 import asyncio
@@ -17,6 +18,7 @@ import async_timeout                        # pylint: disable=import-error
 
 
 DEFAULT_WAIT_FOR_TIMEOUT = 90
+DATA_ROOT = '/opt/alfa_cr6/var/'
 
 
 class MachineHead(object):           # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -171,8 +173,8 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 asyncio.ensure_future(t)
 
             else:
-
-                with open('/opt/alfa_cr6/var/machine_command_{}.json'.format(self.index), 'w') as f:
+                filepth = os.path.join(DATA_ROOT, 'machine_command_{}.json'.format(self.index))
+                with open(filepth, 'w') as f:
                     json.dump(msg, f, indent=2)
 
         except Exception as e:                           # pylint: disable=broad-except

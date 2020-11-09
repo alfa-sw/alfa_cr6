@@ -20,6 +20,7 @@ LOG_LEV = logging.INFO
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(HERE, 'fixtures')
+DATA_ROOT = '/opt/alfa_cr6/var/'
 
 def set_settings():
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
@@ -29,16 +30,16 @@ def set_settings():
 
     alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST=[
         # ~ "127.0.0.1", 
-        "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", 
+        # ~ "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", 
         # ~ "192.168.15.156", "192.168.15.19", "192.168.15.60", "192.168.15.61", "192.168.15.62", "192.168.15.170",
     ]
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
-        # ~ FIXTURES + '/machine_status_0.json',
-        # ~ FIXTURES + '/machine_status_1.json',
-        # ~ FIXTURES + '/machine_status_2.json',
-        # ~ FIXTURES + '/machine_status_3.json',
-        # ~ FIXTURES + '/machine_status_4.json',
-        # ~ FIXTURES + '/machine_status_5.json',
+        DATA_ROOT + '/machine_status_0.json',
+        DATA_ROOT + '/machine_status_1.json',
+        DATA_ROOT + '/machine_status_2.json',
+        DATA_ROOT + '/machine_status_3.json',
+        DATA_ROOT + '/machine_status_4.json',
+        DATA_ROOT + '/machine_status_5.json',
     ]
     alfa_CR6_backend.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
         # ~ '/dev/input/event7',
