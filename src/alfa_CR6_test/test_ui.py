@@ -16,7 +16,7 @@ import alfa_CR6_backend.cr6
 from alfa_CR6_ui.debug_status_view import DebugStatusView
 
 
-LOG_LEV = logging.DEBUG
+LOG_LEV = logging.INFO
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(HERE, 'fixtures')
@@ -45,12 +45,14 @@ def set_settings():
         # ~ '/dev/input/event8',
     ]
     alfa_CR6_backend.cr6.settings.DEFAULT_WAIT_FOR_TIMEOUT = 2
-
-
-def test_all():
+    alfa_CR6_backend.cr6.settings.LOG_LEVEL = LOG_LEV
 
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=LOG_LEV, format=fmt_)
+
+
+
+def test_all():
 
     set_settings()
 

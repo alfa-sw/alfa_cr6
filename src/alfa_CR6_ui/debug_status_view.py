@@ -33,11 +33,12 @@ class DebugStatusView():
                 QFrame {
                     background-color: rgb(220, 220, 220);
                     font-size: 16px;
-                    font-face: monospace;
+                    font-family: monospace;
                     }
                 """)
         self.button_group = QButtonGroup(parent=self.buttons_frame)
         for i, n in enumerate([
+            ('move_00_01', 'feed to IN'),
             ('move_01_02', 'IN -> A'),
             ('move_02_03', 'A -> B'),
             ('move_03_04', 'B -> C'),
@@ -49,7 +50,6 @@ class DebugStatusView():
             ('move_09_10', 'F -> DOWN'),
             ('move_10_11', 'DOWN -> UP'),
             ('move_11_12', 'UP -> OUT'),
-            ('stop_all', ''),
         ]):
 
             b = QPushButton(n[0], parent=self.buttons_frame)
@@ -58,22 +58,23 @@ class DebugStatusView():
             self.button_group.addButton(b)
 
         for i, n in enumerate([
-            'feed',
-            'deliver',
-            'complete',
-            'read BC',
-            'clear jars',
-            'refresh',
-            '*',
-            '*',
-            '*',
-            '*',
-            '*',
-            'close',
+            ('stop_all', 'stop movement for all heads'),
+            ('complete', 'start the complete cycle through the system'),
+            ('read BC', 'simulate a bar code read'),
+            ('clear jars', 'delete all the jars'),
+            ('refresh', 'refresh the view'),
+            ('*', '**'),
+            ('*', '**'),
+            ('*', '**'),
+            ('*', '**'),
+            ('*', '**'),
+            ('*', '**'),
+            ('close', 'close this widget'),
         ]):
 
-            b = QPushButton(n, parent=self.buttons_frame)
+            b = QPushButton(n[0], parent=self.buttons_frame)
             b.setGeometry(20 + i * 152, 90, 150, 80)
+            b.setToolTip(n[1])
             self.button_group.addButton(b)
 
         self.status_text_browser = QTextBrowser(parent=self.main_frame)
@@ -83,7 +84,7 @@ class DebugStatusView():
                 QTextBrowser {
                     background-color: rgb(230, 230, 230);
                     font-size: 18px;
-                    font-face: monospace;
+                    font-family: monospace;
                     }
                 """)
 
@@ -95,14 +96,14 @@ class DebugStatusView():
                 QTextBrowser {
                     background-color: rgb(230, 230, 230);
                     font-size: 16px;
-                    font-face: monospace;
+                    font-family: monospace;
                     }
                 """)
 
         width = 1880
-        self.status_text_browser.setGeometry(10, 0, width, 600)
-        self.answer_text_browser.setGeometry(10, 600, width, 300)
-        self.buttons_frame.setGeometry(10, 900, width, 180)
+        self.status_text_browser.setGeometry(10, 0, width, 560)
+        self.buttons_frame.setGeometry(10, 570, width, 180)
+        self.answer_text_browser.setGeometry(10, 760, width, 300)
 
         # ~ app.main_window.sinottico.main_view_stack.addWidget(self.main_frame)
         # ~ app.main_window.sinottico.main_view_stack.setCurrentWidget(self.main_frame)
@@ -126,46 +127,40 @@ class DebugStatusView():
         os.system("chromium-browser {} &".format(url.url()))
 
     def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use
-        logging.warning(f"{btn}")
-
-        # ~ if 'reset_tasks' in btn.text():
-        # ~ app = QApplication.instance()
-        # ~ app.reset_tasks()
-        # ~ else:
 
         app = QApplication.instance()
+        cmd_txt = btn.text()
 
-        if 'refresh' in btn.text():
+        logging.warning(f"cmd_txt:{cmd_txt}")
+
+        if 'refresh' in cmd_txt:
             self.show_status()
 
-        if 'close' in btn.text():
+        elif 'close' in cmd_txt:
             # ~ app.main_window.main_window_stack.setCurrentIndex(0)
             app.main_window.main_window_stack.setCurrentWidget(app.main_window.project)
 
-        if 'clear jars' in btn.text():
-
-            for j in app._CR6_application__progressing_jars:
-                j.status = 'DONE'
+        elif 'clear jars' in cmd_txt:
 
             for k in [_ for _ in app._CR6_application__jar_runners.keys()]:
-                t = app._CR6_application__jar_runners[k]
+                t = app._CR6_application__jar_runners[k]['task']
                 try:
-                    asyncio.ensure_future(t.cancel())
+                    t.cancel()
+
+                    async def _coro(_):
+                        await _
+                    asyncio.ensure_future(_coro(t))
                 except asyncio.CancelledError:
                     logging.info(f"{ t } has been canceled now.")
 
-            app._CR6_application__progressing_jars = []
-            app._CR6_application__jar_runners = {}
-
-        if 'read BC' in btn.text():
+        elif 'read BC' in cmd_txt:
             t = app._CR6_application__on_barcode_read(0, 23456, skip_checks=True)
             asyncio.ensure_future(t)
             logging.warning(f"t:{t}")
 
-        elif 'complete' in btn.text():
-
+        elif 'complete' in cmd_txt:
             async def coro():
-
+                ret_vals = []
                 for i in [
                     'move_01_02',
                     'move_02_03',
@@ -181,8 +176,11 @@ class DebugStatusView():
                 ]:
                     if hasattr(app, i):
                         t = getattr(app, i)
-                        await t()
+                        ret = await t()
+                        ret_vals.append(ret)
                         await asyncio.sleep(1)
+
+                return ret_vals
 
             try:
                 t = coro()
@@ -191,17 +189,7 @@ class DebugStatusView():
                 logging.error(traceback.format_exc())
 
         else:
-            try:
-                if hasattr(app, btn.text()):
-                    coro = getattr(app, btn.text())
-                    t = coro()
-                    asyncio.ensure_future(t)
-                    logging.warning(f"t:{t}")
-                else:
-                    logging.warning(f"action not found! {btn.text()}")
-
-            except BaseException:
-                logging.error(traceback.format_exc())
+            app.run_a_coroutine_helper(cmd_txt)
 
     def show_status(self, _=None):
 
@@ -236,8 +224,8 @@ class DebugStatusView():
 
         html_ += '<td colspan="2">                                          '
         html_ += '<br/># progressing_jars:'
-        for i, j in enumerate(app._CR6_application__progressing_jars):
-            html_ += '<br/>{}:<code>"{}"</code>'.format(i, j)
+        for i, j in enumerate(app._CR6_application__jar_runners.values()):
+            html_ += '<br/>{}:"{}"'.format(i, j['jar'])
         html_ += '</td>                                          '
 
         html_ += '</tr>                                          '
@@ -246,8 +234,9 @@ class DebugStatusView():
         # ~ html_ += '<h3>CURRENT STATUS:</h3>'
         html_ += '<hr></hr>'
         html_ += '<table width="100%" aligbcellpadding="80px" cellspacing="80px">'
-        html_ += "<tr><th>index</th><th>name</th><th>add</th><th>level</th><th>last update</th>"
-        html_ += "<th>photocells_status</th><th>jar_photocells_status</th></tr>"
+        html_ += '<tr bgcolor="#FFFFFF"><th align="left">index</th><th align="left">name</th><th align="left">addr</th>'
+        html_ += '<th align="left">level</th><th align="left">last update</th>'
+        html_ += '<th align="left">photocells_status</th><th align="left">jar_photocells_status</th></tr>'
 
         for k in sorted(keys_):
             html_ += '<tr>'
@@ -256,14 +245,14 @@ class DebugStatusView():
             photoc_ = m.status.get('photocells_status', -1)
             jar_ph_ = m.status.get('jar_photocells_status', -1)
 
-            html_ += '  <td align="center">{}</td>'.format(m.index)
-            html_ += '  <td align="center">{}</td>'.format(m.name)
-            html_ += '  <td align="center"><a href="http://{0}:8080/admin"> {0} </a></td>'.format(m.ip_add)
-            html_ += '  <td align="center">{}</td>'.format(m.status.get('status_level'))
-            html_ += '  <td align="center">{}</td>'.format(m.status.get('last_update'))
-            html_ += '  <td align="center">        {0:04b} {1:04b} 0x{2:04X} {2:05d}</td>'.format(
+            html_ += '  <td>{}</td>'.format(m.index)
+            html_ += '  <td>{}</td>'.format(m.name)
+            html_ += '  <td><a href="http://{0}:8080/admin"> {0} </a></td>'.format(m.ip_add)
+            html_ += '  <td>{}</td>'.format(m.status.get('status_level'))
+            html_ += '  <td>{}</td>'.format(m.status.get('last_update'))
+            html_ += '  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>'.format(
                 0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_)
-            html_ += '  <td align="center">{0:04b} {1:04b} {2:04b} 0x{3:04X} {3:05d}</td>'.format(
+            html_ += '  <td>{0:04b} {1:04b} {2:04b} | 0x{3:04X} {3:5d}</td>'.format(
                 0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0), jar_ph_)
             html_ += '</tr>'
 

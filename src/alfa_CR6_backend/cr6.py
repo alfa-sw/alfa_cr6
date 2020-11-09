@@ -75,7 +75,8 @@ settings = types.SimpleNamespace(
     # to which the application connects its websocket clients,
     # if it is empty, no websocket client is started
     MACHINE_HEAD_IPADD_LIST=[
-        # ~ "127.0.0.1",
+        # ~ "127.0.0.1", 
+        # ~ "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", 
         # ~ "192.168.15.156", "192.168.15.19", "192.168.15.60", "192.168.15.61", "192.168.15.62", "192.168.15.170",
     ],
 
@@ -180,7 +181,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         if not ret and msg:
             raise Exception("Timeout on waiting for: {}.".format(msg))
-        logging.warning("ret:{} msg:{}".format(ret, msg))
+        logging.info("ret:{} msg:{}".format(ret, msg))
         return ret
 
     async def trigger_refresh_status_event(self):
@@ -451,7 +452,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.__tasks = []
         self.__runners = []
         self.__jar_runners = {}
-        self.__progressing_jars = []
 
         for pth in [settings.LOGS_PATH, settings.TMP_PATH, settings.CONF_PATH]:
             if not os.path.exists(pth):
@@ -491,7 +491,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             except Exception as e:                           # pylint: disable=broad-except
                 handle_exception(e)
 
-        for t in self.__runners[:] + [r for r in self.__jar_runners.values()]:
+        for t in self.__runners[:] + [r['task'] for r in self.__jar_runners.values()]:
             try:
                 t.cancel()
 
@@ -503,7 +503,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 logging.info(f"{ t } has been canceled now.")
 
         self.__runners = []
-        self.__jar_runners = []
+        self.__jar_runners = {}
 
     async def __barcode_read_task(self, dev_index, barcode_device_name):
 
@@ -647,8 +647,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             if jar:
                 # let's run a task that will manage the jar through the entire path inside the system
                 t = self.__jar_task(jar)
-                self.__jar_runners[barcode] = asyncio.ensure_future(t)
-                self.__progressing_jars.append(jar)
+                self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
 
                 logging.info("{} {} t:{}".format(len(self.__jar_runners), barcode, t))
 
@@ -704,9 +703,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             jar.description = traceback.format_exc()
             handle_exception(e)
 
-        logging.warning("jar:{}".format(jar))
+        logging.warning("delivering jar:{}".format(jar))
         self.db_session.commit()
-        self.__progressing_jars.remove(jar)
 
     def __feed_jar_in_input(self, last_time):
 
@@ -724,15 +722,14 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         # TODO: check if machine_heads status is deprcated
 
-        # TODO: [for r in self.__jar_runners: check r.status]
-
         for k in [k_ for k_ in self.__jar_runners]:
-            if self.__jar_runners[k].done():
-                self.__jar_runners[k].cancel()
-                del self.__jar_runners[k]
-
-        # ~ logging.info("len(self.__jar_runners):{}".format(len(self.__jar_runners)))
-        # ~ logging.debug(["{}.".format(r) for r in self.__jar_runners.values()])
+            
+            task = self.__jar_runners[k]['task']
+            # ~ logging.warning("inspecting:{}".format(task))
+            if task.done():
+                task.cancel()
+                logging.warning("deleting:{}".format(self.__jar_runners[k]))
+                self.__jar_runners.pop(k)
 
     def __on_head_answer_received(self, head_index, answer):
 
@@ -805,7 +802,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return order
 
-    async def feed_to_IN(self):  #  'feed'
+    async def move_00_01(self):  # 'feed'
 
         A = self.get_machine_head_by_letter('A')
 
@@ -949,6 +946,18 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         await self.get_machine_head_by_letter('D').can_movement()
         await self.get_machine_head_by_letter('E').can_movement()
         await self.get_machine_head_by_letter('F').can_movement()
+
+    def run_a_coroutine_helper(self, coroutine_name):
+        try:
+            if hasattr(self, coroutine_name):
+                _coroutine = getattr(self, coroutine_name)
+                _future = _coroutine()
+                asyncio.ensure_future(_future)
+                logging.warning(f"coroutine_name:{coroutine_name}, _future:{_future}")
+            else:
+                logging.error(f"coroutine_name:{coroutine_name} not found!")
+        except BaseException:
+            logging.error(traceback.format_exc())
 
 
 def main():

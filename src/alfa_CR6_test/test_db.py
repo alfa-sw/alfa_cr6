@@ -29,8 +29,6 @@ LOG_LEVEL = logging.WARNING
 # ~ LOG_LEVEL = logging.INFO
 # ~ LOG_LEVEL = logging.DEBUG
 
-fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
-logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format=fmt_)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(HERE, 'fixtures')
@@ -77,6 +75,9 @@ def set_settings():
 def test_all():
 
     set_settings()
+
+    fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
+    logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format=fmt_)
 
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
 

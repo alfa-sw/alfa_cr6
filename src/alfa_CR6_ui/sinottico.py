@@ -62,10 +62,16 @@ class Sinottico(QWidget):
         for key, value in service_pages.items():
             value.clicked.connect((lambda x: lambda: self.openChrome(x))(key))
 
-            start_act = [Action(0, 'Input_Roller', 2)]
-            stop_act = [Action(6, 'output_Roller', 2)]
-            self.out_btn_start.clicked.connect(lambda: self.jar_button(start_act))
-            self.out_btn_out.clicked.connect(lambda: self.jar_button(start_act))
+            # ~ start_act = [Action(0, 'Input_Roller', 2)]
+            # ~ stop_act = [Action(6, 'output_Roller', 2)]
+            # ~ self.out_btn_start.clicked.connect(lambda: self.jar_button(start_act))
+            # ~ self.out_btn_out.clicked.connect(lambda: self.jar_button(start_act))
+
+        cr6_app = QApplication.instance()
+
+        self.out_btn_start.clicked.connect(lambda: cr6_app.run_a_coroutine_helper('move_00_01'))
+        self.out_btn_out.clicked.connect(lambda: cr6_app.run_a_coroutine_helper('move_11_12'))
+
 
     def add_data(self):
         for head_index in range(len(self.defs)):
