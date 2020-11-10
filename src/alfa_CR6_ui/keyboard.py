@@ -13,6 +13,7 @@ except BaseException:
     has_evdev = False
 
 KeyButton = namedtuple('KeyButton', 'key label posx posy endx endy button')
+KeyAction = namedtuple('KeyAction', 'key push')
 
 
 class Keyboard(QWidget):
@@ -114,6 +115,9 @@ class Keyboard(QWidget):
 
         return l
 
+    def isletter(self, key):
+        return key.isalpha() and len(key) == 1
+
     def redraw_buttons(self):
         for button in self.buttons:
             button.button.setText(self.i18n(button.label))
@@ -132,10 +136,31 @@ class Keyboard(QWidget):
         if not has_evdev:
             return
         ui = UInput()
-        ui.write(e.EV_KEY, key, 1)
-        QTimer.singleShot(100, lambda: self.pullUp(key, ui))
+        keys = [KeyAction(key, True),
+                KeyAction(key, False)]
+        if self.shifted:
+            keys = self.shifted_symbol(keys)
+        self.pushdispatcher(keys, ui)
 
-    def pullUp(self, key, ui):
-        ui.write(e.EV_KEY, key, 0)
-        ui.syn()
-        ui.close()
+    def shifted_symbol(self, keys):
+        start = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], True)]
+        end = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], False)]
+        return start + keys + end
+
+    def pushdispatcher(self, keys, ui):
+        if keys == []:
+            ui.syn()
+            ui.close()
+            return
+        if keys[0].push:
+            self.push(keys, ui)
+        else:
+            self.pull(keys, ui)
+
+    def push(self, keys, ui):
+        ui.write(e.EV_KEY, keys[0].key, 1)
+        QTimer.singleShot(100, lambda: self.pushdispatcher(keys[1:], ui))
+
+    def pull(self, keys, ui):
+        ui.write(e.EV_KEY, keys[0].key, 0)
+        QTimer.singleShot(100, lambda: self.pushdispatcher(keys[1:], ui))
