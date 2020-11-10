@@ -120,7 +120,11 @@
         <height>211</height>
        </rect>
       </property>
-      <layout class="QVBoxLayout" name="keyboard_position"/>
+      <layout class="QVBoxLayout" name="keyboard_position">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+      </layout>
      </widget>
     </widget>
     <widget class="QWidget" name="project">

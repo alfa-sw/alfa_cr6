@@ -14,6 +14,9 @@ from alfa_CR6_ui.keyboard import Keyboard
 
 
 class MainWindow(QMainWindow):
+    keyboard = {}
+    sinottico = {}
+
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/main_window.ui", self)
@@ -32,6 +35,7 @@ class MainWindow(QMainWindow):
             self.user_edit.clear()
             self.pass_edit.clear()
             self.main_window_stack.setCurrentWidget(self.project)
+            self.sinottico.transferKeyboard(self.keyboard)
 
         else:
             msg.setText('Incorrect Password')

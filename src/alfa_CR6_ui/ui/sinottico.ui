@@ -95,7 +95,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -642,10 +642,10 @@
     </property>
     <layout class="QVBoxLayout" name="keyboard_position">
      <property name="spacing">
-      <number>-1</number>
+      <number>0</number>
      </property>
      <property name="sizeConstraint">
-      <enum>QLayout::SetMaximumSize</enum>
+      <enum>QLayout::SetDefaultConstraint</enum>
      </property>
     </layout>
    </widget>
