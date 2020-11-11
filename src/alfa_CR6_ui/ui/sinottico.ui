@@ -114,7 +114,7 @@
        <pixmap>../images/machine.png</pixmap>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_2" native="true">
+     <widget class="QLabel" name="STEP_2" native="true">
       <property name="geometry">
        <rect>
         <x>639</x>
@@ -124,7 +124,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_9" native="true">
+     <widget class="QLabel" name="STEP_9" native="true">
       <property name="geometry">
        <rect>
         <x>629</x>
@@ -134,7 +134,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_3" native="true">
+     <widget class="QLabel" name="STEP_3" native="true">
       <property name="geometry">
        <rect>
         <x>1000</x>
@@ -144,7 +144,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_8" native="true">
+     <widget class="QLabel" name="STEP_8" native="true">
       <property name="geometry">
        <rect>
         <x>1009</x>
@@ -154,7 +154,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_4" native="true">
+     <widget class="QLabel" name="STEP_4" native="true">
       <property name="geometry">
        <rect>
         <x>1380</x>
@@ -164,7 +164,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_7" native="true">
+     <widget class="QLabel" name="STEP_7" native="true">
       <property name="geometry">
        <rect>
         <x>1380</x>
@@ -395,7 +395,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_1" native="true">
+     <widget class="QLabel" name="STEP_1" native="true">
       <property name="geometry">
        <rect>
         <x>360</x>
@@ -405,7 +405,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_12" native="true">
+     <widget class="QLabel" name="STEP_12" native="true">
       <property name="geometry">
        <rect>
         <x>240</x>
@@ -415,7 +415,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_11" native="true">
+     <widget class="QLabel" name="STEP_11" native="true">
       <property name="geometry">
        <rect>
         <x>370</x>
@@ -425,7 +425,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_10" native="true">
+     <widget class="QLabel" name="STEP_10" native="true">
       <property name="geometry">
        <rect>
         <x>360</x>
@@ -435,7 +435,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_5" native="true">
+     <widget class="QLabel" name="STEP_5" native="true">
       <property name="geometry">
        <rect>
         <x>1590</x>
@@ -445,13 +445,13 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="STEP_6" native="true">
+     <widget class="QLabel" name="STEP_6" native="true">
       <property name="geometry">
        <rect>
         <x>1580</x>
-        <y>620</y>
-        <width>141</width>
-        <height>241</height>
+        <y>780</y>
+        <width>121</width>
+        <height>91</height>
        </rect>
       </property>
      </widget>

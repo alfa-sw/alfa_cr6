@@ -118,6 +118,18 @@ class Sinottico(QWidget):
         for status_obj in self.status_defs[head_index]:
             if status_obj.type == "string":
                 status_obj.path.setText(machine_status[status_obj.source])
+            if status_obj.type == "jar":
+                if False:
+                    pscaled = self.get_jar(0)
+                    status_obj.path.setPixmap(pscaled)
+
+    def get_jar(self, n):
+        dict_cans = ["/jar-green.png",  "/jar-red.png", "/jat-blue.png"]
+        p=""
+        if (n!=-1):
+            p = dict_cans[n]
+        pixmap = QPixmap(QApplication.instance().images_path + p)
+        return pixmap.scaled(50, 50, Qt.KeepAspectRatio)
 
     def get_pscaled(self, on):
         p = "/grey.png"
@@ -152,27 +164,39 @@ class Sinottico(QWidget):
         return widget
 
     def jar_button(self, action):
+        print(action)
         self.cr6_app.run_a_coroutine_helper(action)
 
     def init_defs(self):
         self.status_defs = [
             [  # head 1
-                StatusViewItem(self.view_status_HEAD_1_STEP_2, "string", "status_level")
+                StatusViewItem(self.view_status_HEAD_1_STEP_2, "string", "status_level"),
+                StatusViewItem(self.STEP_1, "jar", "can"),
+                StatusViewItem(self.STEP_2, "jar", "can"),
             ],
             [  # head 2
-                StatusViewItem(self.view_status_HEAD_2_STEP_9, "string", "status_level")
+                StatusViewItem(self.view_status_HEAD_2_STEP_9, "string", "status_level"),
+                StatusViewItem(self.STEP_9, "jar", "can"),
+                StatusViewItem(self.STEP_10, "jar", "can"),
+                StatusViewItem(self.STEP_11, "jar", "can"),
             ],
             [  # head 3
-                StatusViewItem(self.view_status_HEAD_3_STEP_3, "string", "status_level")
+                StatusViewItem(self.view_status_HEAD_3_STEP_3, "string", "status_level"),
+                StatusViewItem(self.STEP_3, "jar", "can"),
             ],
             [  # head 4
-                StatusViewItem(self.view_status_HEAD_4_STEP_8, "string", "status_level")
+                StatusViewItem(self.view_status_HEAD_4_STEP_8, "string", "status_level"),
+                StatusViewItem(self.STEP_8, "jar", "can"),
             ],
             [  # head 5
-                StatusViewItem(self.view_status_HEAD_5_STEP_4, "string", "status_level")
+                StatusViewItem(self.view_status_HEAD_5_STEP_4, "string", "status_level"),
+                StatusViewItem(self.STEP_4, "jar", "can"),
+                StatusViewItem(self.STEP_5, "jar", "can"),
+                StatusViewItem(self.STEP_6, "jar", "can")
             ],
             [  # head 6
-                StatusViewItem(self.view_status_HEAD_6_STEP_7, "string", "status_level")
+                StatusViewItem(self.view_status_HEAD_6_STEP_7, "string", "status_level"),
+                StatusViewItem(self.STEP_7, "jar", "can"),
             ],
         ]
         jar_lifter_1 = self.add_view(Jar(), self.jar_lifter_1)
