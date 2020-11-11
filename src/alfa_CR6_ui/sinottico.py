@@ -76,6 +76,7 @@ class Sinottico(QWidget):
                     btn.setFixedHeight(50)
                     btn.clicked.connect((lambda x: lambda: self.jar_button(x))(button.actions))
                     update_obj['view'].buttons.addWidget(btn)
+                existing = update_obj['view'].status.count() / 2
                 for n, statusItem in enumerate(update_obj['status']):
                     label = QLabel(statusItem.label)
                     label.setFixedHeight(50)
@@ -93,8 +94,8 @@ class Sinottico(QWidget):
                         result.setFixedHeight(50)
                         result.setFont(QFont('Times', 35))
                         statusItem.current.append(result)
-                    update_obj['view'].status.addWidget(label, n, 0)
-                    update_obj['view'].status.addWidget(result, n, 1)
+                    update_obj['view'].status.addWidget(label, existing + n, 0)
+                    update_obj['view'].status.addWidget(result, existing + n, 1)
 
     def update_data(self, head_index, status):
 
@@ -176,11 +177,11 @@ class Sinottico(QWidget):
                 StatusViewItem(self.view_status_HEAD_6_STEP_7, "string", "status_level")
             ],
         ]
+        jar_lifter_1 = self.add_view(Jar(), self.jar_lifter_1)
         self.defs = [  # head 1
             [
                 {
                     # jar input
-                    "first_update": True,
                     "view": self.add_view(Jar(), self.jar_input),
                     "buttons": [
                         Button('Start rulliera (MU_1)', [Action(0, 'Input_Roller', 1)]),
@@ -198,7 +199,6 @@ class Sinottico(QWidget):
                 },
                 {
                     # jar head 1
-                    "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t1),
                     "buttons": [
                         Button('Start rulliera (MU_2)', [Action(0, 'Dispenser_Roller', 1)]),
@@ -217,7 +217,6 @@ class Sinottico(QWidget):
             [  # head 2
                 {
                     # jar head 2
-                    "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t2),
                     "buttons": [
                         Button('Start rulliera (MU_7)', [Action(1, 'Dispenser_Roller', 1)]),
@@ -235,7 +234,6 @@ class Sinottico(QWidget):
             [  # head 3
                 {
                     # jar head 3
-                    "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t3),
                     "buttons": [
                         Button('Start rulliera (MU_3)', [Action(2, 'Dispenser_Roller', 1)]),
@@ -253,7 +251,6 @@ class Sinottico(QWidget):
             [  # head 4
                 {
                     # jar head 4
-                    "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t4),
                     "buttons": [
                         Button('Start rulliera (MU_6)', [Action(3, 'Dispenser_Roller', 1)]),
@@ -271,7 +268,6 @@ class Sinottico(QWidget):
             [  # head 5
                 {
                     # jar head 5
-                    "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t5),
                     "buttons": [
                         Button('Start rulliera (MU_4)', [Action(4, 'Dispenser_Roller', 1)]),
@@ -285,11 +281,24 @@ class Sinottico(QWidget):
                         StatusItem('Stato CP_5', 'container_presence', 'bool', -1, 'm1', []),
                     ]
                 },
+                {
+                    # jar lifter 1 (1/2)
+                    "view": jar_lifter_1,
+                    "buttons": [
+                        Button('Start rulliera (MU_4)', [Action(4, 'Dispenser_Roller', 1)]),
+                        Button('Stop rulliera', [Action(4, 'Dispenser_Roller', 0)]),
+                        Button('Start "step 4"', [Action(4, 'Dispenser_Roller', 2)]),
+                        Button('Start "step 4 -step5"', [Action(4, 'Input_Roller', 2),
+                                                         Action(5, 'Dispenser_Roller', 2)]),
+                    ],
+                    "status":[
+                        StatusItem('Stato FTC_5', 'jar_photocells_status', 'flag', 1, 'm1', []),
+                    ]
+                },
             ],
             [  # head 6
                 {
                     # jar head 6
-                    "first_update": True,
                     "view": self.add_view(Jar(), self.jar_t6),
                     "buttons": [
                         Button('Start rulliera (MU_5)', [Action(5, 'Dispenser_Roller', 1)]),
@@ -301,6 +310,16 @@ class Sinottico(QWidget):
                     "status":[
                         StatusItem('Stato FTC_6', 'jar_photocells_status', 'flag', 8, 'm1', []),
                         StatusItem('Stato CP_6', 'container_presence', 'bool', -1, 'm1', []),
+                    ]
+                },
+                {
+                    # jar lifter 1 (2/2)
+                    "view": jar_lifter_1,
+                    "buttons": [
+                    ],
+                    "status":[
+                        StatusItem('Stato MS_1', 'jar_photocells_status', 'flag', 4, 'm1', []),
+                        StatusItem('Stato MS_2', 'jar_photocells_status', 'flag', 3, 'm1', []),
                     ]
                 },
             ],
