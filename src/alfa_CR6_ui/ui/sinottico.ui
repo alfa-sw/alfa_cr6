@@ -95,7 +95,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -114,7 +114,7 @@
        <pixmap>../images/machine.png</pixmap>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_2" native="true">
+     <widget class="QLabel" name="STEP_2">
       <property name="geometry">
        <rect>
         <x>639</x>
@@ -124,7 +124,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_9" native="true">
+     <widget class="QLabel" name="STEP_9">
       <property name="geometry">
        <rect>
         <x>629</x>
@@ -134,7 +134,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_3" native="true">
+     <widget class="QLabel" name="STEP_3">
       <property name="geometry">
        <rect>
         <x>1000</x>
@@ -144,7 +144,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_8" native="true">
+     <widget class="QLabel" name="STEP_8">
       <property name="geometry">
        <rect>
         <x>1009</x>
@@ -154,7 +154,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_4" native="true">
+     <widget class="QLabel" name="STEP_4">
       <property name="geometry">
        <rect>
         <x>1380</x>
@@ -164,7 +164,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_7" native="true">
+     <widget class="QLabel" name="STEP_7">
       <property name="geometry">
        <rect>
         <x>1380</x>
@@ -395,7 +395,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_1" native="true">
+     <widget class="QLabel" name="STEP_1">
       <property name="geometry">
        <rect>
         <x>360</x>
@@ -405,7 +405,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_12" native="true">
+     <widget class="QLabel" name="STEP_12">
       <property name="geometry">
        <rect>
         <x>240</x>
@@ -415,7 +415,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_11" native="true">
+     <widget class="QLabel" name="STEP_11">
       <property name="geometry">
        <rect>
         <x>370</x>
@@ -425,7 +425,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_10" native="true">
+     <widget class="QLabel" name="STEP_10">
       <property name="geometry">
        <rect>
         <x>360</x>
@@ -435,7 +435,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_5" native="true">
+     <widget class="QLabel" name="STEP_5">
       <property name="geometry">
        <rect>
         <x>1590</x>
@@ -445,7 +445,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QLabel" name="STEP_6" native="true">
+     <widget class="QLabel" name="STEP_6">
       <property name="geometry">
        <rect>
         <x>1580</x>
@@ -626,7 +626,7 @@
       </property>
       <layout class="QVBoxLayout" name="jar_input_buttons">
        <property name="spacing">
-        <number>0</number>
+        <number>1</number>
        </property>
        <property name="topMargin">
         <number>0</number>

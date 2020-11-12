@@ -802,6 +802,129 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return order
 
+    async def move_mu(self, l, roller='Dispensing_Roller', m=1):  # 'feed'
+        A = self.get_machine_head_by_letter(l)
+        await A.can_movement({roller: m})
+
+    async def stop_mu(self, l, roller='Dispensing_Roller', m=0):  # 'feed'
+        A = self.get_machine_head_by_letter(l)
+        await A.can_movement({roller: m})
+
+    async def move_step(self, l, roller='Dispensing_Roller', m=2):  # 'feed'
+        A = self.get_machine_head_by_letter(l)
+        await A.can_movement({roller: m})
+
+    async def move_mu_01(self):  # 'feed'
+        await self.move_mu('A', roller='Input_Roller')
+
+    async def stop_mu_01(self):  # 'feed'
+        await self.stop_mu('A', roller='Input_Roller')
+
+    async def move_step_01(self):  # 'feed'
+        await self.move_step('A', roller='Input_Roller')
+
+    async def move_mu_02(self):  # 'feed'
+        await self.move_mu('A')
+
+    async def stop_mu_02(self):  # 'feed'
+        await self.stop_mu('A')
+
+    async def move_step_02(self):  # 'feed'
+        await self.move_step('A')
+
+    async def move_mu_03(self):  # 'feed'
+        await self.move_mu('B')
+
+    async def stop_mu_03(self):  # 'feed'
+        await self.stop_mu('B')
+
+    async def move_step_03(self):  # 'feed'
+        await self.move_step('B')
+
+    async def move_mu_04(self):  # 'feed'
+        await self.move_mu('C')
+
+    async def stop_mu_04(self):  # 'feed'
+        await self.stop_mu('C')
+
+    async def move_step_04(self):  # 'feed'
+        await self.move_step('C')
+
+    async def move_mu_05(self):  # 'feed'
+        await self.move_mu('D')
+
+    async def stop_mu_05(self):  # 'feed'
+        await self.stop_mu('D')
+
+    async def move_step_05(self):  # 'feed'
+        await self.move_step('D')
+
+    async def move_mu_07(self):  # 'feed'
+        await self.move_mu('F')
+
+    async def move_mu_06(self):  # 'feed'
+        await self.move_mu('E')
+
+    async def stop_mu_06(self):  # 'feed'
+        await self.stop_mu('E')
+
+    async def move_step_06(self):  # 'feed'
+        await self.move_step('E')
+
+    async def move_mu_07(self):  # 'feed'
+        await self.move_mu('F')
+
+    async def stop_mu_07(self):  # 'feed'
+        await self.stop_mu('F')
+
+    async def move_step_07(self):  # 'feed'
+        await self.move_step('F')
+
+    async def move_mu_08(self):  # 'feed'
+        await self.move_mu('F', roller='Lifter_Roller', m=3)
+
+    async def stop_mu_08(self):  # 'feed'
+        await self.stop_mu('F', roller='Lifter_Roller')
+
+    async def move_step_08(self):  # 'feed'
+        await self.move_step('F', roller='Lifter_Roller', m=5)
+
+    async def move_mu_09(self):  # 'feed'
+        await self.move_mu('F', roller='Output_Roller', m=3)
+
+    async def stop_mu_09(self):  # 'feed'
+        await self.stop_mu('F', roller='Output_Roller')
+
+    async def move_step_09(self):  # 'feed'
+        await self.move_step('F', roller='Output_Roller', m=2)
+
+    async def move_cw_mb_1(self):
+        await self.move_mu('C', roller='Lifter_Roller', m=2)
+
+    async def move_ccw_mb_1(self):
+        await self.move_mu('C', roller='Lifter_Roller', m=3)
+
+    async def stop_mb_1(self):
+        await self.move_mu('C', roller='Lifter_Roller', m=0)
+
+    async def lift_01_up(self):
+        await self.move_mu('D', roller='Lifter', m=1)
+
+    async def lift_01_down(self):
+        await self.move_mu('D', roller='Lifter', m=2)
+
+    async def lift_01_stop(self):
+        await self.move_mu('D', roller='Lifter', m=0)
+
+    async def lift_02_up(self):
+        await self.move_mu('F', roller='Lifter', m=1)
+
+    async def lift_02_down(self):
+        await self.move_mu('F', roller='Lifter', m=2)
+
+    async def lift_02_stop(self):
+        await self.move_mu('F', roller='Lifter', m=0)
+
     async def move_00_01(self):  # 'feed'
 
         A = self.get_machine_head_by_letter('A')
