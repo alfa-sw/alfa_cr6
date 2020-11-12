@@ -20,6 +20,7 @@ from collections import namedtuple
 Button = namedtuple('Button', 'label action')
 StatusItem = namedtuple('StatusItem', 'label path type flagno source current')
 StatusViewItem = namedtuple('StatusViewItem', 'path type source')
+StatusFlag = namedtuple('StatusFlag', 'path_local other path_other')
 
 
 class Sinottico(QWidget):
@@ -119,17 +120,22 @@ class Sinottico(QWidget):
             if status_obj.type == "string":
                 status_obj.path.setText(machine_status[status_obj.source])
             if status_obj.type == "jar":
-                if False:
+                if machine_status['jar_photocells_status'] >> status_obj.source.path_local & 1:
                     pscaled = self.get_jar(0)
-                    status_obj.path.setPixmap(pscaled)
+                else:
+                    pscaled = self.get_jar(-1)
+                status_obj.path.setPixmap(pscaled)
 
     def get_jar(self, n):
-        dict_cans = ["/jar-green.png",  "/jar-red.png", "/jat-blue.png"]
-        p=""
-        if (n!=-1):
+        dict_cans = ["/jar-green.png", "/jar-red.png", "/jat-blue.png"]
+        p = ""
+        if (n != -1):
             p = dict_cans[n]
-        pixmap = QPixmap(QApplication.instance().images_path + p)
-        return pixmap.scaled(50, 50, Qt.KeepAspectRatio)
+            pixmap = QPixmap(QApplication.instance().images_path + p)
+            return pixmap.scaled(50, 50, Qt.KeepAspectRatio)
+        else:
+            pixmap = QPixmap(QApplication.instance().images_path + dict_cans[0])
+            return pixmap.scaled(0, 0, Qt.KeepAspectRatio)
 
     def get_pscaled(self, on):
         p = "/grey.png"
@@ -171,32 +177,33 @@ class Sinottico(QWidget):
         self.status_defs = [
             [  # head 1
                 StatusViewItem(self.view_status_HEAD_1_STEP_2, "string", "status_level"),
-                StatusViewItem(self.STEP_1, "jar", "can"),
-                StatusViewItem(self.STEP_2, "jar", "can"),
+                StatusViewItem(self.STEP_1, "jar", StatusFlag(0, 0, 0)),
+                StatusViewItem(self.STEP_2, "jar", StatusFlag(8, 0, 0)),
             ],
             [  # head 2
                 StatusViewItem(self.view_status_HEAD_2_STEP_9, "string", "status_level"),
-                StatusViewItem(self.STEP_9, "jar", "can"),
-                StatusViewItem(self.STEP_10, "jar", "can"),
-                StatusViewItem(self.STEP_11, "jar", "can"),
+                StatusViewItem(self.STEP_9, "jar", StatusFlag(8, 0, 0)),
+                StatusViewItem(self.STEP_10, "jar", StatusFlag(7, 0, 5)),
+                StatusViewItem(self.STEP_11, "jar", StatusFlag(7, 0, 6)),
+                StatusViewItem(self.STEP_12, "jar", StatusFlag(2, 0, 0)),
             ],
             [  # head 3
                 StatusViewItem(self.view_status_HEAD_3_STEP_3, "string", "status_level"),
-                StatusViewItem(self.STEP_3, "jar", "can"),
+                StatusViewItem(self.STEP_3, "jar", StatusFlag(8, 0, 0)),
             ],
             [  # head 4
                 StatusViewItem(self.view_status_HEAD_4_STEP_8, "string", "status_level"),
-                StatusViewItem(self.STEP_8, "jar", "can"),
+                StatusViewItem(self.STEP_8, "jar", StatusFlag(8, 0, 0)),
             ],
             [  # head 5
                 StatusViewItem(self.view_status_HEAD_5_STEP_4, "string", "status_level"),
-                StatusViewItem(self.STEP_4, "jar", "can"),
-                StatusViewItem(self.STEP_5, "jar", "can"),
-                StatusViewItem(self.STEP_6, "jar", "can")
+                StatusViewItem(self.STEP_4, "jar", StatusFlag(8, 0, 0)),
+                StatusViewItem(self.STEP_5, "jar", StatusFlag(1, 6, 4)),  # 1 6-4
+                StatusViewItem(self.STEP_6, "jar", StatusFlag(1, 6, 4))  # 1 6-3
             ],
             [  # head 6
                 StatusViewItem(self.view_status_HEAD_6_STEP_7, "string", "status_level"),
-                StatusViewItem(self.STEP_7, "jar", "can"),
+                StatusViewItem(self.STEP_7, "jar", StatusFlag(8, 0, 0)),
             ],
         ]
         jar_lifter_1 = self.add_view(Jar(), self.jar_lifter_1)
