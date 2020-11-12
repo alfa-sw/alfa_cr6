@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import logging
+import traceback
+
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QPushButton, QSizePolicy
 from collections import namedtuple
@@ -11,6 +14,7 @@ try:
     from evdev import UInput, ecodes as e
 except BaseException:
     has_evdev = False
+    logging.error(traceback.format_exc())
 
 KeyButton = namedtuple('KeyButton', 'key label posx posy endx endy button')
 KeyAction = namedtuple('KeyAction', 'key push')
@@ -25,6 +29,7 @@ class Keyboard(QWidget):
         super().__init__(parent)
         with open(QApplication.instance().keyboard_path + "/it.json", 'r') as keyboard_json:
             keyboard_def = json.load(keyboard_json)
+
         yadd = 0
         for y, row in enumerate(keyboard_def):
             x = 0

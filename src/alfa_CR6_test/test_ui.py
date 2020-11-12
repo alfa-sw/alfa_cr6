@@ -68,6 +68,8 @@ def test_all():
     set_settings()
 
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
+    
+    APP.main_window.onLoginBtnClicked()
 
     APP.debug_status_view = DebugStatusView()
 

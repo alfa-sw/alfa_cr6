@@ -21,13 +21,13 @@ from PyQt5.QtWidgets import QApplication, QFrame, QTextBrowser, QButtonGroup, QP
 
 class DebugStatusView():
 
-    def __init__(self):
+    def __init__(self, parent):
 
         app = QApplication.instance()
         
         self.barcode_counter = 0
 
-        self.main_frame = QFrame(parent=app.main_window.main_window_stack)
+        self.main_frame = QFrame(parent=parent)
         # ~ self.main_frame.setGeometry(0, 0, 1800, 1000)
 
         self.status_text_browser = QTextBrowser(parent=self.main_frame)
@@ -108,8 +108,8 @@ class DebugStatusView():
 
         # ~ app.main_window.sinottico.main_view_stack.addWidget(self.main_frame)
         # ~ app.main_window.sinottico.main_view_stack.setCurrentWidget(self.main_frame)
-        app.main_window.main_window_stack.addWidget(self.main_frame)
-        app.main_window.main_window_stack.setCurrentWidget(self.main_frame)
+        parent.main_window_stack.addWidget(self.main_frame)
+        parent.main_window_stack.setCurrentWidget(self.main_frame)
 
         self.status_text_browser.anchorClicked.connect(self.status_text_browser_anchor_clicked)
         self.button_group.buttonClicked.connect(self.on_button_group_clicked)
