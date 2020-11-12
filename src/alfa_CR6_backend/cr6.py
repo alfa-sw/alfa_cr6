@@ -67,13 +67,13 @@ settings = types.SimpleNamespace(
     # to which the application connects its websocket clients,
     # if it is empty, no websocket client is started
     MACHINE_HEAD_IPADD_PORTS_LIST=[
-        ('127.0.0.1', 11000, 8080)
-        # ~ ("192.168.15.156", 11000, 8080)
-        # ~ ("192.168.15.19",  11000, 8080)
-        # ~ ("192.168.15.60",  11000, 8080)
-        # ~ ("192.168.15.61",  11000, 8080)
-        # ~ ("192.168.15.62",  11000, 8080)
-        # ~ ("192.168.15.170", 11000, 8080)
+        # ~ ('127.0.0.1', 11000, 8080)
+        # ~ ("192.168.15.156", 11000, 8080),
+        # ~ ("192.168.15.19", 11000, 8080),
+        # ~ ("192.168.15.60", 11000, 8080),
+        # ~ ("192.168.15.61", 11000, 8080),
+        # ~ ("192.168.15.62", 11000, 8080),
+        # ~ ("192.168.15.170", 11000, 8080),
     ],
 
     # this dictionary keeps the path to the files where
@@ -336,15 +336,15 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             self.handle_exception(e)
 
     async def __jar_task(self, jar):
-        
+
         def update_jar(jar, status=None, pos=None, t0=None):
-            if not status is None:
+            if status is not None:
                 jar.status = status
 
-            if not pos is None:
-                jar.position = pos 
+            if pos is not None:
+                jar.position = pos
 
-            if not t0 is None:
+            if t0 is not None:
                 jar.description = "d:{:.1f}".format(time.time() - t0)
 
         t0 = time.time()
@@ -825,8 +825,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             if r:
                 # ~ await F.wait_for_status(F.unload_lifter_down)
                 r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True)
-                if r:
-                    await F.can_movement()
+                # ~ if r:
+                # ~ await F.can_movement()
 
         return r
 

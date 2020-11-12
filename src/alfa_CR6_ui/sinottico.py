@@ -266,6 +266,7 @@ class Sinottico(QWidget):
                         Button('Start "sollevatore_up"', 'lift_02_up'),
                         Button('Start "sollevatore_down"', 'lift_02_down'),
                         Button('Stop sollevatore"', 'lift_02_stop'),
+                        Button('Start "step 10 -step 11"', 'move_10_11'),
                     ],
                     "status":[
                         StatusItem('Stato FTC_9', 'jar_photocells_status', 'flag', 7, 'm1', []),
