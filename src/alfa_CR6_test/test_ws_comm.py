@@ -23,8 +23,14 @@ def set_settings():
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
     alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
     
-    alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST=[
-        "127.0.0.1",
+    alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_PORTS_LIST=[
+        ('127.0.0.1', 11000, 8080)
+        # ~ ("192.168.15.156", 11000, 8080)
+        # ~ ("192.168.15.19",  11000, 8080)
+        # ~ ("192.168.15.60",  11000, 8080)
+        # ~ ("192.168.15.61",  11000, 8080)
+        # ~ ("192.168.15.62",  11000, 8080)
+        # ~ ("192.168.15.170", 11000, 8080)
     ]
 
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
@@ -59,7 +65,8 @@ def test_all():
             pars = {'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}
             
             logging.warning(f"APP.machine_head_dict[0].websocket:{APP.machine_head_dict[0].websocket}.")
-            APP.machine_head_dict[0].send_command(cmd_name="PURGE", params=pars, type_='macro')
+            c = APP.machine_head_dict[0].send_command(cmd_name="PURGE", params=pars, type_='macro')
+            t = asyncio.ensure_future(c)
         except:
             logging.error(traceback.format_exc())
 
