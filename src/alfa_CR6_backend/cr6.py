@@ -7,6 +7,7 @@
 
 import sys
 import os
+import time
 import logging
 import traceback
 import asyncio
@@ -335,46 +336,56 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             self.handle_exception(e)
 
     async def __jar_task(self, jar):
+        
+        def update_jar(jar, status=None, pos=None, t0=None):
+            if not status is None:
+                jar.status = status
 
+            if not pos is None:
+                jar.position = pos 
+
+            if not t0 is None:
+                jar.description = "d:{:.1f}".format(time.time() - t0)
+
+        t0 = time.time()
         try:
+            update_jar(jar, 'NEW', '_', t0)
             await self.move_00_01()
-            jar.status = 'PROGRESS'
-            jar.position = 'IN'
+            update_jar(jar, 'PROGRESS', 'IN', t0)
             await self.move_01_02()
-            jar.position = 'A'
+            update_jar(jar, 'PROGRESS', 'A', t0)
             await self.get_machine_head_by_letter('A').do_dispense(jar)
-            jar.position = 'A_B'
+            update_jar(jar, 'PROGRESS', 'A_B', t0)
             await self.move_02_03()
-            jar.position = 'B'
+            update_jar(jar, 'PROGRESS', 'B', t0)
             await self.get_machine_head_by_letter('B').do_dispense(jar)
-            jar.position = 'B_C'
+            update_jar(jar, 'PROGRESS', 'B_C', t0)
             await self.move_03_04()
-            jar.position = 'C'
+            update_jar(jar, 'PROGRESS', 'C', t0)
             await self.get_machine_head_by_letter('C').do_dispense(jar)
-            jar.position = 'C_UP'
+            update_jar(jar, 'PROGRESS', 'C_LIFTR', t0)
             await self.move_04_05()
-            jar.position = 'UP_RIGHT'
+            update_jar(jar, 'PROGRESS', 'LIFTR', t0)
             await self.move_05_06()
-            jar.position = 'DOWN_RIGHT'
+            update_jar(jar, 'PROGRESS', 'LIFTR_D', t0)
             await self.move_06_07()
-            jar.position = 'D'
+            update_jar(jar, 'PROGRESS', 'D', t0)
             await self.get_machine_head_by_letter('D').do_dispense(jar)
-            jar.position = 'D_E'
+            update_jar(jar, 'PROGRESS', 'D_E', t0)
             await self.move_07_08()
-            jar.position = 'E'
+            update_jar(jar, 'PROGRESS', 'E', t0)
             await self.get_machine_head_by_letter('E').do_dispense(jar)
-            jar.position = 'E_F'
+            update_jar(jar, 'PROGRESS', 'E_F', t0)
             await self.move_08_09()
-            jar.position = 'F'
+            update_jar(jar, 'PROGRESS', 'F', t0)
             await self.get_machine_head_by_letter('F').do_dispense(jar)
-            jar.position = 'F_DOWN'
+            update_jar(jar, 'PROGRESS', 'F_LIFTL', t0)
             await self.move_09_10()
-            jar.position = 'DOWN_LEFT'
+            update_jar(jar, 'PROGRESS', 'LIFTL', t0)
             await self.move_10_11()
-            jar.position = 'UP_LEFT'
+            update_jar(jar, 'PROGRESS', 'LIFTL_OUT', t0)
             await self.move_11_12()
-            jar.position = 'OUT'
-            jar.status = 'DONE'
+            update_jar(jar, 'DONE', '_', t0)
 
         except asyncio.CancelledError:
             jar.status = 'ERROR'
@@ -412,7 +423,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             logging.debug("order_nr:{}, index:{}".format(order_nr, index))
 
             if skip_checks:
-                q = self.db_session.query(Jar).filter(Jar.status != 'PROGRESS')
+                q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
                 jar = q.first()
             else:
                 q = self.db_session.query(Jar).filter(Jar.index == index)
@@ -427,9 +438,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 t = self.__jar_task(jar)
                 self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
 
-                logging.warning(" ******************* ")
-                logging.warning(" ******************* {} {} jar:{}".format(len(self.__jar_runners), barcode, jar))
-                logging.warning(" ******************* ")
+                logging.warning(" ************ {} {} jar:{}".format(len(self.__jar_runners), barcode, jar))
 
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)

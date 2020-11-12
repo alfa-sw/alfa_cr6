@@ -126,6 +126,9 @@ class Machine(MachineHead):     # pylint: disable=too-many-instance-attributes
                     self.websocket = websocket
                     while 1:
                         await self.handle_ws_recv()
+            except ConnectionRefusedError as e:
+                logging.error(f"e:{e}")
+                await asyncio.sleep(1)
             except Exception as e:
                 logging.error(f"e:{e}")
                 logging.error(traceback.format_exc())

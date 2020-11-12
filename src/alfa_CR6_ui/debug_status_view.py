@@ -91,7 +91,7 @@ class DebugStatusView():
             ('*', '**'),
             ('*', '**'),
             ('*', '**'),
-            ('*', '**'),
+            ('KILL', 'KILL_EMULATOR'),
             ('clear answers', 'clear answers'),
             ('close', 'close this widget'),
         ]):
@@ -171,7 +171,13 @@ class DebugStatusView():
 
         # ~ logging.warning(f"cmd_txt:{cmd_txt}")
 
-        if 'refresh' in cmd_txt:
+        if 'KILL' in cmd_txt:
+
+            m = app.machine_head_dict[0]
+            t = m.send_command(cmd_name="KILL_EMULATOR", params={})
+            asyncio.ensure_future(t)
+
+        elif 'refresh' in cmd_txt:
             self.show_status()
 
         elif 'clear answers' in cmd_txt:
@@ -251,17 +257,17 @@ class DebugStatusView():
 
         html_ += '<td colspan="1">                                           '
         html_ += '<br/># "jar photocells_status" mask bit coding:'
-        html_ += '<br/># bit0: JAR_INPUT_ROLLER_PHOTOCELL        '
-        html_ += '<br/># bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL  '
-        html_ += '<br/># bit2: JAR_OUTPUT_ROLLER_PHOTOCELL       '
-        html_ += '<br/># bit3: LOAD_LIFTER_DOWN_PHOTOCELL        '
-        html_ += '<br/># bit4: LOAD_LIFTER_UP_PHOTOCELL          '
-        html_ += '<br/># bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL      '
-        html_ += '<br/># bit6: UNLOAD_LIFTER_UP_PHOTOCELL        '
-        html_ += '<br/># bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL'
-        html_ += '<br/># bit8: JAR_DISPENSING_POSITION_PHOTOCELL '
-        html_ += '<br/># bit9: JAR_DETECTION_MICROSWITCH_1       '
-        html_ += '<br/># bit10:JAR_DETECTION_MICROSWITCH_2       '
+        html_ += '<br/> 0000 0000 0001  | 0x0001 # bit0: JAR_INPUT_ROLLER_PHOTOCELL        '
+        html_ += '<br/> 0000 0000 0010  | 0x0002 # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL  '
+        html_ += '<br/> 0000 0000 0100  | 0x0004 # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL       '
+        html_ += '<br/> 0000 0000 1000  | 0x0008 # bit3: LOAD_LIFTER_DOWN_PHOTOCELL        '
+        html_ += '<br/> 0000 0001 0000  | 0x0010 # bit4: LOAD_LIFTER_UP_PHOTOCELL          '
+        html_ += '<br/> 0000 0010 0000  | 0x0020 # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL      '
+        html_ += '<br/> 0000 0100 0000  | 0x0040 # bit6: UNLOAD_LIFTER_UP_PHOTOCELL        '
+        html_ += '<br/> 0000 1000 0000  | 0x0080 # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL'
+        html_ += '<br/> 0001 0000 0000  | 0x0100 # bit8: JAR_DISPENSING_POSITION_PHOTOCELL '
+        html_ += '<br/> 0010 0000 0000  | 0x0200 # bit9: JAR_DETECTION_MICROSWITCH_1       '
+        html_ += '<br/> 0100 0000 0000  | 0x0400 # bit10:JAR_DETECTION_MICROSWITCH_2       '
         html_ += '</td>                                          '
 
         html_ += '<td colspan="2">                                          '
@@ -269,7 +275,7 @@ class DebugStatusView():
         l_ = [i for i in app._CR6_application__jar_runners.values()]
         l_.reverse()
         for i, j in enumerate(l_):
-            html_ += '<br/>{}:"{}"'.format(i, j['jar'])
+            html_ += '<br/>{}:{} {}'.format(i, j['jar'], j['jar'].description)
         html_ += '</td>                                          '
 
         html_ += '</tr>                                          '
@@ -280,13 +286,15 @@ class DebugStatusView():
         html_ += '<table width="100%" aligbcellpadding="80px" cellspacing="80px">'
 
         html_ += '<tr bgcolor="#FFFFFF">'
-        html_ += '<th align="left">ord.</th>'
-        html_ += '<th align="left">name</th>'
-        html_ += '<th align="left">addr</th>'
-        html_ += '<th align="left">level</th>'
-        html_ += '<th align="left">jar_photocells_status</th>'
-        html_ += '<th align="left">photocells_status</th>'
-        html_ += '<th align="left">last update</th>'
+        html_ += '<th align="left" width="5%">ord.</th>'
+        html_ += '<th align="left" width="7%">name</th>'
+        html_ += '<th align="left" width="8%">addr</th>'
+        html_ += '<th align="left" width="18%">jar_photocells_status</th>'
+        html_ += '<th align="left" width="16%">photocells_status</th>'
+        html_ += '<th align="left" width="12%">level</th>'
+        html_ += '<th align="left" width="20%">last update</th>'
+        html_ += '<th align="left" width="7%">-</th>'
+        html_ += '<th align="left" width="8%">-</th>'
         html_ += '</tr>'
 
         for n in sorted(names_):
@@ -301,11 +309,13 @@ class DebugStatusView():
             html_ += '  <td>head {}</td>'.format(ord)
             html_ += '  <td>{}</td>'.format(m.name)
             html_ += '  <td><a href="http://{0}:8080/admin"> {0} </a></td>'.format(m.ip_add)
-            html_ += '  <td>{}</td>'.format(m.status.get('status_level'))
             html_ += '  <td>{0:04b} {1:04b} {2:04b} | 0x{3:04X} {3:5d}</td>'.format(
                 0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0), jar_ph_)
             html_ += '  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>'.format(
                 0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_)
+
+            cp = 1 if m.status.get('container_presence') else 0
+            html_ += '  <td>{} {}</td>'.format(cp, m.status.get('status_level'))
             html_ += '  <td>{}</td>'.format(m.status.get('last_update'))
 
             html_ += f'  <td><a href="RESET@{n}">RESET</a></td>'

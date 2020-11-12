@@ -43,6 +43,20 @@ ID_MAP = [
 
 class MachineHeadMockup:
 
+    """
+        # bit0: JAR_INPUT_ROLLER_PHOTOCELL         0000 0000 0001  | 0x0001
+        # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL   0000 0000 0010  | 0x0002
+        # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL        0000 0000 0100  | 0x0004
+        # bit3: LOAD_LIFTER_DOWN_PHOTOCELL         0000 0000 1000  | 0x0008
+        # bit4: LOAD_LIFTER_UP_PHOTOCELL           0000 0001 0000  | 0x0010
+        # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL       0000 0010 0000  | 0x0020
+        # bit6: UNLOAD_LIFTER_UP_PHOTOCELL         0000 0100 0000  | 0x0040
+        # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL 0000 1000 0000  | 0x0080
+        # bit8: JAR_DISPENSING_POSITION_PHOTOCELL  0001 0000 0000  | 0x0100
+        # bit9: JAR_DETECTION_MICROSWITCH_1        0010 0000 0000  | 0x0200
+        # bit10:JAR_DETECTION_MICROSWITCH_2        0100 0000 0000  | 0x0400
+    """
+
     def __init__(self, index):
 
         self.index = index
@@ -148,7 +162,9 @@ class MachineHeadMockup:
         args = []
         delay = 0
 
-        if msg_out_dict['command'] == 'ENTER_DIAGNOSTIC':
+        if msg_out_dict['command'] == 'KILL_EMULATOR':
+            self.__close_app()
+        elif msg_out_dict['command'] == 'ENTER_DIAGNOSTIC':
             target = self.update_status
             args = [{"status_level": "DIAGNOSTIC"}, ]
             delay = .5
@@ -261,18 +277,6 @@ class MachineHeadMockup:
 
                 if self.index == 1:  # F
 
-                        # bit0: JAR_INPUT_ROLLER_PHOTOCELL
-                        # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL
-                        # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL
-                        # bit3: LOAD_LIFTER_DOWN_PHOTOCELL
-                        # bit4: LOAD_LIFTER_UP_PHOTOCELL
-                        # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL
-                        # bit6: UNLOAD_LIFTER_UP_PHOTOCELL
-                        # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL
-                        # bit8: JAR_DISPENSING_POSITION_PHOTOCELL
-                        # bit9: JAR_DETECTION_MICROSWITCH_1
-                        # bit10:JAR_DETECTION_MICROSWITCH_2
-
                     # ~ await F.can_movement({'Dispensing_Roller': 2})                              move_08_09
                     # ~ await F.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 5})          move_09_10
                     # ~ await F.can_movement({'Output_Roller': 2})                                  move_10_11
@@ -284,15 +288,11 @@ class MachineHeadMockup:
                             'status_level': 'STANDBY'}, ]
                     elif dispensing_roller == 1 and lifter_roller == 5:   # move_09_10
                         args += [{  # set load_lifter_roller_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] | 0x0080) & ~ 0x0100,
-                            'status_level': 'STANDBY'}, ]
-                    # ~ elif output_roller == 2:  # move_10_11
+                            'jar_photocells_status': (self.status['jar_photocells_status'] | 0x0080) & ~ 0x0100,}, ]
                         args += [{  # set dispensig_pc
                             'jar_photocells_status': (self.status['jar_photocells_status'] & ~ 0x0008) | 0x0010}, ]
-                    # ~ elif lifter_roller == 3 and output_roller == 1:  # move_10_11
                         args += [{  # reset load_lifter_roller_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] & ~ 0x0080) | 0x0004,
-                            'status_level': 'STANDBY'}, ]
+                            'jar_photocells_status': (self.status['jar_photocells_status'] & ~ 0x0080) | 0x0004}, ]
                     elif lifter == 2 and output_roller == 2:  # move_11_12
                         args += [{  # set load_lifter_roller_pc
                             'jar_photocells_status': self.status['jar_photocells_status'] & ~ 0x0004,
@@ -308,6 +308,9 @@ class MachineHeadMockup:
     async def dump_status(self):
         raise Exception(f"to be overidden in {self}")
 
+
+    def __close_app(self):
+        raise KeyboardInterrupt
 
 class MachineHeadMockupWsSocket(MachineHeadMockup):
 
@@ -431,7 +434,7 @@ def create_and_run_tasks():
     # ~ res = await asyncio.gather(*tasks, return_exceptions=True)
 
     # ~ logging.warning(f" *** terminating tasks  *** ")
-    return tasks
+    return tasks 
 
 
 def main():
@@ -440,21 +443,19 @@ def main():
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt_)
 
     loop = asyncio.get_event_loop()
+    tasks = []
     try:
-
-        # ~ machine_heads = [MachineHeadMockupFile(i) for i in range(6)]
-        for t in create_and_run_tasks():
+        tasks = create_and_run_tasks()
+        for t in tasks:
             asyncio.ensure_future(t)
         asyncio.get_event_loop().run_forever()
-
-        # ~ asyncio.get_event_loop().run_until_complete(create_and_run_tasks())
-        # ~ asyncio.get_event_loop().close()
-
     except KeyboardInterrupt:
-        print('shutting down')
+        print('KeyboardInterrupt: shutting down')
+    except Exception as e:
+        print(f'Exception:{e}')
     finally:
+        loop.call_later(1, loop.stop)
         loop.run_until_complete(loop.shutdown_asyncgens())
-        # ~ loop.close()
 
 
 main()

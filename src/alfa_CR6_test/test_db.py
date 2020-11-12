@@ -42,7 +42,7 @@ def set_settings():
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
 
     alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_PORTS_LIST = [
-        ('127.0.0.1', 11000, 8080)
+        # ~ ('127.0.0.1', 11000, 8080)
         # ~ ("192.168.15.156", 11000, 8080)
         # ~ ("192.168.15.19",  11000, 8080)
         # ~ ("192.168.15.60",  11000, 8080)
@@ -76,7 +76,7 @@ def test_all():
 
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
 
-    N, M = 3, 2
+    N, M = 8, 5
     barcodes = []
     for i in range(N):
         pth = os.path.join(FIXTURES, "kcc_downloaded_sample.json")
@@ -99,7 +99,7 @@ def test_all():
     def _action(b_code):
         async def t():
             # ~ APP.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL'] = 1
-            await APP._CR6_application__on_barcode_read(0, b_code)
+            await APP.on_barcode_read(0, b_code)
             # ~ APP.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL'] = 0
 
         asyncio.ensure_future(t())
@@ -107,12 +107,13 @@ def test_all():
     # ~ asyncio.get_event_loop().call_later(0.3, APP.main_window.close)
     asyncio.get_event_loop().call_later(.2, APP.main_window.login_btn.click)
 
-    for i, b in enumerate(barcodes):
-        asyncio.get_event_loop().call_later(i*.5, _action, b)
-    asyncio.get_event_loop().call_later(5.0 + len(barcodes)*.1, _stop)
+    # ~ for i, b in enumerate(barcodes):
+        # ~ asyncio.get_event_loop().call_later(i*.5, _action, b)
+
+    # ~ asyncio.get_event_loop().call_later(5.0 + len(barcodes)*.1, _stop)
     
     # ~ asyncio.get_event_loop().call_later(1, _action, barcodes[0])
     
-    asyncio.get_event_loop().call_later(15, _stop)
+    asyncio.get_event_loop().call_later(1, _stop)
 
     APP.run_forever()
