@@ -41,19 +41,14 @@ def set_settings():
 
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = 'sqlite://'  # ":memory:"
 
-    alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST = [
-        "127.0.0.1",
-        "127.0.0.1",
-        "127.0.0.1",
-        "127.0.0.1",
-        "127.0.0.1",
-        "127.0.0.1",
-        # ~ "192.168.15.156",
-        # ~ "192.168.15.19",
-        # ~ "192.168.15.60",
-        # ~ "192.168.15.61",
-        # ~ "192.168.15.62",
-        # ~ "192.168.15.170",
+    alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_PORTS_LIST = [
+        ('127.0.0.1', 11000, 8080)
+        # ~ ("192.168.15.156", 11000, 8080)
+        # ~ ("192.168.15.19",  11000, 8080)
+        # ~ ("192.168.15.60",  11000, 8080)
+        # ~ ("192.168.15.61",  11000, 8080)
+        # ~ ("192.168.15.62",  11000, 8080)
+        # ~ ("192.168.15.170", 11000, 8080)
     ]
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
         FIXTURES + '/machine_status_0.json',

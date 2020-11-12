@@ -28,18 +28,28 @@ def set_settings():
     # ~ alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = None # ":memory:"
     alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
 
-    alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_LIST=[
-        # ~ "127.0.0.1", 
-        # ~ "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", 
-        # ~ "192.168.15.156", "192.168.15.19", "192.168.15.60", "192.168.15.61", "192.168.15.62", "192.168.15.170",
+    alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_PORTS_LIST=[
+        # ~ ('127.0.0.1', 11000, 8080)
+        ('127.0.0.1', 11001, 8080),
+        ('127.0.0.1', 11002, 8080),
+        ('127.0.0.1', 11003, 8080),
+        ('127.0.0.1', 11004, 8080),
+        ('127.0.0.1', 11005, 8080),
+        ('127.0.0.1', 11006, 8080),
+        # ~ ("192.168.15.156", 11000, 8080)
+        # ~ ("192.168.15.19",  11000, 8080)
+        # ~ ("192.168.15.60",  11000, 8080)
+        # ~ ("192.168.15.61",  11000, 8080)
+        # ~ ("192.168.15.62",  11000, 8080)
+        # ~ ("192.168.15.170", 11000, 8080)
     ]
     alfa_CR6_backend.cr6.settings.MOCKUP_FILE_PATH_LIST = [
-        DATA_ROOT + '/machine_status_0.json',
-        DATA_ROOT + '/machine_status_1.json',
-        DATA_ROOT + '/machine_status_2.json',
-        DATA_ROOT + '/machine_status_3.json',
-        DATA_ROOT + '/machine_status_4.json',
-        DATA_ROOT + '/machine_status_5.json',
+        # ~ DATA_ROOT + '/machine_status_0.json',
+        # ~ DATA_ROOT + '/machine_status_1.json',
+        # ~ DATA_ROOT + '/machine_status_2.json',
+        # ~ DATA_ROOT + '/machine_status_3.json',
+        # ~ DATA_ROOT + '/machine_status_4.json',
+        # ~ DATA_ROOT + '/machine_status_5.json',
     ]
     alfa_CR6_backend.cr6.settings.BARCODE_DEVICE_NAME_LIST = [
         # ~ '/dev/input/event7',
