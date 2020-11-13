@@ -132,7 +132,7 @@ class Sinottico(QWidget):
         if (n != -1):
             p = dict_cans[n]
             pixmap = QPixmap(QApplication.instance().images_path + p)
-            return pixmap.scaled(50, 50, Qt.KeepAspectRatio)
+            return pixmap.scaled(75, 75, Qt.KeepAspectRatio)
         else:
             pixmap = QPixmap(QApplication.instance().images_path + dict_cans[0])
             return pixmap.scaled(0, 0, Qt.KeepAspectRatio)
