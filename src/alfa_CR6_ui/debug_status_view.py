@@ -291,7 +291,7 @@ class DebugStatusView():
         html_ += '<th align="left" width="8%">addr</th>'
         html_ += '<th align="left" width="18%">jar_photocells_status</th>'
         html_ += '<th align="left" width="16%">photocells_status</th>'
-        html_ += '<th align="left" width="12%">level</th>'
+        html_ += '<th align="left" width="12%">(cp) level</th>'
         html_ += '<th align="left" width="20%">last update</th>'
         html_ += '<th align="left" width="7%">-</th>'
         html_ += '<th align="left" width="8%">-</th>'
@@ -315,7 +315,7 @@ class DebugStatusView():
                 0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_)
 
             cp = 1 if m.status.get('container_presence') else 0
-            html_ += '  <td>{} {}</td>'.format(cp, m.status.get('status_level'))
+            html_ += '  <td>({}) {}</td>'.format(cp, m.status.get('status_level'))
             html_ += '  <td>{}</td>'.format(m.status.get('last_update'))
 
             html_ += f'  <td><a href="RESET@{n}">RESET</a></td>'
@@ -326,3 +326,5 @@ class DebugStatusView():
         html_ += '</table>'
 
         self.status_text_browser.setHtml(html_)
+
+        # ~ logging.warning("")

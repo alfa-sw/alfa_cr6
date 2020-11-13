@@ -23,3 +23,5 @@ git.diff
 
 __tmp__
 *.session
+
+*.log

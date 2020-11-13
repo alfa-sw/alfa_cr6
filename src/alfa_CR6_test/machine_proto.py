@@ -16,7 +16,7 @@ import json
 
 import websockets                           # pylint: disable=import-error
 
-from PyQt5.QtWidgets import QApplication # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 from alfa_CR6_backend.machine_head import MachineHead
 
@@ -98,11 +98,15 @@ class Machine(MachineHead):     # pylint: disable=too-many-instance-attributes
                 status = dict(status)
                 if status:
                     await self.update_status(status)
+                    logging.warning(
+                        "status_level:{}, cycle_step:{}.".format(
+                            self.status['status_level'],
+                            self.status['cycle_step']))
                     # ~ logging.warning("status_level:{}, cycle_step:{}, autocap_status:{}.".format(
-                        # ~ self.status['status_level'], self.status['cycle_step'], self.status['autocap_status']))
+                    # ~ self.status['status_level'], self.status['cycle_step'], self.status['autocap_status']))
 
             elif msg_dict.get('type') == 'answer':
-                # ~ logging.warning(f"msg_dict:{msg_dict}")
+                logging.warning(f"msg_dict:{msg_dict}")
                 answer = msg_dict.get('value')
                 answer = dict(answer)
                 if answer:

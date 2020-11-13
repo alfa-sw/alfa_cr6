@@ -21,7 +21,6 @@ from PyQt5.QtCore import pyqtSignal         # pylint: disable=no-name-in-module
 from alfa_CR6_ui.main_window import MainWindow
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.machine_head import MachineHead
-from alfa_CR6_test.machine_proto import Machine
 
 RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -61,19 +60,20 @@ settings = types.SimpleNamespace(
     # if it is empty or None, no sqlite db is open
     # ~ SQLITE_CONNECT_STRING="sqlite:///" + \
     # ~ os.path.join(RUNTIME_FILES_ROOT, 'data', 'cr6.V' + _get_version().split('.')[1] + '.sqlite'),
-    SQLITE_CONNECT_STRING=None,
+    # ~ SQLITE_CONNECT_STRING=None,
+    SQLITE_CONNECT_STRING="sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite",
 
     # this dictionary keeps the url of the websocket servers
     # to which the application connects its websocket clients,
     # if it is empty, no websocket client is started
     MACHINE_HEAD_IPADD_PORTS_LIST=[
-        # ~ ('127.0.0.1', 11000, 8080)
-        # ~ ("192.168.15.156", 11000, 8080),
-        # ~ ("192.168.15.19", 11000, 8080),
-        # ~ ("192.168.15.60", 11000, 8080),
-        # ~ ("192.168.15.61", 11000, 8080),
-        # ~ ("192.168.15.62", 11000, 8080),
-        # ~ ("192.168.15.170", 11000, 8080),
+        # ~ ('127.0.0.1', 11000, 8080),
+        ("192.168.15.156", 11000, 8080),
+        ("192.168.15.19", 11000, 8080),
+        ("192.168.15.60", 11000, 8080),
+        ("192.168.15.61", 11000, 8080),
+        ("192.168.15.62", 11000, 8080),
+        ("192.168.15.170", 11000, 8080),
     ],
 
     # this dictionary keeps the path to the files where
@@ -81,12 +81,12 @@ settings = types.SimpleNamespace(
     # the machine:status structures in json format,
     # if it is empty, no mockup file is searched for
     MOCKUP_FILE_PATH_LIST=[
-        '/opt/alfa_cr6/var/machine_status_0.json',
-        '/opt/alfa_cr6/var/machine_status_1.json',
-        '/opt/alfa_cr6/var/machine_status_2.json',
-        '/opt/alfa_cr6/var/machine_status_3.json',
-        '/opt/alfa_cr6/var/machine_status_4.json',
-        '/opt/alfa_cr6/var/machine_status_5.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_0.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_1.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_2.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_3.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_4.json',
+        # ~ '/opt/alfa_cr6/var/machine_status_5.json',
     ],
 
     BARCODE_DEVICE_NAME_LIST=[
@@ -320,7 +320,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def __create_machine_task(self, head_index, ip_add, ws_port, http_port):
 
-        m = Machine(head_index, ip_add, ws_port, http_port, msg_handler=self.on_head_msg_received)
+        # ~ m = Machine(head_index, ip_add, ws_port, http_port, msg_handler=self.on_head_msg_received)
+        m = MachineHead(head_index, ip_add, ws_port, http_port, msg_handler=self.on_head_msg_received)
         self.machine_head_dict[head_index] = m
         await m.run()
         logging.warning(f" *** terminating machine: {m} *** ")
@@ -335,9 +336,12 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
 
-    async def __jar_task(self, jar):
+    async def __jar_task(self, jar):                      # pylint: disable=too-many-statements
+
+        # TODO: check A is available before putting jar in
 
         def update_jar(jar, status=None, pos=None, t0=None):
+            logging.warning(f"{jar} {status}, {pos}, {t0}")
             if status is not None:
                 jar.status = status
 
@@ -445,6 +449,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def on_head_msg_received(self, head_index, msg_dict):
 
+        # ~ logging.warning("")
         if msg_dict.get('type') == 'device:machine:status':
             status = msg_dict.get('value')
             status = dict(status)
@@ -575,9 +580,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     async def move_step_06(self):  # 'feed'
         await self.move_step('E')
 
-    async def move_mu_07(self):  # 'feed'
-        await self.move_mu('F')
-
     async def stop_mu_07(self):  # 'feed'
         await self.stop_mu('F')
 
@@ -632,14 +634,15 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     async def move_00_01(self):  # 'feed'
 
         A = self.get_machine_head_by_letter('A')
-        r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True, timeout=0.5)
-        if not r:
+
+        r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=False, status_levels=['STANDBY'], timeout=1)
+        if r:
             await A.can_movement({'Input_Roller': 2})
             r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True, timeout=20)
             if r:
                 await A.can_movement()
         else:
-            logging.info("A->JAR_INPUT_ROLLER_PHOTOCELL is ON, nothing to do.")
+            logging.warning("A is busy, nothing to do.")
 
         return r
 
@@ -647,9 +650,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         A = self.get_machine_head_by_letter('A')
 
-        await A.can_movement({'Input_Roller': 1, 'Dispensing_Roller': 2})
-        # ~ await A.wait_for_status(A.dispense_position_busy, timeout=10)
-        r = await A.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True, timeout=10)
+        r = await A.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
+        if r:
+            await A.can_movement({'Input_Roller': 1, 'Dispensing_Roller': 2})
+            r = await A.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
         return r
 
     async def move_02_03(self):  # 'A -> B'
@@ -657,12 +661,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         A = self.get_machine_head_by_letter('A')
         B = self.get_machine_head_by_letter('B')
 
-        # ~ await B.wait_for_status(B.dispense_position_available)
-        r = await B.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=False)
+        r = await B.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
         if r:
             await A.can_movement({'Dispensing_Roller': 1})
             await B.can_movement({'Dispensing_Roller': 2})
-            # ~ await B.wait_for_status(B.dispense_position_busy)
             r = await B.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
             if r:
                 await A.can_movement()
@@ -674,13 +676,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         B = self.get_machine_head_by_letter('B')
         C = self.get_machine_head_by_letter('C')
 
-        # ~ await C.wait_for_status(C.dispense_position_available)
-        r = await C.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=False)
-        await B.can_movement({'Dispensing_Roller': 1})
-        await C.can_movement({'Dispensing_Roller': 2})
-        # ~ await C.wait_for_status(C.dispense_position_busy)
-        r = await C.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
-        await B.can_movement()
+        r = await C.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
+        if r:
+            await B.can_movement({'Dispensing_Roller': 1})
+            await C.can_movement({'Dispensing_Roller': 2})
+            r = await C.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
+            if r:
+                await B.can_movement()
 
         return r
 
@@ -689,18 +691,16 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         C = self.get_machine_head_by_letter('C')
         D = self.get_machine_head_by_letter('D')
 
-        # ~ await D.wait_for_status(D.load_lifter_up)
-        r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True)
-        if not r:
-            await D.can_movement({'Lifter': 1})
-            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True)
-
+        r = await C.wait_for_jar_photocells_status('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
         if r:
-            # ~ await C.wait_for_status(C.load_lifter_available)
-            r = await C.wait_for_jar_photocells_status('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
+            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=1)
+            if not r:
+                r = await D.wait_for_status_level(status_levels=['STANDBY'])
+                if r:
+                    await D.can_movement({'Lifter': 1})
+                    r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True)
             if r:
                 await C.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 2})
-                # ~ await C.wait_for_status(C.load_lifter_busy)
                 r = await C.wait_for_jar_photocells_status('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', on=True)
 
         return r
@@ -709,9 +709,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         D = self.get_machine_head_by_letter('D')
 
-        await D.can_movement({'Lifter': 2})
-        # ~ await D.wait_for_status(D.load_lifter_down)
-        r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_DOWN_PHOTOCELL', on=True)
+        r = await D.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
+        if r:
+            await D.can_movement({'Lifter': 2})
+            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_DOWN_PHOTOCELL', on=True)
+
+        # TODO: remove this delay
+        await asyncio.sleep(1)
 
         return r
 
@@ -720,12 +724,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         C = self.get_machine_head_by_letter('C')
         D = self.get_machine_head_by_letter('D')
 
-        # ~ await D.wait_for_status(D.dispense_position_available)
-        r = await D.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=False)
+        r = await D.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
         if r:
             await C.can_movement({'Lifter_Roller': 3})
             await D.can_movement({'Dispensing_Roller': 2})
-            # ~ await D.wait_for_status(D.dispense_position_busy)
             r = await D.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
             if r:
                 await C.can_movement()
@@ -738,9 +740,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         D = self.get_machine_head_by_letter('D')
         E = self.get_machine_head_by_letter('E')
 
-        # ~ await E.wait_for_status(E.dispense_position_available)
-        r = await E.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=False)
-        # ~ r = await D.wait_for_status(D.load_lifter_up, timeout=1)
+        r = await E.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
         if r:
             r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=1)
             if not r:
@@ -749,7 +749,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             else:
                 await D.can_movement({'Dispensing_Roller': 1})
             await E.can_movement({'Dispensing_Roller': 2})
-            # ~ await E.wait_for_status(E.dispense_position_busy)
             r = await E.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
             if r:
                 await D.can_movement()
@@ -762,73 +761,64 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         E = self.get_machine_head_by_letter('E')
         F = self.get_machine_head_by_letter('F')
 
-        # ~ await F.wait_for_status(F.dispense_position_available)
         r = await F.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=False)
         if r:
-            await E.can_movement({'Dispensing_Roller': 1})
-            await F.can_movement({'Dispensing_Roller': 2})
-            # ~ await F.wait_for_status(F.dispense_position_busy)
-            r = await F.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
+            r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
             if r:
-                await E.can_movement()
-
+                r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, timeout=1)
+                if not r:
+                    await F.can_movement({'Lifter': 2})
+                    r = await F.wait_for_jar_photocells_and_status_lev('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, status_levels=['STANDBY'])
+                if r:
+                    await E.can_movement({'Dispensing_Roller': 1})
+                    await F.can_movement({'Dispensing_Roller': 2})
+                    r = await F.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
+                    if r:
+                        await E.can_movement()
         return r
 
     async def move_09_10(self):  # 'F -> DOWN'
 
         F = self.get_machine_head_by_letter('F')
 
-        # ~ await F.wait_for_status(F.unload_lifter_available)
         r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
         if r:
-            # ~ await F.wait_for_status(F.unload_lifter_down)
             r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True)
             if r:
                 await F.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 5})
 
         return r
 
-    async def move_10_11(self):  # 'DOWN -> UP'
+    async def move_10_11(self):  # 'DOWN -> UP -> OUT'
 
         F = self.get_machine_head_by_letter('F')
 
-        # ~ await F.wait_for_status(F.unload_lifter_busy)
-        r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=True)
+        r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True, timeout=1)
         if r:
-            # ~ await F.wait_for_status(F.unload_lifter_up)
-            r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_UP_PHOTOCELL', on=True)
-            # ~ r = await F.wait_for_status(F.output_roller_available, timeout=1)
+            r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=True)
             if r:
-                r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=False, timeout=1)
-                if not r:
-                    await F.can_movement()
+                r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_UP_PHOTOCELL', on=True)
+                if r:
+
+                    # TODO: remove this delay
+                    await asyncio.sleep(2)
+
                     await F.can_movement({'Output_Roller': 2})
-                    # ~ await F.wait_for_status(F.output_roller_available)
                     r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=False)
                     if r:
                         await F.can_movement()
                         await F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})
+                    else:
+                        raise Exception('JAR_OUTPUT_ROLLER_PHOTOCELL busy timeout')
 
-        return r
+                    # ~ r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
+                    # ~ if r:
+                        # ~ r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True)
+                        # ~ if r:
+                            # ~ await F.can_movement({'Lifter': 2})
 
-    async def move_11_12(self):  # 'UP -> OUT'
-
-        F = self.get_machine_head_by_letter('F')
-
-        # ~ await F.wait_for_status(F.output_roller_busy)
-        r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True)
-        if r:
-            await F.can_movement()
-            await F.can_movement({'Lifter': 2, 'Output_Roller': 2})
-            # ~ await F.wait_for_status(F.output_roller_available)
-            r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=False)
-            if r:
-                # ~ await F.wait_for_status(F.unload_lifter_down)
-                r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True)
-                # ~ if r:
-                # ~ await F.can_movement()
-
-        return r
+    async def move_11_12(self):  # 'OUT -> OUT'
+        pass
 
     async def stop_all(self):
 
