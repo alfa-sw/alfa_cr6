@@ -41,21 +41,63 @@ ID_MAP = [
 ]
 
 
-class MachineHeadMockup:
+"""
+    # bit0: JAR_INPUT_ROLLER_PHOTOCELL         0000 0000 0001  | 0x0001
+    # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL   0000 0000 0010  | 0x0002
+    # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL        0000 0000 0100  | 0x0004
+    # bit3: LOAD_LIFTER_DOWN_PHOTOCELL         0000 0000 1000  | 0x0008
+    # bit4: LOAD_LIFTER_UP_PHOTOCELL           0000 0001 0000  | 0x0010
+    # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL       0000 0010 0000  | 0x0020
+    # bit6: UNLOAD_LIFTER_UP_PHOTOCELL         0000 0100 0000  | 0x0040
+    # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL 0000 1000 0000  | 0x0080
+    # bit8: JAR_DISPENSING_POSITION_PHOTOCELL  0001 0000 0000  | 0x0100
+    # bit9: JAR_DETECTION_MICROSWITCH_1        0010 0000 0000  | 0x0200
+    # bit10:JAR_DETECTION_MICROSWITCH_2        0100 0000 0000  | 0x0400
 
-    """
-        # bit0: JAR_INPUT_ROLLER_PHOTOCELL         0000 0000 0001  | 0x0001
-        # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL   0000 0000 0010  | 0x0002
-        # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL        0000 0000 0100  | 0x0004
-        # bit3: LOAD_LIFTER_DOWN_PHOTOCELL         0000 0000 1000  | 0x0008
-        # bit4: LOAD_LIFTER_UP_PHOTOCELL           0000 0001 0000  | 0x0010
-        # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL       0000 0010 0000  | 0x0020
-        # bit6: UNLOAD_LIFTER_UP_PHOTOCELL         0000 0100 0000  | 0x0040
-        # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL 0000 1000 0000  | 0x0080
-        # bit8: JAR_DISPENSING_POSITION_PHOTOCELL  0001 0000 0000  | 0x0100
-        # bit9: JAR_DETECTION_MICROSWITCH_1        0010 0000 0000  | 0x0200
-        # bit10:JAR_DETECTION_MICROSWITCH_2        0100 0000 0000  | 0x0400
-    """
+    'Dispensing_Roller': {'description': 'Values:
+            0 = Stop Movement,
+            1 = Start Movement,
+            2 = Start Movement till Photocell transition LIGHT - DARK ','propertyOrder': 1, 'type': 'number', 'fmt': 'B'},
+
+    'Lifter_Roller': {'description': 'Values:
+        0 = Stop Movement,
+        1 = Start Movement CW,
+        2 = Start Movement CW till Photocell transition LIGHT - DARK,
+        3 = Start Movement CCW,
+        4 = Start Movement CCW till Photocell transition DARK – LIGHT,
+        5 = Start Movement CCW till Photocell transition LIGHT- DARK', 'propertyOrder': 2, 'type': 'number', 'fmt': 'B'},
+
+    'Input_Roller': {'description': 'Values:
+        0 = Stop Movement,
+        1 = Start Movement,
+        2 = Start Movement till Photocell transition LIGHT - DARK', 'propertyOrder': 3, 'type': 'number', 'fmt': 'B'},
+
+    'Lifter': {'description': 'Values:
+        0 = Stop Movement,
+        1 = Start Movement Up till Photocell Up transition LIGHT – DARK,
+        2 = Start Movement Down till Photocell Down transition LIGHT – DARK', 'propertyOrder': 4, 'type': 'number', 'fmt': 'B'},
+
+    'Output_Roller': {'description': 'Values:
+        0 = Stop Movement,
+        1 = Start Movement CCW till Photocell transition LIGHT – DARK,
+        2 = Start Movement CCW till Photocell transition DARK - LIGHT with a Delay',
+        3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
+"""
+
+FULL_MASK = 0xFFFFFF
+EMPTY_MASK = 0x0000
+INPUT_ROLLER_MASK = 0x0001
+LOAD_LIFTER_ROLLER_MASK = 0x0002
+OUTPUT_ROLLER_MASK = 0x0004
+LOAD_LIFTER_DOWN_MASK = 0x0008
+LOAD_LIFTER_UP_MASK = 0x0010
+UNLOAD_LIFTER_DOWN_MASK = 0x0020
+UNLOAD_LIFTER_UP_MASK = 0x0040
+UNLOAD_LIFTER_ROLLER_MASK = 0x0080
+DISPENSING_POSITION_MASK = 0x0100
+
+
+class MachineHeadMockup:
 
     def __init__(self, index):
 
@@ -148,169 +190,89 @@ class MachineHeadMockup:
             t = self.dump_status()
             asyncio.ensure_future(t)
 
-    async def update_status(self, params):
+    async def update_status(self, params=None):
+        if params is None:
+            params = {}
         logging.warning("{}, params:{}.".format(self.index, params))
         self.status.update(params)
-        # ~ t = self.dump_status()
-        # ~ asyncio.ensure_future(t)
         await self.dump_status()
+
+    async def do_move(self, mask=EMPTY_MASK, set_or_reset='', duration=0, tgt_level='STANDBY'):
+        await asyncio.sleep(duration)
+        pars = {'status_level': tgt_level}
+        if mask != EMPTY_MASK:
+            if set_or_reset == 'set':
+                pars['jar_photocells_status'] = self.status['jar_photocells_status'] | mask
+            elif set_or_reset == 'reset':
+                pars['jar_photocells_status'] = self.status['jar_photocells_status'] & ~ mask
+        await self.update_status(params=pars)
 
     async def handle_command(self, msg_out_dict):       # pylint: disable=too-many-branches,too-many-statements
         logging.warning("{}, {}".format(self.index, msg_out_dict))
 
-        target = None
-        args = []
-        delay = 0
-
         if msg_out_dict['command'] == 'KILL_EMULATOR':
-            self.__close_app()
+            raise KeyboardInterrupt
+
         elif msg_out_dict['command'] == 'ENTER_DIAGNOSTIC':
-            target = self.update_status
-            args = [{"status_level": "DIAGNOSTIC"}, ]
-            delay = .5
-
-        elif msg_out_dict['command'] == 'DISPENSE':
-            await self.update_status({'status_level': 'JAR_POSITIONING'})
-            target = self.update_status
-            args = [{"status_level": "STANDBY"}, ]
-            delay = 2
-
+            await self.do_move(duration=0.5, tgt_level='DIAGNOSTIC')
+        elif msg_out_dict['command'] == 'DISPENSATION':
+            await self.do_move(duration=0.5, tgt_level='DISPENSING')
+            await self.do_move(duration=5, tgt_level='STANDBY')
         elif msg_out_dict['command'] == 'RESET':
-
+            await self.do_move(FULL_MASK, 'reset', duration=.1, tgt_level='RESET')
             if self.index == 5:
-                self.status['jar_photocells_status'] = 0x0010  # set load_lifter_up_pc
+                await self.do_move(LOAD_LIFTER_UP_MASK, 'set', duration=3, tgt_level='STANDBY')
             elif self.index == 1:
-                self.status['jar_photocells_status'] = 0x0020  # set load_lifter_down_pc
+                await self.do_move(UNLOAD_LIFTER_DOWN_MASK, 'set', duration=3, tgt_level='STANDBY')
+                # ~ await self.do_move(OUTPUT_ROLLER_MASK, 'set', duration=3, tgt_level='STANDBY')
             else:
-                self.status['jar_photocells_status'] = 0x0000  # set load_lifter_up_pc
-
-            await self.update_status({"status_level": "RESET"})
-            target = self.update_status
-            args = [{"status_level": "STANDBY"}, ]
-            delay = 2
+                await self.do_move(duration=3, tgt_level='STANDBY')
 
         elif msg_out_dict['command'] == 'CAN_MOVEMENT':
-
             dispensing_roller = msg_out_dict['params']['Dispensing_Roller']
             lifter_roller = msg_out_dict['params']['Lifter_Roller']
             input_roller = msg_out_dict['params']['Input_Roller']
             lifter = msg_out_dict['params']['Lifter']
             output_roller = msg_out_dict['params']['Output_Roller']
 
+            await self.update_status({'status_level': 'JAR_POSITIONING'})
             if dispensing_roller + lifter_roller + input_roller + lifter == 0:
-                await self.update_status({'status_level': 'STANDBY'})
+                await self.do_move(EMPTY_MASK, 'set', duration=.4)
             else:
-                await self.update_status({'status_level': 'JAR_POSITIONING'})
 
-                delay = 2
-                target = self.update_status
-                args = []
+                if dispensing_roller == 2:
+                    await self.do_move(DISPENSING_POSITION_MASK, 'set', duration=2)
+                elif dispensing_roller == 1:
+                    await self.do_move(DISPENSING_POSITION_MASK, 'reset', duration=1, tgt_level='JAR_POSITIONING')
 
-                if self.index == 0:  # A
-                    if input_roller == 2 and dispensing_roller == 0:  # feed = move_00_01
-                        args += [{  # set load_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] | 0x0001,
-                            'status_level': 'STANDBY'}, ]
-                    elif input_roller == 1 and dispensing_roller == 2:  # feed = move_01_02
-                        args += [{  # reset load_pc # set dispensig_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] & ~ 0x0001) | 0x0100,
-                            'status_level': 'STANDBY'}, ]
-                    elif input_roller == 0 and dispensing_roller == 1:  # move_02_03(self):  # 'A -> B'
-                        args += [{  # reset dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] & ~ 0x0100}, ]
-                    else:
-                        await self.update_status({'status_level': 'STANDBY'})
+                if lifter_roller == 4:
+                    await self.do_move(LOAD_LIFTER_ROLLER_MASK, 'reset', duration=1)
+                elif lifter_roller == 2 or lifter_roller == 5:
+                    await self.do_move(LOAD_LIFTER_ROLLER_MASK, 'set', duration=2)
 
-                if self.index == 2:  # B
-                    if dispensing_roller == 2:  # move_02_03(self):  # 'A -> B'
-                        args += [{  # set dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] | 0x0100,
-                            'status_level': 'STANDBY'}, ]
-                    if dispensing_roller == 1:  # move_03_04(self):  # 'B -> c'
-                        args += [{  # reset dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] & ~ 0x0100}, ]
+                if lifter == 1:         # 'DOWN -> UP'
+                    await self.do_move(LOAD_LIFTER_DOWN_MASK, 'reset', duration=1, tgt_level='JAR_POSITIONING')
+                    await self.do_move(LOAD_LIFTER_UP_MASK, 'set', duration=2)
+                elif lifter == 2:         # 'UP -> DOWN'
+                    await self.do_move(LOAD_LIFTER_UP_MASK, 'reset', duration=1, tgt_level='JAR_POSITIONING')
+                    await self.do_move(LOAD_LIFTER_DOWN_MASK, 'set', duration=2)
 
-                if self.index == 4:  # C
-                    if dispensing_roller == 2:  # move_03_04(self):  # 'B -> C'
-                        args += [{  # set dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] | 0x0100,
-                            'status_level': 'STANDBY'}, ]
+                if input_roller == 2:  # feed = move_00_01 or -> IN
+                    await self.do_move(INPUT_ROLLER_MASK, 'set', duration=2)
+                elif input_roller == 1 and dispensing_roller == 2:  # move_01_02 or IN -> A
+                    await self.do_move(INPUT_ROLLER_MASK, 'reset', duration=1, tgt_level='JAR_POSITIONING')
+                    await self.do_move(DISPENSING_POSITION_MASK, 'set', duration=2)
+                elif input_roller == 0 and dispensing_roller == 1:  # move_02_03 or  # 'A -> B'
+                    await self.do_move(DISPENSING_POSITION_MASK, 'reset', duration=2)
 
-                    if dispensing_roller == 1:
-                        args += [{  # reset dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] & ~ 0x0100}, ]
-
-                    if lifter_roller == 1 or lifter_roller == 5:
-                        args += [{  # reset load_lifter_roller_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] & ~ 0x0002}, ]
-
-                    if lifter_roller == 2 or lifter_roller == 3:
-                        args += [{  # set load_lifter_roller_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] | 0x0002) & ~ 0x0100,
-                            'status_level': 'STANDBY'}, ]
-
-                if self.index == 5:  # D
-                    if dispensing_roller == 2:  # move_02_03(self):  # 'A -> B'
-                        args += [{  # set dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] | 0x0100,
-                            'status_level': 'STANDBY'}, ]
-                    if dispensing_roller == 1:  # move_03_04(self):  # 'B -> c'
-                        args += [{  # reset dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] & ~ 0x0100}, ]
-
-                    if lifter == 1:         # 'DOWN -> UP'
-                        args += [{  # set load_lifter_up_pc # reset load_lifter_down_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] | 0x0010) & ~ 0x0008,
-                            'status_level': 'STANDBY'}, ]
-                    if lifter == 2:         # 'UP -> DOWN'
-                        args += [{  # reset load_lifter_up_pc # set load_lifter_down_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] & ~ 0x0010) | 0x0008,
-                            'status_level': 'STANDBY'}, ]
-                if self.index == 3:  # E
-                    if dispensing_roller == 2:
-                        args += [{  # set dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] | 0x0100,
-                            'status_level': 'STANDBY'}, ]
-                    if dispensing_roller == 1:
-                        args += [{  # reset dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] & ~ 0x0100}, ]
-
-                if self.index == 1:  # F
-
-                    # ~ await F.can_movement({'Dispensing_Roller': 2})                              move_08_09
-                    # ~ await F.can_movement({'Dispensing_Roller': 1, 'Lifter_Roller': 5})          move_09_10
-                    # ~ await F.can_movement({'Output_Roller': 2})                                  move_10_11
-                    # ~ await F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})              move_10_11
-                    # ~ await F.can_movement({'Lifter': 2, 'Output_Roller': 2})                     move_11_12
-                    if dispensing_roller == 2:                              # move_08_09
-                        args += [{  # set dispensig_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] | 0x0100,
-                            'status_level': 'STANDBY'}, ]
-                    elif dispensing_roller == 1 and lifter_roller == 5:   # move_09_10
-                        args += [{  # set load_lifter_roller_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] | 0x0080) & ~ 0x0100,}, ]
-                        args += [{  # set dispensig_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] & ~ 0x0008) | 0x0010}, ]
-                        args += [{  # reset load_lifter_roller_pc
-                            'jar_photocells_status': (self.status['jar_photocells_status'] & ~ 0x0080) | 0x0004}, ]
-                    elif lifter == 2 and output_roller == 2:  # move_11_12
-                        args += [{  # set load_lifter_roller_pc
-                            'jar_photocells_status': self.status['jar_photocells_status'] & ~ 0x0004,
-                            'status_level': 'STANDBY'}, ]
-
-        if target is not None:
-            for arg in args:
-                await asyncio.sleep(delay)
-                await target(arg)
-                logging.warning("{}, delay:{}, arg:{}.".format(self.index, delay, arg))
-            # ~ asyncio.get_event_loop().call_later(delay, target, *args)
+                if output_roller == 1:
+                    await self.do_move(OUTPUT_ROLLER_MASK, 'set', duration=2)
+                elif output_roller == 2:
+                    await self.do_move(OUTPUT_ROLLER_MASK, 'reset', duration=4)
 
     async def dump_status(self):
         raise Exception(f"to be overidden in {self}")
 
-
-    def __close_app(self):
-        raise KeyboardInterrupt
 
 class MachineHeadMockupWsSocket(MachineHeadMockup):
 
@@ -434,7 +396,7 @@ def create_and_run_tasks():
     # ~ res = await asyncio.gather(*tasks, return_exceptions=True)
 
     # ~ logging.warning(f" *** terminating tasks  *** ")
-    return tasks 
+    return tasks
 
 
 def main():

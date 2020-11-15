@@ -66,6 +66,9 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         self.cntr = 0
         self.time_stamp = 0
 
+    def __str__(self):
+        return f"[{self.index}:{self.name}]"
+
     async def update_pipes(self):
 
         ret = await self.call_api_rest('pipe', 'GET', {})
@@ -319,10 +322,10 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     async def do_dispense(self, jar):
 
         logging.warning("index:{}, jar:{}".format(self.index, jar))
-        logging.warning("jar.order.properties:{}".format(jar.order.properties))
+        # ~ logging.warning("jar.order.json_properties:{}".format(jar.order.json_properties))
         # TODO: check jar order and dispense, if due
         await asyncio.sleep(3)
-        logging.warning("index:{}, jar:{}".format(self.index, jar))
+        # ~ logging.warning("index:{}, jar:{}".format(self.index, jar))
         # ~ await self.send_command(cmd_name="DISPENSE", params={}, type_='command', channel='machine')
 
         return
@@ -332,62 +335,3 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         if self.aiohttp_clientsession:
             await self.aiohttp_clientsession.close()
 
-    async def __unused_wait_for_status(self, condition, *args,
-                                       timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-                                       msg=None):
-        t0 = time.time()
-        ret = condition(*args)
-        while not ret and time.time() - t0 < timeout:
-            await asyncio.sleep(.005)
-            ret = condition(*args)
-            # ~ logging.info("ret:{}, {:.3f}/{}".format(ret, time.time() - t0, timeout))
-        if not ret and msg:
-            raise Exception("Timeout on waiting for: {}.".format(msg))
-        return ret
-
-    async def __unused_trigger_refresh_status_event(self):
-
-        if not hasattr(self, 'refresh_status_event'):
-            self.refresh_status_event = asyncio.Event()
-
-        if self.refresh_status_event.is_set():
-            self.refresh_status_event.clear()
-
-        self.refresh_status_event.set()
-        await asyncio.sleep(.1)  # let the waiters be notified
-        self.refresh_status_event.clear()
-        logging.warning("{} self.refresh_status_event:{}".format(self.name, self.refresh_status_event))
-
-    async def __unused_send_command(self, cmd_name: str, params: dict, type_='command', channel='machine'):
-        """ param 'type_' can be 'command' or 'macro'
-
-            examples:
-                self.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
-                self.send_command(cmd_name="PURGE", params={'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}, type_='macro')
-        """
-        try:
-            msg = {
-                'type': type_,
-                'channel': channel,
-                'msg_out_dict': {'command': cmd_name, 'params': params},
-            }
-            ret = None
-            if self.websocket:
-
-                logging.info(f"msg:{msg}")
-                t = self.websocket.send(json.dumps(msg))
-                asyncio.ensure_future(t)
-
-                # ~ logging.info(f"msg:{msg}")
-                # ~ buff = json.dumps(msg).encode()
-                # ~ ret = await self.websocket.send(buff)
-
-            else:
-                filepth = os.path.join(DATA_ROOT, 'machine_command_{}.json'.format(self.index))
-                with open(filepth, 'w') as f:
-                    json.dump(msg, f, indent=2)
-
-            return ret
-
-        except Exception as e:                           # pylint: disable=broad-except
-            self.app.handle_exception(e)

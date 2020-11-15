@@ -11,12 +11,15 @@ import logging
 import traceback
 import json
 import uuid
+import time
 from datetime import date
 from datetime import datetime
 
 from sqlalchemy import (create_engine, Column, Unicode, Integer, BigInteger, DateTime, ForeignKey, UniqueConstraint)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import (sessionmaker, relationship)
+
+from PyQt5.QtWidgets import QApplication       # pylint: disable=no-name-in-module
 
 from jsonschema import validate   # pylint: disable=import-error
 
@@ -152,9 +155,36 @@ class Jar(Base, ModelCr6):      # pylint: disable=too-few-public-methods
     order_id = Column(Unicode, ForeignKey('order.id'), nullable=False)
     order = relationship("Order", back_populates='jars')
 
+    machine_head = None
+    t0 = None
+
+    def update_live(self, machine_head=None, status=None, pos=None, t0=None):
+
+        logging.warning(f"{self}")
+
+        self.machine_head = machine_head
+
+        if t0 is not None:
+            self.t0 = t0
+
+        if status is not None:
+            self.status = status
+
+        if pos is not None:
+            self.position = pos
+
+        if self.t0 is not None:
+            self.description = "d:{:.1f}".format(time.time() - self.t0)
+
+        try:
+            app = QApplication.instance()
+            app.main_window.debug_status_view.update_status()
+        except Exception as e:
+            logging.error(e)
+            
     def __str__(self):
         # ~ return f"<Jar object. status:{self.status}, position:{self.position}, barcode:{self.barcode}>"
-        return f"[Jar object. status:{self.status}, position:{self.position}, {self.order.order_nr}:{self.index}]"
+        return f"[m:{self.machine_head}, status:{self.status}, position:{self.position}, {self.order.order_nr}:{self.index}]"
 
     @property
     def barcode(self):

@@ -15,14 +15,15 @@ import traceback
 import asyncio
 
 from PyQt5.QtWidgets import (QApplication, QFrame,       # pylint: disable=no-name-in-module
-    QTextBrowser, QButtonGroup, QPushButton, QComboBox)  
+                             # ~ QComboBox,
+                             QTextBrowser, QButtonGroup, QPushButton)
 
 
 class DebugStatusView():
 
     def __init__(self, parent):
 
-        app = QApplication.instance()
+        # ~ app = QApplication.instance()
 
         self.barcode_counter = 0
 
@@ -30,6 +31,7 @@ class DebugStatusView():
         # ~ self.main_frame.setGeometry(0, 0, 1800, 1000)
 
         self.status_text_browser = QTextBrowser(parent=self.main_frame)
+        self.status_text_browser.setOpenLinks(False)
         # ~ self.status_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
         self.status_text_browser.setStyleSheet("""
@@ -140,6 +142,8 @@ class DebugStatusView():
                 t = m.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
             elif command == "PIPES":
                 t = m.update_pipes()
+            elif command == "DISP":
+                t = m.do_dispense()
             asyncio.ensure_future(t)
         else:
             os.system("chromium-browser {} &".format(url.url()))
@@ -218,7 +222,7 @@ class DebugStatusView():
         else:
             app.run_a_coroutine_helper(cmd_txt)
 
-    def update_status(self, _=None):
+    def update_status(self, _=None):              # pylint: disable=too-many-locals,too-many-statements
 
         if not self.main_frame.isVisible():
             return
@@ -238,17 +242,17 @@ class DebugStatusView():
         html_ += """
         <td colspan="1">
         <br/># "jar photocells_status" mask bit coding:
-        <br/> 0000 0000 0001  | 0x0001 # bit0: JAR_INPUT_ROLLER_PHOTOCELL        
-        <br/> 0000 0000 0010  | 0x0002 # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL  
-        <br/> 0000 0000 0100  | 0x0004 # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL       
-        <br/> 0000 0000 1000  | 0x0008 # bit3: LOAD_LIFTER_DOWN_PHOTOCELL        
-        <br/> 0000 0001 0000  | 0x0010 # bit4: LOAD_LIFTER_UP_PHOTOCELL          
-        <br/> 0000 0010 0000  | 0x0020 # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL      
-        <br/> 0000 0100 0000  | 0x0040 # bit6: UNLOAD_LIFTER_UP_PHOTOCELL        
+        <br/> 0000 0000 0001  | 0x0001 # bit0: JAR_INPUT_ROLLER_PHOTOCELL
+        <br/> 0000 0000 0010  | 0x0002 # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL
+        <br/> 0000 0000 0100  | 0x0004 # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL
+        <br/> 0000 0000 1000  | 0x0008 # bit3: LOAD_LIFTER_DOWN_PHOTOCELL
+        <br/> 0000 0001 0000  | 0x0010 # bit4: LOAD_LIFTER_UP_PHOTOCELL
+        <br/> 0000 0010 0000  | 0x0020 # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL
+        <br/> 0000 0100 0000  | 0x0040 # bit6: UNLOAD_LIFTER_UP_PHOTOCELL
         <br/> 0000 1000 0000  | 0x0080 # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL
-        <br/> 0001 0000 0000  | 0x0100 # bit8: JAR_DISPENSING_POSITION_PHOTOCELL 
-        <br/> 0010 0000 0000  | 0x0200 # bit9: JAR_DETECTION_MICROSWITCH_1       
-        <br/> 0100 0000 0000  | 0x0400 # bit10:JAR_DETECTION_MICROSWITCH_2       
+        <br/> 0001 0000 0000  | 0x0100 # bit8: JAR_DISPENSING_POSITION_PHOTOCELL
+        <br/> 0010 0000 0000  | 0x0200 # bit9: JAR_DETECTION_MICROSWITCH_1
+        <br/> 0100 0000 0000  | 0x0400 # bit10:JAR_DETECTION_MICROSWITCH_2
         </td>
         """
 
@@ -271,13 +275,11 @@ class DebugStatusView():
         html_ += '<th align="left" width="5%">ord.</th>'
         html_ += '<th align="left" width="7%">name</th>'
         html_ += '<th align="left" width="8%">addr</th>'
-        html_ += '<th align="left" width="18%">jar_photocells_status</th>'
+        html_ += '<th align="left" width="20%" colspan="4">jar_photocells_status</th>'
         html_ += '<th align="left" width="16%">photocells_status</th>'
         html_ += '<th align="left" width="12%">(cp) level</th>'
         html_ += '<th align="left" width="10%">last update</th>'
-        html_ += '<th align="left" width="7%">-</th>'
-        html_ += '<th align="left" width="8%">-</th>'
-        html_ += '<th align="left" width="8%">-</th>'
+        html_ += '<th align="left" width="12%"  colspan="4">commands</th>'
         html_ += '</tr>'
 
         for n in sorted(names_):
@@ -292,18 +294,30 @@ class DebugStatusView():
             html_ += '  <td>head {}</td>'.format(ord_)
             html_ += '  <td>{}</td>'.format(m.name)
             html_ += '  <td><a href="http://{0}:8080/admin"> {0} </a></td>'.format(m.ip_add)
-            html_ += '  <td>{0:04b} {1:04b} {2:04b} | 0x{3:04X} {3:5d}</td>'.format(
-                0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0), jar_ph_)
+
+            html_ += '  <td  bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
+                                                               (jar_ph_ >> 8) else 'EEEEEE', 0xF & (jar_ph_ >> 8))
+            html_ += '  <td  bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
+                                                               (jar_ph_ >> 4) else 'EEEEEE', 0xF & (jar_ph_ >> 4))
+            html_ += '  <td  bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
+                                                               (jar_ph_ >> 0) else 'EEEEEE', 0xF & (jar_ph_ >> 0))
+            html_ += '  <td>0x{0:04X}</td>'.format(jar_ph_)
+
             html_ += '  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>'.format(
                 0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_)
 
             cp = 1 if m.status.get('container_presence') else 0
             html_ += '  <td>({}) {}</td>'.format(cp, m.status.get('status_level'))
-            html_ += '  <td>{}</td>'.format(m.status.get('last_update', '').split()[1])
 
-            html_ += f'  <td><a href="RESET@{n}">RESET</a></td>'
-            html_ += f'  <td><a href="DIAGNOSTIC@{n}">DIAGNOSTIC</a></td>'
-            html_ += f'  <td><a href="PIPES@{n}">PIPES</a></td>'
+            l_u = m.status.get('last_update', '').split()
+            if l_u[1:]:
+                l_u = l_u[1]
+            html_ += '  <td>{}</td>'.format(l_u)
+
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="RESET@{n}">RESET</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="DIAG@{n}" title="ENTER DIAGNOSTIC">DIAG</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="PIPES@{n}">PIPES</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}">DISP</a></td>'
 
             html_ += '</tr>'
 
