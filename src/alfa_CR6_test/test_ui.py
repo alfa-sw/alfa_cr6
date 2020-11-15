@@ -13,7 +13,6 @@ import traceback
 import asyncio
 
 import alfa_CR6_backend.cr6
-from alfa_CR6_ui.debug_status_view import DebugStatusView
 
 
 LOG_LEV = logging.INFO
@@ -29,7 +28,7 @@ def set_settings():
     alfa_CR6_backend.cr6.settings.SQLITE_CONNECT_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
 
     alfa_CR6_backend.cr6.settings.MACHINE_HEAD_IPADD_PORTS_LIST=[
-        # ~ ('127.0.0.1', 11000, 8080)
+        # ~ ('127.0.0.1', 11000, 8080),
         # ~ ('127.0.0.1', 11001, 8080),
         # ~ ('127.0.0.1', 11002, 8080),
         # ~ ('127.0.0.1', 11003, 8080),
@@ -71,13 +70,9 @@ def test_all():
     
     APP.main_window.onLoginBtnClicked()
 
-    APP.debug_status_view = DebugStatusView()
+    APP.main_window.main_window_stack.setCurrentWidget(APP.main_window.debug_status_view.main_frame)
+    APP.main_window.debug_status_view.update_status()
 
-    def show_debug_status_view():
-        APP.main_window.main_window_stack.setCurrentWidget(APP.debug_status_view.main_frame)
-
-    APP.main_window.sinottico.chrome_btn.clicked.disconnect()
-    APP.main_window.sinottico.chrome_btn.clicked.connect(show_debug_status_view)
 
     APP.run_forever()
 

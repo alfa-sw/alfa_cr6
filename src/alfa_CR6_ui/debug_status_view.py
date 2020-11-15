@@ -9,14 +9,13 @@
 
 
 import os
-# ~ import sys
-# ~ import time
+import time
 import logging
 import traceback
 import asyncio
-# ~ import json
 
-from PyQt5.QtWidgets import QApplication, QFrame, QTextBrowser, QButtonGroup, QPushButton   # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import (QApplication, QFrame,       # pylint: disable=no-name-in-module
+    QTextBrowser, QButtonGroup, QPushButton, QComboBox)  
 
 
 class DebugStatusView():
@@ -24,7 +23,7 @@ class DebugStatusView():
     def __init__(self, parent):
 
         app = QApplication.instance()
-        
+
         self.barcode_counter = 0
 
         self.main_frame = QFrame(parent=parent)
@@ -42,7 +41,7 @@ class DebugStatusView():
                 """)
 
         self.answer_text_browser = QTextBrowser(parent=self.main_frame)
-        # ~ self.answer_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
+        self.answer_text_browser.document().setMaximumBlockCount(500)
 
         self.answer_text_browser.setStyleSheet("""
                 QTextBrowser {
@@ -54,9 +53,10 @@ class DebugStatusView():
 
         self.buttons_frame = QFrame(parent=self.main_frame)
         self.buttons_frame.setStyleSheet("""
-                QFrame {
+                QWidget {
+                    color: #333366;
                     background-color: #FFFFF7;
-                    font-size: 16px;
+                    font-size: 20px;
                     font-family: monospace;
                     }
                 """)
@@ -84,15 +84,15 @@ class DebugStatusView():
         for i, n in enumerate([
             ('stop_all', 'stop movement for all heads'),
             ('complete', 'start the complete cycle through the system'),
-            ('read BC', 'simulate a bar code read'),
-            ('clear jars', 'delete all the jars'),
+            ('read\nbarcode', 'simulate a bar code read'),
+            ('clear\njars', 'delete all the jars'),
             ('refresh', 'refresh the view'),
-            ('*', '**'),
-            ('*', '**'),
-            ('*', '**'),
-            ('*', '**'),
-            ('KILL', 'KILL_EMULATOR'),
-            ('clear answers', 'clear answers'),
+            # ~ ('*', '**'),
+            # ~ ('*', '**'),
+            # ~ ('*', '**'),
+            # ~ ('*', '**'),
+            ('kill\nemul', 'kill emulator'),
+            ('clear\nanswers', 'clear answers'),
             ('close', 'close this widget'),
         ]):
 
@@ -101,46 +101,28 @@ class DebugStatusView():
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
+        # ~ self.cb = QComboBox(parent=self.buttons_frame)
+        # ~ self.cb.setGeometry(20 + 8 * 152, 90, 200, 60)
+        # ~ for name in app.MACHINE_HEAD_INDEX_TO_NAME_MAP.values():
+            # ~ self.cb.addItem(name)
+
         width = 1880
         self.status_text_browser.setGeometry(20, 0, width, 560)
         self.buttons_frame.setGeometry(20, 570, width, 180)
         self.answer_text_browser.setGeometry(20, 760, width, 300)
 
-        # ~ app.main_window.sinottico.main_view_stack.addWidget(self.main_frame)
-        # ~ app.main_window.sinottico.main_view_stack.setCurrentWidget(self.main_frame)
         parent.main_window_stack.addWidget(self.main_frame)
         parent.main_window_stack.setCurrentWidget(self.main_frame)
 
         self.status_text_browser.anchorClicked.connect(self.status_text_browser_anchor_clicked)
         self.button_group.buttonClicked.connect(self.on_button_group_clicked)
-        app.onHeadMsgReceived.connect(self.on_machine_msg_received)
 
-    def on_machine_msg_received(self, index, msg_dict):       # pylint: disable=no-self-use
+    def add_answer(self, head_index, answer):
 
         app = QApplication.instance()
-
-        logging.debug(f"msg_dict:{msg_dict}")
-
-        if msg_dict.get('type') == 'device:machine:status':
-            status = msg_dict.get('value')
-            status = dict(status)
-            if status:
-                self.show_status()
-
-        elif msg_dict.get('type') == 'answer':
-            answer = msg_dict.get('value')
-            answer = dict(answer)
-            if answer:
-
-                _ = f"name:{ app.machine_head_dict[index].name }, answer:{ answer }"
-                # ~ logging.warning(_)
-                self.answer_text_browser.append(_)
-
-        elif msg_dict.get('type') == 'time':
-            # ~ logging.warning(f"msg_dict:{msg_dict}")
-            time_stamp = msg_dict.get('value')
-            if time_stamp:
-                self.time_stamp = time_stamp
+        answer = {k: answer[k] for k in ['status_code', 'error', 'command'] if answer.get(k) is not None}
+        _ = f"<p>{ app.machine_head_dict[head_index].name }:{time.asctime()}:{ answer }</p>"
+        self.answer_text_browser.append(_)
 
     def status_text_browser_anchor_clicked(self, url):       # pylint: disable=no-self-use
 
@@ -151,18 +133,18 @@ class DebugStatusView():
         logging.warning(f"url.url().split('@'):{url.url().split('@')}")
         if url.url().split('@')[1:]:
             command, name = url.url().split('@')
+            m = named_map[name]
             if command == "DIAGNOSTIC":
-                m = named_map[name]
                 t = m.send_command(cmd_name="ENTER_DIAGNOSTIC", params={}, type_='command', channel='machine')
-                asyncio.ensure_future(t)
             elif command == "RESET":
-                m = named_map[name]
                 t = m.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
-                asyncio.ensure_future(t)
+            elif command == "PIPES":
+                t = m.update_pipes()
+            asyncio.ensure_future(t)
         else:
             os.system("chromium-browser {} &".format(url.url()))
-            
-        # ~ self.show_status()
+
+        self.update_status()
 
     def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use
 
@@ -171,22 +153,22 @@ class DebugStatusView():
 
         # ~ logging.warning(f"cmd_txt:{cmd_txt}")
 
-        if 'KILL' in cmd_txt:
+        if 'kill\nemul' in cmd_txt:
 
             m = app.machine_head_dict[0]
             t = m.send_command(cmd_name="KILL_EMULATOR", params={})
             asyncio.ensure_future(t)
 
         elif 'refresh' in cmd_txt:
-            self.show_status()
+            self.update_status()
 
-        elif 'clear answers' in cmd_txt:
+        elif 'clear\nanswers' in cmd_txt:
             self.answer_text_browser.setText("")
         elif 'close' in cmd_txt:
             # ~ app.main_window.main_window_stack.setCurrentIndex(0)
             app.main_window.main_window_stack.setCurrentWidget(app.main_window.project)
 
-        elif 'clear jars' in cmd_txt:
+        elif 'clear\njars' in cmd_txt:
 
             for k in [_ for _ in app._CR6_application__jar_runners.keys()]:
                 t = app._CR6_application__jar_runners[k]['task']
@@ -199,11 +181,9 @@ class DebugStatusView():
                 except asyncio.CancelledError:
                     logging.info(f"{ t } has been canceled now.")
 
-        elif 'read BC' in cmd_txt:
+        elif 'read\nbarcode' in cmd_txt:
             self.barcode_counter += 1
-            t = app.on_barcode_read(0, self.barcode_counter, skip_checks=True)
-            asyncio.ensure_future(t)
-            logging.warning(f"t:{t}")
+            app.run_a_coroutine_helper('on_barcode_read', 0, self.barcode_counter, skip_checks=True)
 
         elif 'complete' in cmd_txt:
             async def coro():
@@ -238,7 +218,7 @@ class DebugStatusView():
         else:
             app.run_a_coroutine_helper(cmd_txt)
 
-    def show_status(self, _=None):
+    def update_status(self, _=None):
 
         if not self.main_frame.isVisible():
             return
@@ -255,20 +235,22 @@ class DebugStatusView():
 
         html_ += '<tr>                                           '
 
-        html_ += '<td colspan="1">                                           '
-        html_ += '<br/># "jar photocells_status" mask bit coding:'
-        html_ += '<br/> 0000 0000 0001  | 0x0001 # bit0: JAR_INPUT_ROLLER_PHOTOCELL        '
-        html_ += '<br/> 0000 0000 0010  | 0x0002 # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL  '
-        html_ += '<br/> 0000 0000 0100  | 0x0004 # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL       '
-        html_ += '<br/> 0000 0000 1000  | 0x0008 # bit3: LOAD_LIFTER_DOWN_PHOTOCELL        '
-        html_ += '<br/> 0000 0001 0000  | 0x0010 # bit4: LOAD_LIFTER_UP_PHOTOCELL          '
-        html_ += '<br/> 0000 0010 0000  | 0x0020 # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL      '
-        html_ += '<br/> 0000 0100 0000  | 0x0040 # bit6: UNLOAD_LIFTER_UP_PHOTOCELL        '
-        html_ += '<br/> 0000 1000 0000  | 0x0080 # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL'
-        html_ += '<br/> 0001 0000 0000  | 0x0100 # bit8: JAR_DISPENSING_POSITION_PHOTOCELL '
-        html_ += '<br/> 0010 0000 0000  | 0x0200 # bit9: JAR_DETECTION_MICROSWITCH_1       '
-        html_ += '<br/> 0100 0000 0000  | 0x0400 # bit10:JAR_DETECTION_MICROSWITCH_2       '
-        html_ += '</td>                                          '
+        html_ += """
+        <td colspan="1">
+        <br/># "jar photocells_status" mask bit coding:
+        <br/> 0000 0000 0001  | 0x0001 # bit0: JAR_INPUT_ROLLER_PHOTOCELL        
+        <br/> 0000 0000 0010  | 0x0002 # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL  
+        <br/> 0000 0000 0100  | 0x0004 # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL       
+        <br/> 0000 0000 1000  | 0x0008 # bit3: LOAD_LIFTER_DOWN_PHOTOCELL        
+        <br/> 0000 0001 0000  | 0x0010 # bit4: LOAD_LIFTER_UP_PHOTOCELL          
+        <br/> 0000 0010 0000  | 0x0020 # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL      
+        <br/> 0000 0100 0000  | 0x0040 # bit6: UNLOAD_LIFTER_UP_PHOTOCELL        
+        <br/> 0000 1000 0000  | 0x0080 # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL
+        <br/> 0001 0000 0000  | 0x0100 # bit8: JAR_DISPENSING_POSITION_PHOTOCELL 
+        <br/> 0010 0000 0000  | 0x0200 # bit9: JAR_DETECTION_MICROSWITCH_1       
+        <br/> 0100 0000 0000  | 0x0400 # bit10:JAR_DETECTION_MICROSWITCH_2       
+        </td>
+        """
 
         html_ += '<td colspan="2">                                          '
         html_ += '<br/># progressing_jars:'
@@ -292,21 +274,22 @@ class DebugStatusView():
         html_ += '<th align="left" width="18%">jar_photocells_status</th>'
         html_ += '<th align="left" width="16%">photocells_status</th>'
         html_ += '<th align="left" width="12%">(cp) level</th>'
-        html_ += '<th align="left" width="20%">last update</th>'
+        html_ += '<th align="left" width="10%">last update</th>'
         html_ += '<th align="left" width="7%">-</th>'
+        html_ += '<th align="left" width="8%">-</th>'
         html_ += '<th align="left" width="8%">-</th>'
         html_ += '</tr>'
 
         for n in sorted(names_):
 
             m = named_map[n]
-            ord = m.index + 1
+            ord_ = m.index + 1
             photoc_ = m.status.get('photocells_status', -1)
             jar_ph_ = m.status.get('jar_photocells_status', -1)
 
             html_ += '<tr>'
 
-            html_ += '  <td>head {}</td>'.format(ord)
+            html_ += '  <td>head {}</td>'.format(ord_)
             html_ += '  <td>{}</td>'.format(m.name)
             html_ += '  <td><a href="http://{0}:8080/admin"> {0} </a></td>'.format(m.ip_add)
             html_ += '  <td>{0:04b} {1:04b} {2:04b} | 0x{3:04X} {3:5d}</td>'.format(
@@ -316,10 +299,11 @@ class DebugStatusView():
 
             cp = 1 if m.status.get('container_presence') else 0
             html_ += '  <td>({}) {}</td>'.format(cp, m.status.get('status_level'))
-            html_ += '  <td>{}</td>'.format(m.status.get('last_update'))
+            html_ += '  <td>{}</td>'.format(m.status.get('last_update', '').split()[1])
 
             html_ += f'  <td><a href="RESET@{n}">RESET</a></td>'
             html_ += f'  <td><a href="DIAGNOSTIC@{n}">DIAGNOSTIC</a></td>'
+            html_ += f'  <td><a href="PIPES@{n}">PIPES</a></td>'
 
             html_ += '</tr>'
 

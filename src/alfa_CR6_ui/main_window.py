@@ -32,9 +32,11 @@ class MainWindow(QMainWindow):
         self.debug_status_view = DebugStatusView(self)
         self.main_window_stack.addWidget(self.debug_status_view.main_frame)
 
-        self.sinottico.chrome_btn_2.clicked.connect(
-            lambda: self.main_window_stack.setCurrentWidget(
-                self.debug_status_view.main_frame))
+        def show_debug_view():
+            self.main_window_stack.setCurrentWidget(self.debug_status_view.main_frame)
+            self.debug_status_view.update_status()
+            
+        self.sinottico.chrome_btn_2.clicked.connect(show_debug_view)
 
         self.main_window_stack.setCurrentWidget(self.login)
 

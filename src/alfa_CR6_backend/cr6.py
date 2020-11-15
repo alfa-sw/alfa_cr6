@@ -16,7 +16,6 @@ import json
 import types
 
 from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
-from PyQt5.QtCore import pyqtSignal         # pylint: disable=no-name-in-module
 
 from alfa_CR6_ui.main_window import MainWindow
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
@@ -194,8 +193,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         5: "D_BOTM_RIGHT",
     }
 
-    onHeadMsgReceived = pyqtSignal(int, dict)
-
     def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):     # pylint:  disable=no-self-use
 
         # TODO: send alarm msg to Gui surface
@@ -254,8 +251,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.__init_tasks()
 
         self.main_window = MainWindow()
-
-        self.debug_status_view = None
 
     def __init_tasks(self):
 
@@ -320,7 +315,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def __create_machine_task(self, head_index, ip_add, ws_port, http_port):
 
-        # ~ m = Machine(head_index, ip_add, ws_port, http_port, msg_handler=self.on_head_msg_received)
         m = MachineHead(head_index, ip_add, ws_port, http_port, msg_handler=self.on_head_msg_received)
         self.machine_head_dict[head_index] = m
         await m.run()
@@ -449,13 +443,15 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def on_head_msg_received(self, head_index, msg_dict):
 
-        # ~ logging.warning("")
         if msg_dict.get('type') == 'device:machine:status':
             status = msg_dict.get('value')
             status = dict(status)
             self.main_window.sinottico.update_data(head_index, status)
+            self.main_window.debug_status_view.update_status()
 
-        self.onHeadMsgReceived.emit(head_index, msg_dict)
+        elif msg_dict.get('type') == 'answer':
+            answer = msg_dict.get('value')
+            self.main_window.debug_status_view.add_answer(head_index, answer)
 
     def get_machine_head_by_letter(self, letter):          # pylint: disable=inconsistent-return-statements
 
@@ -630,6 +626,11 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def lift_02_stop(self):
         await self.move_mu('F', roller='Lifter', m=0)
+
+    async def single_move(self, head_letter, params):  
+
+        m = self.get_machine_head_by_letter(head_letter)
+        return await m.can_movement(params)
 
     async def move_00_01(self):  # 'feed'
 
@@ -816,6 +817,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                         # ~ r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True)
                         # ~ if r:
                             # ~ await F.can_movement({'Lifter': 2})
+        return r
 
     async def move_11_12(self):  # 'OUT -> OUT'
         pass
@@ -829,10 +831,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         await self.get_machine_head_by_letter('E').can_movement()
         await self.get_machine_head_by_letter('F').can_movement()
 
-    def run_a_coroutine_helper(self, coroutine_name):
+    def run_a_coroutine_helper(self, coroutine_name, *args, **kwargs):
         try:
             _coroutine = getattr(self, coroutine_name)
-            _future = _coroutine()
+            _future = _coroutine(*args, **kwargs)
             asyncio.ensure_future(_future)
             logging.warning(f"coroutine_name:{coroutine_name}, _future:{_future}")
 
