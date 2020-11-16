@@ -18,6 +18,8 @@ from PyQt5.QtWidgets import (QApplication, QFrame,       # pylint: disable=no-na
                              # ~ QComboBox,
                              QTextBrowser, QButtonGroup, QPushButton)
 
+from alfa_CR6_backend.models import Jar
+
 
 class DebugStatusView():
 
@@ -114,7 +116,8 @@ class DebugStatusView():
             ('LIFTL\nUP', 'send command UP to left lifter without waiting for any condition'),
             ('LIFTL\nDOWN', 'send command DOWN to left lifter without waiting for any condition'),
             # ~ ('kill\nemul', 'kill emulator'),
-            ('run\ntest', '**'),
+            # ~ ('run\ntest', '**'),
+            ('reset jar\nstatuses', 'reset all jar_status to NEW'),
             ('clear\nanswers', 'clear answers'),
             ('close', 'close this widget'),
         ]):
@@ -173,7 +176,15 @@ class DebugStatusView():
 
         self.update_status()
 
-    async def run_test(self):             # pylint: disable=no-self-use
+    async def reset_jar_status_to_new(self):   # pylint: disable=no-self-use
+
+        app = QApplication.instance()
+        for j in app.db_session.query(Jar).filter(Jar.status != 'NEW').all():
+            logging.warning(f"j:{j}")
+            j.status = 'NEW'
+        app.db_session.commit()
+
+    async def run_test(self):                   # pylint: disable=no-self-use
 
         app = QApplication.instance()
 
@@ -198,6 +209,11 @@ class DebugStatusView():
 
             m = app.machine_head_dict[0]
             t = m.send_command(cmd_name="KILL_EMULATOR", params={})
+            asyncio.ensure_future(t)
+
+        elif 'reset jar\nstatuses' in cmd_txt:
+
+            t = self.reset_jar_status_to_new()
             asyncio.ensure_future(t)
 
         elif 'run\ntest' in cmd_txt:
@@ -290,8 +306,7 @@ class DebugStatusView():
             return
 
         app = QApplication.instance()
-        
-        
+
         named_map = {m.name: m for m in app.machine_head_dict.values()}
         names_ = named_map.keys()
 
@@ -301,14 +316,12 @@ class DebugStatusView():
             app.machine_head_dict[0].status['jar_photocells_status'] & 0x200 +
             app.machine_head_dict[0].status['jar_photocells_status'] & 0x400) >> 4
 
-
-
-        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X}</small>'.format(app.get_version(), app.machine_head_dict[0].jar_size_detect, jar_size_detect)
+        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X}</small>'.format(
+            app.get_version(), app.machine_head_dict[0].jar_size_detect, jar_size_detect)
         html_ += '<p>0x{:02X} 0x{:02X}</p>'.format(
             app.machine_head_dict[0].status['jar_photocells_status'] & 0x200,
             app.machine_head_dict[0].status['jar_photocells_status'] & 0x400
         )
-
 
         html_ += '<table>'
 
