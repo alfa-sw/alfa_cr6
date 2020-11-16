@@ -37,7 +37,7 @@ class DebugStatusView():
         self.status_text_browser.setStyleSheet("""
                 QTextBrowser {
                     background-color: #FFFFF7;
-                    font-size: 18px;
+                    font-size: 12px;
                     font-family: monospace;
                     }
                 """)
@@ -79,7 +79,27 @@ class DebugStatusView():
         ]):
 
             b = QPushButton(n[0], parent=self.buttons_frame)
-            b.setGeometry(20 + i * 152, 0, 150, 80)
+            b.setGeometry(20 + i * 152, 0, 150, 60)
+            b.setToolTip(n[1])
+            self.button_group.addButton(b)
+
+        for i, n in enumerate([
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+            ('', '**'),
+        ]):
+
+            b = QPushButton(n[0], parent=self.buttons_frame)
+            b.setGeometry(20 + i * 152, 65, 150, 60)
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
@@ -89,17 +109,18 @@ class DebugStatusView():
             ('read\nbarcode', 'simulate a bar code read'),
             ('clear\njars', 'delete all the jars'),
             ('refresh', 'refresh the view'),
-            # ~ ('*', '**'),
-            # ~ ('*', '**'),
-            # ~ ('*', '**'),
-            # ~ ('*', '**'),
-            ('kill\nemul', 'kill emulator'),
+            ('LIFTR\nUP', 'send command UP to right lifter without waiting for any condition'),
+            ('LIFTR\nDOWN', 'send command DOWN to right lifter without waiting for any condition'),
+            ('LIFTL\nUP', 'send command UP to left lifter without waiting for any condition'),
+            ('LIFTL\nDOWN', 'send command DOWN to left lifter without waiting for any condition'),
+            # ~ ('kill\nemul', 'kill emulator'),
+            ('run\ntest', '**'),
             ('clear\nanswers', 'clear answers'),
             ('close', 'close this widget'),
         ]):
 
             b = QPushButton(n[0], parent=self.buttons_frame)
-            b.setGeometry(20 + i * 152, 90, 150, 80)
+            b.setGeometry(20 + i * 152, 130, 150, 60)
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
@@ -109,9 +130,9 @@ class DebugStatusView():
             # ~ self.cb.addItem(name)
 
         width = 1880
-        self.status_text_browser.setGeometry(20, 0, width, 560)
-        self.buttons_frame.setGeometry(20, 570, width, 180)
-        self.answer_text_browser.setGeometry(20, 760, width, 300)
+        self.status_text_browser.setGeometry(20, 0, width, 600)
+        self.buttons_frame.setGeometry(20, 600, width, 200)
+        self.answer_text_browser.setGeometry(20, 800, width, 280)
 
         parent.main_window_stack.addWidget(self.main_frame)
         parent.main_window_stack.setCurrentWidget(self.main_frame)
@@ -136,21 +157,37 @@ class DebugStatusView():
         if url.url().split('@')[1:]:
             command, name = url.url().split('@')
             m = named_map[name]
+            t = None
             if command == "DIAGNOSTIC":
                 t = m.send_command(cmd_name="ENTER_DIAGNOSTIC", params={}, type_='command', channel='machine')
             elif command == "RESET":
                 t = m.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
             elif command == "PIPES":
-                t = m.update_pipes()
+                t = m.update_pipes_and_packages()
             elif command == "DISP":
                 t = m.do_dispense()
-            asyncio.ensure_future(t)
+            if t is not None:
+                asyncio.ensure_future(t)
         else:
             os.system("chromium-browser {} &".format(url.url()))
 
         self.update_status()
 
-    def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use
+    async def run_test(self):             # pylint: disable=no-self-use
+
+        app = QApplication.instance()
+
+        F = app.get_machine_head_by_letter('F')
+
+        for i in range(100):
+            r = await F.wait_for_status_level(['STANDBY'], on=True, timeout=10)
+            if r:
+                r = await F.can_movement({'Output_Roller': 2})
+            else:
+                logging.error("timeout !")
+            logging.warning(f"i:{i}, r:{r}")
+
+    def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use, too-many-branches
 
         app = QApplication.instance()
         cmd_txt = btn.text()
@@ -161,6 +198,31 @@ class DebugStatusView():
 
             m = app.machine_head_dict[0]
             t = m.send_command(cmd_name="KILL_EMULATOR", params={})
+            asyncio.ensure_future(t)
+
+        elif 'run\ntest' in cmd_txt:
+
+            t = self.run_test()
+            asyncio.ensure_future(t)
+
+        elif 'LIFTR\nUP' in cmd_txt:
+
+            t = app.single_move('D', {'Lifter': 1})
+            asyncio.ensure_future(t)
+
+        elif 'LIFTR\nDOWN' in cmd_txt:
+
+            t = app.single_move('D', {'Lifter': 2})
+            asyncio.ensure_future(t)
+
+        elif 'LIFTL\nUP' in cmd_txt:
+
+            t = app.single_move('F', {'Lifter': 1})
+            asyncio.ensure_future(t)
+
+        elif 'LIFTL\nDOWN' in cmd_txt:
+
+            t = app.single_move('F', {'Lifter': 2})
             asyncio.ensure_future(t)
 
         elif 'refresh' in cmd_txt:
@@ -228,13 +290,26 @@ class DebugStatusView():
             return
 
         app = QApplication.instance()
-
+        
+        
         named_map = {m.name: m for m in app.machine_head_dict.values()}
         names_ = named_map.keys()
 
         html_ = ''
 
-        html_ += '<small>app ver.: {}</small>'.format(app.get_version())
+        jar_size_detect = (
+            app.machine_head_dict[0].status['jar_photocells_status'] & 0x200 +
+            app.machine_head_dict[0].status['jar_photocells_status'] & 0x400) >> 4
+
+
+
+        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X}</small>'.format(app.get_version(), app.machine_head_dict[0].jar_size_detect, jar_size_detect)
+        html_ += '<p>0x{:02X} 0x{:02X}</p>'.format(
+            app.machine_head_dict[0].status['jar_photocells_status'] & 0x200,
+            app.machine_head_dict[0].status['jar_photocells_status'] & 0x400
+        )
+
+
         html_ += '<table>'
 
         html_ += '<tr>                                           '
@@ -278,7 +353,7 @@ class DebugStatusView():
         html_ += '<th align="left" width="20%" colspan="4">jar_photocells_status</th>'
         html_ += '<th align="left" width="16%">photocells_status</th>'
         html_ += '<th align="left" width="12%">(cp) level</th>'
-        html_ += '<th align="left" width="10%">last update</th>'
+        html_ += '<th align="left" width="8%">last update</th>'
         html_ += '<th align="left" width="12%"  colspan="4">commands</th>'
         html_ += '</tr>'
 
@@ -315,9 +390,9 @@ class DebugStatusView():
             html_ += '  <td>{}</td>'.format(l_u)
 
             html_ += f'  <td bgcolor="#F0F0F0"><a href="RESET@{n}">RESET</a></td>'
-            html_ += f'  <td bgcolor="#F0F0F0"><a href="DIAG@{n}" title="ENTER DIAGNOSTIC">DIAG</a></td>'
-            html_ += f'  <td bgcolor="#F0F0F0"><a href="PIPES@{n}">PIPES</a></td>'
-            html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}">DISP</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="DIAG@{n}" title="Enter diagnostic status">DIAG</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="PIPES@{n}" title="Update pipe info">PIPES</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}" title="Send a dispense cmd">DISP</a></td>'
 
             html_ += '</tr>'
 

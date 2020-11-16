@@ -21,8 +21,15 @@ from alfa_CR6_ui.main_window import MainWindow
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.machine_head import MachineHead
 
-RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 HERE = os.path.dirname(os.path.abspath(__file__))
+UI_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'ui')
+IMAGE_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'images')
+KEYBOARD_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'keyboard')
+
+
+sys.path.append("/opt/alfa_cr6/conf")
+import settings
+sys.path.remove("/opt/alfa_cr6/conf")
 
 
 def _get_version():
@@ -42,59 +49,6 @@ def _get_version():
     return _ver
 
 
-settings = types.SimpleNamespace(
-    # ~ LOG_LEVEL=logging.DEBUG,
-    # ~ LOG_LEVEL=logging.INFO,
-    LOG_LEVEL=logging.WARNING,
-
-    LOGS_PATH=os.path.join(RUNTIME_FILES_ROOT, 'log'),
-    TMP_PATH=os.path.join(RUNTIME_FILES_ROOT, 'tmp'),
-    CONF_PATH=os.path.join(RUNTIME_FILES_ROOT, 'conf'),
-
-    UI_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'ui'),
-    IMAGE_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'images'),
-    KEYBOARD_PATH=os.path.join(HERE, '..', 'alfa_CR6_ui', 'keyboard'),
-
-    # here is defined the path to the sqlite db used for persistent data,
-    # if it is empty or None, no sqlite db is open
-    # ~ SQLITE_CONNECT_STRING="sqlite:///" + \
-    # ~ os.path.join(RUNTIME_FILES_ROOT, 'data', 'cr6.V' + _get_version().split('.')[1] + '.sqlite'),
-    # ~ SQLITE_CONNECT_STRING=None,
-    SQLITE_CONNECT_STRING="sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite",
-
-    # this dictionary keeps the url of the websocket servers
-    # to which the application connects its websocket clients,
-    # if it is empty, no websocket client is started
-    MACHINE_HEAD_IPADD_PORTS_LIST=[
-        # ~ ('127.0.0.1', 11000, 8080),
-        ("192.168.15.156", 11000, 8080),
-        ("192.168.15.19", 11000, 8080),
-        ("192.168.15.60", 11000, 8080),
-        ("192.168.15.61", 11000, 8080),
-        ("192.168.15.62", 11000, 8080),
-        ("192.168.15.170", 11000, 8080),
-    ],
-
-    # this dictionary keeps the path to the files where
-    # the application looks for the mockup version of
-    # the machine:status structures in json format,
-    # if it is empty, no mockup file is searched for
-    MOCKUP_FILE_PATH_LIST=[
-        # ~ '/opt/alfa_cr6/var/machine_status_0.json',
-        # ~ '/opt/alfa_cr6/var/machine_status_1.json',
-        # ~ '/opt/alfa_cr6/var/machine_status_2.json',
-        # ~ '/opt/alfa_cr6/var/machine_status_3.json',
-        # ~ '/opt/alfa_cr6/var/machine_status_4.json',
-        # ~ '/opt/alfa_cr6/var/machine_status_5.json',
-    ],
-
-    BARCODE_DEVICE_NAME_LIST=[
-        # ~ '/dev/input/event7',
-        # ~ '/dev/input/event8',
-    ],
-
-    STORE_EXCEPTIONS_TO_DB_AS_DEFAULT=False,
-)
 
 
 def parse_json_order(path_to_json_file, json_schema_name):
@@ -223,9 +177,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         super().__init__(*args, **kwargs)
 
         self.run_flag = True
-        self.ui_path = settings.UI_PATH
-        self.images_path = settings.IMAGE_PATH
-        self.keyboard_path = settings.KEYBOARD_PATH
+        self.ui_path = UI_PATH
+        self.images_path = IMAGE_PATH
+        self.keyboard_path = KEYBOARD_PATH
         self.db_session = None
 
         self.__inner_loop_task_step = 0.02  # secs
@@ -326,7 +280,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             for m in self.machine_head_dict.values():
 
                 # TODO: use cached vals, if present
-                await m.update_pipes()
+                await m.update_pipes_and_packages()
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
 
@@ -388,6 +342,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             order_nr, index = decompile_barcode(barcode)
             logging.debug("order_nr:{}, index:{}".format(order_nr, index))
 
+            A = self.get_machine_head_by_letter('A')
+            r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'], timeout=1)
+            jar_size_detected = A.jar_size_detect
+
             if skip_checks:
                 q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
                 jar = q.first()
@@ -396,15 +354,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 q = q.join(Order).filter((Order.order_nr == order_nr))
                 jar = q.one()
 
-                sz = self.machine_head_dict[0].jar_size_detect
-                assert jar.size == sz, "{} != {}".format(jar.size, sz)
-
             if jar:
                 # let's run a task that will manage the jar through the entire path inside the system
+                jar.size = jar_size_detected
                 t = self.__jar_task(jar)
                 self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
 
-                logging.warning(" ************ {} {} jar:{}".format(len(self.__jar_runners), barcode, jar))
+                logging.warning(" ************ {} {} jar:{}, jar.size:{}".format(len(self.__jar_runners), barcode, jar, jar.size))
 
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
@@ -486,10 +442,12 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=False, status_levels=['STANDBY'], timeout=1)
         if r:
-            await A.can_movement({'Input_Roller': 2})
-            r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True, timeout=20)
+            r = await A.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'], timeout=1)
             if r:
-                await A.can_movement()
+                await A.can_movement({'Input_Roller': 2})
+                r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True, timeout=20)
+                if not r:
+                    await A.can_movement()
         else:
             logging.warning("A JAR_INPUT_ROLLER_PHOTOCELL is busy, nothing to do.")
 
@@ -592,7 +550,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 jar.update_live(pos='LIFTR')
 
         # TODO: remove this delay
-        await asyncio.sleep(1)
+        # ~ await asyncio.sleep(1)
 
         return r
 
@@ -654,7 +612,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         r = await F.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=False)
         if r:
-            r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
+            r = await F.wait_for_jar_photocells_and_status_lev('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False, status_levels=['STANDBY'])
             if r:
                 r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, timeout=1)
                 if not r:
@@ -704,11 +662,11 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 jar.update_live(pos='LIFTL')
 
             if r:
-                r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_UP_PHOTOCELL', on=True)
+                r = await F.wait_for_jar_photocells_and_status_lev('UNLOAD_LIFTER_UP_PHOTOCELL', on=True, status_levels=['STANDBY'])
                 if r:
 
                     # TODO: remove this delay
-                    await asyncio.sleep(2)
+                    # ~ await asyncio.sleep(2)
 
                     await F.can_movement({'Output_Roller': 2})
                     r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=False)

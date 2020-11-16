@@ -5,7 +5,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 
-import os
+# ~ import os
 import time
 import logging
 import asyncio
@@ -22,6 +22,8 @@ import async_timeout                        # pylint: disable=import-error
 
 DEFAULT_WAIT_FOR_TIMEOUT = 3 * 60
 DATA_ROOT = '/opt/alfa_cr6/var/'
+
+EPSILON = 0.00001
 
 
 class MachineHead(object):           # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -54,6 +56,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         self.jar_photocells_status = {}
         self.jar_size_detect = None
         self.pipe_list = []
+        self.package_list = []
 
         self.ip_add = ip_add
         self.ws_port = ws_port
@@ -69,12 +72,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
-    async def update_pipes(self):
+    async def update_pipes_and_packages(self):
 
         ret = await self.call_api_rest('pipe', 'GET', {})
         self.pipe_list = ret.get('objects', [])
 
-        logging.warning(f"{json.dumps(self.pipe_list, indent=2)}")
+        ret = await self.call_api_rest('package', 'GET', {})
+        self.package_list = ret.get('objects', [])
+        # ~ logging.warning(f"{json.dumps(self.pipe_list, indent=2)}")
 
     async def update_status(self, status):
 
@@ -233,7 +238,9 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         msg = None
         try:
-            msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
+            # TODO: remove
+            # ~ msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
+            msg = await asyncio.wait_for(self.websocket.recv(), timeout=10)
         except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
             logging.debug(f"e:{e}")
 
@@ -319,19 +326,80 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             ret = condition()
         return ret
 
-    async def do_dispense(self, jar):
+    async def get_dispensation_quantity(self, jar):            # pylint: disable=too-many-locals
 
-        logging.warning("index:{}, jar:{}".format(self.index, jar))
-        # ~ logging.warning("jar.order.json_properties:{}".format(jar.order.json_properties))
+        order_json_properties = json.loads(jar.order.json_properties)
+
+        global_ingredients = {}
+        for i in order_json_properties["color information"]:
+            global_ingredients[i["Color MixingAgen"]] = float(i["weight(g)"])
+
+        pigment_to_pipe_map = {}
+        pigment_to_specific_weight_map = {}
+        for p in self.pipe_list:
+            pigment_name = p['pigment']['name']
+            pigment_to_pipe_map[pigment_name] = p['name']
+            specific_weight = p.get("effective_specific_weight", 0)
+            if specific_weight < EPSILON:
+                specific_weight = p['pigment']["specific_weight"]
+            pigment_to_specific_weight_map[pigment_name] = specific_weight
+
+        total_weight = 0
+        total_volume = 0
+        for pigment_name in global_ingredients:
+            if pigment_to_pipe_map.get(pigment_name):
+                specific_weight = pigment_to_specific_weight_map[pigment_name]
+                quantity_g = float(global_ingredients[pigment_name])
+                quantity_cc = quantity_g / specific_weight
+                total_weight += quantity_g
+                total_volume += quantity_cc
+
+        pack_size_list = [p['size'] for p in self.package_list]
+        pack_size_list.sort()
+        pack_size = pack_size_list[jar.size]
+
+        logging.warning(f"{self.name} jar.size:{jar.size}, total_volume:{total_volume}, pack_size:{pack_size}")
+
+    async def compile_dispensation_ingredients(self, jar):            # pylint: disable=too-many-locals
+
+        order_json_properties = json.loads(jar.order.json_properties)
+
+        global_ingredients = {}
+        for i in order_json_properties["color information"]:
+            global_ingredients[i["Color MixingAgen"]] = float(i["weight(g)"])
+
+        pigment_to_pipe_map = {}
+        pigment_to_specific_weight_map = {}
+        for p in self.pipe_list:
+            pigment_name = p['pigment']['name']
+            pigment_to_pipe_map[pigment_name] = p['name']
+            specific_weight = p.get("effective_specific_weight", 0)
+            if specific_weight < EPSILON:
+                specific_weight = p['pigment']["specific_weight"]
+            pigment_to_specific_weight_map[pigment_name] = specific_weight
+
+        ingredients = {}
+        for pigment_name in global_ingredients:
+            if pigment_to_pipe_map.get(pigment_name):
+                pipe_name = pigment_to_pipe_map[pigment_name]
+                specific_weight = pigment_to_specific_weight_map[pigment_name]
+                quantity_g = float(global_ingredients[pigment_name])
+                quantity_cc = quantity_g / specific_weight
+                ingredients[pipe_name] = quantity_cc
+
+        return ingredients
+
+    async def do_dispense(self, jar):            # pylint: disable=too-many-locals
+
         # TODO: check jar order and dispense, if due
-        await asyncio.sleep(3)
-        # ~ logging.warning("index:{}, jar:{}".format(self.index, jar))
-        # ~ await self.send_command(cmd_name="DISPENSE", params={}, type_='command', channel='machine')
 
-        return
+        ingredients = self.compile_dispensation_ingredients(jar)
+        pars = {'package_name': "******* not valid name ****", 'ingredients': ingredients}
+        logging.warning(f"{self.name} pars:{pars}")
+        # ~ ret = await self.send_command(cmd_name="DISPENSE_FORMULA", type_='macro', params = pars)
+        # ~ return ret
 
     async def close(self):
 
         if self.aiohttp_clientsession:
             await self.aiohttp_clientsession.close()
-

@@ -1,4 +1,6 @@
 
+Dropss82
+
 python -c "from PyQt5.QtWidgets import QStyleFactory ; print(QStyleFactory.keys())"
 
 
@@ -19,3 +21,6 @@ python -c "from PyQt5.QtWidgets import QApplication; a = QApplication([]); QAppl
 
 ### run test
     . /opt/alfa_cr6/venv/bin/activate; alfa_CR6_test
+
+
+scp ${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH} 
