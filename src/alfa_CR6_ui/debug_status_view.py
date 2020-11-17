@@ -176,7 +176,7 @@ class DebugStatusView():
 
         self.update_status()
 
-    async def reset_jar_status_to_new(self):   # pylint: disable=no-self-use
+    def reset_jar_status_to_new(self):   # pylint: disable=no-self-use
 
         app = QApplication.instance()
         for j in app.db_session.query(Jar).filter(Jar.status != 'NEW').all():
@@ -213,8 +213,7 @@ class DebugStatusView():
 
         elif 'reset jar\nstatuses' in cmd_txt:
 
-            t = self.reset_jar_status_to_new()
-            asyncio.ensure_future(t)
+            self.reset_jar_status_to_new()
 
         elif 'run\ntest' in cmd_txt:
 
