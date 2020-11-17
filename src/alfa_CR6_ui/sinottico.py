@@ -171,7 +171,12 @@ class Sinottico(QWidget):
 
     def jar_button(self, action):
         print(action)
-        self.cr6_app.run_a_coroutine_helper(action)
+        if (isinstance(action, str)):
+            self.cr6_app.run_a_coroutine_helper(action)
+        elif (isinstance(action, tuple)):
+            self.cr6_app.run_a_coroutine_helper(*action)
+        else:
+            logging.error("{} is neither string nor tuple".format(type(action)))
 
     def init_defs(self):
         self.status_defs = [
@@ -213,7 +218,7 @@ class Sinottico(QWidget):
                     # jar input
                     "view": self.add_view(Jar(), self.jar_input),
                     "buttons": [
-                        Button('Start rulliera (MU_1)', 'move_mu_01'),
+                        Button('Start rulliera (MU_1)', ('single_move', 'A', {'Input_Roller': 1})),
                         Button('Stop rulliera', 'stop_mu_01'),
                         Button('Start "step 1"', 'move_step_01'),
                         Button('Start "step 1 -step2"', 'move_01_02'),
