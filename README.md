@@ -49,18 +49,23 @@ lettore di barcode e in scrittura a /dev/uinput per la virt. kb.
 
 #### D. Install:
 
+NOTA BENE: Per la installazione occorre, oltre a pip-installare il pacchetto, copiare sul sistema target, nel 
+path "/opt/alfa_cr6/conf/settings.py", il file di settings, oppre, nel caso di "install in edit mode", creare un link simbolico:
+
 1. install in edit mode su host per sviluppo:
 
     host$ cd ${PROJECT_ROOT}               
     host$ . /opt/alfa_cr6/venv/bin/activate
     host$ pip uninstall -y alfa_CR6        
     host$ pip install -e ${PROJECT_ROOT}   
+    host$ ln -s ${PROJECT_ROOT}/conf/settings.py /opt/alfa_cr6/conf/settings.py
 
 1. install su target:
 
     NOTA: [VERSION_NUMBER] e' il n. di versione contenuto nel file `${PROJECT_ROOT}/__version__`.
 
     host$ scp user@host:${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH}  
+    host$ scp user@host:${PROJECT_ROOT}/conf/settings.py user@target:/opt/alfa_cr6/conf/settings.py
     target$ . /opt/alfa_cr6/venv/bin/activate                                                                       
     target$ pip install ${DEPLOY_PATH}/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl                                   
 
