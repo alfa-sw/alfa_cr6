@@ -64,7 +64,7 @@ comandi:
     host$ . /opt/alfa_cr6/venv/bin/activate
     host$ pip uninstall -y alfa_CR6        
     host$ pip install -e ${PROJECT_ROOT}   
-    host$ ln -s ${PROJECT_ROOT}/conf/settings.py /opt/alfa_cr6/conf/settings.py
+    host$ ln -s ${PROJECT_ROOT}/conf/app_settings.py /opt/alfa_cr6/conf/app_settings.py
 
 2. install su target:
 
@@ -73,7 +73,7 @@ comandi:
 comandi:
 
     host$ scp user@host:${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH} 
-    host$ scp user@host:${PROJECT_ROOT}/conf/settings.py user@target:/opt/alfa_cr6/conf/settings.py
+    host$ scp user@host:${PROJECT_ROOT}/conf/app_settings.py user@target:/opt/alfa_cr6/conf/app_settings.py
     target$ . /opt/alfa_cr6/venv/bin/activate                                                                       
     target$ pip install ${DEPLOY_PATH}/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl
                                    
