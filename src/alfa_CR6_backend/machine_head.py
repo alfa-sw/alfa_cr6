@@ -57,6 +57,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         self.jar_size_detect = None
         self.pipe_list = []
         self.package_list = []
+        self.pigment_list = []
 
         self.ip_add = ip_add
         self.ws_port = ws_port
@@ -72,14 +73,40 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
-    async def update_pipes_and_packages(self):
+    async def get_available_weight(self, pigment_name):
 
-        ret = await self.call_api_rest('pipe', 'GET', {})
-        self.pipe_list = ret.get('objects', [])
+        available_gr = 0
+        specific_weight = 1
+        for pig in self.pigment_list:
+            if pig['name'] == pigment_name:
+                specific_weight = pig["specific_weight"]
+                for pipe in pig["pipes"]:
+                    if pipe['effective_specific_weight'] > EPSILON:
+                        specific_weight = pipe['effective_specific_weight']
+                    available_cc = max(0, pipe['current_level'] - pipe['minimum_level'])
+                    if available_cc > EPSILON:
+                        available_gr += available_cc * specific_weight
+
+        return available_gr, specific_weight
+
+    async def update_data(self):
+
+        # ~ ret = await self.call_api_rest('pipe', 'GET', {})
+        # ~ self.pipe_list = ret.get('objects', [])
+        # ~ with open(DATA_ROOT + f"{self.name}_pipe_list.json", 'w') as f:
+            # ~ json.dump(self.pipe_list, f, indent=2)
+
+        # TODO: use cached vals, if present
+
+        ret = await self.call_api_rest('pigment', 'GET', {})
+        self.pigment_list = ret.get('objects', [])
+        with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'w') as f:
+            json.dump(self.pigment_list, f, indent=2)
 
         ret = await self.call_api_rest('package', 'GET', {})
         self.package_list = ret.get('objects', [])
-        # ~ logging.warning(f"{json.dumps(self.pipe_list, indent=2)}")
+        with open(DATA_ROOT + f"{self.name}_package_list.json", 'w') as f:
+            json.dump(self.package_list, f, indent=2)
 
     async def update_status(self, status):
 
@@ -391,13 +418,21 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
     async def do_dispense(self, jar):            # pylint: disable=too-many-locals
 
-        # TODO: check jar order and dispense, if due
+        jar_properties = json.loads(jar.json_properties)
+        ingredient_volume_map = jar_properties['ingredient_volume_map']
+        ingredients = {}
+        for pigment_name in ingredient_volume_map.keys():
+            if ingredient_volume_map[pigment_name].get(self.index):
+                ingredients[pigment_name] = ingredient_volume_map[pigment_name][self.index]
 
-        ingredients = self.compile_dispensation_ingredients(jar)
         pars = {'package_name': "******* not valid name ****", 'ingredients': ingredients}
         logging.warning(f"{self.name} pars:{pars}")
-        # ~ ret = await self.send_command(cmd_name="DISPENSE_FORMULA", type_='macro', params = pars)
-        # ~ return ret
+
+        ret = None
+        # ~ if ingredients:
+            # TODO: dispense
+            # ~ ret = await self.send_command(cmd_name="DISPENSE_FORMULA", type_='macro', params = pars)
+        return ret
 
     async def close(self):
 

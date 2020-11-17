@@ -106,19 +106,19 @@ class DebugStatusView():
             self.button_group.addButton(b)
 
         for i, n in enumerate([
-            ('stop_all', 'stop movement for all heads'),
+            ('stop_all', 'send a stop-movement cmd to all heads'),
             ('complete', 'start the complete cycle through the system'),
             ('read\nbarcode', 'simulate a bar code read'),
-            ('clear\njars', 'delete all the jars'),
-            ('refresh', 'refresh the view'),
-            ('LIFTR\nUP', 'send command UP to right lifter without waiting for any condition'),
-            ('LIFTR\nDOWN', 'send command DOWN to right lifter without waiting for any condition'),
+            ('refresh', 'refresh this view'),
+            ('clear\njars', 'delete all the progressing jars'),
+            ('clear\nanswers', 'clear answers'),
+            ('reset jar\ndb status', 'reset all jar_status to NEW in db sqlite'),
             ('LIFTL\nUP', 'send command UP to left lifter without waiting for any condition'),
             ('LIFTL\nDOWN', 'send command DOWN to left lifter without waiting for any condition'),
+            ('LIFTR\nUP', 'send command UP to right lifter without waiting for any condition'),
+            ('LIFTR\nDOWN', 'send command DOWN to right lifter without waiting for any condition'),
             # ~ ('kill\nemul', 'kill emulator'),
             # ~ ('run\ntest', '**'),
-            ('reset jar\nstatuses', 'reset all jar_status to NEW'),
-            ('clear\nanswers', 'clear answers'),
             ('close', 'close this widget'),
         ]):
 
@@ -165,8 +165,8 @@ class DebugStatusView():
                 t = m.send_command(cmd_name="ENTER_DIAGNOSTIC", params={}, type_='command', channel='machine')
             elif command == "RESET":
                 t = m.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
-            elif command == "PIPES":
-                t = m.update_pipes_and_packages()
+            elif command == "UPDATE":
+                t = m.update_data()
             elif command == "DISP":
                 t = m.do_dispense()
             if t is not None:
@@ -264,7 +264,7 @@ class DebugStatusView():
 
         elif 'read\nbarcode' in cmd_txt:
             self.barcode_counter += 1
-            app.run_a_coroutine_helper('on_barcode_read', 0, self.barcode_counter, skip_checks=True)
+            app.run_a_coroutine_helper('on_barcode_read', 0, self.barcode_counter, skip_checks_for_dummy_read=True)
 
         elif 'complete' in cmd_txt:
             async def coro():
@@ -403,8 +403,8 @@ class DebugStatusView():
 
             html_ += f'  <td bgcolor="#F0F0F0"><a href="RESET@{n}">RESET</a></td>'
             html_ += f'  <td bgcolor="#F0F0F0"><a href="DIAG@{n}" title="Enter diagnostic status">DIAG</a></td>'
-            html_ += f'  <td bgcolor="#F0F0F0"><a href="PIPES@{n}" title="Update pipe info">PIPES</a></td>'
-            html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}" title="Send a dispense cmd">DISP</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="UPDATE@{n}" title="Update machine data">UPDATE</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}" title="call do_dispense()">DISP</a></td>'
 
             html_ += '</tr>'
 
