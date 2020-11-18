@@ -10,11 +10,14 @@ T.O.C.:
   1. [create user *admin*](#p3)
   1. [copy rsa keys to the target](#p4)
   1. [install system packages](#p5)
-  1. [create a virtualenv](#p6)
-  1. [setup RT hwclock](#p7)
-  1. [install the 'alfa40' package](#p8)
-  1. [install D2XX Direct Drivers - FTDI Chip](#p9)
-  1. [re-create the ISO image *alfaberry*](#p10)
+  1. [allow graphical application programs to user admin](#p6)
+  1. [create a virtualenv](#p7)
+  1. [setup RT hwclock](#p8)
+  1. [Set up DYMO 450 labeler in CUPS Server](#p9)
+  1. [install the 'alfa_CR6' package](#p10)
+  1. [install the 'alfa40' package](#p11)
+  1. [install D2XX Direct Drivers - FTDI Chip](#p12)
+  1. [re-create the ISO image *alfaberry*](#p13)
 
 ____________________________________
 
@@ -57,12 +60,25 @@ ____________________________________
                     A6 Screen Blanking   Enable/Disable screen blanking
                          Would you like to enable screen blanking?   <No>
 ```
-   
+   * (optional) Setup Italian keyboard layout
+
+   ```
+
+            Preferences  
+                Keyboard and Mouse
+                    Keyboard Tab
+                      Keyboard Layout...
+                        Set Layout
+                        (Set Variant)
+```
+
+   * (optional) Disable Bluetooth
 
 <a name="p2"></a>
 ##### 2. upgrade raspian buster to bullseye  - ([back to top](#top))
 
-TODO (Luca Vitali)
+TODO 
+(Luca Vitali)
 
 
 <a name="p3"></a>
@@ -73,6 +89,7 @@ TODO (Luca Vitali)
     pi@target $ sudo usermod -a -G adm,dialout,cdrom,sudo,audio,plugdev,users,input,netdev,gpio,i2c,spi admin 
     pi@target $ sudo mkdir /home/admin/.ssh && sudo chown admin:admin /home/admin/.ssh
     pi@target $ sudo mkdir /opt/alfa && sudo chown admin:admin /opt/alfa
+    pi@target $ sudo mkdir /opt/alfa_cr6 && sudo chown admin:admin /opt/alfa_cr6
     # let admin run sudo cmds without password
     pi@target $ echo "admin     ALL=(ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers
     pi@target $ sudo reboot
@@ -84,7 +101,6 @@ TODO (Luca Vitali)
 ```
     pi@target $ mkdir /home/pi/tmp
     host $ scp  .ssh/alfa_rsa .ssh/alfa_rsa.pub .ssh/authorized_keys pi@192.168.0.100:/home/pi/tmp/
-    pi@target $ sudo mkdir /home/admin/.ssh 
     pi@target $ sudo cp /home/pi/tmp/* /home/admin/.ssh/ 
     pi@target $ sudo chown admin:admin -R /home/admin/.ssh
     pi@target $ sudo rm -rf /home/pi/tmp
@@ -95,37 +111,157 @@ TODO (Luca Vitali)
 
 ```
     pi@target $ sudo apt update
-    pi@target $ sudo apt install -y supervisor openvpn virtualenv python3 python3-pyqt5 python3-pyqt5.qtwebengine python3-evdev
+    pi@target $ sudo apt install -y supervisor openvpn virtualenv python3 python3-pyqt5 python3-pyqt5.qtwebengine python3-evdev cups printer-driver-dymo redis sqlite3
+``` 
+
+disable the save-on-disk-feature of redis (limit flash mem write access):
+```
+    pi@target $ redis-cli config set save ""
+    pi@target $ redis-cli config rewrite
+```
+
+add user "admin" to the groups input, lpadmin (for printer), video:
+```
+    admin@raspberrypi:~ $ sudo usermod -aG input,lpadmin,video admin
+```
+
+change group and permissions to dev "/dev/uinput"
+```
+    admin@raspberrypi:~ $ sudo chgrp input /dev/uinput && sudo chmod 770 /dev/uinput
 ```
 
 <a name="p6"></a>
-##### 6. create a virtualenv - ([back to top](#top))
+##### 6. allow graphical application programs to user admin  - ([back to top](#top))
+
+**NOTE**
+
+it is necessary study how to add persistence to the permission
+**SKIP THIS STEP**
+
+
+add a Server Interpreted entry of type "localuser" with a value of "admin"
+
+```
+admin@raspberrypi:~ $  xhost +si:localuser:admin
+```
+
+to verify if user admin was correctly added:
+
+```
+admin@raspberrypi:~ $  xhost
+access control enabled, only authorized clients can connect
+SI:localuser:admin
+SI:localuser:pi
+```
+
+for more details:
+
+[man xhost](http://manpages.ubuntu.com/manpages/xenial/man1/xhost.1.html)
+
+[xsecurity man page](http://manpages.ubuntu.com/manpages/xenial/man7/Xsecurity.7.html)
+
+
+<a name="p7"></a>
+##### 7. create a virtualenv - ([back to top](#top))
 
 create virtualenv for alfa_CR6
 ```
-    admin@raspberrypi:~ $ sudo mkdir /opt/alfa_cr6 && sudo chown admin:admin /opt/alfa_cr6/
     admin@raspberrypi:~ $ virtualenv --system-site-packages -p /usr/bin/python3 /opt/alfa_cr6/venv
 ```
 
 create virtualenv for alfa40
 ```
-    admin@raspberrypi:~ $ sudo mkdir /opt/alfa && sudo chown admin:admin /opt/alfa
-    admin@raspberrypi:~ $ virtualenv -p /usr/bin/python3 /opt/alfa/venv
+    pi@raspberrypi:~ $ virtualenv -p /usr/bin/python3 /opt/alfa/venv
 ```
 
-<a name="p7"></a>
-##### 7. Set up RT hwclock - ([back to top](#top))
-
-TODO: install driver for High_Accuracy_Pi_RTC-DS3231/
+<a name="p8"></a>
+##### 8. Set up RT hwclock - ([back to top](#top))
 
 For Low Accuracy RTC, Follow: [http://wiki.seeedstudio.com/Pi_RTC-DS1307/](http://wiki.seeedstudio.com/Pi_RTC-DS1307/)
 
 For High Accuracy RTC, Follow: [http://wiki.seeedstudio.com/High_Accuracy_Pi_RTC-DS3231/](http://wiki.seeedstudio.com/High_Accuracy_Pi_RTC-DS3231/) 
 
-**NOTE**: <span style="color:#660000; background:#FFFFBB"> only one driver can be installed, not both (LoAc DS1307 **or** HiAc DS3231), in the current ISO (2020-02-02-raspbian-buster-lite-alfa.img) the first one (LoAc DS1307) is installed.</span> 
+**NOTE**: <span style="color:#660000; background:#FFFFBB"> only one driver can be installed, not both (LoAc DS1307 **or** HiAc DS3231), in the current ISO the second one (HiAc DS3231) is installed.</span>
 
-<a name="p8"></a>
-##### 8. install the 'alfa40' package - ([back to top](#top))
+
+Guide for lazy people who do not want to read the wiki about HiAc DS3231
+
+Step 1. Driver Installation
+
+```
+admin@raspberrypi:~ $ git clone https://github.com/Seeed-Studio/pi-hats.git
+admin@raspberrypi:~ $ cd pi-hats
+admin@raspberrypi:~ $ sudo ./tools/install.sh -u rtc_ds3231
+```
+
+Step 2. Power off Raspberry Pi
+
+```
+admin@raspberrypi:~ $ sudo shutdown -h now
+```
+
+Step 3. Insert the HAT to Raspberry Pi
+
+Step 4. Power up Raspberry Pi
+
+Step 5. Check driver installation
+```
+admin@raspberrypi:~ $ ./pi-hats/tools/install.sh -l
+rtc_ds1307    : not installed
+rtc_ds3231    : installed
+adc_ads1115   : not installed
+
+admin@raspberrypi:~ $ sudo hwclock -r
+2020-11-17 09:08:18.903180+01:00
+
+admin@raspberrypi:~ $ sudo date
+Tue 17 Nov 2020 09:08:55 AM CET
+
+```
+
+<a name="p9"></a>
+##### 89. Set up DYMO 450 labeler in CUPS Server - ([back to top](#top))
+
+see [note_driver_CUPS_labeler_CR6.md](./note_driver_CUPS_labeler_CR6.md#configure-dymo-labelwriter-450-turbo) for more details
+
+
+<a name="p10"></a>
+##### 10. install the 'alfa_CR6' package - ([back to top](#top))
+
+see [alfa_CR6 REAME-md](../README.md) for more details
+
+build the wheel on host
+
+```
+    host$ cd ${PROJECT_ROOT}               
+    host$ . /opt/alfa_cr6/venv/bin/activate
+    host$ python setup.py bdist_wheel 
+```
+install on target:
+
+NOTE:
+
+[VERSION_NUMBER] is the version number written into file `${PROJECT_ROOT}/__version__`.
+
+
+```
+    host$ scp admin@host:${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH}
+    host$ scp user@host:${PROJECT_ROOT}/conf/app_settings.py user@target:/opt/alfa_cr6/conf/app_settings.py
+    target$ . /opt/alfa_cr6/venv/bin/activate                                                                       
+    target$ pip install ${DEPLOY_PATH}/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl 
+```
+
+create a shell executable file on Desktop for "pi" user
+```
+    admin@raspberrypi:~ $ sudo su pi
+    pi@raspberrypi:~ $ echo $'. /opt/alfa_cr6/venv/bin/activate\nalfa_CR6 > /opt/alfa_cr6/log/cr6.log'|tee -a /home/pi/Desktop/CR6.sh
+    pi@raspberrypi:~ $ chmod +x /home/pi/Desktop/CR6.sh
+
+```
+
+
+<a name="p11"></a>
+##### 11. install the 'alfa40' package - ([back to top](#top))
 
   * clone the git repo: [alfa-sw/devices branch alfa40](https://github.com/alfa-sw/devices/tree/alfa40) on a host (development PC)
   * setup the ./make_defaults.py :
@@ -136,11 +272,11 @@ For High Accuracy RTC, Follow: [http://wiki.seeedstudio.com/High_Accuracy_Pi_RTC
         'dist_dir':             "./__tmp__/",
         'patched_redis_path':   '',
         'target_py_venv_path':  '/opt/alfa/venv',
-        'target_platform':        'RBpi_alfaCR6',
+        'target_platform':        'RBpi',
         'target_credentials':     'admin@192.168.x.x',
     }
 ```
-  * install the packege on target (RPBi) via:
+  * install the package on target (RPBi) via:
 ```
     host:~ $ python3 ./make.py -bI
 ```
@@ -151,14 +287,11 @@ For High Accuracy RTC, Follow: [http://wiki.seeedstudio.com/High_Accuracy_Pi_RTC
     admin@raspberrypi:~ $ sudo ln -s /opt/alfa/conf/supervisord.conf /etc/supervisor/supervisord.conf
 ```
 
-  * copy credentials.gmail for alfa_email_client (necessary for enable vpn remotly via email)
+  * upload credentials.gmail for alfa_email_client (necessary for enable vpn remotly via email) via flask admin interface
 
-   ```
-   host $ scp .credentials.gmail admin@192.168.0.100:/opt/alfa/conf/
-```
 
-<a name="p9"></a>
-##### 9. install D2XX Direct Drivers - FTDI Chip - ([back to top](#top))
+<a name="p12"></a>
+##### 12. install D2XX Direct Drivers - FTDI Chip - ([back to top](#top))
 
 This drivers are necessary to use the FTDI USB to RS232 UART Serial Converter PCB
 
@@ -219,8 +352,8 @@ admin@raspberrypi cd && rm libftd2xx-arm-v8-1.4.8.gz && rm -rf release/
 ```
 Remove unnecessary files and folders
 
-<a name="p10"></a>
-##### 10. re-create the ISO image *alfaberry* - ([back to top](#top))
+<a name="p13"></a>
+##### 13. re-create the ISO image *alfaberry* - ([back to top](#top))
 
 TODO: create platform iso to SVRCLIENTI
 
