@@ -73,7 +73,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
-    async def get_available_weight(self, pigment_name):
+    def get_available_weight(self, pigment_name):
 
         available_gr = 0
         specific_weight = 1
@@ -352,69 +352,6 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             await asyncio.sleep(.01)
             ret = condition()
         return ret
-
-    async def get_dispensation_quantity(self, jar):            # pylint: disable=too-many-locals
-
-        order_json_properties = json.loads(jar.order.json_properties)
-
-        global_ingredients = {}
-        for i in order_json_properties["color information"]:
-            global_ingredients[i["Color MixingAgen"]] = float(i["weight(g)"])
-
-        pigment_to_pipe_map = {}
-        pigment_to_specific_weight_map = {}
-        for p in self.pipe_list:
-            pigment_name = p['pigment']['name']
-            pigment_to_pipe_map[pigment_name] = p['name']
-            specific_weight = p.get("effective_specific_weight", 0)
-            if specific_weight < EPSILON:
-                specific_weight = p['pigment']["specific_weight"]
-            pigment_to_specific_weight_map[pigment_name] = specific_weight
-
-        total_weight = 0
-        total_volume = 0
-        for pigment_name in global_ingredients:
-            if pigment_to_pipe_map.get(pigment_name):
-                specific_weight = pigment_to_specific_weight_map[pigment_name]
-                quantity_g = float(global_ingredients[pigment_name])
-                quantity_cc = quantity_g / specific_weight
-                total_weight += quantity_g
-                total_volume += quantity_cc
-
-        pack_size_list = [p['size'] for p in self.package_list]
-        pack_size_list.sort()
-        pack_size = pack_size_list[jar.size]
-
-        logging.warning(f"{self.name} jar.size:{jar.size}, total_volume:{total_volume}, pack_size:{pack_size}")
-
-    async def compile_dispensation_ingredients(self, jar):            # pylint: disable=too-many-locals
-
-        order_json_properties = json.loads(jar.order.json_properties)
-
-        global_ingredients = {}
-        for i in order_json_properties["color information"]:
-            global_ingredients[i["Color MixingAgen"]] = float(i["weight(g)"])
-
-        pigment_to_pipe_map = {}
-        pigment_to_specific_weight_map = {}
-        for p in self.pipe_list:
-            pigment_name = p['pigment']['name']
-            pigment_to_pipe_map[pigment_name] = p['name']
-            specific_weight = p.get("effective_specific_weight", 0)
-            if specific_weight < EPSILON:
-                specific_weight = p['pigment']["specific_weight"]
-            pigment_to_specific_weight_map[pigment_name] = specific_weight
-
-        ingredients = {}
-        for pigment_name in global_ingredients:
-            if pigment_to_pipe_map.get(pigment_name):
-                pipe_name = pigment_to_pipe_map[pigment_name]
-                specific_weight = pigment_to_specific_weight_map[pigment_name]
-                quantity_g = float(global_ingredients[pigment_name])
-                quantity_cc = quantity_g / specific_weight
-                ingredients[pipe_name] = quantity_cc
-
-        return ingredients
 
     async def do_dispense(self, jar):            # pylint: disable=too-many-locals
 

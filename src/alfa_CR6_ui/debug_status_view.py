@@ -86,7 +86,7 @@ class DebugStatusView():
             self.button_group.addButton(b)
 
         for i, n in enumerate([
-            ('', '**'),
+            ('check\njar', 'check jar from barcode'),
             ('', '**'),
             ('', '**'),
             ('', '**'),
@@ -265,6 +265,10 @@ class DebugStatusView():
         elif 'read\nbarcode' in cmd_txt:
             self.barcode_counter += 1
             app.run_a_coroutine_helper('on_barcode_read', 0, self.barcode_counter, skip_checks_for_dummy_read=True)
+
+        elif 'check\njar' in cmd_txt:
+            self.barcode_counter += 1
+            app.run_a_coroutine_helper('get_and_check_jar_from_barcode', self.barcode_counter, skip_checks_for_dummy_read=True)
 
         elif 'complete' in cmd_txt:
             async def coro():

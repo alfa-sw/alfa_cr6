@@ -331,7 +331,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             requested_quantity_gr = float(i["weight(g)"])
             ingredient_volume_map[pigment_name] = {}
             for m in self.machine_head_dict.values():
-                available_gr, specific_weight = m.get_available_weight(self, pigment_name)
+                available_gr, specific_weight = m.get_available_weight(pigment_name)
                 if available_gr >= requested_quantity_gr:
                     _quantity_gr = requested_quantity_gr
                 elif available_gr > 0:
@@ -350,50 +350,65 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return ingredient_volume_map, total_volume
 
+    async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals
+
+        jar = None
+
+        logging.debug("barcode:{}".format(barcode))
+        order_nr, index = decompile_barcode(barcode)
+        logging.debug("order_nr:{}, index:{}".format(order_nr, index))
+
+        if skip_checks_for_dummy_read:
+            q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
+            jar = q.first()
+        else:
+            q = self.db_session.query(Jar).filter(Jar.index == index)
+            q = q.join(Order).filter((Order.order_nr == order_nr))
+            jar = q.one()
+
+        if jar:
+            A = self.get_machine_head_by_letter('A')
+            jar.size = A.jar_size_detect
+            package_size_list = []
+            for m in self.machine_head_dict.values():
+                await m.update_data()
+                for s in [p['size'] for p in m.package_list]:
+                    if s not in package_size_list:
+                        package_size_list.append(s)
+
+            package_size_list.sort()
+            if len(package_size_list) > jar.size:
+                jar_volume = package_size_list[jar.size]
+
+            ingredient_volume_map, total_volume = self.check_available_volumes(jar)
+
+            logging.warning(f"ingredient_volume_map:{ingredient_volume_map}")
+
+            unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
+            if jar_volume < total_volume:
+                raise Exception(f'Jar volume is not sufficient for {barcode}: {jar_volume}(cc) < {total_volume} (cc).')
+            elif unavailable_pigment_names:
+                raise Exception(f'Pigments not available for {barcode}: {unavailable_pigment_names}.')
+            else:
+                json_properties = json.loads(jar.json_properties)
+                json_properties['ingredient_volume_map'] = ingredient_volume_map
+                jar.json_properties = json.dumps(json_properties, indent=2)
+                self.db_session.commit()
+                
+                logging.warning(f"jar.json_properties:{jar.json_properties}")
+
+        return jar
+
     async def on_barcode_read(self, dev_index, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals
 
         try:
-            logging.debug("dev_index:{}, barcode:{}".format(dev_index, barcode))
-            order_nr, index = decompile_barcode(barcode)
-            logging.debug("order_nr:{}, index:{}".format(order_nr, index))
-
             A = self.get_machine_head_by_letter('A')
             r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'], timeout=1)
             assert r, f"Condition not valid while reading {barcode}"
 
-            if skip_checks_for_dummy_read:
-                q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
-                jar = q.first()
-            else:
-                q = self.db_session.query(Jar).filter(Jar.index == index)
-                q = q.join(Order).filter((Order.order_nr == order_nr))
-                jar = q.one()
+            jar = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
 
             if jar:
-                jar.size = A.jar_size_detect
-                package_size_list = []
-                for m in self.machine_head_dict.values():
-                    await m.update_data()
-                    for s in [p.size for p in m.package_list]:
-                        if s not in package_size_list:
-                            package_size_list.append(s)
-
-                package_size_list.sort()
-                if len(package_size_list) > jar.size:
-                    jar_volume = package_size_list[jar.size]
-
-                ingredient_volume_map, total_volume = self.check_available_volumes(jar)
-                unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
-                if jar_volume < total_volume:
-                    raise Exception(f'Jar volume is not sufficient for {barcode}: {jar_volume}(cc) < {total_volume} (cc).')
-                elif unavailable_pigment_names:
-                    raise Exception(f'Pigments not available for {barcode}: {unavailable_pigment_names}.')
-                else:
-                    json_properties = json.loads(jar.json_properties)
-                    json_properties['ingredient_volume_map'] = ingredient_volume_map
-                    jar.json_properties = json.dumps(json_properties, indent=2)
-                    self.db_session.commit()
-
                 # let's run a task that will manage the jar through the entire path inside the system
                 t = self.__jar_task(jar)
                 self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
