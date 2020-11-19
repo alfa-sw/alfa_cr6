@@ -536,27 +536,47 @@
      <widget class="QPushButton" name="out_btn_start">
       <property name="geometry">
        <rect>
-        <x>40</x>
-        <y>330</y>
-        <width>112</width>
-        <height>41</height>
+        <x>60</x>
+        <y>320</y>
+        <width>91</width>
+        <height>61</height>
        </rect>
       </property>
       <property name="text">
-       <string>start</string>
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/arrow-green.png</normaloff>../images/arrow-green.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>64</width>
+        <height>64</height>
+       </size>
       </property>
      </widget>
      <widget class="QPushButton" name="out_btn_out">
       <property name="geometry">
        <rect>
         <x>11</x>
-        <y>461</y>
+        <y>441</y>
         <width>81</width>
-        <height>41</height>
+        <height>61</height>
        </rect>
       </property>
       <property name="text">
-       <string>out</string>
+       <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/arrow-red.png</normaloff>../images/arrow-red.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>64</width>
+        <height>64</height>
+       </size>
       </property>
      </widget>
      <widget class="QWidget" name="jar_lifter_1" native="true">
