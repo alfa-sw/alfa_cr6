@@ -73,7 +73,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
-    async def get_available_weight(self, pigment_name):
+    def get_available_weight(self, pigment_name):
 
         available_gr = 0
         specific_weight = 1
@@ -89,24 +89,32 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         return available_gr, specific_weight
 
-    async def update_data(self):
+    async def update_tintometer_data(self, invalidate_cache=False):
 
-        # ~ ret = await self.call_api_rest('pipe', 'GET', {})
-        # ~ self.pipe_list = ret.get('objects', [])
-        # ~ with open(DATA_ROOT + f"{self.name}_pipe_list.json", 'w') as f:
-            # ~ json.dump(self.pipe_list, f, indent=2)
+        # TODO: invalidate cache when needed
+        if invalidate_cache:
+            self.pigment_list = []
+            self.package_list = []
 
-        # TODO: use cached vals, if present
+        if not self.pigment_list:
+            ret = await self.call_api_rest('pigment', 'GET', {})
+            self.pigment_list = ret.get('objects', [])
+            if self.pigment_list:
+                with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'w') as f:
+                    json.dump(self.pigment_list, f, indent=2)
+            else:
+                with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'r') as f:
+                    self.pigment_list = json.load(f)
 
-        ret = await self.call_api_rest('pigment', 'GET', {})
-        self.pigment_list = ret.get('objects', [])
-        with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'w') as f:
-            json.dump(self.pigment_list, f, indent=2)
-
-        ret = await self.call_api_rest('package', 'GET', {})
-        self.package_list = ret.get('objects', [])
-        with open(DATA_ROOT + f"{self.name}_package_list.json", 'w') as f:
-            json.dump(self.package_list, f, indent=2)
+        if not self.package_list:
+            ret = await self.call_api_rest('package', 'GET', {})
+            self.package_list = ret.get('objects', [])
+            if self.package_list:
+                with open(DATA_ROOT + f"{self.name}_package_list.json", 'w') as f:
+                    json.dump(self.package_list, f, indent=2)
+            else:
+                with open(DATA_ROOT + f"{self.name}_package_list.json", 'r') as f:
+                    self.package_list = json.load(f)
 
     async def update_status(self, status):
 
@@ -143,14 +151,17 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400 and 1,
         }
 
-        self.jar_size_detect = (
-            status['jar_photocells_status'] & 0x200 +
-            status['jar_photocells_status'] & 0x400) >> 9
+        # ~ self.jar_size_detect = (
+        # ~ status['jar_photocells_status'] & 0x200 +
+        # ~ status['jar_photocells_status'] & 0x400) >> 9
+        s1 = status['jar_photocells_status'] & 0x200
+        s2 = status['jar_photocells_status'] & 0x400
+        self.jar_size_detect = int(s1 + s2) >> 9
 
         # ~ logging.warning("self.jar_photocells_status:{}".format(self.jar_photocells_status))
         return diff
 
-    async def call_api_rest(self, path: str, method: str, data: dict, timeout=5):
+    async def call_api_rest(self, path: str, method: str, data: dict, timeout=10):
 
         r_json_as_dict = {}
         try:
@@ -215,6 +226,8 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             examples:
                 self.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
                 self.send_command(cmd_name="PURGE", params={'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}, type_='macro')
+                self.send_command(cmd_name="PURGE", params={'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}, type_='macro')
+                self.send_command(cmd_name='DISPENSE_FORMULA', type_='macro', params={'package_name': '******* not valid name ****', 'ingredients': {'K205': 85.5859375}})
         """
         ret = None
         try:
@@ -229,15 +242,16 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 self.last_answer = None
                 ret = await self.websocket.send(json.dumps(msg))
 
-                def condition():
-                    if self.last_answer is not None and \
-                            self.last_answer['status_code'] == 0 and \
-                            self.last_answer['command'] == cmd_name + '_END':
-                        return True
-                    return False
+                if type_ == 'command':
+                    def condition():
+                        if self.last_answer is not None and \
+                                self.last_answer['status_code'] == 0 and \
+                                self.last_answer['command'] == cmd_name + '_END':
+                            return True
+                        return False
 
-                ret = await self.wait_for_condition(condition, timeout=30)
-                logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
+                    ret = await self.wait_for_condition(condition, timeout=30)
+                    logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
 
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
@@ -287,10 +301,9 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             elif msg_dict.get('type') == 'answer':
                 answer = msg_dict.get('value')
                 answer = dict(answer)
-                if answer:
+                if answer and answer.get('status_code') is not None and answer.get('command') is not None:
                     self.last_answer = answer
                     logging.warning(f"{self.name} answer:{answer}")
-
             elif msg_dict.get('type') == 'time':
                 # ~ logging.warning(f"msg_dict:{msg_dict}")
                 time_stamp = msg_dict.get('value')
@@ -353,86 +366,35 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             ret = condition()
         return ret
 
-    async def get_dispensation_quantity(self, jar):            # pylint: disable=too-many-locals
-
-        order_json_properties = json.loads(jar.order.json_properties)
-
-        global_ingredients = {}
-        for i in order_json_properties["color information"]:
-            global_ingredients[i["Color MixingAgen"]] = float(i["weight(g)"])
-
-        pigment_to_pipe_map = {}
-        pigment_to_specific_weight_map = {}
-        for p in self.pipe_list:
-            pigment_name = p['pigment']['name']
-            pigment_to_pipe_map[pigment_name] = p['name']
-            specific_weight = p.get("effective_specific_weight", 0)
-            if specific_weight < EPSILON:
-                specific_weight = p['pigment']["specific_weight"]
-            pigment_to_specific_weight_map[pigment_name] = specific_weight
-
-        total_weight = 0
-        total_volume = 0
-        for pigment_name in global_ingredients:
-            if pigment_to_pipe_map.get(pigment_name):
-                specific_weight = pigment_to_specific_weight_map[pigment_name]
-                quantity_g = float(global_ingredients[pigment_name])
-                quantity_cc = quantity_g / specific_weight
-                total_weight += quantity_g
-                total_volume += quantity_cc
-
-        pack_size_list = [p['size'] for p in self.package_list]
-        pack_size_list.sort()
-        pack_size = pack_size_list[jar.size]
-
-        logging.warning(f"{self.name} jar.size:{jar.size}, total_volume:{total_volume}, pack_size:{pack_size}")
-
-    async def compile_dispensation_ingredients(self, jar):            # pylint: disable=too-many-locals
-
-        order_json_properties = json.loads(jar.order.json_properties)
-
-        global_ingredients = {}
-        for i in order_json_properties["color information"]:
-            global_ingredients[i["Color MixingAgen"]] = float(i["weight(g)"])
-
-        pigment_to_pipe_map = {}
-        pigment_to_specific_weight_map = {}
-        for p in self.pipe_list:
-            pigment_name = p['pigment']['name']
-            pigment_to_pipe_map[pigment_name] = p['name']
-            specific_weight = p.get("effective_specific_weight", 0)
-            if specific_weight < EPSILON:
-                specific_weight = p['pigment']["specific_weight"]
-            pigment_to_specific_weight_map[pigment_name] = specific_weight
-
-        ingredients = {}
-        for pigment_name in global_ingredients:
-            if pigment_to_pipe_map.get(pigment_name):
-                pipe_name = pigment_to_pipe_map[pigment_name]
-                specific_weight = pigment_to_specific_weight_map[pigment_name]
-                quantity_g = float(global_ingredients[pigment_name])
-                quantity_cc = quantity_g / specific_weight
-                ingredients[pipe_name] = quantity_cc
-
-        return ingredients
-
     async def do_dispense(self, jar):            # pylint: disable=too-many-locals
 
         jar_properties = json.loads(jar.json_properties)
         ingredient_volume_map = jar_properties['ingredient_volume_map']
         ingredients = {}
         for pigment_name in ingredient_volume_map.keys():
-            if ingredient_volume_map[pigment_name].get(self.index):
-                ingredients[pigment_name] = ingredient_volume_map[pigment_name][self.index]
+            if ingredient_volume_map[pigment_name].get(self.name):
+                ingredients[pigment_name] = ingredient_volume_map[pigment_name][self.name]
 
         pars = {'package_name': "******* not valid name ****", 'ingredients': ingredients}
         logging.warning(f"{self.name} pars:{pars}")
 
-        ret = None
-        # ~ if ingredients:
-            # TODO: dispense
-            # ~ ret = await self.send_command(cmd_name="DISPENSE_FORMULA", type_='macro', params = pars)
-        return ret
+        if ingredients:
+
+            def condition():
+                flag = self.jar_photocells_status['JAR_DISPENSING_POSITION_PHOTOCELL']
+                flag = flag and self.status['status_level'] in ['STANDBY', ]
+                flag = flag and self.status['container_presence']
+
+            r = await self.wait_for_condition(condition, timeout=30)
+
+            if r:
+                r = await self.send_command(cmd_name="DISPENSE_FORMULA", type_='macro', params=pars)
+                if r:
+                    r = await self.wait_for_status_level(['DISPENSING'], timeout=20)
+                    if r:
+                        r = await self.wait_for_status_level(['STANDBY'], timeout=60 * 3)
+
+        return r
 
     async def close(self):
 

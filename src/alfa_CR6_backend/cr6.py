@@ -182,7 +182,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.db_session = None
 
         self.__inner_loop_task_step = 0.02  # secs
-        self.suspend_all_timeouts = False
+        self.carousel_frozen = False
 
         self.machine_head_dict = {}
 
@@ -273,26 +273,50 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         await m.run()
         logging.warning(f" *** terminating machine: {m} *** ")
 
+    async def wait_for_carousel_not_frozen(self):                      # pylint: disable=too-many-statements
+
+        if self.carousel_frozen:
+            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}, start waiting.")
+
+        while self.carousel_frozen:
+            await asyncio.sleep(.1)
+
     async def __jar_task(self, jar):                      # pylint: disable=too-many-statements
 
         try:
             # ~ await self.move_00_01(jar)
             await self.move_01_02(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.get_machine_head_by_letter('A').do_dispense(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_02_03(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.get_machine_head_by_letter('B').do_dispense(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_03_04(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.get_machine_head_by_letter('C').do_dispense(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_04_05(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_05_06(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_06_07(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.get_machine_head_by_letter('D').do_dispense(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_07_08(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.get_machine_head_by_letter('E').do_dispense(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_08_09(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.get_machine_head_by_letter('F').do_dispense(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_09_10(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_10_11(jar)
+            await self.wait_for_carousel_not_frozen()
             await self.move_11_12(jar)
             jar.update_live(status='DONE', pos='_')
 
@@ -331,7 +355,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             requested_quantity_gr = float(i["weight(g)"])
             ingredient_volume_map[pigment_name] = {}
             for m in self.machine_head_dict.values():
-                available_gr, specific_weight = m.get_available_weight(self, pigment_name)
+                available_gr, specific_weight = m.get_available_weight(pigment_name)
                 if available_gr >= requested_quantity_gr:
                     _quantity_gr = requested_quantity_gr
                 elif available_gr > 0:
@@ -339,7 +363,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 else:
                     continue
                 vol = _quantity_gr / specific_weight
-                ingredient_volume_map[pigment_name][m.index] = vol
+                ingredient_volume_map[pigment_name][m.name] = vol
                 total_volume += vol
                 requested_quantity_gr -= _quantity_gr
                 if requested_quantity_gr < EPSILON:
@@ -350,50 +374,80 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return ingredient_volume_map, total_volume
 
+    async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals
+
+        jar = None
+        error = None
+
+        logging.warning("barcode:{}".format(barcode))
+        order_nr, index = decompile_barcode(barcode)
+        logging.debug("order_nr:{}, index:{}".format(order_nr, index))
+
+        if skip_checks_for_dummy_read:
+            q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
+            jar = q.first()
+        else:
+            q = self.db_session.query(Jar).filter(Jar.index == index)
+            q = q.join(Order).filter((Order.order_nr == order_nr))
+            jar = q.one()
+
+        logging.debug("jar:{}".format(jar))
+
+        if not jar:
+            error = f'Jar not found for {barcode}.'
+        else:
+            A = self.get_machine_head_by_letter('A')
+            jar_size = A.jar_size_detect
+            package_size_list = []
+            for m in self.machine_head_dict.values():
+
+                await m.update_tintometer_data()
+                logging.debug("")
+
+                for s in [p['size'] for p in m.package_list]:
+                    if s not in package_size_list:
+                        package_size_list.append(s)
+
+            package_size_list.sort()
+            if len(package_size_list) > jar_size:
+                jar_volume = package_size_list[jar_size]
+
+            ingredient_volume_map, total_volume = self.check_available_volumes(jar)
+
+            logging.warning(f"jar_volume:{jar_volume}, total_volume:{total_volume:.3f}, ingredient_volume_map:{ingredient_volume_map}")
+
+            unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
+            if jar_volume < total_volume:
+                error = f'Jar volume is not sufficient for {barcode}: {jar_volume}(cc) < {total_volume}(cc).'
+                jar = None
+            elif unavailable_pigment_names:
+                error = f'Pigments not available for {barcode}: {unavailable_pigment_names}.'
+                jar = None
+            else:
+                json_properties = json.loads(jar.json_properties)
+                json_properties['ingredient_volume_map'] = ingredient_volume_map
+                jar.json_properties = json.dumps(json_properties, indent=2)
+                self.db_session.commit()
+
+                logging.info(f"jar.json_properties:{jar.json_properties}")
+
+        logging.warning(f"jar:{jar}, error:{error}")
+
+        return jar, error
+
     async def on_barcode_read(self, dev_index, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals
 
         try:
-            logging.debug("dev_index:{}, barcode:{}".format(dev_index, barcode))
-            order_nr, index = decompile_barcode(barcode)
-            logging.debug("order_nr:{}, index:{}".format(order_nr, index))
-
             A = self.get_machine_head_by_letter('A')
             r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'], timeout=1)
             assert r, f"Condition not valid while reading {barcode}"
 
-            if skip_checks_for_dummy_read:
-                q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
-                jar = q.first()
-            else:
-                q = self.db_session.query(Jar).filter(Jar.index == index)
-                q = q.join(Order).filter((Order.order_nr == order_nr))
-                jar = q.one()
+            jar, error = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
 
-            if jar:
-                jar.size = A.jar_size_detect
-                package_size_list = []
-                for m in self.machine_head_dict.values():
-                    await m.update_data()
-                    for s in [p.size for p in m.package_list]:
-                        if s not in package_size_list:
-                            package_size_list.append(s)
-
-                package_size_list.sort()
-                if len(package_size_list) > jar.size:
-                    jar_volume = package_size_list[jar.size]
-
-                ingredient_volume_map, total_volume = self.check_available_volumes(jar)
-                unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
-                if jar_volume < total_volume:
-                    raise Exception(f'Jar volume is not sufficient for {barcode}: {jar_volume}(cc) < {total_volume} (cc).')
-                elif unavailable_pigment_names:
-                    raise Exception(f'Pigments not available for {barcode}: {unavailable_pigment_names}.')
-                else:
-                    json_properties = json.loads(jar.json_properties)
-                    json_properties['ingredient_volume_map'] = ingredient_volume_map
-                    jar.json_properties = json.dumps(json_properties, indent=2)
-                    self.db_session.commit()
-
+            if error:
+                # TODO: send error notification to UI
+                logging.error(error)
+            elif jar:
                 # let's run a task that will manage the jar through the entire path inside the system
                 t = self.__jar_task(jar)
                 self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
@@ -753,6 +807,15 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
+
+    def freeze_carousel(self):
+        self.carousel_frozen = True
+        logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
+
+    def unfreeze_carousel(self):
+        self.carousel_frozen = False
+        logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
+
 
 def main():
 

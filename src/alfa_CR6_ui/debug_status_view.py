@@ -86,8 +86,9 @@ class DebugStatusView():
             self.button_group.addButton(b)
 
         for i, n in enumerate([
-            ('', '**'),
-            ('', '**'),
+            ('check\njar', 'check jar from barcode'),
+            ('freeze\ncarousel', 'stop the movements of the jars, until unfreeze.'),
+            ('unfreeze\ncarousel', 'restar the movements of the jars.'),
             ('', '**'),
             ('', '**'),
             ('', '**'),
@@ -157,6 +158,19 @@ class DebugStatusView():
 
         logging.warning(f"url:{url.url()}")
         logging.warning(f"url.url().split('@'):{url.url().split('@')}")
+        if url.url().split(':')[1:]:
+            command, barcode = url.url().split(':')
+            if command == "CANCEL":
+                t = app._CR6_application__jar_runners[barcode]['task']
+                try:
+                    t.cancel()
+
+                    async def _coro(_):
+                        await _
+                    asyncio.ensure_future(_coro(t))
+                except asyncio.CancelledError:
+                    logging.info(f"{ t } has been canceled now.")
+
         if url.url().split('@')[1:]:
             command, name = url.url().split('@')
             m = named_map[name]
@@ -166,7 +180,7 @@ class DebugStatusView():
             elif command == "RESET":
                 t = m.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
             elif command == "UPDATE":
-                t = m.update_data()
+                t = m.update_tintometer_data(invalidate_cache=True)
             elif command == "DISP":
                 t = m.do_dispense()
             if t is not None:
@@ -211,7 +225,13 @@ class DebugStatusView():
             t = m.send_command(cmd_name="KILL_EMULATOR", params={})
             asyncio.ensure_future(t)
 
-        elif 'reset jar\nstatuses' in cmd_txt:
+        elif cmd_txt == 'unfreeze\ncarousel':
+            app.unfreeze_carousel()
+
+        elif cmd_txt == 'freeze\ncarousel':
+            app.freeze_carousel()
+
+        elif 'reset jar\ndb status' in cmd_txt:
 
             self.reset_jar_status_to_new()
 
@@ -241,10 +261,12 @@ class DebugStatusView():
             asyncio.ensure_future(t)
 
         elif 'refresh' in cmd_txt:
-            self.update_status()
+            # ~ self.update_status()
+            pass
 
         elif 'clear\nanswers' in cmd_txt:
             self.answer_text_browser.setText("")
+
         elif 'close' in cmd_txt:
             # ~ app.main_window.main_window_stack.setCurrentIndex(0)
             app.main_window.main_window_stack.setCurrentWidget(app.main_window.project)
@@ -265,6 +287,13 @@ class DebugStatusView():
         elif 'read\nbarcode' in cmd_txt:
             self.barcode_counter += 1
             app.run_a_coroutine_helper('on_barcode_read', 0, self.barcode_counter, skip_checks_for_dummy_read=True)
+
+        elif 'check\njar' in cmd_txt:
+            self.barcode_counter += 1
+            app.run_a_coroutine_helper(
+                'get_and_check_jar_from_barcode',
+                self.barcode_counter,
+                skip_checks_for_dummy_read=True)
 
         elif 'complete' in cmd_txt:
             async def coro():
@@ -299,6 +328,8 @@ class DebugStatusView():
         else:
             app.run_a_coroutine_helper(cmd_txt)
 
+        self.update_status()
+
     def update_status(self, _=None):              # pylint: disable=too-many-locals,too-many-statements
 
         if not self.main_frame.isVisible():
@@ -311,12 +342,12 @@ class DebugStatusView():
 
         html_ = ''
 
-        jar_size_detect = (
-            app.machine_head_dict[0].status['jar_photocells_status'] & 0x200 +
-            app.machine_head_dict[0].status['jar_photocells_status'] & 0x400) >> 4
+        s1 = app.machine_head_dict[0].status['jar_photocells_status'] & 0x200
+        s2 = app.machine_head_dict[0].status['jar_photocells_status'] & 0x400
+        jar_size_detect = int(s1 + s2) >> 9
 
-        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X}</small>'.format(
-            app.get_version(), app.machine_head_dict[0].jar_size_detect, jar_size_detect)
+        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X}</small> <b>carousel_frozen:{}</b>'.format(
+            app.get_version(), app.machine_head_dict[0].jar_size_detect, jar_size_detect, app.carousel_frozen)
         html_ += '<p>0x{:02X} 0x{:02X}</p>'.format(
             app.machine_head_dict[0].status['jar_photocells_status'] & 0x200,
             app.machine_head_dict[0].status['jar_photocells_status'] & 0x400
@@ -348,11 +379,13 @@ class DebugStatusView():
         l_ = [i for i in app._CR6_application__jar_runners.values()]
         l_.reverse()
         for i, j in enumerate(l_):
-            html_ += '<br/>{}:{} {}'.format(i, j['jar'], j['jar'].description)
-        html_ += '</td>                                          '
+            html_ += '<p  bgcolor="#F0F0F0"><a href="CANCEL:{}" title="cancel this jar">{}:{} {}</a></p>'.format(
+                j['jar'].barcode, i, j['jar'], j['jar'].description)
 
-        html_ += '</tr>                                          '
-        html_ += '</table>                                       '
+        html_ += '</td>'
+
+        html_ += '</tr>'
+        html_ += '</table>'
 
         html_ += '<hr></hr>'
 
@@ -403,7 +436,7 @@ class DebugStatusView():
 
             html_ += f'  <td bgcolor="#F0F0F0"><a href="RESET@{n}">RESET</a></td>'
             html_ += f'  <td bgcolor="#F0F0F0"><a href="DIAG@{n}" title="Enter diagnostic status">DIAG</a></td>'
-            html_ += f'  <td bgcolor="#F0F0F0"><a href="UPDATE@{n}" title="Update machine data">UPDATE</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="UPDATE@{n}" title="Update machine data cache">UPDATE</a></td>'
             html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}" title="call do_dispense()">DISP</a></td>'
 
             html_ += '</tr>'
