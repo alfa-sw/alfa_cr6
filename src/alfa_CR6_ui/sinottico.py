@@ -31,6 +31,7 @@ class Sinottico(QWidget):
     status_defs = []
     machine_head_dict = {}
     cr6_app = []
+    keyboard = {}
 
     def __init__(self, parent=None):
 
@@ -47,7 +48,7 @@ class Sinottico(QWidget):
         self.connect_status()
 
     def transferKeyboard(self, keyboard):
-        self.keyboard_position.addWidget(keyboard)
+        self.keyboard = keyboard
 
     def move_mainview(self, view):
         self.main_view_stack.setCurrentWidget(view)
@@ -146,6 +147,7 @@ class Sinottico(QWidget):
 
     def onHomeBtnClicked(self, other):
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
+        self.keyboard.showMinimized()
         if self.browser:
             self.chrome_layout.removeWidget(self.view)
             self.browser = False
@@ -159,9 +161,11 @@ class Sinottico(QWidget):
     def onChromeBtnClicked(self):
         if self.browser:
             self.browser = False
+            self.keyboard.showMinimized()
             self.main_view_stack.setCurrentWidget(self.image_sinottico)
             self.chrome_layout.removeWidget(self.view)
         else:
+            self.keyboard.showNormal()
             self.openChrome("http://kccrefinish.co.kr")
 
     def add_view(self, widget, clickarea):

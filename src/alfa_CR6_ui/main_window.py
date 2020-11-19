@@ -35,14 +35,14 @@ class MainWindow(QMainWindow):
         def show_debug_view():
             self.main_window_stack.setCurrentWidget(self.debug_status_view.main_frame)
             self.debug_status_view.update_status()
-            
+
         self.sinottico.chrome_btn_2.clicked.connect(show_debug_view)
 
         self.main_window_stack.setCurrentWidget(self.login)
 
         self.keyboard = Keyboard()
+        self.keyboard.showNormal()
 
-        self.keyboard_position.addWidget(self.keyboard)
 
         logging.warning("{ }")
 
@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
             logging.warning("{ }")
 
             self.sinottico.transferKeyboard(self.keyboard)
+            self.keyboard.showMinimized()
 
         else:
             msg.setText('Incorrect Password')
