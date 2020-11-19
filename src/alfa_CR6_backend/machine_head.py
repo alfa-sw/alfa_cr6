@@ -99,6 +99,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         if not self.pigment_list:
             ret = await self.call_api_rest('pigment', 'GET', {})
+
             self.pigment_list = []
             for pig in ret.get('objects', []):
                 enabled_pipes = [pipe for pipe in pig['pipes'] if pipe['enabled']]
@@ -263,7 +264,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 else:
                     # TODO: wait for answer from macroprocessor
                     ret = True
-                
+
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
         return ret

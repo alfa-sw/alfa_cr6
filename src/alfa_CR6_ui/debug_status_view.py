@@ -158,6 +158,19 @@ class DebugStatusView():
 
         logging.warning(f"url:{url.url()}")
         logging.warning(f"url.url().split('@'):{url.url().split('@')}")
+        if url.url().split(':')[1:]:
+            command, barcode = url.url().split(':')
+            if command == "CANCEL":
+                t = app._CR6_application__jar_runners[barcode]['task']
+                try:
+                    t.cancel()
+
+                    async def _coro(_):
+                        await _
+                    asyncio.ensure_future(_coro(t))
+                except asyncio.CancelledError:
+                    logging.info(f"{ t } has been canceled now.")
+
         if url.url().split('@')[1:]:
             # ~ command, barcode = url.url().split('@')
             command, name = url.url().split('@')

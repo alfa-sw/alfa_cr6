@@ -277,6 +277,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         await m.run()
         logging.warning(f" *** terminating machine: {m} *** ")
 
+
     async def wait_for_carousel_not_frozen(self, freeze=False):                      # pylint: disable=too-many-statements
 
         if freeze:
@@ -417,6 +418,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
             package_size_list.sort()
             logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
+
             if len(package_size_list) > jar_size:
                 jar_volume = package_size_list[jar_size]
 
