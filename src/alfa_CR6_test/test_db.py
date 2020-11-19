@@ -76,10 +76,10 @@ def test_all():
 
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
 
-    N, M = 8, 5
+    N, M = 4, 3
     barcodes = []
     for i in range(N):
-        pth = os.path.join(FIXTURES, "kcc_downloaded_sample_1.json")
+        pth = os.path.join(FIXTURES, "kcc_downloaded_sample.json")
         order = APP.create_order(pth, n_of_jars=M)
 
     order_cnt = APP.db_session.query(Order).count()

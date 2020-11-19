@@ -14,7 +14,7 @@ import asyncio
 import subprocess
 import json
 
-from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication, QMessageBox    # pylint: disable=no-name-in-module
 
 from alfa_CR6_ui.main_window import MainWindow
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
@@ -146,6 +146,54 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         5: "D_BOTM_RIGHT",
     }
 
+    def show_alert_dialog(self, msg, modal=False, title="ALERT"):
+
+        ret = False
+
+        if self.alert_msgbox is None:
+            self.alert_msgbox = QMessageBox()
+            def button_clicked(btn):
+                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+            self.alert_msgbox.buttonClicked.connect(button_clicked)
+
+        self.alert_msgbox.setIcon(QMessageBox.Information)
+        self.alert_msgbox.setText(msg)
+        self.alert_msgbox.setWindowTitle(title)
+        self.alert_msgbox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        self.alert_msgbox.setModal(modal)
+        self.alert_msgbox.show()
+        # ~ returnValue = self.alert_msgbox.exec()
+        # ~ if returnValue == QMessageBox.Ok:
+        # ~ ret = True
+
+        return ret
+
+    def show_frozen_dialog(self, msg, modal=False, title="ALERT"):
+
+        ret = False
+
+        if self.frozen_msgbox is None:
+            self.frozen_msgbox = QMessageBox()
+            def button_clicked(btn):
+                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+                if "ok" in btn.text().lower():
+                    self.freeze_carousel(False)
+            self.frozen_msgbox.buttonClicked.connect(button_clicked)
+
+        self.frozen_msgbox.setIcon(QMessageBox.Information)
+        self.frozen_msgbox.setText(msg)
+        self.frozen_msgbox.setWindowTitle(title)
+        self.frozen_msgbox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        self.frozen_msgbox.setModal(modal)
+        self.frozen_msgbox.show()
+        # ~ returnValue = self.frozen_msgbox.exec()
+        # ~ if returnValue == QMessageBox.Ok:
+        # ~ ret = True
+
+        return ret
+
     def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):     # pylint:  disable=no-self-use
 
         # TODO: send alarm msg to Gui surface
@@ -180,6 +228,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.images_path = IMAGE_PATH
         self.keyboard_path = KEYBOARD_PATH
         self.db_session = None
+        self.alert_msgbox = None
+        self.frozen_msgbox = None
 
         self.__inner_loop_task_step = 0.02  # secs
         self.carousel_frozen = False
@@ -273,52 +323,44 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         await m.run()
         logging.warning(f" *** terminating machine: {m} *** ")
 
-    async def wait_for_carousel_not_frozen(self):                      # pylint: disable=too-many-statements
-
-        if self.carousel_frozen:
-            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}, start waiting.")
-
-        while self.carousel_frozen:
-            await asyncio.sleep(.1)
-
     async def __jar_task(self, jar):                      # pylint: disable=too-many-statements
 
         try:
             # ~ await self.move_00_01(jar)
-            await self.move_01_02(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.get_machine_head_by_letter('A').do_dispense(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_02_03(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.get_machine_head_by_letter('B').do_dispense(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_03_04(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.get_machine_head_by_letter('C').do_dispense(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_04_05(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_05_06(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_06_07(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.get_machine_head_by_letter('D').do_dispense(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_07_08(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.get_machine_head_by_letter('E').do_dispense(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_08_09(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.get_machine_head_by_letter('F').do_dispense(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_09_10(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_10_11(jar)
-            await self.wait_for_carousel_not_frozen()
-            await self.move_11_12(jar)
-            jar.update_live(status='DONE', pos='_')
+            r = await self.move_01_02(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD A -")
+            r = await self.get_machine_head_by_letter('A').do_dispense(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD A +")
+            r = await self.move_02_03(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD B -")
+            r = await self.get_machine_head_by_letter('B').do_dispense(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD B +")
+            r = await self.move_03_04(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD C -")
+            r = await self.get_machine_head_by_letter('C').do_dispense(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD C +")
+            r = await self.move_04_05(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD C ++")
+            r = await self.move_05_06(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD C +++")
+            r = await self.move_06_07(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD D -")
+            r = await self.get_machine_head_by_letter('D').do_dispense(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD D +")
+            r = await self.move_07_08(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD E -")
+            r = await self.get_machine_head_by_letter('E').do_dispense(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD E +")
+            r = await self.move_08_09(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD F -")
+            r = await self.get_machine_head_by_letter('F').do_dispense(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD F +")
+            r = await self.move_09_10(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD F ++")
+            r = await self.move_10_11(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, "HEAD F +++")
+            r = await self.move_11_12(jar)
+            r = jar.update_live(status='DONE', pos='_')
 
         except asyncio.CancelledError:
             jar.status = 'ERROR'
@@ -329,7 +371,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             jar.description = traceback.format_exc()
             self.handle_exception(e)
 
-        logging.warning("delivering jar:{}".format(jar))
+        logging.warning("delivering jar:{}, r:{}".format(jar, r))
         self.db_session.commit()
 
     def __clock_tick(self):
@@ -409,6 +451,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                         package_size_list.append(s)
 
             package_size_list.sort()
+            logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
+
             if len(package_size_list) > jar_size:
                 jar_volume = package_size_list[jar_size]
 
@@ -418,10 +462,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
             unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
             if jar_volume < total_volume:
-                error = f'Jar volume is not sufficient for {barcode}: {jar_volume}(cc) < {total_volume}(cc).'
+                error = f'Jar volume is not sufficient for barcode:{barcode}. {jar_volume}(cc)<{total_volume}(cc).'
                 jar = None
             elif unavailable_pigment_names:
-                error = f'Pigments not available for {barcode}: {unavailable_pigment_names}.'
+                error = f'Pigments not available for barcode:{barcode}:{unavailable_pigment_names}.'
                 jar = None
             else:
                 json_properties = json.loads(jar.json_properties)
@@ -440,7 +484,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         try:
             A = self.get_machine_head_by_letter('A')
             r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'], timeout=1)
-            assert r, f"Condition not valid while reading {barcode}"
+            assert r, f"Condition not valid while reading barcode:{barcode}"
 
             jar, error = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
 
@@ -589,9 +633,19 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         B = self.get_machine_head_by_letter('B')
         C = self.get_machine_head_by_letter('C')
 
-        r = await C.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
-        if r:
+        # ~ r = await C.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
+        # ~ r = await C.wait_for_jar_photocells_and_status_lev('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', on=False, status_levels=['STANDBY'])
+        def condition():
+            flag = not C.jar_photocells_status['JAR_DISPENSING_POSITION_PHOTOCELL']
+            flag = flag and not C.jar_photocells_status['JAR_LOAD_LIFTER_ROLLER_PHOTOCELL']
+            flag = flag and C.status['status_level'] in ['STANDBY', ]
+            return flag
 
+        logging.warning(f" condition():{condition()}")
+        r = await C.wait_for_condition(condition, timeout=60*3)
+        logging.warning(f" r:{r}")
+
+        if r:
             if jar is not None:
                 jar.update_live(pos='B_C')
 
@@ -654,6 +708,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         r = await D.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
         if r:
+
+            r = await C.wait_for_status_level(status_levels=['STANDBY'])
 
             if jar is not None:
                 jar.update_live(pos='LIFTR_D')
@@ -808,13 +864,32 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
 
-    def freeze_carousel(self):
-        self.carousel_frozen = True
-        logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
+    def freeze_carousel(self, flag):
 
-    def unfreeze_carousel(self):
-        self.carousel_frozen = False
-        logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
+        self.carousel_frozen = flag
+        if flag:
+            logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
+        else:
+            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
+
+        if self.main_window.debug_status_view:
+            self.main_window.debug_status_view.update_status()
+
+    async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):                      # pylint: disable=too-many-statements
+
+        if freeze:
+            self.freeze_carousel(True)
+            _ = f'ALERT: carousel is frozen in {msg}! hit "OK" to unfreeze it'
+            r = self.show_frozen_dialog(_)
+            logging.error(_)
+            if r:
+                asyncio.get_event_loop().call_later(1, self.freeze_carousel, False)
+
+        if self.carousel_frozen:
+            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}, start waiting.")
+
+        while self.carousel_frozen:
+            await asyncio.sleep(.1)
 
 
 def main():

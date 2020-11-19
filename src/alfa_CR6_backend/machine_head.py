@@ -81,11 +81,12 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             if pig['name'] == pigment_name:
                 specific_weight = pig["specific_weight"]
                 for pipe in pig["pipes"]:
-                    if pipe['effective_specific_weight'] > EPSILON:
-                        specific_weight = pipe['effective_specific_weight']
-                    available_cc = max(0, pipe['current_level'] - pipe['minimum_level'])
-                    if available_cc > EPSILON:
-                        available_gr += available_cc * specific_weight
+                    if pipe['enabled']:
+                        if pipe['effective_specific_weight'] > EPSILON:
+                            specific_weight = pipe['effective_specific_weight']
+                        available_cc = max(0, pipe['current_level'] - pipe['minimum_level'])
+                        if available_cc > EPSILON:
+                            available_gr += available_cc * specific_weight
 
         return available_gr, specific_weight
 
@@ -98,7 +99,13 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         if not self.pigment_list:
             ret = await self.call_api_rest('pigment', 'GET', {})
-            self.pigment_list = ret.get('objects', [])
+
+            self.pigment_list = []
+            for pig in ret.get('objects', []):
+                enabled_pipes = [pipe for pipe in pig['pipes'] if pipe['enabled']]
+                if enabled_pipes:
+                    self.pigment_list.append(pig)
+
             if self.pigment_list:
                 with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'w') as f:
                     json.dump(self.pigment_list, f, indent=2)
@@ -115,6 +122,8 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             else:
                 with open(DATA_ROOT + f"{self.name}_package_list.json", 'r') as f:
                     self.package_list = json.load(f)
+
+        logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
 
     async def update_status(self, status):
 
@@ -252,6 +261,9 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
                     ret = await self.wait_for_condition(condition, timeout=30)
                     logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
+                else:
+                    # TODO: wait for answer from macroprocessor
+                    ret = True
 
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
@@ -296,7 +308,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 if status:
                     diff = await self.update_status(status)
                     if diff:
-                        logging.warning(f"{self.name} diff:{ diff }")
+                        logging.info(f"{self.name} diff:{ diff }")
 
             elif msg_dict.get('type') == 'answer':
                 answer = msg_dict.get('value')
@@ -326,8 +338,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 flag = flag if on else not flag
                 flag = flag and self.status['status_level'] in status_levels
                 return flag
-            ret = await self.wait_for_condition(condition, timeout=timeout)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, ret:{ret}")
+
+            if not ret:
+                _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}"'
+                self.app.show_alert_dialog(_)
+                logging.error(_)
+
             return ret
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
@@ -339,8 +357,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             def condition():
                 flag = self.jar_photocells_status[bit_name]
                 return flag if on else not flag
-            ret = await self.wait_for_condition(condition, timeout=timeout)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
+
+            if not ret:
+                _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}"'
+                self.app.show_alert_dialog(_)
+                logging.error(_)
+
             return ret
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
@@ -352,18 +376,28 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             def condition():
                 flag = self.status['status_level'] in status_levels
                 return flag if on else not flag
-            ret = await self.wait_for_condition(condition, timeout=30)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}")
+
+            if not ret:
+                _ = f'timeout expired! {self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}"'
+                self.app.show_alert_dialog(_)
+                logging.error(_)
+
             return ret
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def wait_for_condition(self, condition, timeout=10):
+    async def wait_for_condition(self, condition, timeout=10, show_alert=True):
         t0 = time.time()
         ret = condition()
         while not ret and time.time() - t0 < timeout:
             await asyncio.sleep(.01)
             ret = condition()
+        if not ret:
+            logging.error(f'{timeout} sec timeout expired!')
+            if show_alert:
+                self.app.show_alert_dialog(f'{timeout} sec timeout expired!')
         return ret
 
     async def do_dispense(self, jar):            # pylint: disable=too-many-locals
@@ -384,15 +418,18 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 flag = self.jar_photocells_status['JAR_DISPENSING_POSITION_PHOTOCELL']
                 flag = flag and self.status['status_level'] in ['STANDBY', ]
                 flag = flag and self.status['container_presence']
+                return flag
 
+            logging.warning(f"{self.name} condition():{condition()}")
             r = await self.wait_for_condition(condition, timeout=30)
+            logging.warning(f"{self.name} r:{r}")
 
             if r:
                 r = await self.send_command(cmd_name="DISPENSE_FORMULA", type_='macro', params=pars)
                 if r:
                     r = await self.wait_for_status_level(['DISPENSING'], timeout=20)
                     if r:
-                        r = await self.wait_for_status_level(['STANDBY'], timeout=60 * 3)
+                        r = await self.wait_for_status_level(['STANDBY'], timeout=60 * 6)
 
         return r
 
