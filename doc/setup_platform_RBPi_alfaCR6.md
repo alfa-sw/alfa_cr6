@@ -107,16 +107,8 @@ Codename: bullseye
 # install gcc
 pi@raspberrypi:~ $ sudo apt install gcc-8-base
 ```
-NOTE
 
-`sudo apt install gcc-8-base` end with 2 Error
-```
-.....
-.....
-E: Could not configure 'libc6:arm64'. 
-E: Could not perform immediate configuration on 'libnss-nis:arm64'. Please see man 5 apt.conf under APT::Immediate-Configure for details. (2)
-
-```
+known issue [gcc-8-base](#issue-gcc-8-base)
 
 
 <a name="p3"></a>
@@ -157,10 +149,7 @@ disable the save-on-disk-feature of redis (limit flash mem write access):
     pi@target $ redis-cli config set save ""
     pi@target $ redis-cli config rewrite
 ```
-```
-pi@target $ redis-cli config rewrite
-(error) ERR Rewriting config file: Permission denied
-```
+known issue [redis](#issue-redis)
 
 add user "admin" to the groups input, lpadmin (for printer), video:
 ```
@@ -411,10 +400,10 @@ Remove unnecessary files and folders
 <a name="p14"></a>
 ##### 14. known issues - ([back to top](#top))
 
-1. hwclock and system time not synced
+* hwclock and system time not synced
 if a RBPi is powered on after some time, the system time will not be synced if the RBPi is not connected via web.
 
-1. juice4halt manager (supervisor)
+* juice4halt manager (supervisor)
 ```
 2020-11-19 10:54:32,529]root:ERROR:main() juice4halt_manager.py:97: retrying ...  
 [2020-11-19 10:54:32,530]root:ERROR:main() juice4halt_manager.py:95: Traceback (most recent call last):
@@ -423,17 +412,17 @@ if a RBPi is powered on after some time, the system time will not be synced if t
 FileNotFoundError: [Errno 2] No such file or directory: '/var/run/user/1001/juice4halt.mark'
 ```
 
-1. A stop job is running for Session c2 (or c3) of user pi
+* A stop job is running for Session c2 (or c3) of user pi
 This is caused by the dpkg 'supervisor'
 
 if the dpkg is not installed, the reboot and shutdown of RBPi is normal; otherwise the message appears and the RBPi will wait 1min29s before reboot/shutdown
 
-1. launch automatically alfa_CR6 via supervisor
+* launch automatically alfa_CR6 via supervisor
 it is necessary to grant the access to X server to the user admin (adding to the supervisor the alfa_CR6 process)
 
 the steps described on [allow graphical application programs to user admin ](#p6) are not persistent
 
-1. email connection issue
+* email connection issue
 ```
 python 3.8 imaplib.IMAP4.error: b'[ALERT] Too many simultaneous connections. (Failure)'
 ```
@@ -442,7 +431,18 @@ there seems to be a problem with the maximum number of simultaneous connections 
 
 check if it has been achieved by analysing the connectivity of the machines in the field and in the company
 
-1. installation gcc-8-base errors
+<a name="issue-redis"></a>
+* redis-cli config rewrite
+
+```
+pi@target $ redis-cli config set save ""
+OK
+pi@target $ redis-cli config rewrite
+(error) ERR Rewriting config file: Permission denied
+```
+
+<a name="issue-gcc-8-base"></a>
+* installation gcc-8-base errors
 ```
 admin@raspberrypi:~ $ sudo apt install -y gcc-8-base 
 Reading package lists... Done
