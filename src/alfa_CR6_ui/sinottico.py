@@ -64,8 +64,8 @@ class Sinottico(QWidget):
         for key, value in service_pages.items():
             value.clicked.connect((lambda x: lambda: self.openChrome(x))(key))
 
-        self.out_btn_start.clicked.connect(lambda: self.jar_button(('single_move', 'A', {'Input_Roller': 1})))
-        self.out_btn_out.clicked.connect(lambda: self.jar_button(('single_move', 'F', {'Dispensing_Roller': 2})))
+        self.out_btn_start.mousePressEvent = lambda event: self.jar_button(('single_move', 'A', {'Input_Roller': 1}))
+        self.out_btn_out.mousePressEvent = lambda event: self.jar_button(('single_move', 'F', {'Dispensing_Roller': 2}))
 
     def add_data(self):
         for head_index in range(len(self.defs)):

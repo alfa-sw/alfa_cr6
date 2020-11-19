@@ -533,7 +533,7 @@
        <string/>
       </property>
      </widget>
-     <widget class="QPushButton" name="out_btn_start">
+     <widget class="QLabel" name="out_btn_start">
       <property name="geometry">
        <rect>
         <x>60</x>
@@ -545,22 +545,18 @@
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>../images/arrow-green.png</normaloff>../images/arrow-green.png</iconset>
+      <property name="pixmap">
+       <pixmap>../images/arrow-green.png</pixmap>
       </property>
-      <property name="iconSize">
-       <size>
-        <width>64</width>
-        <height>64</height>
-       </size>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="out_btn_out">
+     <widget class="QLabel" name="out_btn_out">
       <property name="geometry">
        <rect>
         <x>11</x>
-        <y>441</y>
+        <y>431</y>
         <width>81</width>
         <height>61</height>
        </rect>
@@ -568,15 +564,11 @@
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>../images/arrow-red.png</normaloff>../images/arrow-red.png</iconset>
+      <property name="pixmap">
+       <pixmap>../images/arrow-red.png</pixmap>
       </property>
-      <property name="iconSize">
-       <size>
-        <width>64</width>
-        <height>64</height>
-       </size>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
      <widget class="QWidget" name="jar_lifter_1" native="true">
