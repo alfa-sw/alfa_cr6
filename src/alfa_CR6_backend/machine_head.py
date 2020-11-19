@@ -338,8 +338,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 flag = flag if on else not flag
                 flag = flag and self.status['status_level'] in status_levels
                 return flag
-            ret = await self.wait_for_condition(condition, timeout=timeout)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, ret:{ret}")
+
+            if not ret:
+                _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}"'
+                self.app.show_alert_dialog(_)
+                logging.error(_)
+
             return ret
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
@@ -351,8 +357,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             def condition():
                 flag = self.jar_photocells_status[bit_name]
                 return flag if on else not flag
-            ret = await self.wait_for_condition(condition, timeout=timeout)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
+
+            if not ret:
+                _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}"'
+                self.app.show_alert_dialog(_)
+                logging.error(_)
+
             return ret
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
@@ -364,18 +376,28 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             def condition():
                 flag = self.status['status_level'] in status_levels
                 return flag if on else not flag
-            ret = await self.wait_for_condition(condition, timeout=timeout)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}")
+
+            if not ret:
+                _ = f'timeout expired! {self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}"'
+                self.app.show_alert_dialog(_)
+                logging.error(_)
+
             return ret
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def wait_for_condition(self, condition, timeout=10):
+    async def wait_for_condition(self, condition, timeout=10, show_alert=True):
         t0 = time.time()
         ret = condition()
         while not ret and time.time() - t0 < timeout:
             await asyncio.sleep(.01)
             ret = condition()
+        if not ret:
+            logging.error(f'{timeout} sec timeout expired!')
+            if show_alert:
+                self.app.show_alert_dialog(f'{timeout} sec timeout expired!')
         return ret
 
     async def do_dispense(self, jar):            # pylint: disable=too-many-locals

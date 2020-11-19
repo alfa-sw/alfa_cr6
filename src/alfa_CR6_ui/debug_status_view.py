@@ -89,7 +89,7 @@ class DebugStatusView():
             ('check\njar', 'check jar from barcode'),
             ('freeze\ncarousel', 'stop the movements of the jars, until unfreeze.'),
             ('unfreeze\ncarousel', 'restar the movements of the jars.'),
-            ('', '**'),
+            ('alert', 'test alert box'),
             ('', '**'),
             ('', '**'),
             ('', '**'),
@@ -158,18 +158,6 @@ class DebugStatusView():
 
         logging.warning(f"url:{url.url()}")
         logging.warning(f"url.url().split('@'):{url.url().split('@')}")
-        if url.url().split(':')[1:]:
-            command, barcode = url.url().split(':')
-            if command == "CANCEL":
-                t = app._CR6_application__jar_runners[barcode]['task']
-                try:
-                    t.cancel()
-
-                    async def _coro(_):
-                        await _
-                    asyncio.ensure_future(_coro(t))
-                except asyncio.CancelledError:
-                    logging.info(f"{ t } has been canceled now.")
 
         if url.url().split('@')[1:]:
             # ~ command, barcode = url.url().split('@')
@@ -254,10 +242,17 @@ class DebugStatusView():
             t = m.send_command(cmd_name="KILL_EMULATOR", params={})
             asyncio.ensure_future(t)
 
+        elif cmd_txt == 'alert':
+
+            r = app.show_alert_dialog("test alert message")
+            logging.warning(f"r:{r}")
+
         elif cmd_txt == 'unfreeze\ncarousel':
+
             app.freeze_carousel(False)
 
         elif cmd_txt == 'freeze\ncarousel':
+
             app.freeze_carousel(True)
 
         elif 'reset jar\ndb status' in cmd_txt:
@@ -415,7 +410,7 @@ class DebugStatusView():
         l_ = [i for i in app._CR6_application__jar_runners.values()]
         l_.reverse()
         for i, j in enumerate(l_):
-            html_ += '<p  bgcolor="#F0F0F0"><a href="CANCEL@{}" title="cancel this jar">{}:{} {}</a></p>'.format(
+            html_ += '<p  bgcolor="#F0F0F0">{}:{} {}<a href="CANCEL@{}" title="cancel this jar">CANCEL</a></p>'.format(
                 j['jar'].barcode, i, j['jar'], j['jar'].description)
 
         html_ += '</td>'
