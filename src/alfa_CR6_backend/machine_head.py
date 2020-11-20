@@ -20,7 +20,7 @@ import aiohttp                              # pylint: disable=import-error
 import async_timeout                        # pylint: disable=import-error
 
 
-DEFAULT_WAIT_FOR_TIMEOUT = 3 * 60
+DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
 DATA_ROOT = '/opt/alfa_cr6/var/'
 
 EPSILON = 0.00001
@@ -128,6 +128,15 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     async def update_status(self, status):
 
         logging.debug("status:{}".format(status))
+
+        if status.get('status_level') == 'ALARM':
+            self.app.freeze_carousel(True)
+            msg_ = '{} ALARM. error_code:{}, error_message:{}'.format(
+                self.name, status.get('error_code'), status.get('error_message'))
+            self.app.show_frozen_dialog(msg_)
+
+        if status.get('status_level') == 'RESET':
+            self.app.show_alert_dialog(f'{self.name} RESETTING')
 
         diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
 
@@ -325,7 +334,9 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             if self.msg_handler:
                 await self.msg_handler(self.index, msg_dict)
 
-    async def wait_for_jar_photocells_and_status_lev(self, bit_name, on=True, status_levels=None, timeout=DEFAULT_WAIT_FOR_TIMEOUT):
+    async def wait_for_jar_photocells_and_status_lev(self,    # pylint: disable=too-many-arguments
+                                                     bit_name, on=True, status_levels=None,
+                                                     timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
 
         if status_levels is None:
             status_levels = ['STANDBY']
@@ -338,7 +349,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 flag = flag if on else not flag
                 flag = flag and self.status['status_level'] in status_levels
                 return flag
-            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=show_alert)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, ret:{ret}")
 
             if not ret:
@@ -350,14 +361,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def wait_for_jar_photocells_status(self, bit_name, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT):
+    async def wait_for_jar_photocells_status(self, bit_name, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
         logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}")
 
         try:
             def condition():
                 flag = self.jar_photocells_status[bit_name]
                 return flag if on else not flag
-            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=show_alert)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
 
             if not ret:
@@ -369,14 +380,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def wait_for_status_level(self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT):
+    async def wait_for_status_level(self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
         logging.warning(f"{self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}")
 
         try:
             def condition():
                 flag = self.status['status_level'] in status_levels
                 return flag if on else not flag
-            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=show_alert)
             logging.warning(f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}")
 
             if not ret:
@@ -388,7 +399,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def wait_for_condition(self, condition, timeout=10, show_alert=True):
+    async def wait_for_condition(self, condition, timeout, show_alert=True):
         t0 = time.time()
         ret = condition()
         while not ret and time.time() - t0 < timeout:

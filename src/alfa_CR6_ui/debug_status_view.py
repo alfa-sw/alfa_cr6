@@ -90,7 +90,7 @@ class DebugStatusView():
             ('freeze\ncarousel', 'stop the movements of the jars, until unfreeze.'),
             ('unfreeze\ncarousel', 'restar the movements of the jars.'),
             ('alert', 'test alert box'),
-            ('', '**'),
+            ('move_12_00', 'deliver jar'),
             ('', '**'),
             ('', '**'),
             ('', '**'),

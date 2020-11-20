@@ -152,6 +152,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         if self.alert_msgbox is None:
             self.alert_msgbox = QMessageBox()
+
             def button_clicked(btn):
                 logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
             self.alert_msgbox.buttonClicked.connect(button_clicked)
@@ -175,6 +176,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         if self.frozen_msgbox is None:
             self.frozen_msgbox = QMessageBox()
+
             def button_clicked(btn):
                 logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
                 if "ok" in btn.text().lower():
@@ -582,7 +584,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             r = await A.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'], timeout=1)
             if r:
                 await A.can_movement({'Input_Roller': 2})
-                r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True, timeout=20)
+                r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True, timeout=30)
                 if not r:
                     await A.can_movement()
         else:
@@ -642,7 +644,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             return flag
 
         logging.warning(f" condition():{condition()}")
-        r = await C.wait_for_condition(condition, timeout=60*3)
+        r = await C.wait_for_condition(condition, timeout=60 * 3)
         logging.warning(f" r:{r}")
 
         if r:
@@ -666,7 +668,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         r = await C.wait_for_jar_photocells_status('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
         if r:
-            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=1)
+            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=3)
             if not r:
                 r = await D.wait_for_status_level(status_levels=['STANDBY'])
                 if r:
@@ -733,7 +735,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         r = await E.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
         if r:
-            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=1)
+            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=3)
 
             if jar is not None:
                 jar.update_live(pos='D_E')
@@ -763,7 +765,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         if r:
             r = await F.wait_for_jar_photocells_and_status_lev('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False, status_levels=['STANDBY'])
             if r:
-                r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, timeout=1)
+                r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, timeout=3)
                 if not r:
                     await F.can_movement({'Lifter': 2})
                     r = await F.wait_for_jar_photocells_and_status_lev('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, status_levels=['STANDBY'])
@@ -803,7 +805,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         F = self.get_machine_head_by_letter('F')
 
-        r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True, timeout=1)
+        r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True, timeout=3)
         if r:
             r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=True)
 
@@ -813,10 +815,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             if r:
                 r = await F.wait_for_jar_photocells_and_status_lev('UNLOAD_LIFTER_UP_PHOTOCELL', on=True, status_levels=['STANDBY'])
                 if r:
-
-                    # TODO: remove this delay
-                    # ~ await asyncio.sleep(2)
-
                     await F.can_movement({'Output_Roller': 2})
                     r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=False)
                     if r:
@@ -826,7 +824,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
                         await F.can_movement()
                         await F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})
+                        r = await F.wait_for_status_level(status_levels=['STANDBY'])
+
                     else:
+
                         raise Exception('JAR_OUTPUT_ROLLER_PHOTOCELL busy timeout')
 
                     # ~ r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
@@ -835,15 +836,37 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                         # ~ if r:
                         # ~ await F.can_movement({'Lifter': 2})
         else:
+            r = await F.wait_for_status_level(status_levels=['STANDBY'])
             if jar is not None:
                 jar.update_live(pos='F_OUT')
 
         return r
 
-    async def move_11_12(self, jar=None):  # 'OUT -> OUT'
+    async def move_11_12(self, jar=None):  # 'UP -> OUT'
 
-        if jar is not None:
-            jar.update_live(pos='OUT')
+        F = self.get_machine_head_by_letter('F')
+
+        r = await F.wait_for_status_level(status_levels=['STANDBY'], timeout=3, show_alert=False)
+        if r:
+            r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=True, timeout=3, show_alert=False)
+            if r:
+                r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True, timeout=3, show_alert=False)
+                if r:
+                    await F.can_movement({'Output_Roller': 2})
+
+                r = await F.wait_for_jar_photocells_and_status_lev('JAR_OUTPUT_ROLLER_PHOTOCELL', on=False, status_levels=['STANDBY'])
+                if r:
+                    await F.can_movement({'Lifter_Roller': 3, 'Output_Roller': 1})
+
+                if jar is not None:
+                    jar.update_live(pos='OUT')
+
+        return r
+
+    async def move_12_00(self, jar=None):  # 'deliver'
+
+        F = self.get_machine_head_by_letter('F')
+        await F.can_movement({'Output_Roller': 2})
 
     async def stop_all(self):
 
