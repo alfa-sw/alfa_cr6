@@ -230,6 +230,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         logging.debug("settings:{}".format(settings))
 
         super().__init__(*args, **kwargs)
+        
+        self.settings = settings
 
         self.run_flag = True
         self.ui_path = UI_PATH

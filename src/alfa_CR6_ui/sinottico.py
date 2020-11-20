@@ -54,16 +54,13 @@ class Sinottico(QWidget):
         self.main_view_stack.setCurrentWidget(view)
 
     def connect_status(self):
-        service_pages = {
-            '192.168.15.156:8080/service_page/': self.view_status_HEAD_1_STEP_2,
-            '192.168.15.19:8080/service_page/': self.view_status_HEAD_2_STEP_9,
-            '192.168.15.60:8080/service_page/': self.view_status_HEAD_3_STEP_3,
-            '192.168.15.61:8080/service_page/': self.view_status_HEAD_4_STEP_8,
-            '192.168.15.62:8080/service_page/': self.view_status_HEAD_5_STEP_4,
-            '192.168.15.170:8080/service_page/': self.view_status_HEAD_6_STEP_7
-        }
-        for key, value in service_pages.items():
-            value.clicked.connect((lambda x: lambda: self.openChrome(x))(key))
+        service_page_urls = [ "http://{}:{}/service_page/".format(i[0], i[2]) for i in self.cr6_app.settings.MACHINE_HEAD_IPADD_PORTS_LIST]
+        self.view_status_HEAD_1_STEP_2.clicked.connect(lambda: self.openChrome(service_page_urls[0]))
+        self.view_status_HEAD_2_STEP_9.clicked.connect(lambda: self.openChrome(service_page_urls[1]))
+        self.view_status_HEAD_3_STEP_3.clicked.connect(lambda: self.openChrome(service_page_urls[2]))
+        self.view_status_HEAD_4_STEP_8.clicked.connect(lambda: self.openChrome(service_page_urls[3]))
+        self.view_status_HEAD_5_STEP_4.clicked.connect(lambda: self.openChrome(service_page_urls[4]))
+        self.view_status_HEAD_6_STEP_7.clicked.connect(lambda: self.openChrome(service_page_urls[5]))
 
         self.out_btn_start.mousePressEvent = lambda event: self.jar_button(('single_move', 'A', {'Input_Roller': 2}))
         self.out_btn_out.mousePressEvent = lambda event: self.jar_button(('single_move', 'F', {'Output_Roller': 2}))
@@ -153,6 +150,8 @@ class Sinottico(QWidget):
             self.browser = False
 
     def openChrome(self, target):
+
+        logging.warning("target:{}".format(target))
         self.browser = True
         self.view = ChromeWidget(self, url=target)
         self.chrome_layout.addWidget(self.view)
