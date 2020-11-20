@@ -55,6 +55,7 @@ class Sinottico(QWidget):
 
     def connect_status(self):
         service_page_urls = [ "http://{}:{}/service_page/".format(i[0], i[2]) for i in self.cr6_app.settings.MACHINE_HEAD_IPADD_PORTS_LIST]
+        # TODO: rename the buttons to something meaningful
         self.view_status_HEAD_1_STEP_2.clicked.connect(lambda: self.openChrome(service_page_urls[0]))
         self.view_status_HEAD_2_STEP_9.clicked.connect(lambda: self.openChrome(service_page_urls[1]))
         self.view_status_HEAD_3_STEP_3.clicked.connect(lambda: self.openChrome(service_page_urls[2]))
