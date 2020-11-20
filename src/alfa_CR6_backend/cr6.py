@@ -149,6 +149,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     def show_alert_dialog(self, msg, modal=False, title="ALERT"):
 
         ret = False
+        
+        t = time.asctime()
+        msg = "[{}] {}".format(t, msg)
 
         if self.alert_msgbox is None:
             self.alert_msgbox = QMessageBox()
@@ -173,6 +176,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     def show_frozen_dialog(self, msg, modal=False, title="ALERT"):
 
         ret = False
+
+        t = time.asctime()
+        msg = "[{}] {}".format(t, msg)
 
         if self.frozen_msgbox is None:
             self.frozen_msgbox = QMessageBox()
@@ -486,20 +492,23 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         try:
             A = self.get_machine_head_by_letter('A')
             r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'], timeout=1)
-            assert r, f"Condition not valid while reading barcode:{barcode}"
+            if not r:
+                msg_ = f"Condition not valid while reading barcode:{barcode}"
+                self.show_alert_dialog(msg_)
+            else:
 
-            jar, error = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
+                jar, error = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
 
-            if error:
-                # TODO: send error notification to UI
-                logging.error(error)
-            elif jar:
-                # let's run a task that will manage the jar through the entire path inside the system
-                t = self.__jar_task(jar)
-                self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
+                if error:
+                    self.show_alert_dialog(error)
+                    logging.error(error)
+                elif jar:
+                    # let's run a task that will manage the jar through the entire path inside the system
+                    t = self.__jar_task(jar)
+                    self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
 
-                logging.warning(
-                    " ************ {} {} jar:{}, jar.size:{}".format(len(self.__jar_runners), barcode, jar, jar.size))
+                    logging.warning(
+                        " ************ {} {} jar:{}, jar.size:{}".format(len(self.__jar_runners), barcode, jar, jar.size))
 
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)

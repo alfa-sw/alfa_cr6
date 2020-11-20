@@ -79,7 +79,8 @@ def test_all():
     N, M = 4, 3
     barcodes = []
     for i in range(N):
-        pth = os.path.join(FIXTURES, "kcc_downloaded_sample.json")
+        # ~ pth = os.path.join(FIXTURES, "kcc_downloaded_sample.json")
+        pth = "/opt/alfa_cr6/var/P2S_1L.json"
         order = APP.create_order(pth, n_of_jars=M)
 
     order_cnt = APP.db_session.query(Order).count()

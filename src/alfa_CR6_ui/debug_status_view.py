@@ -411,7 +411,7 @@ class DebugStatusView():
         l_.reverse()
         for i, j in enumerate(l_):
             html_ += '<p  bgcolor="#F0F0F0">{}:{} {}<a href="CANCEL@{}" title="cancel this jar">CANCEL</a></p>'.format(
-                j['jar'].barcode, i, j['jar'], j['jar'].description)
+                i, j['jar'], j['jar'].description, j['jar'].barcode)
 
         html_ += '</td>'
 
@@ -428,7 +428,7 @@ class DebugStatusView():
         html_ += '<th align="left" width="8%">addr</th>'
         html_ += '<th align="left" width="20%" colspan="4">jar_photocells_status</th>'
         html_ += '<th align="left" width="16%">photocells_status</th>'
-        html_ += '<th align="left" width="12%">(cp) level</th>'
+        html_ += '<th align="left" width="12%">(cp) level (cs)</th>'
         html_ += '<th align="left" width="8%">last update</th>'
         html_ += '<th align="left" width="12%"  colspan="4">commands</th>'
         html_ += '</tr>'
@@ -458,7 +458,8 @@ class DebugStatusView():
                 0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_)
 
             cp = 1 if m.status.get('container_presence') else 0
-            html_ += '  <td>({}) {}</td>'.format(cp, m.status.get('status_level'))
+            cs = m.status.get('cycle_step')
+            html_ += '  <td>({}) {} ({})</td>'.format(cp, m.status.get('status_level'), cs)
 
             l_u = m.status.get('last_update', '').split()
             if l_u[1:]:

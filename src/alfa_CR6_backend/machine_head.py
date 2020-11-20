@@ -129,13 +129,14 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         logging.debug("status:{}".format(status))
 
-        if status.get('status_level') == 'ALARM':
+        if status.get('status_level') == 'ALARM' and self.status.get('status_level') != 'ALARM':
             self.app.freeze_carousel(True)
             msg_ = '{} ALARM. error_code:{}, error_message:{}'.format(
                 self.name, status.get('error_code'), status.get('error_message'))
+            logging.error(msg_)
             self.app.show_frozen_dialog(msg_)
 
-        if status.get('status_level') == 'RESET':
+        if status.get('status_level') == 'RESET' and self.status.get('status_level') != 'RESET':
             self.app.show_alert_dialog(f'{self.name} RESETTING')
 
         diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
@@ -349,10 +350,10 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 flag = flag if on else not flag
                 flag = flag and self.status['status_level'] in status_levels
                 return flag
-            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=show_alert)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, ret:{ret}")
 
-            if not ret:
+            if not ret and show_alert:
                 _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}"'
                 self.app.show_alert_dialog(_)
                 logging.error(_)
@@ -368,10 +369,10 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             def condition():
                 flag = self.jar_photocells_status[bit_name]
                 return flag if on else not flag
-            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=show_alert)
+            ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
 
-            if not ret:
+            if not ret and show_alert:
                 _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}"'
                 self.app.show_alert_dialog(_)
                 logging.error(_)
