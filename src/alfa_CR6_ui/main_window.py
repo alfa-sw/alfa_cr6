@@ -43,7 +43,6 @@ class MainWindow(QMainWindow):
         self.keyboard = Keyboard()
         self.keyboard.showNormal()
 
-
         logging.warning("{ }")
 
     def onLoginBtnClicked(self):
