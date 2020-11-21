@@ -272,11 +272,11 @@ class Sinottico(QWidget):
                         Button('Start rulliera (MU_8)', ('single_move', 'F', {'Lifter_Roller': 3})),
                         Button('Stop rulliera', ('single_move', 'F', {'Lifter_Roller': 0})),
                         #Button('Step rulliera', ('single_move', 'F', {'Lifter_Roller': 5})),
-                        Button('Start "step 11 -step12"', 'move_11_12'),
+                        # ~ Button('Start "step 11 -step12"', 'move_11_12'),
                         Button('Start "sollevatore_up"', ('single_move', 'F', {'Lifter': 1})),
                         Button('Start "sollevatore_down"', ('single_move', 'F', {'Lifter': 2})),
                         Button('Stop sollevatore"', ('single_move', 'F', {'Lifter': 0})),
-                        Button('Start "step 10 -step 11"', 'move_10_11'),
+                        # ~ Button('Start "step 10 -step 11"', 'move_10_11'),
                     ],
                     "status": [
                         StatusItem('Stato FTC_9', 'jar_photocells_status', 'flag', 7, 'm1', []),
@@ -302,9 +302,9 @@ class Sinottico(QWidget):
                     # jar head 3
                     "view": self.add_view(Jar(), self.jar_t3),
                     "buttons": [
-                        Button('Start rulliera (MU_3)', ('single_move', 'B', {'Dispenser_Roller': 1})),
-                        Button('Stop rulliera', ('single_move', 'B', {'Dispenser_Roller': 0})),
-                        Button('Start "step 3"', ('single_move', 'B', {'Dispenser_Roller': 2})),
+                        Button('Start rulliera (MU_3)', ('single_move', 'B', {'Dispensing_Roller': 1})),
+                        Button('Stop rulliera', ('single_move', 'B', {'Dispensing_Roller': 0})),
+                        Button('Start "step 3"', ('single_move', 'B', {'Dispensing_Roller': 2})),
                         Button('Start "step 3 -step4"', 'move_03_04'),
                     ],
                     "status": [
@@ -318,9 +318,9 @@ class Sinottico(QWidget):
                     # jar head 4
                     "view": self.add_view(Jar(), self.jar_t4),
                     "buttons": [
-                        Button('Start rulliera (MU_6)', ('single_move', 'E', {'Dispenser_Roller': 1})),
-                        Button('Stop rulliera', ('single_move', 'E', {'Dispenser_Roller': 0})),
-                        Button('Start "step 8"', ('single_move', 'E', {'Dispenser_Roller': 2})),
+                        Button('Start rulliera (MU_6)', ('single_move', 'E', {'Dispensing_Roller': 1})),
+                        Button('Stop rulliera', ('single_move', 'E', {'Dispensing_Roller': 0})),
+                        Button('Start "step 8"', ('single_move', 'E', {'Dispensing_Roller': 2})),
                         Button('Start "step 8 -step9"', 'move_08_09'),
                     ],
                     "status": [
@@ -334,9 +334,9 @@ class Sinottico(QWidget):
                     # jar head 5
                     "view": self.add_view(Jar(), self.jar_t5),
                     "buttons": [
-                        Button('Start rulliera (MU_4)', ('single_move', 'C', {'Dispenser_Roller': 1})),
-                        Button('Stop rulliera', ('single_move', 'C', {'Dispenser_Roller': 0})),
-                        Button('Start "step 4"', ('single_move', 'C', {'Dispenser_Roller': 2})),
+                        Button('Start rulliera (MU_4)', ('single_move', 'C', {'Dispensing_Roller': 1})),
+                        Button('Stop rulliera', ('single_move', 'C', {'Dispensing_Roller': 0})),
+                        Button('Start "step 4"', ('single_move', 'C', {'Dispensing_Roller': 2})),
                         Button('Start "step 4 -step5"', 'move_04_05'),
                     ],
                     "status": [
@@ -368,9 +368,9 @@ class Sinottico(QWidget):
                     # jar head 6
                     "view": self.add_view(Jar(), self.jar_t6),
                     "buttons": [
-                        Button('Start rulliera (MU_5)', ('single_move', 'D', {'Dispenser_Roller': 1})),
-                        Button('Stop rulliera', ('single_move', 'D', {'Dispenser_Roller': 0})),
-                        Button('Start "step 7"', ('single_move', 'D', {'Dispenser_Roller': 2})),
+                        Button('Start rulliera (MU_5)', ('single_move', 'D', {'Dispensing_Roller': 1})),
+                        Button('Stop rulliera', ('single_move', 'D', {'Dispensing_Roller': 0})),
+                        Button('Start "step 7"', ('single_move', 'D', {'Dispensing_Roller': 2})),
                         Button('Start "step 7 -step8"', 'move_07_08'),
                     ],
                     "status": [

@@ -391,7 +391,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             ret = await self.wait_for_condition(condition, timeout=timeout, show_alert=show_alert)
             logging.warning(f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}")
 
-            if not ret:
+            if not ret and show_alert:
                 _ = f'timeout expired! {self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}"'
                 self.app.show_alert_dialog(_)
                 logging.error(_)
@@ -424,6 +424,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         pars = {'package_name': "******* not valid name ****", 'ingredients': ingredients}
         logging.warning(f"{self.name} pars:{pars}")
 
+        r = True
         if ingredients:
 
             def condition():

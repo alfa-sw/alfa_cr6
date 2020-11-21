@@ -39,7 +39,7 @@ class DebugStatusView():
         self.status_text_browser.setStyleSheet("""
                 QTextBrowser {
                     background-color: #FFFFF7;
-                    font-size: 12px;
+                    font-size: 16px;
                     font-family: monospace;
                     }
                 """)
@@ -86,19 +86,18 @@ class DebugStatusView():
             self.button_group.addButton(b)
 
         for i, n in enumerate([
+            ('', '**'),
             ('check\njar', 'check jar from barcode'),
             ('freeze\ncarousel', 'stop the movements of the jars, until unfreeze.'),
             ('unfreeze\ncarousel', 'restar the movements of the jars.'),
+            ('stop_all', 'send a stop-movement cmd to all heads'),
             ('alert', 'test alert box'),
+            ('', '**'),
+            ('LIFTL\nUP', 'send command UP to left lifter without waiting for any condition'),
+            ('LIFTL\nDOWN', 'send command DOWN to left lifter without waiting for any condition'),
+            ('LIFTR\nUP', 'send command UP to right lifter without waiting for any condition'),
+            ('LIFTR\nDOWN', 'send command DOWN to right lifter without waiting for any condition'),
             ('move_12_00', 'deliver jar'),
-            ('', '**'),
-            ('', '**'),
-            ('', '**'),
-            ('', '**'),
-            ('', '**'),
-            ('', '**'),
-            ('', '**'),
-            ('', '**'),
         ]):
 
             b = QPushButton(n[0], parent=self.buttons_frame)
@@ -107,19 +106,17 @@ class DebugStatusView():
             self.button_group.addButton(b)
 
         for i, n in enumerate([
-            ('stop_all', 'send a stop-movement cmd to all heads'),
             ('complete', 'start the complete cycle through the system'),
-            ('read\nbarcode', 'simulate a bar code read'),
             ('refresh', 'refresh this view'),
             ('clear\njars', 'delete all the progressing jars'),
             ('clear\nanswers', 'clear answers'),
             ('reset jar\ndb status', 'reset all jar_status to NEW in db sqlite'),
-            ('LIFTL\nUP', 'send command UP to left lifter without waiting for any condition'),
-            ('LIFTL\nDOWN', 'send command DOWN to left lifter without waiting for any condition'),
-            ('LIFTR\nUP', 'send command UP to right lifter without waiting for any condition'),
-            ('LIFTR\nDOWN', 'send command DOWN to right lifter without waiting for any condition'),
-            # ~ ('kill\nemul', 'kill emulator'),
-            # ~ ('run\ntest', '**'),
+            ('reset all\n heads', 'reset all heads'),
+            ('EXIT', 'Beware! terminate the application'),
+            ('read\nbarcode', 'simulate a bar code read'),
+            ('', '**'),
+            ('', '**'),
+            ('view\norders', ''),
             ('close', 'close this widget'),
         ]):
 
@@ -229,6 +226,15 @@ class DebugStatusView():
                 logging.error("timeout !")
             logging.warning(f"i:{i}, r:{r}")
 
+    def view_orders(self):             # pylint: disable=no-self-use, too-many-branches
+
+        app = QApplication.instance()
+        html_ = ""
+        for j in app.db_session.query(Jar).all()[:100]:
+            logging.warning(f"j.barcode:{j.barcode} j:{j}")
+            html_ += f"j.barcode:{j.barcode} j:{j}<br/>"
+        self.answer_text_browser.setHtml(html_)
+
     def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use, too-many-branches
 
         app = QApplication.instance()
@@ -236,11 +242,24 @@ class DebugStatusView():
 
         # ~ logging.warning(f"cmd_txt:{cmd_txt}")
 
-        if 'kill\nemul' in cmd_txt:
+        if 'EXIT' in cmd_txt:
+            os.system("kill -9 {}".format(os.getpid()))
+
+        elif 'kill\nemul' in cmd_txt:
 
             m = app.machine_head_dict[0]
             t = m.send_command(cmd_name="KILL_EMULATOR", params={})
             asyncio.ensure_future(t)
+
+        elif 'reset all\n heads' in cmd_txt:
+            
+            for m in app.machine_head_dict.values():
+                t = m.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
+                asyncio.ensure_future(t)
+
+        elif 'view\norders' in cmd_txt:
+
+            self.view_orders()
 
         elif cmd_txt == 'alert':
 
@@ -424,13 +443,13 @@ class DebugStatusView():
 
         html_ += '<tr bgcolor="#FFFFFF">'
         html_ += '<th align="left" width="5%">ord.</th>'
-        html_ += '<th align="left" width="7%">name</th>'
+        html_ += '<th align="left" width="9%">name</th>'
         html_ += '<th align="left" width="8%">addr</th>'
         html_ += '<th align="left" width="20%" colspan="4">jar_photocells_status</th>'
         html_ += '<th align="left" width="16%">photocells_status</th>'
-        html_ += '<th align="left" width="12%">(cp) level (cs)</th>'
+        html_ += '<th align="left" width="14%">(cp) level (cs)</th>'
         html_ += '<th align="left" width="8%">last update</th>'
-        html_ += '<th align="left" width="12%"  colspan="4">commands</th>'
+        html_ += '<th align="left" width="16%"  colspan="4">commands</th>'
         html_ += '</tr>'
 
         for n in sorted(names_):

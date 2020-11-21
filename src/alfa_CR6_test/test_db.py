@@ -76,22 +76,33 @@ def test_all():
 
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
 
-    N, M = 4, 3
+    # ~ N, M = 4, 5
+    # ~ barcodes = []
+    # ~ for i in range(N):
+        # ~ pth = "/opt/alfa_cr6/var/P2S_1L.json"
+        # ~ order = APP.create_order(pth, n_of_jars=M)
+
+    order_files = [
+        '/opt/alfa_cr6/var/ORDINE_1.json',
+        '/opt/alfa_cr6/var/ORDINE_2.json',
+        '/opt/alfa_cr6/var/ORDINE_3.json',
+    ]
+    M = 5
     barcodes = []
-    for i in range(N):
-        # ~ pth = os.path.join(FIXTURES, "kcc_downloaded_sample.json")
-        pth = "/opt/alfa_cr6/var/P2S_1L.json"
+    for pth in order_files:
         order = APP.create_order(pth, n_of_jars=M)
 
     order_cnt = APP.db_session.query(Order).count()
     jar_cnt = APP.db_session.query(Jar).count()
 
-    assert order_cnt == N
-    assert jar_cnt == N * M
+    assert order_cnt == len(order_files)
+    assert jar_cnt == order_cnt * M
 
     for j in APP.db_session.query(Jar).all():
-        bc = compile_barcode(j.order.order_nr, j.index)
+        # ~ bc = compile_barcode(j.order.order_nr, j.index)
+        bc = j.barcode
         barcodes.append(bc)
+        logging.warning(f"j.barcode:{j.barcode}")
 
     def _stop():
         logging.info("Stopping execution.")

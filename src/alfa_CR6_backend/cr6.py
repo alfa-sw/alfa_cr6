@@ -14,6 +14,8 @@ import asyncio
 import subprocess
 import json
 
+from sqlalchemy.orm.exc import NoResultFound
+
 from PyQt5.QtWidgets import QApplication, QMessageBox    # pylint: disable=no-name-in-module
 
 from alfa_CR6_ui.main_window import MainWindow
@@ -106,6 +108,8 @@ class BarCodeReader:   # pylint:  disable=too-many-instance-attributes,too-few-p
                 type_key_event = evdev.ecodes.EV_KEY   # pylint:  disable=no-member
                 if event.type == type_key_event and keyEvent.keystate == 0:  # key_up = 0
                     if keyEvent.keycode == 'KEY_ENTER':
+                        buffer = buffer[:12]
+                        logging.warning(f"buffer:{buffer}")
                         if self.barcode_handler:
                             await self.barcode_handler(self.dev_index, buffer)
                         buffer = ''
@@ -149,12 +153,18 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     def show_alert_dialog(self, msg, modal=False, title="ALERT"):
 
         ret = False
-        
+
         t = time.asctime()
         msg = "[{}] {}".format(t, msg)
 
         if self.alert_msgbox is None:
             self.alert_msgbox = QMessageBox()
+            self.alert_msgbox.setStyleSheet("""
+                    QMessageBox {
+                        font-size: 24px;
+                        font-family: monospace;
+                        }
+                    """)
 
             def button_clicked(btn):
                 logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
@@ -182,6 +192,12 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         if self.frozen_msgbox is None:
             self.frozen_msgbox = QMessageBox()
+            self.frozen_msgbox.setStyleSheet("""
+                    QMessageBox {
+                        font-size: 24px;
+                        font-family: monospace;
+                        }
+                    """)
 
             def button_clicked(btn):
                 logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
@@ -230,7 +246,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         logging.debug("settings:{}".format(settings))
 
         super().__init__(*args, **kwargs)
-        
+
         self.settings = settings
 
         self.run_flag = True
@@ -245,6 +261,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.carousel_frozen = False
 
         self.machine_head_dict = {}
+        self.barcode_dict = {}
 
         self.__version = None
         # ~ self.__barcode_device = None
@@ -268,6 +285,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
     def __init_tasks(self):
 
         self.__tasks = [self.__create_inner_loop_task(), ]
+
+        logging.warning(f" settings.BARCODE_DEVICE_NAME_LIST:{settings.BARCODE_DEVICE_NAME_LIST} ")
 
         for dev_index, barcode_device_name in enumerate(settings.BARCODE_DEVICE_NAME_LIST):
             t = self.__create_barcode_task(dev_index, barcode_device_name)
@@ -308,6 +327,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def __create_barcode_task(self, dev_index, barcode_device_name):
 
+        logging.warning(f" *** starting barcode reader, barcode_device_name:{barcode_device_name} *** ")
         b = BarCodeReader(dev_index, barcode_device_name, self.on_barcode_read)
         self.barcode_dict[dev_index] = b
         await b.run()
@@ -428,62 +448,67 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals
 
-        jar = None
-        error = None
-
         logging.warning("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
         logging.debug("order_nr:{}, index:{}".format(order_nr, index))
 
-        if skip_checks_for_dummy_read:
-            q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
-            jar = q.first()
-        else:
-            q = self.db_session.query(Jar).filter(Jar.index == index)
-            q = q.join(Order).filter((Order.order_nr == order_nr))
-            jar = q.one()
+        jar = None
+        error = None
+        try:
+            if skip_checks_for_dummy_read:
+                q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
+                jar = q.first()
+            else:
+                q = self.db_session.query(Jar).filter(Jar.index == index)
+                q = q.filter(Jar.status == 'NEW')
+                q = q.join(Order).filter((Order.order_nr == order_nr))
+                jar = q.one()
+        except NoResultFound:
+            error = f"NoResultFound looking for barcode:{barcode} (is it NEW?)"
+            logging.error(traceback.format_exc())
 
         logging.debug("jar:{}".format(jar))
 
-        if not jar:
-            error = f'Jar not found for {barcode}.'
-        else:
-            A = self.get_machine_head_by_letter('A')
-            jar_size = A.jar_size_detect
-            package_size_list = []
-            for m in self.machine_head_dict.values():
-
-                await m.update_tintometer_data()
-                logging.debug("")
-
-                for s in [p['size'] for p in m.package_list]:
-                    if s not in package_size_list:
-                        package_size_list.append(s)
-
-            package_size_list.sort()
-            logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
-
-            if len(package_size_list) > jar_size:
-                jar_volume = package_size_list[jar_size]
-
-            ingredient_volume_map, total_volume = self.check_available_volumes(jar)
-
-            logging.warning(f"jar_volume:{jar_volume}, total_volume:{total_volume:.3f}, ingredient_volume_map:{ingredient_volume_map}")
-
-            unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
-            if jar_volume < total_volume:
-                error = f'Jar volume is not sufficient for barcode:{barcode}. {jar_volume}(cc)<{total_volume}(cc).'
-                jar = None
-            elif unavailable_pigment_names:
-                error = f'Pigments not available for barcode:{barcode}:{unavailable_pigment_names}.'
-                jar = None
+        if not error:
+            if not jar:
+                error = f'Jar not found for {barcode}.'
             else:
-                json_properties = json.loads(jar.json_properties)
-                json_properties['ingredient_volume_map'] = ingredient_volume_map
-                jar.json_properties = json.dumps(json_properties, indent=2)
-                self.db_session.commit()
+                A = self.get_machine_head_by_letter('A')
+                jar_size = A.jar_size_detect
+                package_size_list = []
+                for m in self.machine_head_dict.values():
 
-                logging.info(f"jar.json_properties:{jar.json_properties}")
+                    await m.update_tintometer_data()
+                    logging.debug("")
+
+                    for s in [p['size'] for p in m.package_list]:
+                        if s not in package_size_list:
+                            package_size_list.append(s)
+
+                package_size_list.sort()
+                logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
+
+                if len(package_size_list) > jar_size:
+                    jar_volume = package_size_list[jar_size]
+
+                ingredient_volume_map, total_volume = self.check_available_volumes(jar)
+
+                logging.warning(f"jar_volume:{jar_volume}, total_volume:{total_volume:.3f}, ingredient_volume_map:{ingredient_volume_map}")
+
+                unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
+                if jar_volume < total_volume:
+                    error = f'Jar volume is not sufficient for barcode:{barcode}. {jar_volume}(cc)<{total_volume}(cc).'
+                    jar = None
+                elif unavailable_pigment_names:
+                    error = f'Pigments not available for barcode:{barcode}:{unavailable_pigment_names}.'
+                    jar = None
+                else:
+                    json_properties = json.loads(jar.json_properties)
+                    json_properties['ingredient_volume_map'] = ingredient_volume_map
+                    jar.json_properties = json.dumps(json_properties, indent=2)
+                    self.db_session.commit()
+
+                    logging.info(f"jar.json_properties:{jar.json_properties}")
 
         logging.warning(f"jar:{jar}, error:{error}")
 
@@ -493,13 +518,17 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         try:
             A = self.get_machine_head_by_letter('A')
-            r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'], timeout=1)
+            r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
             if not r:
                 msg_ = f"Condition not valid while reading barcode:{barcode}"
                 self.show_alert_dialog(msg_)
             else:
 
                 jar, error = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
+
+                if not error:
+                    if barcode in self.__jar_runners.keys():
+                        error = f"{barcode} already in progress!"
 
                 if error:
                     self.show_alert_dialog(error)
@@ -570,7 +599,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 properties = parse_json_order(path_to_json_file, json_schema_name)
                 order = Order(json_properties=json.dumps(properties))
                 self.db_session.add(order)
-                for j in range(n_of_jars):
+                for j in range(1, n_of_jars + 1):
                     jar = Jar(order=order, index=j, size=0)
                     self.db_session.add(jar)
                 self.db_session.commit()
@@ -608,7 +637,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         A = self.get_machine_head_by_letter('A')
 
         if jar is not None:
-            jar.update_live(status='PROGRESS', pos='IN_A', t0=time.time())
+            jar.update_live(status='ENTERING', pos='IN_A', t0=time.time())
 
         r = await A.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
         if r:
@@ -616,7 +645,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             r = await A.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
 
             if jar is not None:
-                jar.update_live(machine_head=A, pos='A')
+                jar.update_live(status='PROGRESS', machine_head=A, pos='A')
 
         return r
 
@@ -679,9 +708,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         r = await C.wait_for_jar_photocells_status('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
         if r:
-            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=3)
+            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=3, show_alert=False)
             if not r:
-                r = await D.wait_for_status_level(status_levels=['STANDBY'])
+
+                r = await D.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
                 if r:
                     await D.can_movement({'Lifter': 1})
                     r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True)
@@ -732,7 +762,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             r = await D.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
             if r:
                 await C.can_movement()
-                await D.can_movement({'Lifter': 1})
+                # ~ await D.can_movement({'Lifter': 1})
 
                 if jar is not None:
                     jar.update_live(machine_head=D, pos='D')
@@ -746,21 +776,22 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         r = await E.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
         if r:
-            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=3)
+            r = await D.wait_for_jar_photocells_status('LOAD_LIFTER_UP_PHOTOCELL', on=True, timeout=3, show_alert=False)
 
             if jar is not None:
                 jar.update_live(pos='D_E')
 
             if not r:
                 await D.can_movement()
-                await D.can_movement({'Lifter': 1, 'Dispensing_Roller': 1})
+                # ~ await D.can_movement({'Lifter': 1, 'Dispensing_Roller': 1})
+                await D.can_movement({'Dispensing_Roller': 1})
             else:
                 await D.can_movement({'Dispensing_Roller': 1})
             await E.can_movement({'Dispensing_Roller': 2})
             r = await E.wait_for_jar_photocells_status('JAR_DISPENSING_POSITION_PHOTOCELL', on=True)
             if r:
                 await D.can_movement()
-                await D.can_movement({'Lifter': 1})
+                # ~ await D.can_movement({'Lifter': 1})
 
                 if jar is not None:
                     jar.update_live(machine_head=E, pos='E')
@@ -776,7 +807,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         if r:
             r = await F.wait_for_jar_photocells_and_status_lev('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False, status_levels=['STANDBY'])
             if r:
-                r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, timeout=3)
+                r = await F.wait_for_jar_photocells_status('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, timeout=3, show_alert=False)
                 if not r:
                     await F.can_movement({'Lifter': 2})
                     r = await F.wait_for_jar_photocells_and_status_lev('UNLOAD_LIFTER_DOWN_PHOTOCELL', on=True, status_levels=['STANDBY'])
@@ -816,7 +847,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         F = self.get_machine_head_by_letter('F')
 
-        r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True, timeout=3)
+        r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True, timeout=3, show_alert=False)
         if r:
             r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=True)
 

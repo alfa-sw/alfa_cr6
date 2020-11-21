@@ -45,7 +45,7 @@ def generate_order_nr():
 
     today = date.today()
     midnight = datetime.combine(today, datetime.min.time())
-    daily_cntr = 1
+    daily_cntr = 0
 
     order = global_session.query(Order).filter(Order.date_created >= midnight).order_by(Order.order_nr.desc()).first()
     # ~ logging.warning(f"order:{order}")
