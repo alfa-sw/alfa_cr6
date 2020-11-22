@@ -63,8 +63,8 @@ class Sinottico(QWidget):
         self.view_status_HEAD_5_STEP_4.clicked.connect(lambda: self.openChrome(service_page_urls[4]))
         self.view_status_HEAD_6_STEP_7.clicked.connect(lambda: self.openChrome(service_page_urls[5]))
 
-        self.out_btn_start.mousePressEvent = lambda event: self.jar_button(('single_move', 'A', {'Input_Roller': 2}))
-        self.out_btn_out.mousePressEvent = lambda event: self.jar_button(('single_move', 'F', {'Output_Roller': 2}))
+        self.out_btn_start.mouseReleaseEvent  = lambda event: self.jar_button(('single_move', 'A', {'Input_Roller': 2}))
+        self.out_btn_out.mouseReleaseEvent = lambda event: self.jar_button(('single_move', 'F', {'Output_Roller': 1}))
 
     def add_data(self):
         for head_index in range(len(self.defs)):
