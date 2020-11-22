@@ -8,7 +8,7 @@ T.O.C.:
   1. [redis-cli config rewrite](#issue-1) - possible [fix](#issue-1-fix)
   1. [hwclock and system time not synced](#issue-2)
   1. [juice4halt manager (supervisor)](#issue-3) - possible [fix](#issue-3-fix)
-  1. [launch alfa_CR6 with user admin error](#issue-4)
+  1. [launch alfa_CR6 with user admin error](#issue-4) - possible [fix](#issue-4-fix)
   1. [A stop job is running for Session c2 (or c3) of user pi](#issue-5)
   1. [email connection issue](#issue-6)
   1. [installation gcc-8-base errors](#issue-7)
@@ -295,7 +295,7 @@ ____________________________________
 
 <a name="issue-4"></a>
 1. **launch alfa_CR6 with user admin error - ([back to top](#top))**
-  it is necessary to grant the access to X server to the user admin (and maybe create a specific supervisor alfa_CR6 process so it can be launched automatically)
+  it is necessary to grant the access to X server to the user admin (and maybe create a specific supervisor alfa_CR6 process so it can be launched automatically).
 
   <a name="issue-4-fix"></a>
   ** FIX **

@@ -168,35 +168,9 @@ change group and permissions to dev "/dev/uinput"
 ```
 
 <a name="p6"></a>
-##### 6. allow graphical application programs to user admin  - ([back to top](#top))
+##### 6. allow graphical application programs (e.g alfa_CR6) to user admin  - ([back to top](#top))
 
-**NOTE**
-
-it is necessary study how to add persistence to the permission
-**SKIP THIS STEP**
-
-
-add a Server Interpreted entry of type "localuser" with a value of "admin"
-
-```
-admin@raspberrypi:~ $  xhost +si:localuser:admin
-```
-
-to verify if user admin was correctly added:
-
-```
-admin@raspberrypi:~ $  xhost
-access control enabled, only authorized clients can connect
-SI:localuser:admin
-SI:localuser:pi
-```
-
-for more details:
-
-[man xhost](http://manpages.ubuntu.com/manpages/xenial/man1/xhost.1.html)
-
-[xsecurity man page](http://manpages.ubuntu.com/manpages/xenial/man7/Xsecurity.7.html)
-
+Possible suggestion here [issue launch alfa_CR6 with user admin](doc/issues_setup_platform_RBPi_alfaCR6.md#issue-4)
 
 <a name="p7"></a>
 ##### 7. create a virtualenv - ([back to top](#top))
@@ -296,8 +270,6 @@ NOTE:
     target$ . /opt/alfa_cr6/venv/bin/activate                                                                       
     target$ pip install ${DEPLOY_PATH}/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl 
 ```
-
-known issue: [juice4halt manager (supervisor)](doc/issues_setup_platform_RBPi_alfaCR6.md#issue-3)
 
 create a shell executable file on Desktop for "pi" user
 ```
