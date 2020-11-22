@@ -12,10 +12,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, '__version__'), encoding='utf-8') as f:
     __version__ = f.read().strip()
 
+__app_name__ = 'alfa_CR6'
+
 
 def main():
     setup(
-        name='alfa_CR6',
+        name=__app_name__,
         version=__version__,
         description='UI for alfa CR6',
         url='https://gitlab.com/freelands2019/alfa_cr6',
