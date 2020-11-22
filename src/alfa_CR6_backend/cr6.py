@@ -126,21 +126,6 @@ class BarCodeReader:   # pylint:  disable=too-many-instance-attributes,too-few-p
 
 class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attributes,too-many-public-methods
 
-    """
-    {   'Dispensing_Roller':  {'description': 'Values: 0 = Stop Movement, 1 = Start Movement, 2 = Start Movement till Photocell
-            transition LIGHT - DARK ','propertyOrder': 1, 'type': 'number', 'fmt': 'B'},
-        'Lifter_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement CW, 2 = Start Movement CW till Photocell
-            transition LIGHT - DARK, 3 = Start Movement CCW, 4 = Start Movement CCW till Photocell transition DARK – LIGHT, 5 = Start Movement
-            CCW till Photocell transition LIGHT- DARK', 'propertyOrder': 2, 'type': 'number', 'fmt': 'B'},
-        'Input_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement, 2 = Start Movement till Photocell transition
-            LIGHT - DARK', 'propertyOrder': 3, 'type': 'number', 'fmt': 'B'},
-        'Lifter': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement Up till Photocell Up transition LIGHT – DARK, 2 =
-            Start Movement Down till Photocell Down transition LIGHT – DARK', 'propertyOrder': 4, 'type': 'number', 'fmt': 'B'},
-        'Output_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement CCW till Photocell transition LIGHT – DARK,
-            2 = Start Movement CCW till Photocell transition DARK - LIGHT with a Delay', 3 = Start Movement', 'propertyOrder': 5, 'type': 'number',
-            'fmt': 'B'}}}},:
-    """
-
     MACHINE_HEAD_INDEX_TO_NAME_MAP = {
         0: "A_TOP_LEFT",
         1: "F_BOTM_LEFT",
@@ -149,97 +134,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         4: "C_TOP_RIGHT",
         5: "D_BOTM_RIGHT",
     }
-
-    def show_alert_dialog(self, msg, modal=False, title="ALERT"):
-
-        ret = False
-
-        t = time.asctime()
-        msg = "[{}] {}".format(t, msg)
-
-        if self.alert_msgbox is None:
-            self.alert_msgbox = QMessageBox()
-            self.alert_msgbox.setStyleSheet("""
-                    QMessageBox {
-                        font-size: 24px;
-                        font-family: monospace;
-                        }
-                    """)
-
-            def button_clicked(btn):
-                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
-            self.alert_msgbox.buttonClicked.connect(button_clicked)
-
-        self.alert_msgbox.setIcon(QMessageBox.Information)
-        self.alert_msgbox.setText(msg)
-        self.alert_msgbox.setWindowTitle(title)
-        self.alert_msgbox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-
-        self.alert_msgbox.setModal(modal)
-        self.alert_msgbox.show()
-        # ~ returnValue = self.alert_msgbox.exec()
-        # ~ if returnValue == QMessageBox.Ok:
-        # ~ ret = True
-
-        return ret
-
-    def show_frozen_dialog(self, msg, modal=False, title="ALERT"):
-
-        ret = False
-
-        t = time.asctime()
-        msg = "[{}] {}".format(t, msg)
-
-        if self.frozen_msgbox is None:
-            self.frozen_msgbox = QMessageBox()
-            self.frozen_msgbox.setStyleSheet("""
-                    QMessageBox {
-                        font-size: 24px;
-                        font-family: monospace;
-                        }
-                    """)
-
-            def button_clicked(btn):
-                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
-                if "ok" in btn.text().lower():
-                    self.freeze_carousel(False)
-            self.frozen_msgbox.buttonClicked.connect(button_clicked)
-
-        self.frozen_msgbox.setIcon(QMessageBox.Information)
-        self.frozen_msgbox.setText(msg)
-        self.frozen_msgbox.setWindowTitle(title)
-        self.frozen_msgbox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-
-        self.frozen_msgbox.setModal(modal)
-        self.frozen_msgbox.show()
-        # ~ returnValue = self.frozen_msgbox.exec()
-        # ~ if returnValue == QMessageBox.Ok:
-        # ~ ret = True
-
-        return ret
-
-    def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):     # pylint:  disable=no-self-use
-
-        # TODO: send alarm msg to Gui surface
-
-        logging.error(traceback.format_exc())
-
-        if db_event:
-            a = QApplication.instance()
-            if a and a.db_session:
-                try:
-                    descr = "{} {}".format(ui_msg, traceback.format_exc())
-                    evnt = Event(
-                        name=e,
-                        level='ERROR',
-                        severity='',
-                        source='CR6_application',
-                        description=descr)
-                    a.db_session.add(evnt)
-                    a.db_session.commit()
-                except BaseException:
-                    a.db_session.rollback()
-                    logging.error(traceback.format_exc())
 
     def __init__(self, *args, **kwargs):
 
@@ -281,6 +175,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.__init_tasks()
 
         self.main_window = MainWindow()
+        if hasattr(self.settings, 'BYPASS_LOGIN') and self.settings.BYPASS_LOGIN:
+            self.main_window.onLoginBtnClicked()
 
     def __init_tasks(self):
 
@@ -446,7 +342,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return ingredient_volume_map, total_volume
 
-    async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals
+    async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals,too-many-branches
 
         logging.warning("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
@@ -514,7 +410,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return jar, error
 
-    async def on_barcode_read(self, dev_index, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals
+    async def on_barcode_read(self, dev_index, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals,unused-argument
 
         try:
             A = self.get_machine_head_by_letter('A')
@@ -609,6 +505,135 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 self.db_session.rollback()
 
         return order
+
+    def run_a_coroutine_helper(self, coroutine_name, *args, **kwargs):
+        try:
+            _coroutine = getattr(self, coroutine_name)
+            _future = _coroutine(*args, **kwargs)
+            asyncio.ensure_future(_future)
+            logging.warning(f"coroutine_name:{coroutine_name}, _future:{_future}")
+
+        except Exception as e:                           # pylint: disable=broad-except
+            self.handle_exception(e)
+
+
+    def show_alert_dialog(self, msg, modal=False, title="ALERT"):
+
+        ret = False
+
+        t = time.asctime()
+        msg = "[{}] {}".format(t, msg)
+
+        if self.alert_msgbox is None:
+            self.alert_msgbox = QMessageBox()
+            self.alert_msgbox.setStyleSheet("""
+                    QMessageBox {
+                        font-size: 24px;
+                        font-family: monospace;
+                        }
+                    """)
+
+            def button_clicked(btn):
+                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+            self.alert_msgbox.buttonClicked.connect(button_clicked)
+
+        self.alert_msgbox.setIcon(QMessageBox.Information)
+        self.alert_msgbox.setText(msg)
+        self.alert_msgbox.setWindowTitle(title)
+        self.alert_msgbox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        self.alert_msgbox.setModal(modal)
+        self.alert_msgbox.show()
+        # ~ returnValue = self.alert_msgbox.exec()
+        # ~ if returnValue == QMessageBox.Ok:
+        # ~ ret = True
+
+        return ret
+
+    def show_frozen_dialog(self, msg, modal=False, title="ALERT"):
+
+        ret = False
+
+        t = time.asctime()
+        msg = "[{}] {}".format(t, msg)
+
+        if self.frozen_msgbox is None:
+            self.frozen_msgbox = QMessageBox()
+            self.frozen_msgbox.setStyleSheet("""
+                    QMessageBox {
+                        font-size: 24px;
+                        font-family: monospace;
+                        }
+                    """)
+
+            def button_clicked(btn):
+                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+                if "ok" in btn.text().lower():
+                    self.freeze_carousel(False)
+            self.frozen_msgbox.buttonClicked.connect(button_clicked)
+
+        self.frozen_msgbox.setIcon(QMessageBox.Information)
+        self.frozen_msgbox.setText(msg)
+        self.frozen_msgbox.setWindowTitle(title)
+        self.frozen_msgbox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        self.frozen_msgbox.setModal(modal)
+        self.frozen_msgbox.show()
+        # ~ returnValue = self.frozen_msgbox.exec()
+        # ~ if returnValue == QMessageBox.Ok:
+        # ~ ret = True
+
+        return ret
+
+    def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):     # pylint:  disable=no-self-use
+
+        # TODO: send alarm msg to Gui surface
+
+        logging.error(traceback.format_exc())
+
+        if db_event:
+            a = QApplication.instance()
+            if a and a.db_session:
+                try:
+                    descr = "{} {}".format(ui_msg, traceback.format_exc())
+                    evnt = Event(
+                        name=e,
+                        level='ERROR',
+                        severity='',
+                        source='CR6_application',
+                        description=descr)
+                    a.db_session.add(evnt)
+                    a.db_session.commit()
+                except BaseException:
+                    a.db_session.rollback()
+                    logging.error(traceback.format_exc())
+
+    def freeze_carousel(self, flag):
+
+        self.carousel_frozen = flag
+        if flag:
+            logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
+        else:
+            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
+
+        if self.main_window.debug_status_view:
+            self.main_window.debug_status_view.update_status()
+
+    async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):                      # pylint: disable=too-many-statements
+
+        if freeze:
+            self.freeze_carousel(True)
+            _ = f'ALERT: carousel is frozen in {msg}! hit "OK" to unfreeze it'
+            r = self.show_frozen_dialog(_)
+            logging.error(_)
+            if r:
+                asyncio.get_event_loop().call_later(1, self.freeze_carousel, False)
+
+        if self.carousel_frozen:
+            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}, start waiting.")
+
+        while self.carousel_frozen:
+            await asyncio.sleep(.1)
 
     async def single_move(self, head_letter, params):
 
@@ -905,7 +930,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return r
 
-    async def move_12_00(self, jar=None):  # 'deliver'
+    async def move_12_00(self, jar=None):  # 'deliver'       # pylint: disable=unused-argument
 
         F = self.get_machine_head_by_letter('F')
         await F.can_movement({'Output_Roller': 2})
@@ -918,43 +943,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         await self.get_machine_head_by_letter('D').can_movement()
         await self.get_machine_head_by_letter('E').can_movement()
         await self.get_machine_head_by_letter('F').can_movement()
-
-    def run_a_coroutine_helper(self, coroutine_name, *args, **kwargs):
-        try:
-            _coroutine = getattr(self, coroutine_name)
-            _future = _coroutine(*args, **kwargs)
-            asyncio.ensure_future(_future)
-            logging.warning(f"coroutine_name:{coroutine_name}, _future:{_future}")
-
-        except Exception as e:                           # pylint: disable=broad-except
-            self.handle_exception(e)
-
-    def freeze_carousel(self, flag):
-
-        self.carousel_frozen = flag
-        if flag:
-            logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
-        else:
-            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
-
-        if self.main_window.debug_status_view:
-            self.main_window.debug_status_view.update_status()
-
-    async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):                      # pylint: disable=too-many-statements
-
-        if freeze:
-            self.freeze_carousel(True)
-            _ = f'ALERT: carousel is frozen in {msg}! hit "OK" to unfreeze it'
-            r = self.show_frozen_dialog(_)
-            logging.error(_)
-            if r:
-                asyncio.get_event_loop().call_later(1, self.freeze_carousel, False)
-
-        if self.carousel_frozen:
-            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}, start waiting.")
-
-        while self.carousel_frozen:
-            await asyncio.sleep(.1)
 
 
 def main():
