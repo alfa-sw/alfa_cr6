@@ -140,6 +140,14 @@ class DebugStatusView():
 
         self.status_text_browser.anchorClicked.connect(self.status_text_browser_anchor_clicked)
         self.button_group.buttonClicked.connect(self.on_button_group_clicked)
+        
+        async def periodic_refresh():
+            while 1:
+                self.update_status()
+                await asyncio.sleep(1)
+
+        t = periodic_refresh()
+        asyncio.ensure_future(t)
 
     def add_answer(self, head_index, answer):
 
@@ -385,22 +393,19 @@ class DebugStatusView():
 
         html_ = ''
 
-        s1 = app.machine_head_dict[0].status['jar_photocells_status'] & 0x200
-        s2 = app.machine_head_dict[0].status['jar_photocells_status'] & 0x400
+        s1 = app.machine_head_dict[0].status.get('jar_photocells_status', 0) & 0x200
+        s2 = app.machine_head_dict[0].status.get('jar_photocells_status', 0) & 0x400
         jar_size_detect = int(s1 + s2) >> 9
 
-        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X}</small>'.format(
-            app.get_version(), app.machine_head_dict[0].jar_size_detect, jar_size_detect)
+        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X} [{}]</small>'.format(
+            app.get_version(), app.machine_head_dict[0].jar_size_detect, jar_size_detect, time.asctime())
 
         html_ += '<p>'
         if app.carousel_frozen:
             html_ += '<b color="#EE0000">carousel_frozen:{}</b>'.format(app.carousel_frozen)
         else:
             html_ += '<b color="#00EE00">carousel_frozen:{}</b>'.format(app.carousel_frozen)
-        html_ += ' - mirco: 0x{:02X} 0x{:02X}'.format(
-            app.machine_head_dict[0].status['jar_photocells_status'] & 0x200,
-            app.machine_head_dict[0].status['jar_photocells_status'] & 0x400
-        )
+        html_ += ' - mirco: 0x{:02X} 0x{:02X}'.format(s1, s2)
         html_ += '</p>'
 
         html_ += '<table>'
