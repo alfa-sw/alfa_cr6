@@ -24,3 +24,38 @@ python -c "from PyQt5.QtWidgets import QApplication; a = QApplication([]); QAppl
 
 
 scp ${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH} 
+
+scp /opt/PROJECTS/alfa_cr6/conf/app_settings.py admin@192.168.1.100:/opt/alfa_cr6/conf/app_settings.py
+
+scp /opt/alfa_cr6/data/cr6_Vx_test.sqlite admin@192.168.1.100:/opt/alfa_cr6/data/cr6_Vx_test.sqlite
+
+scp /opt/alfa_cr6/data/cr6_Vx_test.sqlite admin@192.168.15.185:/opt/alfa_cr6/data/
+
+mkdir /opt/alfa_cr6/var
+sudo chmod -R a+rw /opt/alfa_cr6/
+
+
+export PROJECT_ROOT=/opt/PROJECTS/alfa_cr6/ ; cd ${PROJECT_ROOT};. /opt/alfa_cr6/venv/bin/activate; python setup.py bdist_wheel 
+
+scp /opt/PROJECTS/alfa_cr6/dist/alfa_CR6-0.0.1rc14-py3-none-any.whl  admin@192.168.15.185:/opt/alfa_cr6/dist/
+
+. /opt/alfa_cr6/venv/bin/activate
+pip install /opt/alfa_cr6/dist/alfa_CR6-0.0.1rc11-py3-none-any.whl
+
+
+scp /opt/PROJECTS/alfa_cr6/conf/cr6.desktop admin@192.168.1.100/home/admin/
+
+ssh admin@192.168.1.100 ". /opt/alfa_cr6/venv/bin/activate; pip uninstall -y alfa_CR6; pip install /opt/alfa_cr6/dist/alfa_CR6-0.0.1rc14-py3-none-any.whl"
+
+
+
+
+(venv) admin@raspberrypi:~ $ cat /home/pi/Desktop/CR6.sh 
+xhost +si:localuser:admin
+sudo su admin
+. /opt/alfa_cr6/venv/bin/activate
+alfa_CR6 -display :0 > /opt/alfa_cr6/log/cr6.log
+
+scp /opt/PROJECTS/alfa_cr6/doc/CR6.sh  admin@192.168.15.32:/home/admin/CR6.sh
+sudo rm /home/pi/Desktop/CR6.sh
+sudo ln -s /home/admin/CR6.sh /home/pi/Desktop/CR6.sh
