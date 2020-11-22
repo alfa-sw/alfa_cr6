@@ -8,6 +8,8 @@ RUNTIME_FILES_ROOT = '/opt/alfa_cr6'
 # ~ LOG_LEVEL=logging.INFO,
 LOG_LEVEL=logging.WARNING
 
+BYPASS_LOGIN = False
+
 LOGS_PATH=os.path.join(RUNTIME_FILES_ROOT, 'log')
 TMP_PATH=os.path.join(RUNTIME_FILES_ROOT, 'tmp')
 CONF_PATH=os.path.join(RUNTIME_FILES_ROOT, 'conf')
