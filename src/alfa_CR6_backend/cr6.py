@@ -516,7 +516,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
 
-
     def show_alert_dialog(self, msg, modal=False, title="ALERT"):
 
         ret = False
@@ -932,8 +931,14 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def move_12_00(self, jar=None):  # 'deliver'       # pylint: disable=unused-argument
 
-        F = self.get_machine_head_by_letter('F')
-        await F.can_movement({'Output_Roller': 2})
+        r = await F.wait_for_jar_photocells_and_status_lev('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'], timeout=3, show_alert=False)
+        if r:
+            F = self.get_machine_head_by_letter('F')
+            await F.can_movement({'Output_Roller': 2})
+        else:
+            msg_ = f"cannot move output roller"
+            logging.warning(msg_)
+            self.show_alert_dialog(msg_)
 
     async def stop_all(self):
 
