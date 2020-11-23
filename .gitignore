@@ -25,3 +25,4 @@ __tmp__
 *.session
 
 *.log
+*.out
