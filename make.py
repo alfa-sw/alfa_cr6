@@ -42,6 +42,7 @@ def parse_arguments():
     parser.add_argument('-e', '--install_editable', action='store_const', const=1)
     parser.add_argument('-I', '--install_target', action='store_const', const=1)
     parser.add_argument('-M', '--makedirs_on_target', action='store_const', const=1)
+    parser.add_argument('-C', '--deploy_conf_to_target', action='store_const', const=1)
     parser.add_argument('-D', '--deploy_db_to_target', action='store_const', const=1,
                         help='action: copy the sqlite db to target, *BEWARE* overwriting it!')
 
@@ -63,14 +64,6 @@ def build(args):
     exec_(cmd_, dry=args.dry_run)
 
 
-def deploy_db_to_target(args):
-
-    tgt_cred = args.target_credentials
-
-    cmd_ = f"scp {DATA_PATH}/cr6_Vx_test.sqlite {tgt_cred}:{DATA_PATH}/"
-    exec_(cmd_, dry=args.dry_run)
-
-
 def makedirs_on_target(args):
 
     tgt_cred = args.target_credentials
@@ -80,6 +73,31 @@ def makedirs_on_target(args):
         exec_(cmd_, dry=args.dry_run)
         cmd_ = f'ssh {tgt_cred} "sudo chmod -R a+rw {pth}"'
         exec_(cmd_, dry=args.dry_run)
+
+def deploy_db_to_target(args):
+
+    tgt_cred = args.target_credentials
+
+    cmd_ = f"scp {DATA_PATH}/cr6_Vx_test.sqlite {tgt_cred}:{DATA_PATH}/"
+    exec_(cmd_, dry=args.dry_run)
+
+def deploy_conf_to_target(args):
+
+    tgt_cred = args.target_credentials
+    settings = args.app_settings
+
+    cmds = [
+        f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
+        f"scp {PROJECT_ROOT}/conf/cr6.supervisor.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
+        f"scp {PROJECT_ROOT}/conf/xhost.desktop {tgt_cred}:/opt/alfa/tmp/",
+        f'ssh {tgt_cred} "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"',
+        f'ssh {tgt_cred} "sudo chown pi:pi /home/pi/.config/autostart/xhost.desktop"',
+    ]
+
+    for cmd_ in cmds:
+        exec_(cmd_, dry=args.dry_run)
+
+        time.sleep(.1)
 
 def install_target(args):
 
@@ -91,10 +109,7 @@ def install_target(args):
         f"scp {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl {tgt_cred}:{TMP_PATH}/",
         f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip install {ignore_requires} {TMP_PATH}/alfa_CR6-{__version__}-py3-none-any.whl"',
         f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
-        f"scp {PROJECT_ROOT}/conf/cr6.desktop {tgt_cred}:{TMP_PATH}/cr6.desktop",
-        f'ssh {tgt_cred} "sudo cp {TMP_PATH}/cr6.desktop /etc/xdg/autostart/cr6.desktop"',
         f'ssh {tgt_cred} "sudo killall /opt/alfa_cr6/venv/bin/python"',
-        f'ssh {tgt_cred} "sudo su pi; . /opt/alfa_cr6/venv/bin/activate ; alfa_CR6 -display :0 &"',
     ]
 
     for cmd_ in cmds:
@@ -131,6 +146,10 @@ def main():
         install_target(args)
     if args.makedirs_on_target:
         makedirs_on_target(args)
+    if args.deploy_db_to_target:
+        deploy_db_to_target(args)
+    if args.deploy_conf_to_target:
+        deploy_conf_to_target(args)
 
 
 main()

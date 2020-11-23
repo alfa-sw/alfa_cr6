@@ -16,7 +16,7 @@ import json
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from PyQt5.QtWidgets import QApplication, QMessageBox    # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox    # pylint: disable=no-name-in-module
 
 from alfa_CR6_ui.main_window import MainWindow
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
@@ -68,6 +68,28 @@ def parse_json_order(path_to_json_file, json_schema_name):
         return properties
 
 
+class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
+    
+    # ~ def hideEvent(self, event):
+        # ~ logging.warning(event)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.setStyleSheet("""
+                QMessageBox {
+                    font-size: 24px;
+                    font-family: monospace;
+                    }
+                """)
+
+        # ~ Qt::NonModal	0	The window is not modal and does not block input to other windows.
+        # ~ Qt::WindowModal	1	The window is modal to a single window hierarchy and blocks input to its parent window, all grandparent windows, and all siblings of its parent and grandparent windows.
+        # ~ Qt::ApplicationModal	2	The window is modal to the application and blocks input to all windows.
+        self.setWindowModality(1)
+        self.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        self.resize(800, 400)
+
+    
 class BarCodeReader:   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
@@ -150,6 +172,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.db_session = None
         self.alert_msgbox = None
         self.frozen_msgbox = None
+        self.ready_to_read_a_barcode = True
 
         self.__inner_loop_task_step = 0.02  # secs
         self.carousel_frozen = False
@@ -177,6 +200,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.main_window = MainWindow()
         if hasattr(self.settings, 'BYPASS_LOGIN') and self.settings.BYPASS_LOGIN:
             self.main_window.onLoginBtnClicked()
+            
+        self.alert_msgboxes  = []
 
     def __init_tasks(self):
 
@@ -254,33 +279,21 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         try:
             # ~ await self.move_00_01(jar)
             r = await self.move_01_02(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD A -")
-            r = await self.get_machine_head_by_letter('A').do_dispense(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD A +")
+            r = await self.dispense_step(r, 'A', jar)
             r = await self.move_02_03(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD B -")
-            r = await self.get_machine_head_by_letter('B').do_dispense(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD B +")
+            r = await self.dispense_step(r, 'B', jar)
             r = await self.move_03_04(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD C -")
-            r = await self.get_machine_head_by_letter('C').do_dispense(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD C +")
+            r = await self.dispense_step(r, 'C', jar)
             r = await self.move_04_05(jar)
             r = await self.wait_for_carousel_not_frozen(not r, "HEAD C ++")
             r = await self.move_05_06(jar)
             r = await self.wait_for_carousel_not_frozen(not r, "HEAD C +++")
             r = await self.move_06_07(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD D -")
-            r = await self.get_machine_head_by_letter('D').do_dispense(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD D +")
+            r = await self.dispense_step(r, 'D', jar)
             r = await self.move_07_08(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD E -")
-            r = await self.get_machine_head_by_letter('E').do_dispense(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD E +")
+            r = await self.dispense_step(r, 'E', jar)
             r = await self.move_08_09(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD F -")
-            r = await self.get_machine_head_by_letter('F').do_dispense(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD F +")
+            r = await self.dispense_step(r, 'F', jar)
             r = await self.move_09_10(jar)
             r = await self.wait_for_carousel_not_frozen(not r, "HEAD F ++")
             r = await self.move_10_11(jar)
@@ -340,7 +353,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             if requested_quantity_gr > EPSILON:
                 ingredient_volume_map[pigment_name] = None
 
-        return ingredient_volume_map, total_volume
+        unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
+
+        return ingredient_volume_map, total_volume, unavailable_pigment_names
 
     async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals,too-many-branches
 
@@ -383,15 +398,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
                 package_size_list.sort()
                 logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
-
                 if len(package_size_list) > jar_size:
                     jar_volume = package_size_list[jar_size]
-
-                ingredient_volume_map, total_volume = self.check_available_volumes(jar)
-
-                logging.warning(f"jar_volume:{jar_volume}, total_volume:{total_volume:.3f}, ingredient_volume_map:{ingredient_volume_map}")
-
-                unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
+                ingredient_volume_map, total_volume, unavailable_pigment_names = self.check_available_volumes(jar)
                 if jar_volume < total_volume:
                     error = f'Jar volume is not sufficient for barcode:{barcode}. {jar_volume}(cc)<{total_volume}(cc).'
                     jar = None
@@ -412,6 +421,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def on_barcode_read(self, dev_index, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals,unused-argument
 
+        if not self.ready_to_read_a_barcode:
+            logging.warning(f"not ready to read, skipping barcode:{barcode}")
         try:
             A = self.get_machine_head_by_letter('A')
             r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
@@ -419,6 +430,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 msg_ = f"Condition not valid while reading barcode:{barcode}"
                 self.show_alert_dialog(msg_)
             else:
+
+                self.ready_to_read_a_barcode = False
 
                 jar, error = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
 
@@ -518,69 +531,48 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def show_alert_dialog(self, msg, modal=False, title="ALERT"):
 
+        logging.warning(msg)
+
         ret = False
 
         t = time.asctime()
-        msg = "[{}] {}".format(t, msg)
+        msg = "[{}]\n\n{}\n\n".format(t, msg)
 
-        if self.alert_msgbox is None:
-            self.alert_msgbox = QMessageBox()
-            self.alert_msgbox.setStyleSheet("""
-                    QMessageBox {
-                        font-size: 24px;
-                        font-family: monospace;
-                        }
-                    """)
+        alert_msgbox = CR6MessageBox(parent=self.main_window)
+        def button_clicked(btn):
+            logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+            
+        alert_msgbox.buttonClicked.connect(button_clicked)
 
-            def button_clicked(btn):
-                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
-            self.alert_msgbox.buttonClicked.connect(button_clicked)
-
-        self.alert_msgbox.setIcon(QMessageBox.Information)
-        self.alert_msgbox.setText(msg)
-        self.alert_msgbox.setWindowTitle(title)
-        self.alert_msgbox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-
-        self.alert_msgbox.setModal(modal)
-        self.alert_msgbox.show()
-        # ~ returnValue = self.alert_msgbox.exec()
-        # ~ if returnValue == QMessageBox.Ok:
-        # ~ ret = True
+        alert_msgbox.setIcon(QMessageBox.Information)
+        alert_msgbox.setText(msg)
+        alert_msgbox.setWindowTitle(title)
+        alert_msgbox.show()
 
         return ret
 
     def show_frozen_dialog(self, msg, modal=False, title="ALERT"):
 
+        logging.warning(msg)
+
         ret = False
 
         t = time.asctime()
         msg = "[{}] {}".format(t, msg)
 
-        if self.frozen_msgbox is None:
-            self.frozen_msgbox = QMessageBox()
-            self.frozen_msgbox.setStyleSheet("""
-                    QMessageBox {
-                        font-size: 24px;
-                        font-family: monospace;
-                        }
-                    """)
+        frozen_msgbox = CR6MessageBox(parent=self.main_window)
 
-            def button_clicked(btn):
-                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
-                if "ok" in btn.text().lower():
-                    self.freeze_carousel(False)
-            self.frozen_msgbox.buttonClicked.connect(button_clicked)
+        def button_clicked(btn):
+            logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+            if "ok" in btn.text().lower():
+                self.freeze_carousel(False)
 
-        self.frozen_msgbox.setIcon(QMessageBox.Information)
-        self.frozen_msgbox.setText(msg)
-        self.frozen_msgbox.setWindowTitle(title)
-        self.frozen_msgbox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        frozen_msgbox.buttonClicked.connect(button_clicked)
 
-        self.frozen_msgbox.setModal(modal)
-        self.frozen_msgbox.show()
-        # ~ returnValue = self.frozen_msgbox.exec()
-        # ~ if returnValue == QMessageBox.Ok:
-        # ~ ret = True
+        frozen_msgbox.setIcon(QMessageBox.Critical)
+        frozen_msgbox.setText(msg)
+        frozen_msgbox.setWindowTitle(title)
+        frozen_msgbox.show()
 
         return ret
 
@@ -931,6 +923,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def move_12_00(self, jar=None):  # 'deliver'       # pylint: disable=unused-argument
 
+        F = self.get_machine_head_by_letter('F')
+
         r = await F.wait_for_jar_photocells_and_status_lev('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'], timeout=3, show_alert=False)
         if r:
             F = self.get_machine_head_by_letter('F')
@@ -948,6 +942,19 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         await self.get_machine_head_by_letter('D').can_movement()
         await self.get_machine_head_by_letter('E').can_movement()
         await self.get_machine_head_by_letter('F').can_movement()
+
+    async def dispense_step(self, r, machine_letter, jar):
+
+        r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} -")
+        _, _, unavailable_pigment_names = self.check_available_volumes(jar)
+        if unavailable_pigment_names:
+            msg_ = f"Missing material for barcode {jar.barcode}.\n please refill pigments:{unavailable_pigment_names}."
+            r = await self.wait_for_carousel_not_frozen(True, msg_)
+        else:
+            m = self.get_machine_head_by_letter(machine_letter)
+            r = await m.do_dispense(jar)
+            r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} +")
+        return r
 
 
 def main():

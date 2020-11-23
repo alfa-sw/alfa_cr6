@@ -84,6 +84,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         self.pipe_list = []
         self.package_list = []
         self.pigment_list = []
+        self.low_level_pipes = []
 
         self.ip_add = ip_add
         self.ws_port = ws_port
@@ -127,8 +128,10 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             ret = await self.call_api_rest('pigment', 'GET', {})
 
             self.pigment_list = []
+            self.low_level_pipes = []
             for pig in ret.get('objects', []):
                 enabled_pipes = [pipe for pipe in pig['pipes'] if pipe['enabled']]
+                self.low_level_pipes += [pipe['name'] for pipe in enabled_pipes if pipe['current_level'] < pipe['reserve_level']]
                 if enabled_pipes:
                     self.pigment_list.append(pig)
 
@@ -150,6 +153,9 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                     self.package_list = json.load(f)
 
         logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
+        if self.low_level_pipes:
+            logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
+            self.app.show_alert_dialog(f'{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}')
 
     async def update_status(self, status):
 
@@ -170,6 +176,12 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         self.status = status
 
         # ~ see doc/machine_status_jsonschema.py
+
+        # JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT
+        if self.status['jar_photocells_status'] & 0x001 and not (status['jar_photocells_status'] & 0x001):
+            logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
+            self.app.ready_to_read_a_barcode = True
+
 
         self.photocells_status = {
             'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001 and 1,
@@ -452,6 +464,8 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         r = True
         if ingredients:
+
+            self.update_tintometer_data(invalidate_cache=True)
 
             def condition():
                 flag = self.jar_photocells_status['JAR_DISPENSING_POSITION_PHOTOCELL']

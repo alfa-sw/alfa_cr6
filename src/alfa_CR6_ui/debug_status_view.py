@@ -140,11 +140,12 @@ class DebugStatusView():
 
         self.status_text_browser.anchorClicked.connect(self.status_text_browser_anchor_clicked)
         self.button_group.buttonClicked.connect(self.on_button_group_clicked)
-        
+
         async def periodic_refresh():
             while 1:
                 self.update_status()
                 await asyncio.sleep(1)
+            return True
 
         t = periodic_refresh()
         asyncio.ensure_future(t)
@@ -218,6 +219,7 @@ class DebugStatusView():
         for j in app.db_session.query(Jar).filter(Jar.status != 'NEW').all():
             logging.warning(f"j:{j}")
             j.status = 'NEW'
+            j.position = '_'
         app.db_session.commit()
 
     async def run_test(self):                   # pylint: disable=no-self-use
@@ -260,7 +262,7 @@ class DebugStatusView():
             asyncio.ensure_future(t)
 
         elif 'reset all\n heads' in cmd_txt:
-            
+
             for m in app.machine_head_dict.values():
                 t = m.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
                 asyncio.ensure_future(t)
@@ -467,15 +469,20 @@ class DebugStatusView():
             html_ += '<tr>'
 
             html_ += '  <td>head {}</td>'.format(ord_)
-            html_ += '  <td>{}</td>'.format(m.name)
+
+            if m.low_level_pipes:
+                html_ += '  <td bgcolor="#FF9999">{}</td>'.format(m.name)
+            else:
+                html_ += '  <td>{}</td>'.format(m.name)
+
             html_ += '  <td><a href="http://{0}:8080/admin"> {0} </a></td>'.format(m.ip_add)
 
-            html_ += '  <td  bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
-                                                               (jar_ph_ >> 8) else 'EEEEEE', 0xF & (jar_ph_ >> 8))
-            html_ += '  <td  bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
-                                                               (jar_ph_ >> 4) else 'EEEEEE', 0xF & (jar_ph_ >> 4))
-            html_ += '  <td  bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
-                                                               (jar_ph_ >> 0) else 'EEEEEE', 0xF & (jar_ph_ >> 0))
+            html_ += '  <td bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
+                                                              (jar_ph_ >> 8) else 'EEEEEE', 0xF & (jar_ph_ >> 8))
+            html_ += '  <td bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
+                                                              (jar_ph_ >> 4) else 'EEEEEE', 0xF & (jar_ph_ >> 4))
+            html_ += '  <td bgcolor="#{}">{:04b}</td>'.format('FFFF00' if 0xF &
+                                                              (jar_ph_ >> 0) else 'EEEEEE', 0xF & (jar_ph_ >> 0))
             html_ += '  <td>0x{0:04X}</td>'.format(jar_ph_)
 
             html_ += '  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>'.format(

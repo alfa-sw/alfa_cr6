@@ -83,9 +83,9 @@ def test_all():
         # ~ order = APP.create_order(pth, n_of_jars=M)
 
     order_files = [
-        '/opt/alfa_cr6/var/ORDINE_1.json',
-        '/opt/alfa_cr6/var/ORDINE_2.json',
-        '/opt/alfa_cr6/var/ORDINE_3.json',
+        '/opt/alfa_cr6/var/ORDINE_1_1.json',
+        '/opt/alfa_cr6/var/ORDINE_2_1.json',
+        '/opt/alfa_cr6/var/ORDINE_3_1.json',
     ]
     M = 5
     barcodes = []

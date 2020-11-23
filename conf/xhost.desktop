@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Name=CR6
+Comment=grant access to user admin to X Server
+Exec=sh -c 'xhost +si:localuser:admin > /home/pi/xhost_cr6.log'

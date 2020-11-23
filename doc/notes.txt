@@ -59,3 +59,11 @@ alfa_CR6 -display :0 > /opt/alfa_cr6/log/cr6.log
 scp /opt/PROJECTS/alfa_cr6/doc/CR6.sh  admin@192.168.15.32:/home/admin/CR6.sh
 sudo rm /home/pi/Desktop/CR6.sh
 sudo ln -s /home/admin/CR6.sh /home/pi/Desktop/CR6.sh
+
+
+
+scp /opt/PROJECTS/alfa_cr6/conf/cr6.supervisor.conf admin@192.168.1.100:/opt/alfa/conf/supervisor/cr6.conf
+scp /opt/PROJECTS/alfa_cr6/conf/xhost.desktop admin@192.168.1.100:/opt/alfa/tmp/
+ssh  admin@192.168.1.100 "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"
+ssh  admin@192.168.1.100 "sudo chown pi:pi /home/pi/.config/autostart/xhost.desktop"
+
