@@ -71,7 +71,6 @@ class Sinottico(QWidget):
             for update_obj in self.defs[head_index]:
                 for button in update_obj['buttons']:
                     btn = QPushButton(button.label)
-                    btn.setFont(QFont('Times', 35))
                     btn.setFixedHeight(50)
                     btn.clicked.connect((lambda x: lambda: self.jar_button(x))(button.action))
                     update_obj['view'].buttons.addWidget(btn)
@@ -79,7 +78,6 @@ class Sinottico(QWidget):
                 for n, statusItem in enumerate(update_obj['status']):
                     label = QLabel(statusItem.label)
                     label.setFixedHeight(50)
-                    label.setFont(QFont('Times', 35))
                     result = QLabel('')
                     if (statusItem.type == 'string'):
                         result = QLabel("")
@@ -155,8 +153,16 @@ class Sinottico(QWidget):
         logging.warning("target:{}".format(target))
         self.browser = True
         self.view = ChromeWidget(self, url=target)
+        self.view.setDownloadCallback(lambda path: self.create_order(path))
         self.chrome_layout.addWidget(self.view)
         self.main_view_stack.setCurrentWidget(self.chrome)
+
+    def create_order(self, path):
+        print(path)
+        self.main_view_stack.setCurrentWidget(self.order_modal)
+        self.chrome_layout.removeWidget(self.view)
+        self.browser = False
+
 
     def onChromeBtnClicked(self):
         if self.browser:

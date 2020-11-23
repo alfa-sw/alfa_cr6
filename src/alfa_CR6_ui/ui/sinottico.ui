@@ -95,7 +95,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -646,6 +646,104 @@
        <property name="bottomMargin">
         <number>100000</number>
        </property>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="order_modal">
+     <widget class="QWidget" name="gridLayoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>10</y>
+        <width>1881</width>
+        <height>481</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Inserimento manuale formula</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Selezione formula</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Numero di confezioni</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Numero d'ordine</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="lineEdit">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="lineEdit_2">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="lineEdit_3">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="lineEdit_4">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </widget>

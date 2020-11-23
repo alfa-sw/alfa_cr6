@@ -15,6 +15,7 @@ import os
 
 
 class ChromeWidget(QWidget):
+    download_callback={}
     def __init__(self, parent=None, url="http://kccrefinish.co.kr"):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/chrome.ui", self)
@@ -25,6 +26,9 @@ class ChromeWidget(QWidget):
         view.setUrl(QUrl(url))
         view.resize(1920, 900)
 
+    def setDownloadCallback(self, callback):
+        self.download_callback=callback
+
     @QtCore.pyqtSlot("QWebEngineDownloadItem*")
     def on_downloadRequested(self, download):
         path = "/opt/alfa_cr6/data/kcc"
@@ -33,4 +37,5 @@ class ChromeWidget(QWidget):
             os.makedirs(path)
         download.setPath(path + '/' + fname + '.json')
         download.accept()
+        self.download_callback(path + '/' + fname + '.json')
         # TODO add callback and feedback on successful download

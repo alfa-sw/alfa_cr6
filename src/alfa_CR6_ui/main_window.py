@@ -9,6 +9,7 @@ import logging
 
 from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QMessageBox, QMainWindow  # pylint: disable=no-name-in-module
+from PyQt5.QtGui import QFont
 
 from alfa_CR6_ui.sinottico import Sinottico
 from alfa_CR6_ui.keyboard import Keyboard
@@ -22,6 +23,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/main_window.ui", self)
+        self.setFont(QFont('Times sans-serif', 35))
         self.login_btn.clicked.connect(self.onLoginBtnClicked)
         self.main_window_stack.setCurrentWidget(self.login)
 
