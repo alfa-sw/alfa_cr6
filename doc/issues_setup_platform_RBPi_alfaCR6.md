@@ -1,5 +1,5 @@
 <a name="top"></a>
-##### List of known issues detected during the setup of RBPi supervisor platform for CR6.
+#### List of known issues detected during the setup of RBPi supervisor platform for CR6.
 
 <a name="toc"></a>
 ____________________________________
@@ -9,7 +9,7 @@ T.O.C.:
   1. [hwclock and system time not synced](#issue-2)
   1. [juice4halt manager (supervisor)](#issue-3) - possible [fix](#issue-3-fix)
   1. [launch alfa_CR6 with user admin error](#issue-4) - possible [fix](#issue-4-fix)
-  1. [A stop job is running for Session c2 (or c3) of user pi](#issue-5)
+  1. [A stop job is running for Session cX of user pi (X is an integer)](#issue-5)
   1. [email connection issue](#issue-6)
   1. [installation gcc-8-base errors](#issue-7)
 
@@ -17,8 +17,9 @@ ____________________________________
 
 
 <a name="issue-1"></a>
-1. **redis-cli config rewrite - ([back to top](#top))**
-
+##### **1. redis-cli config rewrite - ([back to top](#top))**
+  
+  **ISSUE**
   ```
   pi@target $ redis-cli config set save ""
   OK
@@ -43,13 +44,41 @@ ____________________________________
     Installing redis from source. see [reference](http://tecnotes.xyz/2020/07/25/how-to-install-and-configure-redis-from-source-on-ubuntu-18-04-server/)
 
 <a name="issue-2"></a>
-1. **hwclock and system time not synced - ([back to top](#top))**
+##### **2. hwclock and system time not synced - ([back to top](#top))**
+  
+  **ISSUE**
 
-  if a RBPi is powered on after some time, the system time will not be synced if the RBPi is not connected via web.
+  If the RBPi is not connected to the network and was powered off for a while, the system clock and the hwclock will be not in sync:
+
+  ```
+  Local time: Mon 2020-11-23 11:43:56 CET
+  Universal time: Mon 2020-11-23 10:43:56 UTC
+  RTC time: Mon 2020-11-23 10:43:56
+  Time zone: Europe/Rome (CET, +0100)
+  System clock synchronized: no
+  NTP service: active
+  RTC in local TZ: no
+  ```
+
+  If the RBPi is connected to the network and was powered off for a while, the system clock and the hwclock will be in sync (but initially they are not in sync: it takes time.):
+
+  ```
+  Local time: Mon 2020-11-23 11:43:56 CET
+  Universal time: Mon 2020-11-23 10:43:56 UTC
+  RTC time: Mon 2020-11-23 10:43:56
+  Time zone: Europe/Rome (CET, +0100)
+  System clock synchronized: no
+  NTP service: active
+  RTC in local TZ: no
+  ```
+
+  In addition, the timestamp of the alfa40 logs are generated with system time.
+
 
 <a name="issue-3"></a>
-1. **juice4halt manager (supervisor) - ([back to top](#top))**
+##### **3. juice4halt manager (supervisor) - ([back to top](#top))**
 
+  **ISSUE**
   the manager, either on Buster release or Bullseye-testing release, can't find the .mark file that should be created in the tmpfs path /var/run/user/1001/ (1001 is the id assigned to user admin)
   
   ```
@@ -209,7 +238,7 @@ ____________________________________
   tmpfs on /run/user/1001 type tmpfs (rw,nosuid,nodev,relatime,size=388876k,mode=700,uid=1001,gid=1001)
   ```
   <a name="issue-3-fix"></a>
-  ** FIX **
+  **FIX**
 
   * Method A
 
@@ -289,16 +318,18 @@ ____________________________________
 
     using the command `loginctl enable-linger admin` the admin tmpfs will always mounted without login with user admin and the juice4halt_manager will start as expected.
 
-    * Method B
+  * Method B
 
-      hypothesize changing the (MARK path)[https://github.com/alfa-sw/devices/blob/CT3.0/src/alfa_common/juice4halt_manager.py#L16] defined in juice4halt_manager of alfa40 - branch CT3.0
+    hypothesize changing the (MARK path)[https://github.com/alfa-sw/devices/blob/CT3.0/src/alfa_common/juice4halt_manager.py#L16] defined in juice4halt_manager of alfa40 - branch CT3.0
 
 <a name="issue-4"></a>
-1. **launch alfa_CR6 with user admin error - ([back to top](#top))**
+##### **4. launch alfa_CR6 with user admin error - ([back to top](#top))**
+
+  **ISSUE**
   it is necessary to grant the access to X server to the user admin (and maybe create a specific supervisor alfa_CR6 process so it can be launched automatically).
 
   <a name="issue-4-fix"></a>
-  ** FIX **
+  **FIX**
 
   create an autostart program to add to user pi
   ```
@@ -333,13 +364,22 @@ ____________________________________
   
 
 <a name="issue-5"></a>
-1. **A stop job is running for Session c2 (or c3) of user pi - ([back to top](#top))**
+##### **5. A stop job is running for Session cX of user pi (X is an integer)- ([back to top](#top))**
+
+  **ISSUE**
+
   This is caused by the dpkg 'supervisor'
 
   if the dpkg is not installed, the reboot and shutdown of RBPi is normal; otherwise the message appears and the RBPi will wait 1min29s before reboot/shutdown
 
+  **FIX**
+
+  TBA
+
 <a name="issue-6"></a>
-1. **email connection issue - ([back to top](#top))**
+##### **6. email connection issue - ([back to top](#top))**
+  
+  **ISSUE**
   ```
   python 3.8 imaplib.IMAP4.error: b'[ALERT] Too many simultaneous connections. (Failure)'
   ```
@@ -348,9 +388,13 @@ ____________________________________
 
   check if it has been achieved by analysing the connectivity of the machines in the field and in the company
 
+  **FIX**
+
+  TBA
+
 
 <a name="issue-7"></a>
-1. **installation gcc-8-base errors - ([back to top](#top))**
+##### **7. installation gcc-8-base errors - ([back to top](#top))**
 
   the installation is completed with a raise of 2 errors that do not seem to impact the system and alfa_CR6
 
