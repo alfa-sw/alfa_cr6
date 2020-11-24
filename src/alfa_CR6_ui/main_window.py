@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/main_window.ui", self)
-        self.setFont(QFont('Times sans-serif', 35))
+        self.setFont(QFont('Times sans-serif', 28))
         self.login_btn.clicked.connect(self.onLoginBtnClicked)
         self.main_window_stack.setCurrentWidget(self.login)
 

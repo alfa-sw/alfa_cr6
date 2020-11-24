@@ -179,15 +179,18 @@ class Keyboard(QWidget):
     def pushdispatcher(self, keys):
 
         logging.warning(f"self:{self}, keys:{keys}, self.uinput:{self.uinput}")
+        try:
+            if keys == []:
+                self.uinput.syn()
+                # ~ self.uinput.close()
+                return
+            if keys[0].push:
+                self.push(keys)
+            else:
+                self.pull(keys)
         
-        if keys == []:
-            self.uinput.syn()
-            # ~ self.uinput.close()
-            return
-        if keys[0].push:
-            self.push(keys)
-        else:
-            self.pull(keys)
+        except Exception:
+            logging.error(traceback.format_exc())
 
     def push(self, keys):
         self.uinput.write(e.EV_KEY, keys[0].key, 1)

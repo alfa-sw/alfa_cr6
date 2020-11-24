@@ -114,7 +114,7 @@ class Sinottico(QWidget):
                         pscaled = self.get_pscaled(on)
                         result.setPixmap(pscaled)
                         result.setFixedHeight(50)
-                        result.setFont(QFont('Times', 35))
+                        result.setFont(QFont('Times', 28))
                         statusItem.current.append(result)
                     update_obj['view'].status.addWidget(label, existing + n, 0)
                     update_obj['view'].status.addWidget(result, existing + n, 1)
