@@ -109,6 +109,7 @@ def install_target(args):
 
     cmds = [
         f"scp {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl {tgt_cred}:{TMP_PATH}/",
+        f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip uninstall -y alfa_CR6"',
         f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip install {ignore_requires} {TMP_PATH}/alfa_CR6-{__version__}-py3-none-any.whl"',
         f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
         f'ssh {tgt_cred} "sudo supervisorctl reload"',

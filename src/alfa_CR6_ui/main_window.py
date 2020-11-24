@@ -50,7 +50,8 @@ class MainWindow(QMainWindow):
     def print_barcode(self):
 
         txt = self.sinottico.bottom_text_edit.toPlainText()
-        logging.warning(f"txt:{txt}")
+        QApplication.instance().show_alert_dialog(f" print_barcode() txt:{txt}")
+        logging.warning(f"* txt:{txt}")
 
     def onLoginBtnClicked(self):
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import os
 import logging
 import traceback
 
@@ -86,6 +87,11 @@ class Keyboard(QWidget):
             layout.addWidget(button.button, button.posx, button.posy, button.endx, button.endy)
         self.setLayout(layout)
 
+        try:
+            os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
+        except Exception:
+            logging.error(traceback.format_exc())
+            
         self.uinput = UInput()
 
     def hide(self):
@@ -178,7 +184,7 @@ class Keyboard(QWidget):
 
     def pushdispatcher(self, keys):
 
-        logging.warning(f"self:{self}, keys:{keys}, self.uinput:{self.uinput}")
+        # ~ logging.warning(f"self:{self}, keys:{keys}, self.uinput:{self.uinput}")
         try:
             if keys == []:
                 self.uinput.syn()
