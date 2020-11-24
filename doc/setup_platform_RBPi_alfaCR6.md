@@ -123,7 +123,7 @@ pi@raspberrypi:~ $ sudo apt install -y gcc-8-base
     pi@target $ sudo usermod -a -G adm,dialout,cdrom,sudo,audio,plugdev,users,input,netdev,gpio,i2c,spi admin 
     pi@target $ sudo mkdir /home/admin/.ssh && sudo chown admin:admin /home/admin/.ssh
     pi@target $ sudo mkdir /opt/alfa && sudo chown admin:admin /opt/alfa
-    pi@target $ sudo mkdir /opt/alfa_cr6 && sudo chown pi:pi /opt/alfa_cr6
+    pi@target $ sudo mkdir /opt/alfa_cr6 && sudo chown admin:admin /opt/alfa_cr6
     # let admin run sudo cmds without password
     pi@target $ echo "admin     ALL=(ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers
     pi@target $ sudo reboot
@@ -177,7 +177,7 @@ Possible suggestion here [issue launch alfa_CR6 with user admin](doc/issues_setu
 
 create virtualenv for alfa_CR6
 ```
-    pi@raspberrypi:~ $ virtualenv --system-site-packages -p /usr/bin/python3 /opt/alfa_cr6/venv
+    admin@raspberrypi:~ $ virtualenv --system-site-packages -p /usr/bin/python3 /opt/alfa_cr6/venv
 ```
 
 create virtualenv for alfa40
@@ -254,29 +254,14 @@ build the wheel on host
 
 ```
     host$ cd ${PROJECT_ROOT}               
-    host$ . /opt/alfa_cr6/venv/bin/activate
-    host$ python setup.py bdist_wheel 
+    host$ python3 make.py -b
 ```
-install on target:
-
-NOTE:
-
-[VERSION_NUMBER] is the version number written into file `${PROJECT_ROOT}/__version__`.
-
-
+install on target (set it with param -t user@ip):
 ```
-    host$ scp admin@host:${PROJECT_ROOT}/dist/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl user@target:${DEPLOY_PATH}
-    host$ scp user@host:${PROJECT_ROOT}/conf/app_settings.py user@target:/opt/alfa_cr6/conf/app_settings.py
-    target$ . /opt/alfa_cr6/venv/bin/activate                                                                       
-    target$ pip install ${DEPLOY_PATH}/alfa_CR6-[VERSION_NUMBER]-py3-none-any.whl 
-```
-
-create a shell executable file on Desktop for "pi" user
-```
-    admin@raspberrypi:~ $ sudo su pi
-    pi@raspberrypi:~ $ echo $'. /opt/alfa_cr6/venv/bin/activate\nalfa_CR6 > /opt/alfa_cr6/log/cr6.log'|tee -a /home/pi/Desktop/CR6.sh
-    pi@raspberrypi:~ $ chmod +x /home/pi/Desktop/CR6.sh
-
+    host$ cd ${PROJECT_ROOT}               
+    host$ python3 make.py -t admin@192.168.15.185 -M -C
+    host$ python3 make.py -t admin@192.168.15.185 -I
+    host$ python3 make.py -t admin@192.168.15.185 -S
 ```
 
 

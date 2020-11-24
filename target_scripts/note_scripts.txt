@@ -1,0 +1,6 @@
+Scripts to run on target based on platform "2020-11-20-rapsios-bullseye-testing-arm64-full.img" saved on SVRCLIENTI
+
+This script:
+
+* fix REDIS issue for "Rewriting config file: Permission denied"
+* fix issue for "A stop job is running for Session c3 of user pi"
