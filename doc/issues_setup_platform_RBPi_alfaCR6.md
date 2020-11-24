@@ -5,11 +5,11 @@
 ____________________________________
 T.O.C.:
 
-  1. [redis-cli config rewrite](#issue-1) - possible [fix](#issue-1-fix)
+  1. [redis-cli config rewrite](#issue-1) - [fix](#issue-1-fix)
   1. [hwclock and system time not synced](#issue-2)
-  1. [juice4halt manager (supervisor)](#issue-3) - possible [fix](#issue-3-fix)
-  1. [launch alfa_CR6 with user admin error](#issue-4) - possible [fix](#issue-4-fix)
-  1. [A stop job is running for Session cX of user pi (X is an integer)](#issue-5)
+  1. [juice4halt manager (supervisor)](#issue-3) - [fix](#issue-3-fix)
+  1. [launch alfa_CR6 with user admin error](#issue-4) - [fix](#issue-4-fix)
+  1. [A stop job is running for Session cX of user pi (X is an integer)](#issue-5) - [fix](#issue-5-fix)
   1. [email connection issue](#issue-6)
   1. [installation gcc-8-base errors](#issue-7)
 
@@ -318,9 +318,9 @@ ____________________________________
 
     using the command `loginctl enable-linger admin` the admin tmpfs will always mounted without login with user admin and the juice4halt_manager will start as expected.
 
-  * Method B
+  * Method B (preferred)
 
-    hypothesize changing the (MARK path)[https://github.com/alfa-sw/devices/blob/CT3.0/src/alfa_common/juice4halt_manager.py#L16] defined in juice4halt_manager of alfa40 - branch CT3.0
+    changed the (MARK path)[https://github.com/alfa-sw/devices/blob/CT3.0/src/alfa_common/juice4halt_manager.py#L17] defined in juice4halt_manager of alfa40 - branch CT3.0
 
 <a name="issue-4"></a>
 ##### **4. launch alfa_CR6 with user admin error - ([back to top](#top))**
@@ -368,13 +368,78 @@ ____________________________________
 
   **ISSUE**
 
-  This is caused by the dpkg 'supervisor'
+  This is caused by **PCManFM** a [free file manager application and the standard file manager of LXDE](https://wiki.archlinux.org/index.php/PCManFM). Most of the time, PCManFM 1.3.1 hangs for 90 seconds on reboot/shutdown. PCManFM 1.3.1 was released on Dec 17, 2018 ([official lxde blog news](https://blog.lxde.org/2018/12/17/libfm-pcmanfm-1-3-1-released/))
 
-  if the dpkg is not installed, the reboot and shutdown of RBPi is normal; otherwise the message appears and the RBPi will wait 1min29s before reboot/shutdown
+  Known issues about **PCManFM** 1.3.1 package:
+  * https://bugs.launchpad.net/ubuntu/+source/pcmanfm/+bug/1878625
+  * https://www.mail-archive.com/ubuntu-bugs@lists.ubuntu.com/msg5812476.html
 
+  ```
+  # verify version of dpkg pcmanfm
+  pi@raspberrypi:~ $ apt-cache policy pcmanfm
+  pcmanfm:
+    Installed: 1.3.1-1+rpt24
+    Candidate: 1.3.1-1+rpt24
+    Version table:
+   *** 1.3.1-1+rpt24 500
+          500 http://archive.raspberrypi.org/debian buster/main arm64 Packages
+          100 /var/lib/dpkg/status
+       1.3.1-1 500
+          500 http://deb.debian.org/debian bullseye/main arm64 Packages
+
+  # activate the debug shell
+  pi@raspberrypi:~ $ systemctl enable debug-shell.service
+  pi@raspberrypi:~ $ systemctl start debug-shell.service
+
+  # reboot/shutdown waiting for A stop job is running for Session cX of user pi
+
+
+  from tty9 (debug shell)
+  root@raspberrypi:/# systemctl status session-3.scope
+    session-3.scope - Session 3 of user pi
+    Loaded: loaded (/run/systemd/transient/session-3.scope; transient)
+  Transient: yes
+     Active: deactivating (stop-sigterm) since Tue 2020-11-24 09:32:53 CET; 1min 22s ago
+     Tasks: 3
+     CGroup: /user.slice/1000.slice/session3.scope 
+             └─ 800 pcmanfm --desktop --profile LXDE-pi
+
+
+  after the reboot check the journalctl
+  pi@raspberrypi:~ $ journalctl --reverse | grep session-3.scope
+  Nov 24 09:34:43 raspberrypi systemd[1]: session-3.scope: Failed with result 'timeout'.
+  Nov 24 09:34:43 raspberrypi systemd[1]: session-3.scope: Killing process 796 (pcmanfm) with signal SIGKILL.
+  Nov 24 09:34:43 raspberrypi systemd[1]: session-3.scope: Stopping timed out. Killing.
+
+  ```
+
+  <a name="issue-5-fix"></a>
   **FIX**
 
-  TBA
+  ```
+  admin@raspberrypi:~ $  sudo nano /etc/systemd/system/run_on_shutdown_reboot.service
+  admin@raspberrypi:~ $  cat /etc/systemd/system/run_on_shutdown_reboot.service
+  [Unit]
+  Description=Kill PCManFM 1.3.1 process before shutdown or reboot
+  DefaultDependencies=no
+  Before=reboot.target shutdown.target halt.target
+  # If your script requires any mounted directories, add them below: 
+  #RequiresMountsFor=/home
+   
+  [Service]
+  Type=oneshot
+  ExecStart=pkill -9 pcmanfm
+   
+  [Install]
+  WantedBy=reboot.target halt.target shutdown.target
+
+  admin@raspberrypi:~ $ sudo systemctl enable run_on_shutdown_reboot.service
+  Created symlink /etc/systemd/system/reboot.target.wants/run_on_shutdown_reboot.service → /etc/systemd/system/run_on_shutdown_reboot.service.
+  Created symlink /etc/systemd/system/halt.target.wants/run_on_shutdown_reboot.service → /etc/systemd/system/run_on_shutdown_reboot.service.
+  Created symlink /etc/systemd/system/shutdown.target.wants/run_on_shutdown_reboot.service → /etc/systemd/system/run_on_shutdown_reboot.service.
+
+  admin@raspberrypi:~ $ sudo reboot
+  ```
 
 <a name="issue-6"></a>
 ##### **6. email connection issue - ([back to top](#top))**
