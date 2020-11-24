@@ -30,8 +30,18 @@ class Keyboard(QWidget):
         with open(QApplication.instance().keyboard_path + "/it.json", 'r') as keyboard_json:
             keyboard_def = json.load(keyboard_json)
         self.setFixedSize(900, 256)
-        self.move(300, 800)
+        # ~ self.setFixedSize(900, 300)
+        self.move(600, 760)
         self.setWindowFlag(Qt.WindowCloseButtonHint, False)
+
+        self.setStyleSheet("""
+                QWidget {
+                    background-color: #FFFFF7;
+                    font-size: 20px;
+                    font-family: monospace;
+                    }
+                """)
+
 
         yadd = 0
         for y, row in enumerate(keyboard_def):
@@ -44,7 +54,7 @@ class Keyboard(QWidget):
                 wtmp = 1
                 htmp = 1
                 if isinstance(element, str):
-                    pushButton = QPushButton(self.i18n(element))
+                    pushButton = QPushButton(self.i18n(element), parent=self)
                     button = KeyButton(
                         self.evdev_convert(element),
                         element,
@@ -75,6 +85,18 @@ class Keyboard(QWidget):
                 button.button.clicked.connect((lambda n: lambda: self.on_pushButton_clicked(n))(button.key))
             layout.addWidget(button.button, button.posx, button.posy, button.endx, button.endy)
         self.setLayout(layout)
+
+        self.uinput = UInput()
+
+    def hide(self):
+        super().hide()
+        for b in self.buttons:
+            b.button.hide()
+
+    def show(self):
+        super().show()
+        for b in self.buttons:
+            b.button.show()
 
     def ev_definitions(self):
         ev_dict = {  # for chars not handled by e.kEY_<key>
@@ -143,32 +165,34 @@ class Keyboard(QWidget):
     def on_pushButton_clicked(self, key):
         if not has_evdev:
             return
-        ui = UInput()
         keys = [KeyAction(key, True),
                 KeyAction(key, False)]
         if self.shifted:
             keys = self.shifted_symbol(keys)
-        self.pushdispatcher(keys, ui)
+        self.pushdispatcher(keys)
 
     def shifted_symbol(self, keys):
         start = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], True)]
         end = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], False)]
         return start + keys + end
 
-    def pushdispatcher(self, keys, ui):
+    def pushdispatcher(self, keys):
+
+        logging.warning(f"self:{self}, keys:{keys}, self.uinput:{self.uinput}")
+        
         if keys == []:
-            ui.syn()
-            ui.close()
+            self.uinput.syn()
+            # ~ self.uinput.close()
             return
         if keys[0].push:
-            self.push(keys, ui)
+            self.push(keys)
         else:
-            self.pull(keys, ui)
+            self.pull(keys)
 
-    def push(self, keys, ui):
-        ui.write(e.EV_KEY, keys[0].key, 1)
-        QTimer.singleShot(100, lambda: self.pushdispatcher(keys[1:], ui))
+    def push(self, keys):
+        self.uinput.write(e.EV_KEY, keys[0].key, 1)
+        QTimer.singleShot(50, lambda: self.pushdispatcher(keys[1:]))
 
-    def pull(self, keys, ui):
-        ui.write(e.EV_KEY, keys[0].key, 0)
-        QTimer.singleShot(100, lambda: self.pushdispatcher(keys[1:], ui))
+    def pull(self, keys):
+        self.uinput.write(e.EV_KEY, keys[0].key, 0)
+        QTimer.singleShot(50, lambda: self.pushdispatcher(keys[1:]))

@@ -5,29 +5,35 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 
+import os
+import logging
 
 from PyQt5.uic import loadUi
 from PyQt5 import QtCore
 from PyQt5.Qt import QUrl      # pylint: disable=no-name-in-module
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile          # pylint: disable=import-error, no-name-in-module
 from PyQt5.QtWidgets import QWidget, QFileDialog, QApplication                          # pylint: disable=no-name-in-module
-import os
+
+# ~ from alfa_CR6_ui.keyboard import Keyboard
 
 
 class ChromeWidget(QWidget):
-    download_callback={}
-    def __init__(self, parent=None, url="http://kccrefinish.co.kr"):
+    download_callback = {}
+
+    def __init__(self, parent, url="http://kccrefinish.co.kr"):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/chrome.ui", self)
         QWebEngineProfile.defaultProfile().downloadRequested.connect(
             self.on_downloadRequested
         )
-        view = QWebEngineView(self)
-        view.setUrl(QUrl(url))
-        view.resize(1920, 900)
+        self.view = QWebEngineView(self)
+        self.view.setUrl(QUrl(url))
+        self.view.resize(1920, 1000)
+        
+        # ~ self.keyboard = Keyboard(self)
 
     def setDownloadCallback(self, callback):
-        self.download_callback=callback
+        self.download_callback = callback
 
     @QtCore.pyqtSlot("QWebEngineDownloadItem*")
     def on_downloadRequested(self, download):

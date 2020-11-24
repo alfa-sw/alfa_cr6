@@ -10,6 +10,7 @@ import logging
 from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QMessageBox, QMainWindow  # pylint: disable=no-name-in-module
 from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 
 from alfa_CR6_ui.sinottico import Sinottico
 from alfa_CR6_ui.keyboard import Keyboard
@@ -17,7 +18,6 @@ from alfa_CR6_ui.debug_status_view import DebugStatusView
 
 
 class MainWindow(QMainWindow):
-    keyboard = {}
     sinottico = {}
 
     def __init__(self, parent=None):
@@ -42,10 +42,9 @@ class MainWindow(QMainWindow):
 
         self.main_window_stack.setCurrentWidget(self.login)
 
-        self.keyboard = Keyboard()
-        self.keyboard.showNormal()
+        # ~ self.keyboard = Keyboard()
+        # ~ self.keyboard.setWindowFlags(Qt.WindowStaysOnTopHint)
 
-        logging.warning("{ }")
 
     def onLoginBtnClicked(self):
 
@@ -58,9 +57,6 @@ class MainWindow(QMainWindow):
             self.main_window_stack.setCurrentWidget(self.project)
 
             logging.warning("{ }")
-
-            self.sinottico.transferKeyboard(self.keyboard)
-            self.keyboard.showMinimized()
 
         else:
             msg.setText('Incorrect Password')
