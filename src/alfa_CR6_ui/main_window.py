@@ -39,12 +39,18 @@ class MainWindow(QMainWindow):
             self.debug_status_view.update_status()
 
         self.sinottico.chrome_btn_2.clicked.connect(show_debug_view)
+        self.sinottico.barcode_btn.clicked.connect(self.print_barcode)
 
         self.main_window_stack.setCurrentWidget(self.login)
 
         # ~ self.keyboard = Keyboard()
         # ~ self.keyboard.setWindowFlags(Qt.WindowStaysOnTopHint)
 
+
+    def print_barcode(self):
+
+        txt = self.sinottico.bottom_text_edit.toPlainText()
+        logging.warning(f"txt:{txt}")
 
     def onLoginBtnClicked(self):
 

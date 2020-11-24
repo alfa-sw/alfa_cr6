@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1920</width>
-    <height>1086</height>
+    <height>1058</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -837,10 +837,10 @@
      </widget>
     </widget>
    </widget>
-   <widget class="QTextEdit" name="textEdit">
+   <widget class="QTextEdit" name="bottom_text_edit">
     <property name="geometry">
      <rect>
-      <x>350</x>
+      <x>260</x>
       <y>1010</y>
       <width>1411</width>
       <height>61</height>
@@ -884,6 +884,56 @@
     <property name="iconSize">
      <size>
       <width>50</width>
+      <height>50</height>
+     </size>
+    </property>
+    <property name="checkable">
+     <bool>false</bool>
+    </property>
+    <property name="autoRepeat">
+     <bool>false</bool>
+    </property>
+    <property name="autoExclusive">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="barcode_btn">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>1720</x>
+      <y>1010</y>
+      <width>91</width>
+      <height>66</height>
+     </rect>
+    </property>
+    <property name="mouseTracking">
+     <bool>false</bool>
+    </property>
+    <property name="tabletTracking">
+     <bool>false</bool>
+    </property>
+    <property name="acceptDrops">
+     <bool>false</bool>
+    </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: transparent;</string>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="icon">
+     <iconset>
+      <normaloff>../images/barcode_C128.png</normaloff>../images/barcode_C128.png</iconset>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>60</width>
       <height>50</height>
      </size>
     </property>
