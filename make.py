@@ -21,6 +21,7 @@ LOG_PATH = f"{DEPLOY_PATH}/log"
 DATA_PATH = f"{DEPLOY_PATH}/data"
 VAR_PATH = f"{DEPLOY_PATH}/var"
 TMP_PATH = f"{DEPLOY_PATH}/tmp"
+SCRIPTS_PATH = f"{DEPLOY_PATH}/scripts"
 
 OUT_ERR_PTH = f"{PROJECT_ROOT}/make.err.out"
 
@@ -45,6 +46,7 @@ def parse_arguments():
     parser.add_argument('-C', '--deploy_conf_to_target', action='store_const', const=1)
     parser.add_argument('-D', '--deploy_db_to_target', action='store_const', const=1,
                         help='action: copy the sqlite db to target, *BEWARE* overwriting it!')
+    parser.add_argument('-S', '--deploy_and_execute_target_scripts', action='store_const', const=1)
 
     return parser.parse_args()
 
@@ -68,11 +70,11 @@ def makedirs_on_target(args):
 
     tgt_cred = args.target_credentials
 
-    for pth in (VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, VAR_PATH, TMP_PATH):
+    for pth in (VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, VAR_PATH, TMP_PATH, SCRIPTS_PATH):
         cmd_ = f'ssh {tgt_cred} "if [ ! -e {pth} ]; then mkdir -p {pth} ;fi"'
         exec_(cmd_, dry=args.dry_run)
-        cmd_ = f'ssh {tgt_cred} "sudo chmod -R a+rw {pth}"'
-        exec_(cmd_, dry=args.dry_run)
+        # cmd_ = f'ssh {tgt_cred} "sudo chmod -R a+rw {pth}"'
+        # exec_(cmd_, dry=args.dry_run)
 
 def deploy_db_to_target(args):
 
@@ -125,6 +127,21 @@ def install_editable(args):
     cmd_ = f"cd {PROJECT_ROOT};. {VENV_PATH}/bin/activate;pip uninstall -y {__app_name__}; pip install {ignore_requires} -e ./"
     exec_(cmd_, dry=args.dry_run)
 
+def deploy_and_execute_target_scripts(args):
+
+    tgt_cred = args.target_credentials
+    settings = args.app_settings
+
+    cmds = [
+        f"scp {PROJECT_ROOT}/target_scripts/target_scripts.sh {tgt_cred}:{SCRIPTS_PATH}/target_scripts.sh",
+        f'ssh {tgt_cred} "sudo chmod +x {SCRIPTS_PATH}/target_scripts.sh"',
+        f'ssh {tgt_cred} "sudo bash {SCRIPTS_PATH}/target_scripts.sh"',
+    ]
+
+    for cmd_ in cmds:
+        exec_(cmd_, dry=args.dry_run)
+
+        time.sleep(.1)
 
 def main():
 
@@ -150,6 +167,8 @@ def main():
         deploy_db_to_target(args)
     if args.deploy_conf_to_target:
         deploy_conf_to_target(args)
+    if args.deploy_and_execute_target_scripts:
+        deploy_and_execute_target_scripts(args)
 
 
 main()
