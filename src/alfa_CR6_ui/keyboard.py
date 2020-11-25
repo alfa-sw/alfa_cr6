@@ -180,11 +180,20 @@ class Keyboard(QWidget):
                 KeyAction(key, False)]
         if self.shifted:
             keys = self.shifted_symbol(keys)
+        if self.lang == "kr":
+            keys = self.hangeul(keys)
         self.pushdispatcher(keys)
 
     def shifted_symbol(self, keys):
         start = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], True)]
         end = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], False)]
+        return start + keys + end
+
+    def hangeul(self, keys):
+        start = [KeyAction(e.ecodes['KEY_HANGUEL'], True),
+                 KeyAction(e.ecodes['KEY_HANGUEL'], False), ]
+        end = [KeyAction(e.ecodes['KEY_HANGUEL'], True),
+               KeyAction(e.ecodes['KEY_HANGUEL'], False), ]
         return start + keys + end
 
     def pushdispatcher(self, keys):
