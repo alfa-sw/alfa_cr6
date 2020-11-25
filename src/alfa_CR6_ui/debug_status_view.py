@@ -17,9 +17,11 @@ import asyncio
 
 from PyQt5.QtWidgets import (QApplication, QFrame,       # pylint: disable=no-name-in-module
                              # ~ QComboBox,
+                             QFileDialog,
                              QTextBrowser, QButtonGroup, QPushButton)
 
-from alfa_CR6_backend.models import Jar
+from alfa_CR6_backend.models import Jar, Order
+from alfa_CR6_backend.dymo_printer import dymo_print
 
 
 class DebugStatusView():
@@ -115,8 +117,8 @@ class DebugStatusView():
             ('reset all\n heads', 'reset all heads'),
             ('EXIT', 'Beware! terminate the application'),
             ('read\nbarcode', 'simulate a bar code read'),
-            ('', '**'),
-            ('', '**'),
+            ('delete\norders in db', 'delelete all jars and all orders in db sqlite'),
+            ('open order\ndialog', '**'),
             ('view\norders', ''),
             ('close', 'close this widget'),
         ]):
@@ -237,16 +239,43 @@ class DebugStatusView():
                 logging.error("timeout !")
             logging.warning(f"i:{i}, r:{r}")
 
+    def view_jar_deatils(self, jar_id):             # pylint: disable=no-self-use, too-many-branches
+
+        jar = app.db_session.query(Jar).filter(Jar == jar_id).one()
+
+        logging.warning(f"jar:{jar}")
+        logging.info(f"jar.json_properties:{jar.json_properties}")
+
+    def delete_orders(self):             # pylint: disable=no-self-use, too-many-branches
+
+        app = QApplication.instance()
+
+        def delete_all_():
+            for model in (Jar, Order):
+                try:
+                    num_rows_deleted = app.db_session.query(model).delete()
+                    app.db_session.commit()
+                    logging.warning(f"deleted {num_rows_deleted} {model}")
+                except Exception as e:
+                    logging.error(e)
+                    app.db_session.rollback()
+
+        app.show_alert_dialog(f'confirm deleting db data?', callback=delete_all_)
+
     def view_orders(self):             # pylint: disable=no-self-use, too-many-branches
 
         app = QApplication.instance()
         html_ = ""
         for j in app.db_session.query(Jar).all()[:100]:
+            
+            # ~ ingredient_volume_map, total_volume, unavailable_pigment_names = app.check_available_volumes(j)
+            # ~ msg_2 = f"{ingredient_volume_map}, {total_volume}, {unavailable_pigment_names}"
+            # ~ html_ += f'<p title="{msg_2}">{msg_1}</p>'
+            msg_1 = f"j.barcode:{j.barcode} j:{j} "
+            html_ += f'<p>{msg_1}</p>'
 
-            ingredient_volume_map, total_volume, unavailable_pigment_names = app.check_available_volumes(j)
-            msg_ = f"j.barcode:{j.barcode} j:{j} {ingredient_volume_map}, {total_volume}, {unavailable_pigment_names}"
-            logging.warning(msg_)
-            html_ += msg_ + "<br/>"
+            logging.warning(msg_1)
+
         self.answer_text_browser.setHtml(html_)
 
     def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use, too-many-branches
@@ -271,13 +300,24 @@ class DebugStatusView():
                 t = m.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
                 asyncio.ensure_future(t)
 
+        elif 'open order\ndialog' in cmd_txt:
+
+            self.open_order_dialog()
+
+        elif 'delete all\norders from db' in cmd_txt:
+
+            self.delete_orders()
+
         elif 'view\norders' in cmd_txt:
 
             self.view_orders()
 
         elif cmd_txt == 'alert':
 
-            r = app.show_alert_dialog("test alert message")
+            def cb():
+                logging.warning(f"callback called!")
+                
+            r = app.show_alert_dialog("test alert message", callback=cb)
             logging.warning(f"r:{r}")
 
         elif cmd_txt == 'unfreeze\ncarousel':
@@ -513,3 +553,48 @@ class DebugStatusView():
         self.status_text_browser.setHtml(html_)
 
         # ~ logging.warning("")
+    def open_order_dialog(self):
+
+        app = QApplication.instance()
+        
+
+        dialog = QFileDialog(self.main_frame)
+        dialog.setOption(QFileDialog.DontUseNativeDialog, True)
+        dialog.setDirectory('/opt/alfa_cr6/data/')
+        dialog.setFileMode(QFileDialog.AnyFile)
+        dialog.setNameFilter("json order file (*.json)")
+        dialog.setViewMode(QFileDialog.Detail)
+        dialog.resize(1200, 600)
+        fileNames = None
+        if dialog.exec_():
+            fileNames = dialog.selectedFiles();
+        logging.warning(f"fileNames:{fileNames}")
+        return
+        
+        
+        fname, filter = QFileDialog.getOpenFileName(self.main_frame, 'Open file', '/opt/alfa_cr6/data/',"json order file (*.json)", options=QFileDialog.DontUseNativeDialog)
+        logging.warning(f"fname:{fname}, filter:{filter}")
+        if fname:
+            order = None
+            try:
+                order = app.create_order(fname, n_of_jars=3)
+                barcodes = [str(j.barcode) for j in order.jars]
+                barcodes.sort()
+                barcodes_str = '\n'.join([str(j.barcode) for j in order.jars])
+                
+                def cb():
+                    for b in barcodes:
+                        def cb_(bc):
+                            response = dymo_print(str(bc))
+                            logging.warning(f"response:{response}")
+
+                        msg_ = f"confirm printing:{b} ?"
+                        app.show_alert_dialog(msg_, callback=cb_, args=[b])
+
+                msg_ = f"creted order with {len(order.jars)} jars. barcodes:\n{barcodes_str} \nclick 'OK' to print barcodes."
+                app.show_alert_dialog(msg_, callback=cb)
+
+            except Exception as e:
+                logging.error(traceback.format_exc())
+
+        return fname
