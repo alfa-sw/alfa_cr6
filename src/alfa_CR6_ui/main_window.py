@@ -16,6 +16,7 @@ from alfa_CR6_ui.sinottico import Sinottico
 from alfa_CR6_ui.keyboard import Keyboard
 from alfa_CR6_ui.debug_status_view import DebugStatusView
 
+from alfa_CR6_backend.dymo_printer import dymo_print
 
 class MainWindow(QMainWindow):
     sinottico = {}
@@ -50,7 +51,8 @@ class MainWindow(QMainWindow):
     def print_barcode(self):
 
         txt = self.sinottico.bottom_text_edit.toPlainText()
-        QApplication.instance().show_alert_dialog(f" print_barcode() txt:{txt}")
+        response = dymo_print(txt)
+        QApplication.instance().show_alert_dialog(f" print_barcode() response: {response}")
         logging.warning(f"* txt:{txt}")
 
     def onLoginBtnClicked(self):
