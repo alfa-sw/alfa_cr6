@@ -42,29 +42,29 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     # bit9: JAR_DETECTION_MICROSWITCH_1
     # bit10:JAR_DETECTION_MICROSWITCH_2
 
-    {   'Dispensing_Roller':  {'description': 'Values: 
-                0 = Stop Movement, 
-                1 = Start Movement, 
+    {   'Dispensing_Roller':  {'description': 'Values:
+                0 = Stop Movement,
+                1 = Start Movement,
                 2 = Start Movement till Photocell transition LIGHT - DARK ','propertyOrder': 1, 'type': 'number', 'fmt': 'B'},
-        'Lifter_Roller': {'description': 'Values: 
-                0 = Stop Movement, 
-                1 = Start Movement CW, 
-                2 = Start Movement CW till Photocell transition LIGHT - DARK, 
-                3 = Start Movement CCW, 
-                4 = Start Movement CCW till Photocell transition DARK – LIGHT, 
+        'Lifter_Roller': {'description': 'Values:
+                0 = Stop Movement,
+                1 = Start Movement CW,
+                2 = Start Movement CW till Photocell transition LIGHT - DARK,
+                3 = Start Movement CCW,
+                4 = Start Movement CCW till Photocell transition DARK – LIGHT,
                 5 = Start Movement CCW till Photocell transition LIGHT- DARK', 'propertyOrder': 2, 'type': 'number', 'fmt': 'B'},
-        'Input_Roller': {'description': 'Values: 
-                0 = Stop Movement, 
-                1 = Start Movement, 
+        'Input_Roller': {'description': 'Values:
+                0 = Stop Movement,
+                1 = Start Movement,
                 2 = Start Movement till Photocell transition LIGHT - DARK', 'propertyOrder': 3, 'type': 'number', 'fmt': 'B'},
-        'Lifter': {'description': 'Values: 
-                0 = Stop Movement, 
-                1 = Start Movement Up till Photocell Up transition LIGHT – DARK, 
+        'Lifter': {'description': 'Values:
+                0 = Stop Movement,
+                1 = Start Movement Up till Photocell Up transition LIGHT – DARK,
                 2 = Start Movement Down till Photocell Down transition LIGHT – DARK', 'propertyOrder': 4, 'type': 'number', 'fmt': 'B'},
-        'Output_Roller': {'description': 'Values: 
-                0 = Stop Movement, 
+        'Output_Roller': {'description': 'Values:
+                0 = Stop Movement,
                 1 = Start Movement CCW till Photocell transition LIGHT – DARK,
-                2 = Start Movement CCW till Photocell transition DARK - LIGHT with a Delay', 
+                2 = Start Movement CCW till Photocell transition DARK - LIGHT with a Delay',
                 3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
 
     """
@@ -131,7 +131,8 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             self.low_level_pipes = []
             for pig in ret.get('objects', []):
                 enabled_pipes = [pipe for pipe in pig['pipes'] if pipe['enabled']]
-                self.low_level_pipes += [pipe['name'] for pipe in enabled_pipes if pipe['current_level'] < pipe['reserve_level']]
+                self.low_level_pipes += [pipe['name']
+                                         for pipe in enabled_pipes if pipe['current_level'] < pipe['reserve_level']]
                 if enabled_pipes:
                     self.pigment_list.append(pig)
 
@@ -181,7 +182,6 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         if self.status['jar_photocells_status'] & 0x001 and not (status['jar_photocells_status'] & 0x001):
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
-
 
         self.photocells_status = {
             'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001 and 1,
