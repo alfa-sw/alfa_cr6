@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1920</width>
-    <height>1058</height>
+    <height>1080</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,14 +30,11 @@
      <rect>
       <x>0</x>
       <y>1010</y>
-      <width>331</width>
+      <width>241</width>
       <height>61</height>
      </rect>
     </property>
-    <widget class="QPushButton" name="chrome_btn">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
+    <widget class="QLabel" name="chrome_btn">
      <property name="geometry">
       <rect>
        <x>90</x>
@@ -46,45 +43,17 @@
        <height>50</height>
       </rect>
      </property>
-     <property name="mouseTracking">
-      <bool>false</bool>
-     </property>
-     <property name="tabletTracking">
-      <bool>false</bool>
-     </property>
-     <property name="acceptDrops">
-      <bool>false</bool>
-     </property>
-     <property name="autoFillBackground">
-      <bool>false</bool>
-     </property>
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
      <property name="text">
       <string/>
      </property>
-     <property name="icon">
-      <iconset>
-       <normaloff>../images/chrome.png</normaloff>../images/chrome.png</iconset>
+     <property name="pixmap">
+      <pixmap>../images/chrome.png</pixmap>
      </property>
-     <property name="iconSize">
-      <size>
-       <width>50</width>
-       <height>50</height>
-      </size>
-     </property>
-     <property name="checkable">
-      <bool>false</bool>
-     </property>
-     <property name="autoRepeat">
-      <bool>false</bool>
-     </property>
-     <property name="autoExclusive">
-      <bool>false</bool>
+     <property name="scaledContents">
+      <bool>true</bool>
      </property>
     </widget>
-    <widget class="QPushButton" name="home_btn">
+    <widget class="QLabel" name="home_btn">
      <property name="geometry">
       <rect>
        <x>20</x>
@@ -93,74 +62,36 @@
        <height>50</height>
       </rect>
      </property>
-     <property name="autoFillBackground">
-      <bool>false</bool>
-     </property>
-     <property name="styleSheet">
-      <string notr="true"/>
-     </property>
      <property name="text">
       <string/>
      </property>
-     <property name="icon">
-      <iconset>
-       <normaloff>../images/home.png</normaloff>../images/home.png</iconset>
+     <property name="pixmap">
+      <pixmap>../images/home.png</pixmap>
      </property>
-     <property name="iconSize">
-      <size>
-       <width>50</width>
-       <height>50</height>
-      </size>
+     <property name="scaledContents">
+      <bool>true</bool>
      </property>
     </widget>
-    <widget class="QPushButton" name="keybd_btn">
+    <widget class="QLabel" name="keybd_btn">
      <property name="enabled">
       <bool>true</bool>
      </property>
      <property name="geometry">
       <rect>
        <x>160</x>
-       <y>5</y>
+       <y>15</y>
        <width>60</width>
-       <height>50</height>
+       <height>30</height>
       </rect>
-     </property>
-     <property name="mouseTracking">
-      <bool>false</bool>
-     </property>
-     <property name="tabletTracking">
-      <bool>false</bool>
-     </property>
-     <property name="acceptDrops">
-      <bool>false</bool>
-     </property>
-     <property name="autoFillBackground">
-      <bool>false</bool>
-     </property>
-     <property name="styleSheet">
-      <string notr="true"/>
      </property>
      <property name="text">
       <string/>
      </property>
-     <property name="icon">
-      <iconset>
-       <normaloff>../images/keybd.png</normaloff>../images/keybd.png</iconset>
+     <property name="pixmap">
+      <pixmap>../images/keybd.png</pixmap>
      </property>
-     <property name="iconSize">
-      <size>
-       <width>60</width>
-       <height>50</height>
-      </size>
-     </property>
-     <property name="checkable">
-      <bool>false</bool>
-     </property>
-     <property name="autoRepeat">
-      <bool>false</bool>
-     </property>
-     <property name="autoExclusive">
-      <bool>false</bool>
+     <property name="scaledContents">
+      <bool>true</bool>
      </property>
     </widget>
    </widget>
@@ -313,7 +244,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QPushButton" name="refilll_HEAD_1_STEP_2">
+     <widget class="QLabel" name="refilll_HEAD_1_STEP_2">
       <property name="geometry">
        <rect>
         <x>490</x>
@@ -322,24 +253,17 @@
         <height>60</height>
        </rect>
       </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
       </property>
-      <property name="iconSize">
-       <size>
-        <width>40</width>
-        <height>40</height>
-       </size>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="refilll_HEAD_3_STEP_3">
+     <widget class="QLabel" name="refilll_HEAD_3_STEP_3">
       <property name="geometry">
        <rect>
         <x>870</x>
@@ -351,18 +275,14 @@
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
       </property>
-      <property name="iconSize">
-       <size>
-        <width>40</width>
-        <height>40</height>
-       </size>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="refilll_HEAD_5_STEP_4">
+     <widget class="QLabel" name="refilll_HEAD_5_STEP_4">
       <property name="geometry">
        <rect>
         <x>1230</x>
@@ -374,18 +294,14 @@
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
       </property>
-      <property name="iconSize">
-       <size>
-        <width>40</width>
-        <height>40</height>
-       </size>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="refilll_HEAD_2_STEP_9">
+     <widget class="QLabel" name="refilll_HEAD_2_STEP_9">
       <property name="geometry">
        <rect>
         <x>499</x>
@@ -397,18 +313,14 @@
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
       </property>
-      <property name="iconSize">
-       <size>
-        <width>40</width>
-        <height>40</height>
-       </size>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="refilll_HEAD_4_STEP_8">
+     <widget class="QLabel" name="refilll_HEAD_4_STEP_8">
       <property name="geometry">
        <rect>
         <x>870</x>
@@ -420,18 +332,14 @@
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
       </property>
-      <property name="iconSize">
-       <size>
-        <width>40</width>
-        <height>40</height>
-       </size>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
-     <widget class="QPushButton" name="refilll_HEAD_6_STEP_7">
+     <widget class="QLabel" name="refilll_HEAD_6_STEP_7">
       <property name="geometry">
        <rect>
         <x>1229</x>
@@ -443,15 +351,11 @@
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset>
-        <normaloff>../images/refill_ok.png</normaloff>../images/refill_ok.png</iconset>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
       </property>
-      <property name="iconSize">
-       <size>
-        <width>40</width>
-        <height>40</height>
-       </size>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
      <widget class="QWidget" name="jar_input" native="true">
@@ -859,7 +763,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="chrome_btn_2">
+   <widget class="QLabel" name="status">
     <property name="enabled">
      <bool>true</bool>
     </property>
@@ -871,92 +775,36 @@
       <height>50</height>
      </rect>
     </property>
-    <property name="mouseTracking">
-     <bool>false</bool>
-    </property>
-    <property name="tabletTracking">
-     <bool>false</bool>
-    </property>
-    <property name="acceptDrops">
-     <bool>false</bool>
-    </property>
-    <property name="autoFillBackground">
-     <bool>false</bool>
-    </property>
-    <property name="styleSheet">
-     <string notr="true"/>
-    </property>
     <property name="text">
      <string/>
     </property>
-    <property name="icon">
-     <iconset>
-      <normaloff>../images/green.svg</normaloff>../images/green.svg</iconset>
+    <property name="pixmap">
+     <pixmap>../images/green.svg</pixmap>
     </property>
-    <property name="iconSize">
-     <size>
-      <width>50</width>
-      <height>50</height>
-     </size>
-    </property>
-    <property name="checkable">
-     <bool>false</bool>
-    </property>
-    <property name="autoRepeat">
-     <bool>false</bool>
-    </property>
-    <property name="autoExclusive">
-     <bool>false</bool>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
    </widget>
-   <widget class="QPushButton" name="barcode_btn">
+   <widget class="QLabel" name="barcode_btn">
     <property name="enabled">
      <bool>true</bool>
     </property>
     <property name="geometry">
      <rect>
       <x>1720</x>
-      <y>1015</y>
+      <y>1025</y>
       <width>60</width>
-      <height>50</height>
+      <height>30</height>
      </rect>
-    </property>
-    <property name="mouseTracking">
-     <bool>false</bool>
-    </property>
-    <property name="tabletTracking">
-     <bool>false</bool>
-    </property>
-    <property name="acceptDrops">
-     <bool>false</bool>
-    </property>
-    <property name="autoFillBackground">
-     <bool>false</bool>
-    </property>
-    <property name="styleSheet">
-     <string notr="true"/>
     </property>
     <property name="text">
      <string/>
     </property>
-    <property name="icon">
-     <iconset>
-      <normaloff>../images/barcode_C128.png</normaloff>../images/barcode_C128.png</iconset>
+    <property name="pixmap">
+     <pixmap>../images/barcode_C128.png</pixmap>
     </property>
-    <property name="iconSize">
-     <size>
-      <width>60</width>
-      <height>50</height>
-     </size>
-    </property>
-    <property name="checkable">
-     <bool>false</bool>
-    </property>
-    <property name="autoRepeat">
-     <bool>false</bool>
-    </property>
-    <property name="autoExclusive">
-     <bool>false</bool>
+    <property name="scaledContents">
+     <bool>true</bool>
     </property>
    </widget>
   </widget>

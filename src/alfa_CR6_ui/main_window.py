@@ -18,6 +18,7 @@ from alfa_CR6_ui.debug_status_view import DebugStatusView
 
 from alfa_CR6_backend.dymo_printer import dymo_print
 
+
 class MainWindow(QMainWindow):
     sinottico = {}
 
@@ -39,14 +40,13 @@ class MainWindow(QMainWindow):
             self.main_window_stack.setCurrentWidget(self.debug_status_view.main_frame)
             self.debug_status_view.update_status()
 
-        self.sinottico.chrome_btn_2.clicked.connect(show_debug_view)
-        self.sinottico.barcode_btn.clicked.connect(self.print_barcode)
+        self.sinottico.status.mouseReleaseEvent = lambda event: show_debug_view()
+        self.sinottico.barcode_btn.mouseReleaseEvent = lambda event: self.print_barcode()
 
         self.main_window_stack.setCurrentWidget(self.login)
 
         # ~ self.keyboard = Keyboard()
         # ~ self.keyboard.setWindowFlags(Qt.WindowStaysOnTopHint)
-
 
     def print_barcode(self):
 

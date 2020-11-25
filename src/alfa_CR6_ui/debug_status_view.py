@@ -143,7 +143,7 @@ class DebugStatusView():
         self.button_group.buttonClicked.connect(self.on_button_group_clicked)
 
         async def periodic_refresh():
-            while 1:
+            while True:
                 self.update_status()
                 await asyncio.sleep(1)
             return True

@@ -43,7 +43,6 @@ class Keyboard(QWidget):
                     }
                 """)
 
-
         yadd = 0
         for y, row in enumerate(keyboard_def):
             x = 0
@@ -201,7 +200,7 @@ class Keyboard(QWidget):
                 self.push(keys)
             else:
                 self.pull(keys)
-        
+
         except Exception:
             logging.error(traceback.format_exc())
 
