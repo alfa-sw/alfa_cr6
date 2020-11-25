@@ -13,6 +13,7 @@ import time
 import logging
 import traceback
 import asyncio
+# ~ import json
 
 from PyQt5.QtWidgets import (QApplication, QFrame,       # pylint: disable=no-name-in-module
                              # ~ QComboBox,
@@ -241,8 +242,11 @@ class DebugStatusView():
         app = QApplication.instance()
         html_ = ""
         for j in app.db_session.query(Jar).all()[:100]:
-            logging.warning(f"j.barcode:{j.barcode} j:{j}")
-            html_ += f"j.barcode:{j.barcode} j:{j}<br/>"
+
+            ingredient_volume_map, total_volume, unavailable_pigment_names = app.check_available_volumes(j)
+            msg_ = f"j.barcode:{j.barcode} j:{j} {ingredient_volume_map}, {total_volume}, {unavailable_pigment_names}"
+            logging.warning(msg_)
+            html_ += msg_ + "<br/>"
         self.answer_text_browser.setHtml(html_)
 
     def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use, too-many-branches
