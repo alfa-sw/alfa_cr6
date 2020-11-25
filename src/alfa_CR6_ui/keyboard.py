@@ -43,7 +43,6 @@ class Keyboard(QWidget):
                     }
                 """)
 
-
         yadd = 0
         for y, row in enumerate(keyboard_def):
             x = 0
@@ -170,8 +169,10 @@ class Keyboard(QWidget):
         elif item == "LANG":
             if self.lang == "it":
                 self.lang = "kr"
+                self.hangeul_toggle()
             elif self.lang == "kr":
                 self.lang = "it"
+                self.hangeul_toggle()
         self.redraw_buttons()
 
     def on_pushButton_clicked(self, key):
@@ -188,6 +189,10 @@ class Keyboard(QWidget):
         end = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], False)]
         return start + keys + end
 
+    def hangeul_toggle(self):
+        self.pushdispatcher([KeyAction(e.ecodes['KEY_HANGUEL'], True),
+                             KeyAction(e.ecodes['KEY_HANGUEL'], False), ])
+
     def pushdispatcher(self, keys):
 
         # ~ logging.warning(f"self:{self}, keys:{keys}, self.uinput:{self.uinput}")
@@ -201,7 +206,7 @@ class Keyboard(QWidget):
                 self.push(keys)
             else:
                 self.pull(keys)
-        
+
         except Exception:
             logging.error(traceback.format_exc())
 

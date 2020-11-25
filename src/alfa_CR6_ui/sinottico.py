@@ -42,9 +42,9 @@ class Sinottico(QWidget):
 
         self.init_defs()
         self.add_data()
-        self.home_btn.clicked.connect(self.onHomeBtnClicked)
-        self.chrome_btn.clicked.connect(self.onChromeBtnClicked)
-        self.keybd_btn.clicked.connect(self.toggleKeyboard)
+        self.home_btn.mouseReleaseEvent = lambda event: self.onHomeBtnClicked()
+        self.chrome_btn.mouseReleaseEvent = lambda event: self.onChromeBtnClicked()
+        self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
         self.connect_status()
 
@@ -166,7 +166,7 @@ class Sinottico(QWidget):
         pixmap = QPixmap(QApplication.instance().images_path + p)
         return pixmap.scaled(25, 25, Qt.KeepAspectRatio)
 
-    def onHomeBtnClicked(self, other):
+    def onHomeBtnClicked(self):
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
         # ~ self.keyboard.showMinimized()
 

@@ -29,7 +29,7 @@ class ChromeWidget(QWidget):
         self.view = QWebEngineView(self)
         self.view.setUrl(QUrl(url))
         self.view.resize(1920, 1000)
-        
+
         # ~ self.keyboard = Keyboard(self)
 
     def setDownloadCallback(self, callback):
