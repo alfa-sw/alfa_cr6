@@ -63,7 +63,7 @@ def parse_json_order(path_to_json_file, json_schema_name):
         if json_schema_name == "KCC":
             sz = properties.get('total', '100')
             sz = '1000' if sz.lower() == '1l' else sz
-        properties['size_cc'] = int(sz)
+        properties['size_cc'] = sz
 
         return properties
 
@@ -421,14 +421,18 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def on_barcode_read(self, dev_index, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals,unused-argument
 
+        logging.warning(f"barcode:{barcode}")
+
         if not self.ready_to_read_a_barcode:
             logging.warning(f"not ready to read, skipping barcode:{barcode}")
         try:
             A = self.get_machine_head_by_letter('A')
-            r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
+            # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
+            r = await A.wait_for_jar_photocells_and_status_lev('JAR_INPUT_ROLLER_PHOTOCELL', on=True, status_levels=['STANDBY'])
             if not r:
                 msg_ = f"Condition not valid while reading barcode:{barcode}"
                 self.show_alert_dialog(msg_)
+                logging.error(msg_)
             else:
 
                 self.ready_to_read_a_barcode = False
@@ -448,7 +452,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                     self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
 
                     logging.warning(
-                        " ************ {} {} jar:{}, jar.size:{}".format(len(self.__jar_runners), barcode, jar, jar.size))
+                        " NEW JAR TASK({}) bc:{} jar:{}, jar.size:{}".format(len(self.__jar_runners), barcode, jar, jar.size))
 
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
@@ -529,9 +533,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
 
-    def show_alert_dialog(self, msg, modal=False, title="ALERT"):
+    def show_alert_dialog(self, msg, modal=False, title="ALERT", callback=None, args=[]):
 
-        logging.warning(msg)
+        logging.info(msg)
 
         ret = False
 
@@ -541,6 +545,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         alert_msgbox = CR6MessageBox(parent=self.main_window)
         def button_clicked(btn):
             logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+            if "ok" in btn.text().lower() and callback:
+                callback(*args)
             
         alert_msgbox.buttonClicked.connect(button_clicked)
 
@@ -553,9 +559,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def show_frozen_dialog(self, msg, modal=False, title="ALERT"):
 
-        logging.warning(msg)
+        logging.info(msg)
 
-        ret = False
+        msg = f'ALERT: carousel is frozen in {msg}! hit "OK" to unfreeze it'
 
         t = time.asctime()
         msg = "[{}] {}".format(t, msg)
@@ -573,8 +579,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         frozen_msgbox.setText(msg)
         frozen_msgbox.setWindowTitle(title)
         frozen_msgbox.show()
-
-        return ret
 
     def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):     # pylint:  disable=no-self-use
 
@@ -614,11 +618,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         if freeze:
             self.freeze_carousel(True)
-            _ = f'ALERT: carousel is frozen in {msg}! hit "OK" to unfreeze it'
-            r = self.show_frozen_dialog(_)
-            logging.error(_)
-            if r:
-                asyncio.get_event_loop().call_later(1, self.freeze_carousel, False)
+            r = self.show_frozen_dialog()
 
         if self.carousel_frozen:
             logging.warning(f"self.carousel_frozen:{self.carousel_frozen}, start waiting.")
