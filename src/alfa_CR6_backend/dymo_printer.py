@@ -18,7 +18,7 @@ from barcode.writer import ImageWriter      # pylint: disable=import-error
 DEPLOY_PATH = "/opt/alfa_cr6"
 TMP_PATH = f"{DEPLOY_PATH}/tmp"
 TMP_BARCODE_IMAGE = f"{TMP_PATH}/tmp_file.png"
-DYMO_MODEL = '450'
+PRINTER_MODEL = 'Dymo'
 
 def _create_printable_image(recipe_barcode):
     """ create a printable image .png for DYMO 450 """
@@ -64,7 +64,7 @@ def _format_reply(command, shell=False, loggable=False):
         reply_cmd = [i.strip() for i in os_cmd_reply.split('\n')]
         if loggable:
             logging.warning('reply_cmd({}): {}'.format(type(reply_cmd), reply_cmd))
-        reply = {'result': 'OK', 'data': reply_cmd[0]}
+        reply = {'result': 'OK', 'data': reply_cmd}
     except subprocess.CalledProcessError as exc:
         err_code = exc.returncode
         err_output = exc.output.decode().rstrip()
@@ -75,8 +75,9 @@ def _format_reply(command, shell=False, loggable=False):
 
 
 def _check_dymo_printer_presence():
-    _res = _format_reply('lsusb', True)
-    label_writer = '-'.join([DYMO_MODEL, 'CoStar'])
+    _res_ = _format_reply('lsusb', True, True)
+    _res = _res_.get('data')
+    label_writer = '-'.join([PRINTER_MODEL, 'CoStar'])
     dymo_printer = [elem for elem in _res if label_writer in elem]
     if dymo_printer:
         response = {'result': 'OK', 'msg': 'Dymo plugged'}
@@ -127,5 +128,5 @@ def dymo_print(barcode=201027001001, fake=False):
 
 if __name__ == "__main__":
 
-    res = dymo_print(fake=True)
+    res = dymo_print('201027001005')
     logging.warning(f'\t res: {res}')
