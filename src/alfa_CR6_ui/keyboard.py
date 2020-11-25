@@ -87,12 +87,18 @@ class Keyboard(QWidget):
             layout.addWidget(button.button, button.posx, button.posy, button.endx, button.endy)
         self.setLayout(layout)
 
-        try:
-            os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
-        except Exception:
-            logging.error(traceback.format_exc())
-            
-        self.uinput = UInput()
+        self.uinput = None
+        if has_evdev:
+            try:
+                import getpass
+                logging.warning(f"getpass.getuser():{getpass.getuser()}")
+                if getpass.getuser() == 'admin':
+                    os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
+            except Exception:
+                logging.error(traceback.format_exc())
+            self.uinput = UInput()
+
+        logging.warning(f"self.uinput:{self.uinput}")
 
     def hide(self):
         super().hide()
@@ -187,7 +193,8 @@ class Keyboard(QWidget):
         # ~ logging.warning(f"self:{self}, keys:{keys}, self.uinput:{self.uinput}")
         try:
             if keys == []:
-                self.uinput.syn()
+                if self.uinput:
+                    self.uinput.syn()
                 # ~ self.uinput.close()
                 return
             if keys[0].push:
@@ -199,9 +206,11 @@ class Keyboard(QWidget):
             logging.error(traceback.format_exc())
 
     def push(self, keys):
-        self.uinput.write(e.EV_KEY, keys[0].key, 1)
-        QTimer.singleShot(50, lambda: self.pushdispatcher(keys[1:]))
+        if self.uinput:
+            self.uinput.write(e.EV_KEY, keys[0].key, 1)
+            QTimer.singleShot(50, lambda: self.pushdispatcher(keys[1:]))
 
     def pull(self, keys):
-        self.uinput.write(e.EV_KEY, keys[0].key, 0)
-        QTimer.singleShot(50, lambda: self.pushdispatcher(keys[1:]))
+        if self.uinput:
+            self.uinput.write(e.EV_KEY, keys[0].key, 0)
+            QTimer.singleShot(50, lambda: self.pushdispatcher(keys[1:]))
