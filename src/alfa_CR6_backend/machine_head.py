@@ -158,6 +158,10 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         if self.low_level_pipes:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
             self.app.show_alert_dialog(f'{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}')
+            self.app.visulize_low_level(self.index, True)
+        else:
+            self.app.visulize_low_level(self.index, False)
+            
 
     async def update_status(self, status):
 

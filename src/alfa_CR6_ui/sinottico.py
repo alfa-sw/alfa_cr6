@@ -91,8 +91,15 @@ class Sinottico(QWidget):
         self.view_status_HEAD_5_STEP_4.clicked.connect(lambda: self.openChrome(service_page_urls[4]))
         self.view_status_HEAD_6_STEP_7.clicked.connect(lambda: self.openChrome(service_page_urls[5]))
 
-        # ~ self.out_btn_start.mouseReleaseEvent  = lambda event: self.jar_button(('single_move', 'A', {'Input_Roller': 2}))
-        # ~ self.out_btn_out.mouseReleaseEvent = lambda event: self.jar_button(('single_move', 'F', {'Output_Roller': 2}))
+        self.refill_HEAD_1.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(0)
+        self.refill_HEAD_2.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(1)
+        self.refill_HEAD_3.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(2)
+        self.refill_HEAD_4.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(3)
+        self.refill_HEAD_5.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(4)
+        self.refill_HEAD_6.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(5)
+        
+        self.toggle_freeze_carousel.mouseReleaseEvent = lambda event: self.cr6_app.toggle_freeze_carousel()
+
         self.out_btn_start.mouseReleaseEvent = lambda event: self.jar_button('move_00_01')
         self.out_btn_out.mouseReleaseEvent = lambda event: self.jar_button('move_12_00')
 

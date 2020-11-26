@@ -471,6 +471,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             self.main_window.sinottico.update_data(head_index, status)
             self.main_window.debug_status_view.update_status()
 
+            # ~ if head_index == 0:
+                # ~ self.machine_head_dict[0]
+                # ~ if status.get('status_level') == 'ALARM' and status.get('error_code') == 10:
+                    # ~ for m in self.machine_head_dict.values():
+                        # ~ if m.index != 0:
+                            # ~ await m.send_command(cmd_name="ABORT", params={})
+
         elif msg_dict.get('type') == 'answer':
             answer = msg_dict.get('value')
             self.main_window.debug_status_view.add_answer(head_index, answer)
@@ -613,13 +620,22 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                     a.db_session.rollback()
                     logging.error(traceback.format_exc())
 
+    def toggle_freeze_carousel(self):
+
+        self.freeze_carousel(not self.carousel_frozen)
+
     def freeze_carousel(self, flag):
 
         self.carousel_frozen = flag
         if flag:
             logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
+            self.main_window.sinottico.toggle_freeze_carousel.setStyleSheet(
+                """QLabel { background-color: #66FF6633;}""")
+
         else:
             logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
+            self.main_window.sinottico.toggle_freeze_carousel.setStyleSheet(
+                """QLabel { background-color: #66EEEEEE;}""")
 
         if self.main_window.debug_status_view:
             self.main_window.debug_status_view.update_status()
@@ -971,6 +987,28 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             r = await m.do_dispense(jar)
             r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} +")
         return r
+
+    def ask_for_refill(self, head_index):
+
+        name = self.MACHINE_HEAD_INDEX_TO_NAME_MAP[head_index]
+        msg = f'freezing carousel for refill of head {name}'
+        logging.warning(msg)
+        self.show_alert_dialog(msg)
+        self.freeze_carousel(True)
+
+    def visulize_low_level(self, head_index, flag):
+        map_ = [
+            self.main_window.sinottico.low_level_HEAD_1,
+            self.main_window.sinottico.low_level_HEAD_2,
+            self.main_window.sinottico.low_level_HEAD_3,
+            self.main_window.sinottico.low_level_HEAD_4,
+            self.main_window.sinottico.low_level_HEAD_5,
+            self.main_window.sinottico.low_level_HEAD_6,
+        ]
+        if flag:
+            map_[head_index].setStyleSheet("""QLabel { background-color: #FF330077;}""")
+        else:
+            map_[head_index].setStyleSheet("""QLabel { background-color: #FFFFFF00;}""")
 
 
 def main():
