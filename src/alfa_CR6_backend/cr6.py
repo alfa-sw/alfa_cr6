@@ -77,7 +77,7 @@ class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attribu
 
         self.setStyleSheet("""
                 QMessageBox {
-                    font-size: 24px;
+                    font-size: 16px;
                     font-family: monospace;
                     }
                 """)
@@ -533,7 +533,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
 
-    def show_alert_dialog(self, msg, modal=False, title="ALERT", callback=None, args=[]):
+    def show_alert_dialog(self, msg, modal=False, title="ALERT", callback=None, args=None):
 
         logging.info(msg)
 
@@ -546,7 +546,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         def button_clicked(btn):
             logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
             if "ok" in btn.text().lower() and callback:
-                callback(*args)
+                args_ = args if args is not None else []
+                callback(*args_)
             
         alert_msgbox.buttonClicked.connect(button_clicked)
 

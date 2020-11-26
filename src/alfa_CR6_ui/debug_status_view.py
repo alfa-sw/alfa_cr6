@@ -49,6 +49,7 @@ class DebugStatusView():
 
         self.answer_text_browser = QTextBrowser(parent=self.main_frame)
         self.answer_text_browser.document().setMaximumBlockCount(500)
+        self.status_text_browser.setOpenLinks(False)
 
         self.answer_text_browser.setStyleSheet("""
                 QTextBrowser {
@@ -142,6 +143,7 @@ class DebugStatusView():
         parent.main_window_stack.setCurrentWidget(self.main_frame)
 
         self.status_text_browser.anchorClicked.connect(self.status_text_browser_anchor_clicked)
+        self.answer_text_browser.anchorClicked.connect(self.answer_text_browser_anchor_clicked)
         self.button_group.buttonClicked.connect(self.on_button_group_clicked)
 
         async def periodic_refresh():
@@ -159,6 +161,18 @@ class DebugStatusView():
         answer = {k: answer[k] for k in ['status_code', 'error', 'command'] if answer.get(k) is not None}
         _ = f"<p>{ app.machine_head_dict[head_index].name }:{time.asctime()}:{ answer }</p>"
         self.answer_text_browser.append(_)
+
+    def answer_text_browser_anchor_clicked(self, url):       # pylint: disable=no-self-use
+
+        app = QApplication.instance()
+
+        logging.warning(f"url:{url.url()}")
+        logging.warning(f"url.url().split('@'):{url.url().split('@')}")
+
+        if url.url().split('@')[1:]:
+            command, jar_id = url.url().split('@')
+            if command == "SHOW_DETAILS":
+                self.view_jar_deatils(jar_id)
 
     def status_text_browser_anchor_clicked(self, url):       # pylint: disable=no-self-use
 
@@ -241,10 +255,15 @@ class DebugStatusView():
 
     def view_jar_deatils(self, jar_id):             # pylint: disable=no-self-use, too-many-branches
 
-        jar = app.db_session.query(Jar).filter(Jar == jar_id).one()
+        app = QApplication.instance()
 
+        jar = app.db_session.query(Jar).filter(Jar.id == jar_id).one()
         logging.warning(f"jar:{jar}")
         logging.info(f"jar.json_properties:{jar.json_properties}")
+        msg_ = f"jar:{jar}"
+        msg_ += f"\njar.json_properties:{jar.json_properties}"
+        msg_ += f"\n<small>jar.order.json_properties:{jar.order.json_properties}</small>"
+        app.show_alert_dialog(msg_)
 
     def delete_orders(self):             # pylint: disable=no-self-use, too-many-branches
 
@@ -272,7 +291,7 @@ class DebugStatusView():
             # ~ msg_2 = f"{ingredient_volume_map}, {total_volume}, {unavailable_pigment_names}"
             # ~ html_ += f'<p title="{msg_2}">{msg_1}</p>'
             msg_1 = f"j.barcode:{j.barcode} j:{j} "
-            html_ += f'<p>{msg_1}</p>'
+            html_ += f'<p><a href="SHOW_DETAILS@{j.id}">{msg_1}</a></p>'
 
             logging.warning(msg_1)
 
@@ -561,20 +580,19 @@ class DebugStatusView():
         dialog = QFileDialog(self.main_frame)
         dialog.setOption(QFileDialog.DontUseNativeDialog, True)
         dialog.setDirectory('/opt/alfa_cr6/data/')
-        dialog.setFileMode(QFileDialog.AnyFile)
+        dialog.setFileMode(QFileDialog.ExistingFile)
         dialog.setNameFilter("json order file (*.json)")
         dialog.setViewMode(QFileDialog.Detail)
         dialog.resize(1200, 600)
-        fileNames = None
+        fileNames = []
         if dialog.exec_():
             fileNames = dialog.selectedFiles();
         logging.warning(f"fileNames:{fileNames}")
-        return
-        
-        
-        fname, filter = QFileDialog.getOpenFileName(self.main_frame, 'Open file', '/opt/alfa_cr6/data/',"json order file (*.json)", options=QFileDialog.DontUseNativeDialog)
-        logging.warning(f"fname:{fname}, filter:{filter}")
-        if fname:
+
+        # ~ fname, filter = QFileDialog.getOpenFileName(self.main_frame, 'Open file', '/opt/alfa_cr6/data/',"json order file (*.json)", options=QFileDialog.DontUseNativeDialog)
+        # ~ logging.warning(f"fname:{fname}, filter:{filter}")
+
+        for fname in fileNames:
             order = None
             try:
                 order = app.create_order(fname, n_of_jars=3)
