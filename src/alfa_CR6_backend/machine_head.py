@@ -119,7 +119,8 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
     async def update_tintometer_data(self, invalidate_cache=False):
 
-        # TODO: invalidate cache when needed
+        logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
+
         if invalidate_cache:
             self.pigment_list = []
             self.package_list = []
@@ -170,6 +171,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             self.app.show_frozen_dialog(msg_)
 
         if status.get('status_level') == 'RESET' and self.status.get('status_level') != 'RESET':
+            await self.update_tintometer_data(invalidate_cache=True)
             self.app.show_alert_dialog(f'{self.name} RESETTING')
 
         diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
@@ -339,11 +341,12 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         msg = None
         try:
-            # TODO: remove
+            # TODO: review
             # ~ msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
-            msg = await asyncio.wait_for(self.websocket.recv(), timeout=10)
-        except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
-            logging.debug(f"e:{e}")
+            msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
+        # ~ except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
+        except asyncio.exceptions.TimeoutError as e:
+            logging.warning(f"e:{e}")
 
         self.cntr += 1
 
@@ -464,8 +467,6 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         r = True
         if ingredients:
-
-            self.update_tintometer_data(invalidate_cache=True)
 
             def condition():
                 flag = self.jar_photocells_status['JAR_DISPENSING_POSITION_PHOTOCELL']

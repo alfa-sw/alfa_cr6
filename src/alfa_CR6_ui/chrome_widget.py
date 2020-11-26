@@ -7,6 +7,7 @@
 
 import os
 import logging
+import time
 
 from PyQt5.uic import loadUi
 from PyQt5 import QtCore
@@ -41,7 +42,8 @@ class ChromeWidget(QWidget):
         fname = download.url().path().split("/")[-1]
         if not os.path.exists(path):
             os.makedirs(path)
-        download.setPath(path + '/' + fname + '.json')
+        # ~ download.setPath(path + '/' + fname + '.json')
+        download.setPath(path + '/' + time.asctime().replace(":", "_").replace(" ", "_") + '.json')
         download.accept()
         self.download_callback(path + '/' + fname + '.json')
         # TODO add callback and feedback on successful download

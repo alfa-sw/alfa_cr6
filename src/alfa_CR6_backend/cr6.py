@@ -16,7 +16,7 @@ import json
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox    # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication, QMessageBox    # pylint: disable=no-name-in-module
 
 from alfa_CR6_ui.main_window import MainWindow
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
@@ -69,7 +69,7 @@ def parse_json_order(path_to_json_file, json_schema_name):
 
 
 class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
-    
+
     # ~ def hideEvent(self, event):
         # ~ logging.warning(event)
     def __init__(self, *args, **kwargs):
@@ -89,7 +89,7 @@ class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attribu
         self.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         self.resize(800, 400)
 
-    
+
 class BarCodeReader:   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
@@ -123,8 +123,11 @@ class BarCodeReader:   # pylint:  disable=too-many-instance-attributes,too-few-p
 
             buffer = ''
             self._device = evdev.InputDevice(self.barcode_device_name)
-            self._device.grab()   # become the sole recipient of all incoming input events from this device
             logging.warning(f"self._device:{ self._device }")
+            if 'barcode' not in str(self._device).lower():
+                logging.error(f" !!!! CHECK BARCODE DEVICE !!! _device:{ self._device }")
+
+            self._device.grab()   # become the sole recipient of all incoming input events from this device
             async for event in self._device.async_read_loop():
                 keyEvent = evdev.categorize(event)
                 type_key_event = evdev.ecodes.EV_KEY   # pylint:  disable=no-member
@@ -200,8 +203,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.main_window = MainWindow()
         if hasattr(self.settings, 'BYPASS_LOGIN') and self.settings.BYPASS_LOGIN:
             self.main_window.onLoginBtnClicked()
-            
-        self.alert_msgboxes  = []
+
+        self.alert_msgboxes = []
 
     def __init_tasks(self):
 
@@ -276,6 +279,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def __jar_task(self, jar):                      # pylint: disable=too-many-statements
 
+        r = None
         try:
             # ~ await self.move_00_01(jar)
             r = await self.move_01_02(jar)
@@ -304,8 +308,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except asyncio.CancelledError:
             jar.status = 'ERROR'
             jar.description = traceback.format_exc()
+            logging.error(traceback.format_exc())
 
         except Exception as e:                           # pylint: disable=broad-except
+
             jar.status = 'ERROR'
             jar.description = traceback.format_exc()
             self.handle_exception(e)
@@ -389,7 +395,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 package_size_list = []
                 for m in self.machine_head_dict.values():
 
-                    await m.update_tintometer_data()
+                    await m.update_tintometer_data(invalidate_cache=True)
                     logging.debug("")
 
                     for s in [p['size'] for p in m.package_list]:
@@ -451,8 +457,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                     t = self.__jar_task(jar)
                     self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
 
-                    logging.warning(
-                        " NEW JAR TASK({}) bc:{} jar:{}, jar.size:{}".format(len(self.__jar_runners), barcode, jar, jar.size))
+                    logging.warning(" NEW JAR TASK({}) bc:{} jar:{}, jar.size:{}".format(
+                        len(self.__jar_runners), barcode, jar, jar.size))
 
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
@@ -533,7 +539,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         except Exception as e:                           # pylint: disable=broad-except
             self.handle_exception(e)
 
-    def show_alert_dialog(self, msg, modal=False, title="ALERT", callback=None, args=None):
+    def show_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
 
         logging.info(msg)
 
@@ -543,12 +549,13 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         msg = "[{}]\n\n{}\n\n".format(t, msg)
 
         alert_msgbox = CR6MessageBox(parent=self.main_window)
+
         def button_clicked(btn):
             logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
             if "ok" in btn.text().lower() and callback:
                 args_ = args if args is not None else []
                 callback(*args_)
-            
+
         alert_msgbox.buttonClicked.connect(button_clicked)
 
         alert_msgbox.setIcon(QMessageBox.Information)
@@ -558,7 +565,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return ret
 
-    def show_frozen_dialog(self, msg, modal=False, title="ALERT"):
+    def show_frozen_dialog(self, msg, title="ALERT"):
 
         logging.info(msg)
 
@@ -583,7 +590,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):     # pylint:  disable=no-self-use
 
-        # TODO: send alarm msg to Gui surface
+        if not ui_msg:
+            ui_msg = e
+        self.show_alert_dialog(ui_msg)
 
         logging.error(traceback.format_exc())
 
@@ -619,7 +628,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         if freeze:
             self.freeze_carousel(True)
-            r = self.show_frozen_dialog()
+            self.show_frozen_dialog(msg)
 
         if self.carousel_frozen:
             logging.warning(f"self.carousel_frozen:{self.carousel_frozen}, start waiting.")
@@ -755,9 +764,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
             if jar is not None:
                 jar.update_live(pos='LIFTR')
-
-        # TODO: remove this delay
-        # ~ await asyncio.sleep(1)
 
         return r
 
@@ -946,13 +952,22 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def dispense_step(self, r, machine_letter, jar):
 
+        m = self.get_machine_head_by_letter(machine_letter)
+
+        logging.warning(f"{m.name}")
+
+        await m.update_tintometer_data(invalidate_cache=True)
+
+        logging.warning(f"{m.name}")
+
         r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} -")
         _, _, unavailable_pigment_names = self.check_available_volumes(jar)
+
         if unavailable_pigment_names:
+
             msg_ = f"Missing material for barcode {jar.barcode}.\n please refill pigments:{unavailable_pigment_names}."
             r = await self.wait_for_carousel_not_frozen(True, msg_)
         else:
-            m = self.get_machine_head_by_letter(machine_letter)
             r = await m.do_dispense(jar)
             r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} +")
         return r

@@ -615,4 +615,4 @@ class DebugStatusView():
             except Exception as e:
                 logging.error(traceback.format_exc())
 
-        return fname
+        return fileNames
