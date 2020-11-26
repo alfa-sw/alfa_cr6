@@ -30,9 +30,9 @@ class Keyboard(QWidget):
         super().__init__(parent)
         with open(QApplication.instance().keyboard_path + "/it.json", 'r') as keyboard_json:
             keyboard_def = json.load(keyboard_json)
-        self.setFixedSize(900, 256)
+        self.setFixedSize(1900, 256)
         # ~ self.setFixedSize(900, 300)
-        self.move(600, 760)
+        self.move(0, 760)
         self.setWindowFlag(Qt.WindowCloseButtonHint, False)
 
         self.setStyleSheet("""
@@ -135,6 +135,8 @@ class Keyboard(QWidget):
             ",": "COMMA",
             ":": "COLON",
             ";": "SEMICOLON",
+            "-": "DASH",
+            "_": "UNDERBAR",
 
         }
         s = symbol.upper().split('\n')[-1]
