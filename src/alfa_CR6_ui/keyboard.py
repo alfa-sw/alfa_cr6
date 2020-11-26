@@ -125,14 +125,31 @@ class Keyboard(QWidget):
         else:
             return False
 
+    def symbol_act(self, symbol):
+        symbols = {
+            "?": "QUESTION",
+            "/": "SLASH",
+            '\\': "BACKSLASH",
+            ".": "DOT",
+            "=": "EQUAL",
+            ",": "COMMA",
+            ":": "COLON",
+            ";": "SEMICOLON",
+
+        }
+        s = symbol.upper().split('\n')[-1]
+        s = symbols.get(s, s)
+        try:
+            r = e.ecodes['KEY_' + s]
+        except BaseException:
+            logging.error("key {} not defined".format(s))
+            return 0
+        return r
+
     def evdev_convert(self, el):
         if self.special_key(el):
             return el
-        try:
-            r = e.ecodes['KEY_' + el.upper().split('\n')[-1]]
-            return r
-        except BaseException:
-            return el
+        return self.symbol_act(el.upper().split('\n')[-1])
 
     def i18n(self, le):
 
