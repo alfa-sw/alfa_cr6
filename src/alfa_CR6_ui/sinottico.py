@@ -16,6 +16,8 @@ from alfa_CR6_ui.chrome_widget import ChromeWidget
 from alfa_CR6_ui.keyboard import Keyboard
 from alfa_CR6_ui.jar import Jar
 from collections import namedtuple
+import datetime
+import os
 
 Button = namedtuple('Button', 'label action')
 StatusItem = namedtuple('StatusItem', 'label path type flagno source current')
@@ -24,6 +26,8 @@ StatusFlag = namedtuple('StatusFlag', 'path_local other path_other')
 
 
 class Sinottico(QWidget):
+    order_n = 0
+    file_order = ""
     browser = False
     view = None
     visual = "none"
@@ -46,6 +50,7 @@ class Sinottico(QWidget):
         self.chrome_btn.mouseReleaseEvent = lambda event: self.onChromeBtnClicked()
         self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
+        self.save_order.clicked.connect(lambda: self.make_order())
         self.connect_status()
 
         self.keyboard = Keyboard(self)
@@ -185,15 +190,27 @@ class Sinottico(QWidget):
 
         self.view.view.setUrl(QUrl(target))
 
-        # ~ self.view.setDownloadCallback(lambda path: self.create_order(path))
+        self.view.setDownloadCallback(lambda path: self.create_order(path))
         # ~ self.chrome_layout.addWidget(self.view)
         self.main_view_stack.setCurrentWidget(self.chrome)
 
     def create_order(self, path):
-        print(path)
         self.main_view_stack.setCurrentWidget(self.order_modal)
         self.chrome_layout.removeWidget(self.view)
+        order = datetime.datetime.now().strftime("%y%m%d")
+        order += '{:03}'.format(self.order_n)
+        self.order_n += 1
+        self.n_order.setText(order)
         self.browser = False
+        self.file_order = path
+
+    def make_order(self):
+        path = "/opt/alfa_cr6/data/kcc/"
+        name = self.n_order.text()
+        if self.file_order != "":
+            os.rename(self.file_order, path + name + '.json')
+            logging.info('placed order: {}'.format(name))
+        self.onHomeBtnClicked()
 
     def onChromeBtnClicked(self):
         if self.browser:

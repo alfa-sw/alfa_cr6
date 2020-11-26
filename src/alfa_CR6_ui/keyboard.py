@@ -30,9 +30,9 @@ class Keyboard(QWidget):
         super().__init__(parent)
         with open(QApplication.instance().keyboard_path + "/it.json", 'r') as keyboard_json:
             keyboard_def = json.load(keyboard_json)
-        self.setFixedSize(900, 256)
+        self.setFixedSize(1900, 256)
         # ~ self.setFixedSize(900, 300)
-        self.move(600, 760)
+        self.move(0, 760)
         self.setWindowFlag(Qt.WindowCloseButtonHint, False)
 
         self.setStyleSheet("""
@@ -125,14 +125,33 @@ class Keyboard(QWidget):
         else:
             return False
 
+    def symbol_act(self, symbol):
+        symbols = {
+            "?": "QUESTION",
+            "/": "SLASH",
+            '\\': "BACKSLASH",
+            ".": "DOT",
+            "=": "EQUAL",
+            ",": "COMMA",
+            ":": "COLON",
+            ";": "SEMICOLON",
+            "-": "DASH",
+            "_": "UNDERBAR",
+
+        }
+        s = symbol.upper().split('\n')[-1]
+        s = symbols.get(s, s)
+        try:
+            r = e.ecodes['KEY_' + s]
+        except BaseException:
+            logging.error("key {} not defined".format(s))
+            return 0
+        return r
+
     def evdev_convert(self, el):
         if self.special_key(el):
             return el
-        try:
-            r = e.ecodes['KEY_' + el.upper().split('\n')[-1]]
-            return r
-        except BaseException:
-            return el
+        return self.symbol_act(el.upper().split('\n')[-1])
 
     def i18n(self, le):
 

@@ -105,7 +105,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -619,24 +619,27 @@
      <widget class="QWidget" name="verticalLayoutWidget_2">
       <property name="geometry">
        <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>891</width>
-        <height>100291</height>
+        <x>-1</x>
+        <y>1</y>
+        <width>911</width>
+        <height>61</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="jar_input_buttons">
        <property name="spacing">
         <number>75</number>
        </property>
+       <property name="sizeConstraint">
+        <enum>QLayout::SetMinimumSize</enum>
+       </property>
+       <property name="leftMargin">
+        <number>10</number>
+       </property>
        <property name="topMargin">
         <number>10</number>
        </property>
        <property name="rightMargin">
         <number>10</number>
-       </property>
-       <property name="bottomMargin">
-        <number>100000</number>
        </property>
       </layout>
      </widget>
@@ -652,30 +655,6 @@
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Inserimento manuale formula</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Selezione formula</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_4">
          <property name="font">
@@ -700,15 +679,6 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="lineEdit">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="1">
         <widget class="QLineEdit" name="lineEdit_2">
          <property name="font">
@@ -727,6 +697,30 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Selezione formula</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Inserimento manuale formula</string>
+         </property>
+        </widget>
+       </item>
        <item row="3" column="1">
         <widget class="QLineEdit" name="lineEdit_4">
          <property name="font">
@@ -736,7 +730,34 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="1">
+        <widget class="QLineEdit" name="n_order">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+        </widget>
+       </item>
       </layout>
+     </widget>
+     <widget class="QPushButton" name="save_order">
+      <property name="geometry">
+       <rect>
+        <x>22</x>
+        <y>551</y>
+        <width>451</width>
+        <height>131</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>35</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>SALVA</string>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="modal_status_HEAD_1">
