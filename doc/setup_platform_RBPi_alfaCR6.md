@@ -367,8 +367,11 @@ Remove unnecessary files and folders
 ##### 13. re-create the ISO image *alfaberry cr6* - ([back to top](#top))
 
 ```
-    host:~ $ sudo pv -s 15G "/dev/sdf" | dd of=/mnt/sshdir/SRVCLIENTI/mnt/dati/RASPBERRY/2020-11-19-raspios-bullseye-testing-arm64-alfa-cr6-FULL.img
+    host:~ $ sudo pv -s 15G "/dev/sdf" | dd of=/mnt/sshdir/SRVCLIENTI/mnt/dati/RASPBERRY/2020-11-26-raspios-bullseye-testing-arm64-alfa-FULL.img
 ```
+
+**TIP**
+To shrink the RBPi image can be used a bash script called PiShrink (see [repo](https://github.com/Drewsif/PiShrink))
 
 <a name="p14"></a>
 ##### 14. known issues - ([back to top](#top))
@@ -382,6 +385,8 @@ it was preferred to report the issues (with their analysis and fix hypothesis) i
 1. [A stop job is running for Session c2 (or c3) of user pi](doc/issues_setup_platform_RBPi_alfaCR6.md#issue-5)
 1. [email connection issue](doc/issues_setup_platform_RBPi_alfaCR6.md#issue-6)
 1. [installation gcc-8-base errors](doc/issues_setup_platform_RBPi_alfaCR6.md#issue-7)
+
+A script has been created to perform the corrective operations concerning points 1 and 5. The script can be found [here](../target_scripts/target_scripts.sh)
 ______________________________
 [back to top](#top)
 
