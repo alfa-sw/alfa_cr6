@@ -97,7 +97,7 @@ class Sinottico(QWidget):
         self.refill_HEAD_4.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(3)
         self.refill_HEAD_5.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(4)
         self.refill_HEAD_6.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(5)
-        
+
         self.toggle_freeze_carousel.mouseReleaseEvent = lambda event: self.cr6_app.toggle_freeze_carousel()
 
         self.out_btn_start.mouseReleaseEvent = lambda event: self.jar_button('move_00_01')
