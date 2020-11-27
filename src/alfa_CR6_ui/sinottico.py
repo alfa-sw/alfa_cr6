@@ -204,19 +204,11 @@ class Sinottico(QWidget):
     def create_order(self, path):
         self.main_view_stack.setCurrentWidget(self.order_modal)
         self.chrome_layout.removeWidget(self.view)
-        order = datetime.datetime.now().strftime("%y%m%d")
-        order += '{:03}'.format(self.order_n)
-        self.order_n += 1
-        self.n_order.setText(order)
         self.browser = False
         self.file_order = path
 
     def make_order(self):
-        path = "/opt/alfa_cr6/data/kcc/"
-        name = self.n_order.text()
-        if self.file_order != "":
-            os.rename(self.file_order, path + name + '.json')
-            logging.info('placed order: {}'.format(name))
+        QApplication.instance().create_order(self.file_order, n_of_jars=int(self.n_of_jars.text()))
         self.onHomeBtnClicked()
 
     def onChromeBtnClicked(self):

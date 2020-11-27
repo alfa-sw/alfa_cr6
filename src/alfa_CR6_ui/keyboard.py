@@ -25,7 +25,7 @@ class Keyboard(QWidget):
     buttons = []
     lang = "en"
     shifted = False
-    uinput=None
+    uinput = None
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -96,7 +96,6 @@ class Keyboard(QWidget):
                 logging.warning(f"getpass.getuser():{getpass.getuser()}")
                 if getpass.getuser() == 'admin':
                     os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
-
 
             except Exception:
                 logging.error(traceback.format_exc())
