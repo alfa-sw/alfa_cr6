@@ -47,7 +47,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>../images/chrome.png</pixmap>
+      <pixmap>../images/order.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -184,66 +184,6 @@
        </rect>
       </property>
      </widget>
-     <widget class="QWidget" name="jar_t1" native="true">
-      <property name="geometry">
-       <rect>
-        <x>520</x>
-        <y>430</y>
-        <width>121</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t2" native="true">
-      <property name="geometry">
-       <rect>
-        <x>520</x>
-        <y>810</y>
-        <width>111</width>
-        <height>91</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t3" native="true">
-      <property name="geometry">
-       <rect>
-        <x>890</x>
-        <y>430</y>
-        <width>111</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t4" native="true">
-      <property name="geometry">
-       <rect>
-        <x>890</x>
-        <y>810</y>
-        <width>121</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t5" native="true">
-      <property name="geometry">
-       <rect>
-        <x>1250</x>
-        <y>430</y>
-        <width>121</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t6" native="true">
-      <property name="geometry">
-       <rect>
-        <x>1250</x>
-        <y>810</y>
-        <width>131</width>
-        <height>91</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QLabel" name="refill_HEAD_1">
       <property name="geometry">
        <rect>
@@ -356,26 +296,6 @@
       </property>
       <property name="scaledContents">
        <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_input" native="true">
-      <property name="geometry">
-       <rect>
-        <x>110</x>
-        <y>440</y>
-        <width>251</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_output" native="true">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>550</y>
-        <width>221</width>
-        <height>81</height>
-       </rect>
       </property>
      </widget>
      <widget class="QLabel" name="STEP_1">
@@ -554,26 +474,6 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QWidget" name="jar_lifter_1" native="true">
-      <property name="geometry">
-       <rect>
-        <x>1590</x>
-        <y>520</y>
-        <width>111</width>
-        <height>301</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_lifter_2" native="true">
-      <property name="geometry">
-       <rect>
-        <x>360</x>
-        <y>640</y>
-        <width>141</width>
-        <height>211</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QLabel" name="toggle_freeze_carousel">
       <property name="geometry">
        <rect>
@@ -681,6 +581,196 @@
       </property>
       <property name="text">
        <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t1">
+      <property name="geometry">
+       <rect>
+        <x>530</x>
+        <y>440</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_input">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>450</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_output">
+      <property name="geometry">
+       <rect>
+        <x>80</x>
+        <y>550</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t2">
+      <property name="geometry">
+       <rect>
+        <x>530</x>
+        <y>820</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t3">
+      <property name="geometry">
+       <rect>
+        <x>910</x>
+        <y>440</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t4">
+      <property name="geometry">
+       <rect>
+        <x>910</x>
+        <y>820</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t5">
+      <property name="geometry">
+       <rect>
+        <x>1280</x>
+        <y>440</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t6">
+      <property name="geometry">
+       <rect>
+        <x>1270</x>
+        <y>820</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_lifter_1">
+      <property name="geometry">
+       <rect>
+        <x>1600</x>
+        <y>620</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_lifter_2">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>710</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
       </property>
       <property name="scaledContents">
        <bool>true</bool>
