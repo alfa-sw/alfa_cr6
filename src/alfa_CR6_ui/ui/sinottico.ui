@@ -47,7 +47,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap>../images/chrome.png</pixmap>
+      <pixmap>../images/order.png</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
@@ -105,7 +105,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -181,66 +181,6 @@
         <y>810</y>
         <width>75</width>
         <height>75</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t1" native="true">
-      <property name="geometry">
-       <rect>
-        <x>520</x>
-        <y>430</y>
-        <width>121</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t2" native="true">
-      <property name="geometry">
-       <rect>
-        <x>520</x>
-        <y>810</y>
-        <width>111</width>
-        <height>91</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t3" native="true">
-      <property name="geometry">
-       <rect>
-        <x>890</x>
-        <y>430</y>
-        <width>111</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t4" native="true">
-      <property name="geometry">
-       <rect>
-        <x>890</x>
-        <y>810</y>
-        <width>121</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t5" native="true">
-      <property name="geometry">
-       <rect>
-        <x>1250</x>
-        <y>430</y>
-        <width>121</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_t6" native="true">
-      <property name="geometry">
-       <rect>
-        <x>1250</x>
-        <y>810</y>
-        <width>131</width>
-        <height>91</height>
        </rect>
       </property>
      </widget>
@@ -356,26 +296,6 @@
       </property>
       <property name="scaledContents">
        <bool>true</bool>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_input" native="true">
-      <property name="geometry">
-       <rect>
-        <x>110</x>
-        <y>440</y>
-        <width>251</width>
-        <height>81</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_output" native="true">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>550</y>
-        <width>221</width>
-        <height>81</height>
-       </rect>
       </property>
      </widget>
      <widget class="QLabel" name="STEP_1">
@@ -554,26 +474,6 @@
        <bool>true</bool>
       </property>
      </widget>
-     <widget class="QWidget" name="jar_lifter_1" native="true">
-      <property name="geometry">
-       <rect>
-        <x>1590</x>
-        <y>520</y>
-        <width>111</width>
-        <height>301</height>
-       </rect>
-      </property>
-     </widget>
-     <widget class="QWidget" name="jar_lifter_2" native="true">
-      <property name="geometry">
-       <rect>
-        <x>360</x>
-        <y>640</y>
-        <width>141</width>
-        <height>211</height>
-       </rect>
-      </property>
-     </widget>
      <widget class="QLabel" name="toggle_freeze_carousel">
       <property name="geometry">
        <rect>
@@ -686,6 +586,196 @@
        <bool>true</bool>
       </property>
      </widget>
+     <widget class="QLabel" name="jar_t1">
+      <property name="geometry">
+       <rect>
+        <x>530</x>
+        <y>440</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_input">
+      <property name="geometry">
+       <rect>
+        <x>200</x>
+        <y>450</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_output">
+      <property name="geometry">
+       <rect>
+        <x>80</x>
+        <y>550</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t2">
+      <property name="geometry">
+       <rect>
+        <x>530</x>
+        <y>820</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t3">
+      <property name="geometry">
+       <rect>
+        <x>910</x>
+        <y>440</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t4">
+      <property name="geometry">
+       <rect>
+        <x>910</x>
+        <y>820</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t5">
+      <property name="geometry">
+       <rect>
+        <x>1280</x>
+        <y>440</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t6">
+      <property name="geometry">
+       <rect>
+        <x>1270</x>
+        <y>820</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_lifter_1">
+      <property name="geometry">
+       <rect>
+        <x>1600</x>
+        <y>620</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_lifter_2">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>710</y>
+        <width>71</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="chrome">
      <widget class="QWidget" name="verticalLayoutWidget">
@@ -734,7 +824,7 @@
         <x>-1</x>
         <y>1</y>
         <width>911</width>
-        <height>61</height>
+        <height>513</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="jar_input_buttons">
@@ -763,11 +853,32 @@
         <x>20</x>
         <y>10</y>
         <width>1881</width>
-        <height>481</height>
+        <height>81</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="3" column="0">
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="n_of_jars">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="buttonSymbols">
+          <enum>QAbstractSpinBox::NoButtons</enum>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
         <widget class="QLabel" name="label_4">
          <property name="font">
           <font>
@@ -776,78 +887,6 @@
          </property>
          <property name="text">
           <string>Numero di confezioni</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Numero d'ordine</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="lineEdit_2">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLineEdit" name="lineEdit_3">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Selezione formula</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-         <property name="text">
-          <string>Inserimento manuale formula</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QLineEdit" name="lineEdit_4">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="n_order">
-         <property name="font">
-          <font>
-           <pointsize>35</pointsize>
-          </font>
          </property>
         </widget>
        </item>

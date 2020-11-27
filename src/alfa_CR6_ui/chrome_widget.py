@@ -43,7 +43,8 @@ class ChromeWidget(QWidget):
         if not os.path.exists(path):
             os.makedirs(path)
         # ~ download.setPath(path + '/' + fname + '.json')
-        download.setPath(path + '/' + time.asctime().replace(":", "_").replace(" ", "_") + '.json')
+        full_name = path + '/' + time.asctime().replace(":", "_").replace(" ", "_") + '.json'
+        download.setPath(full_name)
         download.accept()
-        self.download_callback(path + '/' + fname + '.json')
+        self.download_callback(full_name)
         # TODO add callback and feedback on successful download

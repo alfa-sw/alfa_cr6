@@ -97,7 +97,7 @@ class Sinottico(QWidget):
         self.refill_HEAD_4.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(3)
         self.refill_HEAD_5.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(4)
         self.refill_HEAD_6.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(5)
-        
+
         self.toggle_freeze_carousel.mouseReleaseEvent = lambda event: self.cr6_app.toggle_freeze_carousel()
 
         self.out_btn_start.mouseReleaseEvent = lambda event: self.jar_button('move_00_01')
@@ -114,18 +114,18 @@ class Sinottico(QWidget):
                 existing = update_obj['view'].status.count() / 2
                 for n, statusItem in enumerate(update_obj['status']):
                     label = QLabel(statusItem.label)
-                    label.setFixedHeight(50)
+                    label.setFixedHeight(35)
                     result = QLabel('')
                     if (statusItem.type == 'string'):
                         result = QLabel("")
-                        result.setFixedHeight(50)
+                        result.setFixedHeight(35)
                         statusItem.current.append(result)
                     elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
                         on = 0
                         result = QLabel('')
                         pscaled = self.get_pscaled(on)
                         result.setPixmap(pscaled)
-                        result.setFixedHeight(50)
+                        result.setFixedHeight(35)
                         result.setFont(QFont('Times', 28))
                         statusItem.current.append(result)
                     update_obj['view'].status.addWidget(label, existing + n, 0)
@@ -204,19 +204,11 @@ class Sinottico(QWidget):
     def create_order(self, path):
         self.main_view_stack.setCurrentWidget(self.order_modal)
         self.chrome_layout.removeWidget(self.view)
-        order = datetime.datetime.now().strftime("%y%m%d")
-        order += '{:03}'.format(self.order_n)
-        self.order_n += 1
-        self.n_order.setText(order)
         self.browser = False
         self.file_order = path
 
     def make_order(self):
-        path = "/opt/alfa_cr6/data/kcc/"
-        name = self.n_order.text()
-        if self.file_order != "":
-            os.rename(self.file_order, path + name + '.json')
-            logging.info('placed order: {}'.format(name))
+        QApplication.instance().create_order(self.file_order, n_of_jars=int(self.n_of_jars.text()))
         self.onHomeBtnClicked()
 
     def onChromeBtnClicked(self):

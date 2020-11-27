@@ -17,38 +17,50 @@
    <property name="geometry">
     <rect>
      <x>0</x>
-     <y>0</y>
-     <width>951</width>
-     <height>901</height>
+     <y>10</y>
+     <width>941</width>
+     <height>16</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="buttons">
     <property name="spacing">
-     <number>150</number>
+     <number>35</number>
     </property>
-    <property name="bottomMargin">
-     <number>850</number>
+    <property name="sizeConstraint">
+     <enum>QLayout::SetMinimumSize</enum>
+    </property>
+    <property name="leftMargin">
+     <number>10</number>
+    </property>
+    <property name="topMargin">
+     <number>10</number>
     </property>
    </layout>
   </widget>
   <widget class="QWidget" name="gridLayoutWidget">
    <property name="geometry">
     <rect>
-     <x>949</x>
-     <y>-1</y>
-     <width>681</width>
-     <height>919</height>
+     <x>959</x>
+     <y>9</y>
+     <width>761</width>
+     <height>16</height>
     </rect>
    </property>
-   <layout class="QGridLayout" name="status">
-    <property name="bottomMargin">
-     <number>850</number>
+   <layout class="QGridLayout" name="status" columnstretch="0" rowminimumheight="0" columnminimumwidth="0">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetMinimumSize</enum>
+    </property>
+    <property name="leftMargin">
+     <number>10</number>
+    </property>
+    <property name="topMargin">
+     <number>10</number>
     </property>
     <property name="horizontalSpacing">
-     <number>0</number>
+     <number>1</number>
     </property>
     <property name="verticalSpacing">
-     <number>75</number>
+     <number>35</number>
     </property>
    </layout>
   </widget>

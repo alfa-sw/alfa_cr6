@@ -23,8 +23,9 @@ KeyAction = namedtuple('KeyAction', 'key push')
 
 class Keyboard(QWidget):
     buttons = []
-    lang = "it"
+    lang = "en"
     shifted = False
+    uinput = None
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -34,6 +35,7 @@ class Keyboard(QWidget):
         # ~ self.setFixedSize(900, 300)
         self.move(0, 760)
         self.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        self.hangeul_toggle(set_hangeul=False)
 
         self.setStyleSheet("""
                 QWidget {
@@ -89,12 +91,11 @@ class Keyboard(QWidget):
         self.uinput = None
         if has_evdev:
             try:
+                self.uinput = UInput()
                 import getpass
                 logging.warning(f"getpass.getuser():{getpass.getuser()}")
                 if getpass.getuser() == 'admin':
                     os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
-
-                self.uinput = UInput()
 
             except Exception:
                 logging.error(traceback.format_exc())
@@ -135,7 +136,7 @@ class Keyboard(QWidget):
             ",": "COMMA",
             ":": "COLON",
             ";": "SEMICOLON",
-            "-": "DASH",
+            "-": "MINUS",
             "_": "UNDERBAR",
 
         }
@@ -158,7 +159,7 @@ class Keyboard(QWidget):
         l = self.ev_definitions().get(le, le)
 
         latin_korean = {'normal': {
-            'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': '쇼', 'y': 'ㅕ', 'u': 'ㅑ', 'i': 'ㅐ', 'o': 'ㅔ', 'p': 'ㅁ',
+            'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': 'ㅅ', 'y': 'ㅛ', 'u': 'ㅕ', 'i': 'ㅑ', 'o': 'ㅐ', 'p': 'ㅔ',
             'a': 'ㅁ', 's': 'ㄴ', 'd': 'ㅇ', 'f': 'ㄹ', 'g': 'ㅎ', 'h': 'ㅗ', 'j': 'ㅓ', 'k': 'ㅏ', 'l': 'ㅣ',
             'z': 'ㅋ', 'x': 'ㅌ', 'c': 'ㅊ', 'v': 'ㅍ', 'b': 'ㅠ', 'n': 'ㅜ', 'm': 'ㅡ'
         },
@@ -172,7 +173,7 @@ class Keyboard(QWidget):
             if self.shifted:
                 letter = latin_korean['shifted'].get(l, letter)
             return letter
-        elif self.lang == "it" and self.shifted:
+        elif self.lang == "en" and self.shifted:
             return l.upper()
 
         return l
@@ -188,12 +189,12 @@ class Keyboard(QWidget):
         if (item == 'Shift'):
             self.shifted = not self.shifted
         elif item == "LANG":
-            if self.lang == "it":
+            if self.lang == "en":
                 self.lang = "kr"
-                self.hangeul_toggle()
+                self.hangeul_toggle(set_hangeul=True)
             elif self.lang == "kr":
-                self.lang = "it"
-                self.hangeul_toggle()
+                self.lang = "en"
+                self.hangeul_toggle(set_hangeul=False)
         self.redraw_buttons()
 
     def on_pushButton_clicked(self, key):
@@ -210,9 +211,15 @@ class Keyboard(QWidget):
         end = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], False)]
         return start + keys + end
 
-    def hangeul_toggle(self):
-        self.pushdispatcher([KeyAction(e.ecodes['KEY_HANGUEL'], True),
-                             KeyAction(e.ecodes['KEY_HANGUEL'], False), ])
+    def hangeul_toggle(self, set_hangeul=False):
+        if not has_evdev:
+            return
+        actions = [KeyAction(e.ecodes['KEY_ESC'], True),
+                   KeyAction(e.ecodes['KEY_ESC'], False), ]
+        if set_hangeul:
+            actions += [KeyAction(e.ecodes['KEY_HANGEUL'], True),
+                        KeyAction(e.ecodes['KEY_HANGEUL'], False), ]
+        self.pushdispatcher(actions)
 
     def pushdispatcher(self, keys):
 
