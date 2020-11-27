@@ -25,6 +25,7 @@ class Keyboard(QWidget):
     buttons = []
     lang = "en"
     shifted = False
+    uinput=None
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -90,12 +91,12 @@ class Keyboard(QWidget):
         self.uinput = None
         if has_evdev:
             try:
+                self.uinput = UInput()
                 import getpass
                 logging.warning(f"getpass.getuser():{getpass.getuser()}")
                 if getpass.getuser() == 'admin':
                     os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
 
-                self.uinput = UInput()
 
             except Exception:
                 logging.error(traceback.format_exc())
@@ -136,7 +137,7 @@ class Keyboard(QWidget):
             ",": "COMMA",
             ":": "COLON",
             ";": "SEMICOLON",
-            "-": "DASH",
+            "-": "MINUS",
             "_": "UNDERBAR",
 
         }
@@ -212,6 +213,8 @@ class Keyboard(QWidget):
         return start + keys + end
 
     def hangeul_toggle(self, set_hangeul=False):
+        if not has_evdev:
+            return
         actions = [KeyAction(e.ecodes['KEY_ESC'], True),
                    KeyAction(e.ecodes['KEY_ESC'], False), ]
         if set_hangeul:
