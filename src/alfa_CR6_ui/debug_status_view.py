@@ -164,7 +164,7 @@ class DebugStatusView():
 
     def answer_text_browser_anchor_clicked(self, url):       # pylint: disable=no-self-use
 
-        app = QApplication.instance()
+        # ~ app = QApplication.instance()
 
         logging.warning(f"url:{url.url()}")
         logging.warning(f"url.url().split('@'):{url.url().split('@')}")
@@ -286,7 +286,7 @@ class DebugStatusView():
         app = QApplication.instance()
         html_ = ""
         for j in app.db_session.query(Jar).all()[:100]:
-            
+
             # ~ ingredient_volume_map, total_volume, unavailable_pigment_names = app.check_available_volumes(j)
             # ~ msg_2 = f"{ingredient_volume_map}, {total_volume}, {unavailable_pigment_names}"
             # ~ html_ += f'<p title="{msg_2}">{msg_1}</p>'
@@ -335,7 +335,7 @@ class DebugStatusView():
 
             def cb():
                 logging.warning(f"callback called!")
-                
+
             r = app.show_alert_dialog("test alert message", callback=cb)
             logging.warning(f"r:{r}")
 
@@ -462,8 +462,9 @@ class DebugStatusView():
         s2 = app.machine_head_dict[0].status.get('jar_photocells_status', 0) & 0x400
         jar_size_detect = int(s1 + s2) >> 9
 
-        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X} [{}]</small>'.format(
-            app.get_version(), app.machine_head_dict[0].jar_size_detect, jar_size_detect, time.asctime())
+        html_ += '<small>app ver.: {} - jar_size_detect:{}, 0x{:02X} ready_to_read_a_barcode:{} [{}]</small>'.format(
+            app.get_version(), app.machine_head_dict[0].jar_size_detect,
+            jar_size_detect, app.ready_to_read_a_barcode, time.asctime())
 
         html_ += '<p>'
         if app.carousel_frozen:
@@ -575,7 +576,6 @@ class DebugStatusView():
     def open_order_dialog(self):
 
         app = QApplication.instance()
-        
 
         dialog = QFileDialog(self.main_frame)
         dialog.setOption(QFileDialog.DontUseNativeDialog, True)
@@ -586,7 +586,7 @@ class DebugStatusView():
         dialog.resize(1200, 600)
         fileNames = []
         if dialog.exec_():
-            fileNames = dialog.selectedFiles();
+            fileNames = dialog.selectedFiles()
         logging.warning(f"fileNames:{fileNames}")
 
         # ~ fname, filter = QFileDialog.getOpenFileName(self.main_frame, 'Open file', '/opt/alfa_cr6/data/',"json order file (*.json)", options=QFileDialog.DontUseNativeDialog)
@@ -599,7 +599,7 @@ class DebugStatusView():
                 barcodes = [str(j.barcode) for j in order.jars]
                 barcodes.sort()
                 barcodes_str = '\n'.join([str(j.barcode) for j in order.jars])
-                
+
                 def cb():
                     for b in barcodes:
                         def cb_(bc):

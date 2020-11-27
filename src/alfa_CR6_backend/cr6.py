@@ -77,7 +77,7 @@ class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attribu
 
         self.setStyleSheet("""
                 QMessageBox {
-                    font-size: 16px;
+                    font-size: 24px;
                     font-family: monospace;
                     }
                 """)
@@ -86,8 +86,15 @@ class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attribu
         # ~ Qt::WindowModal	1	The window is modal to a single window hierarchy and blocks input to its parent window, all grandparent windows, and all siblings of its parent and grandparent windows.
         # ~ Qt::ApplicationModal	2	The window is modal to the application and blocks input to all windows.
         self.setWindowModality(1)
-        self.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
         self.resize(800, 400)
+        for b in self.buttons():
+            b.setStyleSheet("""
+                    QWidget {
+                        font-size: 48px;
+                        font-family: monospace;
+                        }
+                    """)
 
 
 class BarCodeReader:   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
@@ -251,11 +258,11 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     async def __create_barcode_task(self, dev_index, barcode_device_name):
 
-        logging.warning(f" *** starting barcode reader, barcode_device_name:{barcode_device_name} *** ")
+        logging.warning(f" #### starting barcode reader, barcode_device_name:{barcode_device_name} #### ")
         b = BarCodeReader(dev_index, barcode_device_name, self.on_barcode_read)
         self.barcode_dict[dev_index] = b
         await b.run()
-        logging.warning(f" *** terminating barcode reader: {b} *** ")
+        logging.warning(f" #### terminating barcode reader: {b} #### ")
 
     async def __create_inner_loop_task(self):
         try:
@@ -321,12 +328,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def __clock_tick(self):
 
-        # TODO: check if machine_heads status is deprcated
-
         for k in [k_ for k_ in self.__jar_runners]:
-
             task = self.__jar_runners[k]['task']
-            # ~ logging.warning("inspecting:{}".format(task))
             if task.done():
                 task.cancel()
                 logging.warning("deleting:{}".format(self.__jar_runners[k]))
@@ -343,6 +346,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             ingredient_volume_map[pigment_name] = {}
             for m in self.machine_head_dict.values():
                 available_gr, specific_weight = m.get_available_weight(pigment_name)
+                logging.warning(f"{m.name} pigment_name:{pigment_name}, available_gr:{available_gr}, requested_quantity_gr:{requested_quantity_gr}")
                 if available_gr >= requested_quantity_gr:
                     _quantity_gr = requested_quantity_gr
                 elif available_gr > 0:
@@ -361,6 +365,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         unavailable_pigment_names = [k for k, v in ingredient_volume_map.items() if not v]
 
+        logging.warning(f"unavailable_pigment_names:{unavailable_pigment_names}")
+
         return ingredient_volume_map, total_volume, unavailable_pigment_names
 
     async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals,too-many-branches
@@ -371,6 +377,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         jar = None
         error = None
+        unavailable_pigment_names = []
         try:
             if skip_checks_for_dummy_read:
                 q = self.db_session.query(Jar).filter(Jar.status == 'NEW')
@@ -385,7 +392,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             logging.error(traceback.format_exc())
 
         logging.debug("jar:{}".format(jar))
-
+        
         if not error:
             if not jar:
                 error = f'Jar not found for {barcode}.'
@@ -396,7 +403,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 for m in self.machine_head_dict.values():
 
                     await m.update_tintometer_data(invalidate_cache=True)
-                    logging.debug("")
+                    logging.warning("{m.name}")
 
                     for s in [p['size'] for p in m.package_list]:
                         if s not in package_size_list:
@@ -410,9 +417,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                 if jar_volume < total_volume:
                     error = f'Jar volume is not sufficient for barcode:{barcode}. {jar_volume}(cc)<{total_volume}(cc).'
                     jar = None
-                elif unavailable_pigment_names:
-                    error = f'Pigments not available for barcode:{barcode}:{unavailable_pigment_names}.'
-                    jar = None
+                # ~ elif unavailable_pigment_names:
+                    # ~ error = f'Pigments not available for barcode:{barcode}:{unavailable_pigment_names}.'
+                    # ~ jar = None
                 else:
                     json_properties = json.loads(jar.json_properties)
                     json_properties['ingredient_volume_map'] = ingredient_volume_map
@@ -421,16 +428,18 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
                     logging.info(f"jar.json_properties:{jar.json_properties}")
 
-        logging.warning(f"jar:{jar}, error:{error}")
+        logging.warning(f"jar:{jar}, error:{error}, unavailable_pigment_names:{unavailable_pigment_names}")
 
-        return jar, error
+        return jar, error, unavailable_pigment_names
 
     async def on_barcode_read(self, dev_index, barcode, skip_checks_for_dummy_read=False):     # pylint: disable=too-many-locals,unused-argument
 
-        logging.warning(f"barcode:{barcode}")
+        logging.warning(f" ###### barcode:{barcode}")
 
         if not self.ready_to_read_a_barcode:
             logging.warning(f"not ready to read, skipping barcode:{barcode}")
+            return
+
         try:
             A = self.get_machine_head_by_letter('A')
             # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
@@ -443,7 +452,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
                 self.ready_to_read_a_barcode = False
 
-                jar, error = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
+                jar, error, unavailable_pigment_names = await self.get_and_check_jar_from_barcode(barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read)
 
                 if not error:
                     if barcode in self.__jar_runners.keys():
@@ -453,6 +462,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
                     self.show_alert_dialog(error)
                     logging.error(error)
                 elif jar:
+                    if unavailable_pigment_names:
+                        msg_ = f'Pigments not available for barcode:{barcode}:{unavailable_pigment_names}.'
+                        self.show_alert_dialog(msg_)
+
                     # let's run a task that will manage the jar through the entire path inside the system
                     t = self.__jar_task(jar)
                     self.__jar_runners[barcode] = {'task': asyncio.ensure_future(t), 'jar': jar}
@@ -472,11 +485,11 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             self.main_window.debug_status_view.update_status()
 
             # ~ if head_index == 0:
-                # ~ self.machine_head_dict[0]
-                # ~ if status.get('status_level') == 'ALARM' and status.get('error_code') == 10:
-                    # ~ for m in self.machine_head_dict.values():
-                        # ~ if m.index != 0:
-                            # ~ await m.send_command(cmd_name="ABORT", params={})
+            # ~ self.machine_head_dict[0]
+            # ~ if status.get('status_level') == 'ALARM' and status.get('error_code') == 10:
+            # ~ for m in self.machine_head_dict.values():
+            # ~ if m.index != 0:
+            # ~ await m.send_command(cmd_name="ABORT", params={})
 
         elif msg_dict.get('type') == 'answer':
             answer = msg_dict.get('value')
@@ -944,7 +957,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         return r
 
-    async def move_12_00(self, jar=None):  # 'deliver'       # pylint: disable=unused-argument
+    async def move_12_00(self, jar=None):  # 'deliver' # pylint: disable=unused-argument
 
         F = self.get_machine_head_by_letter('F')
 
@@ -974,18 +987,19 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         await m.update_tintometer_data(invalidate_cache=True)
 
-        logging.warning(f"{m.name}")
-
         r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} -")
         _, _, unavailable_pigment_names = self.check_available_volumes(jar)
 
         if unavailable_pigment_names:
 
+            logging.warning(f"{m.name} {unavailable_pigment_names}")
             msg_ = f"Missing material for barcode {jar.barcode}.\n please refill pigments:{unavailable_pigment_names}."
             r = await self.wait_for_carousel_not_frozen(True, msg_)
-        else:
-            r = await m.do_dispense(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} +")
+
+        # TODO: check and dispense after refill dispensing
+        r = await m.do_dispense(jar)
+        r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} +")
+
         return r
 
     def ask_for_refill(self, head_index):

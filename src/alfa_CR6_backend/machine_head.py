@@ -11,7 +11,7 @@ import logging
 import asyncio
 import json
 import traceback
-import concurrent
+# ~ import concurrent
 
 from PyQt5.QtWidgets import QApplication    # pylint: disable=no-name-in-module
 
@@ -119,49 +119,41 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
     async def update_tintometer_data(self, invalidate_cache=False):
 
-        logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
+        logging.warning(f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
 
         if invalidate_cache:
-            self.pigment_list = []
-            self.package_list = []
-
-        if not self.pigment_list:
             ret = await self.call_api_rest('pigment', 'GET', {})
-
-            self.pigment_list = []
-            self.low_level_pipes = []
+            pigment_list = []
+            low_level_pipes = []
             for pig in ret.get('objects', []):
+
                 enabled_pipes = [pipe for pipe in pig['pipes'] if pipe['enabled']]
-                self.low_level_pipes += [pipe['name']
-                                         for pipe in enabled_pipes if pipe['current_level'] < pipe['reserve_level']]
+
+                low_level_pipes += [
+                    pipe['name'] for pipe in enabled_pipes if pipe['current_level'] < pipe['reserve_level']]
+
                 if enabled_pipes:
-                    self.pigment_list.append(pig)
+                    pigment_list.append(pig)
 
-            if self.pigment_list:
-                with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'w') as f:
-                    json.dump(self.pigment_list, f, indent=2)
-            else:
-                with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'r') as f:
-                    self.pigment_list = json.load(f)
+            with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'w') as f:
+                json.dump(pigment_list, f, indent=2)
 
-        if not self.package_list:
             ret = await self.call_api_rest('package', 'GET', {})
-            self.package_list = ret.get('objects', [])
-            if self.package_list:
-                with open(DATA_ROOT + f"{self.name}_package_list.json", 'w') as f:
-                    json.dump(self.package_list, f, indent=2)
-            else:
-                with open(DATA_ROOT + f"{self.name}_package_list.json", 'r') as f:
-                    self.package_list = json.load(f)
+            package_list = ret.get('objects', [])
+            with open(DATA_ROOT + f"{self.name}_package_list.json", 'w') as f:
+                json.dump(self.package_list, f, indent=2)
+
+        self.pigment_list = pigment_list
+        self.low_level_pipes = low_level_pipes
+        self.package_list = package_list
 
         logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
         if self.low_level_pipes:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
             self.app.show_alert_dialog(f'{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}')
-            self.app.visulize_low_level(self.index, True)
-        else:
-            self.app.visulize_low_level(self.index, False)
-            
+            # ~ self.app.visulize_low_level(self.index, True)
+        # ~ else:
+            # ~ self.app.visulize_low_level(self.index, False)
 
     async def update_status(self, status):
 
@@ -180,14 +172,12 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
 
         diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
 
-        self.status = status
-
-        # ~ see doc/machine_status_jsonschema.py
-
         # JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT
-        if self.status['jar_photocells_status'] & 0x001 and not (status['jar_photocells_status'] & 0x001):
+        if self.status.get('jar_photocells_status', 0) & 0x001 and not (status['jar_photocells_status'] & 0x001):
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
+
+        self.status = status
 
         self.photocells_status = {
             'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001 and 1,
@@ -349,7 +339,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             # ~ msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
         # ~ except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
-        except asyncio.exceptions.TimeoutError as e:
+        except asyncio.TimeoutError as e:
             logging.warning(f"e:{e}")
 
         self.cntr += 1
