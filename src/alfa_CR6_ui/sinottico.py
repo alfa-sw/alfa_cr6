@@ -114,18 +114,18 @@ class Sinottico(QWidget):
                 existing = update_obj['view'].status.count() / 2
                 for n, statusItem in enumerate(update_obj['status']):
                     label = QLabel(statusItem.label)
-                    label.setFixedHeight(50)
+                    label.setFixedHeight(35)
                     result = QLabel('')
                     if (statusItem.type == 'string'):
                         result = QLabel("")
-                        result.setFixedHeight(50)
+                        result.setFixedHeight(35)
                         statusItem.current.append(result)
                     elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
                         on = 0
                         result = QLabel('')
                         pscaled = self.get_pscaled(on)
                         result.setPixmap(pscaled)
-                        result.setFixedHeight(50)
+                        result.setFixedHeight(35)
                         result.setFont(QFont('Times', 28))
                         statusItem.current.append(result)
                     update_obj['view'].status.addWidget(label, existing + n, 0)
