@@ -392,7 +392,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             logging.error(traceback.format_exc())
 
         logging.debug("jar:{}".format(jar))
-        
+
         if not error:
             if not jar:
                 error = f'Jar not found for {barcode}.'
@@ -561,7 +561,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
     def show_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
 
-        logging.info(msg)
+        logging.warning(msg)
 
         ret = False
 
@@ -992,9 +992,16 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         if unavailable_pigment_names:
 
-            logging.warning(f"{m.name} {unavailable_pigment_names}")
-            msg_ = f"Missing material for barcode {jar.barcode}.\n please refill pigments:{unavailable_pigment_names}."
+            msg_ = f"Missing material for barcode {jar.barcode}.\n please refill pigments:{unavailable_pigment_names} on {m.name}."
+            logging.warning(msg_)
             r = await self.wait_for_carousel_not_frozen(True, msg_)
+
+            await m.update_tintometer_data(invalidate_cache=True)
+
+            ingredient_volume_map, _, _ = self.check_available_volumes(jar)
+            json_properties = json.loads(jar.json_properties)
+            json_properties['ingredient_volume_map'] = ingredient_volume_map
+            jar.json_properties = json.dumps(json_properties, indent=2)
 
         # TODO: check and dispense after refill dispensing
         r = await m.do_dispense(jar)

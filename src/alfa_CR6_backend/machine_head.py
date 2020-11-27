@@ -453,8 +453,11 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         ingredient_volume_map = jar_properties['ingredient_volume_map']
         ingredients = {}
         for pigment_name in ingredient_volume_map.keys():
-            if ingredient_volume_map[pigment_name].get(self.name):
-                ingredients[pigment_name] = ingredient_volume_map[pigment_name][self.name]
+            try:
+                if ingredient_volume_map and ingredient_volume_map.get(pigment_name, {}).get(self.name):
+                    ingredients[pigment_name] = ingredient_volume_map[pigment_name][self.name]
+            except Exception:
+                logging.warning(traceback.format_exc())
 
         pars = {'package_name': "******* not valid name ****", 'ingredients': ingredients}
         logging.warning(f"{self.name} pars:{pars}")
