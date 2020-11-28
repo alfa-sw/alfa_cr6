@@ -105,7 +105,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -589,10 +589,10 @@
      <widget class="QLabel" name="jar_t1">
       <property name="geometry">
        <rect>
-        <x>530</x>
-        <y>440</y>
-        <width>71</width>
-        <height>61</height>
+        <x>540</x>
+        <y>460</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -608,10 +608,10 @@
      <widget class="QLabel" name="jar_input">
       <property name="geometry">
        <rect>
-        <x>200</x>
-        <y>450</y>
-        <width>71</width>
-        <height>61</height>
+        <x>210</x>
+        <y>460</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -627,10 +627,10 @@
      <widget class="QLabel" name="jar_output">
       <property name="geometry">
        <rect>
-        <x>80</x>
-        <y>550</y>
-        <width>71</width>
-        <height>61</height>
+        <x>90</x>
+        <y>560</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -646,10 +646,10 @@
      <widget class="QLabel" name="jar_t2">
       <property name="geometry">
        <rect>
-        <x>530</x>
-        <y>820</y>
-        <width>71</width>
-        <height>61</height>
+        <x>540</x>
+        <y>840</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -665,10 +665,10 @@
      <widget class="QLabel" name="jar_t3">
       <property name="geometry">
        <rect>
-        <x>910</x>
-        <y>440</y>
-        <width>71</width>
-        <height>61</height>
+        <x>920</x>
+        <y>460</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -684,10 +684,10 @@
      <widget class="QLabel" name="jar_t4">
       <property name="geometry">
        <rect>
-        <x>910</x>
-        <y>820</y>
-        <width>71</width>
-        <height>61</height>
+        <x>920</x>
+        <y>840</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -703,10 +703,10 @@
      <widget class="QLabel" name="jar_t5">
       <property name="geometry">
        <rect>
-        <x>1280</x>
-        <y>440</y>
-        <width>71</width>
-        <height>61</height>
+        <x>1290</x>
+        <y>460</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -722,10 +722,10 @@
      <widget class="QLabel" name="jar_t6">
       <property name="geometry">
        <rect>
-        <x>1270</x>
-        <y>820</y>
-        <width>71</width>
-        <height>61</height>
+        <x>1280</x>
+        <y>840</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -741,10 +741,10 @@
      <widget class="QLabel" name="jar_lifter_1">
       <property name="geometry">
        <rect>
-        <x>1600</x>
-        <y>620</y>
-        <width>71</width>
-        <height>61</height>
+        <x>1610</x>
+        <y>640</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">
@@ -760,10 +760,10 @@
      <widget class="QLabel" name="jar_lifter_2">
       <property name="geometry">
        <rect>
-        <x>390</x>
-        <y>710</y>
-        <width>71</width>
-        <height>61</height>
+        <x>400</x>
+        <y>730</y>
+        <width>50</width>
+        <height>50</height>
        </rect>
       </property>
       <property name="text">

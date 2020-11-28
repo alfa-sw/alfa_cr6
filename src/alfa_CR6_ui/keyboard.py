@@ -91,11 +91,13 @@ class Keyboard(QWidget):
         self.uinput = None
         if has_evdev:
             try:
-                self.uinput = UInput()
+
                 import getpass
                 logging.warning(f"getpass.getuser():{getpass.getuser()}")
                 if getpass.getuser() == 'admin':
                     os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
+
+                self.uinput = UInput()
 
             except Exception:
                 logging.error(traceback.format_exc())
