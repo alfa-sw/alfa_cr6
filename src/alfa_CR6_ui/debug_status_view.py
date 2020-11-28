@@ -595,7 +595,7 @@ class DebugStatusView():
         for fname in fileNames:
             order = None
             try:
-                order = app.create_order(fname, n_of_jars=3)
+                order = app.create_order(fname, n_of_jars=6)
                 barcodes = [str(j.barcode) for j in order.jars]
                 barcodes.sort()
                 barcodes_str = '\n'.join([str(j.barcode) for j in order.jars])

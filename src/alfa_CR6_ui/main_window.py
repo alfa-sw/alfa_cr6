@@ -29,6 +29,9 @@ class MainWindow(QMainWindow):
         self.login_btn.clicked.connect(self.onLoginBtnClicked)
         self.main_window_stack.setCurrentWidget(self.login)
 
+        ver = QApplication.instance().get_version()
+        self.version_label.setText(f"ver:{ver}")
+
         self.sinottico = Sinottico(self)
         self.project_layout.addWidget(self.sinottico)
         self.showFullScreen()

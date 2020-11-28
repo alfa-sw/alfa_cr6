@@ -435,16 +435,20 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
         except Exception as e:                           # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def wait_for_condition(self, condition, timeout, show_alert=True):
+    async def wait_for_condition(self, condition, timeout, show_alert=True, extra_info=""):
         t0 = time.time()
         ret = condition()
         while not ret and time.time() - t0 < timeout:
             await asyncio.sleep(.01)
             ret = condition()
         if not ret:
-            logging.error(f'{timeout} sec timeout expired!')
             if show_alert:
-                self.app.show_alert_dialog(f'{timeout} sec timeout expired!')
+                _ = f'timeout expired! {self.name} timeout:{timeout} '
+                if extra_info:
+                    _ += str(extra_info)
+                logging.error(_)
+                self.app.show_alert_dialog(_)
+
         return ret
 
     async def do_dispense(self, jar):            # pylint: disable=too-many-locals
@@ -472,7 +476,7 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 return flag
 
             logging.warning(f"{self.name} condition():{condition()}")
-            r = await self.wait_for_condition(condition, timeout=30)
+            r = await self.wait_for_condition(condition, timeout=30, extra_info=" before dispensing. Please check jar.")
             logging.warning(f"{self.name} r:{r}")
 
             if r:
