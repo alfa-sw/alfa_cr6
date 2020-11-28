@@ -323,7 +323,7 @@ class DebugStatusView():
 
             self.open_order_dialog()
 
-        elif 'delete all\norders from db' in cmd_txt:
+        elif 'delete\norders in db' in cmd_txt:
 
             self.delete_orders()
 
