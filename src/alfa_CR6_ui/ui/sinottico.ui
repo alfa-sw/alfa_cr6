@@ -1,0 +1,986 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>container_sinottico</class>
+ <widget class="QWidget" name="container_sinottico">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1920</width>
+    <height>1058</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Tintometro</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="base_sinottico" native="true">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1920</width>
+     <height>1080</height>
+    </rect>
+   </property>
+   <widget class="QWidget" name="bottom_menuwidget" native="true">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>1010</y>
+      <width>241</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <widget class="QLabel" name="chrome_btn">
+     <property name="geometry">
+      <rect>
+       <x>90</x>
+       <y>5</y>
+       <width>50</width>
+       <height>50</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>../images/order.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="home_btn">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>5</y>
+       <width>50</width>
+       <height>50</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>../images/home.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="keybd_btn">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="geometry">
+      <rect>
+       <x>160</x>
+       <y>15</y>
+       <width>60</width>
+       <height>30</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="pixmap">
+      <pixmap>../images/keybd.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QStackedWidget" name="main_view_stack">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1920</width>
+      <height>1011</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <widget class="QWidget" name="image_sinottico">
+     <widget class="QLabel" name="tintometro_image">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1921</width>
+        <height>1021</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/machine.png</pixmap>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_2">
+      <property name="geometry">
+       <rect>
+        <x>640</x>
+        <y>430</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_9">
+      <property name="geometry">
+       <rect>
+        <x>630</x>
+        <y>810</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_3">
+      <property name="geometry">
+       <rect>
+        <x>1000</x>
+        <y>430</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_8">
+      <property name="geometry">
+       <rect>
+        <x>1010</x>
+        <y>810</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_4">
+      <property name="geometry">
+       <rect>
+        <x>1380</x>
+        <y>440</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_7">
+      <property name="geometry">
+       <rect>
+        <x>1380</x>
+        <y>810</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="refill_HEAD_1">
+      <property name="geometry">
+       <rect>
+        <x>500</x>
+        <y>150</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="refill_HEAD_3">
+      <property name="geometry">
+       <rect>
+        <x>870</x>
+        <y>150</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="refill_HEAD_5">
+      <property name="geometry">
+       <rect>
+        <x>1230</x>
+        <y>150</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="refill_HEAD_2">
+      <property name="geometry">
+       <rect>
+        <x>499</x>
+        <y>540</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="refill_HEAD_4">
+      <property name="geometry">
+       <rect>
+        <x>870</x>
+        <y>540</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="refill_HEAD_6">
+      <property name="geometry">
+       <rect>
+        <x>1229</x>
+        <y>540</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/refill_ok.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_1">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>430</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_12">
+      <property name="geometry">
+       <rect>
+        <x>270</x>
+        <y>540</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_11">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>540</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_10">
+      <property name="geometry">
+       <rect>
+        <x>390</x>
+        <y>850</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_5">
+      <property name="geometry">
+       <rect>
+        <x>1600</x>
+        <y>430</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_6">
+      <property name="geometry">
+       <rect>
+        <x>1600</x>
+        <y>820</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="view_status_HEAD_1_STEP_2">
+      <property name="geometry">
+       <rect>
+        <x>500</x>
+        <y>230</y>
+        <width>340</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="view_status_HEAD_3_STEP_3">
+      <property name="geometry">
+       <rect>
+        <x>870</x>
+        <y>230</y>
+        <width>340</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="view_status_HEAD_5_STEP_4">
+      <property name="geometry">
+       <rect>
+        <x>1230</x>
+        <y>230</y>
+        <width>340</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="view_status_HEAD_2_STEP_9">
+      <property name="geometry">
+       <rect>
+        <x>500</x>
+        <y>600</y>
+        <width>340</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="view_status_HEAD_4_STEP_8">
+      <property name="geometry">
+       <rect>
+        <x>870</x>
+        <y>600</y>
+        <width>340</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="view_status_HEAD_6_STEP_7">
+      <property name="geometry">
+       <rect>
+        <x>1230</x>
+        <y>600</y>
+        <width>340</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="out_btn_start">
+      <property name="geometry">
+       <rect>
+        <x>110</x>
+        <y>380</y>
+        <width>91</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/arrow-green.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="out_btn_out">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>490</y>
+        <width>81</width>
+        <height>61</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/arrow-red.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="toggle_freeze_carousel">
+      <property name="geometry">
+       <rect>
+        <x>270</x>
+        <y>210</y>
+        <width>181</width>
+        <height>111</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="low_level_HEAD_6">
+      <property name="geometry">
+       <rect>
+        <x>1510</x>
+        <y>540</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="low_level_HEAD_4">
+      <property name="geometry">
+       <rect>
+        <x>1151</x>
+        <y>540</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="low_level_HEAD_3">
+      <property name="geometry">
+       <rect>
+        <x>1151</x>
+        <y>150</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="low_level_HEAD_1">
+      <property name="geometry">
+       <rect>
+        <x>781</x>
+        <y>150</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="low_level_HEAD_5">
+      <property name="geometry">
+       <rect>
+        <x>1511</x>
+        <y>150</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="low_level_HEAD_2">
+      <property name="geometry">
+       <rect>
+        <x>780</x>
+        <y>540</y>
+        <width>60</width>
+        <height>60</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t1">
+      <property name="geometry">
+       <rect>
+        <x>540</x>
+        <y>460</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_input">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
+        <y>460</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_output">
+      <property name="geometry">
+       <rect>
+        <x>90</x>
+        <y>560</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t2">
+      <property name="geometry">
+       <rect>
+        <x>540</x>
+        <y>840</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t3">
+      <property name="geometry">
+       <rect>
+        <x>920</x>
+        <y>460</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t4">
+      <property name="geometry">
+       <rect>
+        <x>920</x>
+        <y>840</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t5">
+      <property name="geometry">
+       <rect>
+        <x>1290</x>
+        <y>460</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_t6">
+      <property name="geometry">
+       <rect>
+        <x>1280</x>
+        <y>840</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_lifter_1">
+      <property name="geometry">
+       <rect>
+        <x>1610</x>
+        <y>640</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="jar_lifter_2">
+      <property name="geometry">
+       <rect>
+        <x>400</x>
+        <y>730</y>
+        <width>50</width>
+        <height>50</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="pixmap">
+       <pixmap>../images/settings.png</pixmap>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="chrome">
+     <widget class="QWidget" name="verticalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>-1</x>
+        <y>-1</y>
+        <width>1921</width>
+        <height>1011</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="chrome_layout"/>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="modal_jar_input">
+     <widget class="QWidget" name="gridLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>920</x>
+        <y>0</y>
+        <width>1001</width>
+        <height>10121</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="jar_input_data">
+       <property name="topMargin">
+        <number>10</number>
+       </property>
+       <property name="rightMargin">
+        <number>10</number>
+       </property>
+       <property name="bottomMargin">
+        <number>10000</number>
+       </property>
+       <property name="horizontalSpacing">
+        <number>0</number>
+       </property>
+       <property name="verticalSpacing">
+        <number>75</number>
+       </property>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="verticalLayoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>-1</x>
+        <y>1</y>
+        <width>911</width>
+        <height>513</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="jar_input_buttons">
+       <property name="spacing">
+        <number>75</number>
+       </property>
+       <property name="sizeConstraint">
+        <enum>QLayout::SetMinimumSize</enum>
+       </property>
+       <property name="leftMargin">
+        <number>10</number>
+       </property>
+       <property name="topMargin">
+        <number>10</number>
+       </property>
+       <property name="rightMargin">
+        <number>10</number>
+       </property>
+      </layout>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="order_modal">
+     <widget class="QWidget" name="gridLayoutWidget_2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>10</y>
+        <width>1881</width>
+        <height>81</height>
+       </rect>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="n_of_jars">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="buttonSymbols">
+          <enum>QAbstractSpinBox::NoButtons</enum>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="font">
+          <font>
+           <pointsize>35</pointsize>
+          </font>
+         </property>
+         <property name="text">
+          <string>Numero di confezioni</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QPushButton" name="save_order">
+      <property name="geometry">
+       <rect>
+        <x>22</x>
+        <y>551</y>
+        <width>451</width>
+        <height>131</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>35</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>SALVA</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="modal_status_HEAD_1">
+     <widget class="QWidget" name="verticalLayoutWidget_4">
+      <property name="geometry">
+       <rect>
+        <x>-1</x>
+        <y>-1</y>
+        <width>1911</width>
+        <height>1001</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout"/>
+     </widget>
+    </widget>
+   </widget>
+   <widget class="QTextEdit" name="bottom_text_edit">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>1010</y>
+      <width>1411</width>
+      <height>61</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="status">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>1850</x>
+      <y>1015</y>
+      <width>50</width>
+      <height>50</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap>../images/green.svg</pixmap>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="barcode_btn">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>1720</x>
+      <y>1025</y>
+      <width>60</width>
+      <height>30</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+    <property name="pixmap">
+     <pixmap>../images/barcode_C128.png</pixmap>
+    </property>
+    <property name="scaledContents">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

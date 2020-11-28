@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1920</width>
+    <height>1080</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Sinottico</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QStackedWidget" name="main_window_stack">
+    <property name="geometry">
+     <rect>
+      <x>-1</x>
+      <y>-1</y>
+      <width>1920</width>
+      <height>1080</height>
+     </rect>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
+    </property>
+    <widget class="QWidget" name="login">
+     <widget class="QPushButton" name="login_btn">
+      <property name="geometry">
+       <rect>
+        <x>510</x>
+        <y>550</y>
+        <width>861</width>
+        <height>131</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>40</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>LOGIN</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="pass_label">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>290</y>
+        <width>311</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>25</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>PASSWORD</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="user_label">
+      <property name="geometry">
+       <rect>
+        <x>370</x>
+        <y>200</y>
+        <width>311</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>25</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>USERNAME</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="user_edit">
+      <property name="geometry">
+       <rect>
+        <x>710</x>
+        <y>200</y>
+        <width>641</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>25</pointsize>
+       </font>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="pass_edit">
+      <property name="geometry">
+       <rect>
+        <x>710</x>
+        <y>290</y>
+        <width>641</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>25</pointsize>
+       </font>
+      </property>
+     </widget>
+     <widget class="QWidget" name="verticalLayoutWidget_3">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>870</y>
+        <width>1921</width>
+        <height>211</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="keyboard_position">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+      </layout>
+     </widget>
+     <widget class="QLabel" name="version_label">
+      <property name="geometry">
+       <rect>
+        <x>30</x>
+        <y>20</y>
+        <width>311</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>18</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>ver.</string>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="project">
+     <widget class="QWidget" name="verticalLayoutWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>1921</width>
+        <height>1081</height>
+       </rect>
+      </property>
+      <layout class="QVBoxLayout" name="project_layout"/>
+     </widget>
+    </widget>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

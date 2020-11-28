@@ -1,18 +1,57 @@
-from setuptools import setup
+# coding: utf-8
+
+# pylint: disable=missing-docstring
+# pylint: disable=invalid-name
+
+import os
 import glob
 
-setup (
-    name='alfa_CR6',
-    version='1.0',
-    description='ALFA CR& Project',
-    packages=['alfa_CR6'],
-    #modules_py=['alfa_CR6', 'alfa_cr6.CR6'],
-    package_data={'alfa_CR6/ui': glob.glob('alfa_CR6/ui/*')},
-    data_files=[('alfa_CR6/ui', list(glob.glob('alfa_CR6/ui/*')))],
-   # install_requires=[
-   #     'alfa_CR6'
-   # ],
-    scripts=['alfa_CR6/scripts/cr6']
-    
+from setuptools import setup, find_packages
 
-)
+here = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(here, '__version__'), encoding='utf-8') as f:
+    __version__ = f.read().strip()
+
+__app_name__ = 'alfa_CR6'
+
+
+def main():
+    setup(
+        name=__app_name__,
+        version=__version__,
+        description='UI for alfa CR6',
+        url='https://gitlab.com/freelands2019/alfa_cr6',
+        author='alfadispenser srl',
+        author_email='giovanniangeli@alfadispenser.com',
+        classifiers=[
+            'Development Status :: 3 - Alpha',
+            'Programming Language :: Python :: 3',
+            "License :: OSI Approved :: MIT License",
+            "Operating System :: POSIX :: Linux",
+        ],
+        packages=find_packages(where='src'),
+        package_dir={'': 'src'},
+        data_files=[
+            ('alfa_CR6_ui/ui', list(glob.glob('src/alfa_CR6_ui/ui/*.ui'))),
+            ('alfa_CR6_ui/keyboard', list(glob.glob('src/alfa_CR6_ui/keyboard/*.json'))),
+            ('alfa_CR6_ui/images', list(glob.glob('src/alfa_CR6_ui/images/*'))),
+            ('alfa_CR6_test/fixtures', list(glob.glob('src/alfa_CR6_test/fixtures/*'))),
+        ],
+        include_package_data=True,
+        scripts=[
+            'bin/alfa_CR6',
+            'bin/alfa_CR6_test',
+        ],
+        install_requires=[
+            'websockets',
+            'SQLAlchemy',
+            'jsonschema',
+            'python-barcode',
+            'Pillow',
+            'aiohttp',
+        ],
+    )
+
+
+if __name__ == '__main__':
+    main()

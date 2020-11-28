@@ -1,6 +1,7 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
 # IDEs and editors
+/.idea/*
 /.idea
 .project
 .classpath
@@ -13,3 +14,15 @@
 # System Files
 .DS_Store
 
+/build
+/dist
+*egg-info/
+
+*__pycache__*
+git.diff
+
+__tmp__
+*.session
+
+*.log
+*.out

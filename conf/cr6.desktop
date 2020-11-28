@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=CR6 supervisor
+Comment=launch CR6 supervisor
+NoDisplay=false
+Exec=". /opt/alfa_cr6/venv/bin/activate ; alfa_CR6 -display :0"
+NotShowIn=GNOME;KDE;XFCE;
