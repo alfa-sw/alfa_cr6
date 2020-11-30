@@ -98,14 +98,14 @@
    <widget class="QStackedWidget" name="main_view_stack">
     <property name="geometry">
      <rect>
-      <x>0</x>
+      <x>-1</x>
       <y>10</y>
-      <width>1920</width>
-      <height>1011</height>
+      <width>1921</width>
+      <height>1001</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>4</number>
+     <number>3</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -889,7 +889,7 @@
           </font>
          </property>
          <property name="text">
-          <string>Numero di confezioni</string>
+          <string>Number of jars</string>
          </property>
         </widget>
        </item>
@@ -969,7 +969,7 @@
         <x>9</x>
         <y>239</y>
         <width>1651</width>
-        <height>751</height>
+        <height>731</height>
        </rect>
       </property>
       <property name="widgetResizable">
@@ -981,7 +981,7 @@
          <x>0</x>
          <y>0</y>
          <width>1649</width>
-         <height>749</height>
+         <height>729</height>
         </rect>
        </property>
       </widget>
