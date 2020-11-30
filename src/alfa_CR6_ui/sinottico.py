@@ -212,14 +212,17 @@ class Sinottico(QWidget):
         self.main_view_stack.setCurrentWidget(self.chrome)
 
     def create_order(self, path):
-        self.main_view_stack.setCurrentWidget(self.order_modal)
-        self.chrome_layout.removeWidget(self.view)
+        self.name_formula.setText(path.split('/')[-1][:-5])  # base name - .json
         self.browser = False
         self.file_order = path
+        self.main_view_stack.setCurrentWidget(self.order_modal)
+        self.chrome_layout.removeWidget(self.view)
 
     def make_order(self):
-        QApplication.instance().create_order(self.file_order, n_of_jars=int(self.n_of_jars.text()))
-        self.onModalBtnClicked(self.image_sinottico)
+        name_formula = '/opt/alfa_cr6/data/kcc/' + self.name_formula.text() + '.json'
+        os.rename(self.file_order, name_formula)
+        QApplication.instance().create_order(name_formula, n_of_jars=int(self.n_of_jars.text()))
+        self.onModalBtnClicked(self.order_list)
 
     def onChromeBtnClicked(self):
         if self.browser:
