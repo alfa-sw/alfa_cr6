@@ -782,9 +782,9 @@
       <property name="geometry">
        <rect>
         <x>-1</x>
-        <y>-1</y>
+        <y>29</y>
         <width>1921</width>
-        <height>1011</height>
+        <height>981</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="chrome_layout"/>
