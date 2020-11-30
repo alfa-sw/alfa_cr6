@@ -127,7 +127,9 @@ class Sinottico(QWidget):
         paths.reverse()
 
         for i, item in enumerate(paths):
-            formula_list.addWidget(QLabel(item.name[:-5]), i, 0)
+            label=QLabel(item.name[:-5])
+            formula_list.addWidget(label, i, 0)
+            label.mouseReleaseEvent = (lambda x: lambda event: self.create_order(x))('/opt/alfa_cr6/data/kcc/' + item.name)
         formula_box.setLayout(formula_list)
         self.saved_formulas_area.setWidget(formula_box)
         self.saved_formulas_area.setWidgetResizable(True)
