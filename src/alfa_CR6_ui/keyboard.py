@@ -140,6 +140,7 @@ class Keyboard(QWidget):
             ";": "SEMICOLON",
             "-": "MINUS",
             "_": "UNDERBAR",
+            " ": "SPACE",
 
         }
         s = symbol.upper().split('\n')[-1]
