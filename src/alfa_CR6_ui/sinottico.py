@@ -133,9 +133,9 @@ class Sinottico(QWidget):
         order_list = QGridLayout()
         order_list.setVerticalSpacing(35)
         order_box = QGroupBox('Orders:')
-        for i in range(30):
-            order_list.addWidget(QLabel('order'), i, 0)
-            order_list.addWidget(QLabel('20/10/16 12:30'), i, 1)
+        #for i in range(30):  TODO: add real data
+        #    order_list.addWidget(QLabel('order'), i, 0)
+        #    order_list.addWidget(QLabel('20/10/16 12:30'), i, 1)
         order_box.setLayout(order_list)
         self.orders_area.setWidget(order_box)
         self.orders_area.setWidgetResizable(True)
