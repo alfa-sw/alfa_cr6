@@ -54,7 +54,10 @@ class Sinottico(QWidget):
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
         self.save_order.clicked.connect(lambda: self.make_order())
         self.back_to_list_orders.clicked.connect(lambda: self.onModalBtnClicked(self.order_list))
-        self.new_order_from_formula.clicked.connect(lambda: self.onModalBtnClicked(self.select_formula))
+        self.new_order_from_formula.clicked.connect(
+            lambda: self.onModalBtnClicked(
+                self.select_formula, extra_actions=[
+                    self.update_formulas]))
         self.download_formula2.clicked.connect(lambda: self.onChromeBtnClicked())
         self.connect_status()
 
@@ -108,6 +111,23 @@ class Sinottico(QWidget):
         self.out_btn_start.mouseReleaseEvent = lambda event: self.jar_button('move_00_01')
         self.out_btn_out.mouseReleaseEvent = lambda event: self.jar_button('move_12_00')
 
+    def update_formulas(self):
+        formula_list = QGridLayout()
+        formula_list.setVerticalSpacing(35)
+        formula_box = QGroupBox('Formulas:')
+        paths = sorted(Path('/opt/alfa_cr6/data/kcc').iterdir(), key=os.path.getmtime)
+        paths.reverse()
+
+        for i, item in enumerate(paths):
+            label = QLabel(item.name[:-5])
+            formula_list.addWidget(label, i, 0)
+            label.mouseReleaseEvent = (
+                lambda x: lambda event: self.create_order(x))(
+                '/opt/alfa_cr6/data/kcc/' + item.name)
+        formula_box.setLayout(formula_list)
+        self.saved_formulas_area.setWidget(formula_box)
+        self.saved_formulas_area.setWidgetResizable(True)
+
     def add_data(self):
 
         order_list = QGridLayout()
@@ -120,19 +140,7 @@ class Sinottico(QWidget):
         self.orders_area.setWidget(order_box)
         self.orders_area.setWidgetResizable(True)
 
-        formula_list = QGridLayout()
-        formula_list.setVerticalSpacing(35)
-        formula_box = QGroupBox('Formulas:')
-        paths = sorted(Path('/opt/alfa_cr6/data/kcc').iterdir(), key=os.path.getmtime)
-        paths.reverse()
-
-        for i, item in enumerate(paths):
-            label=QLabel(item.name[:-5])
-            formula_list.addWidget(label, i, 0)
-            label.mouseReleaseEvent = (lambda x: lambda event: self.create_order(x))('/opt/alfa_cr6/data/kcc/' + item.name)
-        formula_box.setLayout(formula_list)
-        self.saved_formulas_area.setWidget(formula_box)
-        self.saved_formulas_area.setWidgetResizable(True)
+        self.update_formulas()
 
         for head_index in range(len(self.defs)):
             for update_obj in self.defs[head_index]:
@@ -208,7 +216,7 @@ class Sinottico(QWidget):
         pixmap = QPixmap(QApplication.instance().images_path + p)
         return pixmap.scaled(25, 25, Qt.KeepAspectRatio)
 
-    def onModalBtnClicked(self, target):
+    def onModalBtnClicked(self, target, extra_actions=[]):
         self.main_view_stack.setCurrentWidget(target)
         # ~ self.keyboard.showMinimized()
 
@@ -217,6 +225,8 @@ class Sinottico(QWidget):
         if self.browser:
             self.chrome_layout.removeWidget(self.view)
             self.browser = False
+        for i in extra_actions:
+            i()
 
     def openChrome(self, target):
 
@@ -235,6 +245,7 @@ class Sinottico(QWidget):
         self.name_formula.setText(path.split('/')[-1][:-5])  # base name - .json
         self.browser = False
         self.file_order = path
+        self.keyboard.show()
         self.main_view_stack.setCurrentWidget(self.order_modal)
         self.chrome_layout.removeWidget(self.view)
 
