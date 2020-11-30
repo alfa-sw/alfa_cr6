@@ -37,13 +37,7 @@ class Keyboard(QWidget):
         self.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.hangeul_toggle(set_hangeul=False)
 
-        self.setStyleSheet("""
-                QWidget {
-                    background-color: #FFFFF7;
-                    font-size: 20px;
-                    font-family: monospace;
-                    }
-                """)
+        self.setAutoFillBackground(True)
 
         yadd = 0
         for y, row in enumerate(keyboard_def):
