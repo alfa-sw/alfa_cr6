@@ -16,6 +16,7 @@ from alfa_CR6_ui.chrome_widget import ChromeWidget
 from alfa_CR6_ui.keyboard import Keyboard
 from alfa_CR6_ui.jar import Jar
 from collections import namedtuple
+from pathlib import Path
 import datetime
 import os
 
@@ -47,11 +48,14 @@ class Sinottico(QWidget):
         self.init_defs()
         self.add_data()
         self.home_btn.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.image_sinottico)
-        self.chrome_btn.mouseReleaseEvent = lambda event: self.onChromeBtnClicked()
+        self.download_formula.mouseReleaseEvent = lambda event: self.onChromeBtnClicked()
         self.list_orders_button.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.order_list)
         self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
         self.save_order.clicked.connect(lambda: self.make_order())
+        self.back_to_list_orders.clicked.connect(lambda: self.onModalBtnClicked(self.order_list))
+        self.new_order_from_formula.clicked.connect(lambda: self.onModalBtnClicked(self.select_formula))
+        self.download_formula2.clicked.connect(lambda: self.onChromeBtnClicked())
         self.connect_status()
 
         self.keyboard = Keyboard(self)
@@ -105,6 +109,7 @@ class Sinottico(QWidget):
         self.out_btn_out.mouseReleaseEvent = lambda event: self.jar_button('move_12_00')
 
     def add_data(self):
+
         order_list = QGridLayout()
         order_list.setVerticalSpacing(35)
         order_box = QGroupBox('Orders:')
@@ -114,6 +119,19 @@ class Sinottico(QWidget):
         order_box.setLayout(order_list)
         self.orders_area.setWidget(order_box)
         self.orders_area.setWidgetResizable(True)
+
+        formula_list = QGridLayout()
+        formula_list.setVerticalSpacing(35)
+        formula_box = QGroupBox('Formulas:')
+        paths = sorted(Path('/opt/alfa_cr6/data/kcc').iterdir(), key=os.path.getmtime)
+        paths.reverse()
+
+        for i, item in enumerate(paths):
+            formula_list.addWidget(QLabel(item.name[:-5]), i, 0)
+        formula_box.setLayout(formula_list)
+        self.saved_formulas_area.setWidget(formula_box)
+        self.saved_formulas_area.setWidgetResizable(True)
+
         for head_index in range(len(self.defs)):
             for update_obj in self.defs[head_index]:
                 for button in update_obj['buttons']:
