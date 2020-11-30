@@ -10,7 +10,7 @@ import asyncio
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QFont
-from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication
+from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication, QGridLayout, QGroupBox
 from PyQt5.uic import loadUi
 from alfa_CR6_ui.chrome_widget import ChromeWidget
 from alfa_CR6_ui.keyboard import Keyboard
@@ -46,8 +46,9 @@ class Sinottico(QWidget):
 
         self.init_defs()
         self.add_data()
-        self.home_btn.mouseReleaseEvent = lambda event: self.onHomeBtnClicked()
+        self.home_btn.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.image_sinottico)
         self.chrome_btn.mouseReleaseEvent = lambda event: self.onChromeBtnClicked()
+        self.list_orders_button.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.order_list)
         self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
         self.save_order.clicked.connect(lambda: self.make_order())
@@ -104,6 +105,15 @@ class Sinottico(QWidget):
         self.out_btn_out.mouseReleaseEvent = lambda event: self.jar_button('move_12_00')
 
     def add_data(self):
+        order_list = QGridLayout()
+        order_list.setVerticalSpacing(35)
+        order_box = QGroupBox('Orders:')
+        for i in range(30):
+            order_list.addWidget(QLabel('order'), i, 0)
+            order_list.addWidget(QLabel('20/10/16 12:30'), i, 1)
+        order_box.setLayout(order_list)
+        self.orders_area.setWidget(order_box)
+        self.orders_area.setWidgetResizable(True)
         for head_index in range(len(self.defs)):
             for update_obj in self.defs[head_index]:
                 for button in update_obj['buttons']:
@@ -178,8 +188,8 @@ class Sinottico(QWidget):
         pixmap = QPixmap(QApplication.instance().images_path + p)
         return pixmap.scaled(25, 25, Qt.KeepAspectRatio)
 
-    def onHomeBtnClicked(self):
-        self.main_view_stack.setCurrentWidget(self.image_sinottico)
+    def onModalBtnClicked(self, target):
+        self.main_view_stack.setCurrentWidget(target)
         # ~ self.keyboard.showMinimized()
 
         self.keyboard.hide()
@@ -209,7 +219,7 @@ class Sinottico(QWidget):
 
     def make_order(self):
         QApplication.instance().create_order(self.file_order, n_of_jars=int(self.n_of_jars.text()))
-        self.onHomeBtnClicked()
+        self.onModalBtnClicked(self.image_sinottico)
 
     def onChromeBtnClicked(self):
         if self.browser:

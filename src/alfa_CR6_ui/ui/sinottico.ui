@@ -34,7 +34,7 @@
       <height>61</height>
      </rect>
     </property>
-    <widget class="QLabel" name="chrome_btn">
+    <widget class="QLabel" name="list_orders_button">
      <property name="geometry">
       <rect>
        <x>90</x>
@@ -105,7 +105,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>4</number>
     </property>
     <widget class="QWidget" name="image_sinottico">
      <widget class="QLabel" name="tintometro_image">
@@ -909,6 +909,57 @@
       <property name="text">
        <string>SALVA</string>
       </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="order_list">
+     <widget class="QPushButton" name="order_btn">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>41</y>
+        <width>431</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>New order from formula</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="chrome_btn">
+      <property name="geometry">
+       <rect>
+        <x>52</x>
+        <y>131</y>
+        <width>431</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Download new formula</string>
+      </property>
+     </widget>
+     <widget class="QScrollArea" name="orders_area">
+      <property name="geometry">
+       <rect>
+        <x>9</x>
+        <y>239</y>
+        <width>1651</width>
+        <height>751</height>
+       </rect>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>1649</width>
+         <height>749</height>
+        </rect>
+       </property>
+      </widget>
      </widget>
     </widget>
     <widget class="QWidget" name="modal_status_HEAD_1">
