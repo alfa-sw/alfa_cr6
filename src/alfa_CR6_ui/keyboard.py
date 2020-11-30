@@ -170,13 +170,16 @@ class Keyboard(QWidget):
             'o': 'ㅒ', 'p': 'ㅖ'}
         }
 
-        if self.lang == "kr":
-            letter = latin_korean['normal'].get(l, l)
-            if self.shifted:
-                letter = latin_korean['shifted'].get(l, letter)
-            return letter
-        elif self.lang == "en" and self.shifted:
-            return l.upper()
+        if self.shifted:
+            if self.lang == "kr":
+                non_shifted = latin_korean['normal'].get(l, l)
+                l = latin_korean['shifted'].get(l, non_shifted)
+            l = l.split('\n')[0]
+            l = l[0].upper() + l[1:].upper()
+        else:
+            if self.lang == "kr":
+                l = latin_korean['normal'].get(l, l)
+            l = l.split('\n')[-1]
 
         return l
 
