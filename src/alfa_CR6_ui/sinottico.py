@@ -61,9 +61,6 @@ class Sinottico(QWidget):
         self.download_formula2.clicked.connect(lambda: self.onChromeBtnClicked())
         self.connect_status()
 
-        self.keyboard = Keyboard(self)
-        self.keyboard.hide()
-
         self.view = ChromeWidget(self)
         self.view.setDownloadCallback(lambda path: self.create_order(path))
         self.chrome_layout.addWidget(self.view)
@@ -82,8 +79,8 @@ class Sinottico(QWidget):
                     self.view.view.resize(1920, 760)
 
     def transferKeyboard(self, keyboard):
-        pass
-        # ~ self.keyboard = keyboard
+        self.keyboard = keyboard
+        self.keyboard.parent = self
 
     def move_mainview(self, view):
         self.main_view_stack.setCurrentWidget(view)

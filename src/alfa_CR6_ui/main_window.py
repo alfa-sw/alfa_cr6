@@ -48,8 +48,8 @@ class MainWindow(QMainWindow):
 
         self.main_window_stack.setCurrentWidget(self.login)
 
-        # ~ self.keyboard = Keyboard()
-        # ~ self.keyboard.setWindowFlags(Qt.WindowStaysOnTopHint)
+        self.keyboard = Keyboard(self)
+        self.keyboard.show()
 
     def print_barcode(self):
 
@@ -67,6 +67,8 @@ class MainWindow(QMainWindow):
             self.user_edit.clear()
             self.pass_edit.clear()
             self.main_window_stack.setCurrentWidget(self.project)
+            self.keyboard.hide()
+            self.sinottico.transferKeyboard(self.keyboard)
 
             logging.warning("{ }")
 
