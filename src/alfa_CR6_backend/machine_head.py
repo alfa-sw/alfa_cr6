@@ -166,6 +166,13 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             logging.error(msg_)
             self.app.show_frozen_dialog(msg_)
 
+            if self.index == 0:
+                if status.get('error_code') == 10:      # user button interrupt
+                    for m in self.app.machine_head_dict.values():
+                        if m.index != 0:
+                            t = m.send_command(cmd_name="ABORT", params={})
+                            asyncio.ensure_future(t)
+
         if status.get('status_level') == 'RESET' and self.status.get('status_level') != 'RESET':
             await self.update_tintometer_data(invalidate_cache=True)
             self.app.show_alert_dialog(f'{self.name} RESETTING')
@@ -460,8 +467,8 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             try:
                 if ingredient_volume_map and ingredient_volume_map.get(pigment_name, {}).get(self.name):
                     ingredients[pigment_name] = ingredient_volume_map[pigment_name][self.name]
-            except Exception:
-                logging.warning(traceback.format_exc())
+            except Exception as e:                           # pylint: disable=broad-except
+                self.app.handle_exception(e)
 
         pars = {'package_name': "******* not valid name ****", 'ingredients': ingredients}
         logging.warning(f"{self.name} pars:{pars}")
