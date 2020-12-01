@@ -112,7 +112,15 @@ class Sinottico(QWidget):
         formula_list = QGridLayout()
         formula_list.setVerticalSpacing(35)
         formula_box = QGroupBox('Formulas:')
-        paths = sorted(Path('/opt/alfa_cr6/data/kcc').iterdir(), key=os.path.getmtime)
+        path_data_kcc = Path('/opt/alfa_cr6/data/kcc')
+
+        try:
+            # https://docs.python.org/3/library/pathlib.html#pathlib.Path.mkdir
+            path_data_kcc.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            pass
+
+        paths = sorted(path_data_kcc.iterdir(), key=os.path.getmtime)
         paths.reverse()
 
         for i, item in enumerate(paths):
