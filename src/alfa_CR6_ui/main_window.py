@@ -10,7 +10,6 @@ import logging
 from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QApplication, QMessageBox, QMainWindow  # pylint: disable=no-name-in-module
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
 
 from alfa_CR6_ui.sinottico import Sinottico
 from alfa_CR6_ui.keyboard import Keyboard

@@ -1,19 +1,24 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# coding: utf-8
+
+# pylint: disable=missing-docstring
+# pylint: disable=logging-format-interpolation
+# pylint: disable=line-too-long
+# pylint: disable=invalid-name
+# pylint: disable=import-error 
 
 import os
 import logging
 import traceback
+from collections import namedtuple
+import json
 
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import QApplication, QGridLayout, QWidget, QPushButton, QSizePolicy
-from collections import namedtuple
-import json
 
 has_evdev = True
 try:
     from evdev import UInput, ecodes as e
-except BaseException:
+except Exception:
     has_evdev = False
     logging.error(traceback.format_exc())
 
@@ -76,9 +81,12 @@ class Keyboard(QWidget):
             button.button.setFocusPolicy(Qt.NoFocus)
             button.button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             if self.special_key(button.key):
-                button.button.clicked.connect((lambda n: lambda: self.change(n))(button.key))
+                button.button.clicked.connect((lambda n:
+                    lambda: self.change(n))(button.key))
             elif has_evdev:
-                button.button.clicked.connect((lambda n: lambda: self.on_pushButton_clicked(n))(button.key))
+                button.button.clicked.connect((lambda n:
+                    lambda: self.on_pushButton_clicked(n))(button.key))
+
             layout.addWidget(button.button, button.posx, button.posy, button.endx, button.endy)
         self.setLayout(layout)
 
@@ -186,7 +194,7 @@ class Keyboard(QWidget):
             button.button.setText(self.i18n(button.label))
 
     def change(self, item):
-        if (item == 'Shift'):
+        if item == 'Shift':
             self.shifted = not self.shifted
         elif item == "LANG":
             if self.lang == "en":

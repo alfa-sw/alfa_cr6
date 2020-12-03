@@ -4,39 +4,51 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
+# pylint: disable=import-error 
 
 import logging
-import asyncio
+from collections import namedtuple
+from pathlib import Path
+import os
 
-from PyQt5.QtCore import *
+from PyQt5.QtCore import QUrl, Qt
 from PyQt5.QtGui import QPixmap, QFont
 from PyQt5.QtWidgets import QWidget, QPushButton, QLabel, QApplication, QGridLayout, QGroupBox
 from PyQt5.uic import loadUi
 from alfa_CR6_ui.chrome_widget import ChromeWidget
-from alfa_CR6_ui.keyboard import Keyboard
 from alfa_CR6_ui.jar import Jar
-from collections import namedtuple
-from pathlib import Path
-import datetime
-import os
 
 Button = namedtuple('Button', 'label action')
 StatusItem = namedtuple('StatusItem', 'label path type flagno source current')
 StatusViewItem = namedtuple('StatusViewItem', 'path type source')
 StatusFlag = namedtuple('StatusFlag', 'path_local other path_other')
 
+def get_jar(n):
+    dict_cans = ["/jar-green.png", "/jar-red.png", "/jat-blue.png"]
+    if n == -1:
+        pixmap = QPixmap(QApplication.instance().images_path + dict_cans[0])
+        return pixmap.scaled(0, 0, Qt.KeepAspectRatio)
+    p = dict_cans[n]
+    pixmap = QPixmap(QApplication.instance().images_path + p)
+    return pixmap.scaled(75, 75, Qt.KeepAspectRatio)
+
+def get_pscaled(on):
+    p = "/grey.png"
+    if on:
+        p = "/green.svg"
+    pixmap = QPixmap(QApplication.instance().images_path + p)
+    return pixmap.scaled(25, 25, Qt.KeepAspectRatio)
 
 class Sinottico(QWidget):
-    order_n = 0
     file_order = ""
     browser = False
     view = None
-    visual = "none"
     defs = []
     status_defs = []
     machine_head_dict = {}
     cr6_app = None
     keyboard = None
+    order_list = []
 
     def __init__(self, parent):
 
@@ -52,13 +64,13 @@ class Sinottico(QWidget):
         self.list_orders_button.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.order_list)
         self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
-        self.save_order.clicked.connect(lambda: self.make_order())
+        self.save_order.clicked.connect(self.make_order)
         self.back_to_list_orders.clicked.connect(lambda: self.onModalBtnClicked(self.order_list))
         self.new_order_from_formula.clicked.connect(
             lambda: self.onModalBtnClicked(
                 self.select_formula, extra_actions=[
                     self.update_formulas]))
-        self.download_formula2.clicked.connect(lambda: self.onChromeBtnClicked())
+        self.download_formula2.clicked.connect(self.onChromeBtnClicked)
         self.connect_status()
 
         self.view = ChromeWidget(self)
@@ -159,14 +171,14 @@ class Sinottico(QWidget):
                     label = QLabel(statusItem.label)
                     label.setFixedHeight(35)
                     result = QLabel('')
-                    if (statusItem.type == 'string'):
+                    if statusItem.type == 'string':
                         result = QLabel("")
                         result.setFixedHeight(35)
                         statusItem.current.append(result)
-                    elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
+                    elif statusItem.type == 'flag' or statusItem.type == 'bool':
                         on = 0
                         result = QLabel('')
-                        pscaled = self.get_pscaled(on)
+                        pscaled = get_pscaled(on)
                         result.setPixmap(pscaled)
                         result.setFixedHeight(35)
                         result.setFont(QFont('Times', 28))
@@ -182,15 +194,15 @@ class Sinottico(QWidget):
 
         for update_obj in self.defs[head_index]:
             for statusItem in update_obj['status']:
-                if (statusItem.type == 'string'):
+                if statusItem.type == 'string':
                     statusItem.current[0].setText(machine_status[statusItem.path])
-                elif (statusItem.type == 'flag' or statusItem.type == 'bool'):
+                elif statusItem.type == 'flag' or statusItem.type == 'bool':
                     on = 0
                     if statusItem.type == 'flag':
                         on = machine_status[statusItem.path] >> statusItem.flagno & 1
                     else:
                         on = machine_status[statusItem.path]
-                    pscaled = self.get_pscaled(on)
+                    pscaled = get_pscaled(on)
                     statusItem.current[0].setPixmap(pscaled)
 
         for status_obj in self.status_defs[head_index]:
@@ -198,52 +210,34 @@ class Sinottico(QWidget):
                 status_obj.path.setText(machine_status[status_obj.source])
             if status_obj.type == "jar":
                 if machine_status['jar_photocells_status'] >> status_obj.source.path_local & 1:
-                    pscaled = self.get_jar(0)
+                    pscaled = get_jar(0)
                 else:
-                    pscaled = self.get_jar(-1)
+                    pscaled = get_jar(-1)
                 status_obj.path.setPixmap(pscaled)
 
-    def get_jar(self, n):
-        dict_cans = ["/jar-green.png", "/jar-red.png", "/jat-blue.png"]
-        p = ""
-        if (n != -1):
-            p = dict_cans[n]
-            pixmap = QPixmap(QApplication.instance().images_path + p)
-            return pixmap.scaled(75, 75, Qt.KeepAspectRatio)
-        else:
-            pixmap = QPixmap(QApplication.instance().images_path + dict_cans[0])
-            return pixmap.scaled(0, 0, Qt.KeepAspectRatio)
-
-    def get_pscaled(self, on):
-        p = "/grey.png"
-        if (on):
-            p = "/green.svg"
-        pixmap = QPixmap(QApplication.instance().images_path + p)
-        return pixmap.scaled(25, 25, Qt.KeepAspectRatio)
-
-    def onModalBtnClicked(self, target, extra_actions=[]):
+    def onModalBtnClicked(self, target, extra_actions=None):
         self.main_view_stack.setCurrentWidget(target)
-        # ~ self.keyboard.showMinimized()
 
-        self.keyboard.hide()
+        try:
+            self.keyboard.hide()
+        except Exception as e:
+            logging.error("keyboard not available: {}".format(e))
 
         if self.browser:
             self.chrome_layout.removeWidget(self.view)
             self.browser = False
-        for i in extra_actions:
-            i()
+        if extra_actions:
+            for i in extra_actions:
+                i()
 
     def openChrome(self, target):
 
         logging.warning("target:{}".format(target))
         self.browser = True
 
-        # ~ self.view = ChromeWidget(self, url=target)
-
         self.view.view.setUrl(QUrl(target))
 
         self.view.setDownloadCallback(lambda path: self.create_order(path))
-        # ~ self.chrome_layout.addWidget(self.view)
         self.main_view_stack.setCurrentWidget(self.chrome)
 
     def create_order(self, path):
@@ -256,9 +250,12 @@ class Sinottico(QWidget):
 
     def make_order(self):
         name_formula = '/opt/alfa_cr6/data/kcc/' + self.name_formula.text() + '.json'
-        os.rename(self.file_order, name_formula)
-        QApplication.instance().create_order(name_formula, n_of_jars=int(self.n_of_jars.text()))
-        self.onModalBtnClicked(self.order_list)
+        try:
+            os.rename(self.file_order, name_formula)
+            QApplication.instance().create_order(name_formula, n_of_jars=int(self.n_of_jars.text()))
+            self.onModalBtnClicked(self.order_list)
+        except Exception as e:
+            logging.error("failed to move {} to {} : {}".format(self.file_order, name_formula, e))
 
     def onChromeBtnClicked(self):
         if self.browser:
@@ -277,9 +274,9 @@ class Sinottico(QWidget):
 
     def jar_button(self, action):
         logging.warning(action)
-        if (isinstance(action, str)):
+        if isinstance(action, str):
             self.cr6_app.run_a_coroutine_helper(action)
-        elif (isinstance(action, tuple)):
+        elif isinstance(action, tuple):
             self.cr6_app.run_a_coroutine_helper(*action)
         else:
             logging.error("{} is neither string nor tuple".format(type(action)))
