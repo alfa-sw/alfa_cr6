@@ -4,7 +4,6 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
-# pylint: disable=import-error 
 
 import logging
 from collections import namedtuple
@@ -23,6 +22,7 @@ StatusItem = namedtuple('StatusItem', 'label path type flagno source current')
 StatusViewItem = namedtuple('StatusViewItem', 'path type source')
 StatusFlag = namedtuple('StatusFlag', 'path_local other path_other')
 
+
 def get_jar(n):
     dict_cans = ["/jar-green.png", "/jar-red.png", "/jat-blue.png"]
     if n == -1:
@@ -32,6 +32,7 @@ def get_jar(n):
     pixmap = QPixmap(QApplication.instance().images_path + p)
     return pixmap.scaled(75, 75, Qt.KeepAspectRatio)
 
+
 def get_pscaled(on):
     p = "/grey.png"
     if on:
@@ -39,22 +40,16 @@ def get_pscaled(on):
     pixmap = QPixmap(QApplication.instance().images_path + p)
     return pixmap.scaled(25, 25, Qt.KeepAspectRatio)
 
+
 class Sinottico(QWidget):
     file_order = ""
-    browser = False
-    view = None
-    defs = []
-    status_defs = []
-    machine_head_dict = {}
-    cr6_app = None
     keyboard = None
-    order_list = []
 
     def __init__(self, parent):
 
         super().__init__(parent)
         self.cr6_app = QApplication.instance()
-        loadUi(QApplication.instance().ui_path + "/sinottico.ui", self)
+        loadUi(self.cr6_app.ui_path + "/sinottico.ui", self)
         self.machine_head_dict = QApplication.instance().machine_head_dict
 
         self.init_defs()
@@ -73,9 +68,9 @@ class Sinottico(QWidget):
         self.download_formula2.clicked.connect(self.onChromeBtnClicked)
         self.connect_status()
 
-        self.view = ChromeWidget(self)
-        self.view.setDownloadCallback(lambda path: self.create_order(path))
-        self.chrome_layout.addWidget(self.view)
+        self.web_browser = ChromeWidget(self)
+        self.web_browser.setDownloadCallback(lambda path: self.create_order(path))
+        self.chrome_layout.addWidget(self.web_browser)
 
     def toggleKeyboard(self):
 
@@ -83,12 +78,12 @@ class Sinottico(QWidget):
         if not self.image_sinottico.isVisible():
             if self.keyboard.isVisible():
                 self.keyboard.hide()
-                if self.view:
-                    self.view.view.resize(1920, 1000)
+                if self.web_browser:
+                    self.web_browser.view.resize(1920, 1000)
             else:
                 self.keyboard.show()
-                if self.view:
-                    self.view.view.resize(1920, 760)
+                if self.web_browser:
+                    self.web_browser.view.resize(1920, 760)
 
     def transferKeyboard(self, keyboard):
         self.keyboard = keyboard
@@ -223,9 +218,6 @@ class Sinottico(QWidget):
         except Exception as e:
             logging.error("keyboard not available: {}".format(e))
 
-        if self.browser:
-            self.chrome_layout.removeWidget(self.view)
-            self.browser = False
         if extra_actions:
             for i in extra_actions:
                 i()
@@ -233,20 +225,17 @@ class Sinottico(QWidget):
     def openChrome(self, target):
 
         logging.warning("target:{}".format(target))
-        self.browser = True
 
-        self.view.view.setUrl(QUrl(target))
+        self.web_browser.view.setUrl(QUrl(target))
 
-        self.view.setDownloadCallback(lambda path: self.create_order(path))
+        self.web_browser.setDownloadCallback(lambda path: self.create_order(path))
         self.main_view_stack.setCurrentWidget(self.chrome)
 
     def create_order(self, path):
         self.name_formula.setText(path.split('/')[-1][:-5])  # base name - .json
-        self.browser = False
         self.file_order = path
         self.keyboard.show()
         self.main_view_stack.setCurrentWidget(self.order_modal)
-        self.chrome_layout.removeWidget(self.view)
 
     def make_order(self):
         name_formula = '/opt/alfa_cr6/data/kcc/' + self.name_formula.text() + '.json'
@@ -258,14 +247,7 @@ class Sinottico(QWidget):
             logging.error("failed to move {} to {} : {}".format(self.file_order, name_formula, e))
 
     def onChromeBtnClicked(self):
-        if self.browser:
-            self.browser = False
-            # ~ self.keyboard.showMinimized()
-            self.main_view_stack.setCurrentWidget(self.image_sinottico)
-            self.chrome_layout.removeWidget(self.view)
-        else:
-            # ~ self.keyboard.showNormal()
-            self.openChrome("http://kccrefinish.co.kr")
+        self.openChrome("http://kccrefinish.co.kr")
 
     def add_view(self, widget, clickarea):
         self.main_view_stack.addWidget(widget)

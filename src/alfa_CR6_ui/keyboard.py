@@ -82,10 +82,10 @@ class Keyboard(QWidget):
             button.button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             if self.special_key(button.key):
                 button.button.clicked.connect((lambda n:
-                    lambda: self.change(n))(button.key))
+                                               lambda: self.change(n))(button.key))
             elif has_evdev:
                 button.button.clicked.connect((lambda n:
-                    lambda: self.on_pushButton_clicked(n))(button.key))
+                                               lambda: self.on_pushButton_clicked(n))(button.key))
 
             layout.addWidget(button.button, button.posx, button.posy, button.endx, button.endy)
         self.setLayout(layout)
