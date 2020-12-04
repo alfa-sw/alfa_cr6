@@ -107,7 +107,7 @@
     <property name="currentIndex">
      <number>3</number>
     </property>
-    <widget class="QWidget" name="image_sinottico">
+    <widget class="QWidget" name="home_view">
      <widget class="QLabel" name="tintometro_image">
       <property name="geometry">
        <rect>

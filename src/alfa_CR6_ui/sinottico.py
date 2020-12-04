@@ -52,12 +52,12 @@ class Sinottico(QWidget):
         self.machine_head_dict = QApplication.instance().machine_head_dict
 
         self.init_defs()
-        self.add_data()
-        self.home_btn.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.image_sinottico)
+        self.init_data()
+        self.home_btn.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.home_view)
         self.download_formula.mouseReleaseEvent = lambda event: self.onChromeBtnClicked()
         self.list_orders_button.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.order_list)
         self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
-        self.main_view_stack.setCurrentWidget(self.image_sinottico)
+        self.main_view_stack.setCurrentWidget(self.home_view)
         self.back_to_list_orders.clicked.connect(self.switch_to_order_list)
         self.new_order_from_formula.clicked.connect(self.switch_to_select_formula)
         self.download_formula2.clicked.connect(self.onChromeBtnClicked)
@@ -70,7 +70,7 @@ class Sinottico(QWidget):
     def toggleKeyboard(self):
 
         logging.warning("self.keyboard.isVisible():{}".format(self.keyboard.isVisible()))
-        if not self.image_sinottico.isVisible():
+        if not self.home_view.isVisible():
             if self.keyboard.isVisible():
                 self.keyboard.hide()
                 if self.web_browser:
@@ -98,7 +98,6 @@ class Sinottico(QWidget):
     def connect_status(self):
         service_page_urls = ["http://{}:{}/service_page/".format(i[0], i[2])
                              for i in self.cr6_app.settings.MACHINE_HEAD_IPADD_PORTS_LIST]
-        # TODO: rename the buttons to something meaningful
         self.view_status_HEAD_1.clicked.connect(lambda: self.openChrome(service_page_urls[0]))
         self.view_status_HEAD_2.clicked.connect(lambda: self.openChrome(service_page_urls[1]))
         self.view_status_HEAD_3.clicked.connect(lambda: self.openChrome(service_page_urls[2]))
@@ -151,7 +150,7 @@ class Sinottico(QWidget):
         # self.orders_area.setWidgetResizable(True)
         pass
 
-    def add_data(self):
+    def init_data(self):
 
         for head_index in range(len(self.defs)):
             for update_obj in self.defs[head_index]:
@@ -287,8 +286,8 @@ class Sinottico(QWidget):
             [  # head 5
                 StatusViewItem(self.view_status_HEAD_5, "string", "status_level"),
                 StatusViewItem(self.STEP_4, "jar", StatusFlag(8, 0, 0)),
-                StatusViewItem(self.STEP_5, "jar", StatusFlag(1, 6, 4)),  # 1 6-4
-                StatusViewItem(self.STEP_6, "jar", StatusFlag(1, 6, 4))  # 1 6-3
+                StatusViewItem(self.STEP_5, "jar", StatusFlag(1, 6, 4)),
+                StatusViewItem(self.STEP_6, "jar", StatusFlag(1, 6, 3))
             ],
             [  # head 6
                 StatusViewItem(self.view_status_HEAD_6, "string", "status_level"),
@@ -351,12 +350,9 @@ class Sinottico(QWidget):
                     "buttons": [
                         Button('Start rulliera (MU_8)', ('single_move', 'F', {'Lifter_Roller': 3})),
                         Button('Stop rulliera', ('single_move', 'F', {'Lifter_Roller': 0})),
-                        #Button('Step rulliera', ('single_move', 'F', {'Lifter_Roller': 5})),
-                        # ~ Button('Start "step 11 -step12"', 'move_11_12'),
                         Button('Start "sollevatore_up"', ('single_move', 'F', {'Lifter': 1})),
                         Button('Start "sollevatore_down"', ('single_move', 'F', {'Lifter': 2})),
                         Button('Stop sollevatore"', ('single_move', 'F', {'Lifter': 0})),
-                        # ~ Button('Start "step 10 -step 11"', 'move_10_11'),
                     ],
                     "status": [
                         StatusItem('Stato FTC_9', 'jar_photocells_status', 'flag', 7, 'm1', []),
