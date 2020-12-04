@@ -58,11 +58,8 @@ class Sinottico(QWidget):
         self.list_orders_button.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.order_list)
         self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
-        self.back_to_list_orders.clicked.connect(lambda: self.onModalBtnClicked(self.order_list))
-        self.new_order_from_formula.clicked.connect(
-            lambda: self.onModalBtnClicked(
-                self.select_formula, extra_actions=[
-                    self.update_formulas]))
+        self.back_to_list_orders.clicked.connect(self.switch_to_order_list)
+        self.new_order_from_formula.clicked.connect(self.switch_to_select_formula)
         self.download_formula2.clicked.connect(self.onChromeBtnClicked)
         self.connect_status()
 
@@ -82,6 +79,14 @@ class Sinottico(QWidget):
                 self.keyboard.show()
                 if self.web_browser:
                     self.web_browser.view.resize(1920, 760)
+
+    def switch_to_select_formula(self):
+        self.update_formulas()
+        self.onModalBtnClicked(self.select_formula)
+
+    def switch_to_order_list(self):
+        self.update_orders()
+        self.onModalBtnClicked(self.order_list)
 
     def transferKeyboard(self, keyboard):
         self.keyboard = keyboard
@@ -138,19 +143,15 @@ class Sinottico(QWidget):
         self.saved_formulas_area.setWidget(formula_box)
         self.saved_formulas_area.setWidgetResizable(True)
 
+    def update_orders(self):
+        # TODO: update the orders
+        # the order widget is self.orders_area with type QScrollArea
+        # its content is set with
+        # self.orders_area.setWidget(WIDGET)
+        # self.orders_area.setWidgetResizable(True)
+        pass
+
     def add_data(self):
-
-        order_list = QGridLayout()
-        order_list.setVerticalSpacing(35)
-        order_box = QGroupBox('Orders:')
-        # for i in range(30):  TODO: add real data
-        #    order_list.addWidget(QLabel('order'), i, 0)
-        #    order_list.addWidget(QLabel('20/10/16 12:30'), i, 1)
-        order_box.setLayout(order_list)
-        self.orders_area.setWidget(order_box)
-        self.orders_area.setWidgetResizable(True)
-
-        self.update_formulas()
 
         for head_index in range(len(self.defs)):
             for update_obj in self.defs[head_index]:
@@ -208,17 +209,13 @@ class Sinottico(QWidget):
                     pscaled = get_jar(-1)
                 status_obj.path.setPixmap(pscaled)
 
-    def onModalBtnClicked(self, target, extra_actions=None):
+    def onModalBtnClicked(self, target):
         self.main_view_stack.setCurrentWidget(target)
 
         try:
             self.keyboard.hide()
         except Exception as e:
             logging.error("keyboard not available: {}".format(e))
-
-        if extra_actions:
-            for i in extra_actions:
-                i()
 
     def openChrome(self, target):
 
