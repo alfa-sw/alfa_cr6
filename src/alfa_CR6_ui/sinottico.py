@@ -42,7 +42,6 @@ def get_pscaled(on):
 
 
 class Sinottico(QWidget):
-    file_order = ""
     keyboard = None
 
     def __init__(self, parent):
@@ -59,7 +58,6 @@ class Sinottico(QWidget):
         self.list_orders_button.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.order_list)
         self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
         self.main_view_stack.setCurrentWidget(self.image_sinottico)
-        self.save_order.clicked.connect(self.make_order)
         self.back_to_list_orders.clicked.connect(lambda: self.onModalBtnClicked(self.order_list))
         self.new_order_from_formula.clicked.connect(
             lambda: self.onModalBtnClicked(
@@ -233,18 +231,22 @@ class Sinottico(QWidget):
 
     def create_order(self, path):
         self.name_formula.setText(path.split('/')[-1][:-5])  # base name - .json
-        self.file_order = path
         self.keyboard.show()
+        try: #remove prevvious connection if any
+            self.save_order.clicked.disconnect()
+        except:
+            pass
+        self.save_order.clicked.connect(lambda: self.make_order(path))
         self.main_view_stack.setCurrentWidget(self.order_modal)
 
-    def make_order(self):
+    def make_order(self, path):
         name_formula = '/opt/alfa_cr6/data/kcc/' + self.name_formula.text() + '.json'
         try:
-            os.rename(self.file_order, name_formula)
+            os.rename(path, name_formula)
             QApplication.instance().create_order(name_formula, n_of_jars=int(self.n_of_jars.text()))
             self.onModalBtnClicked(self.order_list)
         except Exception as e:
-            logging.error("failed to move {} to {} : {}".format(self.file_order, name_formula, e))
+            logging.error("failed to move {} to {} : {}".format(path, name_formula, e))
 
     def onChromeBtnClicked(self):
         self.openChrome("http://kccrefinish.co.kr")
