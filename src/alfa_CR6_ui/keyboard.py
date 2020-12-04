@@ -116,16 +116,16 @@ class Keyboard(QWidget):
         for b in self.buttons:
             b.button.show()
 
-    def ev_definitions(self):
+    def ev_definitions(self, key):
         ev_dict = {  # for chars not handled by e.kEY_<key>
             "LANG": self.lang.upper(),
             "Shift": "Shift",
         }
 
-        return ev_dict  # ev_dict.get(el, el)
+        return ev_dict.get(key, key)
 
     def special_key(self, key):
-        if self.ev_definitions().get(key, False):
+        if self.ev_definitions(False):
             return True
         else:
             return False
@@ -161,7 +161,7 @@ class Keyboard(QWidget):
 
     def i18n(self, le):
 
-        l = self.ev_definitions().get(le, le)
+        l = self.ev_definitions(le)
 
         latin_korean = {'normal': {
             'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': 'ㅅ', 'y': 'ㅛ', 'u': 'ㅕ', 'i': 'ㅑ', 'o': 'ㅐ', 'p': 'ㅔ',
