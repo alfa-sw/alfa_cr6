@@ -53,9 +53,9 @@ class Sinottico(QWidget):
 
         self.init_defs()
         self.init_data()
-        self.home_btn.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.home_view)
+        self.home_btn.mouseReleaseEvent = lambda event: self.change_main_view(self.home_view)
         self.download_formula.mouseReleaseEvent = lambda event: self.browser_btn_clicked()
-        self.list_orders_button.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.order_list)
+        self.list_orders_button.mouseReleaseEvent = lambda event: self.change_main_view(self.order_list)
         self.keybd_btn.mouseReleaseEvent = lambda event: self.toggle_keyboard()
         self.main_view_stack.setCurrentWidget(self.home_view)
         self.back_to_list_orders.clicked.connect(self.switch_to_order_list)
@@ -82,11 +82,11 @@ class Sinottico(QWidget):
 
     def switch_to_select_formula(self):
         self.update_formulas()
-        self.onModalBtnClicked(self.select_formula)
+        self.change_main_view(self.select_formula)
 
     def switch_to_order_list(self):
         self.update_orders()
-        self.onModalBtnClicked(self.order_list)
+        self.change_main_view(self.order_list)
 
     def transfer_keyboard(self, keyboard):
         self.keyboard = keyboard
@@ -98,12 +98,12 @@ class Sinottico(QWidget):
     def connect_status(self):
         service_page_urls = ["http://{}:{}/service_page/".format(i[0], i[2])
                              for i in self.cr6_app.settings.MACHINE_HEAD_IPADD_PORTS_LIST]
-        self.view_status_HEAD_1.clicked.connect(lambda: self.openChrome(service_page_urls[0]))
-        self.view_status_HEAD_2.clicked.connect(lambda: self.openChrome(service_page_urls[1]))
-        self.view_status_HEAD_3.clicked.connect(lambda: self.openChrome(service_page_urls[2]))
-        self.view_status_HEAD_4.clicked.connect(lambda: self.openChrome(service_page_urls[3]))
-        self.view_status_HEAD_5.clicked.connect(lambda: self.openChrome(service_page_urls[4]))
-        self.view_status_HEAD_6.clicked.connect(lambda: self.openChrome(service_page_urls[5]))
+        self.view_status_HEAD_1.clicked.connect(lambda: self.open_browser(service_page_urls[0]))
+        self.view_status_HEAD_2.clicked.connect(lambda: self.open_browser(service_page_urls[1]))
+        self.view_status_HEAD_3.clicked.connect(lambda: self.open_browser(service_page_urls[2]))
+        self.view_status_HEAD_4.clicked.connect(lambda: self.open_browser(service_page_urls[3]))
+        self.view_status_HEAD_5.clicked.connect(lambda: self.open_browser(service_page_urls[4]))
+        self.view_status_HEAD_6.clicked.connect(lambda: self.open_browser(service_page_urls[5]))
 
         self.refill_HEAD_1.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(0)
         self.refill_HEAD_2.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(1)
@@ -160,18 +160,16 @@ class Sinottico(QWidget):
                     btn.clicked.connect((lambda x: lambda: self.jar_button(x))(button.action))
                     update_obj['view'].buttons.addWidget(btn)
                 existing = update_obj['view'].status.count() / 2
+
                 for n, statusItem in enumerate(update_obj['status']):
                     label = QLabel(statusItem.label)
                     label.setFixedHeight(35)
                     result = QLabel('')
                     if statusItem.type == 'string':
-                        result = QLabel("")
                         result.setFixedHeight(35)
                         statusItem.current.append(result)
                     elif statusItem.type == 'flag' or statusItem.type == 'bool':
-                        on = 0
-                        result = QLabel('')
-                        pixmap_scaled = get_pixmap_scaled(on)
+                        pixmap_scaled = get_pixmap_scaled(0)
                         result.setPixmap(pixmap_scaled)
                         result.setFixedHeight(35)
                         result.setFont(QFont('Times', 28))
@@ -190,7 +188,6 @@ class Sinottico(QWidget):
                 if statusItem.type == 'string':
                     statusItem.current[0].setText(machine_status[statusItem.path])
                 elif statusItem.type == 'flag' or statusItem.type == 'bool':
-                    on = 0
                     if statusItem.type == 'flag':
                         on = machine_status[statusItem.path] >> statusItem.flagno & 1
                     else:
@@ -208,7 +205,7 @@ class Sinottico(QWidget):
                     jar_icon = get_jar_icon(-1)
                 status_obj.path.setPixmap(jar_icon)
 
-    def onModalBtnClicked(self, target):
+    def change_main_view(self, target):
         self.main_view_stack.setCurrentWidget(target)
 
         try:
@@ -216,7 +213,7 @@ class Sinottico(QWidget):
         except Exception as e:
             logging.error("keyboard not available: {}".format(e))
 
-    def openChrome(self, target):
+    def open_browser(self, target):
 
         logging.warning("target:{}".format(target))
 
@@ -243,10 +240,10 @@ class Sinottico(QWidget):
             logging.error("failed to move {} to {} : {}".format(path, name_formula, type(e)))
             return
         QApplication.instance().create_order(name_formula, n_of_jars=int(self.n_of_jars.text()))
-        self.onModalBtnClicked(self.order_list)
+        self.change_main_view(self.order_list)
 
     def browser_btn_clicked(self):
-        self.openChrome("http://kccrefinish.co.kr")
+        self.open_browser("http://kccrefinish.co.kr")
 
     def add_view(self, widget, clickarea):
         self.main_view_stack.addWidget(widget)
