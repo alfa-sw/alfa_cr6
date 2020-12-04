@@ -54,20 +54,20 @@ class Sinottico(QWidget):
         self.init_defs()
         self.init_data()
         self.home_btn.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.home_view)
-        self.download_formula.mouseReleaseEvent = lambda event: self.onChromeBtnClicked()
+        self.download_formula.mouseReleaseEvent = lambda event: self.browser_btn_clicked()
         self.list_orders_button.mouseReleaseEvent = lambda event: self.onModalBtnClicked(self.order_list)
-        self.keybd_btn.mouseReleaseEvent = lambda event: self.toggleKeyboard()
+        self.keybd_btn.mouseReleaseEvent = lambda event: self.toggle_keyboard()
         self.main_view_stack.setCurrentWidget(self.home_view)
         self.back_to_list_orders.clicked.connect(self.switch_to_order_list)
         self.new_order_from_formula.clicked.connect(self.switch_to_select_formula)
-        self.download_formula2.clicked.connect(self.onChromeBtnClicked)
+        self.download_formula2.clicked.connect(self.browser_btn_clicked)
         self.connect_status()
 
         self.web_browser = ChromeWidget(self)
         self.web_browser.setDownloadCallback(lambda path: self.create_order(path))
         self.chrome_layout.addWidget(self.web_browser)
 
-    def toggleKeyboard(self):
+    def toggle_keyboard(self):
 
         logging.warning("self.keyboard.isVisible():{}".format(self.keyboard.isVisible()))
         if not self.home_view.isVisible():
@@ -88,7 +88,7 @@ class Sinottico(QWidget):
         self.update_orders()
         self.onModalBtnClicked(self.order_list)
 
-    def transferKeyboard(self, keyboard):
+    def transfer_keyboard(self, keyboard):
         self.keyboard = keyboard
         self.keyboard.parent = self
 
@@ -244,7 +244,7 @@ class Sinottico(QWidget):
         except Exception as e:
             logging.error("failed to move {} to {} : {}".format(path, name_formula, e))
 
-    def onChromeBtnClicked(self):
+    def browser_btn_clicked(self):
         self.openChrome("http://kccrefinish.co.kr")
 
     def add_view(self, widget, clickarea):

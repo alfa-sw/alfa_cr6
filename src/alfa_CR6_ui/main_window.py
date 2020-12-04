@@ -25,7 +25,7 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         loadUi(QApplication.instance().ui_path + "/main_window.ui", self)
         self.setFont(QFont('Times sans-serif', 28))
-        self.login_btn.clicked.connect(self.onLoginBtnClicked)
+        self.login_btn.clicked.connect(self.login_clicked)
         self.main_window_stack.setCurrentWidget(self.login)
 
         ver = QApplication.instance().get_version()
@@ -57,7 +57,7 @@ class MainWindow(QMainWindow):
         QApplication.instance().show_alert_dialog(f" print_barcode() response: {response}")
         logging.warning(f"* txt:{txt}")
 
-    def onLoginBtnClicked(self):
+    def login_clicked(self):
 
         logging.warning("{ }")
 
@@ -67,7 +67,7 @@ class MainWindow(QMainWindow):
             self.pass_edit.clear()
             self.main_window_stack.setCurrentWidget(self.project)
             self.keyboard.hide()
-            self.sinottico.transferKeyboard(self.keyboard)
+            self.sinottico.transfer_keyboard(self.keyboard)
 
             logging.warning("{ }")
 

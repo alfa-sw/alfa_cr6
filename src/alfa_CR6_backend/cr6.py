@@ -209,7 +209,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.main_window = MainWindow()
         if hasattr(self.settings, 'BYPASS_LOGIN') and self.settings.BYPASS_LOGIN:
-            self.main_window.onLoginBtnClicked()
+            self.main_window.login_clicked()
 
         self.alert_msgboxes = []
 
