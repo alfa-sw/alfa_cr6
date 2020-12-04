@@ -230,7 +230,7 @@ class Sinottico(QWidget):
         self.keyboard.show()
         try:  # remove previous connection if any
             self.save_order.clicked.disconnect()
-        except BaseException:
+        except TypeError:
             pass
         self.save_order.clicked.connect(lambda: self.make_order(path))
         self.main_view_stack.setCurrentWidget(self.order_modal)
@@ -239,10 +239,11 @@ class Sinottico(QWidget):
         name_formula = '/opt/alfa_cr6/data/kcc/' + self.name_formula.text() + '.json'
         try:
             os.rename(path, name_formula)
-            QApplication.instance().create_order(name_formula, n_of_jars=int(self.n_of_jars.text()))
-            self.onModalBtnClicked(self.order_list)
         except Exception as e:
-            logging.error("failed to move {} to {} : {}".format(path, name_formula, e))
+            logging.error("failed to move {} to {} : {}".format(path, name_formula, type(e)))
+            return
+        QApplication.instance().create_order(name_formula, n_of_jars=int(self.n_of_jars.text()))
+        self.onModalBtnClicked(self.order_list)
 
     def browser_btn_clicked(self):
         self.openChrome("http://kccrefinish.co.kr")
