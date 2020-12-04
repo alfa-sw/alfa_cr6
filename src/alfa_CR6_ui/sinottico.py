@@ -23,7 +23,7 @@ StatusViewItem = namedtuple('StatusViewItem', 'path type source')
 StatusFlag = namedtuple('StatusFlag', 'path_local other path_other')
 
 
-def get_jar(n):
+def get_jar_icon(n):
     dict_cans = ["/jar-green.png", "/jar-red.png", "/jat-blue.png"]
     if n == -1:
         pixmap = QPixmap(QApplication.instance().images_path + dict_cans[0])
@@ -33,7 +33,7 @@ def get_jar(n):
     return pixmap.scaled(75, 75, Qt.KeepAspectRatio)
 
 
-def get_pscaled(on):
+def get_pixmap_scaled(on):
     p = "/grey.png"
     if on:
         p = "/green.svg"
@@ -171,8 +171,8 @@ class Sinottico(QWidget):
                     elif statusItem.type == 'flag' or statusItem.type == 'bool':
                         on = 0
                         result = QLabel('')
-                        pscaled = get_pscaled(on)
-                        result.setPixmap(pscaled)
+                        pixmap_scaled = get_pixmap_scaled(on)
+                        result.setPixmap(pixmap_scaled)
                         result.setFixedHeight(35)
                         result.setFont(QFont('Times', 28))
                         statusItem.current.append(result)
@@ -195,18 +195,18 @@ class Sinottico(QWidget):
                         on = machine_status[statusItem.path] >> statusItem.flagno & 1
                     else:
                         on = machine_status[statusItem.path]
-                    pscaled = get_pscaled(on)
-                    statusItem.current[0].setPixmap(pscaled)
+                    pixmap_scaled = get_pixmap_scaled(on)
+                    statusItem.current[0].setPixmap(pixmap_scaled)
 
         for status_obj in self.status_defs[head_index]:
             if status_obj.type == "string":
                 status_obj.path.setText(machine_status[status_obj.source])
             if status_obj.type == "jar":
                 if machine_status['jar_photocells_status'] >> status_obj.source.path_local & 1:
-                    pscaled = get_jar(0)
+                    jar_icon = get_jar_icon(0)
                 else:
-                    pscaled = get_jar(-1)
-                status_obj.path.setPixmap(pscaled)
+                    jar_icon = get_jar_icon(-1)
+                status_obj.path.setPixmap(jar_icon)
 
     def onModalBtnClicked(self, target):
         self.main_view_stack.setCurrentWidget(target)
