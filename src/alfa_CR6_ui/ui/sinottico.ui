@@ -358,7 +358,7 @@
        </rect>
       </property>
      </widget>
-     <widget class="QPushButton" name="view_status_HEAD_1_STEP_2">
+     <widget class="QPushButton" name="view_status_HEAD_1">
       <property name="geometry">
        <rect>
         <x>500</x>
@@ -371,7 +371,7 @@
        <string/>
       </property>
      </widget>
-     <widget class="QPushButton" name="view_status_HEAD_3_STEP_3">
+     <widget class="QPushButton" name="view_status_HEAD_3">
       <property name="geometry">
        <rect>
         <x>870</x>
@@ -384,7 +384,7 @@
        <string/>
       </property>
      </widget>
-     <widget class="QPushButton" name="view_status_HEAD_5_STEP_4">
+     <widget class="QPushButton" name="view_status_HEAD_5">
       <property name="geometry">
        <rect>
         <x>1230</x>
@@ -397,7 +397,7 @@
        <string/>
       </property>
      </widget>
-     <widget class="QPushButton" name="view_status_HEAD_2_STEP_9">
+     <widget class="QPushButton" name="view_status_HEAD_2">
       <property name="geometry">
        <rect>
         <x>500</x>
@@ -410,7 +410,7 @@
        <string/>
       </property>
      </widget>
-     <widget class="QPushButton" name="view_status_HEAD_4_STEP_8">
+     <widget class="QPushButton" name="view_status_HEAD_4">
       <property name="geometry">
        <rect>
         <x>870</x>
@@ -423,7 +423,7 @@
        <string/>
       </property>
      </widget>
-     <widget class="QPushButton" name="view_status_HEAD_6_STEP_7">
+     <widget class="QPushButton" name="view_status_HEAD_6">
       <property name="geometry">
        <rect>
         <x>1230</x>

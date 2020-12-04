@@ -99,12 +99,12 @@ class Sinottico(QWidget):
         service_page_urls = ["http://{}:{}/service_page/".format(i[0], i[2])
                              for i in self.cr6_app.settings.MACHINE_HEAD_IPADD_PORTS_LIST]
         # TODO: rename the buttons to something meaningful
-        self.view_status_HEAD_1_STEP_2.clicked.connect(lambda: self.openChrome(service_page_urls[0]))
-        self.view_status_HEAD_2_STEP_9.clicked.connect(lambda: self.openChrome(service_page_urls[1]))
-        self.view_status_HEAD_3_STEP_3.clicked.connect(lambda: self.openChrome(service_page_urls[2]))
-        self.view_status_HEAD_4_STEP_8.clicked.connect(lambda: self.openChrome(service_page_urls[3]))
-        self.view_status_HEAD_5_STEP_4.clicked.connect(lambda: self.openChrome(service_page_urls[4]))
-        self.view_status_HEAD_6_STEP_7.clicked.connect(lambda: self.openChrome(service_page_urls[5]))
+        self.view_status_HEAD_1.clicked.connect(lambda: self.openChrome(service_page_urls[0]))
+        self.view_status_HEAD_2.clicked.connect(lambda: self.openChrome(service_page_urls[1]))
+        self.view_status_HEAD_3.clicked.connect(lambda: self.openChrome(service_page_urls[2]))
+        self.view_status_HEAD_4.clicked.connect(lambda: self.openChrome(service_page_urls[3]))
+        self.view_status_HEAD_5.clicked.connect(lambda: self.openChrome(service_page_urls[4]))
+        self.view_status_HEAD_6.clicked.connect(lambda: self.openChrome(service_page_urls[5]))
 
         self.refill_HEAD_1.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(0)
         self.refill_HEAD_2.mouseReleaseEvent = lambda event: self.cr6_app.ask_for_refill(1)
@@ -229,9 +229,9 @@ class Sinottico(QWidget):
     def create_order(self, path):
         self.name_formula.setText(path.split('/')[-1][:-5])  # base name - .json
         self.keyboard.show()
-        try: #remove prevvious connection if any
+        try:  # remove previous connection if any
             self.save_order.clicked.disconnect()
-        except:
+        except BaseException:
             pass
         self.save_order.clicked.connect(lambda: self.make_order(path))
         self.main_view_stack.setCurrentWidget(self.order_modal)
@@ -265,33 +265,33 @@ class Sinottico(QWidget):
     def init_defs(self):
         self.status_defs = [
             [  # head 1
-                StatusViewItem(self.view_status_HEAD_1_STEP_2, "string", "status_level"),
+                StatusViewItem(self.view_status_HEAD_1, "string", "status_level"),
                 StatusViewItem(self.STEP_1, "jar", StatusFlag(0, 0, 0)),
                 StatusViewItem(self.STEP_2, "jar", StatusFlag(8, 0, 0)),
             ],
             [  # head 2
-                StatusViewItem(self.view_status_HEAD_2_STEP_9, "string", "status_level"),
+                StatusViewItem(self.view_status_HEAD_2, "string", "status_level"),
                 StatusViewItem(self.STEP_9, "jar", StatusFlag(8, 0, 0)),
                 StatusViewItem(self.STEP_10, "jar", StatusFlag(7, 0, 5)),
                 StatusViewItem(self.STEP_11, "jar", StatusFlag(7, 0, 6)),
                 StatusViewItem(self.STEP_12, "jar", StatusFlag(2, 0, 0)),
             ],
             [  # head 3
-                StatusViewItem(self.view_status_HEAD_3_STEP_3, "string", "status_level"),
+                StatusViewItem(self.view_status_HEAD_3, "string", "status_level"),
                 StatusViewItem(self.STEP_3, "jar", StatusFlag(8, 0, 0)),
             ],
             [  # head 4
-                StatusViewItem(self.view_status_HEAD_4_STEP_8, "string", "status_level"),
+                StatusViewItem(self.view_status_HEAD_4, "string", "status_level"),
                 StatusViewItem(self.STEP_8, "jar", StatusFlag(8, 0, 0)),
             ],
             [  # head 5
-                StatusViewItem(self.view_status_HEAD_5_STEP_4, "string", "status_level"),
+                StatusViewItem(self.view_status_HEAD_5, "string", "status_level"),
                 StatusViewItem(self.STEP_4, "jar", StatusFlag(8, 0, 0)),
                 StatusViewItem(self.STEP_5, "jar", StatusFlag(1, 6, 4)),  # 1 6-4
                 StatusViewItem(self.STEP_6, "jar", StatusFlag(1, 6, 4))  # 1 6-3
             ],
             [  # head 6
-                StatusViewItem(self.view_status_HEAD_6_STEP_7, "string", "status_level"),
+                StatusViewItem(self.view_status_HEAD_6, "string", "status_level"),
                 StatusViewItem(self.STEP_7, "jar", StatusFlag(8, 0, 0)),
             ],
         ]

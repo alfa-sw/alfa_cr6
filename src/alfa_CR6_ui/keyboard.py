@@ -4,7 +4,7 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
-# pylint: disable=import-error 
+# pylint: disable=import-error
 
 import os
 import logging
