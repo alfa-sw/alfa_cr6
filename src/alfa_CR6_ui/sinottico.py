@@ -92,9 +92,6 @@ class Sinottico(QWidget):
         self.keyboard = keyboard
         self.keyboard.parent = self
 
-    def move_mainview(self, view):
-        self.main_view_stack.setCurrentWidget(view)
-
     def connect_status(self):
         service_page_urls = ["http://{}:{}/service_page/".format(i[0], i[2])
                              for i in self.cr6_app.settings.MACHINE_HEAD_IPADD_PORTS_LIST]
@@ -161,19 +158,19 @@ class Sinottico(QWidget):
                     update_obj['view'].buttons.addWidget(btn)
                 existing = update_obj['view'].status.count() / 2
 
-                for n, statusItem in enumerate(update_obj['status']):
-                    label = QLabel(statusItem.label)
+                for n, status_item in enumerate(update_obj['status']):
+                    label = QLabel(status_item.label)
                     label.setFixedHeight(35)
                     result = QLabel('')
-                    if statusItem.type == 'string':
+                    if status_item.type == 'string':
                         result.setFixedHeight(35)
-                        statusItem.current.append(result)
-                    elif statusItem.type == 'flag' or statusItem.type == 'bool':
+                        status_item.current.append(result)
+                    elif status_item.type == 'flag' or status_item.type == 'bool':
                         pixmap_scaled = get_pixmap_scaled(0)
                         result.setPixmap(pixmap_scaled)
                         result.setFixedHeight(35)
                         result.setFont(QFont('Times', 28))
-                        statusItem.current.append(result)
+                        status_item.current.append(result)
                     update_obj['view'].status.addWidget(label, existing + n, 0)
                     update_obj['view'].status.addWidget(result, existing + n, 1)
 
@@ -184,16 +181,16 @@ class Sinottico(QWidget):
         machine_status = status
 
         for update_obj in self.defs[head_index]:
-            for statusItem in update_obj['status']:
-                if statusItem.type == 'string':
-                    statusItem.current[0].setText(machine_status[statusItem.path])
-                elif statusItem.type == 'flag' or statusItem.type == 'bool':
-                    if statusItem.type == 'flag':
-                        on = machine_status[statusItem.path] >> statusItem.flagno & 1
+            for status_item in update_obj['status']:
+                if status_item.type == 'string':
+                    status_item.current[0].setText(machine_status[status_item.path])
+                elif status_item.type == 'flag' or status_item.type == 'bool':
+                    if status_item.type == 'flag':
+                        on = machine_status[status_item.path] >> status_item.flagno & 1
                     else:
-                        on = machine_status[statusItem.path]
+                        on = machine_status[status_item.path]
                     pixmap_scaled = get_pixmap_scaled(on)
-                    statusItem.current[0].setPixmap(pixmap_scaled)
+                    status_item.current[0].setPixmap(pixmap_scaled)
 
         for status_obj in self.status_defs[head_index]:
             if status_obj.type == "string":
@@ -247,7 +244,7 @@ class Sinottico(QWidget):
 
     def add_view(self, widget, clickarea):
         self.main_view_stack.addWidget(widget)
-        clickarea.mousePressEvent = lambda event: self.move_mainview(widget)
+        clickarea.mousePressEvent = lambda event: self.change_main_view(widget)
         return widget
 
     def jar_button(self, action):
