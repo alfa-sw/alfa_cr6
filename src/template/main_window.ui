@@ -18,9 +18,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>980</y>
-      <width>1901</width>
-      <height>91</height>
+      <y>1000</y>
+      <width>1920</width>
+      <height>71</height>
      </rect>
     </property>
     <property name="frameShape">
@@ -77,7 +77,7 @@
      <property name="iconSize">
       <size>
        <width>200</width>
-       <height>60</height>
+       <height>56</height>
       </size>
      </property>
      <property name="flat">
@@ -178,7 +178,7 @@
       <x>0</x>
       <y>0</y>
       <width>1920</width>
-      <height>960</height>
+      <height>1001</height>
      </rect>
     </property>
     <property name="styleSheet">
@@ -334,7 +334,7 @@
         <x>10</x>
         <y>110</y>
         <width>920</width>
-        <height>848</height>
+        <height>868</height>
        </rect>
       </property>
      </widget>
@@ -344,7 +344,7 @@
         <x>960</x>
         <y>110</y>
         <width>920</width>
-        <height>848</height>
+        <height>868</height>
        </rect>
       </property>
      </widget>
@@ -431,8 +431,27 @@
     </widget>
     <widget class="QWidget" name="browser_page">
      <property name="styleSheet">
-      <string notr="true">background:#FFFFFF</string>
+      <string notr="true">background:#AAAAAA</string>
      </property>
+     <widget class="QFrame" name="browser_frame">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>20</y>
+        <width>1920</width>
+        <height>981</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:#FFFFEE</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Panel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+     </widget>
     </widget>
    </widget>
   </widget>

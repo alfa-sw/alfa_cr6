@@ -11,18 +11,22 @@ import sys
 import logging
 
 from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView
+from PyQt5.QtCore import Qt, QVariant, QAbstractTableModel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHeaderView, QTableWidgetItem
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.Qt import QUrl
+from PyQt5.QtGui import QIcon
 
-from PyQt5.QtCore import Qt, QVariant, QAbstractTableModel
-# ~ from PyQt5.QtGui import *
-# ~ from PyQt5 import QtGui, QtCore
-
+from alfa_CR6_ui.keyboard import Keyboard                # pylint: disable=import-error
 from alfa_CR6_backend.models import init_models, Order  # pylint: disable=import-error
 
 DOWNLOAD_PATH = "/opt/alfa_cr6/data/kcc"
 DB_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+KEYBOARD_PATH = os.path.join(HERE, '..', 'alfa_CR6_ui', 'keyboard')
+IMAGES_PATH = os.path.join(HERE, '..', 'alfa_CR6_ui', 'images')
+
 
 class Cr6TableModel(QAbstractTableModel):
 
@@ -47,15 +51,21 @@ class Cr6TableModel(QAbstractTableModel):
             return self.header[col]
         return None
 
+
 class FileTableModel(Cr6TableModel):
 
     def __init__(self, parent, path, *args):
         super().__init__(parent, *args)
-        self.header = ['name', ]
+        self.header = ['icon', 'name', ]
         filter_text = parent.search_file_line.text()
-        list_ = [p for p in os.listdir(path) if filter_text in p]
-        logging.warning(f"list_:{list_}")
-        self.results = [[p, ] for p in list_]
+        name_list_ = [p for p in os.listdir(path) if filter_text in p]
+        icon_item = QTableWidgetItem()
+        icon_item.setIcon(QIcon(os.path.join(IMAGES_PATH, 'green.png')))
+        logging.warning(f"name_list_ :{name_list_ }")
+        # ~ logging.warning(f"icon_ :{icon_ }")
+
+        self.results = [[icon_item, p, ] for p in name_list_]
+
 
 class OrderTableModel(Cr6TableModel):
 
@@ -64,7 +74,9 @@ class OrderTableModel(Cr6TableModel):
         self.header = ['order_nr', 'status', 'json_properties']
         filter_text = parent.search_order_line.text()
         if session:
-            query_ = session.query(Order).filter(Order.order_nr.contains(filter_text)).order_by(Order.order_nr.desc()).limit(100)
+            query_ = session.query(Order)
+            query_ = query_.filter(Order.order_nr.contains(filter_text))
+            query_ = query_.order_by(Order.order_nr.desc()).limit(100)
             self.results = [[o.order_nr, o.status, o.json_properties] for o in query_.all()]
         else:
             self.results = [[], ]
@@ -77,9 +89,8 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         loadUi("main_window.ui", self)
 
-        self.webengine_view = QWebEngineView(self.browser_page)
-        self.webengine_view.setGeometry(0, 28, self.stacked_widget.width(), self.stacked_widget.height() - 28)
-
+        self.webengine_view = QWebEngineView(self.browser_frame)
+        self.webengine_view.setGeometry(0, 0, self.browser_frame.width(), self.browser_frame.height())
         self.order_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.file_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
@@ -99,13 +110,13 @@ class MainWindow(QMainWindow):
 
         self.db_session = init_models(DB_STRING)
 
-        self.stacked_widget.setCurrentWidget(self.order_page)
+        self.keyboard = Keyboard(self, keyboard_path=KEYBOARD_PATH)
+        self.keyboard.setGeometry(0, self.menu_frame.y() - self.keyboard.height(), self.menu_frame.width(), 256)
 
     def on_service_btn_group_clicked(self, btn):
 
         logging.warning(f"btn.objectName():{btn.objectName()}")
         self.stacked_widget.setCurrentWidget(self.browser_page)
-        # ~ self.webengine_view.setUrl(QUrl('http://127.0.0.1:8080/admin'))
         self.webengine_view.setUrl(QUrl('http://127.0.0.1:8080/service_page'))
 
     def on_menu_btn_group_clicked(self, btn):
@@ -113,16 +124,19 @@ class MainWindow(QMainWindow):
         logging.warning(f"btn.objectName():{btn.objectName()}")
         btn_name = btn.objectName()
         if 'home' in btn_name:
+            self.toggle_keyboard(on_off=False)
             self.stacked_widget.setCurrentWidget(self.home_page)
         elif 'order' in btn_name:
+            self.toggle_keyboard(on_off=False)
             self.populate_order_table()
             self.populate_file_table()
             self.stacked_widget.setCurrentWidget(self.order_page)
         elif 'browser' in btn_name:
+            self.toggle_keyboard(on_off=True)
             self.stacked_widget.setCurrentWidget(self.browser_page)
             self.webengine_view.setUrl(QUrl('http://kccrefinish.co.kr'))
         elif 'keyboard' in btn_name:
-            pass
+            self.toggle_keyboard()
 
     def on_order_table_clicked(self, index):
 
@@ -143,6 +157,22 @@ class MainWindow(QMainWindow):
 
         file_model = FileTableModel(self, DOWNLOAD_PATH)
         self.file_table.setModel(file_model)
+
+    def toggle_keyboard(self, on_off=None):
+
+        if on_off is None:
+            on_off = not self.keyboard.isVisible()
+
+        w = self.stacked_widget.currentWidget()
+        if on_off and not self.keyboard.isVisible():
+            self.keyboard.show()
+            l = self.webengine_view
+            l.resize(l.width(), l.height() - self.keyboard.height())
+        elif not on_off and self.keyboard.isVisible():
+            self.keyboard.hide()
+            l = self.webengine_view
+            l.resize(l.width(), l.height() + self.keyboard.height())
+
 
 def main():
 

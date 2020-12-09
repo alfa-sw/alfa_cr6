@@ -32,13 +32,16 @@ class Keyboard(QWidget):
     shifted = False
     uinput = None
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, keyboard_path=None, geometry=[0, 760, 1900, 256]):
         super().__init__(parent)
-        with open(QApplication.instance().keyboard_path + "/it.json", 'r') as keyboard_json:
+
+        if keyboard_path is None:
+            keyboard_path = QApplication.instance().keyboard_path
+
+        with open(keyboard_path + "/it.json", 'r') as keyboard_json:
             keyboard_def = json.load(keyboard_json)
-        self.setFixedSize(1900, 256)
-        # ~ self.setFixedSize(900, 300)
-        self.move(0, 760)
+
+        self.setGeometry(*geometry)
         self.setWindowFlag(Qt.WindowCloseButtonHint, False)
         self.hangeul_toggle(set_hangeul=False)
 
