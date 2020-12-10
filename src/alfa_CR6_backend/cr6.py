@@ -18,7 +18,6 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from PyQt5.QtWidgets import QApplication, QMessageBox    # pylint: disable=no-name-in-module
 
-from alfa_CR6_ui.main_window import MainWindow
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.machine_head import MachineHead
 
@@ -167,7 +166,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         5: "D_BOTM_RIGHT",
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, main_window_class, *args, **kwargs):
 
         logging.debug("settings:{}".format(settings))
 
@@ -207,11 +206,12 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
 
         self.__init_tasks()
 
-        self.main_window = MainWindow()
+        self.alert_msgboxes = []
+
+        self.main_window = main_window_class()
         if hasattr(self.settings, 'BYPASS_LOGIN') and self.settings.BYPASS_LOGIN:
             self.main_window.login_clicked()
 
-        self.alert_msgboxes = []
 
     def __init_tasks(self):
 
@@ -1032,12 +1032,15 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
             map_[head_index].setStyleSheet("""QLabel { background-color: #FFFFFF00;}""")
 
 
+
 def main():
 
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=settings.LOG_LEVEL, format=fmt_)
 
-    app = CR6_application(sys.argv)
+    from alfa_CR6_ui.main_window import MainWindow
+
+    app = CR6_application(MainWindow, sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
     app.run_forever()
 

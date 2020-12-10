@@ -74,3 +74,8 @@ class MainWindow(QMainWindow):
         else:
             msg.setText('Incorrect Password')
             msg.exec_()
+
+    def get_stacked_widget(self):
+
+        return self.main_window_stack
+

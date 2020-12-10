@@ -18,7 +18,9 @@ from PyQt5.Qt import QUrl
 from PyQt5.QtGui import QIcon
 
 from alfa_CR6_ui.keyboard import Keyboard                # pylint: disable=import-error
+from alfa_CR6_backend.cr6 import CR6_application # pylint: disable=import-error
 from alfa_CR6_backend.models import init_models, Order  # pylint: disable=import-error
+from alfa_CR6_ui.debug_status_view import DebugStatusView
 
 DOWNLOAD_PATH = "/opt/alfa_cr6/data/kcc"
 DB_STRING = "sqlite:////opt/alfa_cr6/data/cr6_Vx_test.sqlite"
@@ -62,7 +64,6 @@ class FileTableModel(Cr6TableModel):
         icon_item = QTableWidgetItem()
         icon_item.setIcon(QIcon(os.path.join(IMAGES_PATH, 'green.png')))
         logging.warning(f"name_list_ :{name_list_ }")
-        # ~ logging.warning(f"icon_ :{icon_ }")
 
         self.results = [[icon_item, p, ] for p in name_list_]
 
@@ -88,6 +89,9 @@ class MainWindow(QMainWindow):
 
         super().__init__(parent)
         loadUi("main_window.ui", self)
+        
+        self._order_table_time = 0 
+        self._file_table_time = 0
 
         self.webengine_view = QWebEngineView(self.browser_frame)
         self.webengine_view.setGeometry(0, 0, self.browser_frame.width(), self.browser_frame.height())
@@ -103,6 +107,9 @@ class MainWindow(QMainWindow):
         self.search_order_btn.clicked.connect(self.populate_order_table)
         self.search_file_btn.clicked.connect(self.populate_file_table)
 
+        self.search_order_line.textChanged.connect(self.populate_order_table)
+        self.search_file_line. textChanged.connect(self.populate_file_table)
+
         for b in self.service_btn_group.buttons():
             b.setAutoFillBackground(True)
 
@@ -112,6 +119,13 @@ class MainWindow(QMainWindow):
 
         self.keyboard = Keyboard(self, keyboard_path=KEYBOARD_PATH)
         self.keyboard.setGeometry(0, self.menu_frame.y() - self.keyboard.height(), self.menu_frame.width(), 256)
+
+        self.debug_status_view = DebugStatusView(self)
+        self.stacked_widget.addWidget(self.debug_status_view.main_frame)
+
+    def get_stacked_widget(self):
+
+        return self.stacked_widget
 
     def on_service_btn_group_clicked(self, btn):
 
@@ -137,6 +151,8 @@ class MainWindow(QMainWindow):
             self.webengine_view.setUrl(QUrl('http://kccrefinish.co.kr'))
         elif 'keyboard' in btn_name:
             self.toggle_keyboard()
+        elif 'global_status' in btn_name:
+            self.stacked_widget.setCurrentWidget(self.debug_status_view.main_frame)
 
     def on_order_table_clicked(self, index):
 
@@ -174,15 +190,17 @@ class MainWindow(QMainWindow):
             l.resize(l.width(), l.height() + self.keyboard.height())
 
 
+
+
+
+
 def main():
 
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level='INFO', format=fmt_)
 
-    app = QApplication(sys.argv)
-    _ = MainWindow()
+    app = CR6_application(MainWindow, sys.argv)
     app.exec_()
-
 
 if __name__ == "__main__":
     main()

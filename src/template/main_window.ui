@@ -2,6 +2,9 @@
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -170,6 +173,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
     </widget>
    </widget>
    <widget class="QStackedWidget" name="stacked_widget">
@@ -459,11 +465,11 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="menu_btn_group">
    <property name="exclusive">
     <bool>false</bool>
    </property>
   </buttongroup>
+  <buttongroup name="service_btn_group"/>
  </buttongroups>
 </ui>

@@ -34,6 +34,14 @@ class DebugStatusView():
 
         self.main_frame = QFrame(parent=parent)
         # ~ self.main_frame.setGeometry(0, 0, 1800, 1000)
+        self.main_frame.setStyleSheet("""
+                QWidget {
+                    background-image:url("");
+                    background-color: #FFFFF7;
+                    font-size: 16px;
+                    font-family: monospace;
+                    }
+                """)
 
         self.status_text_browser = QTextBrowser(parent=self.main_frame)
         self.status_text_browser.setOpenLinks(False)
@@ -53,6 +61,7 @@ class DebugStatusView():
 
         self.answer_text_browser.setStyleSheet("""
                 QTextBrowser {
+                    background-image:'';
                     background-color: #FFFFF7;
                     font-size: 16px;
                     font-family: monospace;
@@ -62,6 +71,7 @@ class DebugStatusView():
         self.buttons_frame = QFrame(parent=self.main_frame)
         self.buttons_frame.setStyleSheet("""
                 QWidget {
+                    background-image:'';
                     color: #333366;
                     background-color: #FFFFF7;
                     font-size: 20px;
@@ -139,8 +149,8 @@ class DebugStatusView():
         self.buttons_frame.setGeometry(20, 600, width, 200)
         self.answer_text_browser.setGeometry(20, 800, width, 280)
 
-        parent.main_window_stack.addWidget(self.main_frame)
-        parent.main_window_stack.setCurrentWidget(self.main_frame)
+        # ~ parent.main_window_stack.addWidget(self.main_frame)
+        # ~ parent.main_window_stack.setCurrentWidget(self.main_frame)
 
         self.status_text_browser.anchorClicked.connect(self.status_text_browser_anchor_clicked)
         self.answer_text_browser.anchorClicked.connect(self.answer_text_browser_anchor_clicked)
@@ -385,7 +395,9 @@ class DebugStatusView():
 
         elif 'close' in cmd_txt:
             # ~ app.main_window.main_window_stack.setCurrentIndex(0)
-            app.main_window.main_window_stack.setCurrentWidget(app.main_window.project)
+            # ~ app.main_window.main_window_stack.setCurrentWidget(app.main_window.project)
+            app.main_window.get_stacked_widget().setCurrentIndex(1)
+            self.main_frame.hide()
 
         elif 'clear\njars' in cmd_txt:
 
