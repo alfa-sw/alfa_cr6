@@ -1,0 +1,73 @@
+
+precondizione 1: 
+    il supervisore e' connesso al web via wifi (attraverso il modem Huawey o telefono mobile)
+    il supervisore ha client VPN up
+
+    OPTIONAL: le teste 1,... 6 sono connesse al web via wifi (attraverso il modem Huawey o telefono mobile) e hanno client VPN up
+
+step 1
+
+    si accede al supervisore in ssh su VPN, tramite la supervisore.wlan0 e
+    qui si imposta la eth0:
+
+    auto eth0
+    iface eth0 inet static
+        address 192.168.0.100
+        netmask 255.255.255.0
+
+step 2
+
+    si accede alla testa 1 tramite il supervisore.eth1-switch-testa1.eth1 (oppure in ssh su VPN, tramite la testa1.wlan0) e
+    qui si imposta la eth0:
+    auto eth0
+    iface eth0 inet static
+        address 192.168.0.1
+        netmask 255.255.255.0
+    
+    passaggio del cavo  supervisore.eth0 -> switch
+    passaggio del cavo  testa1.eth0 -> switch
+    
+    check della comunicazione sulla rete 192.168.1.0
+    tra supervisore e testa1
+
+    sconnessione del cavo testa1.eth1 -> / switch
+
+step 3...7
+
+    come step 2 per le teste 2,... 6
+
+step 8
+    
+    su tutte le teste 1,... 6 accedi in ssh e riconfiguri la eth1:
+
+    auto eth1
+    iface eth1 inet static
+        address 192.168.1.1
+        netmask 255.255.255.0
+
+
+step 9 
+
+    imposta su supervisore
+    auto eth1
+    iface eth1 inet static
+        address <address fornito da KCC>
+        netmask <netmask fornito da KCC>
+        gateway <gateway fornito da KCC>
+
+    supervisor@ sudo ifdown eth1 ; sudo ifup eth1 
+        
+    sconnetti supervisore.eth1 dallo switch
+    e connetti supervisore.eth1 al cavo fornito da KCC
+
+    verifica la connessione via supervisore.eth1  al web prima di sconnettere il supervisore.wifi
+
+
+sequenza comandi per modifica eth0:
+###########
+cd /etc/network/
+ls -l
+sudo cp interfaces interfaces.back.1
+sudo nano interfaces
+sudo ifdown eth0; sudo ifup eth0
+###########
