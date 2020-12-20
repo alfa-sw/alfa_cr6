@@ -79,3 +79,28 @@ class MainWindow(QMainWindow):
 
         return self.main_window_stack
 
+    def update_status_data(self, head_index, status):
+        self.debug_status_view.update_status()
+        self.sinottico.update_data(head_index, status)
+
+    def show_reserve(self, head_index, flag):
+        map_ = [
+            self.sinottico.low_level_HEAD_1,
+            self.sinottico.low_level_HEAD_2,
+            self.sinottico.low_level_HEAD_3,
+            self.sinottico.low_level_HEAD_4,
+            self.sinottico.low_level_HEAD_5,
+            self.sinottico.low_level_HEAD_6,
+        ]
+        if flag:
+            map_[head_index].setStyleSheet("""QLabel { background-color: #FF330077;}""")
+        else:
+            map_[head_index].setStyleSheet("""QLabel { background-color: #FFFFFF00;}""")
+
+    def show_carousel_frozen(self, flag):
+        if flag:
+            self.sinottico.toggle_freeze_carousel.setStyleSheet(
+                """QLabel { background-color: #66FF6633;}""")
+        else:
+            self.sinottico.toggle_freeze_carousel.setStyleSheet(
+                """QLabel { background-color: #66EEEEEE;}""")

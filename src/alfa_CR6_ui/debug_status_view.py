@@ -584,7 +584,6 @@ class DebugStatusView():
 
         self.status_text_browser.setHtml(html_)
 
-        # ~ logging.warning("")
     def open_order_dialog(self):
 
         app = QApplication.instance()

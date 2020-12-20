@@ -69,8 +69,6 @@ def parse_json_order(path_to_json_file, json_schema_name):
 
 class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
 
-    # ~ def hideEvent(self, event):
-        # ~ logging.warning(event)
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -184,7 +182,6 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.ready_to_read_a_barcode = True
 
         self.__inner_loop_task_step = 0.02  # secs
-        self.carousel_frozen = False
 
         self.machine_head_dict = {}
         self.barcode_dict = {}
@@ -212,6 +209,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         if hasattr(self.settings, 'BYPASS_LOGIN') and self.settings.BYPASS_LOGIN:
             self.main_window.login_clicked()
 
+        self.carousel_frozen = False
+        self.main_window.show_carousel_frozen(self.carousel_frozen)
 
     def __init_tasks(self):
 
@@ -481,8 +480,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         if msg_dict.get('type') == 'device:machine:status':
             status = msg_dict.get('value')
             status = dict(status)
-            self.main_window.sinottico.update_data(head_index, status)
-            self.main_window.debug_status_view.update_status()
+            self.main_window.update_status_data(head_index, status)
 
             # ~ if head_index == 0:
             # ~ self.machine_head_dict[0]
@@ -642,13 +640,10 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.carousel_frozen = flag
         if flag:
             logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
-            self.main_window.sinottico.toggle_freeze_carousel.setStyleSheet(
-                """QLabel { background-color: #66FF6633;}""")
-
+            self.main_window.show_carousel_frozen(self.carousel_frozen)
         else:
             logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
-            self.main_window.sinottico.toggle_freeze_carousel.setStyleSheet(
-                """QLabel { background-color: #66EEEEEE;}""")
+            self.main_window.show_carousel_frozen(self.carousel_frozen)
 
         if self.main_window.debug_status_view:
             self.main_window.debug_status_view.update_status()
@@ -1017,20 +1012,8 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         self.show_alert_dialog(msg)
         self.freeze_carousel(True)
 
-    def visulize_low_level(self, head_index, flag):
-        map_ = [
-            self.main_window.sinottico.low_level_HEAD_1,
-            self.main_window.sinottico.low_level_HEAD_2,
-            self.main_window.sinottico.low_level_HEAD_3,
-            self.main_window.sinottico.low_level_HEAD_4,
-            self.main_window.sinottico.low_level_HEAD_5,
-            self.main_window.sinottico.low_level_HEAD_6,
-        ]
-        if flag:
-            map_[head_index].setStyleSheet("""QLabel { background-color: #FF330077;}""")
-        else:
-            map_[head_index].setStyleSheet("""QLabel { background-color: #FFFFFF00;}""")
-
+    def show_reserve(self, head_index, flag):
+        self.main_window.show_reserve(head_index, flag)
 
 
 def main():
@@ -1038,7 +1021,10 @@ def main():
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=settings.LOG_LEVEL, format=fmt_)
 
-    from alfa_CR6_ui.main_window import MainWindow
+    if 'transition' in sys.argv:
+        from alfa_CR6_ui.transition import MainWindow
+    else:
+        from alfa_CR6_ui.main_window import MainWindow
 
     app = CR6_application(MainWindow, sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
