@@ -9,17 +9,23 @@
 import os
 import sys
 import logging
+import json
 import time
 import traceback
 
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import Qt, QVariant, QAbstractTableModel
+from PyQt5.QtCore import Qt, QVariant, QAbstractTableModel, QSize
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
 from PyQt5.Qt import QUrl
-from PyQt5.QtGui import QIcon, QMovie, QPixmap
-from PyQt5.QtWidgets import (QApplication, QMainWindow,
-                             QHeaderView, QTableWidgetItem,
-                             QInputDialog, QPushButton, QLabel, QFrame)
+from PyQt5.QtGui import QMovie, QPixmap
+from PyQt5.QtWidgets import (QApplication,
+                             QMainWindow,
+                             QHeaderView,
+                             QInputDialog,
+                             QPushButton,
+                             QLabel,
+                             QStyle,
+                             QFrame)
 
 from alfa_CR6_ui.keyboard import Keyboard
 from alfa_CR6_ui.debug_status_view import DebugStatusView
@@ -67,6 +73,13 @@ class InputDialog(QInputDialog):   # pylint:  disable=too-many-instance-attribut
 
 class BaseTableModel(QAbstractTableModel):
 
+    def __init__(self, parent, *args):
+        super().__init__(parent, *args)
+        self.gray_icon = QPixmap(os.path.join(IMAGES_PATH, 'gray.png'))
+        self.green_icon = QPixmap(os.path.join(IMAGES_PATH, 'green.png'))
+        self.red_icon = QPixmap(os.path.join(IMAGES_PATH, 'red.png'))
+        # ~ self.item_font = QFont('Times sans-serif', 32)
+
     def rowCount(self, parent):
         logging.debug(f"parent:{parent}")
         return len(self.results)
@@ -76,10 +89,18 @@ class BaseTableModel(QAbstractTableModel):
         return len(self.results[0])
 
     def data(self, index, role):
+        # ~ logging.warning(f"index, role:{index, role}")
         if not index.isValid():
             return None
         ret = QVariant()
-        if role == Qt.DisplayRole:
+        if role == Qt.DecorationRole and index.column() == 0:
+            # ~ ret = "#FF6633"
+            ret = self.new_icon.scaled(48, 48, Qt.KeepAspectRatio)
+        # ~ elif role == Qt.SizeHintRole:
+            # ~ ret = 32
+        # ~ elif role == Qt.FontRole:
+            # ~ ret = self.item_font
+        elif role == Qt.DisplayRole:
             ret = self.results[index.row()][index.column()]
         return ret
 
@@ -93,32 +114,58 @@ class FileTableModel(BaseTableModel):
 
     def __init__(self, parent, path, *args):
         super().__init__(parent, *args)
-        self.header = ['icon', 'name', ]
+        self.header = ['delete', 'create order', 'file name', ]
         filter_text = parent.search_file_line.text()
-        name_list_ = [p for p in os.listdir(path) if filter_text in p]
-        icon_item = QTableWidgetItem()
-        icon_item.setIcon(QIcon(os.path.join(IMAGES_PATH, 'green.png')))
-        logging.warning(f"name_list_ :{name_list_ }")
+        name_list_ = sorted([p for p in os.listdir(path) if filter_text in p])
+        self.results = [['', '', p, ] for p in name_list_]
 
-        self.results = [[icon_item, p, ] for p in name_list_]
+    def data(self, index, role):
+        # ~ logging.warning(f"index, role:{index, role}")
+        if not index.isValid():
+            return None
+        ret = QVariant()
+        if role == Qt.DecorationRole and index.column() == 0:
+            ret = self.parent().style().standardIcon(getattr(QStyle, 'SP_BrowserStop'))
+        elif role == Qt.DecorationRole and index.column() == 1:
+            ret = self.parent().style().standardIcon(getattr(QStyle, 'SP_FileDialogDetailedView'))
+        elif role == Qt.DisplayRole:
+            ret = self.results[index.row()][index.column()]
+        return ret
 
 
 class OrderTableModel(BaseTableModel):
 
     def __init__(self, parent, session, *args):
         super().__init__(parent, *args)
-        self.header = ['order_nr', 'status', 'json_properties']
+        self.header = ['status', 'order_nr', 'description']
         filter_text = parent.search_order_line.text()
         if session:
             query_ = session.query(Order)
             query_ = query_.filter(Order.order_nr.contains(filter_text))
             query_ = query_.order_by(Order.order_nr.desc()).limit(100)
-            self.results = [[o.order_nr, o.status, o.json_properties] for o in query_.all()]
+            self.results = [[o.status, o.order_nr, o.description] for o in query_.all()]
         else:
             self.results = [[], ]
 
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        ret = QVariant()
+        if role == Qt.DecorationRole and index.column() == 0:
+            datum = str(index.data()).upper()
+            if 'DONE' in datum:
+                ret = self.gray_icon.scaled(48, 48, Qt.KeepAspectRatio)
+            elif 'ERR' in datum:
+                ret = self.red_icon.scaled(48, 48, Qt.KeepAspectRatio)
+            else:
+                ret = self.green_icon.scaled(48, 48, Qt.KeepAspectRatio)
 
-class MainWindow(QMainWindow):
+        elif role == Qt.DisplayRole:
+            ret = self.results[index.row()][index.column()]
+        return ret
+
+
+class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attributes
 
     def __init__(self, parent=None):
 
@@ -144,9 +191,13 @@ class MainWindow(QMainWindow):
 
         self.order_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.file_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # ~ self.order_table.horizontalHeader().setStretchLastSection(True)
+        # ~ self.file_table.horizontalHeader().setStretchLastSection(True)
+        # ~ self.order_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        # ~ self.file_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
-        self.order_table.clicked.connect(self.on_order_table_clicked)
-        self.file_table.clicked.connect(self.on_file_table_clicked)
+        # ~ self.order_table.clicked.connect(self.on_order_table_clicked)
+        # ~ self.file_table.clicked.connect(self.on_file_table_clicked)
 
         self.menu_btn_group.buttonClicked.connect(self.on_menu_btn_group_clicked)
         self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
@@ -178,6 +229,17 @@ class MainWindow(QMainWindow):
 
         self.jar_icon_map = {k: QPixmap(os.path.join(IMAGES_PATH, p)) for k, p in (
             ("no", ""), ("green", "jar-green.png"), ("red", "jar-red.png"), ("blue", "jat-blue.png"))}
+
+        # ~ self.order_table.setStyleSheet("::section{background-color: #FF9933; color: blue; font-weight: bold}")
+        # ~ self.file_table.setStyleSheet("::section{background-color: #FF9933; color: blue; font-weight: bold}")
+
+        self.input_dialog = QFrame(self)
+        loadUi(os.path.join(UI_PATH, "input_dialog.ui"), self.input_dialog)
+        self.input_dialog.move(400, 200)
+        self.input_dialog.ok_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogOkButton')))
+        self.input_dialog.esc_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogDiscardButton')))
+        
+        self.input_dialog.hide()
 
     def create_action_pages(self, ):
 
@@ -355,7 +417,7 @@ class MainWindow(QMainWindow):
 
         action_frame_map = {}
         for btn, val in map_.items():
-            w = QFrame()
+            w = QFrame(self)
             loadUi(os.path.join(UI_PATH, "action_frame.ui"), w)
             w.action_title_label.setText(tr_(val['title']))
             for b in val['buttons']:
@@ -453,7 +515,8 @@ class MainWindow(QMainWindow):
         elif 'deliver' in btn_name:
             QApplication.instance().run_a_coroutine_helper('move_12_00')
         elif 'freeze_carousel' in btn_name:
-            QApplication.instance().toggle_freeze_carousel()
+            msg_ = "confirm unfreezing carousel?" if QApplication.instance().carousel_frozen else "confirm freezing carousel?"
+            self.show_input_dialog(icon_name=None, message=msg_, content=None, ok_callback=QApplication.instance().toggle_freeze_carousel)
         elif 'action_' in btn_name:
             self.stacked_widget.setCurrentWidget(self.action_frame_map[btn])
             for i in QApplication.instance().machine_head_dict.keys():
@@ -479,7 +542,26 @@ class MainWindow(QMainWindow):
     def on_file_table_clicked(self, index):             # pylint: disable=no-self-use
 
         datum = index.data()
-        logging.warning(f"datum:{datum}")
+        col = index.column()
+        row = index.row()
+        file_name = index.model().results[row][2]
+        logging.warning(f"datum:{datum}, row:{row}, col:{col}")
+        if col == 0:  # delete
+            self.show_input_dialog(icon_name='SP_MessageBoxCritical', message="confirm deleting data?", content=file_name)
+
+        elif col == 1:  # create order
+            self.show_input_dialog(message="confirm creating order? \n Please, insert below the number of jars.", content=2)
+
+        elif col == 2:  # file name
+            content = '{}'
+            with open(os.path.join(DOWNLOAD_PATH, file_name)) as f:
+                content = f.read(3000)
+                try:
+                    content = json.dumps(json.loads(content), indent=2)
+                except Exception:                     # pylint: disable=broad-except
+                    logging.error(traceback.format_exc())
+
+            self.show_input_dialog(icon_name='SP_MessageBoxInformation', message=file_name, content=content) 
 
     def populate_order_table(self):
 
@@ -536,10 +618,8 @@ class MainWindow(QMainWindow):
         def set_pixmap_by_photocells(lbl, head_letter, bit_name):
             m = QApplication.instance().get_machine_head_by_letter(head_letter)
             f = m.jar_photocells_status.get(bit_name[0])
-            pixmap = self.jar_icon_map['green'].scaled(75, 75, Qt.KeepAspectRatio) if f else self.jar_icon_map['green'].scaled(0,0)
-            # ~ pixmap = self.jar_icon_map['green'].scaled(75, 75, Qt.KeepAspectRatio)
-
-            logging.warning(f"lbl:{lbl}, head_letter:{head_letter}, bit_name:{bit_name}, f:{f}, pixmap:{pixmap}")
+            pixmap = self.jar_icon_map['green'].scaled(
+                75, 75, Qt.KeepAspectRatio) if f else self.jar_icon_map['green'].scaled(0, 0)
             lbl.setPixmap(pixmap)
             lbl.show()
 
@@ -586,10 +666,42 @@ class MainWindow(QMainWindow):
             self.freeze_carousel_btn.setStyleSheet(
                 """background-color: #FF6666;""")
             self.freeze_carousel_btn.setText(tr_("Carousel Frozen"))
+            self.freeze_carousel_btn.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogDiscardButton')))
         else:
             self.freeze_carousel_btn.setStyleSheet(
                 """background-color: #AAFFAA;""")
             self.freeze_carousel_btn.setText(tr_("Carousel OK"))
+            self.freeze_carousel_btn.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogOkButton')))
+
+    def show_input_dialog(self, icon_name=None, message=None, content=None, ok_callback=None):
+
+        # ~ 'SP_MessageBoxCritical',
+        # ~ 'SP_MessageBoxInformation',
+        # ~ 'SP_MessageBoxQuestion',
+        # ~ 'SP_MessageBoxWarning',
+
+        if icon_name is None:
+            icon_ = self.style().standardIcon(getattr(QStyle, "SP_MessageBoxWarning"))
+        else:
+            icon_ = self.style().standardIcon(getattr(QStyle, icon_name))
+        self.input_dialog.icon_label.setPixmap(icon_.pixmap(QSize(64, 64)))
+
+        if message is None:
+            self.input_dialog.message_label.setText('')
+        else:
+            self.input_dialog.message_label.setText(tr_(message))
+
+        if content is None:
+            self.input_dialog.content_edit.setText('')
+        else:
+            self.input_dialog.content_edit.setText(str(content))
+
+        self.input_dialog.ok_button.clicked.disconnect()
+        self.input_dialog.ok_button.clicked.connect(self.input_dialog.hide)
+        if ok_callback is not None:
+            self.input_dialog.ok_button.clicked.connect(ok_callback)
+
+        self.input_dialog.show()
 
 
 def main():
