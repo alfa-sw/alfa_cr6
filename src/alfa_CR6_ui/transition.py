@@ -210,10 +210,6 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
         self.search_order_line.textChanged.connect(self.populate_order_table)
         self.search_file_line. textChanged.connect(self.populate_file_table)
 
-        # ~ for b in self.service_btn_group.buttons():
-        # ~ b.setAutoFillBackground(True)
-        # ~ self.freeze_carousel_btn.setAutoFillBackground(True)
-
         self.showFullScreen()
 
         self.keyboard = Keyboard(self, keyboard_path=KEYBOARD_PATH)
@@ -233,12 +229,23 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
         # ~ self.order_table.setStyleSheet("::section{background-color: #FF9933; color: blue; font-weight: bold}")
         # ~ self.file_table.setStyleSheet("::section{background-color: #FF9933; color: blue; font-weight: bold}")
 
+        # ~ self.input_dialog = QFrame(self)
         self.input_dialog = QFrame(self)
+        # ~ self.input_dialog.setWindowFlags(Qt.FramelessWindowHint)
+        
         loadUi(os.path.join(UI_PATH, "input_dialog.ui"), self.input_dialog)
         self.input_dialog.move(400, 200)
         self.input_dialog.ok_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogOkButton')))
         self.input_dialog.esc_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogDiscardButton')))
-        
+
+        self.input_dialog.ok_button.setAutoFillBackground(True)        
+        self.input_dialog.esc_button.setAutoFillBackground(True)        
+        # ~ self.freeze_carousel_btn.setAutoFillBackground(True)        
+
+        for b in self.service_btn_group.buttons():
+            if b.objectName() != 'service_0_btn':
+                b.setAutoFillBackground(True)
+
         self.input_dialog.hide()
 
     def create_action_pages(self, ):

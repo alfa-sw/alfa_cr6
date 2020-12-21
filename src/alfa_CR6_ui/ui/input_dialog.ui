@@ -16,6 +16,15 @@
   <property name="styleSheet">
    <string notr="true">background-color: #AACCCCCC</string>
   </property>
+  <property name="frameShape">
+   <enum>QFrame::StyledPanel</enum>
+  </property>
+  <property name="frameShadow">
+   <enum>QFrame::Raised</enum>
+  </property>
+  <property name="lineWidth">
+   <number>4</number>
+  </property>
   <widget class="QLabel" name="icon_label">
    <property name="geometry">
     <rect>
@@ -47,6 +56,11 @@
      <height>81</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>20</pointsize>
+    </font>
+   </property>
    <property name="styleSheet">
     <string notr="true">background-color: #FFFFFF</string>
    </property>
@@ -73,27 +87,67 @@
   <widget class="QPushButton" name="esc_button">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>120</y>
-     <width>191</width>
+     <x>150</x>
+     <y>110</y>
+     <width>200</width>
      <height>61</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>20</pointsize>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background:#FFFFFFFF</string>
+   </property>
    <property name="text">
     <string>ESC</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
    </property>
   </widget>
   <widget class="QPushButton" name="ok_button">
    <property name="geometry">
     <rect>
-     <x>750</x>
-     <y>120</y>
-     <width>211</width>
+     <x>760</x>
+     <y>110</y>
+     <width>200</width>
      <height>61</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>20</pointsize>
+    </font>
+   </property>
+   <property name="autoFillBackground">
+    <bool>true</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background:#FFFFFFFF</string>
+   </property>
    <property name="text">
     <string>OK</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+   <property name="flat">
+    <bool>false</bool>
    </property>
   </widget>
  </widget>
