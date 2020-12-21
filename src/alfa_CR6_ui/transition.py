@@ -174,187 +174,181 @@ class MainWindow(QMainWindow):
 
         self.reserve_movie = QMovie(os.path.join(IMAGES_PATH, 'riserva.gif'))
 
-        # ~ self.green_pixmap = QPixmap(os.path.join(IMAGES_PATH, 'green.png'))
-        # ~ self.gray_pixmap = QPixmap(os.path.join(IMAGES_PATH, 'gray.png'))
-
         self.action_frame_map = self.create_action_pages()
+
+        self.jar_icon_map = {k: QPixmap(os.path.join(IMAGES_PATH, p)) for k, p in (
+            ("no", ""), ("green", "jar-green.png"), ("red", "jar-red.png"), ("blue", "jat-blue.png"))}
 
     def create_action_pages(self, ):
 
-        # ~ self.jar_photocells_status = {
-        # ~ 'JAR_INPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x001 and 1,
-        # ~ 'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x002 and 1,
-        # ~ 'JAR_OUTPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x004 and 1,
-        # ~ 'LOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x008 and 1,
-        # ~ 'LOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x010 and 1,
-        # ~ 'UNLOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x020 and 1,
-        # ~ 'UNLOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x040 and 1,
-        # ~ 'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x080 and 1,
-        # ~ 'JAR_DISPENSING_POSITION_PHOTOCELL': status['jar_photocells_status'] & 0x100 and 1,
-        # ~ 'JAR_DETECTION_MICROSWITCH_1': status['jar_photocells_status'] & 0x200 and 1,
-        # ~ 'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400 and 1,
-        # ~ }
         from functools import partial           # pylint: disable=import-outside-toplevel
 
         def action_(args):
-            QApplication.instance().run_a_coroutine_helper(args[0], *args[1:])
+            logging.warning(f"args:{args}")
+            try:
+                QApplication.instance().run_a_coroutine_helper(args[0], *args[1:])
+            except Exception:                     # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
 
-        def show_val_(head_index, bit_name, text, w):
-            m = QApplication.instance().machine_head_dict[head_index]
-            if bit_name.lower() == 'container_presence':
-                val_ = m.status.get('container_presence')
-            else:
-                val_ = m.jar_photocells_status.get(bit_name)
-            
-            logging.debug(f"text:{text}, head_index:{head_index}, bit_name:{bit_name}, w:{w}, val_:{val_}")
-            pth_ = os.path.join(IMAGES_PATH, 'green.png') if val_ else os.path.join(IMAGES_PATH, 'gray.png')
-            w.setText(f'<img widt="50" height="50" src="{pth_}"></img> {tr_(text)}');
-            
+        def show_val_(head_letter, bit_name, text, w):
+            # ~ logging.warning(f"head_letter:{head_letter}, bit_name:{bit_name}, text:{text}, w:{w}")
+            try:
+                m = QApplication.instance().get_machine_head_by_letter(head_letter)
+                if bit_name.lower() == 'container_presence':
+                    val_ = m.status.get('container_presence')
+                else:
+                    val_ = m.jar_photocells_status.get(bit_name)
+
+                pth_ = os.path.join(IMAGES_PATH, 'green.png') if val_ else os.path.join(IMAGES_PATH, 'gray.png')
+                w.setText(f'<img widt="50" height="50" src="{pth_}"></img> {tr_(text)}')
+            except Exception:                     # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+
         map_ = {
             self.action_01_btn: {
                 'title': 'action 01 (head 1 or A)',
                 'buttons': [
-                    {'text': "Start input roller"             , 'action': partial(action_, "single_move", 'A', {'Input_Roller': 1})},
-                    {'text': "Stop  input roller"             , 'action': partial(action_, "single_move", 'A', {'Input_Roller': 0})},
-                    {'text': "Start input roller to photocell", 'action': partial(action_, "single_move", 'A', {'Input_Roller': 2})},
-                    {'text': "move 01 02 ('IN -> A')", 'action': partial(action_, "move_01_02")},
+                    {'text': "Start input roller", 'action': partial(action_, ("single_move", 'A', {'Input_Roller': 1}))},
+                    {'text': "Stop  input roller", 'action': partial(action_, ("single_move", 'A', {'Input_Roller': 0}))},
+                    {'text': "Start input roller to photocell", 'action': partial(action_, ("single_move", 'A', {'Input_Roller': 2}))},
+                    {'text': "move 01 02 ('IN -> A')", 'action': partial(action_, ("move_01_02", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 0, 'JAR_INPUT_ROLLER_PHOTOCELL', 'INPUT ROLLER PHOTOCELL')},
-                    {'show_val': partial(show_val_, 0, 'JAR_DETECTION_MICROSWITCH_1', 'MICROSWITCH 1')},
-                    {'show_val': partial(show_val_, 0, 'JAR_DETECTION_MICROSWITCH_2', 'MICROSWITCH 2')},
+                    {'show_val': partial(show_val_, 'A', 'JAR_INPUT_ROLLER_PHOTOCELL', 'INPUT ROLLER PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'A', 'JAR_DETECTION_MICROSWITCH_1', 'MICROSWITCH 1')},
+                    {'show_val': partial(show_val_, 'A', 'JAR_DETECTION_MICROSWITCH_2', 'MICROSWITCH 2')},
                 ],
             },
             self.action_02_btn: {
                 'title': 'action 02 (head 1 or A)',
                 'buttons': [
-                    {'text': "Start dispensing roller"             , 'action': partial(action_, "single_move", 'A', {'Dispensing_Roller': 1})},
-                    {'text': "Stop  dispensing roller"             , 'action': partial(action_, "single_move", 'A', {'Dispensing_Roller': 0})},
-                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, "single_move", 'A', {'Dispensing_Roller': 2})},
-                    {'text': "move 02 03 ('A -> B')", 'action': partial(action_, "move_02_03")},
+                    {'text': "Start dispensing roller", 'action': partial(action_, ("single_move", 'A', {'Dispensing_Roller': 1}))},
+                    {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'A', {'Dispensing_Roller': 0}))},
+                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'A', {'Dispensing_Roller': 2}))},
+                    {'text': "move 02 03 ('A -> B')", 'action': partial(action_, ("move_02_03", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 0, 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
-                    {'show_val': partial(show_val_, 0, 'container_presence', 'CONTAINER PRESENCE')},
+                    {'show_val': partial(show_val_, 'A', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'A', 'container_presence', 'CONTAINER PRESENCE')},
                 ],
             },
             self.action_03_btn: {
                 'title': 'action 03 (head 3 or B)',
                 'buttons': [
-                    {'text': "Start dispensing roller"             , 'action': partial(action_, "single_move", 'B', {'Dispensing_Roller': 1})},
-                    {'text': "Stop  dispensing roller"             , 'action': partial(action_, "single_move", 'B', {'Dispensing_Roller': 0})},
-                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, "single_move", 'B', {'Dispensing_Roller': 2})},
-                    {'text': "move 03 04 ('B -> C')", 'action': partial(action_, "move_03_04")},
+                    {'text': "Start dispensing roller", 'action': partial(action_, ("single_move", 'B', {'Dispensing_Roller': 1}))},
+                    {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'B', {'Dispensing_Roller': 0}))},
+                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'B', {'Dispensing_Roller': 2}))},
+                    {'text': "move 03 04 ('B -> C')", 'action': partial(action_, ("move_03_04", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 2, 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
-                    {'show_val': partial(show_val_, 2, 'container_presence', 'CONTAINER PRESENCE')},
+                    {'show_val': partial(show_val_, 'B', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'B', 'container_presence', 'CONTAINER PRESENCE')},
                 ],
             },
             self.action_04_btn: {
                 'title': 'action 04 (head 5 or C)',
                 'buttons': [
-                    {'text': "Start dispensing roller"             , 'action': partial(action_, "single_move", 'C', {'Dispensing_Roller': 1})},
-                    {'text': "Stop  dispensing roller"             , 'action': partial(action_, "single_move", 'C', {'Dispensing_Roller': 0})},
-                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, "single_move", 'C', {'Dispensing_Roller': 2})},
-                    {'text': "move 04 05 ('C -> UP')", 'action': partial(action_, "move_04_05")},
+                    {'text': "Start dispensing roller", 'action': partial(action_, ("single_move", 'C', {'Dispensing_Roller': 1}))},
+                    {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'C', {'Dispensing_Roller': 0}))},
+                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'C', {'Dispensing_Roller': 2}))},
+                    {'text': "move 04 05 ('C -> UP')", 'action': partial(action_, ("move_04_05", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 4, 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
-                    {'show_val': partial(show_val_, 4, 'container_presence', 'CONTAINER PRESENCE')},
+                    {'show_val': partial(show_val_, 'C', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'C', 'container_presence', 'CONTAINER PRESENCE')},
                 ],
             },
             self.action_05_btn: {
-                'title': 'action 05 (head 5 or C)',
+                'title': 'action 05 (head 5, 6 or C, D)',
                 'buttons': [
-                    {'text': "Start lifter roller CW" , 'action': partial(action_, "single_move", 'C', {'Lifter_Roller': 2})},
-                    {'text': "Start lifter roller CCW", 'action': partial(action_, "single_move", 'C', {'Lifter_Roller': 3})},
-                    {'text': "Stop  lifter roller"    , 'action': partial(action_, "single_move", 'C', {'Lifter_Roller': 0})},
+                    {'text': "Start lifter roller CW", 'action': partial(action_, ("single_move", 'C', {'Lifter_Roller': 2}))},
+                    {'text': "Start lifter roller CCW", 'action': partial(action_, ("single_move", 'C', {'Lifter_Roller': 3}))},
+                    {'text': "Stop  lifter roller", 'action': partial(action_, ("single_move", 'C', {'Lifter_Roller': 0}))},
 
-                    {'text': "Start lifter up"        , 'action': partial(action_, "single_move", 'C', {'Lifter': 1})},
-                    {'text': "Start lifter down"      , 'action': partial(action_, "single_move", 'C', {'Lifter': 2})},
-                    {'text': "Stop  lifter"           , 'action': partial(action_, "single_move", 'C', {'Lifter': 0})},
+                    {'text': "Start lifter up", 'action': partial(action_, ("single_move", 'D', {'Lifter': 1}))},
+                    {'text': "Start lifter down", 'action': partial(action_, ("single_move", 'D', {'Lifter': 2}))},
+                    {'text': "Stop  lifter", 'action': partial(action_, ("single_move", 'D', {'Lifter': 0}))},
 
-                    {'text': "move 04 05 ('C -> UP')", 'action': partial(action_, "move_04_05")},
-                    {'text': "move 05 06 ('UP -> DOWN')", 'action': partial(action_, "move_05_06")},
-                    {'text': "move 06 07 ('DOWN -> D')", 'action': partial(action_, "move_06_07")},
+                    {'text': "move 04 05 ('C -> UP')", 'action': partial(action_, ("move_04_05", ))},
+                    {'text': "move 05 06 ('UP -> DOWN')", 'action': partial(action_, ("move_05_06", ))},
+                    {'text': "move 06 07 ('DOWN -> D')", 'action': partial(action_, ("move_06_07", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 4, 'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', 'LIFTER ROLLER PHOTOCELL')},
-                    {'show_val': partial(show_val_, 4, 'LOAD_LIFTER_DOWN_PHOTOCELL', 'LIFTER DOWN PHOTOCELL')},
-                    {'show_val': partial(show_val_, 4, 'LOAD_LIFTER_UP_PHOTOCELL', 'LIFTER UP PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'C', 'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', 'LIFTER ROLLER PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'D', 'LOAD_LIFTER_DOWN_PHOTOCELL', 'LIFTER DOWN PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'D', 'LOAD_LIFTER_UP_PHOTOCELL', 'LIFTER UP PHOTOCELL')},
                 ],
             },
             self.action_06_btn: {
                 'title': 'action 06 (head 6 or D)',
                 'buttons': [
-                    {'text': "Start dispensing roller"             , 'action': partial(action_, "single_move", 'D', {'Dispensing_Roller': 1})},
-                    {'text': "Stop  dispensing roller"             , 'action': partial(action_, "single_move", 'D', {'Dispensing_Roller': 0})},
-                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, "single_move", 'D', {'Dispensing_Roller': 2})},
-                    {'text': "move 07 08 ('D -> E')", 'action': partial(action_, "move_07_08")},
+                    {'text': "Start dispensing roller", 'action': partial(action_, ("single_move", 'D', {'Dispensing_Roller': 1}))},
+                    {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'D', {'Dispensing_Roller': 0}))},
+                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'D', {'Dispensing_Roller': 2}))},
+                    {'text': "move 07 08 ('D -> E')", 'action': partial(action_, ("move_07_08", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 5, 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
-                    {'show_val': partial(show_val_, 5, 'container_presence', 'CONTAINER PRESENCE')},
+                    {'show_val': partial(show_val_, 'D', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'D', 'container_presence', 'CONTAINER PRESENCE')},
                 ],
             },
             self.action_07_btn: {
                 'title': 'action 07 (head 4 or E)',
                 'buttons': [
-                    {'text': "Start dispensing roller"             , 'action': partial(action_, "single_move", 'E', {'Dispensing_Roller': 1})},
-                    {'text': "Stop  dispensing roller"             , 'action': partial(action_, "single_move", 'E', {'Dispensing_Roller': 0})},
-                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, "single_move", 'E', {'Dispensing_Roller': 2})},
-                    {'text': "move 08 09 ('E -> F')", 'action': partial(action_, "move_08_09")},
+                    {'text': "Start dispensing roller", 'action': partial(action_, ("single_move", 'E', {'Dispensing_Roller': 1}))},
+                    {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'E', {'Dispensing_Roller': 0}))},
+                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'E', {'Dispensing_Roller': 2}))},
+                    {'text': "move 08 09 ('E -> F')", 'action': partial(action_, ("move_08_09", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 3, 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
-                    {'show_val': partial(show_val_, 3, 'container_presence', 'CONTAINER PRESENCE')},
+                    {'show_val': partial(show_val_, 'E', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'E', 'container_presence', 'CONTAINER PRESENCE')},
                 ],
             },
             self.action_08_btn: {
                 'title': 'action 08 (head 2 or F)',
                 'buttons': [
-                    {'text': "Start dispensing roller"             , 'action': partial(action_, "single_move", 'F', {'Dispensing_Roller': 1})},
-                    {'text': "Stop  dispensing roller"             , 'action': partial(action_, "single_move", 'F', {'Dispensing_Roller': 0})},
-                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, "single_move", 'F', {'Dispensing_Roller': 2})},
-                    {'text': "move 09 10 ('F -> DOWN')", 'action': partial(action_, "move_09_10")},
+                    {'text': "Start dispensing roller", 'action': partial(action_, ("single_move", 'F', {'Dispensing_Roller': 1}))},
+                    {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'F', {'Dispensing_Roller': 0}))},
+                    {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'F', {'Dispensing_Roller': 2}))},
+                    {'text': "move 09 10 ('F -> DOWN')", 'action': partial(action_, ("move_09_10", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 1, 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
-                    {'show_val': partial(show_val_, 1, 'container_presence', 'CONTAINER PRESENCE')},
+                    {'show_val': partial(show_val_, 'F', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'F', 'container_presence', 'CONTAINER PRESENCE')},
                 ],
             },
             self.action_09_btn: {
                 'title': 'action 09 (head 2 or F)',
                 'buttons': [
-                    {'text': "Start lifter roller CW" , 'action': partial(action_, "single_move", 'F', {'Lifter_Roller': 2})},
-                    {'text': "Start lifter roller CCW", 'action': partial(action_, "single_move", 'F', {'Lifter_Roller': 3})},
-                    {'text': "Stop  lifter roller"    , 'action': partial(action_, "single_move", 'F', {'Lifter_Roller': 0})},
+                    {'text': "Start lifter roller CW", 'action': partial(action_, ("single_move", 'F', {'Lifter_Roller': 2}))},
+                    {'text': "Start lifter roller CCW", 'action': partial(action_, ("single_move", 'F', {'Lifter_Roller': 3}))},
+                    {'text': "Stop  lifter roller", 'action': partial(action_, ("single_move", 'F', {'Lifter_Roller': 0}))},
 
-                    {'text': "Start lifter up"        , 'action': partial(action_, "single_move", 'F', {'Lifter': 1})},
-                    {'text': "Start lifter down"      , 'action': partial(action_, "single_move", 'F', {'Lifter': 2})},
-                    {'text': "Stop  lifter"           , 'action': partial(action_, "single_move", 'F', {'Lifter': 0})},
+                    {'text': "Start lifter up", 'action': partial(action_, ("single_move", 'F', {'Lifter': 1}))},
+                    {'text': "Start lifter down", 'action': partial(action_, ("single_move", 'F', {'Lifter': 2}))},
+                    {'text': "Stop  lifter", 'action': partial(action_, ("single_move", 'F', {'Lifter': 0}))},
 
-                    {'text': "move 09 10 ('F -> DOWN')", 'action': partial(action_, "move_09_10")},
-                    {'text': "move 10 11 ('DOWN -> UP -> OUT')", 'action': partial(action_, "move_10_11")},
+                    {'text': "move 09 10 ('F -> DOWN')", 'action': partial(action_, ("move_09_10", ))},
+                    {'text': "move 10 11 ('DOWN -> UP -> OUT')", 'action': partial(action_, ("move_10_11", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 4, 'JAR_OUTPUT_ROLLER_PHOTOCELL', 'LIFTER ROLLER PHOTOCELL')},
-                    {'show_val': partial(show_val_, 4, 'UNLOAD_LIFTER_DOWN_PHOTOCELL', 'LIFTER DOWN PHOTOCELL')},
-                    {'show_val': partial(show_val_, 4, 'UNLOAD_LIFTER_UP_PHOTOCELL', 'LIFTER UP PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'F', 'JAR_OUTPUT_ROLLER_PHOTOCELL', 'LIFTER ROLLER PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'F', 'UNLOAD_LIFTER_DOWN_PHOTOCELL', 'LIFTER DOWN PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'F', 'UNLOAD_LIFTER_UP_PHOTOCELL', 'LIFTER UP PHOTOCELL')},
                 ],
             },
             self.action_10_btn: {
                 'title': 'action 10 (head 2 or F)',
                 'buttons': [
-                    {'text': "Start output roller"             , 'action': partial(action_, "single_move", 'F', {'Output_Roller': 3})},
-                    {'text': "Stop  output roller"             , 'action': partial(action_, "single_move", 'F', {'Output_Roller': 0})},
-                    {'text': "Start output roller to photocell dark", 'action': partial(action_, "single_move", 'F', {'Output_Roller': 1})},
-                    {'text': "Start output roller to photocell light", 'action': partial(action_, "single_move", 'F', {'Output_Roller': 2})},
-                    {'text': "move 11 12 ('UP -> OUT')", 'action': partial(action_, "move_11_12")},
+                    {'text': "Start output roller", 'action': partial(action_, ("single_move", 'F', {'Output_Roller': 3}))},
+                    {'text': "Stop  output roller", 'action': partial(action_, ("single_move", 'F', {'Output_Roller': 0}))},
+                    {'text': "Start output roller to photocell dark", 'action': partial(action_, ("single_move", 'F', {'Output_Roller': 1}))},
+                    {'text': "Start output roller to photocell light", 'action': partial(action_, ("single_move", 'F', {'Output_Roller': 2}))},
+                    {'text': "move 11 12 ('UP -> OUT')", 'action': partial(action_, ("move_11_12", ))},
                 ],
                 'labels': [
-                    {'show_val': partial(show_val_, 0, 'JAR_OUTPUT_ROLLER_PHOTOCELL', 'OUTPUT ROLLER PHOTOCELL')},
+                    {'show_val': partial(show_val_, 'F', 'JAR_OUTPUT_ROLLER_PHOTOCELL', 'OUTPUT ROLLER PHOTOCELL')},
                 ],
             },
         }
@@ -372,7 +366,7 @@ class MainWindow(QMainWindow):
                 w.action_buttons_layout.addWidget(i)
 
             for l in val['labels']:
-                
+
                 i = QLabel(w)
                 i.setTextFormat(Qt.RichText)
                 if l.get('show_val'):
@@ -529,17 +523,38 @@ class MainWindow(QMainWindow):
             self.service_5_btn,
             self.service_6_btn,
         ]
-
         map_[head_index].setText(status['status_level'])
 
         for action_frame in self.action_frame_map.values():
             for i in range(action_frame.action_labels_layout.count()):
                 lbl = action_frame.action_labels_layout.itemAt(i).widget()
                 if lbl.isVisible() and hasattr(lbl, 'show_val'):
-                    try:
-                        getattr(lbl, 'show_val')(lbl)
-                    except Exception as e:
-                        logging.error(f"e:{e}.")
+                    getattr(lbl, 'show_val')(lbl)
+
+        map_ = QApplication.instance().machine_head_dict
+
+        def set_pixmap_by_photocells(lbl, head_letter, bit_name):
+            m = QApplication.instance().get_machine_head_by_letter(head_letter)
+            f = m.jar_photocells_status.get(bit_name[0])
+            pixmap = self.jar_icon_map['green'].scaled(75, 75, Qt.KeepAspectRatio) if f else self.jar_icon_map['green'].scaled(0,0)
+            # ~ pixmap = self.jar_icon_map['green'].scaled(75, 75, Qt.KeepAspectRatio)
+
+            logging.warning(f"lbl:{lbl}, head_letter:{head_letter}, bit_name:{bit_name}, f:{f}, pixmap:{pixmap}")
+            lbl.setPixmap(pixmap)
+            lbl.show()
+
+        set_pixmap_by_photocells(self.STEP_01_label, 'A', ('JAR_INPUT_ROLLER_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_02_label, 'A', ('JAR_DISPENSING_POSITION_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_03_label, 'B', ('JAR_DISPENSING_POSITION_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_04_label, 'C', ('JAR_DISPENSING_POSITION_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_05_label, 'D', ('LOAD_LIFTER_UP_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_06_label, 'D', ('LOAD_LIFTER_DOWN_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_07_label, 'D', ('JAR_DISPENSING_POSITION_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_08_label, 'E', ('JAR_DISPENSING_POSITION_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_09_label, 'F', ('JAR_DISPENSING_POSITION_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_10_label, 'F', ('UNLOAD_LIFTER_DOWN_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_11_label, 'F', ('UNLOAD_LIFTER_UP_PHOTOCELL',))
+        set_pixmap_by_photocells(self.STEP_12_label, 'F', ('JAR_OUTPUT_ROLLER_PHOTOCELL',))
 
     def show_reserve(self, head_index, flag=None):
 

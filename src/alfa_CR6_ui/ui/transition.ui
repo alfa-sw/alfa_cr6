@@ -358,7 +358,7 @@
      <widget class="QLabel" name="sinottico">
       <property name="geometry">
        <rect>
-        <x>-10</x>
+        <x>10</x>
         <y>10</y>
         <width>1951</width>
         <height>971</height>
@@ -1047,6 +1047,126 @@
        <string notr="true">action_btn_group</string>
       </attribute>
      </widget>
+     <widget class="QLabel" name="STEP_11_label">
+      <property name="geometry">
+       <rect>
+        <x>430</x>
+        <y>490</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_07_label">
+      <property name="geometry">
+       <rect>
+        <x>1490</x>
+        <y>750</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_09_label">
+      <property name="geometry">
+       <rect>
+        <x>680</x>
+        <y>750</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_01_label">
+      <property name="geometry">
+       <rect>
+        <x>430</x>
+        <y>390</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_06_label">
+      <property name="geometry">
+       <rect>
+        <x>1730</x>
+        <y>750</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_10_label">
+      <property name="geometry">
+       <rect>
+        <x>430</x>
+        <y>760</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_12_label">
+      <property name="geometry">
+       <rect>
+        <x>310</x>
+        <y>490</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_03_label">
+      <property name="geometry">
+       <rect>
+        <x>1090</x>
+        <y>380</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_05_label">
+      <property name="geometry">
+       <rect>
+        <x>1730</x>
+        <y>390</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_08_label">
+      <property name="geometry">
+       <rect>
+        <x>1090</x>
+        <y>750</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_04_label">
+      <property name="geometry">
+       <rect>
+        <x>1490</x>
+        <y>380</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
+     <widget class="QLabel" name="STEP_02_label">
+      <property name="geometry">
+       <rect>
+        <x>690</x>
+        <y>380</y>
+        <width>75</width>
+        <height>75</height>
+       </rect>
+      </property>
+     </widget>
      <zorder>sinottico</zorder>
      <zorder>service_1_btn</zorder>
      <zorder>service_3_btn</zorder>
@@ -1080,6 +1200,18 @@
      <zorder>reserve_4_label</zorder>
      <zorder>reserve_6_label</zorder>
      <zorder>freeze_carousel_btn</zorder>
+     <zorder>STEP_07_label</zorder>
+     <zorder>STEP_04_label</zorder>
+     <zorder>STEP_05_label</zorder>
+     <zorder>STEP_06_label</zorder>
+     <zorder>STEP_10_label</zorder>
+     <zorder>STEP_03_label</zorder>
+     <zorder>STEP_02_label</zorder>
+     <zorder>STEP_09_label</zorder>
+     <zorder>STEP_01_label</zorder>
+     <zorder>STEP_08_label</zorder>
+     <zorder>STEP_11_label</zorder>
+     <zorder>STEP_12_label</zorder>
     </widget>
     <widget class="QWidget" name="action_page">
      <widget class="QFrame" name="action_frame">
@@ -1270,9 +1402,9 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
-  <buttongroup name="action_btn_group"/>
   <buttongroup name="menu_btn_group"/>
+  <buttongroup name="service_btn_group"/>
   <buttongroup name="refill_btn_group"/>
+  <buttongroup name="action_btn_group"/>
  </buttongroups>
 </ui>

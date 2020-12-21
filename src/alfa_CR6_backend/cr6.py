@@ -548,6 +548,7 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         return order
 
     def run_a_coroutine_helper(self, coroutine_name, *args, **kwargs):
+        logging.warning(f"coroutine_name:{coroutine_name}, args:{args}, kwargs:{kwargs}")
         try:
             _coroutine = getattr(self, coroutine_name)
             _future = _coroutine(*args, **kwargs)
