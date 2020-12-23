@@ -46,12 +46,12 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>../images/alfa_logo.png</normaloff>../images/alfa_logo.png</iconset>
+       <normaloff>../images/sinottico_small.png</normaloff>../images/sinottico_small.png</iconset>
      </property>
      <property name="iconSize">
       <size>
-       <width>200</width>
-       <height>60</height>
+       <width>280</width>
+       <height>72</height>
       </size>
      </property>
      <property name="flat">
@@ -122,7 +122,7 @@
     <widget class="QPushButton" name="browser_btn">
      <property name="geometry">
       <rect>
-       <x>1280</x>
+       <x>1310</x>
        <y>1</y>
        <width>160</width>
        <height>62</height>
@@ -207,9 +207,9 @@
      <widget class="QPushButton" name="service_1_btn">
       <property name="geometry">
        <rect>
-        <x>540</x>
+        <x>530</x>
         <y>180</y>
-        <width>320</width>
+        <width>330</width>
         <height>60</height>
        </rect>
       </property>
@@ -232,9 +232,9 @@
      <widget class="QPushButton" name="service_3_btn">
       <property name="geometry">
        <rect>
-        <x>930</x>
+        <x>920</x>
         <y>180</y>
-        <width>320</width>
+        <width>330</width>
         <height>60</height>
        </rect>
       </property>
@@ -257,9 +257,9 @@
      <widget class="QPushButton" name="service_6_btn">
       <property name="geometry">
        <rect>
-        <x>1320</x>
-        <y>550</y>
-        <width>320</width>
+        <x>1300</x>
+        <y>530</y>
+        <width>330</width>
         <height>60</height>
        </rect>
       </property>
@@ -282,9 +282,9 @@
      <widget class="QPushButton" name="service_4_btn">
       <property name="geometry">
        <rect>
-        <x>928</x>
-        <y>550</y>
-        <width>320</width>
+        <x>918</x>
+        <y>530</y>
+        <width>330</width>
         <height>60</height>
        </rect>
       </property>
@@ -307,9 +307,9 @@
      <widget class="QPushButton" name="service_2_btn">
       <property name="geometry">
        <rect>
-        <x>540</x>
-        <y>550</y>
-        <width>320</width>
+        <x>530</x>
+        <y>530</y>
+        <width>330</width>
         <height>60</height>
        </rect>
       </property>
@@ -332,9 +332,9 @@
      <widget class="QPushButton" name="service_5_btn">
       <property name="geometry">
        <rect>
-        <x>1320</x>
+        <x>1300</x>
         <y>180</y>
-        <width>320</width>
+        <width>330</width>
         <height>60</height>
        </rect>
       </property>
@@ -357,14 +357,30 @@
      <widget class="QPushButton" name="service_0_btn">
       <property name="geometry">
        <rect>
-        <x>300</x>
+        <x>290</x>
         <y>170</y>
         <width>171</width>
         <height>81</height>
        </rect>
       </property>
+      <property name="autoFillBackground">
+       <bool>true</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background:#0FFFFFF</string>
+      </property>
       <property name="text">
        <string/>
+      </property>
+      <property name="icon">
+       <iconset>
+        <normaloff>../images/alfa_logo.png</normaloff>../images/alfa_logo.png</iconset>
+      </property>
+      <property name="iconSize">
+       <size>
+        <width>160</width>
+        <height>68</height>
+       </size>
       </property>
       <property name="flat">
        <bool>true</bool>
@@ -376,10 +392,10 @@
      <widget class="QLabel" name="sinottico">
       <property name="geometry">
        <rect>
-        <x>10</x>
-        <y>10</y>
-        <width>1911</width>
-        <height>971</height>
+        <x>4</x>
+        <y>4</y>
+        <width>1912</width>
+        <height>972</height>
        </rect>
       </property>
       <property name="text">
@@ -482,7 +498,7 @@
      <widget class="QPushButton" name="action_03_btn">
       <property name="geometry">
        <rect>
-        <x>970</x>
+        <x>950</x>
         <y>390</y>
         <width>71</width>
         <height>61</height>
@@ -511,7 +527,7 @@
      <widget class="QPushButton" name="action_02_btn">
       <property name="geometry">
        <rect>
-        <x>570</x>
+        <x>560</x>
         <y>390</y>
         <width>71</width>
         <height>61</height>
@@ -540,7 +556,7 @@
      <widget class="QPushButton" name="action_04_btn">
       <property name="geometry">
        <rect>
-        <x>1360</x>
+        <x>1330</x>
         <y>390</y>
         <width>71</width>
         <height>61</height>
@@ -569,8 +585,8 @@
      <widget class="QPushButton" name="action_08_btn">
       <property name="geometry">
        <rect>
-        <x>570</x>
-        <y>770</y>
+        <x>560</x>
+        <y>760</y>
         <width>71</width>
         <height>61</height>
        </rect>
@@ -598,8 +614,8 @@
      <widget class="QPushButton" name="action_06_btn">
       <property name="geometry">
        <rect>
-        <x>1360</x>
-        <y>770</y>
+        <x>1330</x>
+        <y>760</y>
         <width>71</width>
         <height>61</height>
        </rect>
@@ -627,8 +643,8 @@
      <widget class="QPushButton" name="action_07_btn">
       <property name="geometry">
        <rect>
-        <x>970</x>
-        <y>770</y>
+        <x>950</x>
+        <y>760</y>
         <width>71</width>
         <height>61</height>
        </rect>
@@ -656,7 +672,7 @@
      <widget class="QPushButton" name="action_05_btn">
       <property name="geometry">
        <rect>
-        <x>1690</x>
+        <x>1680</x>
         <y>580</y>
         <width>71</width>
         <height>61</height>
@@ -685,7 +701,7 @@
      <widget class="QPushButton" name="action_09_btn">
       <property name="geometry">
        <rect>
-        <x>420</x>
+        <x>410</x>
         <y>600</y>
         <width>71</width>
         <height>61</height>
@@ -936,7 +952,7 @@
       <property name="geometry">
        <rect>
         <x>789</x>
-        <y>240</y>
+        <y>260</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -954,8 +970,8 @@
      <widget class="QLabel" name="reserve_3_label">
       <property name="geometry">
        <rect>
-        <x>1190</x>
-        <y>240</y>
+        <x>1170</x>
+        <y>260</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -973,8 +989,8 @@
      <widget class="QLabel" name="reserve_5_label">
       <property name="geometry">
        <rect>
-        <x>1590</x>
-        <y>240</y>
+        <x>1560</x>
+        <y>260</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -993,7 +1009,7 @@
       <property name="geometry">
        <rect>
         <x>790</x>
-        <y>620</y>
+        <y>640</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -1011,8 +1027,8 @@
      <widget class="QLabel" name="reserve_4_label">
       <property name="geometry">
        <rect>
-        <x>1190</x>
-        <y>620</y>
+        <x>1170</x>
+        <y>640</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -1030,8 +1046,8 @@
      <widget class="QLabel" name="reserve_6_label">
       <property name="geometry">
        <rect>
-        <x>1590</x>
-        <y>620</y>
+        <x>1560</x>
+        <y>640</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -1049,11 +1065,16 @@
      <widget class="QPushButton" name="freeze_carousel_btn">
       <property name="geometry">
        <rect>
-        <x>840</x>
-        <y>900</y>
+        <x>830</x>
+        <y>0</y>
         <width>491</width>
-        <height>51</height>
+        <height>74</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>20</pointsize>
+       </font>
       </property>
       <property name="autoFillBackground">
        <bool>false</bool>
@@ -1066,12 +1087,12 @@
       </property>
       <property name="iconSize">
        <size>
-        <width>32</width>
-        <height>32</height>
+        <width>72</width>
+        <height>72</height>
        </size>
       </property>
       <property name="flat">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <attribute name="buttonGroup">
        <string notr="true">action_btn_group</string>
@@ -1080,8 +1101,8 @@
      <widget class="QLabel" name="STEP_11_label">
       <property name="geometry">
        <rect>
-        <x>420</x>
-        <y>490</y>
+        <x>410</x>
+        <y>480</y>
         <width>75</width>
         <height>75</height>
        </rect>
@@ -1090,7 +1111,7 @@
      <widget class="QLabel" name="STEP_07_label">
       <property name="geometry">
        <rect>
-        <x>1440</x>
+        <x>1430</x>
         <y>750</y>
         <width>75</width>
         <height>75</height>
@@ -1100,7 +1121,7 @@
      <widget class="QLabel" name="STEP_09_label">
       <property name="geometry">
        <rect>
-        <x>670</x>
+        <x>660</x>
         <y>750</y>
         <width>75</width>
         <height>75</height>
@@ -1110,8 +1131,8 @@
      <widget class="QLabel" name="STEP_01_label">
       <property name="geometry">
        <rect>
-        <x>420</x>
-        <y>390</y>
+        <x>410</x>
+        <y>380</y>
         <width>75</width>
         <height>75</height>
        </rect>
@@ -1120,7 +1141,7 @@
      <widget class="QLabel" name="STEP_06_label">
       <property name="geometry">
        <rect>
-        <x>1730</x>
+        <x>1680</x>
         <y>750</y>
         <width>75</width>
         <height>75</height>
@@ -1130,8 +1151,8 @@
      <widget class="QLabel" name="STEP_10_label">
       <property name="geometry">
        <rect>
-        <x>420</x>
-        <y>760</y>
+        <x>410</x>
+        <y>750</y>
         <width>75</width>
         <height>75</height>
        </rect>
@@ -1150,7 +1171,7 @@
      <widget class="QLabel" name="STEP_03_label">
       <property name="geometry">
        <rect>
-        <x>1060</x>
+        <x>1050</x>
         <y>380</y>
         <width>75</width>
         <height>75</height>
@@ -1160,7 +1181,7 @@
      <widget class="QLabel" name="STEP_05_label">
       <property name="geometry">
        <rect>
-        <x>1700</x>
+        <x>1680</x>
         <y>390</y>
         <width>75</width>
         <height>75</height>
@@ -1170,7 +1191,7 @@
      <widget class="QLabel" name="STEP_08_label">
       <property name="geometry">
        <rect>
-        <x>1060</x>
+        <x>1050</x>
         <y>750</y>
         <width>75</width>
         <height>75</height>
@@ -1180,7 +1201,7 @@
      <widget class="QLabel" name="STEP_04_label">
       <property name="geometry">
        <rect>
-        <x>1440</x>
+        <x>1430</x>
         <y>380</y>
         <width>75</width>
         <height>75</height>
@@ -1190,7 +1211,7 @@
      <widget class="QLabel" name="STEP_02_label">
       <property name="geometry">
        <rect>
-        <x>680</x>
+        <x>670</x>
         <y>380</y>
         <width>75</width>
         <height>75</height>
@@ -1497,9 +1518,9 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="refill_btn_group"/>
+  <buttongroup name="menu_btn_group"/>
   <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
-  <buttongroup name="menu_btn_group"/>
+  <buttongroup name="refill_btn_group"/>
  </buttongroups>
 </ui>

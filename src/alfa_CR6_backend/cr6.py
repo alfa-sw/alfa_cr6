@@ -16,6 +16,7 @@ import json
 
 from sqlalchemy.orm.exc import NoResultFound
 
+from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMessageBox    # pylint: disable=no-name-in-module
 
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
@@ -82,7 +83,6 @@ class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attribu
         # ~ Qt::NonModal	0	The window is not modal and does not block input to other windows.
         # ~ Qt::WindowModal	1	The window is modal to a single window hierarchy and blocks input to its parent window, all grandparent windows, and all siblings of its parent and grandparent windows.
         # ~ Qt::ApplicationModal	2	The window is modal to the application and blocks input to all windows.
-        self.setWindowModality(1)
         self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
         self.resize(800, 400)
         for b in self.buttons():
@@ -93,6 +93,8 @@ class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attribu
                         }
                     """)
 
+        self.setWindowModality(1)
+        self.setWindowFlags(self.windowFlags() |  Qt.FramelessWindowHint)
 
 class BarCodeReader:   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
 
@@ -533,8 +535,9 @@ class CR6_application(QApplication):   # pylint:  disable=too-many-instance-attr
         order = None
         if self.db_session:
             try:
+                fname = os.path.split(path_to_json_file)[1]
                 properties = parse_json_order(path_to_json_file, json_schema_name)
-                order = Order(json_properties=json.dumps(properties))
+                order = Order(json_properties=json.dumps(properties), description=f'from file:{fname}')
                 self.db_session.add(order)
                 for j in range(1, n_of_jars + 1):
                     jar = Jar(order=order, index=j, size=0)

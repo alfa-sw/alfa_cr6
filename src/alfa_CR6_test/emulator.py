@@ -23,7 +23,7 @@ from asyncinotify import Inotify, Mask  # pylint: disable=import-error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-DATA_ROOT = '/opt/alfa_cr6/var/'
+DATA_ROOT = '/opt/alfa_cr6/tmp/'
 
 ID_MAP = [
     ('127.0.0.1', 11001, 8081),

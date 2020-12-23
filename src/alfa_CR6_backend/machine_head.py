@@ -21,12 +21,11 @@ import async_timeout                        # pylint: disable=import-error
 
 
 DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
-DATA_ROOT = '/opt/alfa_cr6/var/'
 
 EPSILON = 0.00001
 
 
-class MachineHead(object):           # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class MachineHead:           # pylint: disable=too-many-instance-attributes,too-many-public-methods
 
     """
     # "jar photocells_status" mask bit coding:
@@ -135,12 +134,12 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
                 if enabled_pipes:
                     pigment_list.append(pig)
 
-            with open(DATA_ROOT + f"{self.name}_pigment_list.json", 'w') as f:
+            with open(self.app.settings.TMP_PATH + f"{self.name}_pigment_list.json", 'w') as f:
                 json.dump(pigment_list, f, indent=2)
 
             ret = await self.call_api_rest('package', 'GET', {})
             package_list = ret.get('objects', [])
-            with open(DATA_ROOT + f"{self.name}_package_list.json", 'w') as f:
+            with open(self.app.settings.TMP_PATH + f"{self.name}_package_list.json", 'w') as f:
                 json.dump(self.package_list, f, indent=2)
 
         self.pigment_list = pigment_list
@@ -177,14 +176,11 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             await self.update_tintometer_data(invalidate_cache=True)
             self.app.show_alert_dialog(f'{self.name} RESETTING')
 
-        diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
-
-        # JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT
-        if self.status.get('jar_photocells_status', 0) & 0x001 and not (status['jar_photocells_status'] & 0x001):
+        old_flag = self.status.get('jar_photocells_status', 0) & 0x001
+        new_flag = status['jar_photocells_status'] & 0x001
+        if old_flag and not new_flag:
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
-
-        self.status = status
 
         self.photocells_status = {
             'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001 and 1,
@@ -211,12 +207,13 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
             'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400 and 1,
         }
 
-        # ~ self.jar_size_detect = (
-        # ~ status['jar_photocells_status'] & 0x200 +
-        # ~ status['jar_photocells_status'] & 0x400) >> 9
         s1 = status['jar_photocells_status'] & 0x200
         s2 = status['jar_photocells_status'] & 0x400
         self.jar_size_detect = int(s1 + s2) >> 9
+
+        diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
+
+        self.status = status
 
         # ~ logging.warning("self.jar_photocells_status:{}".format(self.jar_photocells_status))
         return diff
@@ -323,11 +320,11 @@ class MachineHead(object):           # pylint: disable=too-many-instance-attribu
     async def run(self):
 
         ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
-        while 1:
+        while True:
             try:
                 async with websockets.connect(ws_url) as websocket:
                     self.websocket = websocket
-                    while 1:
+                    while True:
                         await self.handle_ws_recv()
             except ConnectionRefusedError as e:
                 logging.error(f"e:{e}")

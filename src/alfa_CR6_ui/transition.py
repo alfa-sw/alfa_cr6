@@ -229,29 +229,29 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
         # ~ self.order_table.setStyleSheet("::section{background-color: #FF9933; color: blue; font-weight: bold}")
         # ~ self.file_table.setStyleSheet("::section{background-color: #FF9933; color: blue; font-weight: bold}")
 
-        # ~ self.input_dialog = QFrame(self)
-        self.input_dialog = QFrame(self)
-        # ~ self.input_dialog.setWindowFlags(Qt.FramelessWindowHint)
-        
-        loadUi(os.path.join(UI_PATH, "input_dialog.ui"), self.input_dialog)
-        self.input_dialog.move(400, 200)
-        self.input_dialog.ok_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogOkButton')))
-        self.input_dialog.esc_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogDiscardButton')))
-
-        self.input_dialog.ok_button.setAutoFillBackground(True)        
-        self.input_dialog.esc_button.setAutoFillBackground(True)        
-        # ~ self.freeze_carousel_btn.setAutoFillBackground(True)        
-
+        # ~ self.freeze_carousel_btn.setAutoFillBackground(True)
         for b in self.service_btn_group.buttons():
             if b.objectName() != 'service_0_btn':
                 b.setAutoFillBackground(True)
 
-        self.input_dialog.hide()
+        self.input_dialog = self.create_input_dialog()
+
+    def create_input_dialog(self, ):
+
+        input_dialog = QFrame(self)
+        loadUi(os.path.join(UI_PATH, "input_dialog.ui"), input_dialog)
+        # ~ self.input_dialog.setWindowFlags(Qt.FramelessWindowHint)
+        input_dialog.move(400, 200)
+        input_dialog.ok_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogOkButton')))
+        input_dialog.esc_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogDiscardButton')))
+        input_dialog.ok_button.setAutoFillBackground(True)
+        input_dialog.esc_button.setAutoFillBackground(True)
+        input_dialog.hide()
+
+        return input_dialog
 
     def create_action_pages(self, ):
-
         from functools import partial           # pylint: disable=import-outside-toplevel
-
         def action_(args):
             logging.warning(f"args:{args}")
             try:
@@ -281,6 +281,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "Stop  input roller", 'action': partial(action_, ("single_move", 'A', {'Input_Roller': 0}))},
                     {'text': "Start input roller to photocell", 'action': partial(action_, ("single_move", 'A', {'Input_Roller': 2}))},
                     {'text': "move 01 02 ('IN -> A')", 'action': partial(action_, ("move_01_02", ))},
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'A', 'JAR_INPUT_ROLLER_PHOTOCELL', 'INPUT ROLLER PHOTOCELL')},
@@ -295,6 +296,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'A', {'Dispensing_Roller': 0}))},
                     {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'A', {'Dispensing_Roller': 2}))},
                     {'text': "move 02 03 ('A -> B')", 'action': partial(action_, ("move_02_03", ))},
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'A', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
@@ -308,6 +310,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'B', {'Dispensing_Roller': 0}))},
                     {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'B', {'Dispensing_Roller': 2}))},
                     {'text': "move 03 04 ('B -> C')", 'action': partial(action_, ("move_03_04", ))},
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'B', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
@@ -321,6 +324,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'C', {'Dispensing_Roller': 0}))},
                     {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'C', {'Dispensing_Roller': 2}))},
                     {'text': "move 04 05 ('C -> UP')", 'action': partial(action_, ("move_04_05", ))},
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'C', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
@@ -341,6 +345,8 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "move 04 05 ('C -> UP')", 'action': partial(action_, ("move_04_05", ))},
                     {'text': "move 05 06 ('UP -> DOWN')", 'action': partial(action_, ("move_05_06", ))},
                     {'text': "move 06 07 ('DOWN -> D')", 'action': partial(action_, ("move_06_07", ))},
+
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'C', 'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', 'LIFTER ROLLER PHOTOCELL')},
@@ -355,6 +361,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'D', {'Dispensing_Roller': 0}))},
                     {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'D', {'Dispensing_Roller': 2}))},
                     {'text': "move 07 08 ('D -> E')", 'action': partial(action_, ("move_07_08", ))},
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'D', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
@@ -368,6 +375,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'E', {'Dispensing_Roller': 0}))},
                     {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'E', {'Dispensing_Roller': 2}))},
                     {'text': "move 08 09 ('E -> F')", 'action': partial(action_, ("move_08_09", ))},
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'E', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
@@ -381,6 +389,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "Stop  dispensing roller", 'action': partial(action_, ("single_move", 'F', {'Dispensing_Roller': 0}))},
                     {'text': "Start dispensing roller to photocell", 'action': partial(action_, ("single_move", 'F', {'Dispensing_Roller': 2}))},
                     {'text': "move 09 10 ('F -> DOWN')", 'action': partial(action_, ("move_09_10", ))},
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'F', 'JAR_DISPENSING_POSITION_PHOTOCELL', 'DISPENSING POSITION PHOTOCELL')},
@@ -400,6 +409,8 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
 
                     {'text': "move 09 10 ('F -> DOWN')", 'action': partial(action_, ("move_09_10", ))},
                     {'text': "move 10 11 ('DOWN -> UP -> OUT')", 'action': partial(action_, ("move_10_11", ))},
+
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'F', 'JAR_OUTPUT_ROLLER_PHOTOCELL', 'LIFTER ROLLER PHOTOCELL')},
@@ -415,6 +426,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     {'text': "Start output roller to photocell dark", 'action': partial(action_, ("single_move", 'F', {'Output_Roller': 1}))},
                     {'text': "Start output roller to photocell light", 'action': partial(action_, ("single_move", 'F', {'Output_Roller': 2}))},
                     {'text': "move 11 12 ('UP -> OUT')", 'action': partial(action_, ("move_11_12", ))},
+                    {'text': "Back to Home Page", 'action': partial(self.stacked_widget.setCurrentWidget, self.home_page)},
                 ],
                 'labels': [
                     {'show_val': partial(show_val_, 'F', 'JAR_OUTPUT_ROLLER_PHOTOCELL', 'OUTPUT ROLLER PHOTOCELL')},
@@ -523,7 +535,8 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
             QApplication.instance().run_a_coroutine_helper('move_12_00')
         elif 'freeze_carousel' in btn_name:
             msg_ = "confirm unfreezing carousel?" if QApplication.instance().carousel_frozen else "confirm freezing carousel?"
-            self.show_input_dialog(icon_name=None, message=msg_, content=None, ok_callback=QApplication.instance().toggle_freeze_carousel)
+            self.show_input_dialog(icon_name=None, message=msg_, content=None,
+                                   ok_callback=QApplication.instance().toggle_freeze_carousel)
         elif 'action_' in btn_name:
             self.stacked_widget.setCurrentWidget(self.action_frame_map[btn])
             for i in QApplication.instance().machine_head_dict.keys():
@@ -554,10 +567,26 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
         file_name = index.model().results[row][2]
         logging.warning(f"datum:{datum}, row:{row}, col:{col}")
         if col == 0:  # delete
-            self.show_input_dialog(icon_name='SP_MessageBoxCritical', message="confirm deleting data?", content=file_name)
+            def cb():
+                cmd_ = f'rm -f "{os.path.join(DOWNLOAD_PATH, file_name)}"'
+                logging.warning(f"cmd_:{cmd_}")
+                os.system(cmd_)
+                self.populate_file_table()
+                
+            self.show_input_dialog(icon_name='SP_MessageBoxCritical', 
+                message="confirm deleting file?", 
+                content=file_name, ok_callback=cb)
 
         elif col == 1:  # create order
-            self.show_input_dialog(message="confirm creating order? \n Please, insert below the number of jars.", content=2)
+            def cb():
+                n = int(self.input_dialog.content_container.toPlainText())
+                logging.warning(f"n:{n}")
+                QApplication.instance().create_order(os.path.join(DOWNLOAD_PATH, file_name), json_schema_name="KCC", n_of_jars=n)
+                self.populate_order_table()
+
+            self.show_input_dialog(
+                message=f'confirm creating order from:\n "{file_name}"? \n Please, insert below the number of jars.', 
+                content="<span align='center'>1</span>", ok_callback=cb)
 
         elif col == 2:  # file name
             content = '{}'
@@ -568,7 +597,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                 except Exception:                     # pylint: disable=broad-except
                     logging.error(traceback.format_exc())
 
-            self.show_input_dialog(icon_name='SP_MessageBoxInformation', message=file_name, content=content) 
+            self.show_input_dialog(icon_name='SP_MessageBoxInformation', message=file_name, content=content)
 
     def populate_order_table(self):
 
@@ -671,12 +700,12 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
     def show_carousel_frozen(self, flag):
         if flag:
             self.freeze_carousel_btn.setStyleSheet(
-                """background-color: #FF6666;""")
+                """background-color: #FF6666; color: #990000""")
             self.freeze_carousel_btn.setText(tr_("Carousel Frozen"))
             self.freeze_carousel_btn.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogDiscardButton')))
         else:
             self.freeze_carousel_btn.setStyleSheet(
-                """background-color: #AAFFAA;""")
+                """background-color: #AAFFAA; color: #004400""")
             self.freeze_carousel_btn.setText(tr_("Carousel OK"))
             self.freeze_carousel_btn.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogOkButton')))
 
@@ -699,9 +728,9 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
             self.input_dialog.message_label.setText(tr_(message))
 
         if content is None:
-            self.input_dialog.content_edit.setText('')
+            self.input_dialog.content_container.setText('')
         else:
-            self.input_dialog.content_edit.setText(str(content))
+            self.input_dialog.content_container.setText(str(content))
 
         self.input_dialog.ok_button.clicked.disconnect()
         self.input_dialog.ok_button.clicked.connect(self.input_dialog.hide)

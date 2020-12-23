@@ -1,41 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Frame</class>
- <widget class="QFrame" name="Frame">
+ <class>input_dialog_frame</class>
+ <widget class="QFrame" name="input_dialog_frame">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>977</width>
-    <height>546</height>
+    <width>927</width>
+    <height>495</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Frame</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: #AACCCCCC</string>
+   <string notr="true">background:#CCBBBBBB</string>
   </property>
   <property name="frameShape">
-   <enum>QFrame::StyledPanel</enum>
+   <enum>QFrame::Box</enum>
   </property>
   <property name="frameShadow">
-   <enum>QFrame::Raised</enum>
+   <enum>QFrame::Plain</enum>
   </property>
   <property name="lineWidth">
-   <number>4</number>
+   <number>0</number>
   </property>
   <widget class="QLabel" name="icon_label">
    <property name="geometry">
     <rect>
-     <x>30</x>
+     <x>10</x>
      <y>20</y>
      <width>101</width>
-     <height>81</height>
+     <height>91</height>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: #FFFFFF</string>
+    <string notr="true">background:#00FFFFFF</string>
    </property>
    <property name="text">
     <string>icon</string>
@@ -50,15 +50,15 @@
   <widget class="QLabel" name="message_label">
    <property name="geometry">
     <rect>
-     <x>150</x>
-     <y>20</y>
-     <width>811</width>
-     <height>81</height>
+     <x>120</x>
+     <y>10</y>
+     <width>791</width>
+     <height>91</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <pointsize>20</pointsize>
+     <pointsize>14</pointsize>
     </font>
    </property>
    <property name="styleSheet">
@@ -71,41 +71,41 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
-  <widget class="QTextEdit" name="content_edit">
+  <widget class="QTextEdit" name="content_container">
    <property name="geometry">
     <rect>
-     <x>10</x>
-     <y>190</y>
-     <width>961</width>
-     <height>351</height>
+     <x>2</x>
+     <y>170</y>
+     <width>921</width>
+     <height>321</height>
     </rect>
    </property>
    <property name="styleSheet">
-    <string notr="true">background-color: #FFFFFF</string>
+    <string notr="true">background-color: #AAFFFFFF</string>
    </property>
   </widget>
   <widget class="QPushButton" name="esc_button">
    <property name="geometry">
     <rect>
-     <x>150</x>
+     <x>120</x>
      <y>110</y>
      <width>200</width>
-     <height>61</height>
+     <height>51</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <pointsize>20</pointsize>
+     <pointsize>16</pointsize>
     </font>
    </property>
    <property name="autoFillBackground">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="styleSheet">
     <string notr="true">background:#FFFFFFFF</string>
    </property>
    <property name="text">
-    <string>ESC</string>
+    <string>Cancel</string>
    </property>
    <property name="iconSize">
     <size>
@@ -120,19 +120,19 @@
   <widget class="QPushButton" name="ok_button">
    <property name="geometry">
     <rect>
-     <x>760</x>
+     <x>710</x>
      <y>110</y>
      <width>200</width>
-     <height>61</height>
+     <height>51</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <pointsize>20</pointsize>
+     <pointsize>16</pointsize>
     </font>
    </property>
    <property name="autoFillBackground">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="styleSheet">
     <string notr="true">background:#FFFFFFFF</string>
@@ -142,8 +142,8 @@
    </property>
    <property name="iconSize">
     <size>
-     <width>32</width>
-     <height>32</height>
+     <width>24</width>
+     <height>24</height>
     </size>
    </property>
    <property name="flat">
@@ -156,7 +156,7 @@
   <connection>
    <sender>ok_button</sender>
    <signal>clicked()</signal>
-   <receiver>Frame</receiver>
+   <receiver>input_dialog_frame</receiver>
    <slot>hide()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -172,7 +172,7 @@
   <connection>
    <sender>esc_button</sender>
    <signal>clicked()</signal>
-   <receiver>Frame</receiver>
+   <receiver>input_dialog_frame</receiver>
    <slot>hide()</slot>
    <hints>
     <hint type="sourcelabel">
