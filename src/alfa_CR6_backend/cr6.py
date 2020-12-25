@@ -75,10 +75,14 @@ class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attribu
 
         self.setStyleSheet("""
                 QMessageBox {
-                    font-size: 24px;
-                    font-family: monospace;
+                    font-size: 20px;
+                    border: 2px solid #999999; border-radius: 4px; background-color: #FFFFEE;
                     }
                 """)
+                # ~ QFrame { border: 1px solid #999999; border-radius: 4px; background-color: #FFFFEE;}
+                # ~ QWidget {font-size: 24px; font-family: Times sans-serif;}
+                # ~ QLabel { border-width: 0px; background-color: #FFFFFF;}
+                # ~ QPushButton { background-color: #FFFFEE; border: 1px solid #999999; border-radius: 4px;}
 
         # ~ Qt::NonModal	0	The window is not modal and does not block input to other windows.
         # ~ Qt::WindowModal	1	The window is modal to a single window hierarchy and blocks input to its parent window, all grandparent windows, and all siblings of its parent and grandparent windows.
@@ -93,8 +97,8 @@ class CR6MessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attribu
                         }
                     """)
 
-        self.setWindowModality(1)
-        self.setWindowFlags(self.windowFlags() |  Qt.FramelessWindowHint)
+        self.setWindowModality(0)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.X11BypassWindowManagerHint)
 
 class BarCodeReader:   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
 
@@ -1025,10 +1029,10 @@ def main():
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=settings.LOG_LEVEL, format=fmt_)
 
-    if 'transition' in sys.argv:
-        from alfa_CR6_ui.transition import MainWindow
-    else:
+    if 'old' in sys.argv:
         from alfa_CR6_ui.main_window import MainWindow
+    else:
+        from alfa_CR6_ui.transition import MainWindow
 
     app = CR6_application(MainWindow, sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))

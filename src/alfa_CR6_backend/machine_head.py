@@ -177,39 +177,43 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
             self.app.show_alert_dialog(f'{self.name} RESETTING')
 
         old_flag = self.status.get('jar_photocells_status', 0) & 0x001
-        new_flag = status['jar_photocells_status'] & 0x001
+        new_flag = status.get('jar_photocells_status', 0) & 0x001
         if old_flag and not new_flag:
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
+        try:
+            self.photocells_status = {
+                'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001 and 1,
+                'THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL': status['photocells_status'] & 0x002 and 1,
+                'THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL': status['photocells_status'] & 0x004 and 1,
+                'THOR TABLE_PHOTOCELL': status['photocells_status'] & 0x008 and 1,
+                'THOR VALVE_OPEN_PHOTOCELL': status['photocells_status'] & 0x010 and 1,
+                'THOR AUTOCAP_CLOSE_PHOTOCELL': status['photocells_status'] & 0x020 and 1,
+                'THOR AUTOCAP_OPEN_PHOTOCELL': status['photocells_status'] & 0x040 and 1,
+                'THOR BRUSH_PHOTOCELL': status['photocells_status'] & 0x080 and 1,
+            }
 
-        self.photocells_status = {
-            'THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL': status['photocells_status'] & 0x001 and 1,
-            'THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL': status['photocells_status'] & 0x002 and 1,
-            'THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL': status['photocells_status'] & 0x004 and 1,
-            'THOR TABLE_PHOTOCELL': status['photocells_status'] & 0x008 and 1,
-            'THOR VALVE_OPEN_PHOTOCELL': status['photocells_status'] & 0x010 and 1,
-            'THOR AUTOCAP_CLOSE_PHOTOCELL': status['photocells_status'] & 0x020 and 1,
-            'THOR AUTOCAP_OPEN_PHOTOCELL': status['photocells_status'] & 0x040 and 1,
-            'THOR BRUSH_PHOTOCELL': status['photocells_status'] & 0x080 and 1,
-        }
+            self.jar_photocells_status = {
+                'JAR_INPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x001 and 1,
+                'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x002 and 1,
+                'JAR_OUTPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x004 and 1,
+                'LOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x008 and 1,
+                'LOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x010 and 1,
+                'UNLOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x020 and 1,
+                'UNLOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x040 and 1,
+                'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x080 and 1,
+                'JAR_DISPENSING_POSITION_PHOTOCELL': status['jar_photocells_status'] & 0x100 and 1,
+                'JAR_DETECTION_MICROSWITCH_1': status['jar_photocells_status'] & 0x200 and 1,
+                'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400 and 1,
+            }
 
-        self.jar_photocells_status = {
-            'JAR_INPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x001 and 1,
-            'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x002 and 1,
-            'JAR_OUTPUT_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x004 and 1,
-            'LOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x008 and 1,
-            'LOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x010 and 1,
-            'UNLOAD_LIFTER_DOWN_PHOTOCELL': status['jar_photocells_status'] & 0x020 and 1,
-            'UNLOAD_LIFTER_UP_PHOTOCELL': status['jar_photocells_status'] & 0x040 and 1,
-            'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL': status['jar_photocells_status'] & 0x080 and 1,
-            'JAR_DISPENSING_POSITION_PHOTOCELL': status['jar_photocells_status'] & 0x100 and 1,
-            'JAR_DETECTION_MICROSWITCH_1': status['jar_photocells_status'] & 0x200 and 1,
-            'JAR_DETECTION_MICROSWITCH_2': status['jar_photocells_status'] & 0x400 and 1,
-        }
+            s1 = status['jar_photocells_status'] & 0x200
+            s2 = status['jar_photocells_status'] & 0x400
+            self.jar_size_detect = int(s1 + s2) >> 9
 
-        s1 = status['jar_photocells_status'] & 0x200
-        s2 = status['jar_photocells_status'] & 0x400
-        self.jar_size_detect = int(s1 + s2) >> 9
+        except Exception as e:                           # pylint: disable=broad-except
+            # ~ self.app.handle_exception(e)
+            logging.debug(e)
 
         diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
 
@@ -326,7 +330,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
                     self.websocket = websocket
                     while True:
                         await self.handle_ws_recv()
-            except ConnectionRefusedError as e:
+            except (OSError, ConnectionRefusedError) as e:
                 logging.error(f"e:{e}")
                 await asyncio.sleep(1)
             except Exception as e:                   # pylint: disable=broad-except
@@ -344,7 +348,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
         # ~ except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
         except asyncio.TimeoutError as e:
-            logging.warning(f"e:{e}")
+            logging.warning(f"{self.name} time out while waiting in websocket.recv.")
 
         self.cntr += 1
 

@@ -17,14 +17,26 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
+   <property name="font">
+    <font>
+     <family>FreeSans</family>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
    <widget class="QFrame" name="menu_frame">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>1000</y>
       <width>1920</width>
-      <height>71</height>
+      <height>72</height>
      </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>FreeSans</family>
+      <pointsize>18</pointsize>
+     </font>
     </property>
     <property name="frameShape">
      <enum>QFrame::NoFrame</enum>
@@ -197,6 +209,12 @@
       <height>1001</height>
      </rect>
     </property>
+    <property name="font">
+     <font>
+      <family>FreeSans</family>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
     <property name="styleSheet">
      <string notr="true">background-image:&quot;./../images/machine_r.png&quot;;</string>
     </property>
@@ -212,12 +230,6 @@
         <width>330</width>
         <height>60</height>
        </rect>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:#FFFFFF</string>
       </property>
       <property name="text">
        <string>service 1</string>
@@ -238,12 +250,6 @@
         <height>60</height>
        </rect>
       </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:#FFFFFF</string>
-      </property>
       <property name="text">
        <string>service 3</string>
       </property>
@@ -262,12 +268,6 @@
         <width>330</width>
         <height>60</height>
        </rect>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:#FFFFFF</string>
       </property>
       <property name="text">
        <string>service 6</string>
@@ -288,12 +288,6 @@
         <height>60</height>
        </rect>
       </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:#FFFFFF</string>
-      </property>
       <property name="text">
        <string>service 4</string>
       </property>
@@ -313,12 +307,6 @@
         <height>60</height>
        </rect>
       </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:#FFFFFF</string>
-      </property>
       <property name="text">
        <string>service 2</string>
       </property>
@@ -337,12 +325,6 @@
         <width>330</width>
         <height>60</height>
        </rect>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:#FFFFFF</string>
       </property>
       <property name="text">
        <string>service 5</string>
@@ -364,10 +346,10 @@
        </rect>
       </property>
       <property name="autoFillBackground">
-       <bool>true</bool>
+       <bool>false</bool>
       </property>
       <property name="styleSheet">
-       <string notr="true">background:#0FFFFFF</string>
+       <string notr="true">background:#EEEEFF</string>
       </property>
       <property name="text">
        <string/>
@@ -411,8 +393,8 @@
      <widget class="QPushButton" name="feed_jar_btn">
       <property name="geometry">
        <rect>
-        <x>40</x>
-        <y>320</y>
+        <x>90</x>
+        <y>350</y>
         <width>141</width>
         <height>91</height>
        </rect>
@@ -426,8 +408,8 @@
       </property>
       <property name="iconSize">
        <size>
-        <width>200</width>
-        <height>100</height>
+        <width>120</width>
+        <height>60</height>
        </size>
       </property>
       <property name="flat">
@@ -440,7 +422,7 @@
      <widget class="QPushButton" name="deliver_jar_btn">
       <property name="geometry">
        <rect>
-        <x>20</x>
+        <x>10</x>
         <y>460</y>
         <width>171</width>
         <height>91</height>
@@ -455,8 +437,8 @@
       </property>
       <property name="iconSize">
        <size>
-        <width>200</width>
-        <height>100</height>
+        <width>120</width>
+        <height>60</height>
        </size>
       </property>
       <property name="flat">
@@ -1066,21 +1048,15 @@
       <property name="geometry">
        <rect>
         <x>830</x>
-        <y>0</y>
+        <y>8</y>
         <width>491</width>
-        <height>74</height>
+        <height>68</height>
        </rect>
       </property>
       <property name="font">
        <font>
-        <pointsize>20</pointsize>
+        <pointsize>22</pointsize>
        </font>
-      </property>
-      <property name="autoFillBackground">
-       <bool>false</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">background:#FFFFFF</string>
       </property>
       <property name="text">
        <string>Freeze Carousel</string>
@@ -1518,9 +1494,9 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="menu_btn_group"/>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
+  <buttongroup name="service_btn_group"/>
   <buttongroup name="refill_btn_group"/>
+  <buttongroup name="menu_btn_group"/>
  </buttongroups>
 </ui>

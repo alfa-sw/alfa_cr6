@@ -36,8 +36,6 @@ class DebugStatusView():
         # ~ self.main_frame.setGeometry(0, 0, 1800, 1000)
         self.main_frame.setStyleSheet("""
                 QWidget {
-                    background-image:url("");
-                    background-color: #FFFFF7;
                     font-size: 16px;
                     font-family: monospace;
                     }
@@ -47,37 +45,37 @@ class DebugStatusView():
         self.status_text_browser.setOpenLinks(False)
         # ~ self.status_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
-        self.status_text_browser.setStyleSheet("""
-                QTextBrowser {
-                    background-color: #FFFFF7;
-                    font-size: 16px;
-                    font-family: monospace;
-                    }
-                """)
+        # ~ self.status_text_browser.setStyleSheet("""
+                # ~ QTextBrowser {
+                    # ~ background-color: #FFFFF7;
+                    # ~ font-size: 16px;
+                    # ~ font-family: monospace;
+                    # ~ }
+                # ~ """)
 
         self.answer_text_browser = QTextBrowser(parent=self.main_frame)
         self.answer_text_browser.document().setMaximumBlockCount(500)
         self.status_text_browser.setOpenLinks(False)
 
-        self.answer_text_browser.setStyleSheet("""
-                QTextBrowser {
-                    background-image:'';
-                    background-color: #FFFFF7;
-                    font-size: 16px;
-                    font-family: monospace;
-                    }
-                """)
+        # ~ self.answer_text_browser.setStyleSheet("""
+                # ~ QTextBrowser {
+                    # ~ background-image:'';
+                    # ~ background-color: #FFFFF7;
+                    # ~ font-size: 16px;
+                    # ~ font-family: monospace;
+                    # ~ }
+                # ~ """)
 
         self.buttons_frame = QFrame(parent=self.main_frame)
-        self.buttons_frame.setStyleSheet("""
-                QWidget {
-                    background-image:'';
-                    color: #333366;
-                    background-color: #FFFFF7;
-                    font-size: 20px;
-                    font-family: monospace;
-                    }
-                """)
+        # ~ self.buttons_frame.setStyleSheet("""
+                # ~ QWidget {
+                    # ~ background-image:'';
+                    # ~ color: #333366;
+                    # ~ background-color: #FFFFF7;
+                    # ~ font-size: 20px;
+                    # ~ font-family: monospace;
+                    # ~ }
+                # ~ """)
         self.button_group = QButtonGroup(parent=self.buttons_frame)
         for i, n in enumerate([
             ('move_00_01', 'feed to IN'),
@@ -145,9 +143,9 @@ class DebugStatusView():
             # ~ self.cb.addItem(name)
 
         width = 1880
-        self.status_text_browser.setGeometry(20, 0, width, 600)
-        self.buttons_frame.setGeometry(20, 600, width, 200)
-        self.answer_text_browser.setGeometry(20, 800, width, 280)
+        self.status_text_browser.setGeometry(20, 2, width, 592)
+        self.buttons_frame.setGeometry(20, 598, width, 200)
+        self.answer_text_browser.setGeometry(20, 794, width, 200)
 
         # ~ parent.main_window_stack.addWidget(self.main_frame)
         # ~ parent.main_window_stack.setCurrentWidget(self.main_frame)
