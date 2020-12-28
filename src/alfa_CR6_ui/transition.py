@@ -25,12 +25,11 @@ from PyQt5.QtWidgets import (QApplication,
                              QPushButton,
                              QLabel,
                              QStyle,
+                             QMessageBox,
                              QFrame)
 
 from alfa_CR6_ui.keyboard import Keyboard
-from alfa_CR6_ui.debug_status_view import DebugStatusView
-from alfa_CR6_backend.cr6 import CR6_application
-from alfa_CR6_backend.models import Order
+from alfa_CR6_backend.models import Order, Jar
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KEYBOARD_PATH = os.path.join(HERE, 'keyboard')
@@ -94,8 +93,13 @@ class FileTableModel(BaseTableModel):
         super().__init__(parent, *args)
         self.header = ['delete', 'create order', 'file name', ]
         filter_text = parent.search_file_line.text()
-        name_list_ = sorted([p for p in os.listdir(path) if filter_text in p])
+        name_list_ = sorted([p for p in os.listdir(path) if filter_text in p][:100])
         self.results = [['', '', p, ] for p in name_list_]
+
+    def remove_file(self, file_name):
+        cmd_ = f'rm -f "{os.path.join(DOWNLOAD_PATH, file_name)}"'
+        logging.warning(f"cmd_:{cmd_}")
+        os.system(cmd_)
 
     def data(self, index, role):
         # ~ logging.warning(f"index, role:{index, role}")
@@ -115,65 +119,137 @@ class OrderTableModel(BaseTableModel):
 
     def __init__(self, parent, session, *args):
         super().__init__(parent, *args)
-        self.header = ['status', 'order_nr', 'description']
+        self.session = session
+        self.header = ['delete', 'status', 'order_nr', 'source']
         filter_text = parent.search_order_line.text()
-        if session:
-            query_ = session.query(Order)
+        
+        if self.session:
+            query_ = self.session.query(Order)
             query_ = query_.filter(Order.order_nr.contains(filter_text))
             query_ = query_.order_by(Order.order_nr.desc()).limit(100)
-            self.results = [[o.status, o.order_nr, o.description] for o in query_.all()]
+            self.results = [['', o.status, o.order_nr, o.description] for o in query_.all()]
         else:
             self.results = [[], ]
 
+    def remove_order(self, order_nr):
+        logging.warning(f"order_nr:{order_nr}, self.session:{self.session}")
+        if self.session:
+            order = self.session.query(Order).filter(Order.order_nr==order_nr).one()
+            r = self.session.query(Jar).filter(Jar.order==order).delete()
+            logging.warning(f"r:{r}")
+            self.session.delete(order)
+            self.session.commit()
+            
     def data(self, index, role):
         if not index.isValid():
             return None
         ret = QVariant()
         if role == Qt.DecorationRole and index.column() == 0:
+            ret = self.parent().style().standardIcon(getattr(QStyle, 'SP_BrowserStop'))
+        if role == Qt.DecorationRole and index.column() == 1:
             datum = str(index.data()).upper()
             if 'DONE' in datum:
-                ret = self.gray_icon.scaled(48, 48, Qt.KeepAspectRatio)
+                ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
             elif 'ERR' in datum:
-                ret = self.red_icon.scaled(48, 48, Qt.KeepAspectRatio)
+                ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
             else:
-                ret = self.green_icon.scaled(48, 48, Qt.KeepAspectRatio)
+                ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
 
         elif role == Qt.DisplayRole:
             ret = self.results[index.row()][index.column()]
         return ret
 
 
+class ModalMessageBox(QMessageBox):   # pylint:  disable=too-many-instance-attributes,too-few-public-methods
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.setStyleSheet("""
+                QMessageBox {
+                    font-size: 20px;
+                    font-family: monospace;
+                    border: 2px solid #999999; border-radius: 4px; background-color: #FEFEFE;
+                    }
+                """)
+        # ~ QFrame { border: 1px solid #999999; border-radius: 4px; background-color: #FFFFEE;}
+        # ~ QWidget {font-size: 24px; font-family: Times sans-serif;}
+        # ~ QLabel { border-width: 0px; background-color: #FFFFFF;}
+        # ~ QPushButton { background-color: #FFFFEE; border: 1px solid #999999; border-radius: 4px;}
+
+        # ~ Qt::NonModal	0	The window is not modal and does not block input to other windows.
+        # ~ Qt::WindowModal	1	The window is modal to a single window hierarchy and blocks input to its parent window, all grandparent windows, and all siblings of its parent and grandparent windows.
+        # ~ Qt::ApplicationModal	2	The window is modal to the application and blocks input to all windows.
+        self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+        self.resize(800, 400)
+        for i, b in enumerate(self.buttons()):
+            b.setStyleSheet("""
+                    QWidget {
+                        font-size: 48px;
+                        font-family: monospace;
+                        }
+                    """)
+            if i == 0:
+                b.setIcon(self.parent().style().standardIcon(getattr(QStyle, 'SP_DialogYesButton')))
+            if i == 1:
+                b.setIcon(self.parent().style().standardIcon(getattr(QStyle, 'SP_MessageBoxCritical')))
+
+        self.setWindowModality(0)
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint |
+                            Qt.WindowStaysOnTopHint | Qt.X11BypassWindowManagerHint)
+
+
+
+class InputDialog(QFrame):   # pylint:  disable=too-few-public-methods
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        loadUi(os.path.join(UI_PATH, "input_dialog.ui"), self)
+        # ~ self.input_dialog.setWindowFlags(Qt.FramelessWindowHint)
+        self.setStyleSheet("""
+            QWidget {background:#CCBBBBBB; font-size: 24px; font-family: Times sans-serif; border: 1px solid #999999; border-radius: 4px;}
+            QPushButton { background-color: #F3F3F3F3;}
+            QPushButton:pressed {background-color: #AAAAAA;}""")
+        self.move(400, 200)
+
+        green_icon = QPixmap(os.path.join(IMAGES_PATH, 'green.png'))
+        red_icon = QPixmap(os.path.join(IMAGES_PATH, 'red.png'))
+
+        self.ok_button.setIcon(QIcon(green_icon))
+        self.esc_button.setIcon(QIcon(red_icon))
+        self.ok_button.setAutoFillBackground(True)
+        self.esc_button.setAutoFillBackground(True)
+        self.hide()
+
+
 class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attributes
 
     def __init__(self, parent=None):
+
+        from alfa_CR6_ui.debug_status_view import DebugStatusView       # pylint: disable=import-outside-toplevel
 
         super().__init__(parent)
         r = loadUi(os.path.join(UI_PATH, "transition.ui"), self)
 
         logging.warning(f"r:{r}, QIcon.themeSearchPaths():{QIcon.themeSearchPaths()}")
+        logging.warning(f"QApplication.instance().style():{QApplication.instance().style()}")
 
         self.setStyleSheet("""
             QWidget {font-size: 24px; font-family: Times sans-serif;}
-            QPushButton { background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
+            QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
             QPushButton:pressed {background-color: #AAAAAA;}""")
-
-        self._order_table_time = 0
-        self._file_table_time = 0
 
         self.webengine_view = QWebEngineView(self.browser_frame)
         self.webengine_view.setGeometry(0, 0, self.browser_frame.width(), self.browser_frame.height())
 
         QWebEngineProfile.defaultProfile().downloadRequested.connect(self.on_downloadRequested)
 
-        self.order_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.file_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        # ~ self.order_table.horizontalHeader().setStretchLastSection(True)
-        # ~ self.file_table.horizontalHeader().setStretchLastSection(True)
-        # ~ self.order_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        # ~ self.file_table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.order_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.file_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
-        # ~ self.order_table.clicked.connect(self.on_order_table_clicked)
-        # ~ self.file_table.clicked.connect(self.on_file_table_clicked)
+        self.order_table_view.clicked.connect(self.on_order_table_clicked)
+        self.file_table_view.clicked.connect(self.on_file_table_clicked)
 
         self.menu_btn_group.buttonClicked.connect(self.on_menu_btn_group_clicked)
         self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
@@ -201,39 +277,22 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
 
         self.action_frame_map = self.create_action_pages()
 
+        self.gray_icon = QPixmap(os.path.join(IMAGES_PATH, 'gray.png'))
+        self.green_icon = QPixmap(os.path.join(IMAGES_PATH, 'green.png'))
+        self.red_icon = QPixmap(os.path.join(IMAGES_PATH, 'red.png'))
+
         self.jar_icon_map = {k: QPixmap(os.path.join(IMAGES_PATH, p)) for k, p in (
             ("no", ""), ("green", "jar-green.png"), ("red", "jar-red.png"), ("blue", "jat-blue.png"))}
 
-        # ~ self.order_table.setStyleSheet("::section{background-color: #FF9933; color: blue; font-weight: bold}")
-        # ~ self.file_table.setStyleSheet("::section{background-color: #FF9933; color: blue; font-weight: bold}")
-
-        # ~ self.freeze_carousel_btn.setAutoFillBackground(True)
-        # ~ for b in self.service_btn_group.buttons():
-            # ~ if b.objectName() != 'service_0_btn':
-                # ~ b.setAutoFillBackground(True)
         for b in self.action_btn_group.buttons():
-            logging.warning(f"b.objectName():{b.objectName()}")
+            # ~ logging.warning(f"b.objectName():{b.objectName()}")
             b.setStyleSheet("""QPushButton { background-color: #00FFFFFF; border: 0px;}""")
 
         for b in self.refill_btn_group.buttons():
-            logging.warning(f"b.objectName():{b.objectName()}")
+            # ~ logging.warning(f"b.objectName():{b.objectName()}")
             b.setStyleSheet("""QPushButton { background-color: #00FFFFFF; border: 0px;}""")
 
-        self.input_dialog = self.create_input_dialog()
-
-    def create_input_dialog(self, ):
-
-        input_dialog = QFrame(self)
-        loadUi(os.path.join(UI_PATH, "input_dialog.ui"), input_dialog)
-        # ~ self.input_dialog.setWindowFlags(Qt.FramelessWindowHint)
-        input_dialog.move(400, 200)
-        input_dialog.ok_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogYesButton')))
-        input_dialog.esc_button.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_MessageBoxCritical')))
-        input_dialog.ok_button.setAutoFillBackground(True)
-        input_dialog.esc_button.setAutoFillBackground(True)
-        input_dialog.hide()
-
-        return input_dialog
+        self.input_dialog = InputDialog(self)
 
     def create_action_pages(self, ):
         from functools import partial           # pylint: disable=import-outside-toplevel
@@ -255,7 +314,6 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     val_ = m.jar_photocells_status.get(bit_name)
 
                 pth_ = os.path.join(IMAGES_PATH, 'green.png') if val_ else os.path.join(IMAGES_PATH, 'gray.png')
-                # ~ w.setText(f'<img widt="50" height="50" src="{pth_}"></img> <span style="vertical-align:center;">{tr_(text)}</span>')
                 w.setText(f'<img widt="50" height="50" src="{pth_}" style="vertical-align:middle;">{tr_(text)}</img>')
             except Exception:                     # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
@@ -426,10 +484,11 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
             w = QFrame(self)
             loadUi(os.path.join(UI_PATH, "action_frame.ui"), w)
             w.setStyleSheet("""
-                QFrame { border: 1px solid #999999; border-radius: 4px; background-color: #FFFFEE;}
+                QFrame { border: 1px solid #999999; border-radius: 4px; background-color: #FEFEFE;}
                 QWidget {font-size: 24px; font-family: Times sans-serif;}
                 QLabel { border-width: 0px; background-color: #FFFFFF;}
-                QPushButton { background-color: #FFFFEE; border: 1px solid #999999; border-radius: 4px;}
+                QPushButton { background-color: #EEEEEE; border: 1px solid #999999; border-radius: 4px;}
+                QPushButton:pressed {background-color: #AAAAAA;}
                 """)
 
             w.action_title_label.setText(tr_(val['title']))
@@ -489,8 +548,8 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
 
         except Exception as e:                     # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            QApplication.instance().show_alert_dialog(
-                f"btn_namel:{btn_name} exception:{e}", title="ERR", callback=None, args=None)
+            self.show_alert_dialog(
+                f"btn_namel:{btn_name} exception:{e}", title="ERROR", callback=None, args=None)
 
     def on_menu_btn_group_clicked(self, btn):
 
@@ -517,8 +576,8 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
 
         except Exception as e:                      # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            QApplication.instance().show_alert_dialog(
-                f"btn_namel:{btn_name} exception:{e}", title="ERR", callback=None, args=None)
+            self.show_alert_dialog(
+                f"btn_namel:{btn_name} exception:{e}", title="ERROR", callback=None, args=None)
 
     def on_action_btn_group_clicked(self, btn):
 
@@ -538,8 +597,8 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                 self.update_status_data(i)
         except Exception as e:                      # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            QApplication.instance().show_alert_dialog(
-                f"btn_namel:{btn_name} exception:{e}", title="ERR", callback=None, args=None)
+            self.show_alert_dialog(
+                f"btn_namel:{btn_name} exception:{e}", title="ERROR", callback=None, args=None)
 
     def on_refill_btn_group_clicked(self, btn):
 
@@ -555,19 +614,32 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
             self.show_reserve(map_.index(btn))
         except Exception as e:                      # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            QApplication.instance().show_alert_dialog(
-                f"exception:{e}", title="ERR", callback=None, args=None)
+            self.show_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None)
 
     def on_order_table_clicked(self, index):            # pylint: disable=no-self-use
 
         datum = index.data()
         logging.warning(f"datum:{datum}")
         try:
-            pass
+            col = index.column()
+            row = index.row()
+            model = index.model()
+            order_nr = model.results[row][2]
+            logging.warning(f"row:{row}, col:{col}, order_nr:{order_nr}")
+            if col == 0:  # delete
+                def cb():
+                    model.remove_order(order_nr)
+                    self.populate_order_table()
+
+                self.show_input_dialog(icon_name='SP_MessageBoxCritical',
+                                       message=tr_("confirm deleting order and related jars?"),
+                                       content=order_nr, ok_callback=cb)
+
         except Exception as e:                      # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            QApplication.instance().show_alert_dialog(
-                f"exception:{e}", title="ERR", callback=None, args=None)
+            self.show_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None)
 
     def on_file_table_clicked(self, index):             # pylint: disable=no-self-use
 
@@ -576,13 +648,12 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
         try:
             col = index.column()
             row = index.row()
-            file_name = index.model().results[row][2]
-            logging.warning(f"row:{row}, col:{col}")
+            model = index.model()
+            file_name = model.results[row][2]
+            logging.warning(f"row:{row}, col:{col}, file_name:{file_name}")
             if col == 0:  # delete
                 def cb():
-                    cmd_ = f'rm -f "{os.path.join(DOWNLOAD_PATH, file_name)}"'
-                    logging.warning(f"cmd_:{cmd_}")
-                    os.system(cmd_)
+                    model.remove_file(file_name)
                     self.populate_file_table()
 
                 self.show_input_dialog(icon_name='SP_MessageBoxCritical',
@@ -613,8 +684,8 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                 self.show_input_dialog(icon_name='SP_MessageBoxInformation', message=file_name, content=content)
         except Exception as e:                      # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            QApplication.instance().show_alert_dialog(
-                f"exception:{e}", title="ERR", callback=None, args=None)
+            self.show_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None)
 
     def populate_order_table(self):
         logging.warning("")
@@ -624,7 +695,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
             try:
                 db_session = QApplication.instance().db_session
                 order_model = OrderTableModel(self, db_session)
-                self.order_table.setModel(order_model)
+                self.order_table_view.setModel(order_model)
             except Exception:                     # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
@@ -635,7 +706,7 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
             self.search_file_table_last_time = t
             try:
                 file_model = FileTableModel(self, DOWNLOAD_PATH)
-                self.file_table.setModel(file_model)
+                self.file_table_view.setModel(file_model)
             except Exception:                     # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
@@ -678,7 +749,16 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
                     if lbl.isVisible() and hasattr(lbl, 'show_val'):
                         getattr(lbl, 'show_val')(lbl)
 
-            map_ = QApplication.instance().machine_head_dict
+            for action_frame in self.action_frame_map.values():
+                def _get_status_level(head_letter):
+                    return QApplication.instance().get_machine_head_by_letter(head_letter).status.get('status_level')
+                if action_frame.isVisible():
+                    action_frame.status_A_label.setText(tr_(f"{_get_status_level('A')}"))
+                    action_frame.status_B_label.setText(tr_(f"{_get_status_level('B')}"))
+                    action_frame.status_C_label.setText(tr_(f"{_get_status_level('C')}"))
+                    action_frame.status_D_label.setText(tr_(f"{_get_status_level('D')}"))
+                    action_frame.status_E_label.setText(tr_(f"{_get_status_level('E')}"))
+                    action_frame.status_F_label.setText(tr_(f"{_get_status_level('F')}"))
 
             def set_pixmap_by_photocells(lbl, head_letter, bit_name):
                 m = QApplication.instance().get_machine_head_by_letter(head_letter)
@@ -731,17 +811,12 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
 
     def show_carousel_frozen(self, flag):
         if flag:
-            # ~ self.freeze_carousel_btn.setStyleSheet(
-                # ~ """background-color: #FF6666; color: #990000""")
             self.freeze_carousel_btn.setText(tr_("Carousel Frozen"))
-            # ~ self.freeze_carousel_btn.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogCancelButton')))
-            self.freeze_carousel_btn.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_MessageBoxCritical')))
+            self.freeze_carousel_btn.setIcon(QIcon(self.red_icon))
             self.freeze_carousel_btn.setStyleSheet("background-color: #00FFFFFF; color: #990000")
         else:
-            # ~ self.freeze_carousel_btn.setStyleSheet(
-                # ~ """background-color: #AAFFAA; color: #004400""")
             self.freeze_carousel_btn.setText(tr_("Carousel OK"))
-            self.freeze_carousel_btn.setIcon(self.style().standardIcon(getattr(QStyle, 'SP_DialogYesButton')))
+            self.freeze_carousel_btn.setIcon(QIcon(self.green_icon))
             self.freeze_carousel_btn.setStyleSheet("background-color: #00FFFFFF; color: #004400")
 
     def show_input_dialog(self, icon_name=None, message=None, content=None, ok_callback=None):
@@ -774,11 +849,62 @@ class MainWindow(QMainWindow):     # pylint:  disable=too-many-instance-attribut
 
         self.input_dialog.show()
 
+    def show_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
+
+        logging.warning(msg)
+
+        ret = False
+
+        t = time.asctime()
+        msg = "[{}]\n\n{}\n\n".format(t, msg)
+
+        _msgbox = ModalMessageBox(parent=self)
+
+        def button_clicked(btn):
+            logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+            if "ok" in btn.text().lower() and callback:
+                args_ = args if args is not None else []
+                callback(*args_)
+
+        _msgbox.buttonClicked.connect(button_clicked)
+
+        _msgbox.setIcon(QMessageBox.Information)
+        _msgbox.setText(msg)
+        _msgbox.setWindowTitle(title)
+        _msgbox.show()
+
+        return ret
+
+    def show_frozen_dialog(self, msg, title="ALERT"):
+
+        logging.info(msg)
+
+        msg = f'ALERT: carousel is frozen in {msg}! hit "OK" to unfreeze it'
+
+        t = time.asctime()
+        msg = "[{}] {}".format(t, msg)
+
+        _msgbox = ModalMessageBox(parent=self)
+
+        def button_clicked(btn):
+            logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+            if "ok" in btn.text().lower():
+                QApplication.instance().freeze_carousel(False)
+
+        _msgbox.buttonClicked.connect(button_clicked)
+
+        _msgbox.setIcon(QMessageBox.Critical)
+        _msgbox.setText(msg)
+        _msgbox.setWindowTitle(title)
+        _msgbox.show()
+
 
 def main():
 
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level='INFO', format=fmt_)
+
+    from alfa_CR6_backend.cr6 import CR6_application       # pylint: disable=import-outside-toplevel
 
     app = CR6_application(MainWindow, sys.argv)
     app.exec_()

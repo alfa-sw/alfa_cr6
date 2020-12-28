@@ -64,7 +64,7 @@ def generate_id():
     return str(uuid.uuid4())
 
 
-class ModelCr6(object):         # pylint: disable=too-few-public-methods
+class BaseModel(object):         # pylint: disable=too-few-public-methods
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
     date_created = Column(DateTime, default=datetime.now)
@@ -87,7 +87,7 @@ class ModelCr6(object):         # pylint: disable=too-few-public-methods
         return ret
 
 
-class User(Base, ModelCr6):     # pylint: disable=too-few-public-methods
+class User(Base, BaseModel):     # pylint: disable=too-few-public-methods
 
     __tablename__ = 'user'
 
@@ -96,7 +96,7 @@ class User(Base, ModelCr6):     # pylint: disable=too-few-public-methods
     role = Column(Unicode, default='OPERATOR')
 
 
-class Command(Base, ModelCr6):  # pylint: disable=too-few-public-methods
+class Command(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = 'command'
     name = Column(Unicode(20), unique=True, nullable=False)
@@ -112,7 +112,7 @@ class Command(Base, ModelCr6):  # pylint: disable=too-few-public-methods
         return "{}_{}".format(self.name, self.date_created)
 
 
-class Event(Base, ModelCr6):  # pylint: disable=too-few-public-methods
+class Event(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = 'event'
     name = Column(Unicode(32), nullable=False, index=True)
@@ -128,7 +128,7 @@ class Event(Base, ModelCr6):  # pylint: disable=too-few-public-methods
         return "{}_{}".format(self.name, self.date_created)
 
 
-class Order(Base, ModelCr6):    # pylint: disable=too-few-public-methods
+class Order(Base, BaseModel):    # pylint: disable=too-few-public-methods
 
     __tablename__ = 'order'
     order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
@@ -139,7 +139,7 @@ class Order(Base, ModelCr6):    # pylint: disable=too-few-public-methods
         return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
 
 
-class Jar(Base, ModelCr6):      # pylint: disable=too-few-public-methods
+class Jar(Base, BaseModel):      # pylint: disable=too-few-public-methods
 
     __tablename__ = 'jar'
     status = Column(Unicode, default='NEW', doc="one of ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]")

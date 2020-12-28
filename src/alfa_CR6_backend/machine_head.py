@@ -149,7 +149,8 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
         logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
         if self.low_level_pipes:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
-            self.app.show_alert_dialog(f'{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}')
+            self.app.main_window.show_alert_dialog(
+                f'{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}')
             self.app.show_reserve(self.index, True)
         else:
             self.app.show_reserve(self.index, False)
@@ -163,7 +164,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
             msg_ = '{} ALARM. error_code:{}, error_message:{}'.format(
                 self.name, status.get('error_code'), status.get('error_message'))
             logging.error(msg_)
-            self.app.show_frozen_dialog(msg_)
+            self.app.main_window.show_frozen_dialog(msg_)
 
             if self.index == 0:
                 if status.get('error_code') == 10:      # user button interrupt
@@ -174,7 +175,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
 
         if status.get('status_level') == 'RESET' and self.status.get('status_level') != 'RESET':
             await self.update_tintometer_data(invalidate_cache=True)
-            self.app.show_alert_dialog(f'{self.name} RESETTING')
+            self.app.main_window.show_alert_dialog(f'{self.name} RESETTING')
 
         old_flag = self.status.get('jar_photocells_status', 0) & 0x001
         new_flag = status.get('jar_photocells_status', 0) & 0x001
@@ -330,9 +331,9 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
                     self.websocket = websocket
                     while True:
                         await self.handle_ws_recv()
-            except (OSError, ConnectionRefusedError) as e:
+            except (OSError, ConnectionRefusedError, websockets.exceptions.ConnectionClosedError) as e:
                 logging.error(f"e:{e}")
-                await asyncio.sleep(1)
+                await asyncio.sleep(5)
             except Exception as e:                   # pylint: disable=broad-except
                 logging.error(f"e:{e}")
                 logging.error(traceback.format_exc())
@@ -347,7 +348,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
             # ~ msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
         # ~ except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
-        except asyncio.TimeoutError as e:
+        except asyncio.TimeoutError:
             logging.warning(f"{self.name} time out while waiting in websocket.recv.")
 
         self.cntr += 1
@@ -398,7 +399,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
 
             if not ret and show_alert:
                 _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}"'
-                self.app.show_alert_dialog(_)
+                self.app.main_window.show_alert_dialog(_)
                 logging.error(_)
 
             return ret
@@ -417,7 +418,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
 
             if not ret and show_alert:
                 _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}"'
-                self.app.show_alert_dialog(_)
+                self.app.main_window.show_alert_dialog(_)
                 logging.error(_)
 
             return ret
@@ -436,7 +437,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
 
             if not ret and show_alert:
                 _ = f'timeout expired! {self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}"'
-                self.app.show_alert_dialog(_)
+                self.app.main_window.show_alert_dialog(_)
                 logging.error(_)
 
             return ret
@@ -455,7 +456,7 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
                 if extra_info:
                     _ += str(extra_info)
                 logging.error(_)
-                self.app.show_alert_dialog(_)
+                self.app.main_window.show_alert_dialog(_)
 
         return ret
 
@@ -466,8 +467,9 @@ class MachineHead:           # pylint: disable=too-many-instance-attributes,too-
         ingredients = {}
         for pigment_name in ingredient_volume_map.keys():
             try:
-                if ingredient_volume_map and ingredient_volume_map.get(pigment_name, {}).get(self.name):
-                    ingredients[pigment_name] = ingredient_volume_map[pigment_name][self.name]
+                name_ = ingredient_volume_map and ingredient_volume_map.get(pigment_name) and ingredient_volume_map[pigment_name].get(self.name)
+                if name_:
+                    ingredients[pigment_name] = ingredient_volume_map[pigment_name][name_]
             except Exception as e:                           # pylint: disable=broad-except
                 self.app.handle_exception(e)
 

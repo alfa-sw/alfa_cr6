@@ -23,6 +23,8 @@ from PyQt5.QtWidgets import (QApplication, QFrame,       # pylint: disable=no-na
 from alfa_CR6_backend.models import Jar, Order
 from alfa_CR6_backend.dymo_printer import dymo_print
 
+from alfa_CR6_ui.transition import tr_
+
 
 class DebugStatusView():
 
@@ -46,36 +48,36 @@ class DebugStatusView():
         # ~ self.status_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
 
         # ~ self.status_text_browser.setStyleSheet("""
-                # ~ QTextBrowser {
-                    # ~ background-color: #FFFFF7;
-                    # ~ font-size: 16px;
-                    # ~ font-family: monospace;
-                    # ~ }
-                # ~ """)
+        # ~ QTextBrowser {
+        # ~ background-color: #FFFFF7;
+        # ~ font-size: 16px;
+        # ~ font-family: monospace;
+        # ~ }
+        # ~ """)
 
         self.answer_text_browser = QTextBrowser(parent=self.main_frame)
         self.answer_text_browser.document().setMaximumBlockCount(500)
         self.status_text_browser.setOpenLinks(False)
 
         # ~ self.answer_text_browser.setStyleSheet("""
-                # ~ QTextBrowser {
-                    # ~ background-image:'';
-                    # ~ background-color: #FFFFF7;
-                    # ~ font-size: 16px;
-                    # ~ font-family: monospace;
-                    # ~ }
-                # ~ """)
+        # ~ QTextBrowser {
+        # ~ background-image:'';
+        # ~ background-color: #FFFFF7;
+        # ~ font-size: 16px;
+        # ~ font-family: monospace;
+        # ~ }
+        # ~ """)
 
         self.buttons_frame = QFrame(parent=self.main_frame)
         # ~ self.buttons_frame.setStyleSheet("""
-                # ~ QWidget {
-                    # ~ background-image:'';
-                    # ~ color: #333366;
-                    # ~ background-color: #FFFFF7;
-                    # ~ font-size: 20px;
-                    # ~ font-family: monospace;
-                    # ~ }
-                # ~ """)
+        # ~ QWidget {
+        # ~ background-image:'';
+        # ~ color: #333366;
+        # ~ background-color: #FFFFF7;
+        # ~ font-size: 20px;
+        # ~ font-family: monospace;
+        # ~ }
+        # ~ """)
         self.button_group = QButtonGroup(parent=self.buttons_frame)
         for i, n in enumerate([
             ('move_00_01', 'feed to IN'),
@@ -271,7 +273,7 @@ class DebugStatusView():
         msg_ = f"jar:{jar}"
         msg_ += f"\njar.json_properties:{jar.json_properties}"
         msg_ += f"\n<small>jar.order.json_properties:{jar.order.json_properties}</small>"
-        app.show_alert_dialog(msg_)
+        app.main_window.show_alert_dialog(msg_)
 
     def delete_orders(self):             # pylint: disable=no-self-use, too-many-branches
 
@@ -283,11 +285,11 @@ class DebugStatusView():
                     num_rows_deleted = app.db_session.query(model).delete()
                     app.db_session.commit()
                     logging.warning(f"deleted {num_rows_deleted} {model}")
-                except Exception as e:
+                except Exception as e:   # pylint: disable=broad-except
                     logging.error(e)
                     app.db_session.rollback()
 
-        app.show_alert_dialog(f'confirm deleting db data?', callback=delete_all_)
+        app.main_window.show_alert_dialog(f'confirm deleting db data?', callback=delete_all_)
 
     def view_orders(self):             # pylint: disable=no-self-use, too-many-branches
 
@@ -305,7 +307,7 @@ class DebugStatusView():
 
         self.answer_text_browser.setHtml(html_)
 
-    def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use, too-many-branches
+    def on_button_group_clicked(self, btn):             # pylint: disable=no-self-use, too-many-branches, too-many-statements
 
         app = QApplication.instance()
         cmd_txt = btn.text()
@@ -329,9 +331,17 @@ class DebugStatusView():
 
         elif 'open order\ndialog' in cmd_txt:
 
-            self.open_order_dialog()
+            msg_ = tr_('Please, insert the unlock-key to enable \n the opening of filesystem dialog.')
+            # ~ app.main_window.show_alert_dialog(msg_, callback=open_order_dialog_)
+            def cb():
+                k = app.main_window.input_dialog.content_container.toPlainText()
+                logging.warning(f"k :{k }")
+                if "123" in k:
+                    self.open_order_dialog()
 
-        elif 'delete all\norders from db' in cmd_txt:
+            app.main_window.show_input_dialog(message=msg_, content="", ok_callback=cb)
+
+        elif 'delete\norders in db' in cmd_txt:
 
             self.delete_orders()
 
@@ -342,9 +352,9 @@ class DebugStatusView():
         elif cmd_txt == 'alert':
 
             def cb():
-                logging.warning(f"callback called!")
+                logging.warning(f"empty callback called!")
 
-            r = app.show_alert_dialog("test alert message", callback=cb)
+            r = app.main_window.show_alert_dialog(tr_("test alert message"), callback=cb)
             logging.warning(f"r:{r}")
 
         elif cmd_txt == 'unfreeze\ncarousel':
@@ -392,14 +402,11 @@ class DebugStatusView():
             self.answer_text_browser.setText("")
 
         elif 'close' in cmd_txt:
-            # ~ app.main_window.main_window_stack.setCurrentIndex(0)
-            # ~ app.main_window.main_window_stack.setCurrentWidget(app.main_window.project)
-            app.main_window.get_stacked_widget().setCurrentIndex(1)
-            self.main_frame.hide()
+            app.main_window.get_stacked_widget().setCurrentWidget(self.home_page)
 
         elif 'clear\njars' in cmd_txt:
 
-            for k in [_ for _ in app._CR6_application__jar_runners.keys()]:
+            for k in app._CR6_application__jar_runners.keys():
                 t = app._CR6_application__jar_runners[k]['task']
                 try:
                     t.cancel()
@@ -411,8 +418,17 @@ class DebugStatusView():
                     logging.info(f"{ t } has been canceled now.")
 
         elif 'read\nbarcode' in cmd_txt:
+            input_txt = app.main_window.menu_line_edit.text()
             self.barcode_counter += 1
-            app.run_a_coroutine_helper('on_barcode_read', 0, self.barcode_counter, skip_checks_for_dummy_read=True)
+            input_barcode = int(input_txt) if input_txt else self.barcode_counter
+            status = app.machine_head_dict[0].status.copy()
+            status['jar_photocells_status'] = status['jar_photocells_status'] | 0x01
+            async def coro():    
+                await app.machine_head_dict[0].update_status(status)
+                await app.on_head_msg_received(head_index=0, msg_dict={'type': 'device:machine:status', 'value': status})
+                await app.on_barcode_read(input_barcode, skip_checks_for_dummy_read=True)
+            t = coro()
+            asyncio.ensure_future(t)
 
         elif 'check\njar' in cmd_txt:
             self.barcode_counter += 1
@@ -448,7 +464,7 @@ class DebugStatusView():
             try:
                 t = coro()
                 asyncio.ensure_future(t)
-            except BaseException:
+            except BaseException:     # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
         else:
@@ -605,23 +621,22 @@ class DebugStatusView():
             order = None
             try:
                 order = app.create_order(fname, n_of_jars=6)
-                barcodes = [str(j.barcode) for j in order.jars]
-                barcodes.sort()
+                barcodes = sorted([str(j.barcode) for j in order.jars])
                 barcodes_str = '\n'.join([str(j.barcode) for j in order.jars])
+
+                def cb_(bc):
+                    response = dymo_print(str(bc))
+                    logging.warning(f"response:{response}")
 
                 def cb():
                     for b in barcodes:
-                        def cb_(bc):
-                            response = dymo_print(str(bc))
-                            logging.warning(f"response:{response}")
-
                         msg_ = f"confirm printing:{b} ?"
-                        app.show_alert_dialog(msg_, callback=cb_, args=[b])
+                        app.main_window.show_alert_dialog(msg_, callback=cb_, args=[b])
 
                 msg_ = f"creted order with {len(order.jars)} jars. barcodes:\n{barcodes_str} \nclick 'OK' to print barcodes."
-                app.show_alert_dialog(msg_, callback=cb)
+                app.main_window.show_alert_dialog(msg_, callback=cb)
 
-            except Exception as e:
+            except Exception:       # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
         return fileNames
