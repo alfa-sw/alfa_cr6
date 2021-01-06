@@ -205,7 +205,7 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>1920</width>
+      <width>1931</width>
       <height>1001</height>
      </rect>
     </property>
@@ -220,6 +220,9 @@
     </property>
     <property name="frameShape">
      <enum>QFrame::NoFrame</enum>
+    </property>
+    <property name="currentIndex">
+     <number>0</number>
     </property>
     <widget class="QWidget" name="home_page">
      <widget class="QPushButton" name="service_1_btn">
@@ -1047,9 +1050,9 @@
      <widget class="QPushButton" name="freeze_carousel_btn">
       <property name="geometry">
        <rect>
-        <x>830</x>
+        <x>850</x>
         <y>8</y>
-        <width>491</width>
+        <width>471</width>
         <height>68</height>
        </rect>
       </property>
@@ -1083,25 +1086,43 @@
         <height>75</height>
        </rect>
       </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
      </widget>
      <widget class="QLabel" name="STEP_07_label">
       <property name="geometry">
        <rect>
-        <x>1430</x>
-        <y>750</y>
+        <x>1440</x>
+        <y>755</y>
         <width>75</width>
         <height>75</height>
        </rect>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLabel" name="STEP_09_label">
       <property name="geometry">
        <rect>
-        <x>660</x>
-        <y>750</y>
+        <x>670</x>
+        <y>755</y>
         <width>75</width>
         <height>75</height>
        </rect>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLabel" name="STEP_01_label">
@@ -1123,6 +1144,12 @@
         <height>75</height>
        </rect>
       </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
      </widget>
      <widget class="QLabel" name="STEP_10_label">
       <property name="geometry">
@@ -1132,6 +1159,12 @@
         <width>75</width>
         <height>75</height>
        </rect>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLabel" name="STEP_12_label">
@@ -1153,6 +1186,12 @@
         <height>75</height>
        </rect>
       </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
      </widget>
      <widget class="QLabel" name="STEP_05_label">
       <property name="geometry">
@@ -1163,25 +1202,43 @@
         <height>75</height>
        </rect>
       </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
      </widget>
      <widget class="QLabel" name="STEP_08_label">
       <property name="geometry">
        <rect>
         <x>1050</x>
-        <y>750</y>
+        <y>755</y>
         <width>75</width>
         <height>75</height>
        </rect>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLabel" name="STEP_04_label">
       <property name="geometry">
        <rect>
-        <x>1430</x>
+        <x>1440</x>
         <y>380</y>
         <width>75</width>
         <height>75</height>
        </rect>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
      <widget class="QLabel" name="STEP_02_label">
@@ -1192,6 +1249,172 @@
         <width>75</width>
         <height>75</height>
        </rect>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
+     </widget>
+     <widget class="QLabel" name="container_presence_1_label">
+      <property name="geometry">
+       <rect>
+        <x>690</x>
+        <y>360</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="container_presence_3_label">
+      <property name="geometry">
+       <rect>
+        <x>1070</x>
+        <y>360</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="container_presence_5_label">
+      <property name="geometry">
+       <rect>
+        <x>1460</x>
+        <y>360</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="container_presence_6_label">
+      <property name="geometry">
+       <rect>
+        <x>1460</x>
+        <y>735</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="container_presence_4_label">
+      <property name="geometry">
+       <rect>
+        <x>1070</x>
+        <y>735</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="container_presence_2_label">
+      <property name="geometry">
+       <rect>
+        <x>690</x>
+        <y>735</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="load_lifter_up_label">
+      <property name="geometry">
+       <rect>
+        <x>1770</x>
+        <y>440</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="load_lifter_down_label">
+      <property name="geometry">
+       <rect>
+        <x>1770</x>
+        <y>820</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="unload_lifter_down_label">
+      <property name="geometry">
+       <rect>
+        <x>380</x>
+        <y>820</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+     </widget>
+     <widget class="QLabel" name="unload_lifter_up_label">
+      <property name="geometry">
+       <rect>
+        <x>380</x>
+        <y>550</y>
+        <width>24</width>
+        <height>24</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
       </property>
      </widget>
      <zorder>sinottico</zorder>
@@ -1239,6 +1462,16 @@
      <zorder>STEP_08_label</zorder>
      <zorder>STEP_11_label</zorder>
      <zorder>STEP_12_label</zorder>
+     <zorder>container_presence_1_label</zorder>
+     <zorder>container_presence_3_label</zorder>
+     <zorder>container_presence_5_label</zorder>
+     <zorder>container_presence_6_label</zorder>
+     <zorder>container_presence_4_label</zorder>
+     <zorder>container_presence_2_label</zorder>
+     <zorder>load_lifter_up_label</zorder>
+     <zorder>load_lifter_down_label</zorder>
+     <zorder>unload_lifter_down_label</zorder>
+     <zorder>unload_lifter_up_label</zorder>
     </widget>
     <widget class="QWidget" name="action_page">
      <widget class="QFrame" name="action_frame">
@@ -1305,11 +1538,58 @@
        <rect>
         <x>10</x>
         <y>110</y>
-        <width>1871</width>
+        <width>1901</width>
         <height>871</height>
        </rect>
       </property>
       <layout class="QHBoxLayout" name="order_h_layout">
+       <item>
+        <widget class="QTableView" name="jar_table_view">
+         <property name="styleSheet">
+          <string notr="true">::section{background-color: #AAAAAA}</string>
+         </property>
+         <property name="alternatingRowColors">
+          <bool>true</bool>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <attribute name="horizontalHeaderStretchLastSection">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderMinimumSectionSize">
+          <number>48</number>
+         </attribute>
+         <attribute name="verticalHeaderDefaultSectionSize">
+          <number>48</number>
+         </attribute>
+         <attribute name="verticalHeaderShowSortIndicator" stdset="0">
+          <bool>true</bool>
+         </attribute>
+         <attribute name="verticalHeaderStretchLastSection">
+          <bool>false</bool>
+         </attribute>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Fixed</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
        <item>
         <widget class="QTableView" name="order_table_view">
          <property name="styleSheet">
@@ -1351,7 +1631,7 @@
          </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>40</width>
+           <width>20</width>
            <height>20</height>
           </size>
          </property>
@@ -1399,9 +1679,9 @@
      <widget class="QGroupBox" name="search_file_box">
       <property name="geometry">
        <rect>
-        <x>1179</x>
+        <x>1300</x>
         <y>10</y>
-        <width>701</width>
+        <width>611</width>
         <height>100</height>
        </rect>
       </property>
@@ -1413,7 +1693,7 @@
         <rect>
          <x>0</x>
          <y>40</y>
-         <width>471</width>
+         <width>481</width>
          <height>50</height>
         </rect>
        </property>
@@ -1421,7 +1701,7 @@
       <widget class="QPushButton" name="search_file_btn">
        <property name="geometry">
         <rect>
-         <x>480</x>
+         <x>490</x>
          <y>40</y>
          <width>121</width>
          <height>50</height>
@@ -1439,9 +1719,9 @@
      <widget class="QGroupBox" name="search_order_box">
       <property name="geometry">
        <rect>
-        <x>10</x>
+        <x>660</x>
         <y>10</y>
-        <width>551</width>
+        <width>611</width>
         <height>100</height>
        </rect>
       </property>
@@ -1453,7 +1733,7 @@
         <rect>
          <x>0</x>
          <y>40</y>
-         <width>401</width>
+         <width>461</width>
          <height>50</height>
         </rect>
        </property>
@@ -1461,7 +1741,7 @@
       <widget class="QPushButton" name="search_order_btn">
        <property name="geometry">
         <rect>
-         <x>410</x>
+         <x>470</x>
          <y>40</y>
          <width>131</width>
          <height>50</height>
@@ -1507,9 +1787,9 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="action_btn_group"/>
   <buttongroup name="service_btn_group"/>
-  <buttongroup name="menu_btn_group"/>
+  <buttongroup name="action_btn_group"/>
   <buttongroup name="refill_btn_group"/>
+  <buttongroup name="menu_btn_group"/>
  </buttongroups>
 </ui>

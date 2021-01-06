@@ -15,13 +15,22 @@ import time
 from datetime import date
 from datetime import datetime
 
-from sqlalchemy import (create_engine, Column, Unicode, Integer, BigInteger, DateTime, ForeignKey, UniqueConstraint)
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Unicode,
+    Integer,
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    UniqueConstraint,
+)
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import (sessionmaker, relationship)
+from sqlalchemy.orm import sessionmaker, relationship
 
-from PyQt5.QtWidgets import QApplication       # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
-from jsonschema import validate   # pylint: disable=import-error
+from jsonschema import validate  # pylint: disable=import-error
 
 Base = declarative_base()
 
@@ -41,18 +50,27 @@ def decompile_barcode(barcode):
 
 def generate_order_nr():
 
-    global global_session         # pylint: disable=global-statement
+    global global_session  # pylint: disable=global-statement
 
     today = date.today()
     midnight = datetime.combine(today, datetime.min.time())
     daily_cntr = 0
 
-    order = global_session.query(Order).filter(Order.date_created >= midnight).order_by(Order.order_nr.desc()).first()
+    order = (
+        global_session.query(Order)
+        .filter(Order.date_created >= midnight)
+        .order_by(Order.order_nr.desc())
+        .first()
+    )
     # ~ logging.warning(f"order:{order}")
     if order:
         daily_cntr = (order.order_nr / 1000) % 1000
 
-    order_nr = (today.year % 100 * 10000 + today.month * 100 + today.day) * 1000 + daily_cntr + 1
+    order_nr = (
+        (today.year % 100 * 10000 + today.month * 100 + today.day) * 1000
+        + daily_cntr
+        + 1
+    )
     order_nr = int(order_nr * 1000)
 
     # ~ logging.warning(f"order_nr:{order_nr}")
@@ -64,7 +82,7 @@ def generate_id():
     return str(uuid.uuid4())
 
 
-class BaseModel(object):         # pylint: disable=too-few-public-methods
+class BaseModel(object):  # pylint: disable=too-few-public-methods
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
     date_created = Column(DateTime, default=datetime.now)
@@ -81,26 +99,26 @@ class BaseModel(object):         # pylint: disable=too-few-public-methods
         try:
             validate(instance=instance, schema=self.json_properties_schema)
             ret = json.dumps(instance, indent=2)
-        except Exception:                           # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
         return ret
 
 
-class User(Base, BaseModel):     # pylint: disable=too-few-public-methods
+class User(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
-    __tablename__ = 'user'
+    __tablename__ = "user"
 
     name = Column(Unicode(20), unique=True, nullable=False)
     password = Column(Unicode(20), nullable=False)
-    role = Column(Unicode, default='OPERATOR')
+    role = Column(Unicode, default="OPERATOR")
 
 
 class Command(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
-    __tablename__ = 'command'
+    __tablename__ = "command"
     name = Column(Unicode(20), unique=True, nullable=False)
-    UniqueConstraint('name', 'date_created')
+    UniqueConstraint("name", "date_created")
 
     channel = Column(Unicode(32), nullable=False)
     remote_address = Column(Unicode(16))
@@ -114,9 +132,9 @@ class Command(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
 class Event(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
-    __tablename__ = 'event'
+    __tablename__ = "event"
     name = Column(Unicode(32), nullable=False, index=True)
-    UniqueConstraint('name', 'date_created')
+    UniqueConstraint("name", "date_created")
 
     level = Column(Unicode(16))
     severity = Column(Unicode(16))
@@ -128,32 +146,38 @@ class Event(Base, BaseModel):  # pylint: disable=too-few-public-methods
         return "{}_{}".format(self.name, self.date_created)
 
 
-class Order(Base, BaseModel):    # pylint: disable=too-few-public-methods
+class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
-    __tablename__ = 'order'
-    order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
-    status = Column(Unicode, default='NEW')
+    __tablename__ = "order"
+    order_nr = Column(
+        BigInteger, unique=True, nullable=False, default=generate_order_nr
+    )
+    status = Column(Unicode, default="NEW")
     jars = relationship("Jar")
 
     def __str__(self):
         return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
 
 
-class Jar(Base, BaseModel):      # pylint: disable=too-few-public-methods
+class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
-    __tablename__ = 'jar'
-    status = Column(Unicode, default='NEW', doc="one of ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]")
+    __tablename__ = "jar"
+    status = Column(
+        Unicode, default="NEW", doc="one of ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]"
+    )
     index = Column(Integer, default=0, doc="position of this jar inside the order")
     size = Column(
         Integer,
         nullable=False,
-        doc="one of [0x0, 0x1, 0x2, 0x3] corresponging to the combinations of MICROSWITCH 1 and 2")
+        doc="one of [0x0, 0x1, 0x2, 0x3] corresponging to the combinations of MICROSWITCH 1 and 2",
+    )
     position = Column(
         Unicode,
-        doc="one of [None, 'step_1', 'step_1,step_2', 'step_2', 'step_2,step_3', ..., 'step_11,step_12', 'step_12']")
+        doc="one of [None, 'step_1', 'step_1,step_2', 'step_2', 'step_2,step_3', ..., 'step_11,step_12', 'step_12']",
+    )
 
-    order_id = Column(Unicode, ForeignKey('order.id'), nullable=False)
-    order = relationship("Order", back_populates='jars')
+    order_id = Column(Unicode, ForeignKey("order.id"), nullable=False)
+    order = relationship("Order", back_populates="jars")
 
     machine_head = None
     t0 = None
@@ -181,7 +205,7 @@ class Jar(Base, BaseModel):      # pylint: disable=too-few-public-methods
             app.main_window.debug_status_view.update_status()
         except Exception as e:
             logging.error(e)
-            
+
     def __str__(self):
         # ~ return f"<Jar object. status:{self.status}, position:{self.position}, barcode:{self.barcode}>"
         return f"[m:{self.machine_head}, status:{self.status}, position:{self.position}, {self.order.order_nr}:{self.index}]"
@@ -195,7 +219,7 @@ def init_models(sqlite_connect_string):
 
     global global_session  # pylint: disable=global-statement
 
-    toks = sqlite_connect_string.split('sqlite:///')
+    toks = sqlite_connect_string.split("sqlite:///")
     pth = toks[1:] and toks[1]
     if pth:
         pth = os.path.dirname(os.path.abspath(pth))

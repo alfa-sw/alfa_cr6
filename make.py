@@ -19,7 +19,6 @@ VENV_PATH = f"{DEPLOY_PATH}/venv"
 CONF_PATH = f"{DEPLOY_PATH}/conf"
 LOG_PATH = f"{DEPLOY_PATH}/log"
 DATA_PATH = f"{DEPLOY_PATH}/data"
-VAR_PATH = f"{DEPLOY_PATH}/var"
 TMP_PATH = f"{DEPLOY_PATH}/tmp"
 SCRIPTS_PATH = f"{DEPLOY_PATH}/scripts"
 
@@ -70,7 +69,7 @@ def makedirs_on_target(args):
 
     tgt_cred = args.target_credentials
 
-    for pth in (VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, VAR_PATH, TMP_PATH, SCRIPTS_PATH):
+    for pth in (VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, TMP_PATH, SCRIPTS_PATH):
         cmd_ = f'ssh {tgt_cred} "if [ ! -e {pth} ]; then mkdir -p {pth} ;fi"'
         exec_(cmd_, dry=args.dry_run)
         # cmd_ = f'ssh {tgt_cred} "sudo chmod -R a+rw {pth}"'

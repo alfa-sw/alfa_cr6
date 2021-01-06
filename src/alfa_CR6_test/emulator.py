@@ -17,21 +17,21 @@ import json
 
 from datetime import datetime
 
-import websockets      # pylint: disable=import-error
+import websockets  # pylint: disable=import-error
 
 from asyncinotify import Inotify, Mask  # pylint: disable=import-error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-DATA_ROOT = '/opt/alfa_cr6/tmp/'
+DATA_ROOT = "/opt/alfa_cr6/tmp/"
 
 ID_MAP = [
-    ('127.0.0.1', 11001, 8081),
-    ('127.0.0.1', 11002, 8082),
-    ('127.0.0.1', 11003, 8083),
-    ('127.0.0.1', 11004, 8084),
-    ('127.0.0.1', 11005, 8085),
-    ('127.0.0.1', 11006, 8086),
+    ("127.0.0.1", 11001, 8081),
+    ("127.0.0.1", 11002, 8082),
+    ("127.0.0.1", 11003, 8083),
+    ("127.0.0.1", 11004, 8084),
+    ("127.0.0.1", 11005, 8085),
+    ("127.0.0.1", 11006, 8086),
     # ~ "192.168.15.156",
     # ~ "192.168.15.19",
     # ~ "192.168.15.60",
@@ -98,7 +98,6 @@ DISPENSING_POSITION_MASK = 0x0100
 
 
 class MachineHeadMockup:
-
     def __init__(self, index):
 
         self.index = index
@@ -108,29 +107,14 @@ class MachineHeadMockup:
             "status_level": "STANDBY",
             "cycle_step": 0,
             "error_code": 0,
-            "cover_reserve": [
-                0
-            ],
-            "cover_availability": [
-                1
-            ],
-            "cover_enabled": [
-                0,
-                1
-            ],
-            "container_reserve": [
-                2
-            ],
-            "container_availability": [
-                0,
-                2
-            ],
-            "container_enabled": [
-                1,
-                2
-            ],
+            "cover_reserve": [0],
+            "cover_availability": [1],
+            "cover_enabled": [0, 1],
+            "container_reserve": [2],
+            "container_availability": [0, 2],
+            "container_enabled": [1, 2],
             "color_reserve": [],
-            "container_presence": True,
+            "container_presence": False,
             "autocap_status": True,
             "canlift_status": False,
             "doors_status": True,
@@ -150,42 +134,29 @@ class MachineHeadMockup:
             "circuit_engaged": 16,
             "table_steps_position": 47115,
             "autotest_cycles_number": 1280,
-            "table_cleaning_status": [
-                9
-            ],
+            "table_cleaning_status": [9],
             "panel_table_status": True,
             "photocells_status": 0,
             "can_available": True,
             "mixer_door_status": True,
-            "slave_enable_mask": [
-                1,
-                11,
-                18,
-                19,
-                24,
-                25,
-                26,
-                27,
-                28,
-                29
-            ],
+            "slave_enable_mask": [1, 11, 18, 19, 24, 25, 26, 27, 28, 29],
             "jar_photocells_status": 0,
             "error_message": "NO_ALARM",
             "timestamp": 1603142218.2367265,
             "message_id": 1001758,
-            "last_update": "2020-10-19 23:16:58 CEST"
+            "last_update": "2020-10-19 23:16:58 CEST",
         }
 
         if self.index == 5:
-            self.status['jar_photocells_status'] = 0x0010  # set load_lifter_up_pc
+            self.status["jar_photocells_status"] = 0x0010  # set load_lifter_up_pc
         elif self.index == 1:
-            self.status['jar_photocells_status'] = 0x0020  # set load_lifter_down_pc
+            self.status["jar_photocells_status"] = 0x0020  # set load_lifter_down_pc
         else:
-            self.status['jar_photocells_status'] = 0x0000  # set load_lifter_up_pc
+            self.status["jar_photocells_status"] = 0x0000  # set load_lifter_up_pc
 
     def delayed_stop(self):
         if self.pending_stop:
-            self.status['status_level'] = 'STANDBY'
+            self.status["status_level"] = "STANDBY"
             self.pending_stop = False
             t = self.dump_status()
             asyncio.ensure_future(t)
@@ -197,91 +168,160 @@ class MachineHeadMockup:
         self.status.update(params)
         await self.dump_status()
 
-    async def do_move(self, mask=EMPTY_MASK, set_or_reset='', duration=0, tgt_level='STANDBY'):
+    async def do_move(
+        self, mask=EMPTY_MASK, set_or_reset="", duration=0, tgt_level="STANDBY"
+    ):
         await asyncio.sleep(duration)
-        pars = {'status_level': tgt_level}
+        pars = {"status_level": tgt_level}
         if mask != EMPTY_MASK:
-            if set_or_reset == 'set':
-                pars['jar_photocells_status'] = self.status['jar_photocells_status'] | mask
-            elif set_or_reset == 'reset':
-                pars['jar_photocells_status'] = self.status['jar_photocells_status'] & ~ mask
+            if set_or_reset == "set":
+                pars["jar_photocells_status"] = (
+                    self.status["jar_photocells_status"] | mask
+                )
+            elif set_or_reset == "reset":
+                pars["jar_photocells_status"] = (
+                    self.status["jar_photocells_status"] & ~mask
+                )
+            elif set_or_reset == "toggle":
+                current_bit_val = self.status["jar_photocells_status"] & mask
+                pars["jar_photocells_status"] = (
+                    self.status["jar_photocells_status"] & ~current_bit_val
+                )
+            if mask == DISPENSING_POSITION_MASK:
+                if set_or_reset == "set":
+                    pars["container_presence"] = True
+                else:
+                    pars["container_presence"] = False
+
         await self.update_status(params=pars)
 
-    async def handle_command(self, msg_out_dict):       # pylint: disable=too-many-branches,too-many-statements
+    async def handle_command(
+        self, msg_out_dict
+    ):  # pylint: disable=too-many-branches,too-many-statements
         logging.warning("{}, {}".format(self.index, msg_out_dict))
 
-        if msg_out_dict['command'] == 'KILL_EMULATOR':
+        if msg_out_dict["command"] == "KILL_EMULATOR":
             raise KeyboardInterrupt
 
-        elif msg_out_dict['command'] == 'ENTER_DIAGNOSTIC':
-            await self.do_move(duration=0.5, tgt_level='DIAGNOSTIC')
-        elif msg_out_dict['command'] == 'DISPENSATION':
-            await self.do_move(duration=0.5, tgt_level='DISPENSING')
-            await self.do_move(duration=5, tgt_level='STANDBY')
-        elif msg_out_dict['command'] == 'RESET':
-            await self.do_move(FULL_MASK, 'reset', duration=.1, tgt_level='RESET')
+        elif msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
+            await self.do_move(duration=0.5, tgt_level="DIAGNOSTIC")
+        elif msg_out_dict["command"] == "DISPENSATION":
+            await self.do_move(duration=0.5, tgt_level="DISPENSING")
+            await self.do_move(duration=5, tgt_level="STANDBY")
+        elif msg_out_dict["command"] == "RESET":
+            await self.do_move(FULL_MASK, "reset", duration=0.1, tgt_level="RESET")
             if self.index == 5:
-                await self.do_move(LOAD_LIFTER_UP_MASK, 'set', duration=3, tgt_level='STANDBY')
+                await self.do_move(
+                    LOAD_LIFTER_UP_MASK, "set", duration=3, tgt_level="STANDBY"
+                )
             elif self.index == 1:
-                await self.do_move(UNLOAD_LIFTER_DOWN_MASK, 'set', duration=3, tgt_level='STANDBY')
+                await self.do_move(
+                    UNLOAD_LIFTER_DOWN_MASK, "set", duration=3, tgt_level="STANDBY"
+                )
                 # ~ await self.do_move(OUTPUT_ROLLER_MASK, 'set', duration=3, tgt_level='STANDBY')
             else:
-                await self.do_move(duration=3, tgt_level='STANDBY')
+                await self.do_move(duration=3, tgt_level="STANDBY")
 
-        elif msg_out_dict['command'] == 'CAN_MOVEMENT':
-            dispensing_roller = msg_out_dict['params']['Dispensing_Roller']
-            lifter_roller = msg_out_dict['params']['Lifter_Roller']
-            input_roller = msg_out_dict['params']['Input_Roller']
-            lifter = msg_out_dict['params']['Lifter']
-            output_roller = msg_out_dict['params']['Output_Roller']
+        elif msg_out_dict["command"] == "CAN_MOVEMENT":
+            dispensing_roller = msg_out_dict["params"]["Dispensing_Roller"]
+            lifter_roller = msg_out_dict["params"]["Lifter_Roller"]
+            input_roller = msg_out_dict["params"]["Input_Roller"]
+            lifter = msg_out_dict["params"]["Lifter"]
+            output_roller = msg_out_dict["params"]["Output_Roller"]
 
-            await self.update_status({'status_level': 'JAR_POSITIONING'})
+            await self.update_status({"status_level": "JAR_POSITIONING"})
             if dispensing_roller + lifter_roller + input_roller + lifter == 0:
-                await self.do_move(EMPTY_MASK, 'set', duration=.4)
+                await self.do_move(EMPTY_MASK, "set", duration=0.4)
             else:
 
                 if dispensing_roller == 2:
-                    await self.do_move(DISPENSING_POSITION_MASK, 'set', duration=2)
+                    await self.do_move(DISPENSING_POSITION_MASK, "set", duration=2)
                 elif dispensing_roller == 1:
-                    await self.do_move(DISPENSING_POSITION_MASK, 'reset', duration=1, tgt_level='JAR_POSITIONING')
+                    await self.do_move(
+                        DISPENSING_POSITION_MASK,
+                        "reset",
+                        duration=1,
+                        tgt_level="JAR_POSITIONING",
+                    )
 
                 if lifter_roller == 4:
-                    await self.do_move(LOAD_LIFTER_ROLLER_MASK, 'reset', duration=1)
+                    await self.do_move(LOAD_LIFTER_ROLLER_MASK, "reset", duration=1)
                 elif lifter_roller == 2 or lifter_roller == 5:
-                    await self.do_move(LOAD_LIFTER_ROLLER_MASK, 'set', duration=2)
+                    await self.do_move(LOAD_LIFTER_ROLLER_MASK, "set", duration=2)
+                # ~ elif lifter_roller == 1 or lifter_roller == 3:
+                elif lifter_roller == 3:
+                    await self.do_move(LOAD_LIFTER_ROLLER_MASK, "toggle", duration=2)
 
-                if lifter == 1:         # 'DOWN -> UP'
-                    await self.do_move(LOAD_LIFTER_DOWN_MASK, 'reset', duration=1, tgt_level='JAR_POSITIONING')
-                    await self.do_move(LOAD_LIFTER_UP_MASK, 'set', duration=2)
-                elif lifter == 2:         # 'UP -> DOWN'
-                    await self.do_move(LOAD_LIFTER_UP_MASK, 'reset', duration=1, tgt_level='JAR_POSITIONING')
-                    await self.do_move(LOAD_LIFTER_DOWN_MASK, 'set', duration=2)
+                if self.index == 1:  # F
+                    if lifter == 1:  # 'DOWN -> UP'
+                        await self.do_move(
+                            UNLOAD_LIFTER_DOWN_MASK,
+                            "reset",
+                            duration=1,
+                            tgt_level="JAR_POSITIONING",
+                        )
+                        await self.do_move(UNLOAD_LIFTER_UP_MASK, "set", duration=2)
+                    elif lifter == 2:  # 'UP -> DOWN'
+                        await self.do_move(
+                            UNLOAD_LIFTER_UP_MASK,
+                            "reset",
+                            duration=1,
+                            tgt_level="JAR_POSITIONING",
+                        )
+                        await self.do_move(UNLOAD_LIFTER_DOWN_MASK, "set", duration=2)
+                elif self.index == 5:  # C
+                    if lifter == 1:  # 'DOWN -> UP'
+                        await self.do_move(
+                            LOAD_LIFTER_DOWN_MASK,
+                            "reset",
+                            duration=1,
+                            tgt_level="JAR_POSITIONING",
+                        )
+                        await self.do_move(LOAD_LIFTER_UP_MASK, "set", duration=2)
+                    elif lifter == 2:  # 'UP -> DOWN'
+                        await self.do_move(
+                            LOAD_LIFTER_UP_MASK,
+                            "reset",
+                            duration=1,
+                            tgt_level="JAR_POSITIONING",
+                        )
+                        await self.do_move(LOAD_LIFTER_DOWN_MASK, "set", duration=2)
 
                 if input_roller == 2:  # feed = move_00_01 or -> IN
-                    await self.do_move(INPUT_ROLLER_MASK, 'set', duration=2)
-                elif input_roller == 1 and dispensing_roller == 2:  # move_01_02 or IN -> A
-                    await self.do_move(INPUT_ROLLER_MASK, 'reset', duration=1, tgt_level='JAR_POSITIONING')
-                    await self.do_move(DISPENSING_POSITION_MASK, 'set', duration=2)
-                elif input_roller == 0 and dispensing_roller == 1:  # move_02_03 or  # 'A -> B'
-                    await self.do_move(DISPENSING_POSITION_MASK, 'reset', duration=2)
+                    await self.do_move(INPUT_ROLLER_MASK, "set", duration=2)
+                elif (
+                    input_roller == 1 and dispensing_roller == 2
+                ):  # move_01_02 or IN -> A
+                    await self.do_move(
+                        INPUT_ROLLER_MASK,
+                        "reset",
+                        duration=1,
+                        tgt_level="JAR_POSITIONING",
+                    )
+                    await self.do_move(DISPENSING_POSITION_MASK, "set", duration=2)
+                elif (
+                    input_roller == 0 and dispensing_roller == 1
+                ):  # move_02_03 or  # 'A -> B'
+                    await self.do_move(DISPENSING_POSITION_MASK, "reset", duration=2)
 
                 if output_roller == 1:
-                    await self.do_move(OUTPUT_ROLLER_MASK, 'set', duration=2)
+                    await self.do_move(OUTPUT_ROLLER_MASK, "set", duration=2)
                 elif output_roller == 2:
-                    await self.do_move(OUTPUT_ROLLER_MASK, 'reset', duration=4)
+                    await self.do_move(OUTPUT_ROLLER_MASK, "reset", duration=4)
 
     async def dump_status(self):
         raise Exception(f"to be overidden in {self}")
 
 
 class MachineHeadMockupWsSocket(MachineHeadMockup):
-
     def __init__(self, index):
 
         self.index = index
 
         self.ws_host, self.ws_port = ID_MAP[index][0], ID_MAP[index][1]
-        logging.warning("self.ws_host:{}, self.ws_port:{}".format(self.ws_host, self.ws_port))
+        logging.warning(
+            "self.ws_host:{}, self.ws_port:{}".format(self.ws_host, self.ws_port)
+        )
 
         self.ws_clients = []
         self.timer_step = 1
@@ -295,7 +335,7 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         while 1:
             ts_ = datetime.now().astimezone().strftime("%d %b %Y (%I:%M:%S %p) %Z")
             value = "{}".format(ts_)
-            message = json.dumps({'type': 'time', **{'value': value}})
+            message = json.dumps({"type": "time", **{"value": value}})
             for client in self.ws_clients:
                 asyncio.ensure_future(client.send(message))
             await asyncio.sleep(self.timer_step)
@@ -305,7 +345,7 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         msg_dict = json.loads(msg)
         # ~ logging.warning("msg_dict:{}".format(msg_dict))
         # ~ channel = msg_dict['channel']
-        msg_out_dict = msg_dict['msg_out_dict']
+        msg_out_dict = msg_dict["msg_out_dict"]
 
         await self.handle_command(msg_out_dict)
 
@@ -315,10 +355,10 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
             "reply_to": None,
             "ref_id": 42,
             "timestamp": time.time(),
-            "command": msg_out_dict["command"] + "_END"
+            "command": msg_out_dict["command"] + "_END",
         }
 
-        msg = json.dumps({'type': 'answer', 'value': answer})
+        msg = json.dumps({"type": "answer", "value": answer})
         # ~ logging.warning("{} msg:{}".format(self.index, msg))
         asyncio.ensure_future(ws_client.send(msg))
 
@@ -327,7 +367,9 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         self.ws_clients.append(ws_client)
         logging.warning(
             "self.ws_host:{}, self.ws_port:{}, self.ws_clients:{}, path:{}".format(
-                self.ws_host, self.ws_port, self.ws_clients, path))
+                self.ws_host, self.ws_port, self.ws_clients, path
+            )
+        )
 
         await self.dump_status()
         async for message in ws_client:  # start listening for messages from ws client
@@ -340,34 +382,41 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
 
     async def dump_status(self):
 
-        message = json.dumps({'type': 'device:machine:status', **{'value': self.status}})
+        message = json.dumps(
+            {"type": "device:machine:status", **{"value": self.status}}
+        )
         for client in self.ws_clients:
             await client.send(message)
 
 
 class MachineHeadMockupFile(MachineHeadMockup):
-
     def __init__(self, index):
 
-        pth = os.path.join(DATA_ROOT, 'machine_status_{}.json'.format(self.index))
+        pth = os.path.join(DATA_ROOT, "machine_status_{}.json".format(self.index))
         with open(pth) as f:
             self.status = json.load(f)
 
-        filepth = os.path.join(DATA_ROOT, 'machine_command_{}.json'.format(self.index))
-        with open(filepth, 'w') as f:
+        filepth = os.path.join(DATA_ROOT, "machine_command_{}.json".format(self.index))
+        with open(filepth, "w") as f:
             json.dump({}, f)
 
         super().__init__(index)
-        self.update_status({'status_level': 'IDLE', 'jar_photocells_status': 0x0000})  # reset all pc
+        self.update_status(
+            {"status_level": "IDLE", "jar_photocells_status": 0x0000}
+        )  # reset all pc
 
     async def dump_status(self):
-        pth = os.path.join(DATA_ROOT, 'machine_status_{}.json'.format(self.index))
-        with open(pth, 'w') as f:
+        pth = os.path.join(DATA_ROOT, "machine_status_{}.json".format(self.index))
+        with open(pth, "w") as f:
             json.dump(self.status, f, indent=2)
-            logging.warning("index:{} status_level:{}".format(self.index, self.status['status_level']))
+            logging.warning(
+                "index:{} status_level:{}".format(
+                    self.index, self.status["status_level"]
+                )
+            )
 
     async def command_watcher(self,):
-        filepth = os.path.join(DATA_ROOT, 'machine_command_{}.json'.format(self.index))
+        filepth = os.path.join(DATA_ROOT, "machine_command_{}.json".format(self.index))
         with Inotify() as inotify:
             # ~ inotify.add_watch(filepth, Mask.MODIFY)
             inotify.add_watch(filepth, Mask.CLOSE)
@@ -380,7 +429,7 @@ class MachineHeadMockupFile(MachineHeadMockup):
                     try:
                         with open(filepth) as f:
                             msg = json.load(f)
-                            self.handle_command(msg['msg_out_dict'])
+                            self.handle_command(msg["msg_out_dict"])
                             await self.dump_status()
                     except Exception:
                         logging.error(f"error reading:{filepth}")
@@ -401,7 +450,9 @@ def create_and_run_tasks():
 
 def main():
 
-    fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
+    fmt_ = (
+        "[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s"
+    )
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt_)
 
     loop = asyncio.get_event_loop()
@@ -412,9 +463,9 @@ def main():
             asyncio.ensure_future(t)
         asyncio.get_event_loop().run_forever()
     except KeyboardInterrupt:
-        print('KeyboardInterrupt: shutting down')
+        print("KeyboardInterrupt: shutting down")
     except Exception as e:
-        print(f'Exception:{e}')
+        print(f"Exception:{e}")
     finally:
         loop.call_later(1, loop.stop)
         loop.run_until_complete(loop.shutdown_asyncgens())
