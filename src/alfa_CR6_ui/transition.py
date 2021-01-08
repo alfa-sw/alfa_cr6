@@ -34,15 +34,17 @@ from PyQt5.QtWidgets import (
 
 from alfa_CR6_ui.keyboard import Keyboard
 from alfa_CR6_backend.models import Order, Jar
+from alfa_CR6_backend.dymo_printer import dymo_print
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KEYBOARD_PATH = os.path.join(HERE, "keyboard")
 IMAGES_PATH = os.path.join(HERE, "images")
 UI_PATH = os.path.join(HERE, "ui")
 
-DOWNLOAD_PATH = "/opt/alfa_cr6/data/kcc"
-CUSTOMER_URL = "http://kccrefinish.co.kr/"
+WEBENGINE_DOWNLOAD_PATH = "/opt/alfa_cr6/data/kcc"
+WEBENGINE_CUSTOMER_URL = "http://kccrefinish.co.kr/"
 WEBENGINE_CACHE_PATH = "/opt/alfa_cr6/data/webengine"
+
 
 def tr_(s):
     return s
@@ -50,10 +52,13 @@ def tr_(s):
 
 class BaseTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
+
         super().__init__(parent, *args)
         self.gray_icon = QPixmap(os.path.join(IMAGES_PATH, "gray.png"))
         self.green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
         self.red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
+        self.yellow_icon = QPixmap(os.path.join(IMAGES_PATH, "yellow.png"))
+        self.blue_icon = QPixmap(os.path.join(IMAGES_PATH, "blue.png"))
         # ~ self.item_font = QFont('Times sans-serif', 32)
         self.results = [[]]
 
@@ -105,7 +110,7 @@ class FileTableModel(BaseTableModel):
         self.results = [["", "", p] for p in name_list_]
 
     def remove_file(self, file_name):  # pylint: disable=no-self-use
-        cmd_ = f'rm -f "{os.path.join(DOWNLOAD_PATH, file_name)}"'
+        cmd_ = f'rm -f "{os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name)}"'
         logging.warning(f"cmd_:{cmd_}")
         os.system(cmd_)
 
@@ -131,16 +136,19 @@ class OrderTableModel(BaseTableModel):
     def __init__(self, parent, session, *args):
         super().__init__(parent, *args)
         self.session = session
-        self.header = ["delete", "status", "order_nr", "source"]
+        self.header = [tr_("delete"), tr_("status"), tr_("order nr.")]
         filter_text = parent.search_order_line.text()
 
         if self.session:
             query_ = self.session.query(Order)
             query_ = query_.filter(Order.order_nr.contains(filter_text))
-            query_ = query_.order_by(Order.order_nr.desc()).limit(100)
+            # ~ query_ = query_.order_by(Order.order_nr.desc())
+            query_ = query_.limit(100)
             self.results = [
-                ["", o.status, o.order_nr, o.description] for o in query_.all()
+                ["", o.status, o.order_nr] for o in query_.all()
             ]
+            self.results.sort()
+
         else:
             self.results = [[]]
 
@@ -165,6 +173,68 @@ class OrderTableModel(BaseTableModel):
                 ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
             elif "ERR" in datum:
                 ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
+            elif "PARTIAL" in datum:
+                ret = self.blue_icon.scaled(32, 32, Qt.KeepAspectRatio)
+            elif "PROGRESS" in datum:
+                ret = self.yellow_icon.scaled(32, 32, Qt.KeepAspectRatio)
+            else:
+                ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
+
+        elif role == Qt.DisplayRole:
+            ret = self.results[index.row()][index.column()]
+        return ret
+
+
+class JarTableModel(BaseTableModel):
+
+    def __init__(self, parent, session, *args):
+
+        super().__init__(parent, *args)
+        self.session = session
+        self.header = [tr_("delete"), tr_("status"), tr_("barcode")]
+        filter_text = parent.search_jar_line.text()
+        order_nr = parent.order_table_selected_order_nr
+
+        if self.session:
+            query_ = self.session.query(Jar)
+            if filter_text:
+                query_ = query_.filter(Jar.status.contains(filter_text))
+            if order_nr is not None:
+                order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
+                query_ = query_.filter(Jar.order == order)
+            query_ = query_.order_by(Jar.index.desc()).limit(100)
+            self.results = [
+                ["", o.status, o.barcode] for o in query_.all()
+            ]
+        else:
+            self.results = [[]]
+
+    def remove_jar(self, order_nr=-1, index=-1):
+        if self.session:
+            query_ = self.session.query(Jar)
+            if order_nr:
+                order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
+                query_ = query_.filter(Jar.order == order)
+            if index:
+                query_ = query_.filter(Jar.index == index)
+            r = query_.delete()
+            logging.warning(f"r:{r}")
+            self.session.commit()
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        ret = QVariant()
+        if role == Qt.DecorationRole and index.column() == 0:
+            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
+        if role == Qt.DecorationRole and index.column() == 1:
+            datum = str(index.data()).upper()
+            if "DONE" in datum:
+                ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
+            elif "ERR" in datum:
+                ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
+            elif "PROGRESS" in datum:
+                ret = self.yellow_icon.scaled(32, 32, Qt.KeepAspectRatio)
             else:
                 ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
 
@@ -174,8 +244,12 @@ class OrderTableModel(BaseTableModel):
 
 
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+    def __init__(self, parent=None, ok_callback=None, ok_callback_args=None):
+        super().__init__(parent=parent)
+
+        self.ok_callback = ok_callback
+        self.ok_callback_args = ok_callback_args
 
         self.setStyleSheet(
             """
@@ -226,6 +300,17 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             | Qt.X11BypassWindowManagerHint
         )
 
+        if self.ok_callback:
+            def on_button_clicked(btn):
+                # ~ logging.warning(f"btn.objectName():{btn.objectName()}")
+                # ~ if "ok" in btn.objectName().lower():
+                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+                if "ok" in btn.text().lower():
+                    args_ = self.ok_callback_args if self.ok_callback_args is not None else []
+                    self.ok_callback(*args_)
+
+            self.buttonClicked.connect(on_button_clicked)
+
 
 class InputDialog(QFrame):
     def __init__(self, *args, **kwargs):
@@ -239,7 +324,8 @@ class InputDialog(QFrame):
             QPushButton { background-color: #F3F3F3F3;}
             QPushButton:pressed {background-color: #AAAAAA;}"""
         )
-        self.move(400, 200)
+        self.move(440, 100)
+        # ~ self.resize(1080, 575)
 
         green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
         red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
@@ -251,23 +337,22 @@ class InputDialog(QFrame):
         self.hide()
 
 
-class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
-    def __init__(self, parent=None):
+class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes, too-many-public-methods
+    def __init__(self, parent=None): # pylint: disable=too-many-statements
 
         from alfa_CR6_ui.debug_status_view import DebugStatusView  # pylint: disable=import-outside-toplevel
 
         super().__init__(parent)
-        r = loadUi(os.path.join(UI_PATH, "transition.ui"), self)
-
-        # ~ logging.warning(f"r:{r}, QIcon.themeSearchPaths():{QIcon.themeSearchPaths()}")
+        loadUi(os.path.join(UI_PATH, "transition.ui"), self)
+        # ~ logging.warning(f"QIcon.themeSearchPaths():{QIcon.themeSearchPaths()}")
         # ~ logging.warning(f"QApplication.instance().style():{QApplication.instance().style()}")
 
         self.setStyleSheet(
-            """
-            QWidget {font-size: 24px; font-family: Times sans-serif;}
-            QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
-            QPushButton:pressed {background-color: #AAAAAA;}"""
-        )
+            """QWidget {font-size: 24px; font-family: Times sans-serif;}
+                QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
+                QPushButton:pressed {background-color: #AAAAAA;}
+                QScrollBar:vertical {width: 40px;}
+            """)
 
         self.webengine_view = QWebEngineView(self.browser_frame)
         self.webengine_view.setGeometry(
@@ -279,27 +364,40 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         QWebEngineProfile.defaultProfile().downloadRequested.connect(self.on_downloadRequested)
         QWebEngineProfile.defaultProfile().setCachePath(WEBENGINE_CACHE_PATH)
         QWebEngineProfile.defaultProfile().setPersistentStoragePath(WEBENGINE_CACHE_PATH)
-        
-        logging.warning(f"QWebEngineProfile.defaultProfile().storageName():{QWebEngineProfile.defaultProfile().storageName()}")
 
+        logging.warning(
+            f"QWebEngineProfile.defaultProfile().storageName():{QWebEngineProfile.defaultProfile().storageName()}")
+
+        self.jar_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.order_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.file_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
 
+        self.search_jar_box.setTitle(tr_("Jars:   search by status"))
+        self.search_order_box.setTitle(tr_("Orders: search by order nr."))
+        self.search_file_box.setTitle(tr_("Files:  search by file name"))
+
+        # ~ self.order_table_view.clicked.connect(self.on_jar_table_clicked)
         self.order_table_view.clicked.connect(self.on_order_table_clicked)
         self.file_table_view.clicked.connect(self.on_file_table_clicked)
+
+        self.order_table_selected_order_nr = None
+        # ~ self.order_table_view.selectionChanged.connect(self.on_order_table_selection_changed)
 
         self.menu_btn_group.buttonClicked.connect(self.on_menu_btn_group_clicked)
         self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
         self.action_btn_group.buttonClicked.connect(self.on_action_btn_group_clicked)
-        self.refill_btn_group.buttonClicked.connect(self.on_refill_btn_group_clicked)
+        # ~ self.refill_btn_group.buttonClicked.connect(self.on_refill_btn_group_clicked)
 
         self.search_order_btn.clicked.connect(self.populate_order_table)
         self.search_file_btn.clicked.connect(self.populate_file_table)
 
         self.search_order_line.textChanged.connect(self.populate_order_table)
+        self.search_jar_line.textChanged.connect(self.populate_jar_table)
         self.search_file_line.textChanged.connect(self.populate_file_table)
+
         self.search_order_table_last_time = 0
         self.search_file_table_last_time = 0
+        self.search_jar_table_last_time = 0
 
         self.showFullScreen()
 
@@ -332,6 +430,13 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 ("blue", "jat-blue.png"),
             )
         }
+        self.tank_icon_map = {
+            k: QPixmap(os.path.join(IMAGES_PATH, p))
+            for k, p in (
+                ("green", "tank_green.png"),
+                ("gray", "tank_gray.png"),
+            )
+        }
 
         for b in self.action_btn_group.buttons():
             # ~ logging.warning(f"b.objectName():{b.objectName()}")
@@ -339,11 +444,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
             )
 
-        for b in self.refill_btn_group.buttons():
-            # ~ logging.warning(f"b.objectName():{b.objectName()}")
-            b.setStyleSheet(
-                """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
-            )
+        # ~ for b in self.refill_btn_group.buttons():
+            # ~ b.setStyleSheet(
+                # ~ """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
+            # ~ )
 
         self.input_dialog = InputDialog(self)
 
@@ -385,21 +489,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start input roller",
-                        "action": partial(
-                            action_, ("single_move", "A", {"Input_Roller": 1})
-                        ),
+                        "action": partial(action_, ("single_move", "A", {"Input_Roller": 1})),
                     },
                     {
                         "text": "Stop  input roller",
-                        "action": partial(
-                            action_, ("single_move", "A", {"Input_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "A", {"Input_Roller": 0})),
                     },
                     {
                         "text": "Start input roller to photocell",
-                        "action": partial(
-                            action_, ("single_move", "A", {"Input_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "A", {"Input_Roller": 2})),
                     },
                     {
                         "text": "move 01 02 ('IN -> A')",
@@ -444,21 +542,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "A", {"Dispensing_Roller": 1})
-                        ),
+                        "action": partial(action_, ("single_move", "A", {"Dispensing_Roller": 1})),
                     },
                     {
                         "text": "Stop  dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "A", {"Dispensing_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "A", {"Dispensing_Roller": 0})),
                     },
                     {
                         "text": "Start dispensing roller to photocell",
-                        "action": partial(
-                            action_, ("single_move", "A", {"Dispensing_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "A", {"Dispensing_Roller": 2})),
                     },
                     {
                         "text": "move 02 03 ('A -> B')",
@@ -492,21 +584,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "B", {"Dispensing_Roller": 1})
-                        ),
+                        "action": partial(action_, ("single_move", "B", {"Dispensing_Roller": 1})),
                     },
                     {
                         "text": "Stop  dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "B", {"Dispensing_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "B", {"Dispensing_Roller": 0})),
                     },
                     {
                         "text": "Start dispensing roller to photocell",
-                        "action": partial(
-                            action_, ("single_move", "B", {"Dispensing_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "B", {"Dispensing_Roller": 2})),
                     },
                     {
                         "text": "move 03 04 ('B -> C')",
@@ -540,21 +626,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "C", {"Dispensing_Roller": 1})
-                        ),
+                        "action": partial(action_, ("single_move", "C", {"Dispensing_Roller": 1})),
                     },
                     {
                         "text": "Stop  dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "C", {"Dispensing_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "C", {"Dispensing_Roller": 0})),
                     },
                     {
                         "text": "Start dispensing roller to photocell",
-                        "action": partial(
-                            action_, ("single_move", "C", {"Dispensing_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "C", {"Dispensing_Roller": 2})),
                     },
                     {
                         "text": "move 04 05 ('C -> UP')",
@@ -588,21 +668,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start lifter roller CW",
-                        "action": partial(
-                            action_, ("single_move", "C", {"Lifter_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "C", {"Lifter_Roller": 2})),
                     },
                     {
                         "text": "Start lifter roller CCW",
-                        "action": partial(
-                            action_, ("single_move", "C", {"Lifter_Roller": 3})
-                        ),
+                        "action": partial(action_, ("single_move", "C", {"Lifter_Roller": 3})),
                     },
                     {
                         "text": "Stop  lifter roller",
-                        "action": partial(
-                            action_, ("single_move", "C", {"Lifter_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "C", {"Lifter_Roller": 0})),
                     },
                     {
                         "text": "Start lifter up",
@@ -667,21 +741,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "D", {"Dispensing_Roller": 1})
-                        ),
+                        "action": partial(action_, ("single_move", "D", {"Dispensing_Roller": 1})),
                     },
                     {
                         "text": "Stop  dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "D", {"Dispensing_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "D", {"Dispensing_Roller": 0})),
                     },
                     {
                         "text": "Start dispensing roller to photocell",
-                        "action": partial(
-                            action_, ("single_move", "D", {"Dispensing_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "D", {"Dispensing_Roller": 2})),
                     },
                     {
                         "text": "move 07 08 ('D -> E')",
@@ -715,21 +783,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "E", {"Dispensing_Roller": 1})
-                        ),
+                        "action": partial(action_, ("single_move", "E", {"Dispensing_Roller": 1})),
                     },
                     {
                         "text": "Stop  dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "E", {"Dispensing_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "E", {"Dispensing_Roller": 0})),
                     },
                     {
                         "text": "Start dispensing roller to photocell",
-                        "action": partial(
-                            action_, ("single_move", "E", {"Dispensing_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "E", {"Dispensing_Roller": 2})),
                     },
                     {
                         "text": "move 08 09 ('E -> F')",
@@ -763,21 +825,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Dispensing_Roller": 1})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Dispensing_Roller": 1})),
                     },
                     {
                         "text": "Stop  dispensing roller",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Dispensing_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Dispensing_Roller": 0})),
                     },
                     {
                         "text": "Start dispensing roller to photocell",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Dispensing_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Dispensing_Roller": 2})),
                     },
                     {
                         "text": "move 09 10 ('F -> DOWN')",
@@ -811,21 +867,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start lifter roller CW",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Lifter_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Lifter_Roller": 2})),
                     },
                     {
                         "text": "Start lifter roller CCW",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Lifter_Roller": 3})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Lifter_Roller": 3})),
                     },
                     {
                         "text": "Stop  lifter roller",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Lifter_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Lifter_Roller": 0})),
                     },
                     {
                         "text": "Start lifter up",
@@ -886,27 +936,19 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "buttons": [
                     {
                         "text": "Start output roller",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Output_Roller": 3})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Output_Roller": 3})),
                     },
                     {
                         "text": "Stop  output roller",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Output_Roller": 0})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Output_Roller": 0})),
                     },
                     {
                         "text": "Start output roller to photocell dark",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Output_Roller": 1})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Output_Roller": 1})),
                     },
                     {
                         "text": "Start output roller to photocell light",
-                        "action": partial(
-                            action_, ("single_move", "F", {"Output_Roller": 2})
-                        ),
+                        "action": partial(action_, ("single_move", "F", {"Output_Roller": 2})),
                     },
                     {
                         "text": "move 11 12 ('UP -> OUT')",
@@ -977,10 +1019,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             3: "Download has been cancelled.",
             4: "Download has been interrupted (by the server or because of lost connectivity).",
         }
-        if not os.path.exists(DOWNLOAD_PATH):
-            os.makedirs(DOWNLOAD_PATH)
+        if not os.path.exists(WEBENGINE_DOWNLOAD_PATH):
+            os.makedirs(WEBENGINE_DOWNLOAD_PATH)
         _name = time.strftime("%Y-%m-%d_%H:%M:%S") + ".json"
-        full_name = os.path.join(DOWNLOAD_PATH, _name)
+        full_name = os.path.join(WEBENGINE_DOWNLOAD_PATH, _name)
         download.setPath(full_name)
         download.accept()
 
@@ -1012,8 +1054,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.service_6_btn: service_page_urls[5],
                 self.service_0_btn: "http://127.0.0.1:8080/service_page/",
             }
-            self.webengine_view.setUrl(QUrl(map_[btn]))
+            self.webengine_view.setUrl(self.start_page_url)
             self.stacked_widget.setCurrentWidget(self.browser_page)
+            self.webengine_view.setUrl(QUrl(map_[btn]))
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -1038,16 +1081,18 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.stacked_widget.setCurrentWidget(self.home_page)
 
             elif "order" in btn_name:
+                self.order_table_selected_order_nr = None
                 self.toggle_keyboard(on_off=False)
                 self.populate_order_table()
+                self.populate_jar_table()
                 self.populate_file_table()
                 self.stacked_widget.setCurrentWidget(self.order_page)
 
             elif "browser" in btn_name:
                 self.stacked_widget.setCurrentWidget(self.browser_page)
                 self.toggle_keyboard(on_off=True)
-                if QUrl(CUSTOMER_URL).toString() not in self.webengine_view.url().toString():
-                    self.webengine_view.setUrl(QUrl(CUSTOMER_URL))
+                if QUrl(WEBENGINE_CUSTOMER_URL).toString() not in self.webengine_view.url().toString():
+                    self.webengine_view.setUrl(QUrl(WEBENGINE_CUSTOMER_URL))
 
             elif "global_status" in btn_name:
                 self.stacked_widget.setCurrentWidget(self.debug_status_view.main_frame)
@@ -1071,9 +1116,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 QApplication.instance().run_a_coroutine_helper("move_12_00")
             elif "freeze_carousel" in btn_name:
                 msg_ = (
-                    "confirm unfreezing carousel?"
+                    tr_("confirm unfreezing carousel?")
                     if QApplication.instance().carousel_frozen
-                    else "confirm freezing carousel?"
+                    else tr_("confirm freezing carousel?")
                 )
                 self.show_input_dialog(
                     icon_name=None,
@@ -1094,23 +1139,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 args=None,
             )
 
-    def on_refill_btn_group_clicked(self, btn):
 
-        map_ = [
-            self.refill_1_btn,
-            self.refill_2_btn,
-            self.refill_3_btn,
-            self.refill_4_btn,
-            self.refill_5_btn,
-            self.refill_6_btn,
-        ]
-        try:
-            self.show_reserve(map_.index(btn))
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.show_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None
-            )
+    def on_order_table_selection_changed(self, selected, unselected):  # pylint: disable=no-self-use
+
+        logging.warning(f"selected:{selected}, unselected:{unselected}")
 
     def on_order_table_clicked(self, index):  # pylint: disable=no-self-use
 
@@ -1121,19 +1153,21 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             row = index.row()
             model = index.model()
             order_nr = model.results[row][2]
+
+            self.order_table_selected_order_nr = order_nr
+
             logging.warning(f"row:{row}, col:{col}, order_nr:{order_nr}")
             if col == 0:  # delete
 
                 def cb():
                     model.remove_order(order_nr)
                     self.populate_order_table()
+                    self.populate_jar_table()
 
-                self.show_input_dialog(
-                    icon_name="SP_MessageBoxCritical",
-                    message=tr_("confirm deleting order and related jars?"),
-                    content=order_nr,
-                    ok_cb=cb,
-                )
+                msg_ = tr_("confirm deleting order '{}' and related jars?").format(order_nr)
+                self.show_input_dialog(icon_name="SP_MessageBoxCritical", message=msg_, ok_cb=cb)
+            else:
+                self.populate_jar_table()
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -1159,31 +1193,46 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
                 self.show_input_dialog(
                     icon_name="SP_MessageBoxCritical",
-                    message="confirm deleting file?",
-                    content=file_name,
+                    message=tr_("confirm deleting file\n '{}' ?").format(file_name),
                     ok_cb=cb,
                 )
 
             elif col == 1:  # create order
 
+                app = QApplication.instance()
+
                 def cb():
                     n = int(self.input_dialog.content_container.toPlainText())
                     logging.warning(f"n:{n}")
-                    QApplication.instance().create_order(
-                        os.path.join(DOWNLOAD_PATH, file_name),
+                    order = app.create_order(
+                        os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name),
                         json_schema_name="KCC",
                         n_of_jars=n,
                     )
+                    barcodes = sorted([str(j.barcode) for j in order.jars])
+                    logging.warning(f"barcodes:{barcodes}")
+
+                    def cb_():
+                        for b in barcodes:
+                            response = dymo_print(str(b))
+                            logging.warning(f"response:{response}")
+                            time.sleep(.05)
+
+                    msg_ = tr_("confirm printing {} barcodes?").format(len(barcodes))
+                    self.show_input_dialog(message=msg_, content="{}".format(barcodes), ok_cb=cb_)
+
                     model.remove_file(file_name)
                     self.populate_file_table()
+                    self.populate_order_table()
+                    self.populate_jar_table()
 
-                _msg = tr_('confirm creating order from file (it will be deleted):\n "{}"?\n').format(file_name)
+                _msg = tr_("confirm creating order from file (file will be deleted):\n '{}'?\n").format(file_name)
                 _msg += tr_('Please, insert below the number of jars.')
                 self.show_input_dialog(message=_msg, content="<span align='center'>1</span>", ok_cb=cb)
 
             elif col == 2:  # file name
                 content = "{}"
-                with open(os.path.join(DOWNLOAD_PATH, file_name)) as f:
+                with open(os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name)) as f:
                     content = f.read(3000)
                     try:
                         content = json.dumps(json.loads(content), indent=2)
@@ -1213,13 +1262,25 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
+    def populate_jar_table(self):
+
+        t = time.time()
+        if t - self.search_jar_table_last_time > 0.1:
+            self.search_jar_table_last_time = t
+            try:
+                db_session = QApplication.instance().db_session
+                jar_model = JarTableModel(self, db_session)
+                self.jar_table_view.setModel(jar_model)
+            except Exception:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+
     def populate_file_table(self):
 
         t = time.time()
         if t - self.search_file_table_last_time > 0.1:
             self.search_file_table_last_time = t
             try:
-                file_model = FileTableModel(self, DOWNLOAD_PATH)
+                file_model = FileTableModel(self, WEBENGINE_DOWNLOAD_PATH)
                 self.file_table_view.setModel(file_model)
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
@@ -1246,6 +1307,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self._update_service_btns_and_container_presences(head_index)
             self._update_action_pages()
             self._update_jar_pixmaps()
+            self._update_tank_pixmaps(head_index)
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
@@ -1276,6 +1338,25 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             map_[head_index].setPixmap(self.green_icon)
         else:
             map_[head_index].setPixmap(self.gray_icon)
+
+    def _update_tank_pixmaps(self, head_index):
+        map_ = [
+            self.refill_1_lbl,
+            self.refill_2_lbl,
+            self.refill_3_lbl,
+            self.refill_4_lbl,
+            self.refill_5_lbl,
+            self.refill_6_lbl,
+        ]
+
+        for head_index, m in QApplication.instance().machine_head_dict.items():
+            status = m.status
+            if "STANDBY" in status['status_level'] and QApplication.instance().carousel_frozen:
+                map_[head_index].setPixmap(self.tank_icon_map['green'])
+            else:
+                map_[head_index].setPixmap(self.tank_icon_map['gray'])
+
+            map_[head_index].setText("")
 
     def _update_action_pages(self):
 
@@ -1337,27 +1418,22 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     _runners = QApplication.instance()._CR6_application__jar_runners  # pylint: disable=protected-access
                     for j in _runners.values():
                         pos = j["jar"].position
-                        logging.warning(
-                            f"_label_to_position_map.get(lbl):{_label_to_position_map.get(lbl)}, pos:{pos}"
-                        )
+                        # ~ logging.warning(f"_label_to_position_map.get(lbl):{_label_to_position_map.get(lbl)}, pos:{pos}")
                         if _label_to_position_map.get(lbl) == pos:
-                            text = str(j["jar"].index)
+                            _bc = str(j["jar"].barcode)
+                            text = _bc[-6:-3] + "\n" + _bc[-3:]
                             break
 
-                    lbl.setText(text)
                     if text:
-                        lbl.setStyleSheet(
-                            'color:#000000; background-image:url("{0}")'.format(
-                                os.path.join(IMAGES_PATH, "jar-green.png")
-                            )
-                        )
+                        _img_url = os.path.join(IMAGES_PATH, "jar-green.png")
                     else:
-                        lbl.setStyleSheet(
-                            'color:#000000; background-image:url("{0}")'.format(
-                                os.path.join(IMAGES_PATH, "jar-gray.png")
-                            )
-                        )
-                    logging.warning(f"text:{text}")
+                        _img_url = os.path.join(IMAGES_PATH, "jar-gray.png")
+
+                    lbl.setStyleSheet(
+                        'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url)
+                    )
+                    lbl.setText(text)
+                    # ~ logging.warning(f"text:{text}")
 
             else:  # lifter position
                 size = [0, 0] if false_condition else [32, 32]
@@ -1479,7 +1555,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 "background-color: #00FFFFFF; color: #004400"
             )
 
-    def show_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None):
+    def show_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
 
         # ~ 'SP_MessageBoxCritical',
         # ~ 'SP_MessageBoxInformation',
@@ -1495,63 +1571,48 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         if message is None:
             self.input_dialog.message_label.setText("")
         else:
-            self.input_dialog.message_label.setText(tr_(message))
+            self.input_dialog.message_label.setText(str(message))
 
         if content is None:
             self.input_dialog.content_container.setText("")
+            self.input_dialog.content_container.resize(self.input_dialog.content_container.width(), 0)
         else:
             self.input_dialog.content_container.setText(str(content))
+            self.input_dialog.content_container.resize(self.input_dialog.content_container.width(), 400)
 
         self.input_dialog.ok_button.clicked.disconnect()
         self.input_dialog.ok_button.clicked.connect(self.input_dialog.hide)
         if ok_cb is not None:
-            self.input_dialog.ok_button.clicked.connect(ok_cb)
+            def on_ok_button_clicked():
+                args_ = ok_cb_args if ok_cb_args is not None else []
+                ok_cb(*args_)
+
+            self.input_dialog.ok_button.clicked.connect(on_ok_button_clicked)
 
         self.input_dialog.show()
 
     def show_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
 
+        _msgbox = ModalMessageBox(parent=self, ok_callback=callback, ok_callback_args=args)
         logging.warning(msg)
-
-        ret = False
 
         t = time.asctime()
         msg = "[{}]\n\n{}\n\n".format(t, msg)
-
-        _msgbox = ModalMessageBox(parent=self)
-
-        def button_clicked(btn):
-            logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
-            if "ok" in btn.text().lower() and callback:
-                args_ = args if args is not None else []
-                callback(*args_)
-
-        _msgbox.buttonClicked.connect(button_clicked)
 
         _msgbox.setIcon(QMessageBox.Information)
         _msgbox.setText(msg)
         _msgbox.setWindowTitle(title)
         _msgbox.show()
 
-        return ret
-
     def show_frozen_dialog(self, msg, title="ALERT"):
 
+        callback = QApplication.instance().freeze_carousel
+        args = [False, ]
+        _msgbox = ModalMessageBox(parent=self, ok_callback=callback, ok_callback_args=args)
+
         logging.info(msg)
-
-        msg = f'ALERT: carousel is frozen in {msg}! hit "OK" to unfreeze it'
-
         t = time.asctime()
-        msg = "[{}] {}".format(t, msg)
-
-        _msgbox = ModalMessageBox(parent=self)
-
-        def button_clicked(btn):
-            logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
-            if "ok" in btn.text().lower():
-                QApplication.instance().freeze_carousel(False)
-
-        _msgbox.buttonClicked.connect(button_clicked)
+        msg = f"[{t}] ALERT: carousel is frozen in {msg}! hit 'OK' to unfreeze it"
 
         _msgbox.setIcon(QMessageBox.Critical)
         _msgbox.setText(msg)

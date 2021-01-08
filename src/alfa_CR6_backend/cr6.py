@@ -4,6 +4,7 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
+# pylint: disable=too-many-lines
 
 import sys
 import os
@@ -15,7 +16,6 @@ import subprocess
 import json
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
-
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
@@ -24,7 +24,6 @@ from alfa_CR6_ui.transition import MainWindow
 
 sys.path.append("/opt/alfa_cr6/conf")
 import app_settings as settings  # pylint: disable=import-error,wrong-import-position
-
 sys.path.remove("/opt/alfa_cr6/conf")
 
 
@@ -44,10 +43,10 @@ def _get_version():
         pth = os.path.abspath(os.path.dirname(sys.executable))
         cmd = "{}/pip show alfa_CR6".format(pth)
         for line in (
-            subprocess.run(cmd.split(), stdout=subprocess.PIPE, check=True)
-            .stdout.decode()
-            .split("\n")
-        ):
+                subprocess.run(cmd.split(), stdout=subprocess.PIPE, check=True)
+                .stdout.decode()
+                .split("\n")
+            ):
             if "Version" in line:
                 _ver = line.split(":")[1]
                 _ver = _ver.strip()
@@ -68,11 +67,11 @@ def parse_json_order(path_to_json_file, json_schema_name):
 
         properties["meta"] = {}
         for k in [
-            "color to compare",
-            "basic information",
-            "automobile information",
-            "note",
-        ]:
+                "color to compare",
+                "basic information",
+                "automobile information",
+                "note",
+            ]:
             properties["meta"][k] = content.get(k)
 
         sz = content.get("total", "100")
@@ -124,11 +123,10 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
             buffer = ""
             for path_ in evdev.list_devices():
                 device_ = evdev.InputDevice(path_)
-                if "barcode readerbarcode reader" in str(device_).lower():
+                logging.warning(f"device_:{ device_ }")
+                if "barcode reader" in str(device_).lower():
                     self._device = device_
-                    logging.warning(
-                        f"BARCODE DEVICE FOUND. self._device:{ self._device }"
-                    )
+                    logging.warning(f"BARCODE DEVICE FOUND. self._device:{ self._device }")
                     break
 
             if not self._device:
@@ -138,9 +136,8 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                 async for event in self._device.async_read_loop():
                     keyEvent = evdev.categorize(event)
                     type_key_event = evdev.ecodes.EV_KEY  # pylint:  disable=no-member
-                    if (
-                        event.type == type_key_event and keyEvent.keystate == 0
-                    ):  # key_up = 0
+                    if event.type == type_key_event and keyEvent.keystate == 0:
+                        # key_up = 0
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:12]
                             logging.warning(f"buffer:{buffer}")
@@ -160,9 +157,7 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
             app.handle_exception(e)
 
 
-class CR6_application(
-    QApplication
-):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
+class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
 
     MACHINE_HEAD_INDEX_TO_NAME_MAP = {
         0: "A_TOP_LEFT",
@@ -204,9 +199,7 @@ class CR6_application(
 
         if settings.SQLITE_CONNECT_STRING:
 
-            from alfa_CR6_backend.models import (
-                init_models,
-            )  # pylint: disable=import-outside-toplevel
+            from alfa_CR6_backend.models import init_models # pylint: disable=import-outside-toplevel
 
             self.db_session = init_models(settings.SQLITE_CONNECT_STRING)
 
@@ -318,7 +311,7 @@ class CR6_application(
             r = await self.move_10_11(jar)
             r = await self.wait_for_carousel_not_frozen(not r, "HEAD F +++")
             r = await self.move_11_12(jar)
-            r = jar.update_live(status="DONE", pos="_")
+            r = jar.update_live(status="DONE", pos="OUT")
 
         except asyncio.CancelledError:
             jar.status = "ERROR"
@@ -336,9 +329,7 @@ class CR6_application(
 
     def __clock_tick(self):
 
-        for k in [
-            _ for _ in self.__jar_runners
-        ]:  # pylint: disable=unnecessary-comprehension
+        for k in [_ for _ in self.__jar_runners]:  # pylint: disable=unnecessary-comprehension
             task = self.__jar_runners[k]["task"]
             if task.done():
                 task.cancel()
@@ -383,9 +374,7 @@ class CR6_application(
 
         return ingredient_volume_map, total_volume, unavailable_pigment_names
 
-    async def get_and_check_jar_from_barcode(
-        self, barcode, skip_checks_for_dummy_read=False
-    ):  # pylint: disable=too-many-locals,too-many-branches
+    async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):  # pylint: disable=too-many-locals,too-many-branches
 
         logging.warning("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
@@ -455,9 +444,7 @@ class CR6_application(
 
         return jar, error, unavailable_pigment_names
 
-    async def on_barcode_read(
-        self, barcode, skip_checks_for_dummy_read=False
-    ):  # pylint: disable=too-many-locals,unused-argument
+    async def on_barcode_read(self, barcode, skip_checks_for_dummy_read=False):  # pylint: disable=too-many-locals,unused-argument
 
         logging.warning(f" ###### barcode:{barcode}")
 
@@ -537,9 +524,7 @@ class CR6_application(
             answer = msg_dict.get("value")
             self.main_window.debug_status_view.add_answer(head_index, answer)
 
-    def get_machine_head_by_letter(
-        self, letter
-    ):  # pylint: disable=inconsistent-return-statements
+    def get_machine_head_by_letter(self, letter):  # pylint: disable=inconsistent-return-statements
 
         for m in self.machine_head_dict.values():
             if m.name[0] == letter:
@@ -612,9 +597,7 @@ class CR6_application(
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
-    def handle_exception(
-        self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT
-    ):  # pylint:  disable=no-self-use
+    def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):  # pylint:  disable=no-self-use
 
         if not ui_msg:
             ui_msg = e
@@ -657,9 +640,7 @@ class CR6_application(
         if self.main_window.debug_status_view:
             self.main_window.debug_status_view.update_status()
 
-    async def wait_for_carousel_not_frozen(
-        self, freeze=False, msg=""
-    ):  # pylint: disable=too-many-statements
+    async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):  # pylint: disable=too-many-statements
 
         if freeze:
             self.freeze_carousel(True)
@@ -694,9 +675,7 @@ class CR6_application(
             )
             if r:
                 await A.can_movement({"Input_Roller": 2})
-                r = await A.wait_for_jar_photocells_status(
-                    "JAR_INPUT_ROLLER_PHOTOCELL", on=True, timeout=30
-                )
+                r = await A.wait_for_jar_photocells_status("JAR_INPUT_ROLLER_PHOTOCELL", on=True, timeout=30)
                 if not r:
                     await A.can_movement()
         else:
@@ -948,13 +927,11 @@ class CR6_application(
 
         return r
 
-    async def move_09_10(self, jar=None):  # 'F -> DOWN'
+    async def move_09_10(self, jar=None):  # 'F -> DOWN'  pylint: disable=unused-argument
 
         F = self.get_machine_head_by_letter("F")
 
-        r = await F.wait_for_jar_photocells_status(
-            "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=False
-        )
+        r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=False)
         if r:
             r = await F.wait_for_jar_photocells_status(
                 "UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True
@@ -972,26 +949,18 @@ class CR6_application(
 
         F = self.get_machine_head_by_letter("F")
 
-        r = await F.wait_for_jar_photocells_status(
-            "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=3, show_alert=False
-        )
+        r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=3, show_alert=False)
         if r:
-            r = await F.wait_for_jar_photocells_status(
-                "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=True
-            )
+            r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=True)
 
             if jar is not None:
                 jar.update_live(pos="LIFTL_DOWN")
 
             if r:
-                r = await F.wait_for_jar_photocells_and_status_lev(
-                    "UNLOAD_LIFTER_UP_PHOTOCELL", on=True, status_levels=["STANDBY"]
-                )
+                r = await F.wait_for_jar_photocells_and_status_lev("UNLOAD_LIFTER_UP_PHOTOCELL", on=True, status_levels=["STANDBY"])
                 if r:
                     await F.can_movement({"Output_Roller": 2})
-                    r = await F.wait_for_jar_photocells_status(
-                        "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False
-                    )
+                    r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False)
                     if r:
 
                         if jar is not None:
@@ -1013,7 +982,7 @@ class CR6_application(
         else:
             r = await F.wait_for_status_level(status_levels=["STANDBY"])
             if jar is not None:
-                jar.update_live(pos="F_OUT")
+                jar.update_live(pos="OUT")
 
         return r
 
@@ -1021,9 +990,7 @@ class CR6_application(
 
         F = self.get_machine_head_by_letter("F")
 
-        r = await F.wait_for_status_level(
-            status_levels=["STANDBY"], timeout=3, show_alert=False
-        )
+        r = await F.wait_for_status_level(status_levels=["STANDBY"], timeout=3, show_alert=False)
         if r:
             r = await F.wait_for_jar_photocells_status(
                 "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
@@ -1063,6 +1030,11 @@ class CR6_application(
         if r:
             F = self.get_machine_head_by_letter("F")
             await F.can_movement({"Output_Roller": 2})
+            _runners = QApplication.instance()._CR6_application__jar_runners  # pylint: disable=protected-access
+            for j in _runners.values():
+                if j["jar"].position == "OUT":
+                    j["jar"].position = "_"
+
         else:
             msg_ = f"cannot move output roller"
             logging.warning(msg_)

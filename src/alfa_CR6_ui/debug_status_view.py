@@ -312,9 +312,7 @@ class DebugStatusView:
                 logging.error("timeout !")
             logging.warning(f"i:{i}, r:{r}")
 
-    def view_jar_deatils(
-        self, jar_id
-    ):  # pylint: disable=no-self-use, too-many-branches
+    def view_jar_deatils(self, jar_id):  # pylint: disable=no-self-use, too-many-branches
 
         app = QApplication.instance()
 
@@ -362,9 +360,7 @@ class DebugStatusView:
 
         self.answer_text_browser.setHtml(html_)
 
-    def on_button_group_clicked(
-        self, btn
-    ):  # pylint: disable=no-self-use, too-many-branches, too-many-statements
+    def on_button_group_clicked(self, btn):  # pylint: disable=no-self-use, too-many-branches, too-many-statements
 
         app = QApplication.instance()
         cmd_txt = btn.text()
@@ -393,17 +389,16 @@ class DebugStatusView:
 
         elif "open order\ndialog" in cmd_txt:
 
-            msg_ = tr_(
-                "Please, insert the unlock-key to enable \n the opening of filesystem dialog."
-            )
-            # ~ app.main_window.show_alert_dialog(msg_, callback=open_order_dialog_)
-            def cb():
-                k = app.main_window.input_dialog.content_container.toPlainText()
-                logging.warning(f"k :{k }")
-                if "123" in k:
-                    self.open_order_dialog()
+            self.open_order_dialog()
 
-            app.main_window.show_input_dialog(message=msg_, content="", ok_callback=cb)
+            # ~ msg_ = tr_("Please, insert the unlock-key to enable \n the opening of filesystem dialog.")
+            # ~ def cb():
+                # ~ k = app.main_window.input_dialog.content_container.toPlainText()
+                # ~ logging.warning(f"k :{k }")
+                # ~ if "123" in k:
+                    # ~ self.open_order_dialog()
+
+            # ~ app.main_window.show_input_dialog(message=msg_, content="", ok_cb=cb)
 
         elif "delete\norders in db" in cmd_txt:
 
@@ -545,9 +540,7 @@ class DebugStatusView:
 
         self.update_status()
 
-    def update_status(
-        self, _=None
-    ):  # pylint: disable=too-many-locals,too-many-statements
+    def update_status(self, _=None):  # pylint: disable=too-many-locals,too-many-statements
 
         if not self.main_frame.isVisible():
             return

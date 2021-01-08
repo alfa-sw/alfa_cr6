@@ -69,15 +69,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     """
 
-    def __init__(
-        self,
-        index,
-        ip_add,
-        ws_port,
-        http_port,
-        msg_handler=None,
-        mockup_files_path=None,
-    ):  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments
+            self,
+            index,
+            ip_add,
+            ws_port,
+            http_port,
+            msg_handler=None,
+            mockup_files_path=None,
+        ):
 
         self.index = index
         self.name = QApplication.instance().MACHINE_HEAD_INDEX_TO_NAME_MAP[index]
@@ -151,15 +151,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     pigment_list.append(pig)
 
             with open(
-                self.app.settings.TMP_PATH + f"{self.name}_pigment_list.json", "w"
-            ) as f:
+                    self.app.settings.TMP_PATH + f"{self.name}_pigment_list.json", "w"
+                ) as f:
                 json.dump(pigment_list, f, indent=2)
 
             ret = await self.call_api_rest("package", "GET", {})
             package_list = ret.get("objects", [])
             with open(
-                self.app.settings.TMP_PATH + f"{self.name}_package_list.json", "w"
-            ) as f:
+                    self.app.settings.TMP_PATH + f"{self.name}_package_list.json", "w"
+                ) as f:
                 json.dump(self.package_list, f, indent=2)
 
         self.pigment_list = pigment_list
@@ -181,9 +181,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         logging.debug("status:{}".format(status))
 
         if (
-            status.get("status_level") == "ALARM"
-            and self.status.get("status_level") != "ALARM"
-        ):
+                status.get("status_level") == "ALARM"
+                and self.status.get("status_level") != "ALARM"
+            ):
             self.app.freeze_carousel(True)
             msg_ = "{} ALARM. error_code:{}, error_message:{}".format(
                 self.name, status.get("error_code"), status.get("error_message")
@@ -199,9 +199,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             asyncio.ensure_future(t)
 
         if (
-            status.get("status_level") == "RESET"
-            and self.status.get("status_level") != "RESET"
-        ):
+                status.get("status_level") == "RESET"
+                and self.status.get("status_level") != "RESET"
+            ):
             await self.update_tintometer_data(invalidate_cache=True)
             self.app.main_window.show_alert_dialog(f"{self.name} RESETTING")
 
@@ -212,56 +212,28 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.ready_to_read_a_barcode = True
         try:
             self.photocells_status = {
-                "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL": status[
-                    "photocells_status"
-                ]
-                & 0x001
-                and 1,
-                "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL": status[
-                    "photocells_status"
-                ]
-                & 0x002
-                and 1,
-                "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL": status[
-                    "photocells_status"
-                ]
-                & 0x004
-                and 1,
+                "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL": status["photocells_status"] & 0x001 and 1,
+                "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL": status["photocells_status"] & 0x002 and 1,
+                "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL": status["photocells_status"] & 0x004 and 1,
                 "THOR TABLE_PHOTOCELL": status["photocells_status"] & 0x008 and 1,
                 "THOR VALVE_OPEN_PHOTOCELL": status["photocells_status"] & 0x010 and 1,
-                "THOR AUTOCAP_CLOSE_PHOTOCELL": status["photocells_status"] & 0x020
-                and 1,
-                "THOR AUTOCAP_OPEN_PHOTOCELL": status["photocells_status"] & 0x040
-                and 1,
+                "THOR AUTOCAP_CLOSE_PHOTOCELL": status["photocells_status"] & 0x020 and 1,
+                "THOR AUTOCAP_OPEN_PHOTOCELL": status["photocells_status"] & 0x040 and 1,
                 "THOR BRUSH_PHOTOCELL": status["photocells_status"] & 0x080 and 1,
             }
 
             self.jar_photocells_status = {
-                "JAR_INPUT_ROLLER_PHOTOCELL": status["jar_photocells_status"] & 0x001
-                and 1,
-                "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL": status["jar_photocells_status"]
-                & 0x002
-                and 1,
-                "JAR_OUTPUT_ROLLER_PHOTOCELL": status["jar_photocells_status"] & 0x004
-                and 1,
-                "LOAD_LIFTER_DOWN_PHOTOCELL": status["jar_photocells_status"] & 0x008
-                and 1,
-                "LOAD_LIFTER_UP_PHOTOCELL": status["jar_photocells_status"] & 0x010
-                and 1,
-                "UNLOAD_LIFTER_DOWN_PHOTOCELL": status["jar_photocells_status"] & 0x020
-                and 1,
-                "UNLOAD_LIFTER_UP_PHOTOCELL": status["jar_photocells_status"] & 0x040
-                and 1,
-                "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL": status["jar_photocells_status"]
-                & 0x080
-                and 1,
-                "JAR_DISPENSING_POSITION_PHOTOCELL": status["jar_photocells_status"]
-                & 0x100
-                and 1,
-                "JAR_DETECTION_MICROSWITCH_1": status["jar_photocells_status"] & 0x200
-                and 1,
-                "JAR_DETECTION_MICROSWITCH_2": status["jar_photocells_status"] & 0x400
-                and 1,
+                "JAR_INPUT_ROLLER_PHOTOCELL": status["jar_photocells_status"] & 0x001 and 1,
+                "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL": status["jar_photocells_status"] & 0x002 and 1,
+                "JAR_OUTPUT_ROLLER_PHOTOCELL": status["jar_photocells_status"] & 0x004 and 1,
+                "LOAD_LIFTER_DOWN_PHOTOCELL": status["jar_photocells_status"] & 0x008 and 1,
+                "LOAD_LIFTER_UP_PHOTOCELL": status["jar_photocells_status"] & 0x010 and 1,
+                "UNLOAD_LIFTER_DOWN_PHOTOCELL": status["jar_photocells_status"] & 0x020 and 1,
+                "UNLOAD_LIFTER_UP_PHOTOCELL": status["jar_photocells_status"] & 0x040 and 1,
+                "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL": status["jar_photocells_status"] & 0x080 and 1,
+                "JAR_DISPENSING_POSITION_PHOTOCELL": status["jar_photocells_status"] & 0x100 and 1,
+                "JAR_DETECTION_MICROSWITCH_1": status["jar_photocells_status"] & 0x200 and 1,
+                "JAR_DETECTION_MICROSWITCH_2": status["jar_photocells_status"] & 0x400 and 1,
             }
 
             s1 = status["jar_photocells_status"] & 0x200
@@ -348,9 +320,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return r
 
-    async def send_command(
-        self, cmd_name: str, params: dict, type_="command", channel="machine"
-    ):
+    async def send_command(self, cmd_name: str, params: dict, type_="command", channel="machine"):
         """ param 'type_' can be 'command' or 'macro'
 
             examples:
@@ -376,10 +346,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                     def condition():
                         if (
-                            self.last_answer is not None
-                            and self.last_answer["status_code"] == 0
-                            and self.last_answer["command"] == cmd_name + "_END"
-                        ):
+                                self.last_answer is not None
+                                and self.last_answer["status_code"] == 0
+                                and self.last_answer["command"] == cmd_name + "_END"
+                            ):
                             return True
                         return False
 
@@ -403,10 +373,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     while True:
                         await self.handle_ws_recv()
             except (
-                OSError,
-                ConnectionRefusedError,
-                websockets.exceptions.ConnectionClosedError,
-            ) as e:
+                    OSError,
+                    ConnectionRefusedError,
+                    websockets.exceptions.ConnectionClosedError,
+                ) as e:
                 logging.error(f"e:{e}")
                 await asyncio.sleep(5)
             except Exception as e:  # pylint: disable=broad-except
@@ -443,10 +413,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 answer = msg_dict.get("value")
                 answer = dict(answer)
                 if (
-                    answer
-                    and answer.get("status_code") is not None
-                    and answer.get("command") is not None
-                ):
+                        answer
+                        and answer.get("status_code") is not None
+                        and answer.get("command") is not None
+                    ):
                     self.last_answer = answer
                     logging.warning(f"{self.name} answer:{answer}")
             elif msg_dict.get("type") == "time":
@@ -458,14 +428,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if self.msg_handler:
                 await self.msg_handler(self.index, msg_dict)
 
-    async def wait_for_jar_photocells_and_status_lev(
-        self,  # pylint: disable=too-many-arguments
-        bit_name,
-        on=True,
-        status_levels=None,
-        timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-        show_alert=True,
-    ):
+    async def wait_for_jar_photocells_and_status_lev(  # pylint: disable=too-many-arguments
+            self,
+            bit_name,
+            on=True,
+            status_levels=None,
+            timeout=DEFAULT_WAIT_FOR_TIMEOUT,
+            show_alert=True,
+        ):
 
         if status_levels is None:
             status_levels = ["STANDBY"]
@@ -499,8 +469,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.handle_exception(e)
 
     async def wait_for_jar_photocells_status(
-        self, bit_name, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True
-    ):
+            self, bit_name, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True
+        ):
         logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}")
 
         try:
@@ -524,8 +494,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.handle_exception(e)
 
     async def wait_for_status_level(
-        self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True
-    ):
+            self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True
+        ):
         logging.warning(
             f"{self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}"
         )
@@ -553,8 +523,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.handle_exception(e)
 
     async def wait_for_condition(
-        self, condition, timeout, show_alert=True, extra_info=""
-    ):
+            self, condition, timeout, show_alert=True, extra_info=""
+        ):
         t0 = time.time()
         ret = condition()
         while not ret and time.time() - t0 < timeout:
@@ -577,15 +547,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         ingredients = {}
         for pigment_name in ingredient_volume_map.keys():
             try:
-                name_ = (
-                    ingredient_volume_map
-                    and ingredient_volume_map.get(pigment_name)
+                # ~ name_ = ingredient_volume_map and ingredient_volume_map.get(pigment_name) and ingredient_volume_map[pigment_name].get(self.name)
+                val_ = ingredient_volume_map \
+                    and ingredient_volume_map.get(pigment_name) \
                     and ingredient_volume_map[pigment_name].get(self.name)
-                )
-                if name_:
-                    ingredients[pigment_name] = ingredient_volume_map[pigment_name][
-                        name_
-                    ]
+                if val_:
+                    ingredients[pigment_name] = val_
             except Exception as e:  # pylint: disable=broad-except
                 self.app.handle_exception(e)
 

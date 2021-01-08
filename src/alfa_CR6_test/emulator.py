@@ -168,9 +168,7 @@ class MachineHeadMockup:
         self.status.update(params)
         await self.dump_status()
 
-    async def do_move(
-        self, mask=EMPTY_MASK, set_or_reset="", duration=0, tgt_level="STANDBY"
-    ):
+    async def do_move(self, mask=EMPTY_MASK, set_or_reset="", duration=0, tgt_level="STANDBY"):
         await asyncio.sleep(duration)
         pars = {"status_level": tgt_level}
         if mask != EMPTY_MASK:
@@ -195,9 +193,7 @@ class MachineHeadMockup:
 
         await self.update_status(params=pars)
 
-    async def handle_command(
-        self, msg_out_dict
-    ):  # pylint: disable=too-many-branches,too-many-statements
+    async def handle_command(self, msg_out_dict): # pylint: disable=too-many-branches,too-many-statements
         logging.warning("{}, {}".format(self.index, msg_out_dict))
 
         if msg_out_dict["command"] == "KILL_EMULATOR":
@@ -253,6 +249,7 @@ class MachineHeadMockup:
                     await self.do_move(LOAD_LIFTER_ROLLER_MASK, "toggle", duration=2)
 
                 if self.index == 1:  # F
+                    
                     if lifter == 1:  # 'DOWN -> UP'
                         await self.do_move(
                             UNLOAD_LIFTER_DOWN_MASK,
@@ -269,6 +266,16 @@ class MachineHeadMockup:
                             tgt_level="JAR_POSITIONING",
                         )
                         await self.do_move(UNLOAD_LIFTER_DOWN_MASK, "set", duration=2)
+                    elif dispensing_roller == 1 and lifter_roller == 5:
+                        await self.do_move(
+                            UNLOAD_LIFTER_DOWN_MASK,
+                            "reset",
+                            duration=1,
+                            tgt_level="JAR_POSITIONING",
+                        )
+                        await self.do_move(UNLOAD_LIFTER_UP_MASK, "set", duration=2)
+                        await self.do_move(OUTPUT_ROLLER_MASK, "set", duration=2)
+
                 elif self.index == 5:  # C
                     if lifter == 1:  # 'DOWN -> UP'
                         await self.do_move(
@@ -289,9 +296,7 @@ class MachineHeadMockup:
 
                 if input_roller == 2:  # feed = move_00_01 or -> IN
                     await self.do_move(INPUT_ROLLER_MASK, "set", duration=2)
-                elif (
-                    input_roller == 1 and dispensing_roller == 2
-                ):  # move_01_02 or IN -> A
+                elif input_roller == 1 and dispensing_roller == 2:  # move_01_02 or IN -> A
                     await self.do_move(
                         INPUT_ROLLER_MASK,
                         "reset",
@@ -299,9 +304,7 @@ class MachineHeadMockup:
                         tgt_level="JAR_POSITIONING",
                     )
                     await self.do_move(DISPENSING_POSITION_MASK, "set", duration=2)
-                elif (
-                    input_roller == 0 and dispensing_roller == 1
-                ):  # move_02_03 or  # 'A -> B'
+                elif input_roller == 0 and dispensing_roller == 1:  # move_02_03 or  # 'A -> B'
                     await self.do_move(DISPENSING_POSITION_MASK, "reset", duration=2)
 
                 if output_roller == 1:

@@ -34,9 +34,7 @@ from jsonschema import validate  # pylint: disable=import-error
 
 Base = declarative_base()
 
-
 global_session = None
-
 
 def compile_barcode(order_nr, index):
     return int(order_nr) + int(index) % 1000
@@ -152,11 +150,29 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
     order_nr = Column(
         BigInteger, unique=True, nullable=False, default=generate_order_nr
     )
-    status = Column(Unicode, default="NEW")
+    # ~ status = Column(Unicode, default="NEW")
     jars = relationship("Jar")
 
     def __str__(self):
         return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
+
+    @property
+    def status(self):
+        sts_ = "NEW"
+        new_jars = [j for j in self.jars if j.status == 'NEW']
+        progress_jars = [j for j in self.jars if j.status == 'PROGRESS']
+        error_jars = [j for j in self.jars if j.status == 'ERROR']
+        done_jars = [j for j in self.jars if j.status == 'DONE']
+        if error_jars:
+            sts_ = "ERROR"
+        elif progress_jars:
+            sts_ = "PROGRESS"
+        elif new_jars and done_jars:
+            sts_ = "PARTIAL"
+        elif not new_jars and done_jars:
+            sts_ = "DONE"
+
+        return sts_
 
 
 class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
