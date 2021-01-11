@@ -259,7 +259,7 @@ class JarTableModel(BaseTableModel):
 
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
 
-    def __init__(self, parent=None, ok_callback=None, ok_callback_args=None):
+    def __init__(self, msg="", title="", parent=None, ok_callback=None, ok_callback_args=None):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
 
         self.ok_callback = ok_callback
@@ -326,12 +326,25 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             self.buttonClicked.connect(on_button_clicked)
 
 
+        logging.warning(msg)
+
+        t = time.asctime()
+        msg = "[{}]\n\n{}\n\n".format(t, msg)
+
+        self.setIcon(QMessageBox.Information)
+        self.setText(msg)
+        self.setWindowTitle(title)
+        self.show()
+
 class InputDialog(QFrame):
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
         loadUi(os.path.join(UI_PATH, "input_dialog.ui"), self)
-        # ~ self.input_dialog.setWindowFlags(Qt.FramelessWindowHint)
+
+        # ~ self.setWindowFlags(Qt.FramelessWindowHint)
+
         self.setStyleSheet(
             """
             QWidget {background:#CCBBBBBB; font-size: 24px; font-family: Times sans-serif; border: 1px solid #999999; border-radius: 4px;}
@@ -349,6 +362,42 @@ class InputDialog(QFrame):
         self.ok_button.setAutoFillBackground(True)
         self.esc_button.setAutoFillBackground(True)
         self.hide()
+
+    def show_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
+
+        # ~ 'SP_MessageBoxCritical',
+        # ~ 'SP_MessageBoxInformation',
+        # ~ 'SP_MessageBoxQuestion',
+        # ~ 'SP_MessageBoxWarning',
+
+        if icon_name is None:
+            icon_ = self.style().standardIcon(getattr(QStyle, "SP_MessageBoxWarning"))
+        else:
+            icon_ = self.style().standardIcon(getattr(QStyle, icon_name))
+        self.icon_label.setPixmap(icon_.pixmap(QSize(64, 64)))
+
+        if message is None:
+            self.message_label.setText("")
+        else:
+            self.message_label.setText(str(message))
+
+        if content is None:
+            self.content_container.setText("")
+            self.content_container.resize(self.content_container.width(), 0)
+        else:
+            self.content_container.setText(str(content))
+            self.content_container.resize(self.content_container.width(), 400)
+
+        self.ok_button.clicked.disconnect()
+        self.ok_button.clicked.connect(self.hide)
+        if ok_cb is not None:
+            def on_ok_button_clicked():
+                args_ = ok_cb_args if ok_cb_args is not None else []
+                ok_cb(*args_)
+
+            self.ok_button.clicked.connect(on_ok_button_clicked)
+
+        self.show()
 
 
 class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
@@ -1683,67 +1732,21 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def show_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
 
-        # ~ 'SP_MessageBoxCritical',
-        # ~ 'SP_MessageBoxInformation',
-        # ~ 'SP_MessageBoxQuestion',
-        # ~ 'SP_MessageBoxWarning',
-
-        if icon_name is None:
-            icon_ = self.style().standardIcon(getattr(QStyle, "SP_MessageBoxWarning"))
-        else:
-            icon_ = self.style().standardIcon(getattr(QStyle, icon_name))
-        self.input_dialog.icon_label.setPixmap(icon_.pixmap(QSize(64, 64)))
-
-        if message is None:
-            self.input_dialog.message_label.setText("")
-        else:
-            self.input_dialog.message_label.setText(str(message))
-
-        if content is None:
-            self.input_dialog.content_container.setText("")
-            self.input_dialog.content_container.resize(self.input_dialog.content_container.width(), 0)
-        else:
-            self.input_dialog.content_container.setText(str(content))
-            self.input_dialog.content_container.resize(self.input_dialog.content_container.width(), 400)
-
-        self.input_dialog.ok_button.clicked.disconnect()
-        self.input_dialog.ok_button.clicked.connect(self.input_dialog.hide)
-        if ok_cb is not None:
-            def on_ok_button_clicked():
-                args_ = ok_cb_args if ok_cb_args is not None else []
-                ok_cb(*args_)
-
-            self.input_dialog.ok_button.clicked.connect(on_ok_button_clicked)
-
-        self.input_dialog.show()
+        self.input_dialog.show_dialog(icon_name=icon_name, message=message, content=content, ok_cb=ok_cb, ok_cb_args=ok_cb_args)
 
     def show_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
 
-        _msgbox = ModalMessageBox(parent=self, ok_callback=callback, ok_callback_args=args)
-        logging.warning(msg)
-
-        t = time.asctime()
-        msg = "[{}]\n\n{}\n\n".format(t, msg)
-
-        _msgbox.setIcon(QMessageBox.Information)
-        _msgbox.setText(msg)
-        _msgbox.setWindowTitle(title)
-        _msgbox.show()
+        _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=args)
 
     def show_frozen_dialog(self, msg, title="ALERT"):
 
         callback = QApplication.instance().freeze_carousel
         args = [False, ]
-        _msgbox = ModalMessageBox(parent=self, ok_callback=callback, ok_callback_args=args)
-
         logging.info(msg)
-        t = time.asctime()
-        msg = f"[{t}] ALERT: carousel is frozen in {msg}! hit 'OK' to unfreeze it"
-
-        _msgbox.setIcon(QMessageBox.Critical)
-        _msgbox.setText(msg)
-        _msgbox.setWindowTitle(title)
-        _msgbox.show()
+        msg_ = tr_("carousel is frozen.")
+        msg_ += f'\n------------------------------\n"{msg}"\n------------------------------\n'
+        msg_ += tr_("hit 'OK' to unfreeze it")
+        self.show_alert_dialog(msg_, title=title, callback=callback, args=args)
 
     def show_barcode(self, barcode, is_ok=False):
 

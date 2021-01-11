@@ -1440,10 +1440,6 @@
       <property name="autoFillBackground">
        <bool>false</bool>
       </property>
-      <property name="styleSheet">
-       <string notr="true">background-color:#33777777;
-</string>
-      </property>
       <property name="text">
        <string>running_jars_lbl</string>
       </property>

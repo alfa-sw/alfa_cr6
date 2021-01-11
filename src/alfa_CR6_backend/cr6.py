@@ -20,7 +20,7 @@ from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.machine_head import MachineHead
-from alfa_CR6_ui.transition import MainWindow
+from alfa_CR6_ui.transition import MainWindow, tr_
 
 sys.path.append("/opt/alfa_cr6/conf")
 import app_settings as settings  # pylint: disable=import-error,wrong-import-position
@@ -297,9 +297,9 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await self.move_03_04(jar)
             r = await self.dispense_step(r, "C", jar)
             r = await self.move_04_05(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD C ++")
+            r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} ++").format('C'))
             r = await self.move_05_06(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD C +++")
+            r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +++").format('C'))
             r = await self.move_06_07(jar)
             r = await self.dispense_step(r, "D", jar)
             r = await self.move_07_08(jar)
@@ -307,9 +307,9 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await self.move_08_09(jar)
             r = await self.dispense_step(r, "F", jar)
             r = await self.move_09_10(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD F ++")
+            r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} ++").format('F'))
             r = await self.move_10_11(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, "HEAD F +++")
+            r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +++").format('F'))
             r = await self.move_11_12(jar)
             r = jar.update_live(status="DONE", pos="OUT")
 
@@ -1058,12 +1058,14 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         await m.update_tintometer_data(invalidate_cache=True)
 
-        r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} -")
+        r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} -").format(machine_letter))
         _, _, unavailable_pigment_names = self.check_available_volumes(jar)
 
         if unavailable_pigment_names:
 
-            msg_ = f"Missing material for barcode {jar.barcode}.\n please refill pigments:{unavailable_pigment_names} on {m.name}."
+            msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{} on head {}.').format(
+                    jar.barcode, unavailable_pigment_names, machine_letter)
+
             logging.warning(msg_)
             r = await self.wait_for_carousel_not_frozen(True, msg_)
 
@@ -1075,7 +1077,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             jar.json_properties = json.dumps(json_properties, indent=2)
 
         r = await m.do_dispense(jar)
-        r = await self.wait_for_carousel_not_frozen(not r, f"HEAD {machine_letter} +")
+        r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +").format(machine_letter))
 
         return r
 
