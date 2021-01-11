@@ -88,8 +88,6 @@ useful commands:
 
 sudo nano /etc/network/interfaces
 
-    gateway 192.168.0.100
-
 sudo service networking restart
 sudo supervisorctl restart all
 sudo supervisorctl status
