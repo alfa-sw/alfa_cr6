@@ -319,12 +319,18 @@ class DebugStatusView:
         jar = app.db_session.query(Jar).filter(Jar.id == jar_id).one()
         logging.warning(f"jar:{jar}")
         logging.info(f"jar.json_properties:{jar.json_properties}")
-        msg_ = f"jar:{jar}"
-        msg_ += f"\njar.json_properties:{jar.json_properties}"
-        msg_ += (
-            f"\n<small>jar.order.json_properties:{jar.order.json_properties}</small>"
-        )
-        app.main_window.show_alert_dialog(msg_)
+        
+        # ~ msg_ = "<html>"
+        # ~ msg_ += f"jar.json_properties:{jar.json_properties}"
+        # ~ msg_ += "<br></br>"
+        # ~ msg_ += f"jar.order.json_properties:{jar.order.json_properties}"
+        # ~ msg_ += "</html>"
+        msg_ = ""
+        msg_ += f"jar.json_properties:{jar.json_properties}"
+        msg_ += "\n"
+        msg_ += f"jar.order.json_properties:{jar.order.json_properties}"
+        
+        app.main_window.show_input_dialog(message=f"jar:{jar}", content=msg_)
 
     def delete_orders(self):  # pylint: disable=no-self-use, too-many-branches
 

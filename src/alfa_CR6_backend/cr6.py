@@ -1030,8 +1030,8 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         if r:
             F = self.get_machine_head_by_letter("F")
             await F.can_movement({"Output_Roller": 2})
-            _runners = QApplication.instance()._CR6_application__jar_runners  # pylint: disable=protected-access
-            for j in _runners.values():
+            _runners = self.__jar_runners
+            for j in self.__jar_runners.values():
                 if j["jar"].position == "OUT":
                     j["jar"].position = "_"
 
@@ -1090,6 +1090,23 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
     def show_reserve(self, head_index, flag):
         self.main_window.show_reserve(head_index, flag)
 
+    def delete_jar_runner(self, barcode):
+
+        j = self.__jar_runners.get(barcode)
+        if j:
+            try:
+                t = j["task"]
+                t.cancel()
+                async def _coro(_):
+                    await _
+                asyncio.ensure_future(_coro(t))
+                self.__jar_runners.pop(barcode)
+            except Exception as e:  # pylint: disable=broad-except
+                self.handle_exception(e)
+
+    def get_jar_runners(self):
+
+        return self.__jar_runners
 
 def main():
 

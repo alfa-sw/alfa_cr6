@@ -229,7 +229,7 @@
       <property name="geometry">
        <rect>
         <x>530</x>
-        <y>180</y>
+        <y>170</y>
         <width>330</width>
         <height>60</height>
        </rect>
@@ -248,7 +248,7 @@
       <property name="geometry">
        <rect>
         <x>920</x>
-        <y>180</y>
+        <y>170</y>
         <width>330</width>
         <height>60</height>
        </rect>
@@ -324,7 +324,7 @@
       <property name="geometry">
        <rect>
         <x>1300</x>
-        <y>180</y>
+        <y>170</y>
         <width>330</width>
         <height>60</height>
        </rect>
@@ -745,7 +745,7 @@
       <property name="geometry">
        <rect>
         <x>530</x>
-        <y>90</y>
+        <y>240</y>
         <width>56</width>
         <height>56</height>
        </rect>
@@ -770,8 +770,8 @@
      <widget class="QLabel" name="refill_3_lbl">
       <property name="geometry">
        <rect>
-        <x>911</x>
-        <y>90</y>
+        <x>918</x>
+        <y>240</y>
         <width>56</width>
         <height>56</height>
        </rect>
@@ -796,8 +796,8 @@
      <widget class="QLabel" name="refill_5_lbl">
       <property name="geometry">
        <rect>
-        <x>1301</x>
-        <y>90</y>
+        <x>1300</x>
+        <y>240</y>
         <width>56</width>
         <height>56</height>
        </rect>
@@ -823,7 +823,7 @@
       <property name="geometry">
        <rect>
         <x>530</x>
-        <y>470</y>
+        <y>600</y>
         <width>56</width>
         <height>56</height>
        </rect>
@@ -848,8 +848,8 @@
      <widget class="QLabel" name="refill_4_lbl">
       <property name="geometry">
        <rect>
-        <x>911</x>
-        <y>470</y>
+        <x>918</x>
+        <y>600</y>
         <width>56</width>
         <height>56</height>
        </rect>
@@ -874,8 +874,8 @@
      <widget class="QLabel" name="refill_6_lbl">
       <property name="geometry">
        <rect>
-        <x>1300</x>
-        <y>470</y>
+        <x>1299</x>
+        <y>600</y>
         <width>56</width>
         <height>56</height>
        </rect>
@@ -901,7 +901,7 @@
       <property name="geometry">
        <rect>
         <x>789</x>
-        <y>260</y>
+        <y>240</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -920,7 +920,7 @@
       <property name="geometry">
        <rect>
         <x>1170</x>
-        <y>260</y>
+        <y>240</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -939,7 +939,7 @@
       <property name="geometry">
        <rect>
         <x>1560</x>
-        <y>260</y>
+        <y>240</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -958,7 +958,7 @@
       <property name="geometry">
        <rect>
         <x>790</x>
-        <y>640</y>
+        <y>600</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -977,7 +977,7 @@
       <property name="geometry">
        <rect>
         <x>1170</x>
-        <y>640</y>
+        <y>600</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -996,7 +996,7 @@
       <property name="geometry">
        <rect>
         <x>1560</x>
-        <y>640</y>
+        <y>600</y>
         <width>56</width>
         <height>100</height>
        </rect>
@@ -1081,7 +1081,7 @@
      <widget class="QLabel" name="STEP_09_label">
       <property name="geometry">
        <rect>
-        <x>660</x>
+        <x>655</x>
         <y>745</y>
         <width>85</width>
         <height>85</height>
@@ -1245,7 +1245,7 @@
      <widget class="QLabel" name="STEP_02_label">
       <property name="geometry">
        <rect>
-        <x>660</x>
+        <x>655</x>
         <y>370</y>
         <width>85</width>
         <height>85</height>
@@ -1266,7 +1266,7 @@
      <widget class="QLabel" name="container_presence_1_label">
       <property name="geometry">
        <rect>
-        <x>695</x>
+        <x>690</x>
         <y>355</y>
         <width>24</width>
         <height>24</height>
@@ -1346,7 +1346,7 @@
      <widget class="QLabel" name="container_presence_2_label">
       <property name="geometry">
        <rect>
-        <x>695</x>
+        <x>690</x>
         <y>730</y>
         <width>24</width>
         <height>24</height>
@@ -1423,6 +1423,37 @@
        <bool>true</bool>
       </property>
      </widget>
+     <widget class="QLabel" name="running_jars_lbl">
+      <property name="geometry">
+       <rect>
+        <x>1710</x>
+        <y>90</y>
+        <width>181</width>
+        <height>201</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">background-color:#33777777;
+</string>
+      </property>
+      <property name="text">
+       <string>running_jars_lbl</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTop|Qt::AlignTrailing</set>
+      </property>
+      <property name="wordWrap">
+       <bool>true</bool>
+      </property>
+     </widget>
      <zorder>sinottico</zorder>
      <zorder>service_1_btn</zorder>
      <zorder>service_3_btn</zorder>
@@ -1478,6 +1509,7 @@
      <zorder>refill_2_lbl</zorder>
      <zorder>refill_4_lbl</zorder>
      <zorder>refill_5_lbl</zorder>
+     <zorder>running_jars_lbl</zorder>
     </widget>
     <widget class="QWidget" name="order_page">
      <property name="styleSheet">
