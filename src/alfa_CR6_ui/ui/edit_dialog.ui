@@ -223,10 +223,10 @@
    <widget class="QPushButton" name="set_item_btn">
     <property name="geometry">
      <rect>
-      <x>930</x>
-      <y>30</y>
-      <width>151</width>
-      <height>51</height>
+      <x>1030</x>
+      <y>10</y>
+      <width>111</width>
+      <height>71</height>
      </rect>
     </property>
     <property name="text">

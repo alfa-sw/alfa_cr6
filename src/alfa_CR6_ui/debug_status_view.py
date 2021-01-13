@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import (
 from alfa_CR6_backend.models import Jar, Order
 from alfa_CR6_backend.dymo_printer import dymo_print
 
-from alfa_CR6_ui.transition import tr_
+from alfa_CR6_ui.globals import tr_
 
 
 class DebugStatusView:

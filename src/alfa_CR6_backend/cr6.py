@@ -20,7 +20,7 @@ from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.machine_head import MachineHead
-from alfa_CR6_ui.transition import MainWindow, tr_
+from alfa_CR6_ui.main_window import MainWindow, tr_
 
 sys.path.append("/opt/alfa_cr6/conf")
 import app_settings as settings  # pylint: disable=import-error,wrong-import-position
