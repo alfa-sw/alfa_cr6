@@ -31,6 +31,8 @@ from PyQt5.QtWidgets import (
     QStyle,
     QMessageBox,
     QFrame,
+    QTableWidgetItem,
+    QComboBox,
 )
 
 from alfa_CR6_ui.keyboard import Keyboard
@@ -60,6 +62,10 @@ class BaseTableModel(QAbstractTableModel):
         self.red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
         self.yellow_icon = QPixmap(os.path.join(IMAGES_PATH, "yellow.png"))
         self.blue_icon = QPixmap(os.path.join(IMAGES_PATH, "blue.png"))
+
+        self.add_icon = QPixmap(os.path.join(IMAGES_PATH, "add.png"))
+        self.edit_icon = QPixmap(os.path.join(IMAGES_PATH, "edit.png"))
+
         # ~ self.item_font = QFont('Times sans-serif', 32)
         self.results = [[]]
 
@@ -103,7 +109,7 @@ class FileTableModel(BaseTableModel):
         filter_text = parent.search_file_line.text()
         name_list_ = [p for p in os.listdir(path) if filter_text in p][:101]
         if len(name_list_) >= 100:
-            self.show_alert_dialog(
+            self.open_alert_dialog(
                 tr_("Too many files saved and not used. Please delete unused files."),
                 title="ERROR",
             )
@@ -122,9 +128,9 @@ class FileTableModel(BaseTableModel):
         ret = QVariant()
         if role == Qt.DecorationRole and index.column() == 0:
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1: # view
+        elif role == Qt.DecorationRole and index.column() == 1:  # view
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
-        elif role == Qt.DecorationRole and index.column() == 2: # create order
+        elif role == Qt.DecorationRole and index.column() == 2:  # create order
             ret = (
                 self.parent()
                 .style()
@@ -140,7 +146,7 @@ class OrderTableModel(BaseTableModel):
     def __init__(self, parent, session, *args):
         super().__init__(parent, *args)
         self.session = session
-        self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("order nr.")]
+        self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr.")]
         filter_text = parent.search_order_line.text()
 
         if self.session:
@@ -174,9 +180,9 @@ class OrderTableModel(BaseTableModel):
         ret = QVariant()
         if role == Qt.DecorationRole and index.column() == 0:
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1: # view
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
-        if role == Qt.DecorationRole and index.column() == 2: # status
+        elif role == Qt.DecorationRole and index.column() == 1:  # edit
+            ret = self.edit_icon.scaled(32, 32, Qt.KeepAspectRatio)
+        if role == Qt.DecorationRole and index.column() == 2:  # status
             datum = str(index.data()).upper()
             if "DONE" in datum:
                 ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
@@ -239,9 +245,9 @@ class JarTableModel(BaseTableModel):
         ret = QVariant()
         if role == Qt.DecorationRole and index.column() == 0:
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1: # view
+        elif role == Qt.DecorationRole and index.column() == 1:  # view
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
-        if role == Qt.DecorationRole and index.column() == 2: # barcode
+        if role == Qt.DecorationRole and index.column() == 2:  # barcode
             datum = str(index.data()).upper()
             if "DONE" in datum:
                 ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
@@ -325,7 +331,6 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
             self.buttonClicked.connect(on_button_clicked)
 
-
         logging.warning(msg)
 
         t = time.asctime()
@@ -336,32 +341,160 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         self.setWindowTitle(title)
         self.show()
 
-class InputDialog(QFrame):
+
+class BaseDialog(QFrame):
+
+    ui_file_name = ""
 
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        loadUi(os.path.join(UI_PATH, "input_dialog.ui"), self)
-
-        # ~ self.setWindowFlags(Qt.FramelessWindowHint)
+        loadUi(os.path.join(UI_PATH, self.ui_file_name), self)
 
         self.setStyleSheet(
             """
             QWidget {background:#CCBBBBBB; font-size: 24px; font-family: Times sans-serif; border: 1px solid #999999; border-radius: 4px;}
+            QLabel {border: 0px;}
+            QLineEdit {background:#FFFFAA; }
             QPushButton { background-color: #F3F3F3F3;}
             QPushButton:pressed {background-color: #AAAAAA;}"""
         )
         self.move(440, 100)
         # ~ self.resize(1080, 575)
 
-        green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
-        red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
+        self.green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
+        self.red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
+        self.remove_icon = QPixmap(os.path.join(IMAGES_PATH, "remove.png"))
+        self.add_icon = QPixmap(os.path.join(IMAGES_PATH, "add.png"))
 
-        self.ok_button.setIcon(QIcon(green_icon))
-        self.esc_button.setIcon(QIcon(red_icon))
+        self.ok_button.setIcon(QIcon(self.green_icon))
+        self.esc_button.setIcon(QIcon(self.red_icon))
         self.ok_button.setAutoFillBackground(True)
         self.esc_button.setAutoFillBackground(True)
         self.hide()
+
+
+class EditDialog(BaseDialog):
+
+    ui_file_name = "edit_dialog.ui"
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.ok_button.clicked.connect(self.hide)
+        self.ok_button.clicked.connect(self.save)
+        self.set_item_btn.clicked.connect(self.on_set_item_clicked)
+        self.add_item_btn.clicked.connect(self.on_add_item_clicked)
+        self.formula_table.clicked.connect(self.on_formula_table_clicked)
+
+        self.remove_item_btn.setIcon(QIcon(self.remove_icon))
+        self.add_item_btn.setIcon(QIcon(self.add_icon))
+
+        self.remove_item_btn.setText(tr_("remove\nselected"))
+        self.add_item_btn.setText(tr_("add a\nnew one"))
+        self.order_nr_lbl.setText(tr_("order n.:"))
+        self.size_lbl.setText(tr_("size:"))
+        self.pigment_lbl.setText(tr_("pigment:"))
+        self.quantity_lbl.setText(tr_("quantity (gr):"))
+        self.edit_item_group_box.setTitle(tr_("edit selected item:"))
+
+        pigment_names = [
+            'KB10',
+            'KM702',
+            'KA69F',
+            'KM816',
+            'KM814',
+            'KM200',
+            'KM302',
+            'KM605',
+            'KM900',
+            'KM101',
+            'KM600',
+        ]
+        self.pigment_combo.addItems(pigment_names)
+
+    def on_set_item_clicked(self):
+
+        try:
+            pigment_name = self.pigment_line_edit.text()
+            quantity = float(self.quantity_line_edit.text())
+            logging.warning(f"pigment_name:{pigment_name}, quantity:{quantity}.")
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None
+            )
+
+    def on_add_item_clicked(self):
+
+        try:
+            pigment_name = self.pigment_line_edit.text()
+            quantity = float(self.quantity_line_edit.text())
+            logging.warning(f"pigment_name:{pigment_name}, quantity:{quantity}.")
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None
+            )
+
+    def on_formula_table_clicked(self, index):
+
+        datum = index.data()
+        logging.warning(f"datum:{datum}")
+        try:
+            row = index.row()
+            values_ = [self.formula_table.item(row, col).data(Qt.DisplayRole) for col in range(3)]
+            logging.warning(f"row:{row}, values_:{values_}")
+
+            self.pigment_line_edit.setText(str(values_[0]))
+            self.quantity_line_edit.setText(str(values_[1]))
+            # ~ self.pigment_combo.
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None
+            )
+
+    def show_dialog(self, order_nr):   # pylint: disable=too-many-arguments
+
+        order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).one()
+
+        properties = json.loads(order.json_properties)
+        logging.warning(f"properties:{properties}")
+
+        size = properties.get('size(cc)')
+        ingredients = properties.get('ingredients')
+        content = "\n".join([f"{k}:{v}" for k, v in properties.get("meta", {}).items()])
+
+        self.size_line_edit.setText(str(size))
+        self.meta_text_edit.setText(content)
+        self.order_nr_view_lbl.setText(str(order_nr))
+
+        self.formula_table.clearContents()
+        self.formula_table.setRowCount(len(ingredients))
+        self.formula_table.setColumnCount(3)
+
+        for row, item_ in enumerate(ingredients):
+            self.formula_table.setItem(row, 0, QTableWidgetItem(str(item_['pigment_name'])))
+            self.formula_table.setItem(row, 1, QTableWidgetItem(str(item_['weight(g)'])))
+            self.formula_table.setItem(row, 2, QTableWidgetItem(str(item_['description'])))
+
+        self.move(440, 10)
+
+        self.show()
+
+    def save(self):   # pylint: disable=too-many-arguments
+
+        logging.warning(f"self:{self}")
+
+
+class InputDialog(BaseDialog):
+
+    ui_file_name = "input_dialog.ui"
 
     def show_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
 
@@ -522,6 +655,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def __init_dialogs(self):
 
         self.input_dialog = InputDialog(self)
+        self.edit_dialog = EditDialog(self)
 
     def __init_action_pages(self,):
 
@@ -1097,7 +1231,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         def _cb():
             _msg = "file name:{}\n\n ".format(_name) + tr_(_msgs[download.state()])
-            self.show_alert_dialog(_msg, title="ALERT", callback=None, args=None)
+            self.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
 
         download.finished.connect(_cb)
 
@@ -1129,7 +1263,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.show_alert_dialog(
+            self.open_alert_dialog(
                 f"btn_namel:{btn_name} exception:{e}",
                 title="ERROR",
                 callback=None,
@@ -1168,7 +1302,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.show_alert_dialog(
+            self.open_alert_dialog(
                 f"btn_namel:{btn_name} exception:{e}",
                 title="ERROR",
                 callback=None,
@@ -1189,7 +1323,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     if QApplication.instance().carousel_frozen
                     else tr_("confirm freezing carousel?")
                 )
-                self.show_input_dialog(
+                self.open_input_dialog(
                     icon_name=None,
                     message=msg_,
                     content=None,
@@ -1201,7 +1335,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.update_status_data(i)
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.show_alert_dialog(
+            self.open_alert_dialog(
                 f"btn_namel:{btn_name} exception:{e}",
                 title="ERROR",
                 callback=None,
@@ -1229,25 +1363,27 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     self.populate_jar_table()
 
                 msg_ = tr_("confirm deleting order '{}' and related jars?").format(order_nr)
-                self.show_input_dialog(icon_name="SP_MessageBoxCritical", message=msg_, ok_cb=cb)
+                self.open_input_dialog(icon_name="SP_MessageBoxCritical", message=msg_, ok_cb=cb)
 
-            elif col == 1:  # view
+            elif col == 1:  # edit
 
-                content = "{}"
-                query_ = QApplication.instance().db_session.query(Order)
-                query_ = query_.filter(Order.order_nr == order_nr)
-                order = query_.first()
-                if order:
-                    _props = json.loads(order.json_properties)
-                    content = json.dumps(_props, indent=2)
-                    msg_ = tr_("order nr.:{}\n description:{}\n date_created:{}").format(
-                        order_nr, order.description, order.date_created)
+                self.open_edit_dialog(order_nr)
 
-                self.show_input_dialog(
-                    icon_name="SP_MessageBoxInformation",
-                    message=msg_,
-                    content=content,
-                )
+                # ~ content = "{}"
+                # ~ query_ = QApplication.instance().db_session.query(Order)
+                # ~ query_ = query_.filter(Order.order_nr == order_nr)
+                # ~ order = query_.first()
+                # ~ if order:
+                # ~ _props = json.loads(order.json_properties)
+                # ~ content = json.dumps(_props, indent=2)
+                # ~ msg_ = tr_("order nr.:{}\n description:{}\n date_created:{}").format(
+                # ~ order_nr, order.description, order.date_created)
+
+                # ~ self.open_input_dialog(
+                # ~ icon_name="SP_MessageBoxInformation",
+                # ~ message=msg_,
+                # ~ content=content,
+                # ~ )
 
                 self.populate_jar_table()
 
@@ -1261,7 +1397,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.show_alert_dialog(
+            self.open_alert_dialog(
                 f"exception:{e}", title="ERROR", callback=None, args=None
             )
 
@@ -1281,7 +1417,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     model.remove_jar(barcode)
                     self.populate_jar_table()
 
-                self.show_input_dialog(
+                self.open_input_dialog(
                     icon_name="SP_MessageBoxCritical",
                     message=tr_("confirm deleting jar\n '{}' ?").format(barcode),
                     ok_cb=cb,
@@ -1303,7 +1439,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                             msg_ = tr_("barcode:{}\n description:{}\n date_created:{}").format(
                                 barcode, jar.description, jar.date_created)
 
-                self.show_input_dialog(
+                self.open_input_dialog(
                     icon_name="SP_MessageBoxInformation",
                     message=msg_,
                     content=content,
@@ -1317,7 +1453,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.show_alert_dialog(
+            self.open_alert_dialog(
                 f"exception:{e}", title="ERROR", callback=None, args=None
             )
 
@@ -1337,7 +1473,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     model.remove_file(file_name)
                     self.populate_file_table()
 
-                self.show_input_dialog(
+                self.open_input_dialog(
                     icon_name="SP_MessageBoxCritical",
                     message=tr_("confirm deleting file\n '{}' ?").format(file_name),
                     ok_cb=cb,
@@ -1352,7 +1488,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     except Exception:  # pylint: disable=broad-except
                         logging.error(traceback.format_exc())
 
-                self.show_input_dialog(
+                self.open_input_dialog(
                     icon_name="SP_MessageBoxInformation",
                     message=tr_("file_name:{}").format(file_name),
                     content=content,
@@ -1381,7 +1517,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                             time.sleep(.05)
 
                     msg_ = tr_("confirm printing {} barcodes?").format(len(barcodes))
-                    self.show_input_dialog(message=msg_, content="{}".format(barcodes), ok_cb=cb_)
+                    self.open_input_dialog(message=msg_, content="{}".format(barcodes), ok_cb=cb_)
 
                     self.order_table_selected_order_nr = None
 
@@ -1392,14 +1528,14 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
                 _msg = tr_("confirm creating order from file (file will be deleted):\n '{}'?\n").format(file_name)
                 _msg += tr_('Please, insert below the number of jars.')
-                self.show_input_dialog(message=_msg, content="<span align='center'>1</span>", ok_cb=cb)
+                self.open_input_dialog(message=_msg, content="<span align='center'>1</span>", ok_cb=cb)
 
             elif col == 3:  # file name
                 pass
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.show_alert_dialog(
+            self.open_alert_dialog(
                 f"exception:{e}", title="ERROR", callback=None, args=None
             )
 
@@ -1730,15 +1866,25 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
-    def show_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
+    def open_edit_dialog(self, order_nr):
 
-        self.input_dialog.show_dialog(icon_name=icon_name, message=message, content=content, ok_cb=ok_cb, ok_cb_args=ok_cb_args)
+        self.edit_dialog.show_dialog(order_nr)
+        self.toggle_keyboard(on_off=True)
 
-    def show_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
+    def open_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
+
+        self.input_dialog.show_dialog(
+            icon_name=icon_name,
+            message=message,
+            content=content,
+            ok_cb=ok_cb,
+            ok_cb_args=ok_cb_args)
+
+    def open_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
 
         _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=args)
 
-    def show_frozen_dialog(self, msg, title="ALERT"):
+    def open_frozen_dialog(self, msg, title="ALERT"):
 
         callback = QApplication.instance().freeze_carousel
         args = [False, ]
@@ -1746,7 +1892,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         msg_ = tr_("carousel is frozen.")
         msg_ += f'\n------------------------------\n"{msg}"\n------------------------------\n'
         msg_ += tr_("hit 'OK' to unfreeze it")
-        self.show_alert_dialog(msg_, title=title, callback=callback, args=args)
+        self.open_alert_dialog(msg_, title=title, callback=callback, args=args)
 
     def show_barcode(self, barcode, is_ok=False):
 

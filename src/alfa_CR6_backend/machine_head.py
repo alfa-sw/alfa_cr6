@@ -169,7 +169,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
         if self.low_level_pipes:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
-            self.app.main_window.show_alert_dialog(
+            self.app.main_window.open_alert_dialog(
                 f"{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}"
             )
             self.app.show_reserve(self.index, True)
@@ -189,7 +189,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 self.name, status.get("error_code"), status.get("error_message")
             )
             logging.error(msg_)
-            self.app.main_window.show_frozen_dialog(msg_)
+            self.app.main_window.open_frozen_dialog(msg_)
 
             if self.index == 0:
                 if status.get("error_code") == 10:  # user button interrupt
@@ -203,7 +203,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 and self.status.get("status_level") != "RESET"
             ):
             await self.update_tintometer_data(invalidate_cache=True)
-            self.app.main_window.show_alert_dialog(f"{self.name} RESETTING")
+            self.app.main_window.open_alert_dialog(f"{self.name} RESETTING")
 
         old_flag = self.status.get("jar_photocells_status", 0) & 0x001
         new_flag = status.get("jar_photocells_status", 0) & 0x001
@@ -461,7 +461,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             if not ret and show_alert:
                 _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}"'
-                self.app.main_window.show_alert_dialog(_)
+                self.app.main_window.open_alert_dialog(_)
                 logging.error(_)
 
             return ret
@@ -486,7 +486,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             if not ret and show_alert:
                 _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}"'
-                self.app.main_window.show_alert_dialog(_)
+                self.app.main_window.open_alert_dialog(_)
                 logging.error(_)
 
             return ret
@@ -515,7 +515,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             if not ret and show_alert:
                 _ = f'timeout expired! {self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}"'
-                self.app.main_window.show_alert_dialog(_)
+                self.app.main_window.open_alert_dialog(_)
                 logging.error(_)
 
             return ret
@@ -536,7 +536,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 if extra_info:
                     _ += str(extra_info)
                 logging.error(_)
-                self.app.main_window.show_alert_dialog(_)
+                self.app.main_window.open_alert_dialog(_)
 
         return ret
 

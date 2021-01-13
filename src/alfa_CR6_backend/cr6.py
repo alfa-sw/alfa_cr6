@@ -465,7 +465,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             )
             if not r:
                 msg_ = f"Condition not valid while reading barcode:{barcode}"
-                self.main_window.show_alert_dialog(msg_)
+                self.main_window.open_alert_dialog(msg_)
                 logging.error(msg_)
             else:
 
@@ -481,12 +481,12 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                         self.main_window.show_barcode(barcode, is_ok=False)
 
                 if error:
-                    self.main_window.show_alert_dialog(error, title="ERROR")
+                    self.main_window.open_alert_dialog(error, title="ERROR")
                     logging.error(error)
                 elif jar:
                     if unavailable_pigment_names:
                         msg_ = f"Pigments not available for barcode:{barcode}:{unavailable_pigment_names}."
-                        self.main_window.show_alert_dialog(msg_)
+                        self.main_window.open_alert_dialog(msg_)
                         self.main_window.show_barcode(jar.barcode, is_ok=False)
 
                     # let's run a task that will manage the jar through the entire path inside the system
@@ -601,7 +601,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if not ui_msg:
             ui_msg = e
-        self.main_window.show_alert_dialog(ui_msg, title="ERROR")
+        self.main_window.open_alert_dialog(ui_msg, title="ERROR")
 
         logging.error(traceback.format_exc())
 
@@ -644,7 +644,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if freeze:
             self.freeze_carousel(True)
-            self.main_window.show_frozen_dialog(msg)
+            self.main_window.open_frozen_dialog(msg)
 
         if self.carousel_frozen:
             logging.warning(
@@ -1038,7 +1038,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         else:
             msg_ = f"cannot move output roller"
             logging.warning(msg_)
-            self.main_window.show_alert_dialog(msg_)
+            self.main_window.open_alert_dialog(msg_)
 
     async def stop_all(self):
 
@@ -1086,7 +1086,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         name = self.MACHINE_HEAD_INDEX_TO_NAME_MAP[head_index]
         msg = f"freezing carousel for refill of head {name}"
         logging.warning(msg)
-        self.main_window.show_alert_dialog(msg, title="INFO")
+        self.main_window.open_alert_dialog(msg, title="INFO")
         self.freeze_carousel(True)
 
     def show_reserve(self, head_index, flag):

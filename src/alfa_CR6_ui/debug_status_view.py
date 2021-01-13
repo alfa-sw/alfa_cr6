@@ -330,7 +330,7 @@ class DebugStatusView:
         msg_ += "\n"
         msg_ += f"jar.order.json_properties:{jar.order.json_properties}"
         
-        app.main_window.show_input_dialog(message=f"jar:{jar}", content=msg_)
+        app.main_window.open_input_dialog(message=f"jar:{jar}", content=msg_)
 
     def delete_orders(self):  # pylint: disable=no-self-use, too-many-branches
 
@@ -346,7 +346,7 @@ class DebugStatusView:
                     logging.error(e)
                     app.db_session.rollback()
 
-        app.main_window.show_alert_dialog(
+        app.main_window.open_alert_dialog(
             f"confirm deleting db data?", callback=delete_all_
         )
 
@@ -404,7 +404,7 @@ class DebugStatusView:
                 # ~ if "123" in k:
                     # ~ self.open_order_dialog()
 
-            # ~ app.main_window.show_input_dialog(message=msg_, content="", ok_cb=cb)
+            # ~ app.main_window.open_input_dialog(message=msg_, content="", ok_cb=cb)
 
         elif "delete\norders in db" in cmd_txt:
 
@@ -419,7 +419,7 @@ class DebugStatusView:
             def cb():
                 logging.warning(f"empty callback called!")
 
-            r = app.main_window.show_alert_dialog(
+            r = app.main_window.open_alert_dialog(
                 tr_("test alert message"), callback=cb
             )
             logging.warning(f"r:{r}")
@@ -722,10 +722,10 @@ class DebugStatusView:
                 def cb():
                     for b in barcodes:
                         msg_ = f"confirm printing:{b} ?"
-                        app.main_window.show_alert_dialog(msg_, callback=cb_, args=[b])
+                        app.main_window.open_alert_dialog(msg_, callback=cb_, args=[b])
 
                 msg_ = f"creted order with {len(order.jars)} jars. barcodes:\n{barcodes_str} \nclick 'OK' to print barcodes."
-                app.main_window.show_alert_dialog(msg_, callback=cb)
+                app.main_window.open_alert_dialog(msg_, callback=cb)
 
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
