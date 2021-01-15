@@ -23,6 +23,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QFrame,
     QTableWidgetItem,
+    QCompleter,
 )
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
@@ -375,6 +376,10 @@ class EditDialog(BaseDialog):
         self.set_item_btn.clicked.connect(self.on_set_item_clicked)
         self.add_item_btn.clicked.connect(self.on_add_item_clicked)
         self.formula_table.clicked.connect(self.on_formula_table_clicked)
+        # ~ self.pigment_line_edit.textEdited.connect(self.on_pigment_line_edit_edited)
+        self.pigment_combo.currentTextChanged.connect(self.on_pigment_combo_text_changed)
+        self.pigment_combo.setEditable(True)
+        self.pigment_combo.setInsertPolicy(self.pigment_combo.NoInsert)
 
         self.remove_item_btn.setIcon(QIcon(self.remove_icon))
         self.add_item_btn.setIcon(QIcon(self.add_icon))
@@ -387,20 +392,16 @@ class EditDialog(BaseDialog):
         self.quantity_lbl.setText(tr_("quantity (gr):"))
         self.edit_item_group_box.setTitle(tr_("edit selected item:"))
 
-        pigment_names = [
-            'KB10',
-            'KM702',
-            'KA69F',
-            'KM816',
-            'KM814',
-            'KM200',
-            'KM302',
-            'KM605',
-            'KM900',
-            'KM101',
-            'KM600',
-        ]
-        self.pigment_combo.addItems(pigment_names)
+    def on_pigment_combo_text_changed(self, txt):
+
+        logging.warning(f"txt:{txt}.")
+        # ~ self.pigment_line_edit.setText(txt)
+
+    def on_pigment_line_edit_edited(self, txt):
+
+        logging.warning(f"txt:{txt}.")
+        self.pigment_combo.clear()
+        self.pigment_combo.addItems([_ for _ in list(self.pigment_names) if txt in _])
 
     def on_set_item_clicked(self):
 
@@ -470,6 +471,18 @@ class EditDialog(BaseDialog):
             self.formula_table.setItem(row, 0, QTableWidgetItem(str(item_['pigment_name'])))
             self.formula_table.setItem(row, 1, QTableWidgetItem(str(item_['weight(g)'])))
             self.formula_table.setItem(row, 2, QTableWidgetItem(str(item_['description'])))
+
+        self.pigment_names = set([])
+        for m in QApplication.instance().machine_head_dict.values():
+            for pig in m.pigment_list:
+                self.pigment_names.add(pig["name"])
+
+        logging.warning(f"self.pigment_names:{self.pigment_names}.")
+        self.pigment_combo.addItems(list(self.pigment_names))
+
+        completer = QCompleter(list(self.pigment_names))
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.pigment_combo.setCompleter(completer)
 
         self.move(440, 10)
 
