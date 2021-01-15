@@ -22,11 +22,6 @@ from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_ui.main_window import MainWindow, tr_
 
-sys.path.append("/opt/alfa_cr6/conf")
-import app_settings as settings  # pylint: disable=import-error,wrong-import-position
-sys.path.remove("/opt/alfa_cr6/conf")
-
-
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "ui")
 IMAGE_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "images")
@@ -45,8 +40,7 @@ def _get_version():
         for line in (
                 subprocess.run(cmd.split(), stdout=subprocess.PIPE, check=True)
                 .stdout.decode()
-                .split("\n")
-            ):
+                .split("\n")):
             if "Version" in line:
                 _ver = line.split(":")[1]
                 _ver = _ver.strip()
@@ -70,8 +64,7 @@ def parse_json_order(path_to_json_file, json_schema_name):
                 "color to compare",
                 "basic information",
                 "automobile information",
-                "note",
-            ]:
+                "note"]:
             properties["meta"][k] = content.get(k)
 
         sz = content.get("total", "100")
@@ -168,7 +161,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         5: "D_BOTM_RIGHT",
     }
 
-    def __init__(self, main_window_class, *args, **kwargs):
+    def __init__(self, main_window_class, settings, *args, **kwargs):
 
         logging.debug("settings:{}".format(settings))
 
@@ -193,15 +186,15 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__runners = []
         self.__jar_runners = {}
 
-        for pth in [settings.LOGS_PATH, settings.TMP_PATH, settings.CONF_PATH]:
+        for pth in [self.settings.LOGS_PATH, self.settings.TMP_PATH, self.settings.CONF_PATH]:
             if not os.path.exists(pth):
                 os.makedirs(pth)
 
-        if settings.SQLITE_CONNECT_STRING:
+        if self.settings.SQLITE_CONNECT_STRING:
 
-            from alfa_CR6_backend.models import init_models # pylint: disable=import-outside-toplevel
+            from alfa_CR6_backend.models import init_models  # pylint: disable=import-outside-toplevel
 
-            self.db_session = init_models(settings.SQLITE_CONNECT_STRING)
+            self.db_session = init_models(self.settings.SQLITE_CONNECT_STRING)
 
         self.__init_tasks()
 
@@ -219,13 +212,13 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         t = self.__create_barcode_task()
         self.__tasks.append(t)
 
-        for head_index, item in enumerate(settings.MACHINE_HEAD_IPADD_PORTS_LIST):
+        for head_index, item in enumerate(self.settings.MACHINE_HEAD_IPADD_PORTS_LIST):
             if item:
                 ip_add, ws_port, http_port = item
                 t = self.__create_machine_task(head_index, ip_add, ws_port, http_port)
                 self.__tasks.append(t)
 
-        # ~ for head_index, status_file_name in settings.MACHINE_HEAD_IPADD_PORTS_MAP.items():
+        # ~ for head_index, status_file_name in self.settings.MACHINE_HEAD_IPADD_PORTS_MAP.items():
         # ~ self.__tasks += [self.__create_machine_mockup_task(head_index, status_file_name), ]
 
         logging.debug(f"self.__tasks:{self.__tasks}")
@@ -311,7 +304,11 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await self.move_10_11(jar)
             r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +++").format('F'))
             r = await self.move_11_12(jar)
-            r = jar.update_live(status="DONE", pos="OUT")
+            self.__update_jar_position(jar=jar, machine_head=None, status="DONE", pos="OUT")
+
+            # ~ start waiting for delivery
+            while True:
+                await asyncio.sleep(1)
 
         except asyncio.CancelledError:
             jar.status = "ERROR"
@@ -323,9 +320,6 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             jar.status = "ERROR"
             jar.description = traceback.format_exc()
             self.handle_exception(e)
-
-        logging.warning("delivering jar:{}, r:{}".format(jar, r))
-        self.db_session.commit()
 
     def __clock_tick(self):
 
@@ -348,8 +342,8 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             for m in self.machine_head_dict.values():
                 available_gr, specific_weight = m.get_available_weight(pigment_name)
                 logging.warning(
-                    f"{m.name} pigment_name:{pigment_name}, available_gr:{available_gr}, requested_quantity_gr:{requested_quantity_gr}"
-                )
+                    f"{m.name} pigment_name:{pigment_name}, available_gr:{available_gr},"
+                    f"requested_quantity_gr:{requested_quantity_gr}")
                 if available_gr >= requested_quantity_gr:
                     _quantity_gr = requested_quantity_gr
                 elif available_gr > 0:
@@ -374,7 +368,8 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return ingredient_volume_map, total_volume, unavailable_pigment_names
 
-    async def get_and_check_jar_from_barcode(self, barcode, skip_checks_for_dummy_read=False):  # pylint: disable=too-many-locals,too-many-branches
+    async def get_and_check_jar_from_barcode(  # pylint: disable=too-many-locals,too-many-branches
+            self, barcode, skip_checks_for_dummy_read=False):
 
         logging.warning("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
@@ -444,7 +439,8 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return jar, error, unavailable_pigment_names
 
-    async def on_barcode_read(self, barcode, skip_checks_for_dummy_read=False):  # pylint: disable=too-many-locals,unused-argument
+    async def on_barcode_read(  # pylint: disable=too-many-locals,unused-argument
+            self, barcode, skip_checks_for_dummy_read=False):
 
         logging.warning(f" ###### barcode:{barcode}")
 
@@ -597,13 +593,16 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
-    def handle_exception(self, e, ui_msg=None, db_event=settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT):  # pylint:  disable=no-self-use
+    def handle_exception(self, e, ui_msg=None, db_event=None):  # pylint:  disable=no-self-use
 
         if not ui_msg:
             ui_msg = e
         self.main_window.open_alert_dialog(ui_msg, title="ERROR")
 
         logging.error(traceback.format_exc())
+
+        if db_event is None:
+            db_event = self.settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT
 
         if db_event:
             a = QApplication.instance()
@@ -687,20 +686,16 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         A = self.get_machine_head_by_letter("A")
 
-        if jar is not None:
-            jar.update_live(status="ENTERING", pos="IN_A", t0=time.time())
+        self.__update_jar_position(jar=jar, machine_head=A, status="ENTERING", pos="IN_A")
 
         r = await A.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"]
-        )
+            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
         if r:
             await A.can_movement({"Input_Roller": 1, "Dispensing_Roller": 2})
             r = await A.wait_for_jar_photocells_status(
-                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True
-            )
+                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
 
-            if jar is not None:
-                jar.update_live(status="PROGRESS", machine_head=A, pos="A")
+            self.__update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
 
         return r
 
@@ -710,22 +705,15 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         B = self.get_machine_head_by_letter("B")
 
         r = await B.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"]
-        )
+            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
         if r:
-
-            # ~ if jar is not None:
-            # ~ jar.update_live(pos='A_B')
 
             await A.can_movement({"Dispensing_Roller": 1})
             await B.can_movement({"Dispensing_Roller": 2})
-            r = await B.wait_for_jar_photocells_status(
-                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True
-            )
+            r = await B.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
             if r:
                 await A.can_movement()
-                if jar is not None:
-                    jar.update_live(machine_head=B, pos="B")
+                self.__update_jar_position(jar=jar, machine_head=B, pos="B")
 
         return r
 
@@ -734,8 +722,6 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         B = self.get_machine_head_by_letter("B")
         C = self.get_machine_head_by_letter("C")
 
-        # ~ r = await C.wait_for_jar_photocells_and_status_lev('JAR_DISPENSING_POSITION_PHOTOCELL', on=False, status_levels=['STANDBY'])
-        # ~ r = await C.wait_for_jar_photocells_and_status_lev('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', on=False, status_levels=['STANDBY'])
         def condition():
             flag = not C.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
             flag = (
@@ -749,18 +735,12 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         logging.warning(f" r:{r}")
 
         if r:
-            # ~ if jar is not None:
-            # ~ jar.update_live(pos='B_C')
-
             await B.can_movement({"Dispensing_Roller": 1})
             await C.can_movement({"Dispensing_Roller": 2})
-            r = await C.wait_for_jar_photocells_status(
-                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True
-            )
+            r = await C.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
             if r:
                 await B.can_movement()
-                if jar is not None:
-                    jar.update_live(machine_head=C, pos="C")
+                self.__update_jar_position(jar=jar, machine_head=C, pos="C")
 
         return r
 
@@ -769,13 +749,10 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         C = self.get_machine_head_by_letter("C")
         D = self.get_machine_head_by_letter("D")
 
-        r = await C.wait_for_jar_photocells_status(
-            "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=False
-        )
+        r = await C.wait_for_jar_photocells_status("JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=False)
         if r:
             r = await D.wait_for_jar_photocells_status(
-                "LOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=3, show_alert=False
-            )
+                "LOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=3, show_alert=False)
             if not r:
 
                 r = await D.wait_for_jar_photocells_and_status_lev(
@@ -785,20 +762,11 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                 )
                 if r:
                     await D.can_movement({"Lifter": 1})
-                    r = await D.wait_for_jar_photocells_status(
-                        "LOAD_LIFTER_UP_PHOTOCELL", on=True
-                    )
+                    r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_UP_PHOTOCELL", on=True)
             if r:
-                # ~ if jar is not None:
-                # ~ jar.update_live(pos='C_LIFTR')
-
                 await C.can_movement({"Dispensing_Roller": 1, "Lifter_Roller": 2})
-                r = await C.wait_for_jar_photocells_status(
-                    "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True
-                )
-
-                if jar is not None:
-                    jar.update_live(pos="LIFTR_UP")
+                r = await C.wait_for_jar_photocells_status("JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True)
+                self.__update_jar_position(jar=jar, pos="LIFTR_UP")
 
         return r
 
@@ -807,16 +775,12 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         D = self.get_machine_head_by_letter("D")
 
         r = await D.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"]
-        )
+            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
         if r:
             await D.can_movement({"Lifter": 2})
-            r = await D.wait_for_jar_photocells_status(
-                "LOAD_LIFTER_DOWN_PHOTOCELL", on=True
-            )
+            r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_DOWN_PHOTOCELL", on=True)
 
-            if jar is not None:
-                jar.update_live(pos="LIFTR_DOWN")
+            self.__update_jar_position(jar=jar, pos="LIFTR_DOWN")
 
         return r
 
@@ -826,26 +790,16 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         D = self.get_machine_head_by_letter("D")
 
         r = await D.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"]
-        )
+            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
         if r:
-
             r = await C.wait_for_status_level(status_levels=["STANDBY"])
-
-            # ~ if jar is not None:
-            # ~ jar.update_live(pos='LIFTR_D')
 
             await C.can_movement({"Lifter_Roller": 3})
             await D.can_movement({"Dispensing_Roller": 2})
-            r = await D.wait_for_jar_photocells_status(
-                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True
-            )
+            r = await D.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
             if r:
                 await C.can_movement()
-                # ~ await D.can_movement({'Lifter': 1})
-
-                if jar is not None:
-                    jar.update_live(machine_head=D, pos="D")
+                self.__update_jar_position(jar=jar, machine_head=D, pos="D")
 
         return r
 
@@ -855,32 +809,21 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         E = self.get_machine_head_by_letter("E")
 
         r = await E.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"]
-        )
+            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
         if r:
             r = await D.wait_for_jar_photocells_status(
-                "LOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=3, show_alert=False
-            )
-
-            # ~ if jar is not None:
-            # ~ jar.update_live(pos='D_E')
+                "LOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=3, show_alert=False)
 
             if not r:
                 await D.can_movement()
-                # ~ await D.can_movement({'Lifter': 1, 'Dispensing_Roller': 1})
                 await D.can_movement({"Dispensing_Roller": 1})
             else:
                 await D.can_movement({"Dispensing_Roller": 1})
             await E.can_movement({"Dispensing_Roller": 2})
-            r = await E.wait_for_jar_photocells_status(
-                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True
-            )
+            r = await E.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
             if r:
                 await D.can_movement()
-                # ~ await D.can_movement({'Lifter': 1})
-
-                if jar is not None:
-                    jar.update_live(machine_head=E, pos="E")
+                self.__update_jar_position(jar=jar, machine_head=E, pos="E")
 
         return r
 
@@ -889,9 +832,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         E = self.get_machine_head_by_letter("E")
         F = self.get_machine_head_by_letter("F")
 
-        r = await F.wait_for_jar_photocells_status(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False
-        )
+        r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=False)
         if r:
             r = await F.wait_for_jar_photocells_and_status_lev(
                 "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
@@ -900,8 +841,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             )
             if r:
                 r = await F.wait_for_jar_photocells_status(
-                    "UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=3, show_alert=False
-                )
+                    "UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=3, show_alert=False)
                 if not r:
                     await F.can_movement({"Lifter": 2})
                     r = await F.wait_for_jar_photocells_and_status_lev(
@@ -910,20 +850,12 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                         status_levels=["STANDBY"],
                     )
                 if r:
-
-                    # ~ if jar is not None:
-                    # ~ jar.update_live(pos='E_F')
-
                     await E.can_movement({"Dispensing_Roller": 1})
                     await F.can_movement({"Dispensing_Roller": 2})
-                    r = await F.wait_for_jar_photocells_status(
-                        "JAR_DISPENSING_POSITION_PHOTOCELL", on=True
-                    )
+                    r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
                     if r:
                         await E.can_movement()
-
-                        if jar is not None:
-                            jar.update_live(machine_head=F, pos="F")
+                        self.__update_jar_position(jar=jar, machine_head=F, pos="F")
 
         return r
 
@@ -933,14 +865,8 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=False)
         if r:
-            r = await F.wait_for_jar_photocells_status(
-                "UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True
-            )
+            r = await F.wait_for_jar_photocells_status("UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True)
             if r:
-
-                # ~ if jar is not None:
-                # ~ jar.update_live(pos='F_LIFTL')
-
                 await F.can_movement({"Dispensing_Roller": 1, "Lifter_Roller": 5})
 
         return r
@@ -952,38 +878,23 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=3, show_alert=False)
         if r:
             r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=True)
-
-            if jar is not None:
-                jar.update_live(pos="LIFTL_DOWN")
-
+            self.__update_jar_position(jar=jar, pos="LIFTL_DOWN")
             if r:
-                r = await F.wait_for_jar_photocells_and_status_lev("UNLOAD_LIFTER_UP_PHOTOCELL", on=True, status_levels=["STANDBY"])
+                r = await F.wait_for_jar_photocells_and_status_lev(
+                    "UNLOAD_LIFTER_UP_PHOTOCELL", on=True, status_levels=["STANDBY"])
                 if r:
                     await F.can_movement({"Output_Roller": 2})
                     r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False)
+                    self.__deliver_jar()
+
                     if r:
-
-                        if jar is not None:
-                            jar.update_live(pos="LIFTL_OUT")
-
                         await F.can_movement()
                         await F.can_movement({"Lifter_Roller": 3, "Output_Roller": 1})
                         r = await F.wait_for_status_level(status_levels=["STANDBY"])
-
                     else:
-
                         raise Exception("JAR_OUTPUT_ROLLER_PHOTOCELL busy timeout")
-
-                    # ~ r = await F.wait_for_jar_photocells_status('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', on=False)
-                    # ~ if r:
-                    # ~ r = await F.wait_for_jar_photocells_status('JAR_OUTPUT_ROLLER_PHOTOCELL', on=True)
-                    # ~ if r:
-                    # ~ await F.can_movement({'Lifter': 2})
         else:
             r = await F.wait_for_status_level(status_levels=["STANDBY"])
-            if jar is not None:
-                jar.update_live(pos="OUT")
-
         return r
 
     async def move_11_12(self, jar=None):  # 'UP -> OUT'
@@ -1000,20 +911,15 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             )
             if r:
                 r = await F.wait_for_jar_photocells_status(
-                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=3, show_alert=False
-                )
+                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=3, show_alert=False)
                 if r:
                     await F.can_movement({"Output_Roller": 2})
+                    self.__deliver_jar()
 
                 r = await F.wait_for_jar_photocells_and_status_lev(
-                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, status_levels=["STANDBY"]
-                )
+                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, status_levels=["STANDBY"])
                 if r:
                     await F.can_movement({"Lifter_Roller": 3, "Output_Roller": 1})
-
-                if jar is not None:
-                    jar.update_live(pos="OUT")
-
         return r
 
     async def move_12_00(self, jar=None):  # 'deliver' # pylint: disable=unused-argument
@@ -1025,16 +931,11 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             on=True,
             status_levels=["STANDBY"],
             timeout=3,
-            show_alert=False,
-        )
+            show_alert=False)
         if r:
             F = self.get_machine_head_by_letter("F")
             await F.can_movement({"Output_Roller": 2})
-            _runners = self.__jar_runners
-            for j in self.__jar_runners.values():
-                if j["jar"].position == "OUT":
-                    j["jar"].position = "_"
-
+            self.__deliver_jar()
         else:
             msg_ = f"cannot move output roller"
             logging.warning(msg_)
@@ -1064,7 +965,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         if unavailable_pigment_names:
 
             msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{} on head {}.').format(
-                    jar.barcode, unavailable_pigment_names, machine_letter)
+                jar.barcode, unavailable_pigment_names, machine_letter)
 
             logging.warning(msg_)
             r = await self.wait_for_carousel_not_frozen(True, msg_)
@@ -1080,6 +981,28 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +").format(machine_letter))
 
         return r
+
+    def __update_jar_position(self, jar, machine_head=None, status=None, pos=None):
+
+        logging.warning(f"jar:{jar}, machine_head:{machine_head.name[0]}, status:{status}, pos:{pos}")
+
+        _pos_list = [j["jar"].position for j in self.__jar_runners.values()]
+        if pos in _pos_list:
+            e = Exception(tr_("duplicate {} in jar position list!").format(pos))
+            self.handle_exception(e)
+        else:
+            if jar is not None:
+                jar.update_live(machine_head=None, status=status, pos=pos, t0=time.time())
+
+    def __deliver_jar(self):
+
+        for j in self.__jar_runners.values():
+            if j["jar"].position == "OUT":
+                j["jar"].position = "_"
+                self.delete_jar_runner(j["jar"].barcode)
+                logging.warning("delivering jar:{}.".format(j["jar"]))
+
+        self.db_session.commit()
 
     def ask_for_refill(self, head_index):
 
@@ -1099,6 +1022,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             try:
                 t = j["task"]
                 t.cancel()
+
                 async def _coro(_):
                     await _
                 asyncio.ensure_future(_coro(t))
@@ -1110,14 +1034,22 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return self.__jar_runners
 
+
 def main():
 
-    fmt_ = (
-        "[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s"
-    )
-    logging.basicConfig(stream=sys.stdout, level=settings.LOG_LEVEL, format=fmt_)
+    def import_settings():
+        sys.path.append("/opt/alfa_cr6/conf")
+        import app_settings  # pylint: disable=import-error,import-outside-toplevel
+        sys.path.remove("/opt/alfa_cr6/conf")
+        return app_settings
 
-    app = CR6_application(MainWindow, sys.argv)
+    settings = import_settings()
+
+    logging.basicConfig(
+        stream=sys.stdout, level=settings.LOG_LEVEL,
+        format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
+
+    app = CR6_application(MainWindow, settings, sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
     app.run_forever()
 

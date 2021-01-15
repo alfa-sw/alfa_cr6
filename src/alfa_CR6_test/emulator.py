@@ -101,6 +101,8 @@ class MachineHeadMockup:
     def __init__(self, index):
 
         self.index = index
+        self.letter = ["A", "F", "B", "E", "C", "D"][index]
+
         self.pending_stop = False
 
         self.status = {
@@ -169,6 +171,9 @@ class MachineHeadMockup:
         await self.dump_status()
 
     async def do_move(self, mask=EMPTY_MASK, set_or_reset="", duration=0, tgt_level="STANDBY"):
+
+        logging.warning("{} - mask:0x{:04X}, , set_or_reset:{}, , duration:{}, , tgt_level:{}".format(self.letter, mask, set_or_reset, duration, tgt_level))
+
         await asyncio.sleep(duration)
         pars = {"status_level": tgt_level}
         if mask != EMPTY_MASK:
@@ -194,13 +199,14 @@ class MachineHeadMockup:
         await self.update_status(params=pars)
 
     async def handle_command(self, msg_out_dict): # pylint: disable=too-many-branches,too-many-statements
-        logging.warning("{}, {}".format(self.index, msg_out_dict))
+        logging.warning("{} {}, {}".format(self.index, self.letter, msg_out_dict))
 
-        if msg_out_dict["command"] == "KILL_EMULATOR":
+        if msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
+            await self.do_move(duration=0.5, tgt_level="DIAGNOSTIC")
+
+        elif msg_out_dict["command"] == "KILL_EMULATOR":
             raise KeyboardInterrupt
 
-        elif msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
-            await self.do_move(duration=0.5, tgt_level="DIAGNOSTIC")
         elif msg_out_dict["command"] == "DISPENSATION":
             await self.do_move(duration=0.5, tgt_level="DISPENSING")
             await self.do_move(duration=5, tgt_level="STANDBY")
@@ -226,7 +232,7 @@ class MachineHeadMockup:
             output_roller = msg_out_dict["params"]["Output_Roller"]
 
             await self.update_status({"status_level": "JAR_POSITIONING"})
-            if dispensing_roller + lifter_roller + input_roller + lifter == 0:
+            if dispensing_roller + lifter_roller + input_roller + lifter + output_roller == 0:
                 await self.do_move(EMPTY_MASK, "set", duration=0.4)
             else:
 
@@ -242,7 +248,7 @@ class MachineHeadMockup:
 
                 if lifter_roller == 4:
                     await self.do_move(LOAD_LIFTER_ROLLER_MASK, "reset", duration=1)
-                elif lifter_roller == 2 or lifter_roller == 5:
+                elif lifter_roller in (2, 5):
                     await self.do_move(LOAD_LIFTER_ROLLER_MASK, "set", duration=2)
                 # ~ elif lifter_roller == 1 or lifter_roller == 3:
                 elif lifter_roller == 3:

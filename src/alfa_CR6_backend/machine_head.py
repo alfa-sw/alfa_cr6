@@ -66,7 +66,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 1 = Start Movement CCW till Photocell transition LIGHT – DARK,
                 2 = Start Movement CCW till Photocell transition DARK - LIGHT with a Delay',
                 3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
-
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -127,11 +126,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return available_gr, specific_weight
 
-    async def update_tintometer_data(self, invalidate_cache=False):
+    async def update_tintometer_data(self, invalidate_cache=True):
 
         logging.warning(
-            f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}"
-        )
+            f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
 
         if invalidate_cache:
             ret = await self.call_api_rest("pigment", "GET", {})
@@ -170,8 +168,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.low_level_pipes:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
             self.app.main_window.open_alert_dialog(
-                f"{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}"
-            )
+                f"{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}")
             self.app.show_reserve(self.index, True)
         else:
             self.app.show_reserve(self.index, False)
@@ -180,14 +177,17 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         logging.debug("status:{}".format(status))
 
+        if not self.status:
+            r = asyncio.ensure_future(self.update_tintometer_data())
+            logging.warning(f"r:{r}")
+
         if (
                 status.get("status_level") == "ALARM"
                 and self.status.get("status_level") != "ALARM"
             ):
             self.app.freeze_carousel(True)
             msg_ = "{} ALARM. error_code:{}, error_message:{}".format(
-                self.name, status.get("error_code"), status.get("error_message")
-            )
+                self.name, status.get("error_code"), status.get("error_message"))
             logging.error(msg_)
             self.app.main_window.open_frozen_dialog(msg_)
 
@@ -282,28 +282,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         return r_json_as_dict
 
     async def can_movement(self, params=None):
-        """ extracted from doc/Specifiche_Funzionamento_Car_Refinishing_REV12.pdf :
-        (Please, verify current version of the doc)
 
-        'Dispensing_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement, 2 = Start
-        Movement till Photocell transition LIGHT - DARK ','propertyOrder': 1, 'type': 'number', 'fmt': 'B'},
-
-        'Lifter_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement CW, 2 = Start
-        Movement CW till Photocell transition LIGHT - DARK, 3 = Start Movement CCW, 4 = Start Movement CCW
-        till Photocell transition DARK - LIGHT, 5 = Start Movement CCW till Photocell transition LIGHT- DARK', 'propertyOrder': 2, 'type': 'number', 'fmt': 'B'},
-
-        'Input_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement, 2 = Start
-        Movement till Photocell transition LIGHT - DARK', 'propertyOrder': 3, 'type': 'number', 'fmt': 'B'},
-
-        'Lifter': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement Up till Photocell Up
-        transition LIGHT – DARK, 2 = Start Movement Down till Photocell Down transition LIGHT – DARK',
-        'propertyOrder': 4, 'type': 'number', 'fmt': 'B'},
-
-        'Output_Roller': {'description': 'Values: 0 = Stop Movement, 1 = Start Movement CCW till
-        Photocell transition LIGHT – DARK, 2 = Start Movement CCW till Photocell transition DARK - LIGHT with a
-        Delay', 3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
-
-        """
         default = {
             "Dispensing_Roller": 0,
             "Lifter_Roller": 0,
@@ -581,14 +560,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             if r:
                 r = await self.send_command(
-                    cmd_name="DISPENSE_FORMULA", type_="macro", params=pars
-                )
+                    cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
                 if r:
                     r = await self.wait_for_status_level(["DISPENSING"], timeout=20)
                     if r:
-                        r = await self.wait_for_status_level(
-                            ["STANDBY"], timeout=60 * 6
-                        )
+                        r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
 
         return r
 

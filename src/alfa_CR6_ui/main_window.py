@@ -17,7 +17,7 @@ import traceback
 from functools import partial
 
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
 from PyQt5.Qt import QUrl
 from PyQt5.QtGui import QMovie, QPixmap, QIcon
@@ -732,7 +732,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.action_frame_map = action_frame_map
 
-    def on_downloadRequested(self, download):  # pylint: disable=no-self-use
+    def on_downloadRequested(self, download):
 
         logging.warning(f"download:{download}.")
         _msgs = {
@@ -862,7 +862,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 args=None,
             )
 
-    def on_order_table_clicked(self, index):  # pylint: disable=no-self-use
+    def on_order_table_clicked(self, index):
 
         datum = index.data()
         logging.warning(f"datum:{datum}")
@@ -921,7 +921,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 f"exception:{e}", title="ERROR", callback=None, args=None
             )
 
-    def on_jar_table_clicked(self, index):  # pylint: disable=no-self-use, too-many-locals
+    def on_jar_table_clicked(self, index):  # pylint: disable=too-many-locals
 
         datum = index.data()
         logging.warning(f"datum:{datum}")
@@ -977,7 +977,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 f"exception:{e}", title="ERROR", callback=None, args=None
             )
 
-    def on_file_table_clicked(self, index):  # pylint: disable=no-self-use
+    def on_file_table_clicked(self, index):
 
         datum = index.data()
         logging.warning(f"datum:{datum}")
@@ -1118,14 +1118,60 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def update_status_data(self, head_index, _=None):
 
         try:
-            self.__update_service_btns_and_container_presences(head_index)
+            self.__update_service_btns__presences_and_lifters(head_index)
             self.__update_action_pages()
             self.__update_jar_pixmaps()
             self.__update_tank_pixmaps()
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
-    def __update_service_btns_and_container_presences(self, head_index):
+    def __set_pixmap_by_photocells(self, lbl, head_letters_bit_names, position=None, icon=None):
+
+        def _get_bit(head_letter, bit_name):
+            m = QApplication.instance().get_machine_head_by_letter(head_letter)
+            ret = m.jar_photocells_status.get(bit_name) if m else None
+            return ret
+
+        try:
+
+            false_condition = [
+                1 for h, b in head_letters_bit_names if not _get_bit(h, b)
+            ]
+
+            if icon is None:
+                if false_condition:
+                    lbl.setStyleSheet("QLabel {{}}")
+                    lbl.setText("")
+                else:
+                    text = ""
+                    for j in QApplication.instance().get_jar_runners().values():
+                        pos = j["jar"].position
+                        if pos == position:
+                            _bc = str(j["jar"].barcode)
+                            text = _bc[-6:-3] + "\n" + _bc[-3:]
+                            break
+
+                    if text:
+                        _img_url = os.path.join(IMAGES_PATH, "jar-green.png")
+                    else:
+                        _img_url = os.path.join(IMAGES_PATH, "jar-gray.png")
+
+                    lbl.setStyleSheet(
+                        'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
+                    lbl.setText(text)
+            else:
+                size = [0, 0] if false_condition else [32, 32]
+                pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
+                lbl.setPixmap(pixmap)
+
+            lbl.show()
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.open_alert_dialog(f"exception:{e}", title="ERROR")
+
+    def __update_service_btns__presences_and_lifters(self, head_index):
+
         self.debug_status_view.update_status()
 
         status = QApplication.instance().machine_head_dict[head_index].status
@@ -1152,6 +1198,16 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             map_[head_index].setPixmap(self.green_icon)
         else:
             map_[head_index].setPixmap(self.gray_icon)
+
+        # ~ lifter positions
+        self.__set_pixmap_by_photocells(self.load_lifter_up_label, ((
+            "D", "LOAD_LIFTER_UP_PHOTOCELL"),), icon=self.green_icon)
+        self.__set_pixmap_by_photocells(self.load_lifter_down_label, ((
+            "D", "LOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.green_icon)
+        self.__set_pixmap_by_photocells(self.unload_lifter_up_label, ((
+            "F", "UNLOAD_LIFTER_UP_PHOTOCELL"),), icon=self.green_icon)
+        self.__set_pixmap_by_photocells(self.unload_lifter_down_label, ((
+            "F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.green_icon)
 
     def __update_tank_pixmaps(self):
         map_ = [
@@ -1199,140 +1255,37 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def __update_jar_pixmaps(self):
 
-        _ = [f"{k}" for k, j in QApplication.instance().get_jar_runners().items()]
+        _ = [f"{k} ({j['jar'].position[0]})" for k, j in QApplication.instance().get_jar_runners().items()]
         self.running_jars_lbl.setText("\n".join(_))
 
-        _label_to_position_map = {
-            self.STEP_01_label: "IN_A",
-            self.STEP_02_label: "A",
-            self.STEP_03_label: "B",
-            self.STEP_04_label: "C",
-            self.STEP_05_label: "LIFTR_UP",
-            self.STEP_06_label: "LIFTR_DOWN",
-            self.STEP_07_label: "D",
-            self.STEP_08_label: "E",
-            self.STEP_09_label: "F",
-            self.STEP_10_label: "LIFTL_DOWN",
-            self.STEP_11_label: "LIFTL_UP",
-            self.STEP_12_label: "OUT",
-        }
-
-        def _get_bit(head_letter, bit_name):
-            m = QApplication.instance().get_machine_head_by_letter(head_letter)
-            ret = m.jar_photocells_status.get(bit_name) if m else None
-            return ret
-
-        def _set_pixmap_by_photocells(lbl, head_letters_bit_names, icon=None):
-
-            false_condition = [
-                1 for h, b in head_letters_bit_names if not _get_bit(h, b)
-            ]
-
-            if icon is None:  # jar position
-                if false_condition:
-                    lbl.setStyleSheet("QLabel {{}}")
-                    lbl.setText("")
-                else:
-                    text = ""
-                    for j in QApplication.instance().get_jar_runners().values():
-                        pos = j["jar"].position
-                        # ~ logging.warning(f"_label_to_position_map.get(lbl):{_label_to_position_map.get(lbl)}, pos:{pos}")
-                        if _label_to_position_map.get(lbl) == pos:
-                            _bc = str(j["jar"].barcode)
-                            text = _bc[-6:-3] + "\n" + _bc[-3:]
-                            break
-
-                    if text:
-                        _img_url = os.path.join(IMAGES_PATH, "jar-green.png")
-                    else:
-                        _img_url = os.path.join(IMAGES_PATH, "jar-gray.png")
-
-                    lbl.setStyleSheet(
-                        'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url)
-                    )
-                    lbl.setText(text)
-                    # ~ logging.warning(f"text:{text}")
-
-            else:  # lifter position
-                size = [0, 0] if false_condition else [32, 32]
-                pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
-                lbl.setPixmap(pixmap)
-
-            lbl.show()
-
-        _set_pixmap_by_photocells(
-            self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),)
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),)
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),)
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),)
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_05_label,
-            (
-                ("D", "LOAD_LIFTER_UP_PHOTOCELL"),
-                ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),
-            ),
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_06_label,
-            (
-                ("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),
-                ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),
-            ),
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),)
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),)
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),)
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_10_label,
-            (
-                ("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),
-                ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),
-            ),
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_11_label,
-            (
-                ("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),
-                ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),
-            ),
-        )
-        _set_pixmap_by_photocells(
-            self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),)
-        )
-
-        _set_pixmap_by_photocells(
-            self.load_lifter_up_label,
-            (("D", "LOAD_LIFTER_UP_PHOTOCELL"),),
-            icon=self.green_icon,
-        )
-        _set_pixmap_by_photocells(
-            self.load_lifter_down_label,
-            (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),),
-            icon=self.green_icon,
-        )
-        _set_pixmap_by_photocells(
-            self.unload_lifter_up_label,
-            (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),),
-            icon=self.green_icon,
-        )
-        _set_pixmap_by_photocells(
-            self.unload_lifter_down_label,
-            (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),),
-            icon=self.green_icon,
-        )
+        self.__set_pixmap_by_photocells(
+            self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), position="IN_A")
+        self.__set_pixmap_by_photocells(
+            self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="A")
+        self.__set_pixmap_by_photocells(
+            self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="B")
+        self.__set_pixmap_by_photocells(
+            self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="C")
+        self.__set_pixmap_by_photocells(
+            self.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"),
+                                 ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTR_UP")
+        self.__set_pixmap_by_photocells(
+            self.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),
+                                 ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTR_DOWN")
+        self.__set_pixmap_by_photocells(
+            self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="D")
+        self.__set_pixmap_by_photocells(
+            self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="E")
+        self.__set_pixmap_by_photocells(
+            self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="F")
+        self.__set_pixmap_by_photocells(
+            self.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),
+                                 ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTL_DOWN")
+        self.__set_pixmap_by_photocells(
+            self.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),
+                                 ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTL_UP")
+        self.__set_pixmap_by_photocells(
+            self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), position="OUT")
 
     def show_reserve(self, head_index, flag=None):
 
