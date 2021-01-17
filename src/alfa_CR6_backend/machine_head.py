@@ -128,8 +128,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def update_tintometer_data(self, invalidate_cache=True):
 
-        logging.warning(
-            f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
+        # ~ logging.warning(
+            # ~ f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
 
         if invalidate_cache:
             ret = await self.call_api_rest("pigment", "GET", {})
@@ -164,7 +164,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.low_level_pipes = low_level_pipes
         self.package_list = package_list
 
-        logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
+        # ~ logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
         if self.low_level_pipes:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
             self.app.main_window.open_alert_dialog(
@@ -179,7 +179,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         if not self.status:
             r = asyncio.ensure_future(self.update_tintometer_data())
-            logging.warning(f"r:{r}")
+            # ~ logging.warning(f"r:{r}")
 
         if (
                 status.get("status_level") == "ALARM"

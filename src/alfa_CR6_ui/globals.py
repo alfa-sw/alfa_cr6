@@ -13,18 +13,18 @@ import logging
 import json
 import time
 import traceback
+import random
 
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import Qt, QVariant, QAbstractTableModel, QSize
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtCore import Qt, QVariant, QAbstractTableModel, QSize, QRect, QItemSelectionModel, QItemSelection
+from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
     QApplication,
     QStyle,
     QMessageBox,
     QFrame,
     QTableWidgetItem,
-    QCompleter,
-)
+    QCompleter)
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 
@@ -32,6 +32,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 KEYBOARD_PATH = os.path.join(HERE, "keyboard")
 IMAGES_PATH = os.path.join(HERE, "images")
 UI_PATH = os.path.join(HERE, "ui")
+HELP_PATH = os.path.join(HERE, "help")
 
 WEBENGINE_DOWNLOAD_PATH = "/opt/alfa_cr6/data/kcc"
 WEBENGINE_CUSTOMER_URL = "http://kccrefinish.co.kr/"
@@ -197,7 +198,14 @@ class JarTableModel(BaseTableModel):
         self.session = session
         self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("barcode")]
         filter_text = parent.search_jar_line.text()
-        order_nr = parent.order_table_selected_order_nr
+        
+        order_nr = None
+        sel_model = self.parent().order_table_view.selectionModel()
+        sel_orders = sel_model.selectedRows()
+        if sel_orders:
+            row = sel_orders[0].row()
+            model = sel_orders[0].model()
+            order_nr = model.results[row][3]
 
         if self.session:
             query_ = self.session.query(Jar)
@@ -345,14 +353,18 @@ class BaseDialog(QFrame):
             QWidget {background:#CCBBBBBB; font-size: 24px; font-family: Times sans-serif; border: 1px solid #999999; border-radius: 4px;}
             QLabel {border: 0px;}
             QLineEdit {background:#FFFFAA; }
+            QComboBox {background:#FFFFAA; }
             QPushButton { background-color: #F3F3F3F3;}
-            QPushButton:pressed {background-color: #AAAAAA;}"""
+            QPushButton:pressed {background-color: #AAAAAA;}
+            """
         )
         self.move(440, 100)
         # ~ self.resize(1080, 575)
 
         self.green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
         self.red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
+        self.yellow_icon = QPixmap(os.path.join(IMAGES_PATH, "yellow.png"))
+        self.gray_icon = QPixmap(os.path.join(IMAGES_PATH, "gray.png"))
         self.remove_icon = QPixmap(os.path.join(IMAGES_PATH, "remove.png"))
         self.add_icon = QPixmap(os.path.join(IMAGES_PATH, "add.png"))
 
@@ -373,124 +385,209 @@ class EditDialog(BaseDialog):
 
         self.ok_button.clicked.connect(self.hide)
         self.ok_button.clicked.connect(self.save)
-        self.set_item_btn.clicked.connect(self.on_set_item_clicked)
-        self.add_item_btn.clicked.connect(self.on_add_item_clicked)
-        self.formula_table.clicked.connect(self.on_formula_table_clicked)
-        # ~ self.pigment_line_edit.textEdited.connect(self.on_pigment_line_edit_edited)
-        self.pigment_combo.currentTextChanged.connect(self.on_pigment_combo_text_changed)
+        self.set_item_btn.clicked.connect(self.__on_set_item_clicked)
+        self.remove_item_btn.clicked.connect(self.__on_delete_item_clicked)
+
+        self.formula_table.itemSelectionChanged.connect(self.__on_formula_table_itemSelectionChanged)
+
+        self.pigment_combo.currentTextChanged.connect(self.__on_pigment_combo_currentTextChanged)
+
         self.pigment_combo.setEditable(True)
         self.pigment_combo.setInsertPolicy(self.pigment_combo.NoInsert)
 
         self.remove_item_btn.setIcon(QIcon(self.remove_icon))
-        self.add_item_btn.setIcon(QIcon(self.add_icon))
 
         self.remove_item_btn.setText(tr_("remove\nselected"))
-        self.add_item_btn.setText(tr_("add a\nnew one"))
         self.order_nr_lbl.setText(tr_("order n.:"))
-        self.size_lbl.setText(tr_("size:"))
         self.pigment_lbl.setText(tr_("pigment:"))
         self.quantity_lbl.setText(tr_("quantity (gr):"))
-        self.edit_item_group_box.setTitle(tr_("edit selected item:"))
+        self.edit_item_group_box.setTitle(tr_("edit or add item:"))
 
-    def on_pigment_combo_text_changed(self, txt):
+        self.order_nr = None
+        self.available_pigments = {}
 
-        logging.warning(f"txt:{txt}.")
-        # ~ self.pigment_line_edit.setText(txt)
+    def __check_row(self, pigment_name):
 
-    def on_pigment_line_edit_edited(self, txt):
+        rows = self.formula_table.rowCount()
+        ret = []
+        for row in range(rows):
+            if self.formula_table.item(row, 1) and pigment_name == self.formula_table.item(row, 1).data(Qt.DisplayRole):
+                ret.append(row)
 
-        logging.warning(f"txt:{txt}.")
-        self.pigment_combo.clear()
-        self.pigment_combo.addItems([_ for _ in list(self.pigment_names) if txt in _])
+        if len(ret) > 1:
+            self.warning_lbl.setText(tr_('<div style="color: red;">WARN: replicated entries {}.</div>'.format(pigment_name)))
 
-    def on_set_item_clicked(self):
+        return ret
+
+    def __set_row(self, row, pigment_name, quantity, descr=None):
+
+        old_pigment_name = self.formula_table.item(row, 1) and self.formula_table.item(row, 1).data(Qt.DisplayRole)
+        if old_pigment_name and pigment_name != old_pigment_name:
+            logging.warning(f"pigment_name:{pigment_name}, old_pigment_name:{old_pigment_name}")
+
+        bgcol = None
+        if self.available_pigments.get(pigment_name):
+            icon = QIcon(self.green_icon)
+            pig = self.available_pigments[pigment_name]
+            descr = descr or pig.get("description")
+            bgcol = QColor(pig.get("rgb"))
+        else:
+            icon = QIcon(self.gray_icon)
+        self.formula_table.setItem(row, 0, QTableWidgetItem(icon, ""))
+        self.formula_table.setItem(row, 1, QTableWidgetItem(str(pigment_name)))
+        self.formula_table.setItem(row, 2, QTableWidgetItem("{:.3f}".format(float(quantity))))
+        self.formula_table.setItem(row, 3, QTableWidgetItem(str((descr or "-"))))
+
+        # ~ s = self.formula_table.model().index(row, 0)
+        # ~ e = self.formula_table.model().index(row, 3)
+        # ~ self.formula_table.selectionModel().select(QItemSelection(s, e), QItemSelectionModel.ClearAndSelect)
+
+        # ~ logging.warning(f"bgcol:{bgcol}")
+        if bgcol:
+            self.formula_table.item(row, 3).setBackground(bgcol)
+
+    def __on_pigment_combo_currentTextChanged(self):
+
+        pigment_name = self.pigment_combo.currentText()
+        indexes = self.__check_row(pigment_name)
+        logging.warning(f"indexes:{indexes}, pigment_name:{pigment_name}.")
+
+        if not indexes:
+            self.formula_table.clearSelection()
+
+    def __on_delete_item_clicked(self):
 
         try:
-            pigment_name = self.pigment_line_edit.text()
+            sel_items = self.formula_table.selectedItems()
+            if sel_items:
+                sel_item = sel_items[0]
+                row = sel_item.row()
+                self.formula_table.removeRow(row)
+                # ~ self.formula_table.setRowCount(self.formula_table.rowCount() - 1)
+                logging.warning(f"row:{row}/{self.formula_table.rowCount()}.")
+                self.warning_lbl.setText(tr_('modified.'))
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None)
+
+    def __on_set_item_clicked(self):
+
+        try:
+            pigment_name = self.pigment_combo.currentText()
             quantity = float(self.quantity_line_edit.text())
-            logging.warning(f"pigment_name:{pigment_name}, quantity:{quantity}.")
+            sel_items = self.formula_table.selectedItems()
+            indexes = self.__check_row(pigment_name)
+            logging.warning(f"indexes:{indexes}, pigment_name:{pigment_name}.")
+            description = None
+            if sel_items:
+                sel_item = sel_items[0]
+                row = sel_item.row()
+                description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
+            else:
+                if indexes:
+                    row = indexes[0]
+                    description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
+                else:
+                    row = self.formula_table.rowCount()
+                    self.formula_table.setRowCount(row + 1)
+
+                self.formula_table.scrollToBottom()
+
+            self.__set_row(row, pigment_name, quantity, descr=description)
+            self.warning_lbl.setText(tr_('modified.'))
+            self.__check_row(pigment_name)
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None
-            )
+                f"exception:{e}", title="ERROR", callback=None, args=None)
 
-    def on_add_item_clicked(self):
+    def __on_formula_table_itemSelectionChanged(self):
 
         try:
-            pigment_name = self.pigment_line_edit.text()
-            quantity = float(self.quantity_line_edit.text())
-            logging.warning(f"pigment_name:{pigment_name}, quantity:{quantity}.")
+            sel_items = self.formula_table.selectedItems()
+            if sel_items:
+                sel_item = sel_items[0]
+                row = sel_item.row()
+                values_ = [self.formula_table.item(row, col).data(Qt.DisplayRole) for col in range(3)]
+
+                logging.warning(f"row:{row}, values_:{values_}")
+
+                self.pigment_combo.setCurrentText(str(values_[1]))
+                self.quantity_line_edit.setText(str(values_[2]))
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None
-            )
-
-    def on_formula_table_clicked(self, index):
-
-        datum = index.data()
-        logging.warning(f"datum:{datum}")
-        try:
-            row = index.row()
-            values_ = [self.formula_table.item(row, col).data(Qt.DisplayRole) for col in range(3)]
-            logging.warning(f"row:{row}, values_:{values_}")
-
-            self.pigment_line_edit.setText(str(values_[0]))
-            self.quantity_line_edit.setText(str(values_[1]))
-            # ~ self.pigment_combo.
-
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.parent().open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None
-            )
+                f"exception:{e}", title="ERROR", callback=None, args=None)
 
     def show_dialog(self, order_nr):   # pylint: disable=too-many-arguments
 
+        self.order_nr = order_nr
         order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).one()
 
         properties = json.loads(order.json_properties)
-        logging.warning(f"properties:{properties}")
+        # ~ logging.warning(f"properties:{properties}")
 
-        size = properties.get('size(cc)')
         ingredients = properties.get('ingredients')
-        content = "\n".join([f"{k}:{v}" for k, v in properties.get("meta", {}).items()])
+        meta_content = json.dumps(properties.get("meta", {}), indent=2)
 
-        self.size_line_edit.setText(str(size))
-        self.meta_text_edit.setText(content)
+        self.meta_text_edit.setText(meta_content)
         self.order_nr_view_lbl.setText(str(order_nr))
 
         self.formula_table.clearContents()
         self.formula_table.setRowCount(len(ingredients))
-        self.formula_table.setColumnCount(3)
+        self.formula_table.setColumnCount(4)
 
-        for row, item_ in enumerate(ingredients):
-            self.formula_table.setItem(row, 0, QTableWidgetItem(str(item_['pigment_name'])))
-            self.formula_table.setItem(row, 1, QTableWidgetItem(str(item_['weight(g)'])))
-            self.formula_table.setItem(row, 2, QTableWidgetItem(str(item_['description'])))
-
-        self.pigment_names = set([])
+        self.available_pigments = {}
         for m in QApplication.instance().machine_head_dict.values():
             for pig in m.pigment_list:
-                self.pigment_names.add(pig["name"])
+                self.available_pigments[pig["name"]] = pig
 
-        logging.warning(f"self.pigment_names:{self.pigment_names}.")
-        self.pigment_combo.addItems(list(self.pigment_names))
+        # ~ logging.warning(f"self.available_pigments:{self.available_pigments}.")
+        self.pigment_combo.clear()
+        self.pigment_combo.addItems(self.available_pigments.keys())
 
-        completer = QCompleter(list(self.pigment_names))
+        completer = QCompleter(self.available_pigments.keys())
         completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.popup().setFont(QFont('Times sans-serif', 18))
         self.pigment_combo.setCompleter(completer)
 
-        self.move(440, 10)
+        self.move(360 + random.randint(-80, 80), 10)
+
+        self.warning_lbl.setText("")
+
+        for row, item_ in enumerate(ingredients):
+            self.__set_row(row, item_['pigment_name'], item_['weight(g)'], item_['description'])
 
         self.show()
 
     def save(self):   # pylint: disable=too-many-arguments
 
-        logging.warning(f"self:{self}")
+        order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == self.order_nr).one()
+
+        _meta = json.loads(self.meta_text_edit.toPlainText())
+        _ingredients = []
+        cols = self.formula_table.columnCount()
+        rows = self.formula_table.rowCount()
+        for row in range(rows):
+            values_ = [self.formula_table.item(row, col).data(Qt.DisplayRole) for col in range(cols)]
+            ingredient = {
+                'pigment_name': str(values_[1]),
+                'weight(g)': float(values_[2]),
+                'description': str(values_[3]),
+            }
+            _ingredients.append(ingredient)
+
+        _properties = json.loads(order.json_properties)
+        _properties['ingredients'] = _ingredients
+        _properties['meta'] = _meta
+
+        order.json_properties = json.dumps(_properties, indent=2)
+
+        QApplication.instance().db_session.commit()
 
 
 class InputDialog(BaseDialog):

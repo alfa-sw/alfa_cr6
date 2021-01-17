@@ -984,7 +984,8 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def __update_jar_position(self, jar, machine_head=None, status=None, pos=None):
 
-        logging.warning(f"jar:{jar}, machine_head:{machine_head.name[0]}, status:{status}, pos:{pos}")
+        m_name = machine_head.name[0] if machine_head else None
+        logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
 
         _pos_list = [j["jar"].position for j in self.__jar_runners.values()]
         if pos in _pos_list:
@@ -992,7 +993,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             self.handle_exception(e)
         else:
             if jar is not None:
-                jar.update_live(machine_head=None, status=status, pos=pos, t0=time.time())
+                jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
 
     def __deliver_jar(self):
 

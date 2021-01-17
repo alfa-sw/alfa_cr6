@@ -15,7 +15,9 @@ import time
 from datetime import date
 from datetime import datetime
 
-from sqlalchemy import (
+from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
+
+from sqlalchemy import (      # pylint: disable=import-error
     create_engine,
     Column,
     Unicode,
@@ -24,17 +26,20 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     UniqueConstraint,
-)
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+    event)
 
-from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
+import sqlalchemy.ext.declarative  # pylint: disable=import-error
+from sqlalchemy.orm import sessionmaker, relationship    # pylint: disable=import-error
 
 from jsonschema import validate  # pylint: disable=import-error
 
-Base = declarative_base()
+Base = sqlalchemy.ext.declarative.declarative_base()
 
 global_session = None
+
+
+def generate_id():
+    return str(uuid.uuid4())
 
 def compile_barcode(order_nr, index):
     return int(order_nr) + int(index) % 1000
@@ -76,11 +81,8 @@ def generate_order_nr():
     return order_nr
 
 
-def generate_id():
-    return str(uuid.uuid4())
-
-
-class BaseModel(object):  # pylint: disable=too-few-public-methods
+# ~ #######################
+class BaseModel:  # pylint: disable=too-few-public-methods
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
     date_created = Column(DateTime, default=datetime.now)
@@ -89,6 +91,8 @@ class BaseModel(object):  # pylint: disable=too-few-public-methods
     description = Column(Unicode(200))
 
     json_properties_schema = {}
+
+    row_count_limt = 10000
 
     def validate_json_properties(self, instance):
 
@@ -101,6 +105,26 @@ class BaseModel(object):  # pylint: disable=too-few-public-methods
             logging.error(traceback.format_exc())
 
         return ret
+
+    @classmethod
+    def check_size_limit(cls, session):
+
+        exceeding_objects = []
+        if cls.row_count_limt > 0:
+            try:
+                query_ = session.query(cls)
+                row_count = query_.count()
+                exceeding = max(0, row_count - cls.row_count_limt)
+                if exceeding > 0:
+                    exceeding += int(cls.row_count_limt * 0.1)  # below watermark
+                    exceeding_objects = query_.order_by(cls.date_created).limit(exceeding)
+                    msg = "cls:{}, row_count:{}, exceeding:{}, exceeding_objects.count():{}".format(
+                        cls, row_count, exceeding, exceeding_objects.count())
+                    logging.warning(msg)
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(e)
+
+        return exceeding_objects
 
 
 class User(Base, BaseModel):  # pylint: disable=too-few-public-methods
@@ -147,10 +171,7 @@ class Event(Base, BaseModel):  # pylint: disable=too-few-public-methods
 class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "order"
-    order_nr = Column(
-        BigInteger, unique=True, nullable=False, default=generate_order_nr
-    )
-    # ~ status = Column(Unicode, default="NEW")
+    order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
     jars = relationship("Jar")
 
     def __str__(self):
@@ -219,21 +240,55 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         try:
             app = QApplication.instance()
             app.main_window.debug_status_view.update_status()
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logging.error(e)
 
     def __str__(self):
-        # ~ return f"<Jar object. status:{self.status}, position:{self.position}, barcode:{self.barcode}>"
-        return f"[m:{self.machine_head}, status:{self.status}, position:{self.position}, {self.order.order_nr}:{self.index}]"
+        return "[m:{}, status:{}, position:{}, {}:{}]".format(
+            self.machine_head, self.status, self.position, self.order.order_nr, self.index)
 
     @property
     def barcode(self):
         return compile_barcode(self.order.order_nr, self.index)
 
 
-def init_models(sqlite_connect_string):
+# ~ #######################
+class eventManager:
 
-    global global_session  # pylint: disable=global-statement
+    def __init__(self, session):
+        self.to_be_deleted_object_list = set([])
+        self.session = session
+
+    def do_delete_pending_objects(self, session, flush_context, instances=None):  # pylint: disable=unused-argument
+
+        for item in list(self.to_be_deleted_object_list)[:50]:
+            cls, id_ = item
+            session.query(cls).filter(cls.id == id_).delete()
+            self.to_be_deleted_object_list.remove(item)
+
+    def check_limit_before_insert(self, mapper, connection, target):  # pylint: disable=unused-argument
+
+        exceeding_objects = target.check_size_limit(self.session)
+        if exceeding_objects:
+            for o in exceeding_objects:
+                self.to_be_deleted_object_list.add((target.__class__, o.id))
+
+    def install_listeners(self):
+
+        event.listen(self.session, 'after_flush', self.do_delete_pending_objects)
+
+        for n in globals():
+            m = globals().get(n)
+            try:
+                if isinstance(m, sqlalchemy.ext.declarative.api.DeclarativeMeta) and issubclass(m, BaseModel):
+                    if m.row_count_limt > 0:
+                        event.listen(m, 'before_insert', self.check_limit_before_insert)
+                        logging.warning("m:{}, type(m):{}".format(m, type(m)))
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(e)
+
+
+def init_models(sqlite_connect_string):
 
     toks = sqlite_connect_string.split("sqlite:///")
     pth = toks[1:] and toks[1]
@@ -244,7 +299,13 @@ def init_models(sqlite_connect_string):
 
     engine = create_engine(sqlite_connect_string)
     Base.metadata.create_all(engine)
+
+    global global_session  # pylint: disable=global-statement
+
     Session = sessionmaker(bind=engine)
     global_session = Session()
+
+    e = eventManager(global_session)
+    e.install_listeners()
 
     return global_session

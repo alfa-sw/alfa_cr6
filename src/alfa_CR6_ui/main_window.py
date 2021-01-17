@@ -28,13 +28,13 @@ from PyQt5.QtWidgets import (
     # ~ QInputDialog,
     QPushButton,
     QLabel,
-    QFrame,
-)
+    QFrame)
 
 from alfa_CR6_ui.globals import (
     KEYBOARD_PATH,
     IMAGES_PATH,
     UI_PATH,
+    HELP_PATH,
     WEBENGINE_DOWNLOAD_PATH,
     WEBENGINE_CUSTOMER_URL,
     WEBENGINE_CACHE_PATH,
@@ -44,8 +44,7 @@ from alfa_CR6_ui.globals import (
     JarTableModel,
     ModalMessageBox,
     EditDialog,
-    InputDialog,
-)
+    InputDialog)
 
 from alfa_CR6_ui.keyboard import Keyboard
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
@@ -75,8 +74,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.search_file_table_last_time = 0
         self.search_jar_table_last_time = 0
 
-        self.order_table_selected_order_nr = None
-
         self.keyboard = Keyboard(self, keyboard_path=KEYBOARD_PATH)
         self.keyboard.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.keyboard.setGeometry(
@@ -104,7 +101,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         # ~ self.refill_3_lbl.mouseReleaseEvent = lambda event: self.show_reserve(2)
         # ~ self.refill_4_lbl.mouseReleaseEvent = lambda event: self.show_reserve(3)
         # ~ self.refill_5_lbl.mouseReleaseEvent = lambda event: self.show_reserve(4)
-        self.refill_6_lbl.mouseReleaseEvent = lambda event: self.show_reserve(5)
+        # ~ self.refill_6_lbl.mouseReleaseEvent = lambda event: self.show_reserve(5)
 
     def __init_icons(self):
 
@@ -151,8 +148,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.jar_table_view.clicked.connect(self.on_jar_table_clicked)
         self.file_table_view.clicked.connect(self.on_file_table_clicked)
 
-        self.search_order_btn.clicked.connect(self.populate_order_table)
-        self.search_file_btn.clicked.connect(self.populate_file_table)
+        self.new_order_btn.clicked.connect(  self.__on_new_order_clicked)
+        self.clone_order_btn.clicked.connect(self.__on_clone_order_clicked)
 
         self.search_order_line.textChanged.connect(self.populate_order_table)
         self.search_jar_line.textChanged.connect(self.populate_jar_table)
@@ -804,7 +801,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.stacked_widget.setCurrentWidget(self.home_page)
 
             elif "order" in btn_name:
-                self.order_table_selected_order_nr = None
                 self.toggle_keyboard(on_off=False)
                 self.populate_order_table()
                 self.populate_jar_table()
@@ -819,6 +815,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
             elif "global_status" in btn_name:
                 self.stacked_widget.setCurrentWidget(self.debug_status_view.main_frame)
+
+            elif "help" in btn_name:
+                with open(os.path.join(HELP_PATH, "home_page.html")) as f:
+                    content = f.read()
+                    self.help_text_browser.setHtml(content)
+                self.stacked_widget.setCurrentWidget(self.help_page)
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -871,8 +873,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             row = index.row()
             model = index.model()
             order_nr = model.results[row][3]
-
-            self.order_table_selected_order_nr = order_nr
 
             logging.warning(f"row:{row}, col:{col}, order_nr:{order_nr}")
             if col == 0:  # delete
@@ -1038,8 +1038,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
                     msg_ = tr_("confirm printing {} barcodes?").format(len(barcodes))
                     self.open_input_dialog(message=msg_, content="{}".format(barcodes), ok_cb=cb_)
-
-                    self.order_table_selected_order_nr = None
 
                     model.remove_file(file_name)
                     self.populate_file_table()
@@ -1366,6 +1364,21 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         css = "color: #000000" if is_ok else "color: #990000"
         self.menu_line_edit.setStyleSheet(css)
         self.menu_line_edit.setText(f"{barcode}")
+
+
+
+    def __on_new_order_clicked(self):
+        logging.warning("")
+
+    def __on_clone_order_clicked(self):
+        order_nr = None
+        sel_model = self.order_table_view.selectionModel()
+        sel_orders = sel_model.selectedRows()
+        if sel_orders:
+            row = sel_orders[0].row()
+            model = sel_orders[0].model()
+            order_nr = model.results[row][3]
+            logging.warning(f"order_nr:{order_nr}")
 
 
 def main():
