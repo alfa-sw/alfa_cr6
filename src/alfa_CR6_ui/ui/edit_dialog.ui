@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1260</width>
-    <height>734</height>
+    <height>750</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,9 +62,9 @@
   <widget class="QPushButton" name="esc_button">
    <property name="geometry">
     <rect>
-     <x>410</x>
-     <y>680</y>
-     <width>200</width>
+     <x>689</x>
+     <y>690</y>
+     <width>271</width>
      <height>51</height>
     </rect>
    </property>
@@ -95,9 +95,9 @@
   <widget class="QPushButton" name="ok_button">
    <property name="geometry">
     <rect>
-     <x>630</x>
-     <y>680</y>
-     <width>201</width>
+     <x>970</x>
+     <y>690</y>
+     <width>271</width>
      <height>51</height>
     </rect>
    </property>
@@ -181,9 +181,9 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>576</y>
+     <y>570</y>
      <width>971</width>
-     <height>91</height>
+     <height>81</height>
     </rect>
    </property>
    <property name="title">
@@ -195,7 +195,7 @@
       <x>820</x>
       <y>10</y>
       <width>141</width>
-      <height>71</height>
+      <height>61</height>
      </rect>
     </property>
     <property name="text">
@@ -216,7 +216,7 @@
     <property name="geometry">
      <rect>
       <x>670</x>
-      <y>40</y>
+      <y>30</y>
       <width>141</width>
       <height>41</height>
      </rect>
@@ -226,7 +226,7 @@
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>50</y>
+      <y>40</y>
       <width>131</width>
       <height>31</height>
      </rect>
@@ -242,7 +242,7 @@
     <property name="geometry">
      <rect>
       <x>140</x>
-      <y>40</y>
+      <y>30</y>
       <width>321</width>
       <height>41</height>
      </rect>
@@ -252,7 +252,7 @@
     <property name="geometry">
      <rect>
       <x>470</x>
-      <y>50</y>
+      <y>40</y>
       <width>191</width>
       <height>31</height>
      </rect>
@@ -309,7 +309,7 @@
    <property name="geometry">
     <rect>
      <x>1060</x>
-     <y>586</y>
+     <y>580</y>
      <width>181</width>
      <height>71</height>
     </rect>
@@ -328,40 +328,64 @@
     </size>
    </property>
   </widget>
+  <widget class="QLabel" name="jars_to_add_lbl">
+   <property name="geometry">
+    <rect>
+     <x>100</x>
+     <y>664</y>
+     <width>211</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/jar-green.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>false</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+   </property>
+  </widget>
+  <widget class="QSpinBox" name="n_of_jars_spinbox">
+   <property name="geometry">
+    <rect>
+     <x>320</x>
+     <y>654</y>
+     <width>111</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <property name="maximum">
+    <number>30</number>
+   </property>
+  </widget>
+  <widget class="QLabel" name="jars_to_add_lbl_2">
+   <property name="geometry">
+    <rect>
+     <x>30</x>
+     <y>664</y>
+     <width>71</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/jar-green.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>false</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+   </property>
+  </widget>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>ok_button</sender>
-   <signal>clicked()</signal>
-   <receiver>input_dialog_frame</receiver>
-   <slot>hide()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>605</x>
-     <y>150</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>488</x>
-     <y>272</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>esc_button</sender>
-   <signal>clicked()</signal>
-   <receiver>input_dialog_frame</receiver>
-   <slot>hide()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>305</x>
-     <y>150</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>488</x>
-     <y>272</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

@@ -27,8 +27,15 @@ UI_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "ui")
 IMAGE_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "images")
 KEYBOARD_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "keyboard")
 
+CONF_PATH = "/opt/alfa_cr6/conf"
+
 EPSILON = 0.00001
 
+def import_settings():
+    sys.path.append(CONF_PATH)
+    import app_settings  # pylint: disable=import-error,import-outside-toplevel
+    sys.path.remove(CONF_PATH)
+    return app_settings
 
 def _get_version():
 
@@ -557,16 +564,43 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         )
         asyncio.get_event_loop().close()
 
-    def create_order(self, path_to_json_file, json_schema_name="KCC", n_of_jars=1):
+    def clone_order(self, order_nr, n_of_jars=0):
+
+        cloned_order = None
+        if self.db_session:
+            try:
+                order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).one()
+                cloned_order = Order(
+                    json_properties=order.json_properties,
+                    description=order.description,
+                )
+                self.db_session.add(cloned_order)
+                for j in range(1, n_of_jars + 1):
+                    jar = Jar(order=cloned_order, index=j, size=0)
+                    self.db_session.add(jar)
+                self.db_session.commit()
+            except BaseException:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+                order = None
+                self.db_session.rollback()
+
+        return cloned_order
+
+    def create_order(self, path_to_json_file=None, json_schema_name="KCC", n_of_jars=0):
 
         order = None
         if self.db_session:
             try:
-                fname = os.path.split(path_to_json_file)[1]
-                properties = parse_json_order(path_to_json_file, json_schema_name)
+                properties = {}
+                description = ""
+                if path_to_json_file:
+                    fname = os.path.split(path_to_json_file)[1]
+                    properties = parse_json_order(path_to_json_file, json_schema_name)
+                    description = f"{fname}"
+
                 order = Order(
                     json_properties=json.dumps(properties, indent=2),
-                    description=f"{fname}",
+                    description=description,
                 )
                 self.db_session.add(order)
                 for j in range(1, n_of_jars + 1):
@@ -614,8 +648,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                         level="ERROR",
                         severity="",
                         source="CR6_application",
-                        description=descr,
-                    )
+                        description=descr)
                     a.db_session.add(evnt)
                     a.db_session.commit()
                 except BaseException:  # pylint: disable=broad-except
@@ -1037,12 +1070,6 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
 
 def main():
-
-    def import_settings():
-        sys.path.append("/opt/alfa_cr6/conf")
-        import app_settings  # pylint: disable=import-error,import-outside-toplevel
-        sys.path.remove("/opt/alfa_cr6/conf")
-        return app_settings
 
     settings = import_settings()
 

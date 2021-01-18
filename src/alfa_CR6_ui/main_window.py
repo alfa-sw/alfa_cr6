@@ -51,6 +51,483 @@ from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 from alfa_CR6_backend.dymo_printer import dymo_print
 
 
+class OrderPage:
+
+    def __init__(self, parent):
+
+        self.parent = parent
+        self.parent.jar_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.parent.order_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.parent.file_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+
+        self.parent.order_table_view.clicked.connect(self.__on_order_table_clicked)
+        self.parent.jar_table_view.clicked.connect(self.__on_jar_table_clicked)
+        self.parent.file_table_view.clicked.connect(self.__on_file_table_clicked)
+
+        self.parent.new_order_btn.clicked.connect(self.__on_new_order_clicked)
+        self.parent.clone_order_btn.clicked.connect(self.__on_clone_order_clicked)
+
+        self.parent.search_order_line.textChanged.connect(self.populate_order_table)
+        self.parent.search_jar_line.textChanged.connect(self.populate_jar_table)
+        self.parent.search_file_line.textChanged.connect(self.populate_file_table)
+
+        self.search_order_table_last_time = 0
+        self.search_file_table_last_time = 0
+        self.search_jar_table_last_time = 0
+
+    def populate_order_table(self):
+
+        t = time.time()
+        if t - self.search_order_table_last_time > 0.1:
+            self.search_order_table_last_time = t
+            try:
+                order_model = OrderTableModel(self.parent)
+                self.parent.order_table_view.setModel(order_model)
+            except Exception:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+
+            self.parent.search_order_box.setTitle(
+                tr_("[{}] Orders: search by order nr.").format(
+                    order_model.rowCount()))
+
+    def populate_jar_table(self):
+
+        t = time.time()
+        if t - self.search_jar_table_last_time > 0.1:
+            self.search_jar_table_last_time = t
+            try:
+                jar_model = JarTableModel(self.parent)
+                self.parent.jar_table_view.setModel(jar_model)
+            except Exception:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+            self.parent.search_jar_box.setTitle(tr_("[{}] Jars:   search by status").format(jar_model.rowCount()))
+
+    def populate_file_table(self):
+
+        t = time.time()
+        if t - self.search_file_table_last_time > 0.1:
+            self.search_file_table_last_time = t
+            try:
+                file_model = FileTableModel(self.parent, WEBENGINE_DOWNLOAD_PATH)
+                self.parent.file_table_view.setModel(file_model)
+            except Exception:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+
+            self.parent.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(file_model.rowCount()))
+
+    def __on_order_table_clicked(self, index):
+
+        datum = index.data()
+        logging.warning(f"datum:{datum}")
+        try:
+            col = index.column()
+            row = index.row()
+            model = index.model()
+            order_nr = model.results[row][3]
+
+            logging.warning(f"row:{row}, col:{col}, order_nr:{order_nr}")
+            if col == 0:  # delete
+
+                def cb():
+                    model.remove_order(order_nr)
+                    self.populate_order_table()
+                    self.populate_jar_table()
+
+                msg_ = tr_("confirm deleting order '{}' and related jars?").format(order_nr)
+                self.parent.open_input_dialog(icon_name="SP_MessageBoxCritical", message=msg_, ok_cb=cb)
+
+            elif col == 1:  # edit
+
+                self.parent.open_edit_dialog(order_nr)
+                self.populate_jar_table()
+
+            elif col == 2:  # status
+
+                self.populate_jar_table()
+
+            elif col == 3:  # order_nr
+
+                self.populate_jar_table()
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+
+    def __on_jar_table_clicked(self, index):  # pylint: disable=too-many-locals
+
+        datum = index.data()
+        logging.warning(f"datum:{datum}")
+        try:
+            col = index.column()
+            row = index.row()
+            model = index.model()
+            barcode = model.results[row][3]
+            logging.warning(f"row:{row}, col:{col}, barcode:{barcode}")
+            if col == 0:  # delete
+
+                def cb():
+                    model.remove_jar(barcode)
+                    self.populate_jar_table()
+
+                self.parent.open_input_dialog(
+                    icon_name="SP_MessageBoxCritical",
+                    message=tr_("confirm deleting jar\n '{}' ?").format(barcode),
+                    ok_cb=cb,
+                )
+
+            elif col == 1:  # view
+                content = "{}"
+                order_nr, index = decompile_barcode(barcode)
+                if order_nr and index >= 0:
+                    order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).first()
+                    if order:
+                        query_ = QApplication.instance().db_session.query(Jar)
+                        query_ = query_.filter(Jar.order == order)
+                        query_ = query_.filter(Jar.index == index)
+                        jar = query_.first()
+                        if jar:
+                            _props = json.loads(jar.json_properties)
+                            content = json.dumps(_props, indent=2)
+                            msg_ = tr_("barcode:{}\n description:{}\n date_created:{}").format(
+                                barcode, jar.description, jar.date_created)
+
+                self.parent.open_input_dialog(
+                    icon_name="SP_MessageBoxInformation",
+                    message=msg_,
+                    content=content,
+                )
+
+            elif col == 2:  # status
+                pass
+
+            elif col == 3:  # barcode
+                pass
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+
+    def __on_file_table_clicked(self, index):
+
+        datum = index.data()
+        logging.warning(f"datum:{datum}")
+        try:
+            col = index.column()
+            row = index.row()
+            model = index.model()
+            file_name = model.results[row][3]
+            logging.warning(f"row:{row}, col:{col}, file_name:{file_name}")
+            if col == 0:  # delete
+
+                def cb():
+                    model.remove_file(file_name)
+                    self.populate_file_table()
+
+                self.parent.open_input_dialog(
+                    icon_name="SP_MessageBoxCritical",
+                    message=tr_("confirm deleting file\n '{}' ?").format(file_name),
+                    ok_cb=cb,
+                )
+
+            elif col == 1:  # view
+                content = "{}"
+                with open(os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name)) as f:
+                    content = f.read(3000)
+                    try:
+                        content = json.dumps(json.loads(content), indent=2)
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(traceback.format_exc())
+
+                self.parent.open_input_dialog(
+                    icon_name="SP_MessageBoxInformation",
+                    message=tr_("file_name:{}").format(file_name),
+                    content=content,
+                )
+
+            elif col == 2:  # create order
+
+                app = QApplication.instance()
+
+                def cb():
+                    n = int(self.parent.input_dialog.content_container.toPlainText())
+                    n = min(n, 20)
+                    logging.warning(f"n:{n}")
+                    order = app.create_order(
+                        os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name),
+                        json_schema_name="KCC",
+                        n_of_jars=n,
+                    )
+                    barcodes = sorted([str(j.barcode) for j in order.jars])
+                    logging.warning(f"file_name:{file_name}, barcodes:{barcodes}")
+
+                    def cb_():
+                        for b in barcodes:
+                            response = dymo_print(str(b))
+                            logging.warning(f"response:{response}")
+                            time.sleep(.05)
+
+                    msg_ = tr_("confirm printing {} barcodes?").format(len(barcodes))
+                    self.parent.open_input_dialog(message=msg_, content="{}".format(barcodes), ok_cb=cb_)
+
+                    model.remove_file(file_name)
+                    self.populate_file_table()
+                    self.populate_order_table()
+                    self.populate_jar_table()
+
+                _msg = tr_("confirm creating order from file (file will be deleted):\n '{}'?\n").format(file_name)
+                _msg += tr_('Please, insert below the number of jars.')
+                self.parent.open_input_dialog(message=_msg, content="<span align='center'>1</span>", ok_cb=cb)
+
+            elif col == 3:  # file name
+                pass
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+
+    def __on_new_order_clicked(self):
+
+        try:
+            new_order = QApplication.instance().create_order()
+            msg = tr_("created order:{}.").format(new_order.order_nr)
+            self.parent.open_alert_dialog(msg, title="INFO")
+            self.populate_order_table()
+            self.populate_jar_table()
+
+            # ~ s = self.parent.order_table_view.model().index(row, 0)
+            # ~ e = self.parent.order_table_view.model().index(row, 3)
+            # ~ self.formula_table.selectionModel().select(QItemSelection(s, e), QItemSelectionModel.ClearAndSelect)
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+
+    def __on_clone_order_clicked(self):
+
+        try:
+            order_nr = None
+            sel_model = self.parent.order_table_view.selectionModel()
+            sel_orders = sel_model.selectedRows()
+            if sel_orders:
+                row = sel_orders[0].row()
+                model = sel_orders[0].model()
+                order_nr = model.results[row][3]
+                order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).first()
+                if order:
+                    cloned_order = QApplication.instance().clone_order(order_nr)
+                    msg = tr_("cloned order:{}.").format(cloned_order.order_nr)
+                    self.parent.open_alert_dialog(msg, title="INFO")
+                    self.populate_order_table()
+                    self.populate_jar_table()
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+
+
+class HomePage:
+
+    def __init__(self, parent):
+
+        self.parent = parent
+        self.parent.service_btn_group.buttonClicked.connect(self.__on_service_btn_group_clicked)
+        self.parent.action_btn_group.buttonClicked.connect(self.__on_action_btn_group_clicked)
+
+        for b in self.parent.action_btn_group.buttons():
+            b.setStyleSheet(
+                """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
+            )
+
+    def __on_service_btn_group_clicked(self, btn):
+
+        btn_name = btn.objectName()
+
+        try:
+            service_page_urls = [
+                "http://{}:{}/service_page/".format(i[0], i[2])
+                for i in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST
+            ]
+
+            map_ = {
+                self.parent.service_1_btn: service_page_urls[0],
+                self.parent.service_2_btn: service_page_urls[1],
+                self.parent.service_3_btn: service_page_urls[2],
+                self.parent.service_4_btn: service_page_urls[3],
+                self.parent.service_5_btn: service_page_urls[4],
+                self.parent.service_6_btn: service_page_urls[5],
+                self.parent.service_0_btn: "http://127.0.0.1:8080/service_page/",
+            }
+            self.parent.webengine_view.setUrl(self.parent.start_page_url)
+            self.parent.stacked_widget.setCurrentWidget(self.parent.browser_page)
+            self.parent.webengine_view.setUrl(QUrl(map_[btn]))
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent.open_alert_dialog(f"btn_namel:{btn_name} exception:{e}", title="ERROR")
+
+    def __on_action_btn_group_clicked(self, btn):
+
+        btn_name = btn.objectName()
+        try:
+            if "feed" in btn_name:
+                QApplication.instance().run_a_coroutine_helper("move_00_01")
+            elif "deliver" in btn_name:
+                QApplication.instance().run_a_coroutine_helper("move_12_00")
+            elif "freeze_carousel" in btn_name:
+                msg_ = (
+                    tr_("confirm unfreezing carousel?")
+                    if QApplication.instance().carousel_frozen
+                    else tr_("confirm freezing carousel?")
+                )
+                self.parent.open_input_dialog(
+                    icon_name=None,
+                    message=msg_,
+                    content=None,
+                    ok_cb=QApplication.instance().toggle_freeze_carousel,
+                )
+            elif "action_" in btn_name:
+                self.parent.stacked_widget.setCurrentWidget(self.parent.action_frame_map[btn])
+            for i in QApplication.instance().machine_head_dict.keys():
+                self.parent.update_status_data(i)
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent.open_alert_dialog(f"btn_namel:{btn_name} exception:{e}", title="ERROR")
+
+    def update_service_btns__presences_and_lifters(self, head_index):
+
+        status = QApplication.instance().machine_head_dict[head_index].status
+
+        map_ = [
+            self.parent.service_1_btn,
+            self.parent.service_2_btn,
+            self.parent.service_3_btn,
+            self.parent.service_4_btn,
+            self.parent.service_5_btn,
+            self.parent.service_6_btn,
+        ]
+        map_[head_index].setText(f"{status['status_level']}")
+
+        map_ = [
+            self.parent.container_presence_1_label,
+            self.parent.container_presence_2_label,
+            self.parent.container_presence_3_label,
+            self.parent.container_presence_4_label,
+            self.parent.container_presence_5_label,
+            self.parent.container_presence_6_label,
+        ]
+        if status["container_presence"]:
+            map_[head_index].setPixmap(self.parent.green_icon)
+        else:
+            map_[head_index].setPixmap(self.parent.gray_icon)
+
+        # ~ lifter positions
+        self.__set_pixmap_by_photocells(self.parent.load_lifter_up_label,
+                                        (("D", "LOAD_LIFTER_UP_PHOTOCELL"),), icon=self.parent.green_icon)
+        self.__set_pixmap_by_photocells(self.parent.load_lifter_down_label,
+                                        (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.parent.green_icon)
+        self.__set_pixmap_by_photocells(self.parent.unload_lifter_up_label,
+                                        (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),), icon=self.parent.green_icon)
+        self.__set_pixmap_by_photocells(self.parent.unload_lifter_down_label,
+                                        (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.parent.green_icon)
+
+    def update_tank_pixmaps(self):
+        map_ = [
+            self.parent.refill_1_lbl,
+            self.parent.refill_2_lbl,
+            self.parent.refill_3_lbl,
+            self.parent.refill_4_lbl,
+            self.parent.refill_5_lbl,
+            self.parent.refill_6_lbl,
+        ]
+
+        for head_index, m in QApplication.instance().machine_head_dict.items():
+            status = m.status
+            if "STANDBY" in status.get('status_level', '') and QApplication.instance().carousel_frozen:
+                map_[head_index].setPixmap(self.parent.tank_icon_map['green'])
+            else:
+                map_[head_index].setPixmap(self.parent.tank_icon_map['gray'])
+
+            map_[head_index].setText("")
+
+    def update_jar_pixmaps(self):
+
+        _ = [f"{k} ({j['jar'].position[0]})" for k, j in QApplication.instance().get_jar_runners().items()]
+        self.parent.running_jars_lbl.setText("\n".join(_))
+
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), position="IN_A")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="A")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="B")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="C")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"),
+                                        ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTR_UP")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),
+                                        ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTR_DOWN")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="D")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="E")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="F")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),
+                                        ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTL_DOWN")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),
+                                        ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTL_UP")
+        self.__set_pixmap_by_photocells(
+            self.parent.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), position="OUT")
+
+    def __set_pixmap_by_photocells(self, lbl, head_letters_bit_names, position=None, icon=None):
+
+        def _get_bit(head_letter, bit_name):
+            m = QApplication.instance().get_machine_head_by_letter(head_letter)
+            ret = m.jar_photocells_status.get(bit_name) if m else None
+            return ret
+
+        try:
+
+            false_condition = [
+                1 for h, b in head_letters_bit_names if not _get_bit(h, b)
+            ]
+
+            if icon is None:
+                if false_condition:
+                    lbl.setStyleSheet("QLabel {{}}")
+                    lbl.setText("")
+                else:
+                    text = ""
+                    for j in QApplication.instance().get_jar_runners().values():
+                        pos = j["jar"].position
+                        if pos == position:
+                            _bc = str(j["jar"].barcode)
+                            text = _bc[-6:-3] + "\n" + _bc[-3:]
+                            break
+
+                    if text:
+                        _img_url = os.path.join(IMAGES_PATH, "jar-green.png")
+                    else:
+                        _img_url = os.path.join(IMAGES_PATH, "jar-gray.png")
+
+                    lbl.setStyleSheet(
+                        'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
+                    lbl.setText(text)
+            else:
+                size = [0, 0] if false_condition else [32, 32]
+                pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
+                lbl.setPixmap(pixmap)
+
+            lbl.show()
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent.open_alert_dialog(f"exception:{e}", title="ERROR")
+
+
 class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def __init__(self, parent=None):
@@ -70,27 +547,27 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.menu_btn_group.buttonClicked.connect(self.on_menu_btn_group_clicked)
 
-        self.search_order_table_last_time = 0
-        self.search_file_table_last_time = 0
-        self.search_jar_table_last_time = 0
-
         self.keyboard = Keyboard(self, keyboard_path=KEYBOARD_PATH)
         self.keyboard.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.keyboard.setGeometry(
             0,
             self.menu_frame.y() - self.keyboard.height(),
             self.menu_frame.width(),
-            256,
-        )
+            256)
         self.keyboard.hide()
 
         self.debug_status_view = DebugStatusView(self)
         self.stacked_widget.addWidget(self.debug_status_view.main_frame)
 
-        self.__init_action_pages()
-        self.__init_home_page()
-        self.__init_order_page()
+
+        # ~ self.__init_home_page()
+        self.__home_page = HomePage(self)
+
+        # ~ self.__init_order_page()
+        self.__order_page = OrderPage(self)
+
         self.__init_browser_page()
+        self.__init_action_pages()
         self.__init_dialogs()
         self.__init_icons()
 
@@ -127,33 +604,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 ("gray", "tank_gray.png"),
             )
         }
-
-    def __init_home_page(self):
-
-        self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
-        self.action_btn_group.buttonClicked.connect(self.on_action_btn_group_clicked)
-
-        for b in self.action_btn_group.buttons():
-            b.setStyleSheet(
-                """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
-            )
-
-    def __init_order_page(self):
-
-        self.jar_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.order_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.file_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
-        self.order_table_view.clicked.connect(self.on_order_table_clicked)
-        self.jar_table_view.clicked.connect(self.on_jar_table_clicked)
-        self.file_table_view.clicked.connect(self.on_file_table_clicked)
-
-        self.new_order_btn.clicked.connect(  self.__on_new_order_clicked)
-        self.clone_order_btn.clicked.connect(self.__on_clone_order_clicked)
-
-        self.search_order_line.textChanged.connect(self.populate_order_table)
-        self.search_jar_line.textChanged.connect(self.populate_jar_table)
-        self.search_file_line.textChanged.connect(self.populate_file_table)
 
     def __init_browser_page(self):
 
@@ -755,38 +1205,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def get_stacked_widget(self):
         return self.stacked_widget
 
-    def on_service_btn_group_clicked(self, btn):
-
-        btn_name = btn.objectName()
-
-        try:
-            service_page_urls = [
-                "http://{}:{}/service_page/".format(i[0], i[2])
-                for i in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST
-            ]
-
-            map_ = {
-                self.service_1_btn: service_page_urls[0],
-                self.service_2_btn: service_page_urls[1],
-                self.service_3_btn: service_page_urls[2],
-                self.service_4_btn: service_page_urls[3],
-                self.service_5_btn: service_page_urls[4],
-                self.service_6_btn: service_page_urls[5],
-                self.service_0_btn: "http://127.0.0.1:8080/service_page/",
-            }
-            self.webengine_view.setUrl(self.start_page_url)
-            self.stacked_widget.setCurrentWidget(self.browser_page)
-            self.webengine_view.setUrl(QUrl(map_[btn]))
-
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.open_alert_dialog(
-                f"btn_namel:{btn_name} exception:{e}",
-                title="ERROR",
-                callback=None,
-                args=None,
-            )
-
     def on_menu_btn_group_clicked(self, btn):
 
         btn_name = btn.objectName()
@@ -802,9 +1220,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
             elif "order" in btn_name:
                 self.toggle_keyboard(on_off=False)
-                self.populate_order_table()
-                self.populate_jar_table()
-                self.populate_file_table()
+                self.__order_page.populate_order_table()
+                self.__order_page.populate_jar_table()
+                self.__order_page.populate_file_table()
                 self.stacked_widget.setCurrentWidget(self.order_page)
 
             elif "browser" in btn_name:
@@ -831,272 +1249,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 args=None,
             )
 
-    def on_action_btn_group_clicked(self, btn):
-
-        btn_name = btn.objectName()
-        try:
-            if "feed" in btn_name:
-                QApplication.instance().run_a_coroutine_helper("move_00_01")
-            elif "deliver" in btn_name:
-                QApplication.instance().run_a_coroutine_helper("move_12_00")
-            elif "freeze_carousel" in btn_name:
-                msg_ = (
-                    tr_("confirm unfreezing carousel?")
-                    if QApplication.instance().carousel_frozen
-                    else tr_("confirm freezing carousel?")
-                )
-                self.open_input_dialog(
-                    icon_name=None,
-                    message=msg_,
-                    content=None,
-                    ok_cb=QApplication.instance().toggle_freeze_carousel,
-                )
-            elif "action_" in btn_name:
-                self.stacked_widget.setCurrentWidget(self.action_frame_map[btn])
-            for i in QApplication.instance().machine_head_dict.keys():
-                self.update_status_data(i)
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.open_alert_dialog(
-                f"btn_namel:{btn_name} exception:{e}",
-                title="ERROR",
-                callback=None,
-                args=None,
-            )
-
-    def on_order_table_clicked(self, index):
-
-        datum = index.data()
-        logging.warning(f"datum:{datum}")
-        try:
-            col = index.column()
-            row = index.row()
-            model = index.model()
-            order_nr = model.results[row][3]
-
-            logging.warning(f"row:{row}, col:{col}, order_nr:{order_nr}")
-            if col == 0:  # delete
-
-                def cb():
-                    model.remove_order(order_nr)
-                    self.populate_order_table()
-                    self.populate_jar_table()
-
-                msg_ = tr_("confirm deleting order '{}' and related jars?").format(order_nr)
-                self.open_input_dialog(icon_name="SP_MessageBoxCritical", message=msg_, ok_cb=cb)
-
-            elif col == 1:  # edit
-
-                self.open_edit_dialog(order_nr)
-
-                # ~ content = "{}"
-                # ~ query_ = QApplication.instance().db_session.query(Order)
-                # ~ query_ = query_.filter(Order.order_nr == order_nr)
-                # ~ order = query_.first()
-                # ~ if order:
-                # ~ _props = json.loads(order.json_properties)
-                # ~ content = json.dumps(_props, indent=2)
-                # ~ msg_ = tr_("order nr.:{}\n description:{}\n date_created:{}").format(
-                # ~ order_nr, order.description, order.date_created)
-
-                # ~ self.open_input_dialog(
-                # ~ icon_name="SP_MessageBoxInformation",
-                # ~ message=msg_,
-                # ~ content=content,
-                # ~ )
-
-                self.populate_jar_table()
-
-            elif col == 2:  # status
-
-                self.populate_jar_table()
-
-            elif col == 3:  # order_nr
-
-                self.populate_jar_table()
-
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None
-            )
-
-    def on_jar_table_clicked(self, index):  # pylint: disable=too-many-locals
-
-        datum = index.data()
-        logging.warning(f"datum:{datum}")
-        try:
-            col = index.column()
-            row = index.row()
-            model = index.model()
-            barcode = model.results[row][3]
-            logging.warning(f"row:{row}, col:{col}, barcode:{barcode}")
-            if col == 0:  # delete
-
-                def cb():
-                    model.remove_jar(barcode)
-                    self.populate_jar_table()
-
-                self.open_input_dialog(
-                    icon_name="SP_MessageBoxCritical",
-                    message=tr_("confirm deleting jar\n '{}' ?").format(barcode),
-                    ok_cb=cb,
-                )
-
-            elif col == 1:  # view
-                content = "{}"
-                order_nr, index = decompile_barcode(barcode)
-                if order_nr and index >= 0:
-                    order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).first()
-                    if order:
-                        query_ = QApplication.instance().db_session.query(Jar)
-                        query_ = query_.filter(Jar.order == order)
-                        query_ = query_.filter(Jar.index == index)
-                        jar = query_.first()
-                        if jar:
-                            _props = json.loads(jar.json_properties)
-                            content = json.dumps(_props, indent=2)
-                            msg_ = tr_("barcode:{}\n description:{}\n date_created:{}").format(
-                                barcode, jar.description, jar.date_created)
-
-                self.open_input_dialog(
-                    icon_name="SP_MessageBoxInformation",
-                    message=msg_,
-                    content=content,
-                )
-
-            elif col == 2:  # status
-                pass
-
-            elif col == 3:  # barcode
-                pass
-
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None
-            )
-
-    def on_file_table_clicked(self, index):
-
-        datum = index.data()
-        logging.warning(f"datum:{datum}")
-        try:
-            col = index.column()
-            row = index.row()
-            model = index.model()
-            file_name = model.results[row][3]
-            logging.warning(f"row:{row}, col:{col}, file_name:{file_name}")
-            if col == 0:  # delete
-
-                def cb():
-                    model.remove_file(file_name)
-                    self.populate_file_table()
-
-                self.open_input_dialog(
-                    icon_name="SP_MessageBoxCritical",
-                    message=tr_("confirm deleting file\n '{}' ?").format(file_name),
-                    ok_cb=cb,
-                )
-
-            elif col == 1:  # view
-                content = "{}"
-                with open(os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name)) as f:
-                    content = f.read(3000)
-                    try:
-                        content = json.dumps(json.loads(content), indent=2)
-                    except Exception:  # pylint: disable=broad-except
-                        logging.error(traceback.format_exc())
-
-                self.open_input_dialog(
-                    icon_name="SP_MessageBoxInformation",
-                    message=tr_("file_name:{}").format(file_name),
-                    content=content,
-                )
-
-            elif col == 2:  # create order
-
-                app = QApplication.instance()
-
-                def cb():
-                    n = int(self.input_dialog.content_container.toPlainText())
-                    n = min(n, 20)
-                    logging.warning(f"n:{n}")
-                    order = app.create_order(
-                        os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name),
-                        json_schema_name="KCC",
-                        n_of_jars=n,
-                    )
-                    barcodes = sorted([str(j.barcode) for j in order.jars])
-                    logging.warning(f"file_name:{file_name}, barcodes:{barcodes}")
-
-                    def cb_():
-                        for b in barcodes:
-                            response = dymo_print(str(b))
-                            logging.warning(f"response:{response}")
-                            time.sleep(.05)
-
-                    msg_ = tr_("confirm printing {} barcodes?").format(len(barcodes))
-                    self.open_input_dialog(message=msg_, content="{}".format(barcodes), ok_cb=cb_)
-
-                    model.remove_file(file_name)
-                    self.populate_file_table()
-                    self.populate_order_table()
-                    self.populate_jar_table()
-
-                _msg = tr_("confirm creating order from file (file will be deleted):\n '{}'?\n").format(file_name)
-                _msg += tr_('Please, insert below the number of jars.')
-                self.open_input_dialog(message=_msg, content="<span align='center'>1</span>", ok_cb=cb)
-
-            elif col == 3:  # file name
-                pass
-
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None
-            )
-
-    def populate_order_table(self):
-
-        t = time.time()
-        if t - self.search_order_table_last_time > 0.1:
-            self.search_order_table_last_time = t
-            try:
-                db_session = QApplication.instance().db_session
-                order_model = OrderTableModel(self, db_session)
-                self.order_table_view.setModel(order_model)
-            except Exception:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-
-            self.search_order_box.setTitle(tr_("[{}] Orders: search by order nr.").format(order_model.rowCount()))
-
-    def populate_jar_table(self):
-
-        t = time.time()
-        if t - self.search_jar_table_last_time > 0.1:
-            self.search_jar_table_last_time = t
-            try:
-                db_session = QApplication.instance().db_session
-                jar_model = JarTableModel(self, db_session)
-                self.jar_table_view.setModel(jar_model)
-            except Exception:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-            self.search_jar_box.setTitle(tr_("[{}] Jars:   search by status").format(jar_model.rowCount()))
-
-    def populate_file_table(self):
-
-        t = time.time()
-        if t - self.search_file_table_last_time > 0.1:
-            self.search_file_table_last_time = t
-            try:
-                file_model = FileTableModel(self, WEBENGINE_DOWNLOAD_PATH)
-                self.file_table_view.setModel(file_model)
-            except Exception:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-
-            self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(file_model.rowCount()))
-
     def toggle_keyboard(self, on_off=None):
 
         if on_off is None:
@@ -1116,115 +1268,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def update_status_data(self, head_index, _=None):
 
         try:
-            self.__update_service_btns__presences_and_lifters(head_index)
+            self.debug_status_view.update_status()
+
+            self.__home_page.update_service_btns__presences_and_lifters(head_index)
+            self.__home_page.update_tank_pixmaps()
+            self.__home_page.update_jar_pixmaps()
+
             self.__update_action_pages()
-            self.__update_jar_pixmaps()
-            self.__update_tank_pixmaps()
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-
-    def __set_pixmap_by_photocells(self, lbl, head_letters_bit_names, position=None, icon=None):
-
-        def _get_bit(head_letter, bit_name):
-            m = QApplication.instance().get_machine_head_by_letter(head_letter)
-            ret = m.jar_photocells_status.get(bit_name) if m else None
-            return ret
-
-        try:
-
-            false_condition = [
-                1 for h, b in head_letters_bit_names if not _get_bit(h, b)
-            ]
-
-            if icon is None:
-                if false_condition:
-                    lbl.setStyleSheet("QLabel {{}}")
-                    lbl.setText("")
-                else:
-                    text = ""
-                    for j in QApplication.instance().get_jar_runners().values():
-                        pos = j["jar"].position
-                        if pos == position:
-                            _bc = str(j["jar"].barcode)
-                            text = _bc[-6:-3] + "\n" + _bc[-3:]
-                            break
-
-                    if text:
-                        _img_url = os.path.join(IMAGES_PATH, "jar-green.png")
-                    else:
-                        _img_url = os.path.join(IMAGES_PATH, "jar-gray.png")
-
-                    lbl.setStyleSheet(
-                        'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
-                    lbl.setText(text)
-            else:
-                size = [0, 0] if false_condition else [32, 32]
-                pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
-                lbl.setPixmap(pixmap)
-
-            lbl.show()
-
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.open_alert_dialog(f"exception:{e}", title="ERROR")
-
-    def __update_service_btns__presences_and_lifters(self, head_index):
-
-        self.debug_status_view.update_status()
-
-        status = QApplication.instance().machine_head_dict[head_index].status
-
-        map_ = [
-            self.service_1_btn,
-            self.service_2_btn,
-            self.service_3_btn,
-            self.service_4_btn,
-            self.service_5_btn,
-            self.service_6_btn,
-        ]
-        map_[head_index].setText(f"{status['status_level']}")
-
-        map_ = [
-            self.container_presence_1_label,
-            self.container_presence_2_label,
-            self.container_presence_3_label,
-            self.container_presence_4_label,
-            self.container_presence_5_label,
-            self.container_presence_6_label,
-        ]
-        if status["container_presence"]:
-            map_[head_index].setPixmap(self.green_icon)
-        else:
-            map_[head_index].setPixmap(self.gray_icon)
-
-        # ~ lifter positions
-        self.__set_pixmap_by_photocells(self.load_lifter_up_label, ((
-            "D", "LOAD_LIFTER_UP_PHOTOCELL"),), icon=self.green_icon)
-        self.__set_pixmap_by_photocells(self.load_lifter_down_label, ((
-            "D", "LOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.green_icon)
-        self.__set_pixmap_by_photocells(self.unload_lifter_up_label, ((
-            "F", "UNLOAD_LIFTER_UP_PHOTOCELL"),), icon=self.green_icon)
-        self.__set_pixmap_by_photocells(self.unload_lifter_down_label, ((
-            "F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.green_icon)
-
-    def __update_tank_pixmaps(self):
-        map_ = [
-            self.refill_1_lbl,
-            self.refill_2_lbl,
-            self.refill_3_lbl,
-            self.refill_4_lbl,
-            self.refill_5_lbl,
-            self.refill_6_lbl,
-        ]
-
-        for head_index, m in QApplication.instance().machine_head_dict.items():
-            status = m.status
-            if "STANDBY" in status.get('status_level', '') and QApplication.instance().carousel_frozen:
-                map_[head_index].setPixmap(self.tank_icon_map['green'])
-            else:
-                map_[head_index].setPixmap(self.tank_icon_map['gray'])
-
-            map_[head_index].setText("")
 
     def __update_action_pages(self):
 
@@ -1251,40 +1303,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 action_frame.status_E_label.setText(tr_(f"{_get_status_level('E')}"))
                 action_frame.status_F_label.setText(tr_(f"{_get_status_level('F')}"))
 
-    def __update_jar_pixmaps(self):
-
-        _ = [f"{k} ({j['jar'].position[0]})" for k, j in QApplication.instance().get_jar_runners().items()]
-        self.running_jars_lbl.setText("\n".join(_))
-
-        self.__set_pixmap_by_photocells(
-            self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), position="IN_A")
-        self.__set_pixmap_by_photocells(
-            self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="A")
-        self.__set_pixmap_by_photocells(
-            self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="B")
-        self.__set_pixmap_by_photocells(
-            self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="C")
-        self.__set_pixmap_by_photocells(
-            self.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"),
-                                 ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTR_UP")
-        self.__set_pixmap_by_photocells(
-            self.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),
-                                 ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTR_DOWN")
-        self.__set_pixmap_by_photocells(
-            self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="D")
-        self.__set_pixmap_by_photocells(
-            self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="E")
-        self.__set_pixmap_by_photocells(
-            self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="F")
-        self.__set_pixmap_by_photocells(
-            self.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),
-                                 ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTL_DOWN")
-        self.__set_pixmap_by_photocells(
-            self.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),
-                                 ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTL_UP")
-        self.__set_pixmap_by_photocells(
-            self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), position="OUT")
-
     def show_reserve(self, head_index, flag=None):
 
         map_ = [
@@ -1299,16 +1317,16 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         if flag is None:
             flag = not map_[head_index].isVisible()
 
-        l = map_[head_index]
-        # ~ logging.warning(f"head_index:{head_index}, flag:{flag}, l:{l}.")
+        _label = map_[head_index]
+        # ~ logging.warning(f"head_index:{head_index}, flag:{flag}, _label:{_label}.")
 
         if flag:
-            l.setMovie(self.reserve_movie)
+            _label.setMovie(self.reserve_movie)
             self.reserve_movie.start()
-            l.show()
+            _label.show()
         else:
-            l.setText("")
-            l.hide()
+            _label.setText("")
+            _label.hide()
 
     def show_carousel_frozen(self, flag):
         if flag:
@@ -1364,21 +1382,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         css = "color: #000000" if is_ok else "color: #990000"
         self.menu_line_edit.setStyleSheet(css)
         self.menu_line_edit.setText(f"{barcode}")
-
-
-
-    def __on_new_order_clicked(self):
-        logging.warning("")
-
-    def __on_clone_order_clicked(self):
-        order_nr = None
-        sel_model = self.order_table_view.selectionModel()
-        sel_orders = sel_model.selectedRows()
-        if sel_orders:
-            row = sel_orders[0].row()
-            model = sel_orders[0].model()
-            order_nr = model.results[row][3]
-            logging.warning(f"order_nr:{order_nr}")
 
 
 def main():

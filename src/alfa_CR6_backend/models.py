@@ -174,6 +174,8 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
     order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
     jars = relationship("Jar")
 
+    json_properties = Column(Unicode, default='{"meta": "", "ingrdients": []}')
+
     def __str__(self):
         return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
 
@@ -200,18 +202,15 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "jar"
     status = Column(
-        Unicode, default="NEW", doc="one of ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]"
-    )
+        Unicode, default="NEW", doc="one of ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]")
     index = Column(Integer, default=0, doc="position of this jar inside the order")
     size = Column(
         Integer,
         nullable=False,
-        doc="one of [0x0, 0x1, 0x2, 0x3] corresponging to the combinations of MICROSWITCH 1 and 2",
-    )
+        doc="one of [0x0, 0x1, 0x2, 0x3] corresponging to the combinations of MICROSWITCH 1 and 2")
     position = Column(
         Unicode,
-        doc="one of [None, 'step_1', 'step_1,step_2', 'step_2', 'step_2,step_3', ..., 'step_11,step_12', 'step_12']",
-    )
+        doc="one of [None, 'step_1', 'step_1,step_2', 'step_2', 'step_2,step_3', ..., 'step_11,step_12', 'step_12']")
 
     order_id = Column(Unicode, ForeignKey("order.id"), nullable=False)
     order = relationship("Order", back_populates="jars")

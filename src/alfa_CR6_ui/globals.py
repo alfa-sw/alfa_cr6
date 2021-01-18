@@ -16,15 +16,12 @@ import traceback
 import random
 
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import Qt, QVariant, QAbstractTableModel, QSize, QRect, QItemSelectionModel, QItemSelection
+from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
+    Qt, QVariant, QAbstractTableModel, QSize)
+
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
-    QApplication,
-    QStyle,
-    QMessageBox,
-    QFrame,
-    QTableWidgetItem,
-    QCompleter)
+    QApplication, QStyle, QMessageBox, QFrame, QTableWidgetItem, QCompleter)
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 
@@ -44,6 +41,7 @@ def tr_(s):
 
 
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
+
     def __init__(self, parent, *args):
 
         super().__init__(parent, *args)
@@ -93,6 +91,7 @@ class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-a
 
 
 class FileTableModel(BaseTableModel):
+
     def __init__(self, parent, path, *args):
         super().__init__(parent, *args)
         self.header = [tr_("delete"), tr_("view"), tr_("create order"), tr_("file name")]
@@ -133,9 +132,9 @@ class FileTableModel(BaseTableModel):
 
 class OrderTableModel(BaseTableModel):
 
-    def __init__(self, parent, session, *args):
+    def __init__(self, parent, *args):
         super().__init__(parent, *args)
-        self.session = session
+        self.session = QApplication.instance().db_session
         self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr.")]
         filter_text = parent.search_order_line.text()
 
@@ -192,13 +191,12 @@ class OrderTableModel(BaseTableModel):
 
 class JarTableModel(BaseTableModel):
 
-    def __init__(self, parent, session, *args):
+    def __init__(self, parent, *args):
 
         super().__init__(parent, *args)
-        self.session = session
+        self.session = QApplication.instance().db_session
         self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("barcode")]
         filter_text = parent.search_jar_line.text()
-        
         order_nr = None
         sel_model = self.parent().order_table_view.selectionModel()
         sel_orders = sel_model.selectedRows()
@@ -356,6 +354,8 @@ class BaseDialog(QFrame):
             QComboBox {background:#FFFFAA; }
             QPushButton { background-color: #F3F3F3F3;}
             QPushButton:pressed {background-color: #AAAAAA;}
+            QSpinBox::up-button { height: 35px; width: 50px; }
+            QSpinBox::down-button { height: 35px; width: 50px; }
             """
         )
         self.move(440, 100)
@@ -383,8 +383,8 @@ class EditDialog(BaseDialog):
 
         super().__init__(*args, **kwargs)
 
-        self.ok_button.clicked.connect(self.hide)
-        self.ok_button.clicked.connect(self.save)
+        self.ok_button.clicked.connect(self.__save_changes)
+        self.esc_button.clicked.connect(self.__discard_changes)
         self.set_item_btn.clicked.connect(self.__on_set_item_clicked)
         self.remove_item_btn.clicked.connect(self.__on_delete_item_clicked)
 
@@ -397,10 +397,13 @@ class EditDialog(BaseDialog):
 
         self.remove_item_btn.setIcon(QIcon(self.remove_icon))
 
+        self.ok_button.setText(tr_("save changes"))
+        self.esc_button.setText(tr_("discard changes"))
         self.remove_item_btn.setText(tr_("remove\nselected"))
         self.order_nr_lbl.setText(tr_("order n.:"))
         self.pigment_lbl.setText(tr_("pigment:"))
         self.quantity_lbl.setText(tr_("quantity (gr):"))
+        self.jars_to_add_lbl.setText(tr_("n. of jars to add:"))
         self.edit_item_group_box.setTitle(tr_("edit or add item:"))
 
         self.order_nr = None
@@ -415,7 +418,8 @@ class EditDialog(BaseDialog):
                 ret.append(row)
 
         if len(ret) > 1:
-            self.warning_lbl.setText(tr_('<div style="color: red;">WARN: replicated entries {}.</div>'.format(pigment_name)))
+            self.warning_lbl.setText(
+                tr_('<div style="color: red;">WARN: replicated entries {}.</div>'.format(pigment_name)))
 
         return ret
 
@@ -498,6 +502,8 @@ class EditDialog(BaseDialog):
             self.__set_row(row, pigment_name, quantity, descr=description)
             self.warning_lbl.setText(tr_('modified.'))
             self.__check_row(pigment_name)
+            
+            self.quantity_line_edit.setText('0.0')
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -523,7 +529,61 @@ class EditDialog(BaseDialog):
             self.parent().open_alert_dialog(
                 f"exception:{e}", title="ERROR", callback=None, args=None)
 
-    def show_dialog(self, order_nr):   # pylint: disable=too-many-arguments
+    def __do_save_changes(self):
+
+        db_session = QApplication.instance().db_session
+
+        try:
+            order = db_session.query(Order).filter(Order.order_nr == self.order_nr).one()
+
+            _meta = json.loads(self.meta_text_edit.toPlainText())
+            _ingredients = []
+            cols = self.formula_table.columnCount()
+            rows = self.formula_table.rowCount()
+            for row in range(rows):
+                values_ = [self.formula_table.item(row, col).data(Qt.DisplayRole) for col in range(cols)]
+                ingredient = {
+                    'pigment_name': str(values_[1]),
+                    'weight(g)': float(values_[2]),
+                    'description': str(values_[3]),
+                }
+                _ingredients.append(ingredient)
+
+            _properties = json.loads(order.json_properties)
+            _properties['ingredients'] = _ingredients
+            _properties['meta'] = _meta
+
+            order.json_properties = json.dumps(_properties, indent=2)
+
+            n_of_jars = self.n_of_jars_spinbox.value()
+            for _ in range(1, n_of_jars + 1):
+                jar = Jar(order=order, size=0)
+                db_session.add(jar)
+
+            db_session.commit()
+
+        except BaseException:  # pylint: disable=broad-except
+            db_session.rollback()
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None)
+
+        self.hide()
+
+    def __save_changes(self):
+
+        msg = tr_("confirm saving changes?")
+        self.parent().open_alert_dialog(msg, title="ALERT", callback=self.__do_save_changes)
+
+        self.parent().populate_order_table()
+        self.parent().populate_jar_table()
+
+    def __discard_changes(self):
+
+        msg = tr_("confirm discarding changes?")
+        self.parent().open_alert_dialog(msg, title="ALERT", callback=self.hide)
+
+    def show_dialog(self, order_nr):
 
         self.order_nr = order_nr
         order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).one()
@@ -531,7 +591,7 @@ class EditDialog(BaseDialog):
         properties = json.loads(order.json_properties)
         # ~ logging.warning(f"properties:{properties}")
 
-        ingredients = properties.get('ingredients')
+        ingredients = properties.get('ingredients', {})
         meta_content = json.dumps(properties.get("meta", {}), indent=2)
 
         self.meta_text_edit.setText(meta_content)
@@ -555,39 +615,15 @@ class EditDialog(BaseDialog):
         completer.popup().setFont(QFont('Times sans-serif', 18))
         self.pigment_combo.setCompleter(completer)
 
-        self.move(360 + random.randint(-80, 80), 10)
+        self.move(360 + random.randint(-80, 80), 2)
 
         self.warning_lbl.setText("")
+        self.n_of_jars_spinbox.setValue(0)
 
         for row, item_ in enumerate(ingredients):
             self.__set_row(row, item_['pigment_name'], item_['weight(g)'], item_['description'])
 
         self.show()
-
-    def save(self):   # pylint: disable=too-many-arguments
-
-        order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == self.order_nr).one()
-
-        _meta = json.loads(self.meta_text_edit.toPlainText())
-        _ingredients = []
-        cols = self.formula_table.columnCount()
-        rows = self.formula_table.rowCount()
-        for row in range(rows):
-            values_ = [self.formula_table.item(row, col).data(Qt.DisplayRole) for col in range(cols)]
-            ingredient = {
-                'pigment_name': str(values_[1]),
-                'weight(g)': float(values_[2]),
-                'description': str(values_[3]),
-            }
-            _ingredients.append(ingredient)
-
-        _properties = json.loads(order.json_properties)
-        _properties['ingredients'] = _ingredients
-        _properties['meta'] = _meta
-
-        order.json_properties = json.dumps(_properties, indent=2)
-
-        QApplication.instance().db_session.commit()
 
 
 class InputDialog(BaseDialog):

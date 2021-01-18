@@ -1537,9 +1537,6 @@
      <zorder>running_jars_lbl</zorder>
     </widget>
     <widget class="QWidget" name="order_page">
-     <property name="styleSheet">
-      <string notr="true">background:#FFFFFF</string>
-     </property>
      <widget class="QGroupBox" name="search_file_box">
       <property name="geometry">
        <rect>
@@ -1607,6 +1604,9 @@
          <height>40</height>
         </size>
        </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
       </widget>
       <widget class="QPushButton" name="clone_order_btn">
        <property name="geometry">
@@ -1629,6 +1629,9 @@
          <width>40</width>
          <height>40</height>
         </size>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
        </property>
       </widget>
      </widget>
@@ -1843,8 +1846,8 @@
  <resources/>
  <connections/>
  <buttongroups>
+  <buttongroup name="action_btn_group"/>
   <buttongroup name="menu_btn_group"/>
   <buttongroup name="service_btn_group"/>
-  <buttongroup name="action_btn_group"/>
  </buttongroups>
 </ui>
