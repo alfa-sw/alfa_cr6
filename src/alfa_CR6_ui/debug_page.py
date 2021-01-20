@@ -16,10 +16,9 @@ import asyncio
 
 # ~ import json
 
-from PyQt5.QtWidgets import (
+from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
     QApplication,
-    QFrame,  # pylint: disable=no-name-in-module
-    # ~ QComboBox,
+    QFrame,
     QFileDialog,
     QTextBrowser,
     QButtonGroup,
@@ -32,7 +31,8 @@ from alfa_CR6_backend.dymo_printer import dymo_print
 from alfa_CR6_ui.globals import tr_
 
 
-class DebugStatusView:
+class DebugPage:
+
     def __init__(self, parent):
 
         # ~ app = QApplication.instance()
@@ -40,51 +40,21 @@ class DebugStatusView:
         self.barcode_counter = 0
 
         self.main_frame = QFrame(parent=parent)
-        # ~ self.main_frame.setGeometry(0, 0, 1800, 1000)
-        self.main_frame.setStyleSheet(
-            """
+        self.main_frame.setStyleSheet("""
                 QWidget {
                     font-size: 16px;
                     font-family: monospace;
                     }
-                """
-        )
+                """)
 
         self.status_text_browser = QTextBrowser(parent=self.main_frame)
         self.status_text_browser.setOpenLinks(False)
-        # ~ self.status_text_browser.setFrameStyle(QFrame.Panel | QFrame.Raised)
-
-        # ~ self.status_text_browser.setStyleSheet("""
-        # ~ QTextBrowser {
-        # ~ background-color: #FFFFF7;
-        # ~ font-size: 16px;
-        # ~ font-family: monospace;
-        # ~ }
-        # ~ """)
 
         self.answer_text_browser = QTextBrowser(parent=self.main_frame)
         self.answer_text_browser.document().setMaximumBlockCount(500)
         self.status_text_browser.setOpenLinks(False)
 
-        # ~ self.answer_text_browser.setStyleSheet("""
-        # ~ QTextBrowser {
-        # ~ background-image:'';
-        # ~ background-color: #FFFFF7;
-        # ~ font-size: 16px;
-        # ~ font-family: monospace;
-        # ~ }
-        # ~ """)
-
         self.buttons_frame = QFrame(parent=self.main_frame)
-        # ~ self.buttons_frame.setStyleSheet("""
-        # ~ QWidget {
-        # ~ background-image:'';
-        # ~ color: #333366;
-        # ~ background-color: #FFFFF7;
-        # ~ font-size: 20px;
-        # ~ font-family: monospace;
-        # ~ }
-        # ~ """)
         self.button_group = QButtonGroup(parent=self.buttons_frame)
         for i, n in enumerate(
             [
@@ -167,18 +137,10 @@ class DebugStatusView:
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
-        # ~ self.cb = QComboBox(parent=self.buttons_frame)
-        # ~ self.cb.setGeometry(20 + 8 * 152, 90, 200, 60)
-        # ~ for name in app.MACHINE_HEAD_INDEX_TO_NAME_MAP.values():
-        # ~ self.cb.addItem(name)
-
         width = 1880
         self.status_text_browser.setGeometry(20, 2, width, 592)
         self.buttons_frame.setGeometry(20, 598, width, 200)
         self.answer_text_browser.setGeometry(20, 794, width, 200)
-
-        # ~ parent.main_window_stack.addWidget(self.main_frame)
-        # ~ parent.main_window_stack.setCurrentWidget(self.main_frame)
 
         self.status_text_browser.anchorClicked.connect(
             self.status_text_browser_anchor_clicked
@@ -319,7 +281,7 @@ class DebugStatusView:
         jar = app.db_session.query(Jar).filter(Jar.id == jar_id).one()
         logging.warning(f"jar:{jar}")
         logging.info(f"jar.json_properties:{jar.json_properties}")
-        
+
         # ~ msg_ = "<html>"
         # ~ msg_ += f"jar.json_properties:{jar.json_properties}"
         # ~ msg_ += "<br></br>"
@@ -329,7 +291,7 @@ class DebugStatusView:
         msg_ += f"jar.json_properties:{jar.json_properties}"
         msg_ += "\n"
         msg_ += f"jar.order.json_properties:{jar.order.json_properties}"
-        
+
         app.main_window.open_input_dialog(message=f"jar:{jar}", content=msg_)
 
     def delete_orders(self):  # pylint: disable=no-self-use, too-many-branches
@@ -397,15 +359,6 @@ class DebugStatusView:
 
             self.open_order_dialog()
 
-            # ~ msg_ = tr_("Please, insert the unlock-key to enable \n the opening of filesystem dialog.")
-            # ~ def cb():
-                # ~ k = app.main_window.input_dialog.content_container.toPlainText()
-                # ~ logging.warning(f"k :{k }")
-                # ~ if "123" in k:
-                    # ~ self.open_order_dialog()
-
-            # ~ app.main_window.open_input_dialog(message=msg_, content="", ok_cb=cb)
-
         elif "delete\norders in db" in cmd_txt:
 
             self.delete_orders()
@@ -469,9 +422,7 @@ class DebugStatusView:
             self.answer_text_browser.setText("")
 
         elif "close" in cmd_txt:
-            app.main_window.get_stacked_widget().setCurrentWidget(
-                app.main_window.home_page
-            )
+            app.main_window.home_page.open_page()
 
         elif "clear\njars" in cmd_txt:
 

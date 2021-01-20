@@ -15,15 +15,24 @@ import time
 import traceback
 import random
 
+
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
-    Qt, QVariant, QAbstractTableModel, QSize)
+    Qt, QSize)
 
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
-    QApplication, QStyle, QMessageBox, QFrame, QTableWidgetItem, QCompleter)
+    QApplication,
+    QStyle,
+    QMessageBox,
+    QFrame,
+    QTableWidgetItem,
+    QCompleter)
 
-from alfa_CR6_backend.models import Order, Jar, decompile_barcode
+from alfa_CR6_backend.models import Order, Jar
+from alfa_CR6_backend.dymo_printer import dymo_print
+
+EPSILON = 0.00001
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 KEYBOARD_PATH = os.path.join(HERE, "keyboard")
@@ -38,224 +47,6 @@ WEBENGINE_CACHE_PATH = "/opt/alfa_cr6/data/webengine"
 
 def tr_(s):
     return s
-
-
-class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
-
-    def __init__(self, parent, *args):
-
-        super().__init__(parent, *args)
-        self.gray_icon = QPixmap(os.path.join(IMAGES_PATH, "gray.png"))
-        self.green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
-        self.red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
-        self.yellow_icon = QPixmap(os.path.join(IMAGES_PATH, "yellow.png"))
-        self.blue_icon = QPixmap(os.path.join(IMAGES_PATH, "blue.png"))
-
-        self.add_icon = QPixmap(os.path.join(IMAGES_PATH, "add.png"))
-        self.edit_icon = QPixmap(os.path.join(IMAGES_PATH, "edit.png"))
-
-        # ~ self.item_font = QFont('Times sans-serif', 32)
-        self.results = [[]]
-
-    def rowCount(self, parent=None):
-        logging.debug(f"parent:{parent}")
-        return len(self.results)
-
-    def columnCount(self, parent):
-        logging.debug(f"parent:{parent}")
-        ret = 0
-        if self.results:
-            ret = len(self.results[0])
-        return ret
-
-    def data(self, index, role):
-        # ~ logging.warning(f"index, role:{index, role}")
-        if not index.isValid():
-            return None
-        ret = QVariant()
-        if role == Qt.DecorationRole and index.column() == 0:
-            # ~ ret = "#FF6633"
-            ret = self.new_icon.scaled(48, 48, Qt.KeepAspectRatio)
-        # ~ elif role == Qt.SizeHintRole:
-        # ~ ret = 32
-        # ~ elif role == Qt.FontRole:
-        # ~ ret = self.item_font
-        elif role == Qt.DisplayRole:
-            ret = self.results[index.row()][index.column()]
-        return ret
-
-    def headerData(self, col, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.header[col]
-        return None
-
-
-class FileTableModel(BaseTableModel):
-
-    def __init__(self, parent, path, *args):
-        super().__init__(parent, *args)
-        self.header = [tr_("delete"), tr_("view"), tr_("create order"), tr_("file name")]
-        filter_text = parent.search_file_line.text()
-        name_list_ = [p for p in os.listdir(path) if filter_text in p][:101]
-        if len(name_list_) >= 100:
-            self.open_alert_dialog(
-                tr_("Too many files saved and not used. Please delete unused files."),
-                title="ERROR",
-            )
-        name_list_.sort(reverse=True)
-        self.results = [["", "", "", p] for p in name_list_]
-
-    def remove_file(self, file_name):  # pylint: disable=no-self-use
-        cmd_ = f'rm -f "{os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name)}"'
-        logging.warning(f"cmd_:{cmd_}")
-        os.system(cmd_)
-
-    def data(self, index, role):
-        # ~ logging.warning(f"index, role:{index, role}")
-        if not index.isValid():
-            return None
-        ret = QVariant()
-        if role == Qt.DecorationRole and index.column() == 0:
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1:  # view
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
-        elif role == Qt.DecorationRole and index.column() == 2:  # create order
-            ret = (
-                self.parent()
-                .style()
-                .standardIcon(getattr(QStyle, "SP_FileDialogDetailedView"))
-            )
-        elif role == Qt.DisplayRole:
-            ret = self.results[index.row()][index.column()]
-        return ret
-
-
-class OrderTableModel(BaseTableModel):
-
-    def __init__(self, parent, *args):
-        super().__init__(parent, *args)
-        self.session = QApplication.instance().db_session
-        self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr.")]
-        filter_text = parent.search_order_line.text()
-
-        if self.session:
-            query_ = self.session.query(Order)
-            query_ = query_.filter(Order.order_nr.contains(filter_text))
-            # ~ query_ = query_.order_by(Order.order_nr.desc())
-            query_ = query_.limit(100)
-            self.results = [
-                ["", "", o.status, o.order_nr] for o in query_.all()
-            ]
-            self.results.sort()
-
-        else:
-            self.results = [[]]
-
-    def remove_order(self, order_nr):
-        logging.warning(f"order_nr:{order_nr}, self.session:{self.session}")
-        if self.session:
-            order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
-
-            for j in self.session.query(Jar).filter(Jar.order == order).all():
-                self.session.delete(j)
-                QApplication.instance().delete_jar_runner(j.barcode)
-
-            self.session.delete(order)
-            self.session.commit()
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        ret = QVariant()
-        if role == Qt.DecorationRole and index.column() == 0:
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1:  # edit
-            ret = self.edit_icon.scaled(32, 32, Qt.KeepAspectRatio)
-        if role == Qt.DecorationRole and index.column() == 2:  # status
-            datum = str(index.data()).upper()
-            if "DONE" in datum:
-                ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "ERR" in datum:
-                ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "PARTIAL" in datum:
-                ret = self.blue_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "PROGRESS" in datum:
-                ret = self.yellow_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            else:
-                ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
-
-        elif role == Qt.DisplayRole:
-            ret = self.results[index.row()][index.column()]
-        return ret
-
-
-class JarTableModel(BaseTableModel):
-
-    def __init__(self, parent, *args):
-
-        super().__init__(parent, *args)
-        self.session = QApplication.instance().db_session
-        self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("barcode")]
-        filter_text = parent.search_jar_line.text()
-        order_nr = None
-        sel_model = self.parent().order_table_view.selectionModel()
-        sel_orders = sel_model.selectedRows()
-        if sel_orders:
-            row = sel_orders[0].row()
-            model = sel_orders[0].model()
-            order_nr = model.results[row][3]
-
-        if self.session:
-            query_ = self.session.query(Jar)
-            if filter_text:
-                query_ = query_.filter(Jar.status.contains(filter_text))
-            if order_nr is not None:
-                order = self.session.query(Order).filter(Order.order_nr == order_nr).first()
-                if order:
-                    query_ = query_.filter(Jar.order == order)
-            query_ = query_.order_by(Jar.index.desc()).limit(100)
-            self.results = [
-                ["", "", o.status, o.barcode] for o in query_.all()
-            ]
-        else:
-            self.results = [[]]
-
-    def remove_jar(self, barcode):
-        order_nr, index = decompile_barcode(barcode)
-        if self.session and order_nr and index >= 0:
-            order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
-
-            query_ = self.session.query(Jar)
-            query_ = query_.filter(Jar.order == order)
-            query_ = query_.filter(Jar.index == index)
-            r = query_.delete()
-            logging.warning(f"r:{r}")
-            self.session.commit()
-
-            QApplication.instance().delete_jar_runner(barcode)
-
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        ret = QVariant()
-        if role == Qt.DecorationRole and index.column() == 0:
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1:  # view
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
-        if role == Qt.DecorationRole and index.column() == 2:  # barcode
-            datum = str(index.data()).upper()
-            if "DONE" in datum:
-                ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "ERR" in datum:
-                ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "PROGRESS" in datum:
-                ret = self.yellow_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            else:
-                ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
-
-        elif role == Qt.DisplayRole:
-            ret = self.results[index.row()][index.column()]
-        return ret
 
 
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
@@ -283,29 +74,32 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         # ~ Qt::NonModal	0	The window is not modal and does not block input to other windows.
         # ~ Qt::WindowModal	1	The window is modal to a single window hierarchy and blocks input to its parent window, all grandparent windows, and all siblings of its parent and grandparent windows.
         # ~ Qt::ApplicationModal	2	The window is modal to the application and blocks input to all windows.
+
         self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+        # ~ self.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+
         self.resize(800, 400)
+
         for i, b in enumerate(self.buttons()):
-            b.setStyleSheet(
-                """
+            if i == 0:
+                b.setObjectName('esc')
+                b.setText(tr_('cancel'))
+                style_ = getattr(QStyle, "SP_MessageBoxCritical")
+            elif i == 1:
+                b.setObjectName('ok')
+                b.setText(tr_('confirm'))
+                style_ = getattr(QStyle, "SP_DialogYesButton")
+
+            b.setStyleSheet("""
                     QWidget {
                         font-size: 48px;
                         font-family: monospace;
                         }
-                    """
-            )
-            if i == 0:
-                b.setIcon(
-                    self.parent()
-                    .style()
-                    .standardIcon(getattr(QStyle, "SP_DialogYesButton"))
-                )
-            if i == 1:
-                b.setIcon(
-                    self.parent()
-                    .style()
-                    .standardIcon(getattr(QStyle, "SP_MessageBoxCritical"))
-                )
+                    """)
+            b.setIcon(
+                self.parent()
+                .style()
+                .standardIcon(style_))
 
         self.setWindowModality(0)
         self.setWindowFlags(
@@ -317,10 +111,11 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         if self.ok_callback:
             def on_button_clicked(btn):
-                # ~ logging.warning(f"btn.objectName():{btn.objectName()}")
-                # ~ if "ok" in btn.objectName().lower():
                 logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
-                if "ok" in btn.text().lower():
+                logging.warning(f"self.buttons().index(btn):{self.buttons().index(btn)}")
+
+                # ~ if "ok" in btn.text().lower():
+                if "ok" in btn.objectName().lower():
                     args_ = self.ok_callback_args if self.ok_callback_args is not None else []
                     self.ok_callback(*args_)
 
@@ -356,6 +151,7 @@ class BaseDialog(QFrame):
             QPushButton:pressed {background-color: #AAAAAA;}
             QSpinBox::up-button { height: 35px; width: 50px; }
             QSpinBox::down-button { height: 35px; width: 50px; }
+            QCheckBox::indicator {width: 40px; height: 40px; color: #99FF99;}
             """
         )
         self.move(440, 100)
@@ -391,6 +187,8 @@ class EditDialog(BaseDialog):
         self.formula_table.itemSelectionChanged.connect(self.__on_formula_table_itemSelectionChanged)
 
         self.pigment_combo.currentTextChanged.connect(self.__on_pigment_combo_currentTextChanged)
+        
+        self.n_of_jars_spinbox.valueChanged.connect(self.__on_n_of_jars_spinbox_valueChanged)
 
         self.pigment_combo.setEditable(True)
         self.pigment_combo.setInsertPolicy(self.pigment_combo.NoInsert)
@@ -400,14 +198,24 @@ class EditDialog(BaseDialog):
         self.ok_button.setText(tr_("save changes"))
         self.esc_button.setText(tr_("discard changes"))
         self.remove_item_btn.setText(tr_("remove\nselected"))
+        self.edit_item_group_box.setTitle(tr_("edit or add item:"))
         self.order_nr_lbl.setText(tr_("order n.:"))
         self.pigment_lbl.setText(tr_("pigment:"))
         self.quantity_lbl.setText(tr_("quantity (gr):"))
-        self.jars_to_add_lbl.setText(tr_("n. of jars to add:"))
-        self.edit_item_group_box.setTitle(tr_("edit or add item:"))
+        self.jars_to_add_lbl.setText(tr_("n. of jars\nto add:"))
+        self.print_check_box.setText(tr_("print\nbarcodes?"))
 
         self.order_nr = None
         self.available_pigments = {}
+
+    def __on_n_of_jars_spinbox_valueChanged(self):
+
+        if self.n_of_jars_spinbox.value() > 0:
+            self.print_check_box.setEnabled(True)
+            self.warning_lbl.setText(tr_('modified.'))
+        else:
+            self.print_check_box.setEnabled(False)
+            self.print_check_box.setChecked(False)
 
     def __check_row(self, pigment_name):
 
@@ -502,7 +310,7 @@ class EditDialog(BaseDialog):
             self.__set_row(row, pigment_name, quantity, descr=description)
             self.warning_lbl.setText(tr_('modified.'))
             self.__check_row(pigment_name)
-            
+
             self.quantity_line_edit.setText('0.0')
 
         except Exception as e:  # pylint: disable=broad-except
@@ -529,12 +337,14 @@ class EditDialog(BaseDialog):
             self.parent().open_alert_dialog(
                 f"exception:{e}", title="ERROR", callback=None, args=None)
 
-    def __do_save_changes(self):
+    def __do_save_changes(self):  # pylint: disable=too-many-locals
 
         db_session = QApplication.instance().db_session
 
         try:
             order = db_session.query(Order).filter(Order.order_nr == self.order_nr).one()
+            jar = db_session.query(Jar).filter(Jar.order == order).order_by(Jar.index.desc()).first()
+            base_index = jar.index + 1 if jar else 1
 
             _meta = json.loads(self.meta_text_edit.toPlainText())
             _ingredients = []
@@ -545,24 +355,33 @@ class EditDialog(BaseDialog):
                 ingredient = {
                     'pigment_name': str(values_[1]),
                     'weight(g)': float(values_[2]),
-                    'description': str(values_[3]),
-                }
+                    'description': str(values_[3])}
                 _ingredients.append(ingredient)
 
             _properties = json.loads(order.json_properties)
-            _properties['ingredients'] = _ingredients
-            _properties['meta'] = _meta
-
+            _properties.update({'ingredients': _ingredients, 'meta': _meta})
             order.json_properties = json.dumps(_properties, indent=2)
 
             n_of_jars = self.n_of_jars_spinbox.value()
-            for _ in range(1, n_of_jars + 1):
-                jar = Jar(order=order, size=0)
+            barcodes = []
+            for _indx in range(base_index, base_index + n_of_jars):
+                jar = Jar(order=order, size=0, index=_indx)
                 db_session.add(jar)
+                barcodes.append(jar.barcode)
 
             db_session.commit()
 
-        except BaseException:  # pylint: disable=broad-except
+            self.parent().order_page.populate_jar_table()
+
+            logging.warning(f"self.print_check_box.isChecked() :{self.print_check_box.isChecked() }")
+            logging.warning(f"barcodes:{barcodes}")
+            if self.print_check_box.isChecked():
+                for b in barcodes:
+                    response = dymo_print(str(b))
+                    logging.warning(f"response:{response}")
+                    time.sleep(.05)
+
+        except BaseException as e:  # pylint: disable=broad-except
             db_session.rollback()
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(
@@ -572,16 +391,28 @@ class EditDialog(BaseDialog):
 
     def __save_changes(self):
 
-        msg = tr_("confirm saving changes?")
-        self.parent().open_alert_dialog(msg, title="ALERT", callback=self.__do_save_changes)
-
-        self.parent().populate_order_table()
-        self.parent().populate_jar_table()
+        if self.warning_lbl.text():
+            msg = tr_("confirm saving changes")
+            n_of_jars = self.n_of_jars_spinbox.value()
+            print_barcodes = self.print_check_box.isChecked()
+            if n_of_jars:
+                msg += tr_(",\ncreating {} jars").format(n_of_jars)
+                if print_barcodes:
+                    msg += tr_("\nand printing barcodes")
+                else:
+                    msg += tr_("\nwithout printing barcodes")
+            msg += tr_(" ?")
+            self.parent().open_alert_dialog(msg, title="ALERT", callback=self.__do_save_changes)
+        else:
+            self.hide()
 
     def __discard_changes(self):
 
-        msg = tr_("confirm discarding changes?")
-        self.parent().open_alert_dialog(msg, title="ALERT", callback=self.hide)
+        if self.warning_lbl.text():
+            msg = tr_("confirm discarding changes?")
+            self.parent().open_alert_dialog(msg, title="ALERT", callback=self.hide)
+        else:
+            self.hide()
 
     def show_dialog(self, order_nr):
 
@@ -619,6 +450,8 @@ class EditDialog(BaseDialog):
 
         self.warning_lbl.setText("")
         self.n_of_jars_spinbox.setValue(0)
+        self.print_check_box.setEnabled(False)
+        self.print_check_box.setChecked(False)
 
         for row, item_ in enumerate(ingredients):
             self.__set_row(row, item_['pigment_name'], item_['weight(g)'], item_['description'])
@@ -659,9 +492,14 @@ class InputDialog(BaseDialog):
         self.ok_button.clicked.connect(self.hide)
         if ok_cb is not None:
             def on_ok_button_clicked():
-                args_ = ok_cb_args if ok_cb_args is not None else []
-                ok_cb(*args_)
-
+                try:
+                    args_ = ok_cb_args if ok_cb_args is not None else []
+                    ok_cb(*args_)
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.error(traceback.format_exc())
+                    self.parent().open_alert_dialog(
+                        f"exception:{e}", title="ERROR", callback=None, args=None)
+                    
             self.ok_button.clicked.connect(on_ok_button_clicked)
 
         self.show()

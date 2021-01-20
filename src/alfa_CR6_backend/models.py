@@ -238,7 +238,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         try:
             app = QApplication.instance()
-            app.main_window.debug_status_view.update_status()
+            app.main_window.debug_page.update_status()
         except Exception as e:  # pylint: disable=broad-except
             logging.error(e)
 

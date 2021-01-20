@@ -32,9 +32,10 @@ def main():
         packages=find_packages(where='src'),
         package_dir={'': 'src'},
         data_files=[
-            ('alfa_CR6_ui/ui', list(glob.glob('src/alfa_CR6_ui/ui/*'))),
-            ('alfa_CR6_ui/keyboard', list(glob.glob('src/alfa_CR6_ui/keyboard/*'))),
+            ('alfa_CR6_ui/help', list(glob.glob('src/alfa_CR6_ui/help/*'))),
             ('alfa_CR6_ui/images', list(glob.glob('src/alfa_CR6_ui/images/*'))),
+            ('alfa_CR6_ui/keyboard', list(glob.glob('src/alfa_CR6_ui/keyboard/*'))),
+            ('alfa_CR6_ui/ui', list(glob.glob('src/alfa_CR6_ui/ui/*'))),
             ('alfa_CR6_test/fixtures', list(glob.glob('src/alfa_CR6_test/fixtures/*'))),
         ],
         include_package_data=True,

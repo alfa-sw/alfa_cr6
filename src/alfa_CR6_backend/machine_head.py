@@ -20,10 +20,9 @@ import websockets  # pylint: disable=import-error
 import aiohttp  # pylint: disable=import-error
 import async_timeout  # pylint: disable=import-error
 
+from alfa_CR6_ui.globals import EPSILON
 
 DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
-
-EPSILON = 0.00001
 
 
 class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-public-methods

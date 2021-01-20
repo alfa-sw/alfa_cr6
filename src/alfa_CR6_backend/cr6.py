@@ -525,7 +525,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         elif msg_dict.get("type") == "answer":
             answer = msg_dict.get("value")
-            self.main_window.debug_status_view.add_answer(head_index, answer)
+            self.main_window.debug_page.add_answer(head_index, answer)
 
     def get_machine_head_by_letter(self, letter):  # pylint: disable=inconsistent-return-statements
 
@@ -669,8 +669,8 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
             self.main_window.show_carousel_frozen(self.carousel_frozen)
 
-        if self.main_window.debug_status_view:
-            self.main_window.debug_status_view.update_status()
+        if self.main_window.debug_page:
+            self.main_window.debug_page.update_status()
 
     async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):  # pylint: disable=too-many-statements
 
@@ -1020,23 +1020,29 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         m_name = machine_head.name[0] if machine_head else None
         logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
 
-        _pos_list = [j["jar"].position for j in self.__jar_runners.values()]
-        if pos in _pos_list:
-            e = Exception(tr_("duplicate {} in jar position list!").format(pos))
+        try:
+            _pos_list = [j["jar"].position for j in self.__jar_runners.values()]
+            if pos in _pos_list:
+                e = Exception(tr_("duplicate {} in jar position list!").format(pos))
+                self.handle_exception(e)
+            else:
+                if jar is not None:
+                    jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
+        except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
-        else:
-            if jar is not None:
-                jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
 
     def __deliver_jar(self):
 
-        for j in self.__jar_runners.values():
-            if j["jar"].position == "OUT":
-                j["jar"].position = "_"
-                self.delete_jar_runner(j["jar"].barcode)
-                logging.warning("delivering jar:{}.".format(j["jar"]))
+        try:
+            for j in self.__jar_runners.values():
+                if j["jar"].position == "OUT":
+                    j["jar"].position = "_"
+                    self.delete_jar_runner(j["jar"].barcode)
+                    logging.warning("delivering jar:{}.".format(j["jar"]))
 
-        self.db_session.commit()
+            self.db_session.commit()
+        except Exception as e:  # pylint: disable=broad-except
+            self.handle_exception(e)
 
     def ask_for_refill(self, head_index):
 
