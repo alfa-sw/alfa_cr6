@@ -474,6 +474,7 @@ class OrderPage(BaseStackedPage):
 
                 msg_ = tr_("confirm deleting order '{}' and related jars?").format(order_nr)
                 self.main_window.open_input_dialog(icon_name="SP_MessageBoxCritical", message=msg_, ok_cb=cb)
+                self.populate_jar_table()
 
             elif col == 1:  # edit
 
@@ -701,7 +702,7 @@ class HomePage(BaseStackedPage):
     def __init_action_pages(self):
 
         def action_back_home_():
-            self.parent().setCurrentWidget(self.main_window.home_page_c)
+            self.parent().setCurrentWidget(self)
 
         def action_(args):
             logging.warning(f"args:{args}")
