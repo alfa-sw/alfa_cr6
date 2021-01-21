@@ -83,11 +83,11 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         for i, b in enumerate(self.buttons()):
             if i == 0:
                 b.setObjectName('esc')
-                b.setText(tr_('cancel'))
+                b.setText(tr_('Cancel'))
                 style_ = getattr(QStyle, "SP_MessageBoxCritical")
             elif i == 1:
                 b.setObjectName('ok')
-                b.setText(tr_('confirm'))
+                b.setText(tr_('  OK  '))
                 style_ = getattr(QStyle, "SP_DialogYesButton")
 
             b.setStyleSheet("""
@@ -100,6 +100,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 self.parent()
                 .style()
                 .standardIcon(style_))
+            b.resize(300, 80)
 
         self.setWindowModality(0)
         self.setWindowFlags(
@@ -423,10 +424,11 @@ class EditDialog(BaseDialog):
         # ~ logging.warning(f"properties:{properties}")
 
         ingredients = properties.get('ingredients', {})
+        size = properties.get("size(cc)", "")
         meta_content = json.dumps(properties.get("meta", {}), indent=2)
 
         self.meta_text_edit.setText(meta_content)
-        self.order_nr_view_lbl.setText(str(order_nr))
+        self.order_nr_view_lbl.setText("{} ({})".format(order_nr, size))
 
         self.formula_table.clearContents()
         self.formula_table.setRowCount(len(ingredients))

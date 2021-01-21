@@ -31,11 +31,13 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 
 EPSILON = 0.00001
 
+
 def import_settings():
     sys.path.append(CONF_PATH)
     import app_settings  # pylint: disable=import-error,import-outside-toplevel
     sys.path.remove(CONF_PATH)
     return app_settings
+
 
 def _get_version():
 
@@ -427,7 +429,12 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                     jar
                 )
                 if jar_volume < total_volume:
-                    error = f"Jar volume is not sufficient for barcode:{barcode}. {jar_volume}(cc)<{total_volume}(cc)."
+                    error = tr_(
+                        """Jar volume not sufficient for barcode:{}.
+                    Please, remove it.
+                    {}(cc)<{:.3f}(cc).""").format(
+                        barcode, jar_volume, total_volume)
+
                     jar = None
                 # ~ elif unavailable_pigment_names:
                 # ~ error = f'Pigments not available for barcode:{barcode}:{unavailable_pigment_names}.'
@@ -467,7 +474,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                 "JAR_INPUT_ROLLER_PHOTOCELL", on=True, status_levels=["STANDBY"]
             )
             if not r:
-                msg_ = f"Condition not valid while reading barcode:{barcode}"
+                msg_ = tr_("Condition not valid while reading barcode:{}").format(barcode)
                 self.main_window.open_alert_dialog(msg_)
                 logging.error(msg_)
             else:
@@ -480,7 +487,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if not error:
                     if barcode in self.__jar_runners.keys():
-                        error = f"{barcode} already in progress!"
+                        error = tr_("{} already in progress!"), format(barcode)
                         self.main_window.show_barcode(barcode, is_ok=False)
 
                 if error:

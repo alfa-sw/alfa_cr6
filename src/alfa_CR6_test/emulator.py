@@ -172,7 +172,8 @@ class MachineHeadMockup:
 
     async def do_move(self, mask=EMPTY_MASK, set_or_reset="", duration=0, tgt_level="STANDBY"):
 
-        logging.warning("{} - mask:0x{:04X}, , set_or_reset:{}, , duration:{}, , tgt_level:{}".format(self.letter, mask, set_or_reset, duration, tgt_level))
+        logging.warning("{} - mask:0x{:04X}, , set_or_reset:{}, , duration:{}, , tgt_level:{}".format(self.letter,
+                                                                                                      mask, set_or_reset, duration, tgt_level))
 
         await asyncio.sleep(duration)
         pars = {"status_level": tgt_level}
@@ -198,7 +199,7 @@ class MachineHeadMockup:
 
         await self.update_status(params=pars)
 
-    async def handle_command(self, msg_out_dict): # pylint: disable=too-many-branches,too-many-statements
+    async def handle_command(self, msg_out_dict):  # pylint: disable=too-many-branches,too-many-statements
         logging.warning("{} {}, {}".format(self.index, self.letter, msg_out_dict))
 
         if msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
@@ -255,7 +256,7 @@ class MachineHeadMockup:
                     await self.do_move(LOAD_LIFTER_ROLLER_MASK, "toggle", duration=2)
 
                 if self.index == 1:  # F
-                    
+
                     if lifter == 1:  # 'DOWN -> UP'
                         await self.do_move(
                             UNLOAD_LIFTER_DOWN_MASK,
@@ -341,7 +342,7 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
 
     async def _time_notifier(self):
 
-        while 1:
+        while True:
             ts_ = datetime.now().astimezone().strftime("%d %b %Y (%I:%M:%S %p) %Z")
             value = "{}".format(ts_)
             message = json.dumps({"type": "time", **{"value": value}})

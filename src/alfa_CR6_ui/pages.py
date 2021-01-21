@@ -342,18 +342,18 @@ class WebenginePage(BaseStackedPage):
     def __on_load_start(self):
         self.__load_progress = 0
         url_ = self.webengine_view.url().toString()
-        self.url_lbl.setText('<div style="font-size: 10pt;">{} {} ({})</div>'.format(
+        self.url_lbl.setText('<div style="font-size: 10pt; background-color: #EEEEFF;">{} {} ({})</div>'.format(
             self.start_load, url_, self.__load_progress))
 
     def __on_load_progress(self):
         self.__load_progress += 1
         url_ = self.webengine_view.url().toString()
-        self.url_lbl.setText('<div style="font-size: 10pt;">{} {} ... ({})</div>'.format(
+        self.url_lbl.setText('<div style="font-size: 10pt; background-color: #DDEEFF;">{} {} ... ({})</div>'.format(
             self.loading, url_, "*" * self.__load_progress))
 
     def __on_load_finish(self):
         url_ = self.webengine_view.url().toString()
-        self.url_lbl.setText('<div style="font-size: 10pt;">{} {}</div>'.format(self.loaded, url_))
+        self.url_lbl.setText('<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
 
     def open_page(self, url=WEBENGINE_CUSTOMER_URL):
 

@@ -20,7 +20,7 @@ import websockets  # pylint: disable=import-error
 import aiohttp  # pylint: disable=import-error
 import async_timeout  # pylint: disable=import-error
 
-from alfa_CR6_ui.globals import EPSILON
+from alfa_CR6_ui.globals import EPSILON, tr_
 
 DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
 
@@ -128,7 +128,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     async def update_tintometer_data(self, invalidate_cache=True):
 
         # ~ logging.warning(
-            # ~ f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
+        # ~ f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
 
         if invalidate_cache:
             ret = await self.call_api_rest("pigment", "GET", {})
@@ -177,8 +177,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         logging.debug("status:{}".format(status))
 
         if not self.status:
-            r = asyncio.ensure_future(self.update_tintometer_data())
-            # ~ logging.warning(f"r:{r}")
+            asyncio.ensure_future(self.update_tintometer_data())
 
         if (
                 status.get("status_level") == "ALARM"
@@ -425,7 +424,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         try:
 
             def condition():
-                flag = self.jar_photocells_status[bit_name] and True
+                flag = self.jar_photocells_status.get(bit_name, False) and True
                 flag = flag if on else not flag
                 flag = flag and self.status["status_level"] in status_levels
                 return flag
@@ -438,7 +437,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             )
 
             if not ret and show_alert:
-                _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}"'
+                _ = tr_('timeout expired!\n{} bit_name:{}, on:{}, status_levels:{}, timeout:{}.').format(
+                    self.name, bit_name, on, status_levels, timeout)
                 self.app.main_window.open_alert_dialog(_)
                 logging.error(_)
 
@@ -454,7 +454,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         try:
 
             def condition():
-                flag = self.jar_photocells_status[bit_name]
+                flag = self.jar_photocells_status.get(bit_name, False)
                 return flag if on else not flag
 
             ret = await self.wait_for_condition(
@@ -463,7 +463,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
 
             if not ret and show_alert:
-                _ = f'timeout expired! {self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}"'
+                _ = tr_('timeout expired!\n{} bit_name:{}, on:{}, timeout:{}.').format(
+                    self.name, bit_name, on, timeout)
                 self.app.main_window.open_alert_dialog(_)
                 logging.error(_)
 
@@ -492,7 +493,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             )
 
             if not ret and show_alert:
-                _ = f'timeout expired! {self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}"'
+                _ = tr_('timeout expired!\n{} on:{}, status_levels:{}, timeout:{}.').format(
+                    self.name, on, status_levels, timeout)
                 self.app.main_window.open_alert_dialog(_)
                 logging.error(_)
 
