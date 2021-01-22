@@ -220,7 +220,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     def update_live(self, machine_head=None, status=None, pos=None, t0=None):
 
-        logging.warning(f"{self}")
+        old = f"{self}"
 
         self.machine_head = machine_head
 
@@ -235,6 +235,9 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         if self.t0 is not None:
             self.description = "d:{:.1f}".format(time.time() - self.t0)
+
+        new = f"{self}"
+        logging.warning(f"old:{old}, new:{new}.")
 
         try:
             app = QApplication.instance()

@@ -144,6 +144,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.stacked_widget.setCurrentWidget(self.debug_page.main_frame)
 
             elif "help" in btn_name:
+                self.toggle_keyboard(on_off=False)
                 self.help_page.open_page()
 
         except Exception as e:  # pylint: disable=broad-except

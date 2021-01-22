@@ -18,7 +18,7 @@ from functools import partial
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (Qt, QVariant, QAbstractTableModel)
 
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QTextDocument
 from PyQt5.QtWidgets import (
     QApplication,
     QStyle,
@@ -284,13 +284,20 @@ class HelpPage(BaseStackedPage):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.exit_help_btn.clicked.connect(self.__on_exit)
+
+        self.help_text_browser.anchorClicked.connect(self.__on_anchor_clicked)
+
         self.context_widget = None
 
-    def __on_exit(self):
-        if self.context_widget:
-            self.parent().setCurrentWidget(self.context_widget)
-            self.hide()
+        self.help_text_browser.document().setMetaInformation( QTextDocument.DocumentUrl, "file:" + IMAGES_PATH + "/")
+
+    def __on_anchor_clicked(self, link):
+
+        logging.warning(f"link:{link}")
+        if '#exit' in link.toString():
+            if self.context_widget:
+                self.parent().setCurrentWidget(self.context_widget)
+                self.hide()
 
     def open_page(self):
 
@@ -300,7 +307,7 @@ class HelpPage(BaseStackedPage):
 
         logging.warning(f"self.context_widget:{self.context_widget}")
 
-        help_file_name = 'html5_example.html'
+        help_file_name = 'home.html'
 
         with open(os.path.join(HELP_PATH, help_file_name)) as f:
             content = f.read()
@@ -349,7 +356,7 @@ class WebenginePage(BaseStackedPage):
         self.__load_progress += 1
         url_ = self.webengine_view.url().toString()
         self.url_lbl.setText('<div style="font-size: 10pt; background-color: #DDEEFF;">{} {} ... ({})</div>'.format(
-            self.loading, url_, "*" * self.__load_progress))
+            self.loading, url_, "*" * (self.__load_progress%10)))
 
     def __on_load_finish(self):
         url_ = self.webengine_view.url().toString()
@@ -526,10 +533,14 @@ class OrderPage(BaseStackedPage):
                         query_ = query_.filter(Jar.index == index)
                         jar = query_.first()
                         if jar:
-                            content = tr_("status:{}").format(jar.status)
-                            content += tr_("\ndescription:{}").format(jar.description)
-                            content += tr_("\ndate_created:{}\n").format(jar.date_created)
-                            content += tr_("\nproperties:{}\n").format(json.loads(jar.json_properties))
+                            content = tr_("status:{}\n").format(jar.status)
+                            if jar.position:
+                                content += tr_("position:{}\n").format(jar.position)
+                            if jar.machine_head:
+                                content += tr_("machine_head:{}\n").format(jar.machine_head)
+                            content += tr_("description:{}\n").format(jar.description)
+                            content += tr_("date_created:{}\n").format(jar.date_created)
+                            content += tr_("properties:{}\n").format(json.loads(jar.json_properties))
 
                             msg_ = tr_("do you want to print barcode:\n {} ?").format(barcode)
 
@@ -1098,10 +1109,6 @@ class HomePage(BaseStackedPage):
                 "title": "action 09 (head 2 or F)",
                 "buttons": [
                     {
-                        "text": "Start lifter roller CW",
-                        "action": partial(action_, ("single_move", "F", {"Lifter_Roller": 2})),
-                    },
-                    {
                         "text": "Start lifter roller CCW",
                         "action": partial(action_, ("single_move", "F", {"Lifter_Roller": 3})),
                     },
@@ -1139,7 +1146,7 @@ class HomePage(BaseStackedPage):
                         "show_val": partial(
                             show_val_,
                             "F",
-                            "JAR_OUTPUT_ROLLER_PHOTOCELL",
+                            "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
                             "LIFTER ROLLER PHOTOCELL",
                         )
                     },

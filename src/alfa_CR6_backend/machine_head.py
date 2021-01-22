@@ -473,11 +473,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.handle_exception(e)
 
     async def wait_for_status_level(
-            self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True
-        ):
+            self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
+
         logging.warning(
-            f"{self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}"
-        )
+            f"{self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}")
 
         try:
 
@@ -503,8 +502,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.handle_exception(e)
 
     async def wait_for_condition(
-            self, condition, timeout, show_alert=True, extra_info=""
-        ):
+            self, condition, timeout, show_alert=True, extra_info=""):
+
         t0 = time.time()
         ret = condition()
         while not ret and time.time() - t0 < timeout:

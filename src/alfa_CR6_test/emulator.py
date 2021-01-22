@@ -241,23 +241,21 @@ class MachineHeadMockup:
                     await self.do_move(DISPENSING_POSITION_MASK, "set", duration=2)
                 elif dispensing_roller == 1:
                     await self.do_move(
-                        DISPENSING_POSITION_MASK,
-                        "reset",
-                        duration=1,
-                        tgt_level="JAR_POSITIONING",
-                    )
+                        DISPENSING_POSITION_MASK, "reset", duration=1, tgt_level="JAR_POSITIONING")
 
                 if lifter_roller == 4:
                     await self.do_move(LOAD_LIFTER_ROLLER_MASK, "reset", duration=1)
+                    await self.do_move(UNLOAD_LIFTER_ROLLER_MASK, "reset", duration=1)
                 elif lifter_roller in (2, 5):
                     await self.do_move(LOAD_LIFTER_ROLLER_MASK, "set", duration=2)
-                # ~ elif lifter_roller == 1 or lifter_roller == 3:
-                elif lifter_roller == 3:
+                    await self.do_move(UNLOAD_LIFTER_ROLLER_MASK, "set", duration=2)
+                elif lifter_roller in (1, 3):
                     await self.do_move(LOAD_LIFTER_ROLLER_MASK, "toggle", duration=2)
+                    await self.do_move(UNLOAD_LIFTER_ROLLER_MASK, "toggle", duration=2)
 
                 if self.index == 1:  # F
 
-                    if lifter == 1:  # 'DOWN -> UP'
+                    if lifter == 1:  
                         await self.do_move(
                             UNLOAD_LIFTER_DOWN_MASK,
                             "reset",
@@ -265,7 +263,7 @@ class MachineHeadMockup:
                             tgt_level="JAR_POSITIONING",
                         )
                         await self.do_move(UNLOAD_LIFTER_UP_MASK, "set", duration=2)
-                    elif lifter == 2:  # 'UP -> DOWN'
+                    elif lifter == 2:  
                         await self.do_move(
                             UNLOAD_LIFTER_UP_MASK,
                             "reset",

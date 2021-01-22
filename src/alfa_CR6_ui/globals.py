@@ -428,7 +428,10 @@ class EditDialog(BaseDialog):
         meta_content = json.dumps(properties.get("meta", {}), indent=2)
 
         self.meta_text_edit.setText(meta_content)
-        self.order_nr_view_lbl.setText("{} ({})".format(order_nr, size))
+        txt_ = "{}".format(order_nr)
+        if size:
+            txt_ += " <small>({}cc)</small>".format(size)
+        self.order_nr_view_lbl.setText(txt_)
 
         self.formula_table.clearContents()
         self.formula_table.setRowCount(len(ingredients))
@@ -451,6 +454,7 @@ class EditDialog(BaseDialog):
         self.move(360 + random.randint(-80, 80), 2)
 
         self.warning_lbl.setText("")
+        self.quantity_line_edit.setText("")
         self.n_of_jars_spinbox.setValue(0)
         self.print_check_box.setEnabled(False)
         self.print_check_box.setChecked(False)

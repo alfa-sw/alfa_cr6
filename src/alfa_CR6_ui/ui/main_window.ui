@@ -174,12 +174,12 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>../images/green.png</normaloff>../images/green.png</iconset>
+       <normaloff>../images/RPi-Logo-Reg.png</normaloff>../images/RPi-Logo-Reg.png</iconset>
      </property>
      <property name="iconSize">
       <size>
-       <width>200</width>
-       <height>60</height>
+       <width>54</width>
+       <height>54</height>
       </size>
      </property>
      <property name="flat">
