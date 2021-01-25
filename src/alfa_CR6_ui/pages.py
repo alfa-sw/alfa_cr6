@@ -245,7 +245,7 @@ class JarTableModel(BaseTableModel):
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
         elif role == Qt.DecorationRole and index.column() == 1:  # view
             # ~ ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
-            ret = self.barcode_C128_icon.scaled(48, 64, Qt.KeepAspectRatio)
+            ret = self.barcode_C128_icon.scaled(80, 160, Qt.KeepAspectRatio)
 
         if role == Qt.DecorationRole and index.column() == 2:  # status
             datum = str(index.data()).upper()
@@ -289,15 +289,21 @@ class HelpPage(BaseStackedPage):
 
         self.context_widget = None
 
-        self.help_text_browser.document().setMetaInformation( QTextDocument.DocumentUrl, "file:" + IMAGES_PATH + "/")
+        self.help_text_browser.document().setMetaInformation(QTextDocument.DocumentUrl, "file:" + IMAGES_PATH + "/")
 
     def __on_anchor_clicked(self, link):
 
         logging.warning(f"link:{link}")
-        if '#exit' in link.toString():
+        link_s = link.toString()
+
+        if '#exit' in link_s:
             if self.context_widget:
                 self.parent().setCurrentWidget(self.context_widget)
                 self.hide()
+        elif link_s.startswith("#ext:"):
+            url_ = link_s.split("#ext:")[1]
+            logging.warning(f"url_:{url_}")
+            self.main_window.webengine_page.open_page(url_)
 
     def open_page(self):
 
@@ -356,11 +362,12 @@ class WebenginePage(BaseStackedPage):
         self.__load_progress += 1
         url_ = self.webengine_view.url().toString()
         self.url_lbl.setText('<div style="font-size: 10pt; background-color: #DDEEFF;">{} {} ... ({})</div>'.format(
-            self.loading, url_, "*" * (self.__load_progress%10)))
+            self.loading, url_, "*" * (self.__load_progress % 10)))
 
     def __on_load_finish(self):
         url_ = self.webengine_view.url().toString()
-        self.url_lbl.setText('<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
+        self.url_lbl.setText(
+            '<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
 
     def open_page(self, url=WEBENGINE_CUSTOMER_URL):
 
@@ -540,7 +547,8 @@ class OrderPage(BaseStackedPage):
                                 content += tr_("machine_head:{}\n").format(jar.machine_head)
                             content += tr_("description:{}\n").format(jar.description)
                             content += tr_("date_created:{}\n").format(jar.date_created)
-                            content += tr_("properties:{}\n").format(json.loads(jar.json_properties))
+                            content += tr_("properties:{}\n").format(
+                                json.dumps(json.loads(jar.json_properties), indent=2))
 
                             msg_ = tr_("do you want to print barcode:\n {} ?").format(barcode)
 
@@ -1216,7 +1224,7 @@ class HomePage(BaseStackedPage):
             w.setStyleSheet(
                 """
                 QFrame { border: 1px solid #999999; border-radius: 4px; background-color: #FEFEFE;}
-                QWidget {font-size: 24px; font-family: Times sans-serif;}
+                QWidget {font-size: 24px;}
                 QLabel { border-width: 0px; background-color: #FFFFFF;}
                 QPushButton { background-color: #EEEEEE; border: 1px solid #999999; border-radius: 4px;}
                 QPushButton:pressed {background-color: #AAAAAA;}

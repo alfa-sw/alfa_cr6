@@ -45,8 +45,14 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         super().__init__(parent)
         loadUi(os.path.join(UI_PATH, "main_window.ui"), self)
 
+        # ~ self.setStyleSheet("""
+                # ~ QWidget {font-size: 24px; font-family: Times sans-serif;}
+                # ~ QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
+                # ~ QPushButton:pressed {background-color: #AAAAAA;}
+                # ~ QScrollBar:vertical {width: 40px;}
+            # ~ """)
         self.setStyleSheet("""
-                QWidget {font-size: 24px; font-family: Times sans-serif;}
+                QWidget {font-size: 24px; font-family:Dejavu;}
                 QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
                 QPushButton:pressed {background-color: #AAAAAA;}
                 QScrollBar:vertical {width: 40px;}

@@ -20,8 +20,8 @@ def main():
         name=__app_name__,
         version=__version__,
         description='UI for alfa CR6',
-        url='https://gitlab.com/freelands2019/alfa_cr6',
-        author='alfadispenser srl',
+        url='https://gitlab.com/alfa-sw/alfa_cr6',
+        author='giovanni angeli per alfadispenser srl',
         author_email='giovanniangeli@alfadispenser.com',
         classifiers=[
             'Development Status :: 3 - Alpha',

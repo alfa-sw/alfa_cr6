@@ -158,9 +158,12 @@ class Keyboard(QWidget):
         return r
 
     def evdev_convert(self, el):
+
         if self.special_key(el):
-            return el
-        return self.symbol_act(el.upper().split('\n')[-1])
+            ret = el
+        else:
+            ret = self.symbol_act(el.upper().split('\n')[-1])
+        return ret 
 
     def i18n(self, le):
 
@@ -209,13 +212,14 @@ class Keyboard(QWidget):
         self.redraw_buttons()
 
     def on_pushButton_clicked(self, key):
-        if not has_evdev:
-            return
-        keys = [KeyAction(key, True),
-                KeyAction(key, False)]
-        if self.shifted:
-            keys = self.shifted_symbol(keys)
-        self.pushdispatcher(keys)
+        if  has_evdev:
+            keys = [KeyAction(key, True),
+                    KeyAction(key, False)]
+            if self.shifted:
+                keys = self.shifted_symbol(keys)
+            self.pushdispatcher(keys)
+
+            logging.warning(f"keys:{keys}")
 
     def shifted_symbol(self, keys):
         start = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], True)]

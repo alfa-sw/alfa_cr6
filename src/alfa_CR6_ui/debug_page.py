@@ -370,11 +370,12 @@ class DebugPage:
         elif cmd_txt == "alert":
 
             def cb():
-                logging.warning(f"empty callback called!")
+                msg_ = "실차색상 배합입니다. (희석10%, 2회도장) 서페이서 V-1 적용색상입니다. 리피니쉬 벨류쉐이드 가이드 주소안내"
+                r = app.main_window.open_alert_dialog(msg_, callback=None)
+                logging.warning("")
 
-            r = app.main_window.open_alert_dialog(
-                tr_("test alert message"), callback=cb
-            )
+            msg_ = tr_("test alert message")
+            r = app.main_window.open_alert_dialog(msg_, callback=cb)
             logging.warning(f"r:{r}")
 
         elif cmd_txt == "unfreeze\ncarousel":

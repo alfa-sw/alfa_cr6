@@ -61,7 +61,6 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             """
                 QMessageBox {
                     font-size: 20px;
-                    font-family: monospace;
                     border: 2px solid #999999; border-radius: 4px; background-color: #FEFEFE;
                     }
                 """
@@ -83,19 +82,14 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         for i, b in enumerate(self.buttons()):
             if i == 0:
                 b.setObjectName('esc')
-                b.setText(tr_('Cancel'))
+                b.setText(tr_(' Cancel '))
                 style_ = getattr(QStyle, "SP_MessageBoxCritical")
             elif i == 1:
                 b.setObjectName('ok')
-                b.setText(tr_('  OK  '))
+                b.setText(tr_('   OK   '))
                 style_ = getattr(QStyle, "SP_DialogYesButton")
 
-            b.setStyleSheet("""
-                    QWidget {
-                        font-size: 48px;
-                        font-family: monospace;
-                        }
-                    """)
+            b.setStyleSheet("""QWidget {font-size: 48px; font-family:Monospace;}""")
             b.setIcon(
                 self.parent()
                 .style()
@@ -144,14 +138,14 @@ class BaseDialog(QFrame):
 
         self.setStyleSheet(
             """
-            QWidget {background:#CCBBBBBB; font-size: 24px; font-family: Times sans-serif; border: 1px solid #999999; border-radius: 4px;}
+            QWidget {background:#CCBBBBBB; border: 1px solid #999999; border-radius: 4px;}
             QLabel {border: 0px;}
             QLineEdit {background:#FFFFAA; }
             QComboBox {background:#FFFFAA; }
             QPushButton { background-color: #F3F3F3F3;}
             QPushButton:pressed {background-color: #AAAAAA;}
-            QSpinBox::up-button { height: 35px; width: 50px; }
-            QSpinBox::down-button { height: 35px; width: 50px; }
+            QSpinBox::up-button { height: 40px; width: 50px; }
+            QSpinBox::down-button { height: 40px; width: 50px; }
             QCheckBox::indicator {width: 40px; height: 40px; color: #99FF99;}
             """
         )
@@ -200,7 +194,6 @@ class EditDialog(BaseDialog):
         self.esc_button.setText(tr_("discard changes"))
         self.remove_item_btn.setText(tr_("remove\nselected"))
         self.edit_item_group_box.setTitle(tr_("edit or add item:"))
-        self.order_nr_lbl.setText(tr_("order n.:"))
         self.pigment_lbl.setText(tr_("pigment:"))
         self.quantity_lbl.setText(tr_("quantity (gr):"))
         self.jars_to_add_lbl.setText(tr_("n. of jars\nto add:"))
@@ -425,7 +418,11 @@ class EditDialog(BaseDialog):
 
         ingredients = properties.get('ingredients', {})
         size = properties.get("size(cc)", "")
-        meta_content = json.dumps(properties.get("meta", {}), indent=2)
+        meta = properties.get("meta", {})
+        title = meta.get("basic information", {}).get("kcc code", tr_("order n.:"))
+        meta_content = json.dumps(meta, indent=2)
+
+        self.order_nr_lbl.setText(title)
 
         self.meta_text_edit.setText(meta_content)
         txt_ = "{}".format(order_nr)
