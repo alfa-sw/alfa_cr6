@@ -988,7 +988,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         try:
             r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
             if r:
-                r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=60 * 60, show_alert=True)
+                r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=24 * 60 * 60)
 
             jar.update_live(pos="_")
 
@@ -1044,8 +1044,8 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         try:
             # ~ _pos_list = [j["jar"].position for j in self.__jar_runners.values()]
             # ~ if pos in _pos_list and jar.barcode != j["jar"].barcode:
-                # ~ e = Exception(tr_("duplicate {} in jar position list!").format(pos))
-                # ~ self.handle_exception(e)
+            # ~ e = Exception(tr_("duplicate {} in jar position list!").format(pos))
+            # ~ self.handle_exception(e)
 
             for j in self.__jar_runners.values():
                 if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
