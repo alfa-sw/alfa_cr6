@@ -19,7 +19,6 @@ VENV_PATH = f"{DEPLOY_PATH}/venv"
 CONF_PATH = f"{DEPLOY_PATH}/conf"
 LOG_PATH = f"{DEPLOY_PATH}/log"
 DATA_PATH = f"{DEPLOY_PATH}/data"
-VAR_PATH = f"{DEPLOY_PATH}/var"
 TMP_PATH = f"{DEPLOY_PATH}/tmp"
 SCRIPTS_PATH = f"{DEPLOY_PATH}/scripts"
 
@@ -70,7 +69,7 @@ def makedirs_on_target(args):
 
     tgt_cred = args.target_credentials
 
-    for pth in (VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, VAR_PATH, TMP_PATH, SCRIPTS_PATH):
+    for pth in (VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, TMP_PATH, SCRIPTS_PATH):
         cmd_ = f'ssh {tgt_cred} "if [ ! -e {pth} ]; then mkdir -p {pth} ;fi"'
         exec_(cmd_, dry=args.dry_run)
         # cmd_ = f'ssh {tgt_cred} "sudo chmod -R a+rw {pth}"'
@@ -90,10 +89,10 @@ def deploy_conf_to_target(args):
 
     cmds = [
         f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
-        f"scp {PROJECT_ROOT}/conf/cr6.supervisor.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
-        f"scp {PROJECT_ROOT}/conf/xhost.desktop {tgt_cred}:/opt/alfa/tmp/",
-        f'ssh {tgt_cred} "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"',
-        f'ssh {tgt_cred} "sudo chown pi:pi /home/pi/.config/autostart/xhost.desktop"',
+        f"scp {PROJECT_ROOT}/conf/supervisor.target.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
+        # ~ f"scp {PROJECT_ROOT}/conf/xhost.desktop {tgt_cred}:/opt/alfa/tmp/",
+        # ~ f'ssh {tgt_cred} "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"',
+        # ~ f'ssh {tgt_cred} "sudo chown pi:pi /home/pi/.config/autostart/xhost.desktop"',
     ]
 
     for cmd_ in cmds:
@@ -111,15 +110,12 @@ def install_target(args):
         f"scp {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl {tgt_cred}:{TMP_PATH}/",
         f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip uninstall -y alfa_CR6"',
         f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip install {ignore_requires} {TMP_PATH}/alfa_CR6-{__version__}-py3-none-any.whl"',
-        f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
         f'ssh {tgt_cred} "sudo supervisorctl reload"',
     ]
 
     for cmd_ in cmds:
         exec_(cmd_, dry=args.dry_run)
-
         time.sleep(.1)
-
 
 def install_editable(args):
 

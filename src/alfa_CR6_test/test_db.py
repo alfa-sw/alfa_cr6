@@ -115,7 +115,7 @@ def test_all():
     def _action(b_code):
         async def t():
             # ~ APP.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL'] = 1
-            await APP.on_barcode_read(0, b_code)
+            await APP.on_barcode_read(b_code)
             # ~ APP.machine_head_dict[0].jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL'] = 0
 
         asyncio.ensure_future(t())

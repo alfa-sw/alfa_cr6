@@ -68,7 +68,7 @@ def test_all():
 
     APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
     
-    APP.main_window.onLoginBtnClicked()
+    APP.main_window.login_clicked()
 
     APP.main_window.main_window_stack.setCurrentWidget(APP.main_window.debug_status_view.main_frame)
     APP.main_window.debug_status_view.update_status()

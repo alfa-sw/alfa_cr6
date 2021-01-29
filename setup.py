@@ -20,8 +20,8 @@ def main():
         name=__app_name__,
         version=__version__,
         description='UI for alfa CR6',
-        url='https://gitlab.com/freelands2019/alfa_cr6',
-        author='alfadispenser srl',
+        url='https://gitlab.com/alfa-sw/alfa_cr6',
+        author='giovanni angeli per alfadispenser srl',
         author_email='giovanniangeli@alfadispenser.com',
         classifiers=[
             'Development Status :: 3 - Alpha',
@@ -32,9 +32,10 @@ def main():
         packages=find_packages(where='src'),
         package_dir={'': 'src'},
         data_files=[
-            ('alfa_CR6_ui/ui', list(glob.glob('src/alfa_CR6_ui/ui/*.ui'))),
-            ('alfa_CR6_ui/keyboard', list(glob.glob('src/alfa_CR6_ui/keyboard/*.json'))),
+            ('alfa_CR6_ui/help', list(glob.glob('src/alfa_CR6_ui/help/*'))),
             ('alfa_CR6_ui/images', list(glob.glob('src/alfa_CR6_ui/images/*'))),
+            ('alfa_CR6_ui/keyboard', list(glob.glob('src/alfa_CR6_ui/keyboard/*'))),
+            ('alfa_CR6_ui/ui', list(glob.glob('src/alfa_CR6_ui/ui/*'))),
             ('alfa_CR6_test/fixtures', list(glob.glob('src/alfa_CR6_test/fixtures/*'))),
         ],
         include_package_data=True,
