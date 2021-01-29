@@ -313,12 +313,22 @@ class HelpPage(BaseStackedPage):
 
         logging.warning(f"self.context_widget:{self.context_widget}")
 
-        help_file_name = 'home.html'
+        map_ = {
+            self.main_window.order_page: 'order.html',
+            self.main_window.webengine_page: 'webengine.html',
+            self.main_window.home_page: 'home.html',
+        }
 
-        with open(os.path.join(HELP_PATH, help_file_name)) as f:
-            content = f.read()
-            self.help_text_browser.setHtml(content)
-        self.parent().setCurrentWidget(self)
+        if self.context_widget in self.main_window.home_page.action_frame_map.values():
+            help_file_name = "action.html"
+        else:
+            help_file_name = map_.get(self.context_widget)
+
+        if help_file_name:
+            with open(os.path.join(HELP_PATH, help_file_name)) as f:
+                content = f.read()
+                self.help_text_browser.setHtml(content)
+            self.parent().setCurrentWidget(self)
 
 
 class WebenginePage(BaseStackedPage):
@@ -337,6 +347,12 @@ class WebenginePage(BaseStackedPage):
         # ~ QScrollBar:vertical {width: 40px;}
         # ~ ::-webkit-scrollbar {width: 80px}
         # ~ """)
+        settings_ = self.webengine_view.settings()
+        # ~ pdfviewerenabled = settings_.testAttribute(settings_.PdfViewerEnabled)
+        pdfviewerenabled = settings_.setAttribute(30, True)
+        pdfviewerenabled = settings_.testAttribute(30)
+        logging.warning(f"pdfviewerenabled:{pdfviewerenabled}")
+        # ~ QWebEngineSettings::setAttribute(QWebEngineSettings::WebAttribute attribute, bool on)
 
         self.webengine_view.loadStarted.connect(self.__on_load_start)
         self.webengine_view.loadProgress.connect(self.__on_load_progress)
@@ -373,6 +389,7 @@ class WebenginePage(BaseStackedPage):
 
         q_url = QUrl(url)
         if q_url.toString() not in self.webengine_view.url().toString():
+            logging.warning(f"q_url:{q_url}")
             self.webengine_view.setUrl(q_url)
 
         self.parent().setCurrentWidget(self)

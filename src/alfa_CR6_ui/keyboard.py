@@ -25,6 +25,33 @@ except Exception:
 KeyButton = namedtuple('KeyButton', 'key label posx posy endx endy button')
 KeyAction = namedtuple('KeyAction', 'key push')
 
+""" http://www.keyboard-layout-editor.com/ 
+
+    Impostazione tastiera
+    apt get install ibus-hangul
+    Impostazone manuale del Raspberry per usare ibus e di ibus per abilitare il toggle 
+    hangul; dovrebbe comparire il simbolo relativo in alto a destra si puo' switchare 
+    manualmente da caratteri latini a coreani con SHIFT - SPACE, in tastiere dove il 
+    tasto HANGEUL non e' presente per verificare o modificare la tastiera si puo' 
+    switchare da italiano a coreano e provari i vari tasti con o senza shift
+    NOTE:
+    alcuni caratteri coreani possono essere shiftati, ma la maggior parte rimangono 
+    uguali (non esistono lettere maiuscole ma ci sono piu' caratteri che nella tastiera 
+    QWERTY).Alcuni caratteri si compongono tra loro, quindi bisogna digitarne uno alla 
+    volta, cancellando i precedenti o aggiungendo uno spazio per evitare di avere dei caratteri composti.
+    PARTE CODICE
+    la tastera e' realizzata tramite il widget QGridLayout che viene valorizzato tramite 
+    layout.addWidget( Widget, posX, posY, [endX, endY] ).
+    Il layout della tastiera e' definito tramite un json ( riferimento http://www.keyboard-layout-editor.com/ per creare 
+    il layout della tastiera e di conseguenza il json), con lettere e eventuali opzioni di spaziatura (W: larghezza del 
+    pulsante, H: altezza, X: spazio tra i tasti)
+    La traduzione caratteri latini/coreani e' definita in latin_korean nella funzione i18n()
+    Dato che il pulsante KEY_HANGEUL e' solo un toggle, per essere sicuri che lo stato sia quello desiderato 
+    viene passato un "KEY_ESC", che fa uscire dalla modalita' di input coreana.
+    Successivamente viene premuto KEY_HANGEUL alla bisogna, in modo da assicurarsi di avere la situazione 
+    della tastiera locale sempre corrispondente all'input.
+
+"""
 
 class Keyboard(QWidget):
     buttons = []
@@ -212,14 +239,14 @@ class Keyboard(QWidget):
         self.redraw_buttons()
 
     def on_pushButton_clicked(self, key):
+
         if  has_evdev:
             keys = [KeyAction(key, True),
                     KeyAction(key, False)]
             if self.shifted:
                 keys = self.shifted_symbol(keys)
             self.pushdispatcher(keys)
-
-            logging.warning(f"keys:{keys}")
+            # ~ logging.warning(f"keys:{keys}")
 
     def shifted_symbol(self, keys):
         start = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], True)]
