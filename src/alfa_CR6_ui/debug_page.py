@@ -359,6 +359,7 @@ class DebugPage:
 
             self.open_order_dialog()
 
+
         elif "delete\norders in db" in cmd_txt:
 
             self.delete_orders()
