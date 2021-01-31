@@ -279,6 +279,34 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return r_json_as_dict
 
+
+    async def crx_outputs_management(self, params=None):
+
+        # ~ 'CRX_OUTPUTS_MANAGEMENT'
+        # ~ 'properties': {
+            # ~ 'Output_Number': {'propertyOrder': 1, 'type': 'number', 'fmt': 'B',
+                # ~ 'description': "Outupt (roller or lifter) identification number related to a dispensing head. Values comprised between 0 - 3"},
+            # ~ 'Output_Action': {'propertyOrder': 2, 'type': 'number', 'fmt': 'B',
+                # ~ 'description': """Values: 
+                    # ~ 0 = Stop Movement, 
+                    # ~ 1 = Start Movement CW, 
+                    # ~ 2 = Start Movement CW or UP till Photocell transition LIGHT - DARK, 
+                    # ~ 3 = Start Movement CW or UP till Photocell transition DARK - LIGHT, 
+                    # ~ 4 = Start Movement CCW, 
+                    # ~ 5 = Start Movement CCW or DOWN till Photocell transition LIGHT - DARK, 
+                    # ~ 6 = Start Movement CCW or DOWN till Photocell transition DARK - LIGHT"""}}}},            
+
+        default = {
+            "Output_Number": 0,
+            "Output_Action": 0,
+        }
+        if params:
+            default.update(params)
+
+        r = await self.send_command("CRX_OUTPUTS_MANAGEMENT", default)
+
+        return r
+
     async def can_movement(self, params=None):
 
         default = {
