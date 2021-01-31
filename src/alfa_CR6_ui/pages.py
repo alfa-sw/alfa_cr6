@@ -13,12 +13,11 @@ import logging
 import json
 import time
 import traceback
-from functools import partial
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (Qt, QVariant, QAbstractTableModel)
 
-from PyQt5.QtGui import QPixmap, QTextDocument
+from PyQt5.QtGui import QPixmap, QTextDocument, QMovie
 from PyQt5.QtWidgets import (
     QApplication,
     QStyle,
@@ -713,16 +712,46 @@ class OrderPage(BaseStackedPage):
         self.parent().setCurrentWidget(self)
 
 
-class HomePage(BaseStackedPage):
+class ActionPage(BaseStackedPage):
 
-    ui_file_name = "home_page.ui"
+    ui_file_name = "action_frame.ui"
+
+    def __init__(self, action_item, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.setStyleSheet(
+            """
+            QFrame { border: 1px solid #999999; border-radius: 4px; background-color: #FEFEFE;}
+            QWidget {font-size: 24px;}
+            QLabel { border-width: 0px; background-color: #FFFFFF;}
+            QPushButton { background-color: #EEEEEE; border: 1px solid #999999; border-radius: 4px;}
+            QPushButton:pressed {background-color: #AAAAAA;}
+            """
+        )
+
+        self.action_title_label.setText(tr_(action_item["title"]))
+        for b in action_item["buttons"]:
+            i = QPushButton(tr_(b["text"]), self)
+            i.setFixedHeight(50)
+            if b.get("action"):
+                i.clicked.connect(b.get("action"))
+            self.action_buttons_layout.addWidget(i)
+
+        for l in action_item["labels"]:
+
+            i = QLabel(self)
+            i.setTextFormat(Qt.RichText)
+            if l.get("show_val"):
+                setattr(i, "show_val", l.get("show_val"))
+            self.action_labels_layout.addWidget(i)
+
+
+class HomePage(BaseStackedPage):
 
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-
-        self.service_btn_group.buttonClicked.connect(self.__on_service_btn_group_clicked)
-        self.action_btn_group.buttonClicked.connect(self.__on_action_btn_group_clicked)
 
         self.running_jars_lbl.setStyleSheet("font-size: 15px")
 
@@ -733,543 +762,42 @@ class HomePage(BaseStackedPage):
 
         self.action_frame_map = {}
 
-        self.__init_action_pages()
+        self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
+        self.action_btn_group.buttonClicked.connect(self.on_action_btn_group_clicked)
 
-    def __init_action_pages(self):
+        self.reserve_movie = QMovie(os.path.join(IMAGES_PATH, "riserva.gif"))
 
-        def action_back_home_():
-            self.parent().setCurrentWidget(self)
+    def open_page(self):
 
-        def action_(args):
-            logging.warning(f"args:{args}")
-            try:
-                QApplication.instance().run_a_coroutine_helper(args[0], *args[1:])
-            except Exception:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
+        self.parent().setCurrentWidget(self)
 
-        def show_val_(head_letter, bit_name, text, w):
-            # ~ logging.warning(f"head_letter:{head_letter}, bit_name:{bit_name}, text:{text}, w:{w}")
-            try:
-                m = QApplication.instance().get_machine_head_by_letter(head_letter)
-                if bit_name.lower() == "container_presence":
-                    val_ = m.status.get("container_presence")
-                else:
-                    val_ = m.jar_photocells_status.get(bit_name)
 
-                pth_ = (
-                    os.path.join(IMAGES_PATH, "green.png")
-                    if val_
-                    else os.path.join(IMAGES_PATH, "gray.png")
-                )
-                w.setText(
-                    f'<img widt="50" height="50" src="{pth_}" style="vertical-align:middle;">{tr_(text)}</img>'
-                )
-            except Exception:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
+class HomePageSixHeads(HomePage):
 
-        map_ = {
-            self.action_01_btn: {
-                "title": "action 01 (head 1 or A)",
-                "buttons": [
-                    {
-                        "text": "Start input roller",
-                        "action": partial(action_, ("single_move", "A", {"Input_Roller": 1})),
-                    },
-                    {
-                        "text": "Stop  input roller",
-                        "action": partial(action_, ("single_move", "A", {"Input_Roller": 0})),
-                    },
-                    {
-                        "text": "Start input roller to photocell",
-                        "action": partial(action_, ("single_move", "A", {"Input_Roller": 2})),
-                    },
-                    {
-                        "text": "move 01 02 ('IN -> A')",
-                        "action": partial(action_, ("move_01_02",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "A",
-                            "JAR_INPUT_ROLLER_PHOTOCELL",
-                            "INPUT ROLLER PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "A",
-                            "JAR_DETECTION_MICROSWITCH_1",
-                            "MICROSWITCH 1",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "A",
-                            "JAR_DETECTION_MICROSWITCH_2",
-                            "MICROSWITCH 2",
-                        )
-                    },
-                ],
-            },
-            self.action_02_btn: {
-                "title": "action 02 (head 1 or A)",
-                "buttons": [
-                    {
-                        "text": "Start dispensing roller",
-                        "action": partial(action_, ("single_move", "A", {"Dispensing_Roller": 1})),
-                    },
-                    {
-                        "text": "Stop  dispensing roller",
-                        "action": partial(action_, ("single_move", "A", {"Dispensing_Roller": 0})),
-                    },
-                    {
-                        "text": "Start dispensing roller to photocell",
-                        "action": partial(action_, ("single_move", "A", {"Dispensing_Roller": 2})),
-                    },
-                    {
-                        "text": "move 02 03 ('A -> B')",
-                        "action": partial(action_, ("move_02_03",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "A",
-                            "JAR_DISPENSING_POSITION_PHOTOCELL",
-                            "DISPENSING POSITION PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_, "A", "container_presence", "CONTAINER PRESENCE"
-                        )
-                    },
-                ],
-            },
-            self.action_03_btn: {
-                "title": "action 03 (head 3 or B)",
-                "buttons": [
-                    {
-                        "text": "Start dispensing roller",
-                        "action": partial(action_, ("single_move", "B", {"Dispensing_Roller": 1})),
-                    },
-                    {
-                        "text": "Stop  dispensing roller",
-                        "action": partial(action_, ("single_move", "B", {"Dispensing_Roller": 0})),
-                    },
-                    {
-                        "text": "Start dispensing roller to photocell",
-                        "action": partial(action_, ("single_move", "B", {"Dispensing_Roller": 2})),
-                    },
-                    {
-                        "text": "move 03 04 ('B -> C')",
-                        "action": partial(action_, ("move_03_04",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "B",
-                            "JAR_DISPENSING_POSITION_PHOTOCELL",
-                            "DISPENSING POSITION PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_, "B", "container_presence", "CONTAINER PRESENCE"
-                        )
-                    },
-                ],
-            },
-            self.action_04_btn: {
-                "title": "action 04 (head 5 or C)",
-                "buttons": [
-                    {
-                        "text": "Start dispensing roller",
-                        "action": partial(action_, ("single_move", "C", {"Dispensing_Roller": 1})),
-                    },
-                    {
-                        "text": "Stop  dispensing roller",
-                        "action": partial(action_, ("single_move", "C", {"Dispensing_Roller": 0})),
-                    },
-                    {
-                        "text": "Start dispensing roller to photocell",
-                        "action": partial(action_, ("single_move", "C", {"Dispensing_Roller": 2})),
-                    },
-                    {
-                        "text": "move 04 05 ('C -> UP')",
-                        "action": partial(action_, ("move_04_05",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "C",
-                            "JAR_DISPENSING_POSITION_PHOTOCELL",
-                            "DISPENSING POSITION PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_, "C", "container_presence", "CONTAINER PRESENCE"
-                        )
-                    },
-                ],
-            },
-            self.action_05_btn: {
-                "title": "action 05 (head 5, 6 or C, D)",
-                "buttons": [
-                    {
-                        "text": "Start lifter roller CW",
-                        "action": partial(action_, ("single_move", "C", {"Lifter_Roller": 2})),
-                    },
-                    {
-                        "text": "Start lifter roller CCW",
-                        "action": partial(action_, ("single_move", "C", {"Lifter_Roller": 3})),
-                    },
-                    {
-                        "text": "Stop  lifter roller",
-                        "action": partial(action_, ("single_move", "C", {"Lifter_Roller": 0})),
-                    },
-                    {
-                        "text": "Start lifter up",
-                        "action": partial(action_, ("single_move", "D", {"Lifter": 1})),
-                    },
-                    {
-                        "text": "Start lifter down",
-                        "action": partial(action_, ("single_move", "D", {"Lifter": 2})),
-                    },
-                    {
-                        "text": "Stop  lifter",
-                        "action": partial(action_, ("single_move", "D", {"Lifter": 0})),
-                    },
-                    {
-                        "text": "move 04 05 ('C -> UP')",
-                        "action": partial(action_, ("move_04_05",)),
-                    },
-                    {
-                        "text": "move 05 06 ('UP -> DOWN')",
-                        "action": partial(action_, ("move_05_06",)),
-                    },
-                    {
-                        "text": "move 06 07 ('DOWN -> D')",
-                        "action": partial(action_, ("move_06_07",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "C",
-                            "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL",
-                            "LIFTER ROLLER PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "D",
-                            "LOAD_LIFTER_UP_PHOTOCELL",
-                            "LIFTER UP PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "D",
-                            "LOAD_LIFTER_DOWN_PHOTOCELL",
-                            "LIFTER DOWN PHOTOCELL",
-                        )
-                    },
-                ],
-            },
-            self.action_06_btn: {
-                "title": "action 06 (head 6 or D)",
-                "buttons": [
-                    {
-                        "text": "Start dispensing roller",
-                        "action": partial(action_, ("single_move", "D", {"Dispensing_Roller": 1})),
-                    },
-                    {
-                        "text": "Stop  dispensing roller",
-                        "action": partial(action_, ("single_move", "D", {"Dispensing_Roller": 0})),
-                    },
-                    {
-                        "text": "Start dispensing roller to photocell",
-                        "action": partial(action_, ("single_move", "D", {"Dispensing_Roller": 2})),
-                    },
-                    {
-                        "text": "move 07 08 ('D -> E')",
-                        "action": partial(action_, ("move_07_08",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "D",
-                            "JAR_DISPENSING_POSITION_PHOTOCELL",
-                            "DISPENSING POSITION PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_, "D", "container_presence", "CONTAINER PRESENCE"
-                        )
-                    },
-                ],
-            },
-            self.action_07_btn: {
-                "title": "action 07 (head 4 or E)",
-                "buttons": [
-                    {
-                        "text": "Start dispensing roller",
-                        "action": partial(action_, ("single_move", "E", {"Dispensing_Roller": 1})),
-                    },
-                    {
-                        "text": "Stop  dispensing roller",
-                        "action": partial(action_, ("single_move", "E", {"Dispensing_Roller": 0})),
-                    },
-                    {
-                        "text": "Start dispensing roller to photocell",
-                        "action": partial(action_, ("single_move", "E", {"Dispensing_Roller": 2})),
-                    },
-                    {
-                        "text": "move 08 09 ('E -> F')",
-                        "action": partial(action_, ("move_08_09",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "E",
-                            "JAR_DISPENSING_POSITION_PHOTOCELL",
-                            "DISPENSING POSITION PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_, "E", "container_presence", "CONTAINER PRESENCE"
-                        )
-                    },
-                ],
-            },
-            self.action_08_btn: {
-                "title": "action 08 (head 2 or F)",
-                "buttons": [
-                    {
-                        "text": "Start dispensing roller",
-                        "action": partial(action_, ("single_move", "F", {"Dispensing_Roller": 1})),
-                    },
-                    {
-                        "text": "Stop  dispensing roller",
-                        "action": partial(action_, ("single_move", "F", {"Dispensing_Roller": 0})),
-                    },
-                    {
-                        "text": "Start dispensing roller to photocell",
-                        "action": partial(action_, ("single_move", "F", {"Dispensing_Roller": 2})),
-                    },
-                    {
-                        "text": "move 09 10 ('F -> DOWN')",
-                        "action": partial(action_, ("move_09_10",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "F",
-                            "JAR_DISPENSING_POSITION_PHOTOCELL",
-                            "DISPENSING POSITION PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_, "F", "container_presence", "CONTAINER PRESENCE"
-                        )
-                    },
-                ],
-            },
-            self.action_09_btn: {
-                "title": "action 09 (head 2 or F)",
-                "buttons": [
-                    {
-                        "text": "Start lifter roller CCW",
-                        "action": partial(action_, ("single_move", "F", {"Lifter_Roller": 3})),
-                    },
-                    {
-                        "text": "Stop  lifter roller",
-                        "action": partial(action_, ("single_move", "F", {"Lifter_Roller": 0})),
-                    },
-                    {
-                        "text": "Start lifter up",
-                        "action": partial(action_, ("single_move", "F", {"Lifter": 1})),
-                    },
-                    {
-                        "text": "Start lifter down",
-                        "action": partial(action_, ("single_move", "F", {"Lifter": 2})),
-                    },
-                    {
-                        "text": "Stop  lifter",
-                        "action": partial(action_, ("single_move", "F", {"Lifter": 0})),
-                    },
-                    {
-                        "text": "move 09 10 ('F -> DOWN')",
-                        "action": partial(action_, ("move_09_10",)),
-                    },
-                    {
-                        "text": "move 10 11 ('DOWN -> UP -> OUT')",
-                        "action": partial(action_, ("move_10_11",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "F",
-                            "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
-                            "LIFTER ROLLER PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "F",
-                            "UNLOAD_LIFTER_UP_PHOTOCELL",
-                            "LIFTER UP PHOTOCELL",
-                        )
-                    },
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "F",
-                            "UNLOAD_LIFTER_DOWN_PHOTOCELL",
-                            "LIFTER DOWN PHOTOCELL",
-                        )
-                    },
-                ],
-            },
-            self.action_10_btn: {
-                "title": "action 10 (head 2 or F)",
-                "buttons": [
-                    {
-                        "text": "Start output roller",
-                        "action": partial(action_, ("single_move", "F", {"Output_Roller": 3})),
-                    },
-                    {
-                        "text": "Stop  output roller",
-                        "action": partial(action_, ("single_move", "F", {"Output_Roller": 0})),
-                    },
-                    {
-                        "text": "Start output roller to photocell dark",
-                        "action": partial(action_, ("single_move", "F", {"Output_Roller": 1})),
-                    },
-                    {
-                        "text": "Start output roller to photocell light",
-                        "action": partial(action_, ("single_move", "F", {"Output_Roller": 2})),
-                    },
-                    {
-                        "text": "move 11 12 ('UP -> OUT')",
-                        "action": partial(action_, ("move_11_12",)),
-                    },
-                    {
-                        "text": "Back to Home Page",
-                        "action": action_back_home_,
-                    },
-                ],
-                "labels": [
-                    {
-                        "show_val": partial(
-                            show_val_,
-                            "F",
-                            "JAR_OUTPUT_ROLLER_PHOTOCELL",
-                            "OUTPUT ROLLER PHOTOCELL",
-                        )
-                    }
-                ],
-            },
-        }
+    ui_file_name = "home_page_six_heads.ui"
 
-        action_frame_map = {}
-        for btn, val in map_.items():
-            w = QFrame(self)
-            loadUi(os.path.join(UI_PATH, "action_frame.ui"), w)
-            w.setStyleSheet(
-                """
-                QFrame { border: 1px solid #999999; border-radius: 4px; background-color: #FEFEFE;}
-                QWidget {font-size: 24px;}
-                QLabel { border-width: 0px; background-color: #FFFFFF;}
-                QPushButton { background-color: #EEEEEE; border: 1px solid #999999; border-radius: 4px;}
-                QPushButton:pressed {background-color: #AAAAAA;}
-                """
-            )
+    """
+    semantic bit map of field 'crx_outputs_status' of the 'MACHINE_STATUS' info
 
-            w.action_title_label.setText(tr_(val["title"]))
-            for b in val["buttons"]:
-                i = QPushButton(tr_(b["text"]), w)
-                i.setFixedHeight(50)
-                if b.get("action"):
-                    i.clicked.connect(b.get("action"))
-                w.action_buttons_layout.addWidget(i)
+    # TESTA1: bit0 = DOSING ROLLER, bit1 = INPUT ROLLER,
+    # TESTA2: bit0 = DOSING ROLLER, bit1 = LIFTER_ROLLER, bit2 = OUTPUT_ROLLER, bit3 = LIFTER
+    # TESTA3: bit0 = DOSING ROLLER
+    # TESTA4: bit0 = DOSING ROLLER
+    # TESTA5: bit0 = DOSING ROLLER, bit1 = LIFTER_ROLLER,
+    # TESTA6: bit0 = DOSING ROLLER, bit1 = LIFTER
 
-            for l in val["labels"]:
+    semantic map of field 'Output_Number' of the 'CRX_OUTPUTS_MANAGEMENT' command
 
-                i = QLabel(w)
-                i.setTextFormat(Qt.RichText)
-                if l.get("show_val"):
-                    setattr(i, "show_val", l.get("show_val"))
-                w.action_labels_layout.addWidget(i)
+    # Outputs meaning for each dispensing head:
+    # TESTA1: 0 = DOSING ROLLER, 1 = INPUT ROLLER,
+    # TESTA2: 0 = DOSING ROLLER, 1 = LIFTER_ROLLER, 2 = OUTPUT_ROLLER, 3 = LIFTER
+    # TESTA3: 0 = DOSING ROLLER
+    # TESTA4: 0 = DOSING ROLLER
+    # TESTA5: 0 = DOSING ROLLER, 1 = LIFTER_ROLLER,
+    # TESTA6: 0 = DOSING ROLLER, 1 = LIFTER
+    """
 
-            self.parent().addWidget(w)
-            action_frame_map[btn] = w
-
-        self.action_frame_map = action_frame_map
-
-    def __on_service_btn_group_clicked(self, btn):
+    def on_service_btn_group_clicked(self, btn):
 
         btn_name = btn.objectName()
 
@@ -1294,7 +822,7 @@ class HomePage(BaseStackedPage):
             logging.error(traceback.format_exc())
             self.main_window.open_alert_dialog(f"btn_namel:{btn_name} exception:{e}", title="ERROR")
 
-    def __on_action_btn_group_clicked(self, btn):
+    def on_action_btn_group_clicked(self, btn):
 
         btn_name = btn.objectName()
         try:
@@ -1481,5 +1009,31 @@ class HomePage(BaseStackedPage):
                 action_frame.status_E_label.setText(tr_(f"{_get_status_level('E')}"))
                 action_frame.status_F_label.setText(tr_(f"{_get_status_level('F')}"))
 
-    def open_page(self):
-        self.parent().setCurrentWidget(self)
+    def show_reserve(self, head_index, flag=None):
+
+        map_ = [
+            self.reserve_1_label,
+            self.reserve_2_label,
+            self.reserve_3_label,
+            self.reserve_4_label,
+            self.reserve_5_label,
+            self.reserve_6_label,
+        ]
+
+        if flag is None:
+            flag = not map_[head_index].isVisible()
+
+        _label = map_[head_index]
+        # ~ logging.warning(f"head_index:{head_index}, flag:{flag}, _label:{_label}.")
+
+        if flag:
+            _label.setMovie(self.reserve_movie)
+            self.reserve_movie.start()
+            _label.show()
+        else:
+            _label.setText("")
+            _label.hide()
+
+
+class HomePageFourHeads(HomePage):
+    ui_file_name = "home_page_four_heads.ui"

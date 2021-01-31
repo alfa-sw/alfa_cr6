@@ -1038,23 +1038,17 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def __update_jar_position(self, jar, machine_head=None, status=None, pos=None):
 
-        m_name = machine_head.name[0] if machine_head else None
-        logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
+        if jar is not None:
+            m_name = machine_head.name[0] if machine_head else None
+            logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
+            try:
+                for j in self.__jar_runners.values():
+                    if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
+                        raise Exception(tr_("duplicate {} in jar position list!").format(pos))
+                jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
 
-        try:
-            # ~ _pos_list = [j["jar"].position for j in self.__jar_runners.values()]
-            # ~ if pos in _pos_list and jar.barcode != j["jar"].barcode:
-            # ~ e = Exception(tr_("duplicate {} in jar position list!").format(pos))
-            # ~ self.handle_exception(e)
-
-            for j in self.__jar_runners.values():
-                if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
-                    raise Exception(tr_("duplicate {} in jar position list!").format(pos))
-
-            jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
-
-        except Exception as e:  # pylint: disable=broad-except
-            self.handle_exception(e)
+            except Exception as e:  # pylint: disable=broad-except
+                self.handle_exception(e)
 
     def ask_for_refill(self, head_index):
 
