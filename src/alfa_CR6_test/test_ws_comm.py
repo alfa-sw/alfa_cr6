@@ -50,7 +50,7 @@ def test_all():
 
     set_settings()
 
-    APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
+    APP = alfa_CR6_backend.cr6.Application(sys.argv)
 
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format=fmt_)

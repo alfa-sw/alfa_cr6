@@ -159,7 +159,7 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
             app.handle_exception(e)
 
 
-class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
+class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
 
     MACHINE_HEAD_INDEX_TO_NAME_MAP = {
         0: "A_TOP_LEFT",
@@ -169,6 +169,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         4: "C_TOP_RIGHT",
         5: "D_BOTM_RIGHT",
     }
+    n_of_active_heads = 0
 
     def __init__(self, main_window_class, settings, *args, **kwargs):
 
@@ -226,6 +227,16 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                 ip_add, ws_port, http_port = item
                 t = self.__create_machine_task(head_index, ip_add, ws_port, http_port)
                 self.__tasks.append(t)
+                self.n_of_active_heads += 1
+            else:
+                m = MachineHead(
+                    head_index,
+                    ip_add,
+                    ws_port,
+                    http_port,
+                    msg_handler=self.on_head_msg_received,
+                )
+                self.machine_head_dict[head_index] = m
 
         # ~ for head_index, status_file_name in self.settings.MACHINE_HEAD_IPADD_PORTS_MAP.items():
         # ~ self.__tasks += [self.__create_machine_mockup_task(head_index, status_file_name), ]
@@ -291,38 +302,14 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         r = None
         try:
-            # ~ await self.move_00_01(jar)
-            r = await self.move_01_02(jar)
-            r = await self.dispense_step(r, "A", jar)
-            r = await self.move_02_03(jar)
-            r = await self.dispense_step(r, "B", jar)
-            r = await self.move_03_04(jar)
-            r = await self.dispense_step(r, "C", jar)
-            r = await self.move_04_05(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} ++").format('C'))
-            r = await self.move_05_06(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +++").format('C'))
-            r = await self.move_06_07(jar)
-            r = await self.dispense_step(r, "D", jar)
-            r = await self.move_07_08(jar)
-            r = await self.dispense_step(r, "E", jar)
-            r = await self.move_08_09(jar)
-            r = await self.dispense_step(r, "F", jar)
-            r = await self.move_09_10(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} ++").format('F'))
-            r = await self.move_10_11(jar)
-            r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +++").format('F'))
-            r = await self.move_11_12(jar)
-
-            r = await self.wait_for_jar_delivery(jar)
+            r = await self.execute_carousel_steps(self.n_of_active_heads, jar)
+            logging.warning(f"r:{r}")
 
         except asyncio.CancelledError:
             jar.status = "ERROR"
             jar.description = traceback.format_exc()
             logging.error(traceback.format_exc())
-
         except Exception as e:  # pylint: disable=broad-except
-
             jar.status = "ERROR"
             jar.description = traceback.format_exc()
             self.handle_exception(e)
@@ -532,12 +519,6 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             answer = msg_dict.get("value")
             self.main_window.debug_page.add_answer(head_index, answer)
 
-    def get_machine_head_by_letter(self, letter):  # pylint: disable=inconsistent-return-statements
-
-        for m in self.machine_head_dict.values():
-            if m.name[0] == letter:
-                return m
-
     def get_version(self):
 
         if not self.__version:
@@ -652,7 +633,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                         name=e,
                         level="ERROR",
                         severity="",
-                        source="CR6_application",
+                        source="crX_Application",
                         description=descr)
                     a.db_session.add(evnt)
                     a.db_session.commit()
@@ -677,6 +658,50 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         if self.main_window.debug_page:
             self.main_window.debug_page.update_status()
 
+    async def single_move(self, head_letter, params):
+
+        m = self.get_machine_head_by_letter(head_letter)
+        return await m.can_movement(params)
+
+    async def stop_all(self):
+
+        await self.get_machine_head_by_letter("A").can_movement()
+        await self.get_machine_head_by_letter("B").can_movement()
+        await self.get_machine_head_by_letter("C").can_movement()
+        await self.get_machine_head_by_letter("D").can_movement()
+        await self.get_machine_head_by_letter("E").can_movement()
+        await self.get_machine_head_by_letter("F").can_movement()
+
+    def ask_for_refill(self, head_index):
+
+        name = self.MACHINE_HEAD_INDEX_TO_NAME_MAP[head_index]
+        msg = f"freezing carousel for refill of head {name}"
+        logging.warning(msg)
+        self.main_window.open_alert_dialog(msg, title="INFO")
+        self.freeze_carousel(True)
+
+    def show_reserve(self, head_index, flag):
+        self.main_window.show_reserve(head_index, flag)
+
+    def delete_jar_runner(self, barcode):
+
+        j = self.__jar_runners.get(barcode)
+        if j:
+            try:
+                t = j["task"]
+                t.cancel()
+
+                async def _coro(_):
+                    await _
+                asyncio.ensure_future(_coro(t))
+                self.__jar_runners.pop(barcode)
+            except Exception as e:  # pylint: disable=broad-except
+                self.handle_exception(e)
+
+    def get_jar_runners(self):
+
+        return self.__jar_runners
+
     async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):  # pylint: disable=too-many-statements
 
         if freeze:
@@ -691,10 +716,28 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         while self.carousel_frozen:
             await asyncio.sleep(0.1)
 
-    async def single_move(self, head_letter, params):
+    def update_jar_position(self, jar, machine_head=None, status=None, pos=None):
 
-        m = self.get_machine_head_by_letter(head_letter)
-        return await m.can_movement(params)
+        if jar is not None:
+            m_name = machine_head.name[0] if machine_head else None
+            logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
+            try:
+                for j in self.__jar_runners.values():
+                    if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
+                        raise Exception(tr_("duplicate {} in jar position list!").format(pos))
+                jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
+
+            except Exception as e:  # pylint: disable=broad-except
+                self.handle_exception(e)
+
+    def get_machine_head_by_letter(self, letter):  # pylint: disable=inconsistent-return-statements
+
+        for m in self.machine_head_dict.values():
+            if m.name[0] == letter:
+                return m
+
+
+class CarouselMotor(BaseApplication):
 
     async def move_00_01(self):  # 'feed'
 
@@ -724,7 +767,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         A = self.get_machine_head_by_letter("A")
 
-        self.__update_jar_position(jar=jar, machine_head=A, status="ENTERING", pos="IN_A")
+        self.update_jar_position(jar=jar, machine_head=A, status="ENTERING", pos="IN_A")
 
         r = await A.wait_for_jar_photocells_and_status_lev(
             "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
@@ -733,7 +776,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await A.wait_for_jar_photocells_status(
                 "JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
 
-            self.__update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
+            self.update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
 
         return r
 
@@ -751,7 +794,34 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await B.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
             if r:
                 await A.can_movement()
-                self.__update_jar_position(jar=jar, machine_head=B, pos="B")
+                self.update_jar_position(jar=jar, machine_head=B, pos="B")
+
+        return r
+
+    async def move_02_04(self, jar=None):  # 'A -> C'
+
+        A = self.get_machine_head_by_letter("A")
+        C = self.get_machine_head_by_letter("C")
+
+        def condition():
+            flag = not C.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
+            flag = (
+                flag and not C.jar_photocells_status["JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"]
+            )
+            flag = flag and C.status["status_level"] in ["STANDBY"]
+            return flag
+
+        logging.warning(f" condition():{condition()}")
+        r = await C.wait_for_condition(condition, timeout=60 * 3)
+        logging.warning(f" r:{r}")
+
+        if r:
+            await A.can_movement({"Dispensing_Roller": 1})
+            await C.can_movement({"Dispensing_Roller": 2})
+            r = await C.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
+            if r:
+                await A.can_movement()
+                self.update_jar_position(jar=jar, machine_head=C, pos="C")
 
         return r
 
@@ -778,7 +848,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await C.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
             if r:
                 await B.can_movement()
-                self.__update_jar_position(jar=jar, machine_head=C, pos="C")
+                self.update_jar_position(jar=jar, machine_head=C, pos="C")
 
         return r
 
@@ -804,7 +874,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             if r:
                 await C.can_movement({"Dispensing_Roller": 1, "Lifter_Roller": 2})
                 r = await C.wait_for_jar_photocells_status("JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True)
-                self.__update_jar_position(jar=jar, pos="LIFTR_UP")
+                self.update_jar_position(jar=jar, pos="LIFTR_UP")
 
         return r
 
@@ -818,7 +888,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             await D.can_movement({"Lifter": 2})
             r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_DOWN_PHOTOCELL", on=True)
 
-            self.__update_jar_position(jar=jar, pos="LIFTR_DOWN")
+            self.update_jar_position(jar=jar, pos="LIFTR_DOWN")
 
         return r
 
@@ -837,7 +907,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await D.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
             if r:
                 await C.can_movement()
-                self.__update_jar_position(jar=jar, machine_head=D, pos="D")
+                self.update_jar_position(jar=jar, machine_head=D, pos="D")
 
         return r
 
@@ -861,7 +931,39 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await E.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
             if r:
                 await D.can_movement()
-                self.__update_jar_position(jar=jar, machine_head=E, pos="E")
+                self.update_jar_position(jar=jar, machine_head=E, pos="E")
+
+        return r
+
+    async def move_07_09(self, jar=None):  # 'D -> F'
+
+        D = self.get_machine_head_by_letter("D")
+        F = self.get_machine_head_by_letter("F")
+
+        r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=False)
+        if r:
+            r = await F.wait_for_jar_photocells_and_status_lev(
+                "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
+                on=False,
+                status_levels=["STANDBY"],
+            )
+            if r:
+                r = await F.wait_for_jar_photocells_status(
+                    "UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=3, show_alert=False)
+                if not r:
+                    await F.can_movement({"Lifter": 2})
+                    r = await F.wait_for_jar_photocells_and_status_lev(
+                        "UNLOAD_LIFTER_DOWN_PHOTOCELL",
+                        on=True,
+                        status_levels=["STANDBY"],
+                    )
+                if r:
+                    await D.can_movement({"Dispensing_Roller": 1})
+                    await F.can_movement({"Dispensing_Roller": 2})
+                    r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
+                    if r:
+                        await D.can_movement()
+                        self.update_jar_position(jar=jar, machine_head=F, pos="F")
 
         return r
 
@@ -893,7 +995,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                     r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
                     if r:
                         await E.can_movement()
-                        self.__update_jar_position(jar=jar, machine_head=F, pos="F")
+                        self.update_jar_position(jar=jar, machine_head=F, pos="F")
 
         return r
 
@@ -905,7 +1007,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
             r = await F.wait_for_jar_photocells_status("UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True)
             if r:
                 await F.can_movement({"Dispensing_Roller": 1, "Lifter_Roller": 5})
-            self.__update_jar_position(jar=jar, pos="LIFTL_DOWN")
+            self.update_jar_position(jar=jar, pos="LIFTL_DOWN")
         return r
 
     async def move_10_11(self, jar=None):  # 'DOWN -> UP -> OUT'
@@ -914,7 +1016,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=3, show_alert=False)
         if r:
             r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=True)
-            self.__update_jar_position(jar=jar, machine_head=F, pos="LIFTL_UP")
+            self.update_jar_position(jar=jar, machine_head=F, pos="LIFTL_UP")
             if r:
                 r = await F.wait_for_jar_photocells_and_status_lev(
                     "UNLOAD_LIFTER_UP_PHOTOCELL", on=True, status_levels=["STANDBY"])
@@ -922,7 +1024,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                     await F.can_movement({"Output_Roller": 2})
                     r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False)
 
-                    self.__update_jar_position(jar=jar, machine_head=F, pos="WAIT")
+                    self.update_jar_position(jar=jar, machine_head=F, pos="WAIT")
 
                     if r:
                         await F.can_movement()
@@ -932,7 +1034,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                         raise Exception("JAR_OUTPUT_ROLLER_PHOTOCELL busy timeout")
         else:
             r = await F.wait_for_status_level(status_levels=["STANDBY"])
-            self.__update_jar_position(jar=jar, machine_head=F, pos="OUT")
+            self.update_jar_position(jar=jar, machine_head=F, pos="OUT")
 
         return r
 
@@ -959,7 +1061,7 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
                 if r:
                     await F.can_movement({"Lifter_Roller": 3, "Output_Roller": 1})
 
-        self.__update_jar_position(jar=jar, machine_head=None, status="DONE", pos="OUT")
+        self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="OUT")
 
         return r
 
@@ -995,15 +1097,6 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
-    async def stop_all(self):
-
-        await self.get_machine_head_by_letter("A").can_movement()
-        await self.get_machine_head_by_letter("B").can_movement()
-        await self.get_machine_head_by_letter("C").can_movement()
-        await self.get_machine_head_by_letter("D").can_movement()
-        await self.get_machine_head_by_letter("E").can_movement()
-        await self.get_machine_head_by_letter("F").can_movement()
-
     async def dispense_step(self, r, machine_letter, jar):
 
         m = self.get_machine_head_by_letter(machine_letter)
@@ -1036,49 +1129,48 @@ class CR6_application(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return r
 
-    def __update_jar_position(self, jar, machine_head=None, status=None, pos=None):
+    async def execute_carousel_steps(self, n_of_heads, jar):
 
-        if jar is not None:
-            m_name = machine_head.name[0] if machine_head else None
-            logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
-            try:
-                for j in self.__jar_runners.values():
-                    if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
-                        raise Exception(tr_("duplicate {} in jar position list!").format(pos))
-                jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
+        # ~ await self.move_00_01(jar)
+        r = await self.move_01_02(jar)
+        r = await self.dispense_step(r, "A", jar)
 
-            except Exception as e:  # pylint: disable=broad-except
-                self.handle_exception(e)
+        if n_of_heads == 6:
+            r = await self.move_02_03(jar)
+            r = await self.dispense_step(r, "B", jar)
+            r = await self.move_03_04(jar)
+        elif n_of_heads == 4:
+            r = await self.move_02_04(jar)
 
-    def ask_for_refill(self, head_index):
+        r = await self.dispense_step(r, "C", jar)
+        r = await self.move_04_05(jar)
+        r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} ++").format('C'))
+        r = await self.move_05_06(jar)
+        r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +++").format('C'))
+        r = await self.move_06_07(jar)
+        r = await self.dispense_step(r, "D", jar)
 
-        name = self.MACHINE_HEAD_INDEX_TO_NAME_MAP[head_index]
-        msg = f"freezing carousel for refill of head {name}"
-        logging.warning(msg)
-        self.main_window.open_alert_dialog(msg, title="INFO")
-        self.freeze_carousel(True)
+        if n_of_heads == 6:
+            r = await self.move_07_08(jar)
+            r = await self.dispense_step(r, "E", jar)
+            r = await self.move_08_09(jar)
+        elif n_of_heads == 4:
+            r = await self.move_07_09(jar)
 
-    def show_reserve(self, head_index, flag):
-        self.main_window.show_reserve(head_index, flag)
+        r = await self.dispense_step(r, "F", jar)
+        r = await self.move_09_10(jar)
+        r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} ++").format('F'))
+        r = await self.move_10_11(jar)
+        r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +++").format('F'))
+        r = await self.move_11_12(jar)
 
-    def delete_jar_runner(self, barcode):
+        r = await self.wait_for_jar_delivery(jar)
 
-        j = self.__jar_runners.get(barcode)
-        if j:
-            try:
-                t = j["task"]
-                t.cancel()
+        return r
 
-                async def _coro(_):
-                    await _
-                asyncio.ensure_future(_coro(t))
-                self.__jar_runners.pop(barcode)
-            except Exception as e:  # pylint: disable=broad-except
-                self.handle_exception(e)
 
-    def get_jar_runners(self):
-
-        return self.__jar_runners
+class Application(CarouselMotor):
+    pass
 
 
 def main():
@@ -1089,7 +1181,7 @@ def main():
         stream=sys.stdout, level=settings.LOG_LEVEL,
         format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
 
-    app = CR6_application(MainWindow, settings, sys.argv)
+    app = Application(MainWindow, settings, sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
     app.run_forever()
 

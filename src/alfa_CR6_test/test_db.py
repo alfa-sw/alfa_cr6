@@ -74,7 +74,7 @@ def test_all():
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=LOG_LEVEL, format=fmt_)
 
-    APP = alfa_CR6_backend.cr6.CR6_application(sys.argv)
+    APP = alfa_CR6_backend.cr6.Application(sys.argv)
 
     # ~ N, M = 4, 5
     # ~ barcodes = []

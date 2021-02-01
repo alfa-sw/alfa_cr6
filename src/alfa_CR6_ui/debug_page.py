@@ -197,7 +197,7 @@ class DebugPage:
             t = None
             if command == "CANCEL":
                 barcode = name
-                t = app._CR6_application__jar_runners[barcode]["task"]
+                t = app.get_jar_runners()[barcode]["task"]
                 try:
                     t.cancel()
 
@@ -372,8 +372,8 @@ class DebugPage:
 
             def cb():
                 msg_ = "실차색상 배합입니다. (희석10%, 2회도장) 서페이서 V-1 적용색상입니다. 리피니쉬 벨류쉐이드 가이드 주소안내"
-                r = app.main_window.open_alert_dialog(msg_, callback=None)
-                logging.warning("")
+                app.main_window.open_alert_dialog(msg_, callback=None)
+                logging.warning(f"msg_:{msg_}")
 
             msg_ = tr_("test alert message")
             r = app.main_window.open_alert_dialog(msg_, callback=cb)
@@ -428,8 +428,8 @@ class DebugPage:
 
         elif "clear\njars" in cmd_txt:
 
-            for k in app._CR6_application__jar_runners.keys():
-                t = app._CR6_application__jar_runners[k]["task"]
+            for k in app.get_jar_runners().keys():
+                t = app.get_jar_runners()[k]["task"]
                 try:
                     t.cancel()
 
@@ -558,7 +558,7 @@ class DebugPage:
 
         html_ += '<td colspan="2">                                          '
         html_ += "<br/># progressing_jars:"
-        l_ = [i for i in app._CR6_application__jar_runners.values()]
+        l_ = [i for i in app.get_jar_runners().values()]
         l_.reverse()
         for i, j in enumerate(l_):
             html_ += '<p  bgcolor="#F0F0F0">{}:{} {}<a href="CANCEL@{}" title="cancel this jar">CANCEL</a></p>'.format(

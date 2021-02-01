@@ -13,6 +13,7 @@ import logging
 import json
 import time
 import traceback
+from functools import partial
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (Qt, QVariant, QAbstractTableModel)
@@ -716,6 +717,35 @@ class ActionPage(BaseStackedPage):
 
     ui_file_name = "action_frame.ui"
 
+    def __do_action(self, args):
+        logging.warning(f"args:{args}")
+        if args[0] == 'open_home_page':
+            self.parent().setCurrentWidget(self.main_window.home_page)
+        else:
+            try:
+                QApplication.instance().run_a_coroutine_helper(args[0], *args[1:])
+            except Exception:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+
+    def __do_show_val(self, w, head_letter, bit_name, text):
+        try:
+            m = QApplication.instance().get_machine_head_by_letter(head_letter)
+            if bit_name.lower() == "container_presence":
+                val_ = m.status.get("container_presence")
+            else:
+                val_ = m.jar_photocells_status.get(bit_name)
+
+            pth_ = (
+                os.path.join(IMAGES_PATH, "green.png")
+                if val_
+                else os.path.join(IMAGES_PATH, "gray.png")
+            )
+            w.setText(
+                f'<img widt="50" height="50" src="{pth_}" style="vertical-align:middle;">{tr_(text)}</img>'
+            )
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
     def __init__(self, action_item, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -731,20 +761,22 @@ class ActionPage(BaseStackedPage):
         )
 
         self.action_title_label.setText(tr_(action_item["title"]))
+
         for b in action_item["buttons"]:
             i = QPushButton(tr_(b["text"]), self)
             i.setFixedHeight(50)
-            if b.get("action"):
-                i.clicked.connect(b.get("action"))
+            if b.get("action_args"):
+                args_ = b.get("action_args")
+                i.clicked.connect(partial(self.__do_action, args_))
             self.action_buttons_layout.addWidget(i)
 
-        for l in action_item["labels"]:
-
-            i = QLabel(self)
-            i.setTextFormat(Qt.RichText)
-            if l.get("show_val"):
-                setattr(i, "show_val", l.get("show_val"))
-            self.action_labels_layout.addWidget(i)
+        for l in action_item["labels_args"]:
+            if l:
+                i = QLabel(self)
+                i.setTextFormat(Qt.RichText)
+                args_ = [i, ] + list(l)
+                setattr(i, "show_val", partial(self.__do_show_val, *args_))
+                self.action_labels_layout.addWidget(i)
 
 
 class HomePage(BaseStackedPage):
@@ -771,56 +803,38 @@ class HomePage(BaseStackedPage):
 
         self.parent().setCurrentWidget(self)
 
-
-class HomePageSixHeads(HomePage):
-
-    ui_file_name = "home_page_six_heads.ui"
-
-    """
-    semantic bit map of field 'crx_outputs_status' of the 'MACHINE_STATUS' info
-
-    # TESTA1: bit0 = DOSING ROLLER, bit1 = INPUT ROLLER,
-    # TESTA2: bit0 = DOSING ROLLER, bit1 = LIFTER_ROLLER, bit2 = OUTPUT_ROLLER, bit3 = LIFTER
-    # TESTA3: bit0 = DOSING ROLLER
-    # TESTA4: bit0 = DOSING ROLLER
-    # TESTA5: bit0 = DOSING ROLLER, bit1 = LIFTER_ROLLER,
-    # TESTA6: bit0 = DOSING ROLLER, bit1 = LIFTER
-
-    semantic map of field 'Output_Number' of the 'CRX_OUTPUTS_MANAGEMENT' command
-
-    # Outputs meaning for each dispensing head:
-    # TESTA1: 0 = DOSING ROLLER, 1 = INPUT ROLLER,
-    # TESTA2: 0 = DOSING ROLLER, 1 = LIFTER_ROLLER, 2 = OUTPUT_ROLLER, 3 = LIFTER
-    # TESTA3: 0 = DOSING ROLLER
-    # TESTA4: 0 = DOSING ROLLER
-    # TESTA5: 0 = DOSING ROLLER, 1 = LIFTER_ROLLER,
-    # TESTA6: 0 = DOSING ROLLER, 1 = LIFTER
-    """
-
     def on_service_btn_group_clicked(self, btn):
 
         btn_name = btn.objectName()
 
         try:
-            service_page_urls = [
-                "http://{}:{}/service_page/".format(i[0], i[2])
-                for i in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST
+            service_page_urls = ["http://127.0.0.1:8080/service_page/", ]
+            for i in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST:
+                if i:
+                    url = "http://{}:{}/service_page/".format(i[0], i[2])
+                else:
+                    url = None
+                service_page_urls.append(url)
+
+            service_btns = [
+                self.service_0_btn,
+                self.service_1_btn,
+                self.service_2_btn,
+                self.service_3_btn,
+                self.service_4_btn,
+                self.service_5_btn,
+                self.service_6_btn,
             ]
 
-            map_ = {
-                self.service_1_btn: service_page_urls[0],
-                self.service_2_btn: service_page_urls[1],
-                self.service_3_btn: service_page_urls[2],
-                self.service_4_btn: service_page_urls[3],
-                self.service_5_btn: service_page_urls[4],
-                self.service_6_btn: service_page_urls[5],
-                self.service_0_btn: "http://127.0.0.1:8080/service_page/",
-            }
+            map_ = dict(zip(service_btns, service_page_urls))
+
+            logging.warning(f"btn_name:{btn_name}, map_[btn]:{map_[btn]}, map_:{map_}")
+
             self.main_window.webengine_page.open_page(map_[btn])
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"btn_namel:{btn_name} exception:{e}", title="ERROR")
+            self.main_window.open_alert_dialog(f"btn_name:{btn_name} exception:{e}", title="ERROR")
 
     def on_action_btn_group_clicked(self, btn):
 
@@ -848,7 +862,7 @@ class HomePageSixHeads(HomePage):
                 self.main_window.update_status_data(i)
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"btn_namel:{btn_name} exception:{e}", title="ERROR")
+            self.main_window.open_alert_dialog(f"btn_name:{btn_name} exception:{e}", title="ERROR")
 
     def update_service_btns__presences_and_lifters(self, head_index):
 
@@ -862,7 +876,8 @@ class HomePageSixHeads(HomePage):
             self.service_5_btn,
             self.service_6_btn,
         ]
-        map_[head_index].setText(f"{status.get('status_level', 'empty')}")
+        if map_[head_index]:
+            map_[head_index].setText(f"{status.get('status_level', 'empty')}")
 
         map_ = [
             self.container_presence_1_label,
@@ -872,20 +887,22 @@ class HomePageSixHeads(HomePage):
             self.container_presence_5_label,
             self.container_presence_6_label,
         ]
-        if status["container_presence"]:
-            map_[head_index].setPixmap(self.main_window.green_icon)
-        else:
-            map_[head_index].setPixmap(self.main_window.gray_icon)
 
-        # ~ lifter positions
-        self.__set_pixmap_by_photocells(self.load_lifter_up_label,
-                                        (("D", "LOAD_LIFTER_UP_PHOTOCELL"),), icon=self.main_window.green_icon)
-        self.__set_pixmap_by_photocells(self.load_lifter_down_label,
-                                        (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.main_window.green_icon)
-        self.__set_pixmap_by_photocells(self.unload_lifter_up_label,
-                                        (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),), icon=self.main_window.green_icon)
-        self.__set_pixmap_by_photocells(self.unload_lifter_down_label,
-                                        (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.main_window.green_icon)
+        if map_[head_index]:
+            if status.get("container_presence"):
+                map_[head_index].setPixmap(self.main_window.green_icon)
+            else:
+                map_[head_index].setPixmap(self.main_window.gray_icon)
+
+            # ~ lifter positions
+            self.__set_pixmap_by_photocells(self.load_lifter_up_label,
+                                            (("D", "LOAD_LIFTER_UP_PHOTOCELL"),), icon=self.main_window.green_icon)
+            self.__set_pixmap_by_photocells(self.load_lifter_down_label,
+                                            (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.main_window.green_icon)
+            self.__set_pixmap_by_photocells(self.unload_lifter_up_label,
+                                            (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),), icon=self.main_window.green_icon)
+            self.__set_pixmap_by_photocells(self.unload_lifter_down_label,
+                                            (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),), icon=self.main_window.green_icon)
 
     def update_tank_pixmaps(self):
         map_ = [
@@ -898,92 +915,83 @@ class HomePageSixHeads(HomePage):
         ]
 
         for head_index, m in QApplication.instance().machine_head_dict.items():
-            status = m.status
-            if "STANDBY" in status.get('status_level', '') and QApplication.instance().carousel_frozen:
-                map_[head_index].setPixmap(self.main_window.tank_icon_map['green'])
-            else:
-                map_[head_index].setPixmap(self.main_window.tank_icon_map['gray'])
+            if map_[head_index]:
+                status = m.status
+                if "STANDBY" in status.get('status_level', '') and QApplication.instance().carousel_frozen:
+                    map_[head_index].setPixmap(self.main_window.tank_icon_map['green'])
+                else:
+                    map_[head_index].setPixmap(self.main_window.tank_icon_map['gray'])
 
-            map_[head_index].setText("")
+                map_[head_index].setText("")
 
     def update_jar_pixmaps(self):
 
         _ = [f"{k} ({j['jar'].position[0]})" for k, j in QApplication.instance().get_jar_runners().items()]
         self.running_jars_lbl.setText("\n".join(_))
 
-        self.__set_pixmap_by_photocells(
-            self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), position="IN_A")
-        self.__set_pixmap_by_photocells(
-            self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="A")
-        self.__set_pixmap_by_photocells(
-            self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="B")
-        self.__set_pixmap_by_photocells(
-            self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="C")
-        self.__set_pixmap_by_photocells(
-            self.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"),
-                                 ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTR_UP")
-        self.__set_pixmap_by_photocells(
-            self.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"),
-                                 ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTR_DOWN")
-        self.__set_pixmap_by_photocells(
-            self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="D")
-        self.__set_pixmap_by_photocells(
-            self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="E")
-        self.__set_pixmap_by_photocells(
-            self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), position="F")
-        self.__set_pixmap_by_photocells(
-            self.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"),
-                                 ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTL_DOWN")
-        self.__set_pixmap_by_photocells(
-            self.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"),
-                                 ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), position="LIFTL_UP")
-        self.__set_pixmap_by_photocells(
-            self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), position="OUT")
+        map_ = [
+            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
+            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_UP",),
+            (self.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_DOWN",),
+            (self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
+            (self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "E",),
+            (self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "F",),
+            (self.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
+            (self.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
+            (self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
+        ]
+
+        for lbl, head_letters_bit_names, position in map_:
+            if lbl:
+                self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position)
 
     def __set_pixmap_by_photocells(self, lbl, head_letters_bit_names, position=None, icon=None):
+        if lbl:
+            def _get_bit(head_letter, bit_name):
+                m = QApplication.instance().get_machine_head_by_letter(head_letter)
+                ret = m.jar_photocells_status.get(bit_name) if m else None
+                return ret
 
-        def _get_bit(head_letter, bit_name):
-            m = QApplication.instance().get_machine_head_by_letter(head_letter)
-            ret = m.jar_photocells_status.get(bit_name) if m else None
-            return ret
+            try:
 
-        try:
+                false_condition = [
+                    1 for h, b in head_letters_bit_names if not _get_bit(h, b)
+                ]
 
-            false_condition = [
-                1 for h, b in head_letters_bit_names if not _get_bit(h, b)
-            ]
-
-            if icon is None:
-                if false_condition:
-                    lbl.setStyleSheet("QLabel {{}}")
-                    lbl.setText("")
-                else:
-                    text = ""
-                    for j in QApplication.instance().get_jar_runners().values():
-                        pos = j["jar"].position
-                        if pos == position:
-                            _bc = str(j["jar"].barcode)
-                            text = _bc[-6:-3] + "\n" + _bc[-3:]
-                            break
-
-                    if text:
-                        _img_url = os.path.join(IMAGES_PATH, "jar-green.png")
+                if icon is None:
+                    if false_condition:
+                        lbl.setStyleSheet("QLabel {{}}")
+                        lbl.setText("")
                     else:
-                        _img_url = os.path.join(IMAGES_PATH, "jar-gray.png")
+                        text = ""
+                        for j in QApplication.instance().get_jar_runners().values():
+                            pos = j["jar"].position
+                            if pos == position:
+                                _bc = str(j["jar"].barcode)
+                                text = _bc[-6:-3] + "\n" + _bc[-3:]
+                                break
 
-                    lbl.setStyleSheet(
-                        'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
-                    lbl.setText(text)
-            else:
-                size = [0, 0] if false_condition else [32, 32]
-                pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
-                lbl.setPixmap(pixmap)
+                        if text:
+                            _img_url = os.path.join(IMAGES_PATH, "jar-green.png")
+                        else:
+                            _img_url = os.path.join(IMAGES_PATH, "jar-gray.png")
 
-            lbl.show()
+                        lbl.setStyleSheet(
+                            'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
+                        lbl.setText(text)
+                else:
+                    size = [0, 0] if false_condition else [32, 32]
+                    pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
+                    lbl.setPixmap(pixmap)
 
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR")
+                lbl.show()
+
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+                self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR")
 
     def update_action_pages(self):
 
@@ -992,22 +1000,25 @@ class HomePageSixHeads(HomePage):
                 for i in range(action_frame.action_labels_layout.count()):
                     lbl = action_frame.action_labels_layout.itemAt(i).widget()
                     if hasattr(lbl, "show_val"):
-                        getattr(lbl, "show_val")(lbl)
+                        getattr(lbl, "show_val")()
 
-        def _get_status_level(head_letter):
-            return (
-                QApplication.instance()
-                .get_machine_head_by_letter(head_letter)
-                .status.get("status_level"))
+        def _set_label_text(lbl, head_letter):
+            status_level = QApplication.instance().get_machine_head_by_letter(head_letter).status.get("status_level")
+
+            if status_level:
+                lbl.setText(tr_(f"{status_level}"))
+                lbl.show()
+            else:
+                lbl.hide()
 
         for action_frame in self.action_frame_map.values():
             if action_frame.isVisible():
-                action_frame.status_A_label.setText(tr_(f"{_get_status_level('A')}"))
-                action_frame.status_B_label.setText(tr_(f"{_get_status_level('B')}"))
-                action_frame.status_C_label.setText(tr_(f"{_get_status_level('C')}"))
-                action_frame.status_D_label.setText(tr_(f"{_get_status_level('D')}"))
-                action_frame.status_E_label.setText(tr_(f"{_get_status_level('E')}"))
-                action_frame.status_F_label.setText(tr_(f"{_get_status_level('F')}"))
+                _set_label_text(action_frame.status_A_label, 'A')
+                _set_label_text(action_frame.status_B_label, 'B')
+                _set_label_text(action_frame.status_C_label, 'C')
+                _set_label_text(action_frame.status_D_label, 'D')
+                _set_label_text(action_frame.status_E_label, 'E')
+                _set_label_text(action_frame.status_F_label, 'F')
 
     def show_reserve(self, head_index, flag=None):
 
@@ -1020,20 +1031,45 @@ class HomePageSixHeads(HomePage):
             self.reserve_6_label,
         ]
 
-        if flag is None:
-            flag = not map_[head_index].isVisible()
+        if map_[head_index]:
+            if flag is None:
+                flag = not map_[head_index].isVisible()
 
-        _label = map_[head_index]
-        # ~ logging.warning(f"head_index:{head_index}, flag:{flag}, _label:{_label}.")
+            _label = map_[head_index]
+            # ~ logging.warning(f"head_index:{head_index}, flag:{flag}, _label:{_label}.")
 
-        if flag:
-            _label.setMovie(self.reserve_movie)
-            self.reserve_movie.start()
-            _label.show()
-        else:
-            _label.setText("")
-            _label.hide()
+            if flag:
+                _label.setMovie(self.reserve_movie)
+                self.reserve_movie.start()
+                _label.show()
+            else:
+                _label.setText("")
+                _label.hide()
+
+
+class HomePageSixHeads(HomePage):
+
+    ui_file_name = "home_page_six_heads.ui"
 
 
 class HomePageFourHeads(HomePage):
+
     ui_file_name = "home_page_four_heads.ui"
+
+    action_03_btn = None
+    action_07_btn = None
+
+    refill_3_lbl = None
+    refill_4_lbl = None
+
+    reserve_3_label = None
+    reserve_4_label = None
+
+    service_3_btn = None
+    service_4_btn = None
+
+    container_presence_3_label = None
+    container_presence_4_label = None
+
+    STEP_03_label = None
+    STEP_08_label = None
