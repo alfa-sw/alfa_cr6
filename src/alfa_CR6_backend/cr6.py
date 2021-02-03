@@ -1112,7 +1112,7 @@ class CarouselMotor(BaseApplication):
         if unavailable_pigment_names:
 
             msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{} on head {}.').format(
-                jar.barcode, unavailable_pigment_names, machine_letter)
+                jar.barcode, unavailable_pigment_names, m.name)
 
             logging.warning(msg_)
             r = await self.wait_for_carousel_not_frozen(True, msg_)

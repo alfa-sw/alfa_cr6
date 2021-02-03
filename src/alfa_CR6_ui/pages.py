@@ -266,7 +266,8 @@ class JarTableModel(BaseTableModel):
 
 class BaseStackedPage(QFrame):
 
-    ui_file_name = ""
+    ui_file_name = ''
+    help_file_name = ''
 
     def __init__(self, *args, **kwargs):
 
@@ -313,17 +314,7 @@ class HelpPage(BaseStackedPage):
 
         logging.warning(f"self.context_widget:{self.context_widget}")
 
-        map_ = {
-            self.main_window.order_page: 'order.html',
-            self.main_window.webengine_page: 'webengine.html',
-            self.main_window.home_page: 'home.html',
-        }
-
-        if self.context_widget in self.main_window.home_page.action_frame_map.values():
-            help_file_name = "action.html"
-        else:
-            help_file_name = map_.get(self.context_widget)
-
+        help_file_name = self.context_widget.help_file_name
         if help_file_name:
             with open(os.path.join(HELP_PATH, help_file_name)) as f:
                 content = f.read()
@@ -334,6 +325,7 @@ class HelpPage(BaseStackedPage):
 class WebenginePage(BaseStackedPage):
 
     ui_file_name = "webengine_page.ui"
+    help_file_name = 'webengine.html'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -421,6 +413,7 @@ class WebenginePage(BaseStackedPage):
 class OrderPage(BaseStackedPage):
 
     ui_file_name = "order_page.ui"
+    help_file_name = 'order.html'
 
     def __init__(self, *args, **kwargs):
 
@@ -1050,14 +1043,19 @@ class HomePage(BaseStackedPage):
 class HomePageSixHeads(HomePage):
 
     ui_file_name = "home_page_six_heads.ui"
+    help_file_name = 'home_six_heads.html'
 
 
 class HomePageFourHeads(HomePage):
 
     ui_file_name = "home_page_four_heads.ui"
+    help_file_name = 'home_four_heads.html'
 
     action_03_btn = None
     action_07_btn = None
+
+    STEP_03_label = None
+    STEP_08_label = None
 
     refill_3_lbl = None
     refill_4_lbl = None
@@ -1070,6 +1068,3 @@ class HomePageFourHeads(HomePage):
 
     container_presence_3_label = None
     container_presence_4_label = None
-
-    STEP_03_label = None
-    STEP_08_label = None

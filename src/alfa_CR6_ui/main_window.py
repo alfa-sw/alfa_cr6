@@ -14,7 +14,7 @@ import traceback
 from functools import partial
 
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
@@ -80,8 +80,14 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         if QApplication.instance().n_of_active_heads == 6:
             self.home_page = HomePageSixHeads(parent=self)
+            home_btn_pixmap = QPixmap(os.path.join(IMAGES_PATH, "sinottico_6_small.png"))
+
         elif QApplication.instance().n_of_active_heads == 4:
             self.home_page = HomePageFourHeads(parent=self)
+            home_btn_pixmap = QPixmap(os.path.join(IMAGES_PATH, "sinottico_4_small.png"))
+
+        self.home_btn.setIcon(QIcon(home_btn_pixmap));
+        self.home_btn.setIconSize(QSize(280, 72));
 
         self.stacked_widget.setCurrentWidget(self.home_page)
 
