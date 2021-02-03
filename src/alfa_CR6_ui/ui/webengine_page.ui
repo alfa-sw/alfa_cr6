@@ -28,7 +28,7 @@
     </font>
    </property>
    <property name="styleSheet">
-    <string notr="true">bacground-color: #AAAAAA</string>
+    <string notr="true">background-color: #AAAAAA</string>
    </property>
    <property name="text">
     <string>url lbl</string>

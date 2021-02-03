@@ -32,15 +32,14 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 from alfa_CR6_backend.dymo_printer import dymo_print
-from alfa_CR6_ui.globals import (
-    WEBENGINE_DOWNLOAD_PATH,
-    WEBENGINE_CUSTOMER_URL,
-    WEBENGINE_CACHE_PATH,
+from alfa_CR6_backend.globals import (
     IMAGES_PATH,
     UI_PATH,
     HELP_PATH,
+    import_settings,
     tr_)
 
+g_settings = import_settings()
 
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
 
@@ -109,7 +108,7 @@ class FileTableModel(BaseTableModel):
         self.results = [["", "", "", p] for p in name_list_]
 
     def remove_file(self, file_name):  # pylint: disable=no-self-use
-        cmd_ = f'rm -f "{os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name)}"'
+        cmd_ = f'rm -f "{os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)}"'
         logging.warning(f"cmd_:{cmd_}")
         os.system(cmd_)
 
@@ -356,8 +355,8 @@ class WebenginePage(BaseStackedPage):
 
         QWebEngineProfile.defaultProfile().downloadRequested.connect(self.__on_downloadRequested)
 
-        QWebEngineProfile.defaultProfile().setCachePath(WEBENGINE_CACHE_PATH)
-        QWebEngineProfile.defaultProfile().setPersistentStoragePath(WEBENGINE_CACHE_PATH)
+        QWebEngineProfile.defaultProfile().setCachePath(g_settings.WEBENGINE_CACHE_PATH)
+        QWebEngineProfile.defaultProfile().setPersistentStoragePath(g_settings.WEBENGINE_CACHE_PATH)
 
         self.__load_progress = 0
         self.start_load = tr_("start load:")
@@ -381,7 +380,7 @@ class WebenginePage(BaseStackedPage):
         self.url_lbl.setText(
             '<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
 
-    def open_page(self, url=WEBENGINE_CUSTOMER_URL):
+    def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL):
 
         q_url = QUrl(url)
         if q_url.toString() not in self.webengine_view.url().toString():
@@ -400,10 +399,10 @@ class WebenginePage(BaseStackedPage):
             3: "Download has been cancelled.",
             4: "Download has been interrupted (by the server or because of lost connectivity).",
         }
-        if not os.path.exists(WEBENGINE_DOWNLOAD_PATH):
-            os.makedirs(WEBENGINE_DOWNLOAD_PATH)
+        if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
+            os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
         _name = time.strftime("%Y-%m-%d_%H:%M:%S") + ".json"
-        full_name = os.path.join(WEBENGINE_DOWNLOAD_PATH, _name)
+        full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
         download.setPath(full_name)
         download.accept()
 
@@ -475,7 +474,7 @@ class OrderPage(BaseStackedPage):
         if t - self.search_file_table_last_time > 0.1:
             self.search_file_table_last_time = t
             try:
-                file_model = FileTableModel(self, WEBENGINE_DOWNLOAD_PATH)
+                file_model = FileTableModel(self, g_settings.WEBENGINE_DOWNLOAD_PATH)
                 self.file_table_view.setModel(file_model)
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
@@ -606,7 +605,7 @@ class OrderPage(BaseStackedPage):
 
             elif col == 1:  # view
                 content = "{}"
-                with open(os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name)) as f:
+                with open(os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)) as f:
                     content = f.read(3000)
                     try:
                         content = json.dumps(json.loads(content), indent=2)
@@ -627,7 +626,7 @@ class OrderPage(BaseStackedPage):
                     n = min(n, 20)
                     logging.warning(f"n:{n}")
                     order = app.create_order(
-                        os.path.join(WEBENGINE_DOWNLOAD_PATH, file_name),
+                        os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name),
                         json_schema_name="KCC",
                         n_of_jars=n)
                     barcodes = sorted([str(j.barcode) for j in order.jars])

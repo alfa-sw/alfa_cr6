@@ -32,21 +32,10 @@ from PyQt5.QtWidgets import (
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print
 
-EPSILON = 0.00001
-
-HERE = os.path.dirname(os.path.abspath(__file__))
-KEYBOARD_PATH = os.path.join(HERE, "keyboard")
-IMAGES_PATH = os.path.join(HERE, "images")
-UI_PATH = os.path.join(HERE, "ui")
-HELP_PATH = os.path.join(HERE, "help")
-
-WEBENGINE_DOWNLOAD_PATH = "/opt/alfa_cr6/data/kcc"
-WEBENGINE_CUSTOMER_URL = "http://kccrefinish.co.kr/"
-WEBENGINE_CACHE_PATH = "/opt/alfa_cr6/data/webengine"
-
-
-def tr_(s):
-    return s
+from alfa_CR6_backend.globals import (
+    UI_PATH,
+    IMAGES_PATH,
+    tr_)
 
 
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
@@ -182,7 +171,7 @@ class EditDialog(BaseDialog):
         self.formula_table.itemSelectionChanged.connect(self.__on_formula_table_itemSelectionChanged)
 
         self.pigment_combo.currentTextChanged.connect(self.__on_pigment_combo_currentTextChanged)
-        
+
         self.n_of_jars_spinbox.valueChanged.connect(self.__on_n_of_jars_spinbox_valueChanged)
 
         self.pigment_combo.setEditable(True)
@@ -255,11 +244,13 @@ class EditDialog(BaseDialog):
     def __on_pigment_combo_currentTextChanged(self):
 
         pigment_name = self.pigment_combo.currentText()
-        indexes = self.__check_row(pigment_name)
-        logging.warning(f"indexes:{indexes}, pigment_name:{pigment_name}.")
-
-        if not indexes:
-            self.formula_table.clearSelection()
+        sel_items = self.formula_table.selectedItems()
+        if sel_items:
+            sel_item = sel_items[0]
+            row = sel_item.row()
+            sel_pigment_name = self.formula_table.item(row, 1).data(Qt.DisplayRole)
+            if pigment_name != sel_pigment_name:
+                self.formula_table.clearSelection()
 
     def __on_delete_item_clicked(self):
 
@@ -284,32 +275,27 @@ class EditDialog(BaseDialog):
             pigment_name = self.pigment_combo.currentText()
             quantity = float(self.quantity_line_edit.text())
             sel_items = self.formula_table.selectedItems()
+            description = None
+
             indexes = self.__check_row(pigment_name)
             logging.warning(f"indexes:{indexes}, pigment_name:{pigment_name}.")
-            if len(indexes) >= 1:
-                msg = tr_('pigment {} is already present.'.format(pigment_name))
-                self.parent().open_alert_dialog(msg, title=tr_("ERROR"))
+
+            if sel_items:
+                sel_item = sel_items[0]
+                row = sel_item.row()
+                description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
+                sel_pigment_name = self.formula_table.item(row, 1).data(Qt.DisplayRole)
             else:
-                description = None
-                if sel_items:
-                    sel_item = sel_items[0]
-                    row = sel_item.row()
-                    description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
-                else:
-                    if indexes:
-                        row = indexes[0]
-                        description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
-                    else:
-                        row = self.formula_table.rowCount()
-                        self.formula_table.setRowCount(row + 1)
+                if len(indexes) >= 1:
+                    raise Exception(tr_(' Pigment {} is already present.'.format(pigment_name)))
 
-                    self.formula_table.scrollToBottom()
+                row = self.formula_table.rowCount()
+                self.formula_table.setRowCount(row + 1)
+                self.formula_table.scrollToBottom()
 
-                self.__set_row(row, pigment_name, quantity, descr=description)
-                self.warning_lbl.setText(tr_('modified.'))
-                self.__check_row(pigment_name)
-
-                self.quantity_line_edit.setText('0.0')
+            self.__set_row(row, pigment_name, quantity, descr=description)
+            self.warning_lbl.setText(tr_('modified.'))
+            self.quantity_line_edit.setText('')
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -317,6 +303,8 @@ class EditDialog(BaseDialog):
                 f"exception:{e}", title="ERROR", callback=None, args=None)
 
     def __on_formula_table_itemSelectionChanged(self):
+
+        logging.warning("")
 
         try:
             sel_items = self.formula_table.selectedItems()
@@ -506,7 +494,7 @@ class InputDialog(BaseDialog):
                     logging.error(traceback.format_exc())
                     self.parent().open_alert_dialog(
                         f"exception:{e}", title="ERROR", callback=None, args=None)
-                    
+
             self.ok_button.clicked.connect(on_ok_button_clicked)
 
         self.show()

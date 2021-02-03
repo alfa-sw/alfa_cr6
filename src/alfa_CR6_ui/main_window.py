@@ -11,18 +11,19 @@
 import os
 import logging
 import traceback
-from functools import partial
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from alfa_CR6_ui.globals import (
-    KEYBOARD_PATH,
-    IMAGES_PATH,
+from alfa_CR6_backend.globals import (
     UI_PATH,
-    tr_,
+    IMAGES_PATH,
+    KEYBOARD_PATH,
+    tr_)
+
+from alfa_CR6_ui.dialogs import (
     ModalMessageBox,
     EditDialog,
     InputDialog)

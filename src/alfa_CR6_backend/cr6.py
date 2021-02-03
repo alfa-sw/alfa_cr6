@@ -12,51 +12,22 @@ import time
 import logging
 import traceback
 import asyncio
-import subprocess
 import json
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.machine_head import MachineHead
-from alfa_CR6_ui.main_window import MainWindow, tr_
+from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
+from alfa_CR6_backend.globals import (
+    UI_PATH,
+    KEYBOARD_PATH,
+    EPSILON,
+    get_version,
+    tr_,
+    import_settings)
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-UI_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "ui")
-IMAGE_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "images")
-KEYBOARD_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "keyboard")
-
-CONF_PATH = "/opt/alfa_cr6/conf"
-
-EPSILON = 0.00001
-
-
-def import_settings():
-    sys.path.append(CONF_PATH)
-    import app_settings  # pylint: disable=import-error,import-outside-toplevel
-    sys.path.remove(CONF_PATH)
-    return app_settings
-
-
-def _get_version():
-
-    _ver = None
-
-    try:
-        pth = os.path.abspath(os.path.dirname(sys.executable))
-        cmd = "{}/pip show alfa_CR6".format(pth)
-        for line in (
-                subprocess.run(cmd.split(), stdout=subprocess.PIPE, check=True)
-                .stdout.decode()
-                .split("\n")):
-            if "Version" in line:
-                _ver = line.split(":")[1]
-                _ver = _ver.strip()
-    except Exception as exc:  # pylint: disable=broad-except
-        logging.error(exc)
-
-    return _ver
+from alfa_CR6_ui.main_window import MainWindow
 
 
 def parse_json_order(path_to_json_file, json_schema_name):
@@ -181,7 +152,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.run_flag = True
         self.ui_path = UI_PATH
-        self.images_path = IMAGE_PATH
         self.keyboard_path = KEYBOARD_PATH
         self.db_session = None
         self.ready_to_read_a_barcode = True
@@ -195,10 +165,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__tasks = []
         self.__runners = []
         self.__jar_runners = {}
-
-        for pth in [self.settings.LOGS_PATH, self.settings.TMP_PATH, self.settings.CONF_PATH]:
-            if not os.path.exists(pth):
-                os.makedirs(pth)
 
         if self.settings.SQLITE_CONNECT_STRING:
 
@@ -522,7 +488,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def get_version(self):
 
         if not self.__version:
-            self.__version = _get_version()
+            self.__version = get_version()
         return self.__version
 
     def run_forever(self):
