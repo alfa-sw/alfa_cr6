@@ -221,7 +221,7 @@ class EditDialog(BaseDialog):
 
         if len(ret) > 1:
             self.warning_lbl.setText(
-                tr_('<div style="color: red;">WARN: replicated entries {}.</div>'.format(pigment_name)))
+                tr_('<div style="color: red;">WARN: replicated entries {} ({}).</div>'.format(pigment_name, len(ret))))
 
         return ret
 
@@ -286,26 +286,30 @@ class EditDialog(BaseDialog):
             sel_items = self.formula_table.selectedItems()
             indexes = self.__check_row(pigment_name)
             logging.warning(f"indexes:{indexes}, pigment_name:{pigment_name}.")
-            description = None
-            if sel_items:
-                sel_item = sel_items[0]
-                row = sel_item.row()
-                description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
+            if len(indexes) >= 1:
+                msg = tr_('pigment {} is already present.'.format(pigment_name))
+                self.parent().open_alert_dialog(msg, title=tr_("ERROR"))
             else:
-                if indexes:
-                    row = indexes[0]
+                description = None
+                if sel_items:
+                    sel_item = sel_items[0]
+                    row = sel_item.row()
                     description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
                 else:
-                    row = self.formula_table.rowCount()
-                    self.formula_table.setRowCount(row + 1)
+                    if indexes:
+                        row = indexes[0]
+                        description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
+                    else:
+                        row = self.formula_table.rowCount()
+                        self.formula_table.setRowCount(row + 1)
 
-                self.formula_table.scrollToBottom()
+                    self.formula_table.scrollToBottom()
 
-            self.__set_row(row, pigment_name, quantity, descr=description)
-            self.warning_lbl.setText(tr_('modified.'))
-            self.__check_row(pigment_name)
+                self.__set_row(row, pigment_name, quantity, descr=description)
+                self.warning_lbl.setText(tr_('modified.'))
+                self.__check_row(pigment_name)
 
-            self.quantity_line_edit.setText('0.0')
+                self.quantity_line_edit.setText('0.0')
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
