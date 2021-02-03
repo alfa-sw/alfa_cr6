@@ -314,12 +314,16 @@ class HelpPage(BaseStackedPage):
 
         logging.warning(f"self.context_widget:{self.context_widget}")
 
-        help_file_name = self.context_widget.help_file_name
-        if help_file_name:
+        
+        if hasattr(self.context_widget, 'help_file_name') and self.context_widget.help_file_name:
+            help_file_name = self.context_widget.help_file_name
             with open(os.path.join(HELP_PATH, help_file_name)) as f:
                 content = f.read()
                 self.help_text_browser.setHtml(content)
             self.parent().setCurrentWidget(self)
+        else:
+            _msg = tr_("sorry, this help page is missing.")
+            self.main_window.open_alert_dialog(_msg, title="ALERT")
 
 
 class WebenginePage(BaseStackedPage):

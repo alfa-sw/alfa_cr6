@@ -145,7 +145,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>../images/autofinish.png</normaloff>../images/autofinish.png</iconset>
+       <normaloff>../images/chrome.png</normaloff>../images/chrome.png</iconset>
      </property>
      <property name="iconSize">
       <size>

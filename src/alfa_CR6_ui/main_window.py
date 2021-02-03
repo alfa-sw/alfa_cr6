@@ -86,8 +86,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self.home_page = HomePageFourHeads(parent=self)
             home_btn_pixmap = QPixmap(os.path.join(IMAGES_PATH, "sinottico_4_small.png"))
 
-        self.home_btn.setIcon(QIcon(home_btn_pixmap));
-        self.home_btn.setIconSize(QSize(280, 72));
+        self.home_btn.setIcon(QIcon(home_btn_pixmap))
+        self.home_btn.setIconSize(QSize(280, 72))
+
+        browser_btn_pixmap = QPixmap(os.path.join(IMAGES_PATH, "browser_btn.png"))
+        self.browser_btn.setIcon(QIcon(browser_btn_pixmap))
+        self.browser_btn.setIconSize(QSize(140, 60))
 
         self.stacked_widget.setCurrentWidget(self.home_page)
 
