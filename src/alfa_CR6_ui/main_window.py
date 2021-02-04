@@ -141,143 +141,108 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def __init_action_pages(self):
 
         action_page_list_ = [
-            {
-                "title": tr_("action 01 (head 1 or A)"),
-                "buttons": [
-                    {"text": tr_("Start input roller"), "action_args": ("single_move", "A", {"Input_Roller": 1})},
-                    {"text": tr_("Stop  input roller"), "action_args": ("single_move", "A", {"Input_Roller": 0})},
-                    {"text": tr_("Start input roller to photocell"), "action_args": ("single_move", "A", {"Input_Roller": 2})},
-                    {"text": tr_("move 01 02 ('IN -> A')"), "action_args": ("move_01_02",)},
-                ],
-                "labels_args": [
-                    ("A", "JAR_INPUT_ROLLER_PHOTOCELL", tr_("INPUT ROLLER PHOTOCELL")),
-                    ("A", "JAR_DETECTION_MICROSWITCH_1", tr_("MICROSWITCH 1")),
-                    ("A", "JAR_DETECTION_MICROSWITCH_2", tr_("MICROSWITCH 2")),
-                ],
-            },
-            {
-                "title": tr_("action 02 (head 1 or A)"),
-                "buttons": [
-                    {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "A", {"Dispensing_Roller": 1})},
-                    {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "A", {"Dispensing_Roller": 0})},
-                    {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "A", {"Dispensing_Roller": 2})},
-                ],
-                "labels_args": [
-                    ("A", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-                    ("A", "container_presence", tr_("CAN PRESENCE")),
-                ],
-            },
-            {
-                "title": tr_("action 03 (head 3 or B)"),
-                "buttons": [
-                    {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "B", {"Dispensing_Roller": 1})},
-                    {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "B", {"Dispensing_Roller": 0})},
-                    {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "B", {"Dispensing_Roller": 2})},
-                ],
-                "labels_args": [
-                    ("B", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-                    ("B", "container_presence", tr_("CAN PRESENCE")),
-                ],
-            },
-            {
-                "title": tr_("action 04 (head 5 or C)"),
-                "buttons": [
-                    {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "C", {"Dispensing_Roller": 1})},
-                    {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "C", {"Dispensing_Roller": 0})},
-                    {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "C", {"Dispensing_Roller": 2})},
-                ],
-                "labels_args": [
-                    ("C", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-                    ("C", "container_presence", tr_("CAN PRESENCE")),
-                ],
-            },
-            {
-                "title": tr_("action 05 (head 5, 6 or C, D)"),
-                "buttons": [
-                    {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "C", {"Lifter_Roller": 2})},
-                    {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "C", {"Lifter_Roller": 3})},
-                    {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "C", {"Lifter_Roller": 0})},
-                    {"text": tr_("Start lifter up"), "action_args": ("single_move", "D", {"Lifter": 1})},
-                    {"text": tr_("Start lifter down"), "action_args": ("single_move", "D", {"Lifter": 2})},
-                    {"text": tr_("Stop  lifter"), "action_args": ("single_move", "D", {"Lifter": 0})},
-                    {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
-                    {"text": tr_("move 04 05 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
-                    {"text": tr_("move 04 05 ('DOWN -> D')"), "action_args": ("move_06_07",)},
-
-                ],
-                "labels_args": [
-                    ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
-                    ("D", "LOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
-                    ("D", "LOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")),
-                ],
-            },
-            {
-                "title": tr_("action 06 (head 6 or D)"),
-                "buttons": [
-                    {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "D", {"Dispensing_Roller": 1})},
-                    {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "D", {"Dispensing_Roller": 0})},
-                    {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "D", {"Dispensing_Roller": 2})},
-                ],
-                "labels_args": [
-                    ("D", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-                    ("D", "container_presence", tr_("CAN PRESENCE")),
-                ],
-            },
-            {
-                "title": tr_("action 07 (head 4 or E)"),
-                "buttons": [
-                    {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "E", {"Dispensing_Roller": 1})},
-                    {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "E", {"Dispensing_Roller": 0})},
-                    {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "E", {"Dispensing_Roller": 2})},
-                ],
-                "labels_args": [
-                    ("E", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-                    ("E", "container_presence", tr_("CAN PRESENCE")),
-                ],
-            },
-            {
-                "title": tr_("action 08 (head 2 or F)"),
-                "buttons": [
-                    {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "F", {"Dispensing_Roller": 1})},
-                    {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "F", {"Dispensing_Roller": 0})},
-                    {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "F", {"Dispensing_Roller": 2})},
-                ],
-                "labels_args": [
-                    ("F", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-                    ("F", "container_presence", tr_("CAN PRESENCE")),
-                ],
-            },
-            {
-                "title": tr_("action 09 (head 2 or F)"),
-                "buttons": [
-                    {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "F", {"Lifter_Roller": 3})},
-                    {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "F", {"Lifter_Roller": 0})},
-                    {"text": tr_("Start lifter up"), "action_args": ("single_move", "F", {"Lifter": 1})},
-                    {"text": tr_("Start lifter down"), "action_args": ("single_move", "F", {"Lifter": 2})},
-                    {"text": tr_("Stop  lifter"), "action_args": ("single_move", "F", {"Lifter": 0})},
-                    {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
-                    {"text": tr_("move 04 05 ('DOWN -> UP -> OUT')"), "action_args": ("move_10_11",)},
-
-                ],
-                "labels_args": [
-                    ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
-                    ("F", "UNLOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
-                    ("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")),
-                ],
-            },
-            {
-                "title": tr_("action 10 (head 2 or F)"),
-                "buttons": [
-                    {"text": tr_("Start  input roller"), "action_args": ("single_move", "F", {"Output_Roller": 3})},
-                    {"text": tr_("Stop  input roller"), "action_args": ("single_move", "F", {"Output_Roller": 0})},
-                    {"text": tr_("Start output roller to photocell dark"), "action_args": ("single_move", "F", {"Output_Roller": 1})},
-                    {"text": tr_("Start output roller to photocell light"), "action_args": ("single_move", "F", {"Output_Roller": 2})},
-                    {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},
-                ],
-                "labels_args": [
-                    ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL", tr_("OUTPUT ROLLER PHOTOCELL")),
-                ],
-            },
+            {"title": tr_("action 01 (head 1 or A)"),
+             "buttons": [
+                 {"text": tr_("Start input roller"), "action_args": ("single_move", "A", {"Input_Roller": 1})},
+                 {"text": tr_("Stop  input roller"), "action_args": ("single_move", "A", {"Input_Roller": 0})},
+                 {"text": tr_("Start input roller to photocell"), "action_args": ("single_move", "A", {"Input_Roller": 2})},
+                 {"text": tr_("move 00 01 ('feed')"), "action_args": ("move_00_01",)},
+                 {"text": tr_("move 01 02 ('IN -> A')"), "action_args": ("move_01_02",)}, ],
+             "labels_args": [
+                 ("A", "JAR_INPUT_ROLLER_PHOTOCELL", tr_("INPUT ROLLER PHOTOCELL")),
+                 ("A", "JAR_DETECTION_MICROSWITCH_1", tr_("MICROSWITCH 1")),
+                 ("A", "JAR_DETECTION_MICROSWITCH_2", tr_("MICROSWITCH 2")), ], },
+            {"title": tr_("action 02 (head 1 or A)"),
+             "buttons": [
+                 {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "A", {"Dispensing_Roller": 1})},
+                 {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "A", {"Dispensing_Roller": 0})},
+                 {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "A", {"Dispensing_Roller": 2})}, ],
+             "labels_args": [
+                 ("A", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+                 ("A", "container_presence", tr_("CAN PRESENCE")), ], },
+            {"title": tr_("action 03 (head 3 or B)"),
+             "buttons": [
+                 {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "B", {"Dispensing_Roller": 1})},
+                 {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "B", {"Dispensing_Roller": 0})},
+                 {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "B", {"Dispensing_Roller": 2})}, ],
+             "labels_args": [
+                 ("B", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+                 ("B", "container_presence", tr_("CAN PRESENCE")), ], },
+            {"title": tr_("action 04 (head 5, 6 or C, D)"),
+             "buttons": [
+                 {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "C", {"Dispensing_Roller": 1})},
+                 {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "C", {"Dispensing_Roller": 0})},
+                 {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "C", {"Dispensing_Roller": 2})},
+                 {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
+                 {"text": tr_("move 04 05 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
+                 {"text": tr_("move 04 05 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
+             "labels_args": [
+                 ("C", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+                 ("C", "container_presence", tr_("CAN PRESENCE")), ], },
+            {"title": tr_("action 05 (head 5, 6 or C, D)"),
+             "buttons": [
+                 {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "C", {"Lifter_Roller": 2})},
+                 {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "C", {"Lifter_Roller": 3})},
+                 {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "C", {"Lifter_Roller": 0})},
+                 {"text": tr_("Start lifter up"), "action_args": ("single_move", "D", {"Lifter": 1})},
+                 {"text": tr_("Start lifter down"), "action_args": ("single_move", "D", {"Lifter": 2})},
+                 {"text": tr_("Stop  lifter"), "action_args": ("single_move", "D", {"Lifter": 0})},
+                 {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
+                 {"text": tr_("move 04 05 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
+                 {"text": tr_("move 04 05 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
+             "labels_args": [
+                 ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
+                 ("D", "LOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
+                 ("D", "LOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")), ], },
+            {"title": tr_("action 06 (head 6 or D)"),
+             "buttons": [
+                 {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "D", {"Dispensing_Roller": 1})},
+                 {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "D", {"Dispensing_Roller": 0})},
+                 {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "D", {"Dispensing_Roller": 2})}, ],
+             "labels_args": [
+                 ("D", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+                 ("D", "container_presence", tr_("CAN PRESENCE")), ], },
+            {"title": tr_("action 07 (head 4 or E)"),
+             "buttons": [
+                 {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "E", {"Dispensing_Roller": 1})},
+                 {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "E", {"Dispensing_Roller": 0})},
+                 {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "E", {"Dispensing_Roller": 2})}, ],
+             "labels_args": [
+                 ("E", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+                 ("E", "container_presence", tr_("CAN PRESENCE")), ], },
+            {"title": tr_("action 08 (head 2 or F)"),
+             "buttons": [
+                 {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "F", {"Dispensing_Roller": 1})},
+                 {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "F", {"Dispensing_Roller": 0})},
+                 {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "F", {"Dispensing_Roller": 2})},
+                 {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
+                 {"text": tr_("move 04 05 ('DOWN -> UP -> OUT')"), "action_args": ("move_10_11",)}, ],
+             "labels_args": [
+                 ("F", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+                 ("F", "container_presence", tr_("CAN PRESENCE")), ], },
+            {"title": tr_("action 09 (head 2 or F)"),
+             "buttons": [
+                 {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "F", {"Lifter_Roller": 3})},
+                 {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "F", {"Lifter_Roller": 0})},
+                 {"text": tr_("Start lifter up"), "action_args": ("single_move", "F", {"Lifter": 1})},
+                 {"text": tr_("Start lifter down"), "action_args": ("single_move", "F", {"Lifter": 2})},
+                 {"text": tr_("Stop  lifter"), "action_args": ("single_move", "F", {"Lifter": 0})},
+                 {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
+                 {"text": tr_("move 04 05 ('DOWN -> UP -> OUT')"), "action_args": ("move_10_11",)}, ],
+             "labels_args": [
+                 ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
+                 ("F", "UNLOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
+                 ("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")), ], },
+            {"title": tr_("action 10 (head 2 or F)"),
+             "buttons": [
+                 {"text": tr_("Start  input roller"), "action_args": ("single_move", "F", {"Output_Roller": 3})},
+                 {"text": tr_("Stop  input roller"), "action_args": ("single_move", "F", {"Output_Roller": 0})},
+                 {"text": tr_("Start output roller to photocell dark"), "action_args": ("single_move", "F", {"Output_Roller": 1})},
+                 {"text": tr_("Start output roller to photocell light"), "action_args": ("single_move", "F", {"Output_Roller": 2})},
+                 {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},
+                 {"text": tr_("move 12 00 ('deliver')"), "action_args": ("move_12_00",)}, ],
+             "labels_args": [
+                 ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL", tr_("OUTPUT ROLLER PHOTOCELL")), ], },
         ]
 
         action_button_list_ = [
@@ -308,7 +273,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             action_page_list_[6]["buttons"].append(
                 {"text": tr_("move 08 09 ('E -> F')"), "action_args": ("move_08_09",)})
         else:
-            action_page_list_[6]["buttons"].append(
+            action_page_list_[5]["buttons"].append(
                 {"text": tr_("move 07 09 ('D -> F')"), "action_args": ("move_07_09",)})
 
         action_frame_map = {}
