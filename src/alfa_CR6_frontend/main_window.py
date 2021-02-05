@@ -23,12 +23,12 @@ from alfa_CR6_backend.globals import (
     KEYBOARD_PATH,
     tr_)
 
-from alfa_CR6_ui.dialogs import (
+from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
     InputDialog)
 
-from alfa_CR6_ui.pages import (
+from alfa_CR6_frontend.pages import (
     OrderPage,
     WebenginePage,
     HomePageSixHeads,
@@ -36,14 +36,14 @@ from alfa_CR6_ui.pages import (
     ActionPage,
     HelpPage)
 
-from alfa_CR6_ui.keyboard import Keyboard
+from alfa_CR6_frontend.keyboard import Keyboard
 
 
 class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def __init__(self, parent=None):
 
-        from alfa_CR6_ui.debug_page import DebugPage  # pylint: disable=import-outside-toplevel
+        from alfa_CR6_frontend.debug_page import DebugPage  # pylint: disable=import-outside-toplevel
 
         super().__init__(parent)
         loadUi(os.path.join(UI_PATH, "main_window.ui"), self)

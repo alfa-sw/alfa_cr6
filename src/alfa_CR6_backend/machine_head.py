@@ -182,7 +182,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if self.index == 0:
                 if status.get("error_code") == 10:  # user button interrupt
                     for m in self.app.machine_head_dict.values():
-                        if m.index != 0:
+                        if m and m.index != 0:
                             t = m.send_command(cmd_name="ABORT", params={})
                             asyncio.ensure_future(t)
 

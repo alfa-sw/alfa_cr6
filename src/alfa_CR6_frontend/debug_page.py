@@ -22,8 +22,7 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
     QFileDialog,
     QTextBrowser,
     QButtonGroup,
-    QPushButton,
-)
+    QPushButton)
 
 from alfa_CR6_backend.models import Jar, Order
 from alfa_CR6_backend.dymo_printer import dymo_print
@@ -184,7 +183,7 @@ class DebugPage:
     def status_text_browser_anchor_clicked(self, url):  # pylint: disable=no-self-use
 
         app = QApplication.instance()
-        named_map = {m.name: m for m in app.machine_head_dict.values()}
+        named_map = {m.name: m for m in app.machine_head_dict.values() if m}
 
         logging.warning(f"url:{url.url()}")
         logging.warning(f"url.url().split('@'):{url.url().split('@')}")
@@ -346,13 +345,14 @@ class DebugPage:
         elif "reset all\n heads" in cmd_txt:
 
             for m in app.machine_head_dict.values():
-                t = m.send_command(
-                    cmd_name="RESET",
-                    params={"mode": 0},
-                    type_="command",
-                    channel="machine",
-                )
-                asyncio.ensure_future(t)
+                if m:
+                    t = m.send_command(
+                        cmd_name="RESET",
+                        params={"mode": 0},
+                        type_="command",
+                        channel="machine",
+                    )
+                    asyncio.ensure_future(t)
 
         elif "open order\ndialog" in cmd_txt:
 
@@ -505,7 +505,7 @@ class DebugPage:
 
         app = QApplication.instance()
 
-        named_map = {m.name: m for m in app.machine_head_dict.values()}
+        named_map = {m.name: m for m in app.machine_head_dict.values() if m}
         names_ = named_map.keys()
 
         html_ = ""

@@ -10,10 +10,10 @@ import subprocess
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-UI_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "ui")
-IMAGES_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "images")
-HELP_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "help")
-KEYBOARD_PATH = os.path.join(HERE, "..", "alfa_CR6_ui", "keyboard")
+UI_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "ui")
+IMAGES_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "images")
+HELP_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "help")
+KEYBOARD_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "keyboard")
 
 CONF_PATH = "/opt/alfa_cr6/conf"
 

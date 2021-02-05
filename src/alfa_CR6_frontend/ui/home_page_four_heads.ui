@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1931</width>
-    <height>1006</height>
+    <height>973</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -1149,7 +1149,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
+  <buttongroup name="service_btn_group"/>
  </buttongroups>
 </ui>

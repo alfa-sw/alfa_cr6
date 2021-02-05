@@ -428,8 +428,9 @@ class EditDialog(BaseDialog):
 
         self.available_pigments = {}
         for m in QApplication.instance().machine_head_dict.values():
-            for pig in m.pigment_list:
-                self.available_pigments[pig["name"]] = pig
+            if m:
+                for pig in m.pigment_list:
+                    self.available_pigments[pig["name"]] = pig
 
         # ~ logging.warning(f"self.available_pigments:{self.available_pigments}.")
         self.pigment_combo.clear()

@@ -854,8 +854,11 @@ class HomePage(BaseStackedPage):
                 )
             elif "action_" in btn_name:
                 self.parent().setCurrentWidget(self.action_frame_map[btn])
-            for i in QApplication.instance().machine_head_dict.keys():
-                self.main_window.update_status_data(i)
+
+            for i, m in QApplication.instance().machine_head_dict.items():
+                if m:
+                    self.main_window.update_status_data(i)
+
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.main_window.open_alert_dialog(f"btn_name:{btn_name} exception:{e}", title="ERROR")
@@ -911,7 +914,7 @@ class HomePage(BaseStackedPage):
         ]
 
         for head_index, m in QApplication.instance().machine_head_dict.items():
-            if map_[head_index]:
+            if m and map_[head_index]:
                 status = m.status
                 if "STANDBY" in status.get('status_level', '') and QApplication.instance().carousel_frozen:
                     map_[head_index].setPixmap(self.main_window.tank_icon_map['green'])
