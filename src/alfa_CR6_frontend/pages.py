@@ -788,7 +788,6 @@ class HomePage(BaseStackedPage):
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
             )
 
-        self.action_frame_map = {}
 
         self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
         self.action_btn_group.buttonClicked.connect(self.on_action_btn_group_clicked)
@@ -853,7 +852,7 @@ class HomePage(BaseStackedPage):
                     ok_cb=QApplication.instance().toggle_freeze_carousel,
                 )
             elif "action_" in btn_name:
-                self.parent().setCurrentWidget(self.action_frame_map[btn])
+                self.parent().setCurrentWidget(self.main_window.action_frame_map[btn])
 
             for i, m in QApplication.instance().machine_head_dict.items():
                 if m:
@@ -991,33 +990,6 @@ class HomePage(BaseStackedPage):
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
                 self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR")
-
-    def update_action_pages(self):
-
-        for action_frame in self.action_frame_map.values():
-            if action_frame.isVisible():
-                for i in range(action_frame.action_labels_layout.count()):
-                    lbl = action_frame.action_labels_layout.itemAt(i).widget()
-                    if hasattr(lbl, "show_val"):
-                        getattr(lbl, "show_val")()
-
-        def _set_label_text(lbl, head_letter):
-            status_level = QApplication.instance().get_machine_head_by_letter(head_letter).status.get("status_level")
-
-            if status_level:
-                lbl.setText(tr_(f"{status_level}"))
-                lbl.show()
-            else:
-                lbl.hide()
-
-        for action_frame in self.action_frame_map.values():
-            if action_frame.isVisible():
-                _set_label_text(action_frame.status_A_label, 'A')
-                _set_label_text(action_frame.status_B_label, 'B')
-                _set_label_text(action_frame.status_C_label, 'C')
-                _set_label_text(action_frame.status_D_label, 'D')
-                _set_label_text(action_frame.status_E_label, 'E')
-                _set_label_text(action_frame.status_F_label, 'F')
 
     def show_reserve(self, head_index, flag=None):
 

@@ -45,6 +45,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         from alfa_CR6_frontend.debug_page import DebugPage  # pylint: disable=import-outside-toplevel
 
+        self.action_frame_map = {}
+
         super().__init__(parent)
         loadUi(os.path.join(UI_PATH, "main_window.ui"), self)
 
@@ -215,8 +217,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                  {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "F", {"Dispensing_Roller": 1})},
                  {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "F", {"Dispensing_Roller": 0})},
                  {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "F", {"Dispensing_Roller": 2})},
-                 {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
-                 {"text": tr_("move 04 05 ('DOWN -> UP -> OUT')"), "action_args": ("move_10_11",)}, ],
+                 {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)}, ],
              "labels_args": [
                  ("F", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
                  ("F", "container_presence", tr_("CAN PRESENCE")), ], },
@@ -228,7 +229,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                  {"text": tr_("Start lifter down"), "action_args": ("single_move", "F", {"Lifter": 2})},
                  {"text": tr_("Stop  lifter"), "action_args": ("single_move", "F", {"Lifter": 0})},
                  {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
-                 {"text": tr_("move 04 05 ('DOWN -> UP -> OUT')"), "action_args": ("move_10_11",)}, ],
+                 {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)}, ],
              "labels_args": [
                  ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
                  ("F", "UNLOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
@@ -284,7 +285,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 w = ActionPage(action_item, parent=self)
                 action_frame_map[btn] = w
 
-        self.home_page.action_frame_map = action_frame_map
+        self.action_frame_map = action_frame_map
 
     def get_stacked_widget(self):
         return self.stacked_widget
@@ -347,6 +348,38 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             for l in ls:
                 l.resize(l.width(), l.height() + self.keyboard.height())
 
+    def __update_action_pages(self):
+
+        for action_frame in self.action_frame_map.values():
+            if action_frame.isVisible():
+                for i in range(action_frame.action_labels_layout.count()):
+                    lbl = action_frame.action_labels_layout.itemAt(i).widget()
+                    if hasattr(lbl, "show_val"):
+                        getattr(lbl, "show_val")()
+
+        def _set_label_text(lbl, head_letter):
+
+            m = QApplication.instance().get_machine_head_by_letter(head_letter)
+            if m and m.status.get("status_level") is not None:
+                status_level = m.status.get("status_level")
+                lbl.setText(tr_(f"{status_level}"))
+                lbl.show()
+            else:
+                lbl.hide()
+
+        for action_frame in self.action_frame_map.values():
+            if action_frame.isVisible():
+                for w, l in[(action_frame.status_A_label, 'A'),
+                            (action_frame.status_B_label, 'B'),
+                            (action_frame.status_C_label, 'C'),
+                            (action_frame.status_D_label, 'D'),
+                            (action_frame.status_E_label, 'E'),
+                            (action_frame.status_F_label, 'F')]:
+
+                    logging.warning(f"w:{w}, l:{l}")
+                    if w:
+                        _set_label_text(w, l)
+
     def update_status_data(self, head_index, _=None):
 
         try:
@@ -355,7 +388,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self.home_page.update_service_btns__presences_and_lifters(head_index)
             self.home_page.update_tank_pixmaps()
             self.home_page.update_jar_pixmaps()
-            self.home_page.update_action_pages()
+            self.__update_action_pages()
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -379,7 +412,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             )
 
         try:
-            self.home_page.update_action_pages()
+            self.__update_action_pages()
             self.home_page.update_jar_pixmaps()
             self.home_page.update_tank_pixmaps()
         except Exception:  # pylint: disable=broad-except
