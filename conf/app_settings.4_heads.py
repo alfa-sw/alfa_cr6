@@ -13,6 +13,8 @@ LOGS_PATH = os.path.join(RUNTIME_FILES_ROOT, "log")
 TMP_PATH = os.path.join(RUNTIME_FILES_ROOT, "tmp")
 DATA_PATH = os.path.join(RUNTIME_FILES_ROOT, "data")
 
+CUSTOM_PATH =  os.path.join(HERE, "custom_sw")
+
 WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "SW_download")
 WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "SW_web_cachewebengine")
 WEBENGINE_CUSTOMER_URL = "https://www.sherwin-williams.com/"

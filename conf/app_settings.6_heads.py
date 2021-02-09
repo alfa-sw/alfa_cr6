@@ -13,6 +13,8 @@ LOGS_PATH = os.path.join(RUNTIME_FILES_ROOT, "log")
 TMP_PATH = os.path.join(RUNTIME_FILES_ROOT, "tmp")
 DATA_PATH = os.path.join(RUNTIME_FILES_ROOT, "data")
 
+CUSTOM_PATH =  os.path.join(HERE, "custom_kcc")
+
 WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "kcc")
 WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "webengine")
 WEBENGINE_CUSTOMER_URL = "http://kccrefinish.co.kr/"
