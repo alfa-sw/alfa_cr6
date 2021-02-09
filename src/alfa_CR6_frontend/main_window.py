@@ -8,7 +8,6 @@
 # pylint: disable=too-many-lines
 # pylint: disable=too-few-public-methods
 
-import os
 import logging
 import traceback
 
@@ -17,12 +16,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from alfa_CR6_backend.globals import (
-    UI_PATH,
-    IMAGES_PATH,
-    KEYBOARD_PATH,
-    tr_)
-
+from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
@@ -48,7 +42,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.action_frame_map = {}
 
         super().__init__(parent)
-        loadUi(os.path.join(UI_PATH, "main_window.ui"), self)
+        loadUi(get_res("UI", "main_window.ui"), self)
 
         # ~ self.setStyleSheet("""
         # ~ QWidget {font-size: 24px; font-family: Times sans-serif;}
@@ -83,16 +77,16 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         if QApplication.instance().n_of_active_heads == 6:
             self.home_page = HomePageSixHeads(parent=self)
-            home_btn_pixmap = QPixmap(os.path.join(IMAGES_PATH, "sinottico_6_small.png"))
+            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_6_small.png"))
 
         elif QApplication.instance().n_of_active_heads == 4:
             self.home_page = HomePageFourHeads(parent=self)
-            home_btn_pixmap = QPixmap(os.path.join(IMAGES_PATH, "sinottico_4_small.png"))
+            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_4_small.png"))
 
         self.home_btn.setIcon(QIcon(home_btn_pixmap))
         self.home_btn.setIconSize(QSize(280, 72))
 
-        browser_btn_pixmap = QPixmap(os.path.join(IMAGES_PATH, "browser_btn.png"))
+        browser_btn_pixmap = QPixmap(get_res("IMAGE", "browser_btn.png"))
         self.browser_btn.setIcon(QIcon(browser_btn_pixmap))
         self.browser_btn.setIconSize(QSize(140, 60))
 
@@ -114,12 +108,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def __init_icons(self):
 
-        self.gray_icon = QPixmap(os.path.join(IMAGES_PATH, "gray.png"))
-        self.green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
-        self.red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
+        self.gray_icon = QPixmap(get_res("IMAGE", "gray.png"))
+        self.green_icon = QPixmap(get_res("IMAGE", "green.png"))
+        self.red_icon = QPixmap(get_res("IMAGE", "red.png"))
 
         self.jar_icon_map = {
-            k: QPixmap(os.path.join(IMAGES_PATH, p))
+            k: QPixmap(get_res("IMAGE", p))
             for k, p in (
                 ("no", ""),
                 ("green", "jar-green.png"),
@@ -128,7 +122,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             )
         }
         self.tank_icon_map = {
-            k: QPixmap(os.path.join(IMAGES_PATH, p))
+            k: QPixmap(get_res("IMAGE", p))
             for k, p in (
                 ("green", "tank_green.png"),
                 ("gray", "tank_gray.png"),

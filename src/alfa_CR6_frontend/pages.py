@@ -33,28 +33,24 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 from alfa_CR6_backend.dymo_printer import dymo_print
 from alfa_CR6_backend.globals import (
-    IMAGES_PATH,
-    UI_PATH,
-    HELP_PATH,
-    import_settings,
-    tr_)
+    IMAGES_PATH, import_settings, get_res, tr_)
 
 g_settings = import_settings()
+
 
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
 
     def __init__(self, parent, *args):
 
         super().__init__(parent, *args)
-        self.gray_icon = QPixmap(os.path.join(IMAGES_PATH, "gray.png"))
-        self.green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
-        self.red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
-        self.yellow_icon = QPixmap(os.path.join(IMAGES_PATH, "yellow.png"))
-        self.blue_icon = QPixmap(os.path.join(IMAGES_PATH, "blue.png"))
-
-        self.add_icon = QPixmap(os.path.join(IMAGES_PATH, "add.png"))
-        self.edit_icon = QPixmap(os.path.join(IMAGES_PATH, "edit.png"))
-        self.barcode_C128_icon = QPixmap(os.path.join(IMAGES_PATH, "barcode_C128.png"))
+        self.gray_icon = QPixmap(get_res("IMAGE", "gray.png"))
+        self.green_icon = QPixmap(get_res("IMAGE", "green.png"))
+        self.red_icon = QPixmap(get_res("IMAGE", "red.png"))
+        self.yellow_icon = QPixmap(get_res("IMAGE", "yellow.png"))
+        self.blue_icon = QPixmap(get_res("IMAGE", "blue.png"))
+        self.add_icon = QPixmap(get_res("IMAGE", "add.png"))
+        self.edit_icon = QPixmap(get_res("IMAGE", "edit.png"))
+        self.barcode_C128_icon = QPixmap(get_res("IMAGE", "barcode_C128.png"))
 
         # ~ self.item_font = QFont('Times sans-serif', 32)
         self.results = [[]]
@@ -272,7 +268,7 @@ class BaseStackedPage(QFrame):
 
         super().__init__(*args, **kwargs)
 
-        loadUi(os.path.join(UI_PATH, self.ui_file_name), self)
+        loadUi(get_res("UI", self.ui_file_name), self)
 
         self.main_window = self.parent()
         self.main_window.stacked_widget.addWidget(self)
@@ -313,10 +309,9 @@ class HelpPage(BaseStackedPage):
 
         logging.warning(f"self.context_widget:{self.context_widget}")
 
-        
         if hasattr(self.context_widget, 'help_file_name') and self.context_widget.help_file_name:
             help_file_name = self.context_widget.help_file_name
-            with open(os.path.join(HELP_PATH, help_file_name)) as f:
+            with open(get_res("HELP", help_file_name)) as f:
                 content = f.read()
                 self.help_text_browser.setHtml(content)
             self.parent().setCurrentWidget(self)
@@ -335,7 +330,7 @@ class WebenginePage(BaseStackedPage):
 
         self.webengine_view = QWebEngineView(self)
         self.webengine_view.setGeometry(8, 28, 1904, 960)
-        self.start_page_url = QUrl.fromLocalFile((os.path.join(UI_PATH, "start_page.html")))
+        self.start_page_url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
         self.webengine_view.setUrl(self.start_page_url)
 
         # ~ self.webengine_view.setStyleSheet("""
@@ -732,9 +727,8 @@ class ActionPage(BaseStackedPage):
                 val_ = m.jar_photocells_status.get(bit_name)
 
             pth_ = (
-                os.path.join(IMAGES_PATH, "green.png")
-                if val_
-                else os.path.join(IMAGES_PATH, "gray.png")
+                get_res("IMAGE", "green.png")
+                if val_ else get_res("IMAGE", "gray.png")
             )
             w.setText(
                 f'<img widt="50" height="50" src="{pth_}" style="vertical-align:middle;">{tr_(text)}</img>'
@@ -788,11 +782,10 @@ class HomePage(BaseStackedPage):
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
             )
 
-
         self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
         self.action_btn_group.buttonClicked.connect(self.on_action_btn_group_clicked)
 
-        self.reserve_movie = QMovie(os.path.join(IMAGES_PATH, "riserva.gif"))
+        self.reserve_movie = QMovie(get_res("IMAGE", "riserva.gif"))
 
     def open_page(self):
 
@@ -973,9 +966,9 @@ class HomePage(BaseStackedPage):
                                 break
 
                         if text:
-                            _img_url = os.path.join(IMAGES_PATH, "jar-green.png")
+                            _img_url = get_res("IMAGE", "jar-green.png")
                         else:
-                            _img_url = os.path.join(IMAGES_PATH, "jar-gray.png")
+                            _img_url = get_res("IMAGE", "jar-gray.png")
 
                         lbl.setStyleSheet(
                             'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))

@@ -19,7 +19,6 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 
 EPSILON = 0.00001
 
-
 def tr_(lemma):
     return lemma
 
@@ -32,6 +31,7 @@ def import_settings():
     for pth in (app_settings.LOGS_PATH,
                 app_settings.TMP_PATH ,
                 app_settings.DATA_PATH,
+                app_settings.CUSTOM_PATH,
                 app_settings.WEBENGINE_DOWNLOAD_PATH,
                 app_settings.WEBENGINE_CACHE_PATH):
 
@@ -59,3 +59,21 @@ def get_version():
         logging.error(exc)
 
     return _ver
+
+def get_res(type, name):
+
+    res = None
+    _settings = import_settings()
+
+    if os.path.exists(os.path.join(_settings.CUSTOM_PATH, name)):
+        res = os.path.join(_settings.CUSTOM_PATH, name)
+    else:
+        if type == 'IMAGE':
+            res = os.path.join(IMAGES_PATH, name)
+        elif type == 'HELP': 
+            res = os.path.join(HELP_PATH, name)
+        elif type == 'UI': 
+            res = os.path.join(UI_PATH, name)
+
+    return res
+

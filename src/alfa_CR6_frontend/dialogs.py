@@ -8,7 +8,6 @@
 # pylint: disable=too-many-lines
 # pylint: disable=too-few-public-methods
 
-import os
 import logging
 import json
 import time
@@ -32,10 +31,7 @@ from PyQt5.QtWidgets import (
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print
 
-from alfa_CR6_backend.globals import (
-    UI_PATH,
-    IMAGES_PATH,
-    tr_)
+from alfa_CR6_backend.globals import get_res, tr_
 
 
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
@@ -123,7 +119,7 @@ class BaseDialog(QFrame):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        loadUi(os.path.join(UI_PATH, self.ui_file_name), self)
+        loadUi(get_res("UI", self.ui_file_name), self)
 
         self.setStyleSheet(
             """
@@ -141,12 +137,12 @@ class BaseDialog(QFrame):
         self.move(440, 100)
         # ~ self.resize(1080, 575)
 
-        self.green_icon = QPixmap(os.path.join(IMAGES_PATH, "green.png"))
-        self.red_icon = QPixmap(os.path.join(IMAGES_PATH, "red.png"))
-        self.yellow_icon = QPixmap(os.path.join(IMAGES_PATH, "yellow.png"))
-        self.gray_icon = QPixmap(os.path.join(IMAGES_PATH, "gray.png"))
-        self.remove_icon = QPixmap(os.path.join(IMAGES_PATH, "remove.png"))
-        self.add_icon = QPixmap(os.path.join(IMAGES_PATH, "add.png"))
+        self.green_icon = QPixmap(get_res("IMAGE", "green.png"))
+        self.red_icon = QPixmap(get_res("IMAGE", "red.png"))
+        self.yellow_icon = QPixmap(get_res("IMAGE", "yellow.png"))
+        self.gray_icon = QPixmap(get_res("IMAGE", "gray.png"))
+        self.remove_icon = QPixmap(get_res("IMAGE", "remove.png"))
+        self.add_icon = QPixmap(get_res("IMAGE", "add.png"))
 
         self.ok_button.setIcon(QIcon(self.green_icon))
         self.esc_button.setIcon(QIcon(self.red_icon))

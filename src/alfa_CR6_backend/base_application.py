@@ -6,7 +6,6 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-lines
 
-import sys
 import os
 import time
 import logging
@@ -17,19 +16,16 @@ import json
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
-from alfa_CR6_backend.carousel_motor import CarouselMotor
-from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.globals import (
     UI_PATH,
     KEYBOARD_PATH,
     EPSILON,
     get_version,
-    tr_,
-    import_settings)
+    tr_)
 
-from alfa_CR6_frontend.main_window import MainWindow
 
+from alfa_CR6_backend.machine_head import MachineHead
 
 def parse_json_order(path_to_json_file, json_schema_name):
 
@@ -690,24 +686,3 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         for m in self.machine_head_dict.values():
             if m and m.name[0] == letter:
                 return m
-
-
-class Application(BaseApplication, CarouselMotor):
-    pass
-
-
-def main():
-
-    settings = import_settings()
-
-    logging.basicConfig(
-        stream=sys.stdout, level=settings.LOG_LEVEL,
-        format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
-
-    app = Application(MainWindow, settings, sys.argv)
-    logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
-    app.run_forever()
-
-
-if __name__ == "__main__":
-    main()

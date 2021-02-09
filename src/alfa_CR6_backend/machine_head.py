@@ -6,7 +6,6 @@
 # pylint: disable=invalid-name
 
 # ~ import os
-import time
 import logging
 import asyncio
 import json
@@ -26,46 +25,6 @@ DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
 
 
 class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
-
-    """
-    # "jar photocells_status" mask bit coding:
-    # bit0: JAR_INPUT_ROLLER_PHOTOCELL
-    # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL
-    # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL
-    # bit3: LOAD_LIFTER_DOWN_PHOTOCELL
-    # bit4: LOAD_LIFTER_UP_PHOTOCELL
-    # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL
-    # bit6: UNLOAD_LIFTER_UP_PHOTOCELL
-    # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL
-    # bit8: JAR_DISPENSING_POSITION_PHOTOCELL
-    # bit9: JAR_DETECTION_MICROSWITCH_1
-    # bit10:JAR_DETECTION_MICROSWITCH_2
-
-    {   'Dispensing_Roller':  {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement,
-                2 = Start Movement till Photocell transition LIGHT - DARK ','propertyOrder': 1, 'type': 'number', 'fmt': 'B'},
-        'Lifter_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement CW,
-                2 = Start Movement CW till Photocell transition LIGHT - DARK,
-                3 = Start Movement CCW,
-                4 = Start Movement CCW till Photocell transition DARK – LIGHT,
-                5 = Start Movement CCW till Photocell transition LIGHT- DARK', 'propertyOrder': 2, 'type': 'number', 'fmt': 'B'},
-        'Input_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement,
-                2 = Start Movement till Photocell transition LIGHT - DARK', 'propertyOrder': 3, 'type': 'number', 'fmt': 'B'},
-        'Lifter': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement Up till Photocell Up transition LIGHT – DARK,
-                2 = Start Movement Down till Photocell Down transition LIGHT – DARK', 'propertyOrder': 4, 'type': 'number', 'fmt': 'B'},
-        'Output_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement CCW till Photocell transition LIGHT – DARK,
-                2 = Start Movement CCW till Photocell transition DARK - LIGHT with a Delay',
-                3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
-    """
 
     def __init__(  # pylint: disable=too-many-arguments
             self, index, ip_add, ws_port, http_port, msg_handler=None, mockup_files_path=None):
@@ -237,6 +196,47 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ logging.warning("self.jar_photocells_status:{}".format(self.jar_photocells_status))
         return diff
 
+    async def handle_ws_recv(self):
+
+        msg = None
+        try:
+            # TODO: review
+            # ~ msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
+            msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
+        # ~ except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
+        except asyncio.TimeoutError:
+            logging.warning(f"{self.name} time out while waiting in websocket.recv.")
+
+        self.cntr += 1
+
+        if msg:
+            msg_dict = dict(json.loads(msg))
+
+            if msg_dict.get("type") == "device:machine:status":
+                status = msg_dict.get("value")
+                status = dict(status)
+                if status:
+                    diff = await self.update_status(status)
+                    if diff:
+                        logging.info(f"{self.name} diff:{ diff }")
+
+            elif msg_dict.get("type") == "answer":
+                answer = msg_dict.get("value")
+                answer = dict(answer)
+                if (answer and answer.get("status_code") is not None
+                        and answer.get("command") is not None):
+
+                    self.last_answer = answer
+                    logging.warning(f"{self.name} answer:{answer}")
+            elif msg_dict.get("type") == "time":
+                # ~ logging.warning(f"msg_dict:{msg_dict}")
+                time_stamp = msg_dict.get("value")
+                if time_stamp:
+                    self.time_stamp = time_stamp
+
+            if self.msg_handler:
+                await self.msg_handler(self.index, msg_dict)
+
     async def call_api_rest(self, path: str, method: str, data: dict, timeout=10):
 
         r_json_as_dict = {}
@@ -343,7 +343,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             return True
                         return False
 
-                    ret = await self.wait_for_condition(condition, timeout=30)
+                    ret = await self.app.wait_for_condition(condition, timeout=30)
                     logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
                 else:
                     # TODO: wait for answer from macroprocessor
@@ -351,174 +351,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
-        return ret
-
-    async def run(self):
-
-        ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
-        while True:
-            try:
-                async with websockets.connect(ws_url) as websocket:
-                    self.websocket = websocket
-                    while True:
-                        await self.handle_ws_recv()
-            except (OSError,
-                    ConnectionRefusedError,
-                    websockets.exceptions.ConnectionClosedError,) as e:
-                logging.error(f"e:{e}")
-                await asyncio.sleep(5)
-            except Exception as e:  # pylint: disable=broad-except
-                logging.error(f"e:{e}")
-                logging.error(traceback.format_exc())
-                await asyncio.sleep(2)
-        logging.warning(f" *** exiting *** ")
-
-    async def handle_ws_recv(self):
-
-        msg = None
-        try:
-            # TODO: review
-            # ~ msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
-            msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
-        # ~ except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
-        except asyncio.TimeoutError:
-            logging.warning(f"{self.name} time out while waiting in websocket.recv.")
-
-        self.cntr += 1
-
-        if msg:
-            msg_dict = dict(json.loads(msg))
-
-            if msg_dict.get("type") == "device:machine:status":
-                status = msg_dict.get("value")
-                status = dict(status)
-                if status:
-                    diff = await self.update_status(status)
-                    if diff:
-                        logging.info(f"{self.name} diff:{ diff }")
-
-            elif msg_dict.get("type") == "answer":
-                answer = msg_dict.get("value")
-                answer = dict(answer)
-                if (answer and answer.get("status_code") is not None
-                        and answer.get("command") is not None):
-
-                    self.last_answer = answer
-                    logging.warning(f"{self.name} answer:{answer}")
-            elif msg_dict.get("type") == "time":
-                # ~ logging.warning(f"msg_dict:{msg_dict}")
-                time_stamp = msg_dict.get("value")
-                if time_stamp:
-                    self.time_stamp = time_stamp
-
-            if self.msg_handler:
-                await self.msg_handler(self.index, msg_dict)
-
-    async def wait_for_jar_photocells_and_status_lev(  # pylint: disable=too-many-arguments
-            self, bit_name, on=True, status_levels=None, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
-
-        if status_levels is None:
-            status_levels = ["STANDBY"]
-
-        logging.warning(
-            f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}")
-
-        try:
-
-            def condition():
-                flag = self.jar_photocells_status.get(bit_name, False) and True
-                flag = flag if on else not flag
-                flag = flag and self.status["status_level"] in status_levels
-                return flag
-
-            ret = await self.wait_for_condition(
-                condition, timeout=timeout, show_alert=False
-            )
-            logging.warning(
-                f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, ret:{ret}"
-            )
-
-            if not ret and show_alert:
-                _ = tr_('timeout expired!\n{} bit_name:{}, on:{}, status_levels:{}, timeout:{}.').format(
-                    self.name, bit_name, on, status_levels, timeout)
-                self.app.main_window.open_alert_dialog(_)
-                logging.error(_)
-
-            return ret
-        except Exception as e:  # pylint: disable=broad-except
-            self.app.handle_exception(e)
-
-    async def wait_for_jar_photocells_status(
-            self, bit_name, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
-
-        logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}")
-
-        try:
-
-            def condition():
-                flag = self.jar_photocells_status.get(bit_name, False)
-                return flag if on else not flag
-
-            ret = await self.wait_for_condition(
-                condition, timeout=timeout, show_alert=False
-            )
-            logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
-
-            if not ret and show_alert:
-                _ = tr_('timeout expired!\n{} bit_name:{}, on:{}, timeout:{}.').format(
-                    self.name, bit_name, on, timeout)
-                self.app.main_window.open_alert_dialog(_)
-                logging.error(_)
-
-            return ret
-        except Exception as e:  # pylint: disable=broad-except
-            self.app.handle_exception(e)
-
-    async def wait_for_status_level(
-            self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
-
-        logging.warning(
-            f"{self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}")
-
-        try:
-
-            def condition():
-                flag = self.status["status_level"] in status_levels
-                return flag if on else not flag
-
-            ret = await self.wait_for_condition(
-                condition, timeout=timeout, show_alert=show_alert
-            )
-            logging.warning(
-                f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}"
-            )
-
-            if not ret and show_alert:
-                _ = tr_('timeout expired!\n{} on:{}, status_levels:{}, timeout:{}.').format(
-                    self.name, on, status_levels, timeout)
-                self.app.main_window.open_alert_dialog(_)
-                logging.error(_)
-
-            return ret
-        except Exception as e:  # pylint: disable=broad-except
-            self.app.handle_exception(e)
-
-    async def wait_for_condition(
-            self, condition, timeout, show_alert=True, extra_info=""):
-
-        t0 = time.time()
-        ret = condition()
-        while not ret and time.time() - t0 < timeout:
-            await asyncio.sleep(0.01)
-            ret = condition()
-        if not ret:
-            if show_alert:
-                _ = f"timeout expired! {self.name} timeout:{timeout} "
-                if extra_info:
-                    _ += str(extra_info)
-                logging.error(_)
-                self.app.main_window.open_alert_dialog(_)
-
         return ret
 
     async def do_dispense(self, jar):  # pylint: disable=too-many-locals
@@ -553,7 +385,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 return flag
 
             logging.warning(f"{self.name} condition():{condition()}")
-            r = await self.wait_for_condition(
+            r = await self.app.wait_for_condition(
                 condition,
                 timeout=30,
                 extra_info=" before dispensing. Please check jar.",
@@ -574,3 +406,112 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         if self.aiohttp_clientsession:
             await self.aiohttp_clientsession.close()
+
+    async def run(self):
+
+        ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
+        while True:
+            try:
+                async with websockets.connect(ws_url) as websocket:
+                    self.websocket = websocket
+                    while True:
+                        await self.handle_ws_recv()
+            except (OSError,
+                    ConnectionRefusedError,
+                    websockets.exceptions.ConnectionClosedError,) as e:
+                logging.error(f"e:{e}")
+                await asyncio.sleep(5)
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(f"e:{e}")
+                logging.error(traceback.format_exc())
+                await asyncio.sleep(2)
+        logging.warning(f" *** exiting *** ")
+
+    async def wait_for_jar_photocells_and_status_lev(  # pylint: disable=too-many-arguments
+            self, bit_name, on=True, status_levels=None, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
+
+        if status_levels is None:
+            status_levels = ["STANDBY"]
+
+        logging.warning(
+            f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}")
+
+        try:
+
+            def condition():
+                flag = self.jar_photocells_status.get(bit_name, False) and True
+                flag = flag if on else not flag
+                flag = flag and self.status["status_level"] in status_levels
+                return flag
+
+            ret = await self.app.wait_for_condition(
+                condition, timeout=timeout, show_alert=False
+            )
+            logging.warning(
+                f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, ret:{ret}"
+            )
+
+            if not ret and show_alert:
+                _ = tr_('timeout expired!\n{} bit_name:{}, on:{}, status_levels:{}, timeout:{}.').format(
+                    self.name, bit_name, on, status_levels, timeout)
+                self.app.main_window.open_alert_dialog(_)
+                logging.error(_)
+
+            return ret
+        except Exception as e:  # pylint: disable=broad-except
+            self.app.handle_exception(e)
+
+    async def wait_for_jar_photocells_status(
+            self, bit_name, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
+
+        logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}")
+
+        try:
+
+            def condition():
+                flag = self.jar_photocells_status.get(bit_name, False)
+                return flag if on else not flag
+
+            ret = await self.app.wait_for_condition(
+                condition, timeout=timeout, show_alert=False
+            )
+            logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
+
+            if not ret and show_alert:
+                _ = tr_('timeout expired!\n{} bit_name:{}, on:{}, timeout:{}.').format(
+                    self.name, bit_name, on, timeout)
+                self.app.main_window.open_alert_dialog(_)
+                logging.error(_)
+
+            return ret
+        except Exception as e:  # pylint: disable=broad-except
+            self.app.handle_exception(e)
+
+    async def wait_for_status_level(
+            self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
+
+        logging.warning(
+            f"{self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}")
+
+        try:
+
+            def condition():
+                flag = self.status["status_level"] in status_levels
+                return flag if on else not flag
+
+            ret = await self.app.wait_for_condition(
+                condition, timeout=timeout, show_alert=show_alert
+            )
+            logging.warning(
+                f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}"
+            )
+
+            if not ret and show_alert:
+                _ = tr_('timeout expired!\n{} on:{}, status_levels:{}, timeout:{}.').format(
+                    self.name, on, status_levels, timeout)
+                self.app.main_window.open_alert_dialog(_)
+                logging.error(_)
+
+            return ret
+        except Exception as e:  # pylint: disable=broad-except
+            self.app.handle_exception(e)
