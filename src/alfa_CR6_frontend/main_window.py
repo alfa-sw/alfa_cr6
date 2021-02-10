@@ -184,8 +184,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                  {"text": tr_("Start lifter down"), "action_args": ("single_move", "D", {"Lifter": 2})},
                  {"text": tr_("Stop  lifter"), "action_args": ("single_move", "D", {"Lifter": 0})},
                  {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
-                 {"text": tr_("move 04 05 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
-                 {"text": tr_("move 04 05 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
+                 {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
+                 {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
              "labels_args": [
                  ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
                  ("D", "LOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
@@ -223,6 +223,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                  {"text": tr_("Start lifter down"), "action_args": ("single_move", "F", {"Lifter": 2})},
                  {"text": tr_("Stop  lifter"), "action_args": ("single_move", "F", {"Lifter": 0})},
                  {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
+                 {"text": tr_("move 10 11 ('DOWN -> UP')"), "action_args": ("move_10_11",)},
                  {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)}, ],
              "labels_args": [
                  ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
@@ -356,7 +357,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             m = QApplication.instance().get_machine_head_by_letter(head_letter)
             if m and m.status.get("status_level") is not None:
                 status_level = m.status.get("status_level")
-                lbl.setText(tr_(f"{status_level}"))
+                crx_outputs = m.status.get('crx_outputs_status', -1)
+                jar_ph_ = m.status.get("jar_photocells_status", -1)
+                
+                txt_ = "{}".format(tr_(f"{status_level}"))
+                txt_ += "<br/><small>{:04b} {:04b}</small>\n".format(
+                            0xF & (crx_outputs >> 4), 0xF & (crx_outputs >> 0))
+                txt_ += '<br/><small>{:04b} {:04b} {:04b} </small>'.format(
+                            0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0))
+                lbl.setText(txt_)
                 lbl.show()
             else:
                 lbl.hide()
@@ -370,7 +379,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                             (action_frame.status_E_label, 'E'),
                             (action_frame.status_F_label, 'F')]:
 
-                    logging.warning(f"w:{w}, l:{l}")
+                    # ~ logging.warning(f"w:{w}, l:{l}")
                     if w:
                         _set_label_text(w, l)
 

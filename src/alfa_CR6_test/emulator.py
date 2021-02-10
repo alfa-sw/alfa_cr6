@@ -189,10 +189,7 @@ class MachineHeadMockup:
                     self.status["jar_photocells_status"] & ~mask
                 )
             elif set_or_reset == "toggle":
-                current_bit_val = self.status["jar_photocells_status"] & mask
-                pars["jar_photocells_status"] = (
-                    self.status["jar_photocells_status"] & ~current_bit_val
-                )
+                pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ mask
             if mask == DISPENSING_POSITION_MASK:
                 if set_or_reset == "set":
                     pars["container_presence"] = True
@@ -311,11 +308,11 @@ class MachineHeadMockup:
                 elif output_roller == 2:
                     await self.do_move(OUTPUT_ROLLER_MASK, "reset", duration=4)
         elif msg_out_dict["command"] == "CRX_OUTPUTS_MANAGEMENT":
-            output_number = msg_out_dict["params"]["Output_Number"]
-            output_action = msg_out_dict["params"]["Output_Action"]
-            mask = 0x1 << int(output_number)
+            output_number = int(msg_out_dict["params"]["Output_Number"])
+            output_action = int(msg_out_dict["params"]["Output_Action"])
+            mask = 0x1 << output_number
 
-            if int(output_action):
+            if output_action:
                 crx_outputs_status = self.status["crx_outputs_status"] | mask
             else:
                 crx_outputs_status = self.status["crx_outputs_status"] & ~mask
@@ -323,39 +320,44 @@ class MachineHeadMockup:
             await self.update_status(params={"crx_outputs_status": crx_outputs_status})
 
             await asyncio.sleep(2)
+            pars = self.do_move_by_crx_outputs(output_number, output_action)
+            await self.update_status(params=pars)
 
-            """
-            # ~ 'Output_Number': {'propertyOrder': 1, 'type': 'number', 'fmt': 'B',
-            # ~ 'description': "Outupt (roller or lifter) identification number related to a dispensing head. Values comprised between 0 - 3"},
-            # ~ 'Output_Action': {'propertyOrder': 2, 'type': 'number', 'fmt': 'B',
-            # ~ 'description': "Values:
-            # ~ 0 = Stop Movement,
-            # ~ 1 = Start Movement CW,
-            # ~ 2 = Start Movement CW or UP till Photocell transition LIGHT - DARK,
-            # ~ 3 = Start Movement CW or UP till Photocell transition DARK - LIGHT,
-            # ~ 4 = Start Movement CCW,
-            # ~ 5 = Start Movement CCW or DOWN till Photocell transition LIGHT - DARK,
-            # ~ 6 = Start Movement CCW or DOWN till Photocell transition DARK - LIGHT"}}}},
+    def do_move_by_crx_outputs(self, output_number, output_action):  # pylint: disable=too-many-branches,too-many-statements
 
-            # Outputs meaning for each dispensing head:
-            # TESTA1: A 0 = DOSING ROLLER, 1 = INPUT ROLLER,
-            # TESTA2: F 0 = DOSING ROLLER, 1 = LIFTER_ROLLER, 2 = OUTPUT_ROLLER, 3 = LIFTER
-            # TESTA3: B 0 = DOSING ROLLER
-            # TESTA4: E 0 = DOSING ROLLER
-            # TESTA5: C 0 = DOSING ROLLER, 1 = LIFTER_ROLLER,
-            # TESTA6: D 0 = DOSING ROLLER, 1 = LIFTER
-            """
+        """
+        # ~ 'Output_Number': {'propertyOrder': 1, 'type': 'number', 'fmt': 'B',
+        # ~ 'description': "Outupt (roller or lifter) identification number related to a dispensing head. Values comprised between 0 - 3"},
+        # ~ 'Output_Action': {'propertyOrder': 2, 'type': 'number', 'fmt': 'B',
+        # ~ 'description': "Values:
+        # ~ 0 = Stop Movement,
+        # ~ 1 = Start Movement CW,
+        # ~ 2 = Start Movement CW or UP till Photocell transition LIGHT - DARK,
+        # ~ 3 = Start Movement CW or UP till Photocell transition DARK - LIGHT,
+        # ~ 4 = Start Movement CCW,
+        # ~ 5 = Start Movement CCW or DOWN till Photocell transition LIGHT - DARK,
+        # ~ 6 = Start Movement CCW or DOWN till Photocell transition DARK - LIGHT"}}}},
 
-            pars = {}
+        # Outputs meaning for each dispensing head:
+        # TESTA1: A 0 = DOSING ROLLER, 1 = INPUT ROLLER,
+        # TESTA2: F 0 = DOSING ROLLER, 1 = LIFTER_ROLLER, 2 = OUTPUT_ROLLER, 3 = LIFTER
+        # TESTA3: B 0 = DOSING ROLLER
+        # TESTA4: E 0 = DOSING ROLLER
+        # TESTA5: C 0 = DOSING ROLLER, 1 = LIFTER_ROLLER,
+        # TESTA6: D 0 = DOSING ROLLER, 1 = LIFTER
+        """
 
-            if output_number == 0:
-                if output_action in (1, 4):
-                    pars["jar_photocells_status"] = ~self.status["jar_photocells_status"]
-                elif output_action in (2, 5):
-                    pars["jar_photocells_status"] = self.status["jar_photocells_status"] | DISPENSING_POSITION_MASK
-                elif output_action in (3, 6):
-                    pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~DISPENSING_POSITION_MASK
+        pars = {}
 
+        if output_number == 0:
+            if output_action in (1, 4):
+                current_bit_val = self.status["jar_photocells_status"] & DISPENSING_POSITION_MASK
+                pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~current_bit_val
+            elif output_action in (2, 5):
+                pars["jar_photocells_status"] = self.status["jar_photocells_status"] | DISPENSING_POSITION_MASK
+            elif output_action in (3, 6):
+                pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~DISPENSING_POSITION_MASK
+        else:
             if self.letter == 'A':
                 if output_number == 1:
                     if output_action in (1, 3):
@@ -363,49 +365,67 @@ class MachineHeadMockup:
                     elif output_action in (2, ):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | INPUT_ROLLER_MASK
 
-            if self.letter == 'B':
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x02
+
+            elif self.letter == 'B':
                 pass
-            if self.letter == 'C':
+
+            elif self.letter == 'C':
                 if output_number == 1:
-                    if output_action in (2, 5):
+                    if output_action in (1, 4):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ LOAD_LIFTER_ROLLER_MASK
+                    elif output_action in (2, 5):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | LOAD_LIFTER_ROLLER_MASK
                     elif output_action in (3, 6):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~LOAD_LIFTER_ROLLER_MASK
 
-            if self.letter == 'D':
+            elif self.letter == 'D':
                 if output_number == 1:
                     if output_action in (2, 3):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | LOAD_LIFTER_UP_MASK
-                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~LOAD_LIFTER_DOWN_MASK
+                        pars["jar_photocells_status"] = pars["jar_photocells_status"] & ~LOAD_LIFTER_DOWN_MASK
                     elif output_action in (5, 6):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | LOAD_LIFTER_DOWN_MASK
-                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~LOAD_LIFTER_UP_MASK
+                        pars["jar_photocells_status"] = pars["jar_photocells_status"] & ~LOAD_LIFTER_UP_MASK
 
-            if self.letter == 'E':
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x02
+
+            elif self.letter == 'E':
                 pass
-            if self.letter == 'F':
+
+            elif self.letter == 'F':
                 if output_number == 1:
-                    if output_action in (2, 5):
+                    if output_action in (1, 4):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ UNLOAD_LIFTER_ROLLER_MASK
+                    elif output_action in (2, 5):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | UNLOAD_LIFTER_ROLLER_MASK
                     elif output_action in (3, 6):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~UNLOAD_LIFTER_ROLLER_MASK
+
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x02
+
                 elif output_number == 2:
-                    if output_action in (2, 5):
+                    if output_action in (1, 4):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ OUTPUT_ROLLER_MASK
+                    elif output_action in (2, 5):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | OUTPUT_ROLLER_MASK
                     elif output_action in (3, 6):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~OUTPUT_ROLLER_MASK
+
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x04
+
                 elif output_number == 3:
                     if output_action in (2, 3):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | UNLOAD_LIFTER_UP_MASK
-                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~UNLOAD_LIFTER_DOWN_MASK
+                        pars["jar_photocells_status"] = pars["jar_photocells_status"] & ~UNLOAD_LIFTER_DOWN_MASK
                     elif output_action in (5, 6):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | UNLOAD_LIFTER_DOWN_MASK
-                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~UNLOAD_LIFTER_UP_MASK
+                        pars["jar_photocells_status"] = pars["jar_photocells_status"] & ~UNLOAD_LIFTER_UP_MASK
 
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x08
 
-            logging.warning(f"{self.letter}, input:{msg_out_dict['params']}, pars:{pars}")
-
-            await self.update_status(params=pars)
+        logging.warning(f"{self.letter}, pars:{pars}")
+        return pars
 
     async def dump_status(self):
         raise Exception(f"to be overidden in {self}")

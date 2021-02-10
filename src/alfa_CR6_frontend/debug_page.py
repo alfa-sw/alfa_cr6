@@ -578,7 +578,8 @@ class DebugPage:
         html_ += '<th align="left" width="9%">name</th>'
         html_ += '<th align="left" width="8%">addr</th>'
         html_ += '<th align="left" width="20%" colspan="4">jar_photocells_status</th>'
-        html_ += '<th align="left" width="16%">photocells_status</th>'
+        # ~ html_ += '<th align="left" width="16%">photocells_status</th>'
+        html_ += '<th align="left" width="16%">crx_outputs</th>'
         html_ += '<th align="left" width="14%">(cp) level (cs)</th>'
         html_ += '<th align="left" width="8%">last update</th>'
         html_ += '<th align="left" width="16%"  colspan="4">commands</th>'
@@ -589,6 +590,7 @@ class DebugPage:
             m = named_map[n]
             ord_ = m.index + 1
             photoc_ = m.status.get("photocells_status", -1)
+            crx_outputs = m.status.get('crx_outputs_status', -1)
             jar_ph_ = m.status.get("jar_photocells_status", -1)
 
             html_ += "<tr>"
@@ -615,8 +617,11 @@ class DebugPage:
             )
             html_ += "  <td>0x{0:04X}</td>".format(jar_ph_)
 
-            html_ += "  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>".format(
-                0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_
+            # ~ html_ += "  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>".format(
+                # ~ 0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_
+            # ~ )
+            html_ += "  <td>        {0:04b} {1:04b} | 0x{2:02X} {2:5d}</td>".format(
+                0xF & (crx_outputs >> 4), 0xF & (crx_outputs >> 0), crx_outputs
             )
 
             cp = 1 if m.status.get("container_presence") else 0
