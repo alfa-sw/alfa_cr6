@@ -378,18 +378,18 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         r = True
         if ingredients:
 
+            # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY','POSITIONING','DISPENSING','JAR_POSITIONING']
+            allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
+
             def condition():
                 flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
-                flag = flag and self.status["status_level"] in ["STANDBY"]
+                flag = flag and self.status["status_level"] in allowed_status_levels
                 flag = flag and self.status["container_presence"]
                 return flag
 
             logging.warning(f"{self.name} condition():{condition()}")
-            r = await self.app.wait_for_condition(
-                condition,
-                timeout=30,
-                extra_info=" before dispensing. Please check jar.",
-            )
+            msg_ = tr_(" before dispensing. Please check jar.")
+            r = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_)
             logging.warning(f"{self.name} r:{r}")
 
             if r:
