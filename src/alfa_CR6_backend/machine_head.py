@@ -5,13 +5,13 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 
-# ~ import os
+
 import logging
 import asyncio
 import json
 import traceback
+import time
 
-# ~ import concurrent
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
@@ -54,6 +54,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.last_answer = None
         self.cntr = 0
         self.time_stamp = 0
+
+        self.__crx_inner_status = [
+            {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
+            {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
+            {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
+            {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
+        ]
 
     def __str__(self):
         return f"[{self.index}:{self.name}]"
@@ -155,6 +162,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if old_flag and not new_flag:
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
+
         try:
             self.photocells_status = {
                 "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL": status["photocells_status"] & 0x001 and 1,
@@ -185,6 +193,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             s2 = status["jar_photocells_status"] & 0x400
             self.jar_size_detect = int(s1 + s2) >> 9
 
+            crx_outputs_status = self.status.get('crx_outputs_status')
+            for output_number in range(4):
+                mask_ = 0x1 << output_number
+                if not (int(crx_outputs_status) & mask_):
+                    self.__crx_inner_status[output_number] = {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0}
+
         except Exception as e:  # pylint: disable=broad-except
             # ~ self.app.handle_exception(e)
             logging.debug(e)
@@ -200,10 +214,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         msg = None
         try:
-            # TODO: review
-            # ~ msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
-        # ~ except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
         except asyncio.TimeoutError:
             logging.warning(f"{self.name} time out while waiting in websocket.recv.")
 
@@ -267,30 +278,49 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return r_json_as_dict
 
-    async def crx_outputs_management(self, params=None):
+    async def crx_outputs_management(self, output_number, output_action, timeout=30):
 
-        # ~ 'CRX_OUTPUTS_MANAGEMENT'
-        # ~ 'properties': {
-        # ~ 'Output_Number': {'propertyOrder': 1, 'type': 'number', 'fmt': 'B',
-        # ~ 'description': "Outupt (roller or lifter) identification number related to a dispensing head. Values comprised between 0 - 3"},
-        # ~ 'Output_Action': {'propertyOrder': 2, 'type': 'number', 'fmt': 'B',
-        # ~ 'description': """Values:
-        # ~ 0 = Stop Movement,
-        # ~ 1 = Start Movement CW,
-        # ~ 2 = Start Movement CW or UP till Photocell transition LIGHT - DARK,
-        # ~ 3 = Start Movement CW or UP till Photocell transition DARK - LIGHT,
-        # ~ 4 = Start Movement CCW,
-        # ~ 5 = Start Movement CCW or DOWN till Photocell transition LIGHT - DARK,
-        # ~ 6 = Start Movement CCW or DOWN till Photocell transition DARK - LIGHT"""}}}},
+        r = None
+        if self.__crx_inner_status[output_number]['value'] != 0 and output_action:
+            logging.error(
+                f"{self.name} SKIPPING CMD output_number:{output_number}, output_action:{output_action}, self.__crx_inner_status:{self.__crx_inner_status}")
+        else:
 
-        default = {
-            "Output_Number": 0,
-            "Output_Action": 0,
-        }
-        if params:
-            default.update(params)
+            def condition_1():
+                flag = not self.__crx_inner_status[output_number]['locked']
+                return flag
+            msg_ = tr_("{} waiting for {} to get unlocked.").format(self.name, output_number)
+            ret = await self.app.wait_for_condition(condition_1, timeout=5, extra_info=msg_, stability_count=1)
 
-        r = await self.send_command("CRX_OUTPUTS_MANAGEMENT", default)
+            if ret:
+                self.__crx_inner_status[output_number]['locked'] = True
+                try:
+                    if output_action == 0:
+                        self.__crx_inner_status[output_number]['timeout'] = 0
+                        self.__crx_inner_status[output_number]['t0'] = 0
+                    elif timeout:
+                        self.__crx_inner_status[output_number]['timeout'] = timeout
+                        self.__crx_inner_status[output_number]['t0'] = time.time()
+
+                    params = {"Output_Number": output_number, "Output_Action": output_action}
+                    r = await self.send_command("CRX_OUTPUTS_MANAGEMENT", params)
+                    self.__crx_inner_status[output_number]['value'] = output_action
+                    mask_ = 0x1 << output_number
+                    msg_ = tr_("{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}").format(
+                        self.name, output_number, output_action, self.status.get('crx_outputs_status', 0x0))
+
+                    def condition():
+                        if output_action:
+                            flag = self.status.get('crx_outputs_status', 0x0) & mask_
+                        else:
+                            flag = not self.status.get('crx_outputs_status', 0x0) & mask_
+                        return flag
+                    r = await self.app.wait_for_condition(condition, timeout=2.1, extra_info=msg_, stability_count=1, step=0.5)
+
+                except Exception as e:  # pylint: disable=broad-except
+                    self.app.handle_exception(e)
+
+                self.__crx_inner_status[output_number]['locked'] = False
 
         return r
 
@@ -389,14 +419,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             logging.warning(f"{self.name} condition():{condition()}")
             msg_ = tr_(" before dispensing. Please check jar.")
-            r = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_)
+            r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
             logging.warning(f"{self.name} r:{r}")
 
             if r:
                 r = await self.send_command(
                     cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
                 if r:
-                    r = await self.wait_for_status_level(["DISPENSING"], timeout=20)
+                    r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
                     if r:
                         r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
 
@@ -407,7 +437,19 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.aiohttp_clientsession:
             await self.aiohttp_clientsession.close()
 
+    async def __watch_dog_task(self):
+
+        while True:
+            await asyncio.sleep(1)
+            for output_number, output in enumerate(self.__crx_inner_status):
+                timeout = output['timeout']
+                t0 = output['t0']
+                if (timeout > 0 and t0 > 0) and (time.time() - t0 > timeout):
+                    self.crx_outputs_management(output_number, 0, timeout=0)
+
     async def run(self):
+        t = self.__watch_dog_task()
+        asyncio.ensure_future(t)
 
         ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
         while True:
@@ -416,9 +458,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     self.websocket = websocket
                     while True:
                         await self.handle_ws_recv()
-            except (OSError,
-                    ConnectionRefusedError,
-                    websockets.exceptions.ConnectionClosedError,) as e:
+            except (OSError, ConnectionRefusedError,
+                    websockets.exceptions.ConnectionClosedError) as e:
                 logging.error(f"e:{e}")
                 await asyncio.sleep(5)
             except Exception as e:  # pylint: disable=broad-except
@@ -444,9 +485,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 flag = flag and self.status["status_level"] in status_levels
                 return flag
 
-            ret = await self.app.wait_for_condition(
-                condition, timeout=timeout, show_alert=False
-            )
+            ret = await self.app.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(
                 f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, ret:{ret}"
             )

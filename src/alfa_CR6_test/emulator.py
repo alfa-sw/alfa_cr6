@@ -168,7 +168,7 @@ class MachineHeadMockup:
     async def update_status(self, params=None):
         if params is None:
             params = {}
-        logging.warning("{}, params:{}.".format(self.index, params))
+        logging.warning("{}, params:{}.".format(self.letter, {k: f"0x{v:02X}" for k, v in params.items()}))
         self.status.update(params)
         await self.dump_status()
 
@@ -199,7 +199,7 @@ class MachineHeadMockup:
         await self.update_status(params=pars)
 
     async def handle_command(self, msg_out_dict):  # pylint: disable=too-many-branches,too-many-statements
-        logging.warning("{} {}, {}".format(self.index, self.letter, msg_out_dict))
+        # ~ logging.warning("{} {}, {}".format(self.index, self.letter, msg_out_dict))
 
         if msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
             await self.do_move(duration=0.5, tgt_level="DIAGNOSTIC")
@@ -313,15 +313,19 @@ class MachineHeadMockup:
             mask = 0x1 << output_number
 
             if output_action:
+                if self.status["crx_outputs_status"] & mask:
+                    logging.error(f'{self.name} msg_out_dict["params"]:{msg_out_dict["params"]}, {self.status["crx_outputs_status"]}, {mask}')
+
                 crx_outputs_status = self.status["crx_outputs_status"] | mask
+
             else:
                 crx_outputs_status = self.status["crx_outputs_status"] & ~mask
 
             await self.update_status(params={"crx_outputs_status": crx_outputs_status})
 
-            await asyncio.sleep(2)
-            pars = self.do_move_by_crx_outputs(output_number, output_action)
-            await self.update_status(params=pars)
+            # ~ logging.warning("{} {}, crx_outputs_status:{}".format(self.index, self.letter, self.status["crx_outputs_status"]))
+
+            asyncio.get_event_loop().call_later(2.0, self.do_move_by_crx_outputs, *[output_number, output_action])
 
     def do_move_by_crx_outputs(self, output_number, output_action):  # pylint: disable=too-many-branches,too-many-statements
 
@@ -363,6 +367,10 @@ class MachineHeadMockup:
                     if output_action in (1, 3):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~INPUT_ROLLER_MASK
                     elif output_action in (2, ):
+                        if self.status["jar_photocells_status"] & INPUT_ROLLER_MASK:
+                            jar_photocells_status = self.status["jar_photocells_status"] & ~INPUT_ROLLER_MASK
+                            t = self.update_status(params={"jar_photocells_status": jar_photocells_status})
+                            asyncio.ensure_future(t)
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | INPUT_ROLLER_MASK
 
                     pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x02
@@ -424,8 +432,11 @@ class MachineHeadMockup:
 
                     pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x08
 
-        logging.warning(f"{self.letter}, pars:{pars}")
-        return pars
+        if not pars:
+            logging.warning(f"{self.letter}, output_number:{output_number}, output_action:{output_action}, pars:{pars}")
+        else:
+            t = self.update_status(params=pars)
+            asyncio.ensure_future(t)
 
     async def dump_status(self):
         raise Exception(f"to be overidden in {self}")
@@ -465,8 +476,6 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         # ~ channel = msg_dict['channel']
         msg_out_dict = msg_dict["msg_out_dict"]
 
-        await self.handle_command(msg_out_dict)
-
         answer = {
             "status_code": 0,
             "error": "no error",
@@ -479,6 +488,9 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         msg = json.dumps({"type": "answer", "value": answer})
         # ~ logging.warning("{} msg:{}".format(self.index, msg))
         asyncio.ensure_future(ws_client.send(msg))
+
+        # ~ asyncio.ensure_future(self.handle_command(msg_out_dict))
+        await self.handle_command(msg_out_dict)
 
     async def _new_client_handler(self, ws_client, path):
 
@@ -505,6 +517,7 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         )
         for client in self.ws_clients:
             await client.send(message)
+            logging.debug("{}, message:{}.".format(self.letter, message))
 
 
 class MachineHeadMockupFile(MachineHeadMockup):

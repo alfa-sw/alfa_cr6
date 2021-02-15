@@ -349,7 +349,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 package_size_list = []
                 for m in [m_ for m_ in self.machine_head_dict.values() if m_]:
                     await m.update_tintometer_data(invalidate_cache=True)
-                    logging.warning("{m.name}")
+                    logging.warning(f"{m.name}")
 
                     for s in [p["size"] for p in m.package_list]:
                         if s not in package_size_list:
