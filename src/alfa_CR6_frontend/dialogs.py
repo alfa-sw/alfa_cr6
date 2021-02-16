@@ -101,7 +101,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
             self.buttonClicked.connect(on_button_clicked)
 
-        logging.warning(msg)
+        logging.error(msg)
 
         t = time.asctime()
         msg = "[{}]\n\n{}\n\n".format(t, msg)

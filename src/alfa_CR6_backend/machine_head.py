@@ -164,6 +164,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.ready_to_read_a_barcode = True
 
         try:
+            crx_outputs_status = self.status.get('crx_outputs_status')
+            for output_number in range(4):
+                mask_ = 0x1 << output_number
+                if not (int(crx_outputs_status) & mask_):
+                    self.__crx_inner_status[output_number] = {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0}
+
             self.photocells_status = {
                 "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL": status["photocells_status"] & 0x001 and 1,
                 "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL": status["photocells_status"] & 0x002 and 1,
@@ -192,12 +198,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             s1 = status["jar_photocells_status"] & 0x200
             s2 = status["jar_photocells_status"] & 0x400
             self.jar_size_detect = int(s1 + s2) >> 9
-
-            crx_outputs_status = self.status.get('crx_outputs_status')
-            for output_number in range(4):
-                mask_ = 0x1 << output_number
-                if not (int(crx_outputs_status) & mask_):
-                    self.__crx_inner_status[output_number] = {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0}
 
         except Exception as e:  # pylint: disable=broad-except
             # ~ self.app.handle_exception(e)
@@ -239,11 +239,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                     self.last_answer = answer
                     logging.warning(f"{self.name} answer:{answer}")
+
             elif msg_dict.get("type") == "time":
                 # ~ logging.warning(f"msg_dict:{msg_dict}")
                 time_stamp = msg_dict.get("value")
                 if time_stamp:
                     self.time_stamp = time_stamp
+                    
+            else:
+                logging.warning(f"{self.name} msg_dict:{anmsg_dictswer}")
 
             if self.msg_handler:
                 await self.msg_handler(self.index, msg_dict)
@@ -281,7 +285,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     async def crx_outputs_management(self, output_number, output_action, timeout=30):
 
         r = None
-        if self.__crx_inner_status[output_number]['value'] != 0 and output_action:
+        mask_ = 0x1 << output_number
+        # ~ if self.__crx_inner_status[output_number]['value'] != 0 and output_action:
+        if self.status.get('crx_outputs_status', 0x0) & mask_ != 0 and output_action:
             logging.error(
                 f"{self.name} SKIPPING CMD output_number:{output_number}, output_action:{output_action}, self.__crx_inner_status:{self.__crx_inner_status}")
         else:
@@ -309,13 +315,17 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     msg_ = tr_("{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}").format(
                         self.name, output_number, output_action, self.status.get('crx_outputs_status', 0x0))
 
-                    def condition():
-                        if output_action:
-                            flag = self.status.get('crx_outputs_status', 0x0) & mask_
-                        else:
-                            flag = not self.status.get('crx_outputs_status', 0x0) & mask_
-                        return flag
-                    r = await self.app.wait_for_condition(condition, timeout=2.1, extra_info=msg_, stability_count=1, step=0.5)
+                    if output_action:
+                        def condition():
+                            return self.status.get('crx_outputs_status', 0x0) & mask_
+                        r = await self.app.wait_for_condition(condition, timeout=3.3, show_alert=False, stability_count=1, step=0.1)
+                    else:
+                        def condition():
+                            return not self.status.get('crx_outputs_status', 0x0) & mask_
+                        r = await self.app.wait_for_condition(condition, timeout=3.3, show_alert=False, stability_count=1, step=0.1)
+
+                    if not r:
+                        logging.error(f"msg_:{msg_}")
 
                 except Exception as e:  # pylint: disable=broad-except
                     self.app.handle_exception(e)

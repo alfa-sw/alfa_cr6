@@ -314,7 +314,7 @@ class MachineHeadMockup:
 
             if output_action:
                 if self.status["crx_outputs_status"] & mask:
-                    logging.error(f'{self.name} msg_out_dict["params"]:{msg_out_dict["params"]}, {self.status["crx_outputs_status"]}, {mask}')
+                    logging.error(f'{self.letter} msg_out_dict["params"]:{msg_out_dict["params"]}, {self.status["crx_outputs_status"]}, {mask}')
 
                 crx_outputs_status = self.status["crx_outputs_status"] | mask
 
@@ -516,8 +516,12 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
             {"type": "device:machine:status", **{"value": self.status}}
         )
         for client in self.ws_clients:
-            await client.send(message)
-            logging.debug("{}, message:{}.".format(self.letter, message))
+            try:
+                await client.send(message)
+                logging.debug("{}, message:{}.".format(self.letter, message))
+            except Exception:
+                logging.error(traceback.format_exc())
+                time.sleep(10)
 
 
 class MachineHeadMockupFile(MachineHeadMockup):

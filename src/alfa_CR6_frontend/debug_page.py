@@ -191,37 +191,38 @@ class DebugPage:
         if url.url().split("@")[1:]:
             # ~ command, barcode = url.url().split('@')
             command, name = url.url().split("@")
-            m = named_map[name]
+            m = named_map.get(name)
             t = None
             if command == "CANCEL":
-                barcode = name
-                t = app.get_jar_runners()[barcode]["task"]
                 try:
-                    t.cancel()
+                    barcode = int(name)
+                    tsks = app.get_jar_runners()
+                    t = tsks.get(barcode, {}).get("task")
+                    logging.warning(f"t:{t}, tsks:{tsks}.")
+                    if t:
+                        async def _coro():
+                            await t.cancel()
+                        asyncio.ensure_future(_coro())
 
-                    async def _coro(_):
-                        await _
-
-                    asyncio.ensure_future(_coro(t))
                 except asyncio.CancelledError:
                     logging.info(f"{ t } has been canceled now.")
-            elif command == "DIAGNOSTIC":
+            elif command == "DIAGNOSTIC" and m:
                 t = m.send_command(
                     cmd_name="ENTER_DIAGNOSTIC",
                     params={},
                     type_="command",
                     channel="machine",
                 )
-            elif command == "RESET":
+            elif command == "RESET" and m:
                 t = m.send_command(
                     cmd_name="RESET",
                     params={"mode": 0},
                     type_="command",
                     channel="machine",
                 )
-            elif command == "UPDATE":
+            elif command == "UPDATE" and m:
                 t = m.update_tintometer_data(invalidate_cache=True)
-            elif command == "DISP":
+            elif command == "DISP" and m:
 
                 # BEWARE: force size to max
                 t = self.dispense_coro(app, m, size=3)
@@ -524,13 +525,9 @@ class DebugPage:
 
         html_ += "<p>"
         if app.carousel_frozen:
-            html_ += '<b color="#EE0000">carousel_frozen:{}</b>'.format(
-                app.carousel_frozen
-            )
+            html_ += '<b color="#EE0000">carousel_frozen:{}</b>'.format(app.carousel_frozen)
         else:
-            html_ += '<b color="#00EE00">carousel_frozen:{}</b>'.format(
-                app.carousel_frozen
-            )
+            html_ += '<b color="#00EE00">carousel_frozen:{}</b>'.format(app.carousel_frozen)
         html_ += " - mirco: 0x{:02X} 0x{:02X}".format(s1, s2)
         html_ += "</p>"
 
@@ -560,7 +557,7 @@ class DebugPage:
         l_ = [i for i in app.get_jar_runners().values()]
         l_.reverse()
         for i, j in enumerate(l_):
-            html_ += '<p  bgcolor="#F0F0F0">{}:{} {}<a href="CANCEL@{}" title="cancel this jar">CANCEL</a></p>'.format(
+            html_ += '<p  bgcolor="#F0F0F0">{}:{} {}<a href="CANCEL@{}" title="cancel this jar"> <span style="font-size:20px"><b>CANCEL</b></span> </a></p>'.format(
                 i, j["jar"], j["jar"].description, j["jar"].barcode
             )
 

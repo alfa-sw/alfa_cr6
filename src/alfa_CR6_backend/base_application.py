@@ -609,11 +609,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if self.main_window.debug_page:
             self.main_window.debug_page.update_status()
 
-    async def single_move(self, head_letter, params):
-
-        m = self.get_machine_head_by_letter(head_letter)
-        return await m.can_movement(params)
-
     async def stop_all(self):
 
         await self.get_machine_head_by_letter("A").can_movement()

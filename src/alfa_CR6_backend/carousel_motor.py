@@ -453,11 +453,11 @@ class CarouselMotor(BaseApplication):
         m = self.get_machine_head_by_letter(machine_letter)
         self.main_window.update_status_data(m.index, m.status)
 
-        logging.warning(f"{m.name}")
+        logging.warning(f"{m.name}, j:{jar}, r:{r}")
+        r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} -").format(machine_letter))
 
         await m.update_tintometer_data(invalidate_cache=True)
 
-        r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} -").format(machine_letter))
         _, _, unavailable_pigment_names = self.check_available_volumes(jar)
 
         if unavailable_pigment_names:
@@ -476,10 +476,10 @@ class CarouselMotor(BaseApplication):
             jar.json_properties = json.dumps(json_properties, indent=2)
 
         r = await m.do_dispense(jar)
-        logging.warning(f"r :{r }")
+        logging.warning(f"j:{jar}, r :{r }")
         r = await self.wait_for_carousel_not_frozen(not r, tr_("position: HEAD {} +").format(machine_letter))
 
-        logging.warning(f"{m.name}")
+        logging.warning(f"{m.name}, j:{jar}.")
 
         return r
 
@@ -522,6 +522,11 @@ class CarouselMotor(BaseApplication):
 
         return r
 
+    async def single_move(self, head_letter, params):
+
+        m = self.get_machine_head_by_letter(head_letter)
+        return await m.can_movement(params)
+
 
 class CarouselMotor2(CarouselMotor):
 
@@ -562,20 +567,29 @@ class CarouselMotor2(CarouselMotor):
 
     async def move_from_to(self, jar, letter_from, letter_to):
 
+        logging.warning(f"j:{jar} {letter_from} -> {letter_to}")
+
         FROM = self.get_machine_head_by_letter(letter_from)
         TO = self.get_machine_head_by_letter(letter_to)
-        r = await self.wait_for_dispense_position_available(letter_to)
+
+        def condition():
+            return not FROM.status.get('crx_outputs_status', 0x0) & 0x01
+
+        r = await self.wait_for_dispense_position_available(letter_to, extra_check=condition)
         if r:
             await FROM.crx_outputs_management(0, 1)
             await TO.crx_outputs_management(0, 2)
-            r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=13)
+            r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
             await FROM.crx_outputs_management(0, 0)
             await TO.crx_outputs_management(0, 0)
             if r:
                 self.update_jar_position(jar=jar, machine_head=TO, pos=letter_to)
+
+        logging.warning(f"j:{jar} {letter_from} -> {letter_to} r:{r}")
+
         return r
 
-    async def wait_for_dispense_position_available(self, head_letter):
+    async def wait_for_dispense_position_available(self, head_letter, extra_check=None):
 
         m = self.get_machine_head_by_letter(head_letter)
 
@@ -587,6 +601,8 @@ class CarouselMotor2(CarouselMotor):
             flag = not m.status.get('crx_outputs_status', 0x0) & 0x01
             flag = flag and not m.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', False)
             flag = flag and m.status.get("status_level") in status_levels
+            if extra_check:
+                flag = flag and extra_check()
             return flag
 
         msgs_ = tr_('{} waiting for dispense position to get available.'.format(m.name))
@@ -624,10 +640,6 @@ class CarouselMotor2(CarouselMotor):
 
         A = self.get_machine_head_by_letter("A")
 
-        def condition():
-            flag = not A.status.get('crx_outputs_status', 0x0) & 0x02
-            return flag and not A.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', True)
-
         if silent:
             show_alert = False
             extra_info = ''
@@ -635,6 +647,9 @@ class CarouselMotor2(CarouselMotor):
             show_alert = True
             extra_info = tr_('waiting for input_roller available and stopped.')
 
+        def condition():
+            flag = not A.status.get('crx_outputs_status', 0x0) & 0x02
+            return flag and not A.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', True)
         r = await self.wait_for_condition(condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info)
 
         if r:
@@ -648,11 +663,16 @@ class CarouselMotor2(CarouselMotor):
 
     async def move_01_02(self, jar=None):  # 'IN -> A'
 
+        logging.warning(f"j:{jar}")
+
         A = self.get_machine_head_by_letter("A")
 
         self.update_jar_position(jar=jar, machine_head=A, status="ENTERING", pos="IN_A")
 
-        r = await self.wait_for_dispense_position_available("A")
+        def condition():
+            return not A.status.get('crx_outputs_status', 0x0) & 0x02
+
+        r = await self.wait_for_dispense_position_available("A", extra_check=condition)
 
         if r:
             await A.crx_outputs_management(1, 2)
@@ -660,9 +680,6 @@ class CarouselMotor2(CarouselMotor):
             r = await A.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=13)
             await A.crx_outputs_management(1, 0)
             await A.crx_outputs_management(0, 0)
-
-            # ~ _future = self.move_00_01(silent=True)
-            # ~ asyncio.ensure_future(_future)
 
             if r:
                 self.update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
@@ -686,60 +703,36 @@ class CarouselMotor2(CarouselMotor):
         D = self.get_machine_head_by_letter("D")
         C = self.get_machine_head_by_letter("C")
 
+        if (D.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL') or
+                D.status.get('status_level') != 'STANDBY' or
+                D.status.get('crx_outputs_status', 0x0) & 0x02):
+            timeout_ = 20
+        else:
+            timeout_ = 5
+
+        def condition_11():
+            return D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+        r = await self.wait_for_condition(condition_11, show_alert=False, timeout=timeout_)
+
+        if not r:  # the lifter is not UP, we must call it
+            def condition_12():
+                return not D.status.get('crx_outputs_status', 0x0) & 0x02
+            r = await self.wait_for_condition(condition_12, show_alert=False, timeout=34)
+            await D.crx_outputs_management(1, 2)
+
         def condition():
             flag = not D.status.get('crx_outputs_status', 0x0) & 0x02
             flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x01
             flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
             flag = flag and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
+            flag = flag and D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
             return flag
 
         r = await self.wait_for_condition(condition,
                                           show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
                                           extra_info=tr_('waiting for load_lifter roller available and stopped.'))
 
-        if r:  # the lifter_roller is stopped AND the lifter is available, stopped
-
-            # ~ if not D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL'):
-            def condition_11():
-                return D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
-            r = await self.wait_for_condition(condition_11, show_alert=False, timeout=5)
-
-            if not r:  # Anomalous condition
-                logging.warning("not LOAD_LIFTER_UP_PHOTOCELL !!!!!")
-
-                def condition_1():
-                    flag = not D.status.get('crx_outputs_status', 0x0) & 0x01
-                    flag = flag and not D.status.get('crx_outputs_status', 0x0) & 0x02
-                    flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x01
-                    flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
-                    flag = flag and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
-                    flag = flag and not D.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True)
-                    return flag
-
-                r = await self.wait_for_condition(condition_1, stability_count=5, step=0.1,
-                                                  show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-                                                  extra_info=tr_('waiting for load_lifter available and stopped.'))
-
-                if r:
-                    await D.crx_outputs_management(1, 2)
-
-                    def condition_2():
-                        flag = not D.status.get('crx_outputs_status', 0x0) & 0x02
-                        flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x01
-                        flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
-                        flag = flag and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
-                        flag = flag and D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL', False)
-                        return flag
-
-                    r = await self.wait_for_condition(condition_2,
-                                                      show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-                                                      extra_info=tr_('waiting for load_lifter coming UP.'))
-
-                    await D.crx_outputs_management(1, 0)
-
-                if not r:
-                    return False
-
+        if r:
             await C.crx_outputs_management(0, 1)
             await C.crx_outputs_management(1, 2)
             r = await C.wait_for_jar_photocells_status("JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True, timeout=17)
@@ -756,11 +749,14 @@ class CarouselMotor2(CarouselMotor):
 
         logging.warning("")
 
-        await D.crx_outputs_management(1, 5)
-        r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=20)
-        await D.crx_outputs_management(1, 0)
-
-        self.update_jar_position(jar=jar, pos="LIFTR_DOWN")
+        def condition_12():
+            return not D.status.get('crx_outputs_status', 0x0) & 0x02
+        r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+        if r:
+            await D.crx_outputs_management(1, 5)
+            r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=20)
+            await D.crx_outputs_management(1, 0)
+            self.update_jar_position(jar=jar, pos="LIFTR_DOWN")
 
         return r
 
@@ -769,8 +765,10 @@ class CarouselMotor2(CarouselMotor):
         C = self.get_machine_head_by_letter("C")
         D = self.get_machine_head_by_letter("D")
 
-        r = await self.wait_for_dispense_position_available("D")
-        logging.warning(f"r:{r}")
+        def condition():
+            return not C.status.get('crx_outputs_status', 0x0) & 0x02
+        r = await self.wait_for_dispense_position_available("D", extra_check=condition)
+        logging.warning(f"j:{jar}, r:{r}")
         if r:
 
             await C.crx_outputs_management(1, 4)
@@ -778,7 +776,12 @@ class CarouselMotor2(CarouselMotor):
             r = await D.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=20)
             await C.crx_outputs_management(1, 0)
             await D.crx_outputs_management(0, 0)
-            await D.crx_outputs_management(1, 2)
+
+            def condition_1():
+                return not D.status.get('crx_outputs_status', 0x0) & 0x02
+            r = await self.wait_for_condition(condition_1, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+            if r:
+                await D.crx_outputs_management(1, 2)
 
             self.update_jar_position(jar=jar, pos="D")
 
@@ -800,35 +803,37 @@ class CarouselMotor2(CarouselMotor):
 
         F = self.get_machine_head_by_letter("F")
 
+        def condition_11():
+            return F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
+        r = await self.wait_for_condition(condition_11, show_alert=False, timeout=10)
+
+        if not r:  # the lifter is not DOWN, we must call it
+            def condition_12():
+                flag = not F.status.get('crx_outputs_status', 0x0) & 0x02
+                flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x08
+                flag = flag and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', True)
+                return flag
+            r = await self.wait_for_condition(condition_12, show_alert=False, timeout=34)
+            await F.crx_outputs_management(3, 5)
+
         def condition():
             flag = not F.status.get('crx_outputs_status', 0x0) & 0x01
             flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x02
-            flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x04
+            # ~ flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x04
             flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x08
             flag = flag and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', True)
+            flag = flag and F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL', False)
             return flag
 
         r = await self.wait_for_condition(condition, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
                                           show_alert=True, extra_info=tr_('waiting for unload lifter to be free, stopped.'))
 
         if r:  # the lifter_roller is stopped AND the lifter is available and stopped
-
-            if not F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL'):
-
-                await F.crx_outputs_management(3, 5)
-
-                def condition_1():
-                    return F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
-
-                r = await self.wait_for_condition(condition_1, timeout=15,
-                                                  show_alert=True, extra_info=tr_('waiting for unload lifter to be DOWN.'))
-
             await F.crx_outputs_management(0, 4)
             await F.crx_outputs_management(1, 5)
             r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=True, timeout=20)
             await F.crx_outputs_management(0, 0)
             await F.crx_outputs_management(1, 0)
-
             self.update_jar_position(jar=jar, pos="LIFTL_DOWN")
 
         return r
@@ -837,11 +842,14 @@ class CarouselMotor2(CarouselMotor):
 
         F = self.get_machine_head_by_letter("F")
 
-        await F.crx_outputs_management(3, 2)
-        r = await F.wait_for_jar_photocells_status("UNLOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=20)
-        await F.crx_outputs_management(3, 0)
-
-        self.update_jar_position(jar=jar, pos="LIFTL_UP")
+        def condition_12():
+            return not F.status.get('crx_outputs_status', 0x0) & 0x08
+        r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+        if r:
+            await F.crx_outputs_management(3, 2)
+            r = await F.wait_for_jar_photocells_status("UNLOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=20)
+            await F.crx_outputs_management(3, 0)
+            self.update_jar_position(jar=jar, pos="LIFTL_UP")
 
         return r
 
@@ -851,18 +859,33 @@ class CarouselMotor2(CarouselMotor):
 
         r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=1.5, show_alert=False)
         if not r:  # the output position is busy
+            def condition_120():
+                return not F.status.get('crx_outputs_status', 0x0) & 0x04
+            r = await self.wait_for_condition(condition_120, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+            if r:
+                await F.crx_outputs_management(2, 4)
+                r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=21)
+                await F.crx_outputs_management(2, 0)
+
+        def condition_121():
+            flag = not F.status.get('crx_outputs_status', 0x0) & 0x02
+            flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x04
+            return flag
+        r = await self.wait_for_condition(condition_121, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+        if r:
+            await F.crx_outputs_management(1, 4)
             await F.crx_outputs_management(2, 4)
-            r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=21)
+            r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=22)
+            await F.crx_outputs_management(1, 0)
             await F.crx_outputs_management(2, 0)
 
-        await F.crx_outputs_management(1, 4)
-        await F.crx_outputs_management(2, 4)
-        r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=22)
-        await F.crx_outputs_management(1, 0)
-        await F.crx_outputs_management(2, 0)
-        await F.crx_outputs_management(3, 5)
+            def condition_12():
+                return not F.status.get('crx_outputs_status', 0x0) & 0x08
+            r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+            if r:
+                await F.crx_outputs_management(3, 5)
 
-        self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="OUT")
+            self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="OUT")
 
         return r
 
@@ -884,3 +907,30 @@ class CarouselMotor2(CarouselMotor):
             logging.warning("F JAR_OUTPUT_ROLLER_PHOTOCELL is free, nothing to do.")
 
         return r
+
+    async def single_move(self, head_letter, params):
+
+        m = self.get_machine_head_by_letter(head_letter)
+
+        map_1 = {
+            'A': ['dispensing roller', 'input roller', ],
+            'F': ['dispensing roller', 'lifter roller', 'output roller', 'lifter', ],
+            'B': ['dispensing roller', ],
+            'E': ['dispensing roller', ],
+            'C': ['dispensing roller', 'lifter roller'],
+            'D': ['dispensing roller', 'lifter'],
+        }
+
+        map_2 = [
+            'Stop',
+            'Start CW',
+            'Start CW or UP till Photocell transition LIGHT - DARK',
+            'Start CW or UP till Photocell transition DARK - LIGHT',
+            'Start CCW',
+            'Start CCW or DOWN till Photocell transition LIGHT - DARK',
+            'Start CCW or DOWN till Photocell transition DARK - LIGHT',
+        ]
+        target = map_1[head_letter][params[0]]
+        value = map_2[params[1]]
+        logging.warning(f"{head_letter} params:{params}: '{target}, {value}'")
+        return await m.crx_outputs_management(*params)
