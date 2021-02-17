@@ -400,7 +400,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         ingredients = {}
         for pigment_name in ingredient_volume_map.keys():
             try:
-                # ~ name_ = ingredient_volume_map and ingredient_volume_map.get(pigment_name) and ingredient_volume_map[pigment_name].get(self.name)
                 val_ = ingredient_volume_map \
                     and ingredient_volume_map.get(pigment_name) \
                     and ingredient_volume_map[pigment_name].get(self.name)

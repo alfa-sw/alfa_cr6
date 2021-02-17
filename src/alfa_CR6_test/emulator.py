@@ -275,8 +275,7 @@ class MachineHeadMockup:
                             UNLOAD_LIFTER_DOWN_MASK,
                             "reset",
                             duration=1,
-                            tgt_level="JAR_POSITIONING",
-                        )
+                            tgt_level="JAR_POSITIONING")
                         await self.do_move(UNLOAD_LIFTER_UP_MASK, "set", duration=2)
                         await self.do_move(OUTPUT_ROLLER_MASK, "set", duration=2)
 
@@ -413,8 +412,17 @@ class MachineHeadMockup:
                     pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x02
 
                 elif output_number == 2:
-                    if output_action in (1, 4):
+
+                    # ~ if output_action in (1, 4):
+                        # ~ pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ OUTPUT_ROLLER_MASK
+                    if output_action in (1, ):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ OUTPUT_ROLLER_MASK
+                    elif output_action in (4, ):
+                        if 'buffer_full' in sys.argv:
+                            pars["jar_photocells_status"] = self.status["jar_photocells_status"] | OUTPUT_ROLLER_MASK
+                        else:
+                            pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ OUTPUT_ROLLER_MASK
+
                     elif output_action in (2, 5):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] | OUTPUT_ROLLER_MASK
                     elif output_action in (3, 6):

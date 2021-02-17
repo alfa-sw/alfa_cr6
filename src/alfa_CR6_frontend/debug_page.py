@@ -79,7 +79,7 @@ class DebugPage:
         for i, n in enumerate(
             [
                 ("", "**"),
-                ("check\njar", "check jar from barcode"),
+                # ~ ("check\njar", "check jar from barcode"),
                 ("freeze\ncarousel", "stop the movements of the jars, until unfreeze."),
                 ("unfreeze\ncarousel", "restar the movements of the jars."),
                 ("stop_all", "send a stop-movement cmd to all heads"),
@@ -222,10 +222,10 @@ class DebugPage:
                 )
             elif command == "UPDATE" and m:
                 t = m.update_tintometer_data(invalidate_cache=True)
-            elif command == "DISP" and m:
+            # ~ elif command == "DISP" and m:
 
                 # BEWARE: force size to max
-                t = self.dispense_coro(app, m, size=3)
+                # ~ t = self.dispense_coro(app, m, size=3)
 
             if t is not None:
                 asyncio.ensure_future(t)
@@ -241,9 +241,7 @@ class DebugPage:
         A.jar_size_detect = size
 
         self.barcode_counter += 1
-        jar, error = await app.get_and_check_jar_from_barcode(
-            self.barcode_counter, skip_checks_for_dummy_read=True
-        )
+        jar, error = await app.get_and_check_jar_from_barcode(self.barcode_counter)
         logging.warning(f"jar:{jar}, error:{error}")
         r = None
         if jar:
@@ -450,18 +448,17 @@ class DebugPage:
                     head_index=0,
                     msg_dict={"type": "device:machine:status", "value": status},
                 )
-                await app.on_barcode_read(-1, skip_checks_for_dummy_read=True)
+                await app.on_barcode_read(-1)
 
             t = coro()
             asyncio.ensure_future(t)
 
-        elif "check\njar" in cmd_txt:
-            self.barcode_counter += 1
-            app.run_a_coroutine_helper(
-                "get_and_check_jar_from_barcode",
-                self.barcode_counter,
-                skip_checks_for_dummy_read=True,
-            )
+        # ~ elif "check\njar" in cmd_txt:
+            # ~ self.barcode_counter += 1
+            # ~ app.run_a_coroutine_helper(
+                # ~ "get_and_check_jar_from_barcode",
+                # ~ self.barcode_counter,
+            # ~ )
 
         elif "complete" in cmd_txt:
 
@@ -554,7 +551,7 @@ class DebugPage:
 
         html_ += '<td colspan="2">                                          '
         html_ += "<br/># progressing_jars:"
-        l_ = [i for i in app.get_jar_runners().values()]
+        l_ = list(app.get_jar_runners().values())
         l_.reverse()
         for i, j in enumerate(l_):
             html_ += '<p  bgcolor="#F0F0F0">{}:{} {}<a href="CANCEL@{}" title="cancel this jar"> <span style="font-size:20px"><b>CANCEL</b></span> </a></p>'.format(
@@ -586,7 +583,7 @@ class DebugPage:
 
             m = named_map[n]
             ord_ = m.index + 1
-            photoc_ = m.status.get("photocells_status", -1)
+            # ~ photoc_ = m.status.get("photocells_status", -1)
             crx_outputs = m.status.get('crx_outputs_status', -1)
             jar_ph_ = m.status.get("jar_photocells_status", -1)
 
@@ -635,7 +632,7 @@ class DebugPage:
             html_ += f'  <td bgcolor="#F0F0F0"><a href="RESET@{n}">RESET</a></td>'
             html_ += f'  <td bgcolor="#F0F0F0"><a href="DIAG@{n}" title="Enter diagnostic status">DIAG</a></td>'
             html_ += f'  <td bgcolor="#F0F0F0"><a href="UPDATE@{n}" title="Update machine data cache">UPDATE</a></td>'
-            html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}" title="call do_dispense()">DISP</a></td>'
+            # ~ html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}" title="call do_dispense()">DISP</a></td>'
 
             html_ += "</tr>"
 

@@ -27,6 +27,7 @@ from alfa_CR6_backend.globals import (
 
 from alfa_CR6_backend.machine_head import MachineHead
 
+
 def parse_json_order(path_to_json_file, json_schema_name):
 
     properties = {}
@@ -250,12 +251,26 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         await m.run()
         logging.warning(f" *** terminating machine: {m} *** ")
 
-    async def __jar_task(self, jar):  # pylint: disable=too-many-statements
+    async def __jar_task(self, barcode):  # pylint: disable=too-many-statements
 
         r = None
         try:
-            r = await self.execute_carousel_steps(self.n_of_active_heads, jar)
-            logging.warning(f"r:{r}")
+
+            jar, error, unavailable_pigment_names = await self.get_and_check_jar_from_barcode(barcode)
+
+            if error:
+                self.main_window.open_alert_dialog(error, title="ERROR")
+                logging.error(error)
+            elif jar:
+                if unavailable_pigment_names:
+                    msg_ = f"Pigments not available for barcode:{barcode}:{unavailable_pigment_names}."
+                    self.main_window.open_alert_dialog(msg_)
+                    self.main_window.show_barcode(jar.barcode, is_ok=False)
+
+                self.__jar_runners[barcode]["jar"] = jar
+
+                r = await self.execute_carousel_steps(self.n_of_active_heads, jar)
+                logging.warning(f"r:{r}")
 
         except asyncio.CancelledError:
             jar.status = "ERROR"
@@ -316,7 +331,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         return ingredient_volume_map, total_volume, unavailable_pigment_names
 
     async def get_and_check_jar_from_barcode(  # pylint: disable=too-many-locals,too-many-branches
-            self, barcode, skip_checks_for_dummy_read=False):
+            self, barcode):
 
         logging.warning("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
@@ -326,14 +341,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         error = None
         unavailable_pigment_names = []
         try:
-            if skip_checks_for_dummy_read:
-                q = self.db_session.query(Jar).filter(Jar.status == "NEW")
-                jar = q.first()
-            else:
-                q = self.db_session.query(Jar).filter(Jar.index == index)
-                q = q.filter(Jar.status == "NEW")
-                q = q.join(Order).filter((Order.order_nr == order_nr))
-                jar = q.one()
+            q = self.db_session.query(Jar).filter(Jar.index == index)
+            q = q.filter(Jar.status == "NEW")
+            q = q.join(Order).filter((Order.order_nr == order_nr))
+            jar = q.one()
         except NoResultFound:
             error = f"NoResultFound looking for barcode:{barcode} (is it NEW?)"
             logging.error(traceback.format_exc())
@@ -356,15 +367,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             package_size_list.append(s)
 
                 package_size_list.sort()
-                logging.warning(
-                    f"jar_size:{jar_size}, package_size_list:{package_size_list}"
-                )
+                logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
                 jar_volume = 0
                 if len(package_size_list) > jar_size:
                     jar_volume = package_size_list[jar_size]
-                ingredient_volume_map, total_volume, unavailable_pigment_names = self.check_available_volumes(
-                    jar
-                )
+
+                r = self.check_available_volumes(jar)
+                ingredient_volume_map, total_volume, unavailable_pigment_names = r
+
                 if jar_volume < total_volume:
                     error = tr_(
                         """Jar volume not sufficient for barcode:{}.
@@ -390,8 +400,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return jar, error, unavailable_pigment_names
 
-    async def on_barcode_read(  # pylint: disable=too-many-locals,unused-argument
-            self, barcode, skip_checks_for_dummy_read=False):
+    async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals,unused-argument
+
+        if int(barcode) == -1:
+            q = self.db_session.query(Jar).filter(Jar.status == "NEW")
+            jar = q.first()
+            if jar:
+                barcode = jar.barcode
 
         logging.warning(f" ###### barcode:{barcode}")
 
@@ -418,37 +433,17 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 self.ready_to_read_a_barcode = False
 
-                jar, error, unavailable_pigment_names = await self.get_and_check_jar_from_barcode(
-                    barcode, skip_checks_for_dummy_read=skip_checks_for_dummy_read
-                )
-
-                if not error:
-                    if barcode in self.__jar_runners.keys():
-                        error = tr_("{} already in progress!"), format(barcode)
-                        self.main_window.show_barcode(barcode, is_ok=False)
-
-                if error:
+                if barcode in self.__jar_runners.keys():
+                    error = tr_("{} already in progress!").format(barcode)
                     self.main_window.open_alert_dialog(error, title="ERROR")
                     logging.error(error)
-                elif jar:
-                    if unavailable_pigment_names:
-                        msg_ = f"Pigments not available for barcode:{barcode}:{unavailable_pigment_names}."
-                        self.main_window.open_alert_dialog(msg_)
-                        self.main_window.show_barcode(jar.barcode, is_ok=False)
-
+                    self.main_window.show_barcode(barcode, is_ok=False)
+                else:
                     # let's run a task that will manage the jar through the entire path inside the system
-                    t = self.__jar_task(jar)
-                    self.__jar_runners[jar.barcode] = {
-                        "task": asyncio.ensure_future(t),
-                        "jar": jar,
-                    }
-                    self.main_window.show_barcode(jar.barcode, is_ok=True)
-
-                    logging.warning(
-                        " NEW JAR TASK({}) bc:{} jar:{}, jar.size:{}".format(
-                            len(self.__jar_runners), barcode, jar, jar.size
-                        )
-                    )
+                    t = self.__jar_task(barcode)
+                    self.__jar_runners[barcode] = {"task": asyncio.ensure_future(t)}
+                    self.main_window.show_barcode(barcode, is_ok=True)
+                    logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
@@ -598,13 +593,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def freeze_carousel(self, flag):
 
-        self.carousel_frozen = flag
-        if flag:
-            logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
-            self.main_window.show_carousel_frozen(self.carousel_frozen)
-        else:
-            logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
-            self.main_window.show_carousel_frozen(self.carousel_frozen)
+        if self.carousel_frozen != flag:
+            self.carousel_frozen = flag
+            if flag:
+                logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
+                self.main_window.show_carousel_frozen(self.carousel_frozen)
+            else:
+                logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
+                self.main_window.show_carousel_frozen(self.carousel_frozen)
 
         if self.main_window.debug_page:
             self.main_window.debug_page.update_status()
@@ -650,17 +646,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):  # pylint: disable=too-many-statements
 
-        if freeze:
+        if freeze and not self.carousel_frozen:
             self.freeze_carousel(True)
             self.main_window.open_frozen_dialog(msg)
 
-        if self.carousel_frozen:
-            logging.warning(
-                f"self.carousel_frozen:{self.carousel_frozen}, start waiting."
-            )
-
         while self.carousel_frozen:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.2)
 
     def update_jar_position(self, jar, machine_head=None, status=None, pos=None):
 
@@ -669,8 +660,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
             try:
                 for j in self.__jar_runners.values():
-                    if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
-                        raise Exception(tr_("duplicate {} in jar position list!").format(pos))
+                    if j.get("jar"):
+                        if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
+                            raise Exception(tr_("duplicate {} in jar position list!").format(pos))
                 jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
 
             except Exception as e:  # pylint: disable=broad-except

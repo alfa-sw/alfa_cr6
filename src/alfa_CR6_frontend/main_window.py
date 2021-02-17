@@ -553,7 +553,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         callback = QApplication.instance().freeze_carousel
         args = [False, ]
         logging.info(msg)
-        msg_ = tr_("carousel is frozen.")
+        msg_ = tr_("carousel is paused.")
         msg_ += f'\n------------------------------\n"{msg}"\n------------------------------\n'
         msg_ += tr_("hit 'OK' to unfreeze it")
         self.open_alert_dialog(msg_, title=title, callback=callback, args=args)
