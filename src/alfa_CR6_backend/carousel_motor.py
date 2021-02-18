@@ -485,6 +485,14 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             else:
                 break
 
+        json_properties = json.loads(jar.json_properties)
+        for k, v in json_properties["ingredient_volume_map"].items():
+            if v.get(m.name):
+                v.pop(m.name)
+                
+        jar.json_properties = json.dumps(json_properties, indent=2)
+        self.db_session.commit()
+
         logging.warning(f"{m.name}, j:{jar}.")
 
         return r
@@ -735,8 +743,12 @@ class CarouselMotor2(CarouselMotor):
 
         def condition():
             flag = not A.status.get('crx_outputs_status', 0x0) & 0x02
-            return flag and not A.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', True)
-        r = await self.wait_for_condition(condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info)
+            flag = flag and not A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False)
+            # ~ flag = flag and not A.jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL']
+            logging.warning(f"flag:{flag}.")
+            return flag
+        r = await self.wait_for_condition(
+            condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info, stability_count=1, step=0.5)
 
         if r:
             await A.crx_outputs_management(1, 2)

@@ -257,7 +257,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         try:
 
             cntr = 0
-            while 1:
+            while cntr < 3:
                 cntr += 1
                 jar, error, unavailable_pigments = await self.get_and_check_jar_from_barcode(barcode)
                 if error:
@@ -278,10 +278,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         if unknown_pigments:
                             msg_ += tr_("\npigments to be added by hand after dispensing:{}.\n").format(unknown_pigments)
 
-                        if insufficient_pigments and cntr < 4:
+                        if insufficient_pigments and cntr <= 3:
                             msg_ += tr_("\npigments to be refilled before dispensing:{}. ({}/3)\n").format(insufficient_pigments, cntr)
                         else:
-                            break
+                            cntr = 4
 
                         await self.wait_for_carousel_not_frozen(True, msg=msg_)
                     else:
