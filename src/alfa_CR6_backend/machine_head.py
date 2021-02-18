@@ -68,7 +68,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     def get_available_weight(self, pigment_name):
 
         available_gr = 0
-        specific_weight = 1
+        specific_weight = -1
         for pig in self.pigment_list:
             if pig["name"] == pigment_name:
                 specific_weight = pig["specific_weight"]

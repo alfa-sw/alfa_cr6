@@ -908,7 +908,11 @@ class HomePage(BaseStackedPage):
         for head_index, m in QApplication.instance().machine_head_dict.items():
             if m and map_[head_index]:
                 status = m.status
-                if "STANDBY" in status.get('status_level', '') and QApplication.instance().carousel_frozen:
+                crx_outputs_status = m.status.get('crx_outputs_status', 0x1)
+                if (not crx_outputs_status and
+                        status.get('status_level', '') in ("STANDBY", )  and 
+                        QApplication.instance().carousel_frozen):
+
                     map_[head_index].setPixmap(self.main_window.tank_icon_map['green'])
                 else:
                     map_[head_index].setPixmap(self.main_window.tank_icon_map['gray'])

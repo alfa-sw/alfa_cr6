@@ -222,31 +222,12 @@ class DebugPage:
                 )
             elif command == "UPDATE" and m:
                 t = m.update_tintometer_data(invalidate_cache=True)
-            # ~ elif command == "DISP" and m:
-
-                # BEWARE: force size to max
-                # ~ t = self.dispense_coro(app, m, size=3)
-
             if t is not None:
                 asyncio.ensure_future(t)
         else:
             os.system("chromium-browser {} &".format(url.url()))
 
         self.update_status()
-
-    async def dispense_coro(self, app, m, size):
-
-        app = QApplication.instance()
-        A = app.machine_head_dict[0]
-        A.jar_size_detect = size
-
-        self.barcode_counter += 1
-        jar, error = await app.get_and_check_jar_from_barcode(self.barcode_counter)
-        logging.warning(f"jar:{jar}, error:{error}")
-        r = None
-        if jar:
-            r = await m.do_dispense(jar)
-        return r
 
     def reset_jar_status_to_new(self):  # pylint: disable=no-self-use
 
@@ -315,9 +296,6 @@ class DebugPage:
         html_ = ""
         for j in app.db_session.query(Jar).all()[:100]:
 
-            # ~ ingredient_volume_map, total_volume, unavailable_pigment_names = app.check_available_volumes(j)
-            # ~ msg_2 = f"{ingredient_volume_map}, {total_volume}, {unavailable_pigment_names}"
-            # ~ html_ += f'<p title="{msg_2}">{msg_1}</p>'
             msg_1 = f"j.barcode:{j.barcode} j:{j} "
             html_ += f'<p><a href="SHOW_DETAILS@{j.id}">{msg_1}</a></p>'
 
@@ -452,13 +430,6 @@ class DebugPage:
 
             t = coro()
             asyncio.ensure_future(t)
-
-        # ~ elif "check\njar" in cmd_txt:
-            # ~ self.barcode_counter += 1
-            # ~ app.run_a_coroutine_helper(
-                # ~ "get_and_check_jar_from_barcode",
-                # ~ self.barcode_counter,
-            # ~ )
 
         elif "complete" in cmd_txt:
 
