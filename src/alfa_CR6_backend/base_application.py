@@ -665,6 +665,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             raise Exception(tr_("duplicate {} in jar position list!").format(pos))
                 jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
 
+                self.db_session.commit()
+
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
 
