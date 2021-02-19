@@ -212,12 +212,31 @@ class JarTableModel(BaseTableModel):
                 if order:
                     query_ = query_.filter(Jar.order == order)
             query_ = query_.order_by(Jar.index.desc()).limit(100)
+            def _fmt_status(o):
+                if o.unavailable_pigments:
+                    r = "{} *".format(o.status) 
+                else:
+                    r = o.status
+                return r
             self.results = [
-                ["", "", o.status, o.barcode] for o in query_.all()
+                ["", "", _fmt_status(o), o.barcode] for o in query_.all()
             ]
         else:
             self.results = [[]]
 
+    def get_jar(self, barcode):
+
+        jar = None
+        order_nr, index = decompile_barcode(barcode)
+        if self.session and order_nr and index >= 0:
+            order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
+            query_ = self.session.query(Jar)
+            query_ = query_.filter(Jar.order == order)
+            query_ = query_.filter(Jar.index == index)
+            jar = query_.first()
+
+        return jar
+        
     def remove_jar(self, barcode):
         order_nr, index = decompile_barcode(barcode)
         if self.session and order_nr and index >= 0:
@@ -539,26 +558,19 @@ class OrderPage(BaseStackedPage):
 
             elif col == 1:  # view
                 content = "{}"
-                order_nr, index = decompile_barcode(barcode)
-                if order_nr and index >= 0:
-                    order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).first()
-                    if order:
-                        query_ = QApplication.instance().db_session.query(Jar)
-                        query_ = query_.filter(Jar.order == order)
-                        query_ = query_.filter(Jar.index == index)
-                        jar = query_.first()
-                        if jar:
-                            content = tr_("status:{}\n").format(jar.status)
-                            if jar.position:
-                                content += tr_("position:{}\n").format(jar.position)
-                            if jar.machine_head:
-                                content += tr_("machine_head:{}\n").format(jar.machine_head)
-                            content += tr_("description:{}\n").format(jar.description)
-                            content += tr_("date_created:{}\n").format(jar.date_created)
-                            content += tr_("properties:{}\n").format(
-                                json.dumps(json.loads(jar.json_properties), indent=2))
-
-                            msg_ = tr_("do you want to print barcode:\n {} ?").format(barcode)
+                msg_ = ""
+                jar = model.get_jar(barcode)
+                if jar:
+                    content = tr_("status:{}\n").format(jar.status)
+                    if jar.position:
+                        content += tr_("position:{}\n").format(jar.position)
+                    if jar.machine_head:
+                        content += tr_("machine_head:{}\n").format(jar.machine_head)
+                    content += tr_("description:{}\n").format(jar.description)
+                    content += tr_("date_created:{}\n").format(jar.date_created)
+                    content += tr_("properties:{}\n").format(
+                        json.dumps(json.loads(jar.json_properties), indent=2))
+                    msg_ = tr_("do you want to print barcode:\n {} ?").format(barcode)
 
                 self.main_window.open_input_dialog(
                     icon_name="SP_MessageBoxInformation",
@@ -568,7 +580,19 @@ class OrderPage(BaseStackedPage):
                     ok_cb_args=[str(barcode), ])
 
             elif col == 2:  # status
-                pass
+                content = "{}"
+                msg_ = ""
+                jar = model.get_jar(barcode)
+                if jar and jar.unavailable_pigments:
+                    msg_ = tr_("pigments to be added for barcode:\n {}").format(barcode)
+                    content = '<div style="text-align: center;">'
+                    content += ''.join([f'<div>{k}: {round(float(v), 4)} gr</div>' for k, v in jar.unavailable_pigments.items()])
+                    content += '</div>'
+
+                    self.main_window.open_input_dialog(
+                        icon_name="SP_MessageBoxInformation",
+                        message=msg_,
+                        content=content)
 
             elif col == 3:  # barcode
                 pass

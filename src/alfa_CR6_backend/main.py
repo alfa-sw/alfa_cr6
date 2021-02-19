@@ -17,7 +17,7 @@ import json
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
-from alfa_CR6_backend.carousel_motor import CarouselMotor, CarouselMotor2
+from alfa_CR6_backend.carousel_motor import CarouselMotor
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.globals import (
@@ -39,8 +39,7 @@ def main():
         stream=sys.stdout, level=settings.LOG_LEVEL,
         format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
 
-    # ~ app = CarouselMotor(MainWindow, settings, sys.argv)
-    app = CarouselMotor2(MainWindow, settings, sys.argv)
+    app = CarouselMotor(MainWindow, settings, sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
     app.run_forever()
 

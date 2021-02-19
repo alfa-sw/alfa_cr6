@@ -528,8 +528,7 @@ class DebugPage:
         l_.reverse()
         for i, j in enumerate(l_):
             html_ += '<p  bgcolor="#F0F0F0">{}:{} {}<a href="CANCEL@{}" title="cancel this jar"> <span style="font-size:20px"><b>CANCEL</b></span> </a></p>'.format(
-                i, j["jar"], j["jar"].description, j["jar"].barcode
-            )
+                i, j.get("jar"), j.get("jar") and j["jar"].description, j.get("jar") and j["jar"].barcode)
 
         html_ += "</td>"
 

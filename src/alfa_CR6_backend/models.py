@@ -253,6 +253,11 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
     def barcode(self):
         return compile_barcode(self.order.order_nr, self.index)
 
+    @property
+    def unavailable_pigments(self):
+        _json_properties = json.loads(self.json_properties)
+        _json_properties.get("unavailable_pigments", {})
+        return _json_properties.get("unavailable_pigments", {})
 
 # ~ #######################
 class eventManager:

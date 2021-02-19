@@ -21,43 +21,38 @@ from alfa_CR6_backend.base_application import BaseApplication
 class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     """
-    # "jar photocells_status" mask bit coding:
-    # bit0: JAR_INPUT_ROLLER_PHOTOCELL
-    # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL
-    # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL
-    # bit3: LOAD_LIFTER_DOWN_PHOTOCELL
-    # bit4: LOAD_LIFTER_UP_PHOTOCELL
-    # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL
-    # bit6: UNLOAD_LIFTER_UP_PHOTOCELL
-    # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL
-    # bit8: JAR_DISPENSING_POSITION_PHOTOCELL
-    # bit9: JAR_DETECTION_MICROSWITCH_1
-    # bit10:JAR_DETECTION_MICROSWITCH_2
+     'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
+        'documentable': False,
+        'description': 'Move rollers or lifters of a dispening head of a car refinishing machine in different ways',
+        'allowed_status_levels': ['JAR_POSITIONING', 'DIAGNOSTIC', 'STANDBY', 'ALARM', 'DISPENSING',],
+        'target_status_levels': ['JAR_POSITIONING', 'DISPENSING',],
 
-    {   'Dispensing_Roller':  {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement,
-                2 = Start Movement till Photocell transition LIGHT - DARK ','propertyOrder': 1, 'type': 'number', 'fmt': 'B'},
-        'Lifter_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement CW,
-                2 = Start Movement CW till Photocell transition LIGHT - DARK,
-                3 = Start Movement CCW,
-                4 = Start Movement CCW till Photocell transition DARK – LIGHT,
-                5 = Start Movement CCW till Photocell transition LIGHT- DARK', 'propertyOrder': 2, 'type': 'number', 'fmt': 'B'},
-        'Input_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement,
-                2 = Start Movement till Photocell transition LIGHT - DARK', 'propertyOrder': 3, 'type': 'number', 'fmt': 'B'},
-        'Lifter': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement Up till Photocell Up transition LIGHT – DARK,
-                2 = Start Movement Down till Photocell Down transition LIGHT – DARK', 'propertyOrder': 4, 'type': 'number', 'fmt': 'B'},
-        'Output_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement CCW till Photocell transition LIGHT – DARK,
-                2 = Start Movement CCW till Photocell transition DARK - LIGHT with a Delay',
-                3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
+        # Output_Number:
+        # TESTA1: A 0 = DOSING ROLLER, 1 = INPUT ROLLER,
+        # TESTA2: F 0 = DOSING ROLLER, 1 = LIFTER_ROLLER, 2 = OUTPUT_ROLLER, 3 = LIFTER
+        # TESTA3: B 0 = DOSING ROLLER
+        # TESTA4: E 0 = DOSING ROLLER
+        # TESTA5: C 0 = DOSING ROLLER, 1 = LIFTER_ROLLER,
+        # TESTA6: D 0 = DOSING ROLLER, 1 = LIFTER
+
+        # ~ Output_Action:
+        # ~ 0 = Stop Movement,
+        # ~ 1 = Start Movement CW,
+        # ~ 2 = Start Movement CW or UP till Photocell transition LIGHT - DARK,
+        # ~ 3 = Start Movement CW or UP till Photocell transition DARK - LIGHT,
+        # ~ 4 = Start Movement CCW,
+        # ~ 5 = Start Movement CCW or DOWN till Photocell transition LIGHT - DARK,
+        # ~ 6 = Start Movement CCW or DOWN till Photocell transition DARK - LIGHT"}}}},
+
+
+    'crx_outputs_status'   : {"type": "number",  "propertyOrder": 52, 'fmt': 'B',
+        'description': "rollers or lifters status of a dispening head of a CRx machine. Mask bit coding: bit x = 0 output = OFF, bit x = 1 output = ON"},
+        # TESTA1: A bit0 = DOSING ROLLER, bit1 = INPUT ROLLER,
+        # TESTA2: F bit0 = DOSING ROLLER, bit1 = LIFTER_ROLLER, bit2 = OUTPUT_ROLLER, bit3 = LIFTER
+        # TESTA3: B bit0 = DOSING ROLLER
+        # TESTA4: E bit0 = DOSING ROLLER
+        # TESTA5: C bit0 = DOSING ROLLER, bit1 = LIFTER_ROLLER,
+        # TESTA6: D bit0 = DOSING ROLLER, bit1 = LIFTER
     """
 
     async def wait_for_condition(      # pylint: disable=too-many-arguments
@@ -94,346 +89,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.handle_exception(e)
 
         return ret
-
-    async def move_00_01(self, silent=False):  # 'feed'
-
-        A = self.get_machine_head_by_letter("A")
-
-        r = await A.wait_for_jar_photocells_and_status_lev(
-            "JAR_INPUT_ROLLER_PHOTOCELL", on=False, status_levels=["STANDBY"], timeout=1.1, show_alert=not silent)
-        if r:
-            r = await A.wait_for_jar_photocells_and_status_lev(
-                "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"], timeout=1.12, show_alert=not silent)
-            if r:
-                await A.can_movement({"Input_Roller": 2})
-                r = await A.wait_for_jar_photocells_status(
-                    "JAR_INPUT_ROLLER_PHOTOCELL", on=True, timeout=30, show_alert=not silent)
-                if not r:
-                    await A.can_movement()
-        else:
-            logging.warning("A JAR_INPUT_ROLLER_PHOTOCELL is busy, nothing to do.")
-
-        return r
-
-    async def move_01_02(self, jar=None):  # 'IN -> A'
-
-        A = self.get_machine_head_by_letter("A")
-
-        self.update_jar_position(jar=jar, machine_head=A, status="ENTERING", pos="IN_A")
-
-        r = await A.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
-        if r:
-            await A.can_movement({"Input_Roller": 1, "Dispensing_Roller": 2})
-            r = await A.wait_for_jar_photocells_status(
-                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
-
-            self.update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
-
-        return r
-
-    async def move_02_03(self, jar=None):  # 'A -> B'
-
-        A = self.get_machine_head_by_letter("A")
-        B = self.get_machine_head_by_letter("B")
-
-        r = await B.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
-        if r:
-
-            await A.can_movement({"Dispensing_Roller": 1})
-            await B.can_movement({"Dispensing_Roller": 2})
-            r = await B.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
-            if r:
-                await A.can_movement()
-                self.update_jar_position(jar=jar, machine_head=B, pos="B")
-
-        return r
-
-    async def move_02_04(self, jar=None):  # 'A -> C'
-
-        A = self.get_machine_head_by_letter("A")
-        C = self.get_machine_head_by_letter("C")
-
-        def condition():
-            flag = not C.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
-            flag = (
-                flag and not C.jar_photocells_status["JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"]
-            )
-            flag = flag and C.status["status_level"] in ["STANDBY"]
-            return flag
-
-        logging.warning(f" condition():{condition()}")
-        r = await self.wait_for_condition(condition, timeout=60 * 3)
-        logging.warning(f" r:{r}")
-
-        if r:
-            await A.can_movement({"Dispensing_Roller": 1})
-            await C.can_movement({"Dispensing_Roller": 2})
-            r = await C.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
-            if r:
-                await A.can_movement()
-                self.update_jar_position(jar=jar, machine_head=C, pos="C")
-
-        return r
-
-    async def move_03_04(self, jar=None):  # 'B -> C'
-
-        B = self.get_machine_head_by_letter("B")
-        C = self.get_machine_head_by_letter("C")
-
-        def condition():
-            flag = not C.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
-            flag = (
-                flag and not C.jar_photocells_status["JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"]
-            )
-            flag = flag and C.status["status_level"] in ["STANDBY"]
-            return flag
-
-        logging.warning(f" condition():{condition()}")
-        r = await self.wait_for_condition(condition, timeout=60 * 3)
-        logging.warning(f" r:{r}")
-
-        if r:
-            await B.can_movement({"Dispensing_Roller": 1})
-            await C.can_movement({"Dispensing_Roller": 2})
-            r = await C.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
-            if r:
-                await B.can_movement()
-                self.update_jar_position(jar=jar, machine_head=C, pos="C")
-
-        return r
-
-    async def move_04_05(self, jar=None):  # 'C -> UP'
-
-        C = self.get_machine_head_by_letter("C")
-        D = self.get_machine_head_by_letter("D")
-
-        r = await C.wait_for_jar_photocells_status("JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=False)
-        if r:
-            r = await D.wait_for_jar_photocells_status(
-                "LOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=3, show_alert=False)
-            if not r:
-
-                r = await D.wait_for_jar_photocells_and_status_lev(
-                    "JAR_DISPENSING_POSITION_PHOTOCELL",
-                    on=False,
-                    status_levels=["STANDBY"],
-                )
-                if r:
-                    await D.can_movement({"Lifter": 1})
-                    r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_UP_PHOTOCELL", on=True)
-            if r:
-                await C.can_movement({"Dispensing_Roller": 1, "Lifter_Roller": 2})
-                r = await C.wait_for_jar_photocells_status("JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True)
-                self.update_jar_position(jar=jar, pos="LIFTR_UP")
-
-        return r
-
-    async def move_05_06(self, jar=None):  # 'UP -> DOWN'
-
-        D = self.get_machine_head_by_letter("D")
-
-        r = await D.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
-        if r:
-            await D.can_movement({"Lifter": 2})
-            r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_DOWN_PHOTOCELL", on=True)
-
-            self.update_jar_position(jar=jar, pos="LIFTR_DOWN")
-
-        return r
-
-    async def move_06_07(self, jar=None):  # 'DOWN -> D'
-
-        C = self.get_machine_head_by_letter("C")
-        D = self.get_machine_head_by_letter("D")
-
-        r = await D.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
-        if r:
-            r = await C.wait_for_status_level(status_levels=["STANDBY"])
-
-            await C.can_movement({"Lifter_Roller": 3})
-            await D.can_movement({"Dispensing_Roller": 2})
-            r = await D.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
-            if r:
-                await C.can_movement()
-                self.update_jar_position(jar=jar, machine_head=D, pos="D")
-
-        return r
-
-    async def move_07_08(self, jar=None):  # 'D -> E'
-
-        D = self.get_machine_head_by_letter("D")
-        E = self.get_machine_head_by_letter("E")
-
-        r = await E.wait_for_jar_photocells_and_status_lev(
-            "JAR_DISPENSING_POSITION_PHOTOCELL", on=False, status_levels=["STANDBY"])
-        if r:
-            r = await D.wait_for_jar_photocells_status(
-                "LOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=3, show_alert=False)
-
-            if not r:
-                await D.can_movement()
-                await D.can_movement({"Dispensing_Roller": 1})
-            else:
-                await D.can_movement({"Dispensing_Roller": 1})
-            await E.can_movement({"Dispensing_Roller": 2})
-            r = await E.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
-            if r:
-                await D.can_movement()
-                self.update_jar_position(jar=jar, machine_head=E, pos="E")
-
-        return r
-
-    async def move_07_09(self, jar=None):  # 'D -> F'
-
-        D = self.get_machine_head_by_letter("D")
-        F = self.get_machine_head_by_letter("F")
-
-        r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=False)
-        if r:
-            r = await F.wait_for_jar_photocells_and_status_lev(
-                "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
-                on=False,
-                status_levels=["STANDBY"],
-            )
-            if r:
-                r = await F.wait_for_jar_photocells_status(
-                    "UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=3, show_alert=False)
-                if not r:
-                    await F.can_movement({"Lifter": 2})
-                    r = await F.wait_for_jar_photocells_and_status_lev(
-                        "UNLOAD_LIFTER_DOWN_PHOTOCELL",
-                        on=True,
-                        status_levels=["STANDBY"],
-                    )
-                if r:
-                    await D.can_movement({"Dispensing_Roller": 1})
-                    await F.can_movement({"Dispensing_Roller": 2})
-                    r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
-                    if r:
-                        await D.can_movement()
-                        self.update_jar_position(jar=jar, machine_head=F, pos="F")
-
-        return r
-
-    async def move_08_09(self, jar=None):  # 'E -> F'
-
-        E = self.get_machine_head_by_letter("E")
-        F = self.get_machine_head_by_letter("F")
-
-        r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=False)
-        if r:
-            r = await F.wait_for_jar_photocells_and_status_lev(
-                "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
-                on=False,
-                status_levels=["STANDBY"],
-            )
-            if r:
-                r = await F.wait_for_jar_photocells_status(
-                    "UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=3, show_alert=False)
-                if not r:
-                    await F.can_movement({"Lifter": 2})
-                    r = await F.wait_for_jar_photocells_and_status_lev(
-                        "UNLOAD_LIFTER_DOWN_PHOTOCELL",
-                        on=True,
-                        status_levels=["STANDBY"],
-                    )
-                if r:
-                    await E.can_movement({"Dispensing_Roller": 1})
-                    await F.can_movement({"Dispensing_Roller": 2})
-                    r = await F.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True)
-                    if r:
-                        await E.can_movement()
-                        self.update_jar_position(jar=jar, machine_head=F, pos="F")
-
-        return r
-
-    async def move_09_10(self, jar=None):  # 'F -> DOWN'  pylint: disable=unused-argument
-
-        F = self.get_machine_head_by_letter("F")
-        r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=False)
-        if r:
-            r = await F.wait_for_jar_photocells_status("UNLOAD_LIFTER_DOWN_PHOTOCELL", on=True)
-            if r:
-                await F.can_movement({"Dispensing_Roller": 1, "Lifter_Roller": 5})
-            self.update_jar_position(jar=jar, pos="LIFTL_DOWN")
-        return r
-
-    async def move_10_11(self, jar=None):  # 'DOWN -> UP -> OUT'
-
-        F = self.get_machine_head_by_letter("F")
-        r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=3, show_alert=False)
-        if r:
-            r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=True)
-            self.update_jar_position(jar=jar, machine_head=F, pos="LIFTL_UP")
-            if r:
-                r = await F.wait_for_jar_photocells_and_status_lev(
-                    "UNLOAD_LIFTER_UP_PHOTOCELL", on=True, status_levels=["STANDBY"])
-                if r:
-                    await F.can_movement({"Output_Roller": 2})
-                    r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False)
-
-                    self.update_jar_position(jar=jar, machine_head=F, pos="WAIT")
-
-                    if r:
-                        await F.can_movement()
-                        await F.can_movement({"Lifter_Roller": 3, "Output_Roller": 1})
-                        r = await F.wait_for_status_level(status_levels=["STANDBY"])
-                    else:
-                        raise Exception("JAR_OUTPUT_ROLLER_PHOTOCELL busy timeout")
-        else:
-            r = await F.wait_for_status_level(status_levels=["STANDBY"])
-            self.update_jar_position(jar=jar, machine_head=F, pos="OUT")
-
-        return r
-
-    async def move_11_12(self, jar=None):  # 'UP -> OUT'
-
-        F = self.get_machine_head_by_letter("F")
-
-        r = await F.wait_for_status_level(status_levels=["STANDBY"], timeout=3, show_alert=False)
-        if r:
-            r = await F.wait_for_jar_photocells_status(
-                "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
-                on=True,
-                timeout=3,
-                show_alert=False,
-            )
-            if r:
-                r = await F.wait_for_jar_photocells_status(
-                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=3, show_alert=False)
-                if r:
-                    await F.can_movement({"Output_Roller": 2})
-
-                r = await F.wait_for_jar_photocells_and_status_lev(
-                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, status_levels=["STANDBY"])
-                if r:
-                    await F.can_movement({"Lifter_Roller": 3, "Output_Roller": 1})
-
-        self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="OUT")
-
-        return r
-
-    async def move_12_00(self, jar=None):  # 'deliver' # pylint: disable=unused-argument
-
-        F = self.get_machine_head_by_letter("F")
-
-        r = await F.wait_for_jar_photocells_and_status_lev(
-            "JAR_OUTPUT_ROLLER_PHOTOCELL",
-            on=True,
-            status_levels=["STANDBY"],
-            timeout=3,
-            show_alert=False)
-        if r:
-            F = self.get_machine_head_by_letter("F")
-            await F.can_movement({"Output_Roller": 2})
-        else:
-            msg_ = f"cannot move output roller"
-            logging.warning(msg_)
-            self.main_window.open_alert_dialog(msg_)
 
     async def wait_for_jar_delivery(self, jar):
 
@@ -536,48 +191,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return r
 
-    async def single_move(self, head_letter, params):
 
         m = self.get_machine_head_by_letter(head_letter)
         return await m.can_movement(params)
 
-
-class CarouselMotor2(CarouselMotor):
-
-    """
-     'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
-        'documentable': False,
-        'description': 'Move rollers or lifters of a dispening head of a car refinishing machine in different ways',
-        'allowed_status_levels': ['JAR_POSITIONING', 'DIAGNOSTIC', 'STANDBY', 'ALARM', 'DISPENSING',],
-        'target_status_levels': ['JAR_POSITIONING', 'DISPENSING',],
-
-        # Output_Number:
-        # TESTA1: A 0 = DOSING ROLLER, 1 = INPUT ROLLER,
-        # TESTA2: F 0 = DOSING ROLLER, 1 = LIFTER_ROLLER, 2 = OUTPUT_ROLLER, 3 = LIFTER
-        # TESTA3: B 0 = DOSING ROLLER
-        # TESTA4: E 0 = DOSING ROLLER
-        # TESTA5: C 0 = DOSING ROLLER, 1 = LIFTER_ROLLER,
-        # TESTA6: D 0 = DOSING ROLLER, 1 = LIFTER
-
-        # ~ Output_Action:
-        # ~ 0 = Stop Movement,
-        # ~ 1 = Start Movement CW,
-        # ~ 2 = Start Movement CW or UP till Photocell transition LIGHT - DARK,
-        # ~ 3 = Start Movement CW or UP till Photocell transition DARK - LIGHT,
-        # ~ 4 = Start Movement CCW,
-        # ~ 5 = Start Movement CCW or DOWN till Photocell transition LIGHT - DARK,
-        # ~ 6 = Start Movement CCW or DOWN till Photocell transition DARK - LIGHT"}}}},
-
-
-    'crx_outputs_status'   : {"type": "number",  "propertyOrder": 52, 'fmt': 'B',
-        'description': "rollers or lifters status of a dispening head of a CRx machine. Mask bit coding: bit x = 0 output = OFF, bit x = 1 output = ON"},
-        # TESTA1: A bit0 = DOSING ROLLER, bit1 = INPUT ROLLER,
-        # TESTA2: F bit0 = DOSING ROLLER, bit1 = LIFTER_ROLLER, bit2 = OUTPUT_ROLLER, bit3 = LIFTER
-        # TESTA3: B bit0 = DOSING ROLLER
-        # TESTA4: E bit0 = DOSING ROLLER
-        # TESTA5: C bit0 = DOSING ROLLER, bit1 = LIFTER_ROLLER,
-        # TESTA6: D bit0 = DOSING ROLLER, bit1 = LIFTER
-    """
 
     async def move_from_to(self, jar, letter_from, letter_to):
 

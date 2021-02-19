@@ -310,9 +310,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         jar_json_properties = json.loads(jar.json_properties)
         order_json_properties = json.loads(jar.order.json_properties)
 
-        # ~ logging.warning(f"jar_json_properties  :{jar_json_properties  }")
-        # ~ logging.warning(f"order_json_properties:{order_json_properties}")
-
         order_ingredients = jar_json_properties.get('order_ingredients')
         if order_ingredients is None:
             order_ingredients = order_json_properties.get('ingredients', {})
@@ -355,18 +352,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 # ~ the ingredient is known but not sufficiently available
                 ingredient_volume_map[pigment_name] = None
 
+        _order_ingredients_dict = {i["pigment_name"]: i["weight(g)"] for i in order_ingredients}
         unavailable_pigments = {
-            k: v for k, v in ingredient_volume_map.items() if not v}
-
-        # ~ logging.warning(f"unavailable_pigments.keys():{list(unavailable_pigments.keys())}")
+            k: _order_ingredients_dict[k] for k, v in ingredient_volume_map.items() if not v}
 
         jar_json_properties["ingredient_volume_map"] = ingredient_volume_map
         jar_json_properties["total_volume"] = total_volume
         jar_json_properties["unavailable_pigments"] = unavailable_pigments
         jar.json_properties = json.dumps(jar_json_properties, indent=2)
         self.db_session.commit()
-
-        # ~ logging.warning(f"jar.json_properties:{jar.json_properties}")
 
     async def get_and_check_jar_from_barcode(self, barcode):  # pylint: disable=too-many-locals,too-many-branches
 
@@ -378,12 +372,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         error = None
         try:
             q = self.db_session.query(Jar).filter(Jar.index == index)
-            q = q.filter(Jar.status == "NEW")
+            # ~ q = q.filter(Jar.status != "DONE")
+            q = q.filter(~Jar.status.in_(["DONE", "ERROR"]))
             q = q.join(Order).filter((Order.order_nr == order_nr))
             jar = q.one()
         except NoResultFound:
             jar = None
-            error = f"NoResultFound looking for barcode:{barcode} (is it NEW?)"
+            error = f"NoResultFound looking for barcode:{barcode} (may be already DONE?)"
             logging.error(error)
             logging.error(traceback.format_exc())
 
@@ -423,7 +418,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals,unused-argument
 
         if int(barcode) == -1:
-            q = self.db_session.query(Jar).filter(Jar.status == "NEW")
+            q = self.db_session.query(Jar).filter(~Jar.status.in_(["DONE", "ERROR"]))
             jar = q.first()
             if jar:
                 barcode = jar.barcode
