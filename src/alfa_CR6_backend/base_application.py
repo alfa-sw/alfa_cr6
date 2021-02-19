@@ -259,36 +259,30 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             cntr = 0
             while cntr < 3:
                 cntr += 1
-                jar, error, unavailable_pigments = await self.get_and_check_jar_from_barcode(barcode)
-                if error:
-                    self.main_window.open_alert_dialog(error, title="ERROR")
-                    logging.error(error)
+                jar = await self.get_and_check_jar_from_barcode(barcode)
+                if not jar:
                     break
-                elif jar:
-                    self.__jar_runners[barcode]["jar"] = jar
-                    if unavailable_pigments:
-                        self.main_window.show_barcode(jar.barcode, is_ok=False)
-                        msg_ = f"barcode: {barcode}\n"
-                        insufficient_pigments = [k for k, v in unavailable_pigments.items() if v is None]
-                        unknown_pigments = [k for k, v in unavailable_pigments.items() if v is not None]
-                        logging.warning(f"unavailable_pigments :{unavailable_pigments}")
-                        logging.warning(f"insufficient_pigments:{insufficient_pigments}")
-                        logging.warning(f"unknown_pigments     :{unknown_pigments     }")
 
-                        if unknown_pigments:
-                            msg_ += tr_("\npigments to be added by hand after dispensing:{}.\n").format(unknown_pigments)
-
-                        if insufficient_pigments and cntr <= 3:
-                            msg_ += tr_("\npigments to be refilled before dispensing:{}. ({}/3)\n").format(insufficient_pigments, cntr)
-                        else:
-                            cntr = 4
-
-                        await self.wait_for_carousel_not_frozen(True, msg=msg_)
+                self.__jar_runners[barcode]["jar"] = jar
+                json_properties = json.loads(jar.json_properties)
+                unavailable_pigments = json_properties["unavailable_pigments"]
+                if unavailable_pigments:
+                    self.main_window.show_barcode(jar.barcode, is_ok=False)
+                    msg_ = f"barcode: {barcode}\n"
+                    insufficient_pigments = [k for k, v in unavailable_pigments.items() if v is None]
+                    unknown_pigments = [k for k, v in unavailable_pigments.items() if v is not None]
+                    if unknown_pigments:
+                        msg_ += tr_("\npigments to be added by hand after dispensing:{}.\n").format(unknown_pigments)
+                    if insufficient_pigments and cntr <= 3:
+                        msg_ += tr_("\npigments to be refilled before dispensing:{}. ({}/3)\n").format(insufficient_pigments, cntr)
                     else:
-                        self.main_window.show_barcode(jar.barcode, is_ok=True)
-                        break
+                        cntr = 4
+                    await self.wait_for_carousel_not_frozen(True, msg=msg_)
+                else:
+                    self.main_window.show_barcode(jar.barcode, is_ok=True)
+                    break
 
-            if jar and not error:
+            if jar:
                 r = await self.execute_carousel_steps(self.n_of_active_heads, jar)
                 logging.warning(f"r:{r}")
 
@@ -311,49 +305,70 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 logging.warning("deleting:{}".format(j))
                 self.__jar_runners.pop(k)
 
-    def check_available_volumes(self, jar):  # pylint: disable=too-many-locals
+    def update_jar_properties(self, jar):  # pylint: disable=too-many-locals
+
+        jar_json_properties = json.loads(jar.json_properties)
+        order_json_properties = json.loads(jar.order.json_properties)
+
+        # ~ logging.warning(f"jar_json_properties  :{jar_json_properties  }")
+        # ~ logging.warning(f"order_json_properties:{order_json_properties}")
+
+        order_ingredients = jar_json_properties.get('order_ingredients')
+        if order_ingredients is None:
+            order_ingredients = order_json_properties.get('ingredients', {})
+            jar_json_properties["order_ingredients"] = order_ingredients
+
+        dispensed_quantities_gr = jar_json_properties.get('dispensed_quantities_gr', {})
 
         ingredient_volume_map = {}
         total_volume = 0
-        order_json_properties = json.loads(jar.order.json_properties)
-        for i in order_json_properties["ingredients"]:
+        for i in order_ingredients:
             pigment_name = i["pigment_name"]
-            requested_quantity_gr = float(i["weight(g)"])
-            if requested_quantity_gr > EPSILON:
-                ingredient_volume_map[pigment_name] = {}
-                for m in self.machine_head_dict.values():
-                    if m:
-                        available_gr, specific_weight = m.get_available_weight(pigment_name)
-                        if specific_weight > 0:
-                            logging.warning(
-                                f"{m.name} pigment_name:{pigment_name}, available_gr:{available_gr},"
-                                f"requested_quantity_gr:{requested_quantity_gr}")
-                            if available_gr >= requested_quantity_gr:
-                                _quantity_gr = requested_quantity_gr
-                            elif available_gr > 0:
-                                _quantity_gr = available_gr
-                            else:
-                                continue
-                            vol = _quantity_gr / specific_weight
-                            ingredient_volume_map[pigment_name][m.name] = vol
-                            total_volume += vol
-                            requested_quantity_gr -= _quantity_gr
-                            if requested_quantity_gr < EPSILON:
-                                break
+            dispensed_quantity_gr = dispensed_quantities_gr.get(pigment_name, 0)
+            requested_quantity_gr = float(i["weight(g)"]) - dispensed_quantity_gr
 
-                if  ingredient_volume_map[pigment_name] and requested_quantity_gr > EPSILON:
-                    # ~ the ingredient is known but not sufficiently available
-                    ingredient_volume_map[pigment_name] = None
+            if requested_quantity_gr < EPSILON:
+                continue
+
+            ingredient_volume_map[pigment_name] = {}
+            for m in self.machine_head_dict.values():
+                if m:
+                    available_gr, specific_weight = m.get_available_weight(pigment_name)
+                    if specific_weight > 0:
+                        logging.warning(
+                            f"{m.name} pigment_name:{pigment_name}, available_gr:{available_gr},"
+                            f"requested_quantity_gr:{requested_quantity_gr}")
+                        if available_gr >= requested_quantity_gr:
+                            _quantity_gr = requested_quantity_gr
+                        elif available_gr > 0:
+                            _quantity_gr = available_gr
+                        else:
+                            continue
+                        vol = _quantity_gr / specific_weight
+                        ingredient_volume_map[pigment_name][m.name] = round(vol, 4)
+                        total_volume += vol
+                        requested_quantity_gr -= _quantity_gr
+                        if requested_quantity_gr < EPSILON:
+                            break
+
+            if ingredient_volume_map[pigment_name] and requested_quantity_gr > EPSILON:
+                # ~ the ingredient is known but not sufficiently available
+                ingredient_volume_map[pigment_name] = None
 
         unavailable_pigments = {
             k: v for k, v in ingredient_volume_map.items() if not v}
 
-        logging.warning(f"unavailable_pigments.keys():{list(unavailable_pigments.keys())}")
+        # ~ logging.warning(f"unavailable_pigments.keys():{list(unavailable_pigments.keys())}")
 
-        return ingredient_volume_map, total_volume, unavailable_pigments
+        jar_json_properties["ingredient_volume_map"] = ingredient_volume_map
+        jar_json_properties["total_volume"] = total_volume
+        jar_json_properties["unavailable_pigments"] = unavailable_pigments
+        jar.json_properties = json.dumps(jar_json_properties, indent=2)
+        self.db_session.commit()
 
-    async def get_and_check_jar_from_barcode(  # pylint: disable=too-many-locals,too-many-branches
-            self, barcode):
+        # ~ logging.warning(f"jar.json_properties:{jar.json_properties}")
+
+    async def get_and_check_jar_from_barcode(self, barcode):  # pylint: disable=too-many-locals,too-many-branches
 
         logging.warning("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
@@ -361,63 +376,49 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         jar = None
         error = None
-        unavailable_pigments = {}
         try:
             q = self.db_session.query(Jar).filter(Jar.index == index)
             q = q.filter(Jar.status == "NEW")
             q = q.join(Order).filter((Order.order_nr == order_nr))
             jar = q.one()
         except NoResultFound:
+            jar = None
             error = f"NoResultFound looking for barcode:{barcode} (is it NEW?)"
+            logging.error(error)
             logging.error(traceback.format_exc())
 
-        logging.debug("jar:{}".format(jar))
+        if jar:
+            A = self.get_machine_head_by_letter("A")
+            jar_size = A.jar_size_detect
+            package_size_list = []
+            for m in [m_ for m_ in self.machine_head_dict.values() if m_]:
+                await m.update_tintometer_data(invalidate_cache=True)
+                logging.warning(f"{m.name}")
 
-        if not error:
-            if not jar:
-                error = f"Jar not found for {barcode}."
-            else:
-                A = self.get_machine_head_by_letter("A")
-                jar_size = A.jar_size_detect
-                package_size_list = []
-                for m in [m_ for m_ in self.machine_head_dict.values() if m_]:
-                    await m.update_tintometer_data(invalidate_cache=True)
-                    logging.warning(f"{m.name}")
+                for s in [p["size"] for p in m.package_list]:
+                    if s not in package_size_list:
+                        package_size_list.append(s)
 
-                    for s in [p["size"] for p in m.package_list]:
-                        if s not in package_size_list:
-                            package_size_list.append(s)
+            package_size_list.sort()
+            logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
+            jar_volume = 0
+            if len(package_size_list) > jar_size:
+                jar_volume = package_size_list[jar_size]
 
-                package_size_list.sort()
-                logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
-                jar_volume = 0
-                if len(package_size_list) > jar_size:
-                    jar_volume = package_size_list[jar_size]
+            self.update_jar_properties(jar)
 
-                r = self.check_available_volumes(jar)
-                ingredient_volume_map, total_volume, unavailable_pigments = r
+            json_properties = json.loads(jar.json_properties)
+            total_volume = json_properties["total_volume"]
 
-                if jar_volume < total_volume:
-                    error = tr_(
-                        """Jar volume not sufficient for barcode:{}.
-                    Please, remove it.
-                    {}(cc)<{:.3f}(cc).""").format(
-                        barcode, jar_volume, total_volume)
+            if jar_volume < total_volume:
+                jar = None
+                msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
+                msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, total_volume)
+                self.main_window.open_alert_dialog(msg_, title="ERROR")
+                logging.error(msg_)
 
-                    jar = None
-                else:
-                    json_properties = json.loads(jar.json_properties)
-                    json_properties["ingredient_volume_map"] = ingredient_volume_map
-                    jar.json_properties = json.dumps(json_properties, indent=2)
-                    self.db_session.commit()
-
-                    logging.warning(f"jar.json_properties:{jar.json_properties}")
-
-        logging.warning(
-            f"jar:{jar}, error:{error}, unavailable_pigments.keys():{list(unavailable_pigments.keys())}"
-        )
-
-        return jar, error, unavailable_pigments
+        logging.warning(f"jar:{jar}")
+        return jar
 
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals,unused-argument
 

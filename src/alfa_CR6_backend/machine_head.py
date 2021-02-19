@@ -82,6 +82,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         if available_cc > EPSILON:
                             available_gr += available_cc * specific_weight
 
+        logging.warning(f"{self.name} {pigment_name} available_gr:{available_gr}, specific_weight:{specific_weight}")
+
         return available_gr, specific_weight
 
     async def update_tintometer_data(self, invalidate_cache=True):
@@ -167,7 +169,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             crx_outputs_status = self.status.get('crx_outputs_status')
             for output_number in range(4):
                 mask_ = 0x1 << output_number
-                if not (int(crx_outputs_status) & mask_):
+                if not int(crx_outputs_status) & mask_:
                     self.__crx_inner_status[output_number] = {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0}
 
             self.photocells_status = {
@@ -245,9 +247,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 time_stamp = msg_dict.get("value")
                 if time_stamp:
                     self.time_stamp = time_stamp
-                    
+
             else:
-                logging.warning(f"{self.name} msg_dict:{anmsg_dictswer}")
+                logging.warning(f"{self.name} unknown type for msg_dict:{msg_dict}")
 
             if self.msg_handler:
                 await self.msg_handler(self.index, msg_dict)
@@ -416,21 +418,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         r = True
         if ingredients:
-
-            # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY','POSITIONING','DISPENSING','JAR_POSITIONING']
+            # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
             allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
-
             def condition():
                 flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
                 flag = flag and self.status["status_level"] in allowed_status_levels
                 flag = flag and self.status["container_presence"]
                 return flag
-
-            logging.warning(f"{self.name} condition():{condition()}")
             msg_ = tr_(" before dispensing. Please check jar.")
             r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
-            logging.warning(f"{self.name} r:{r}")
-
             if r:
                 r = await self.send_command(
                     cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
@@ -438,7 +434,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
                     if r:
                         r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
-
+            if r:
+                json_properties = json.loads(jar.json_properties)
+                dispensed_quantities_gr = {}
+                for k, v in ingredients.items():
+                    _, specific_weight = self.get_available_weight(k)
+                    dispensed_quantities_gr[k] = v * specific_weight
+                json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
+                jar.json_properties = json.dumps(json_properties, indent=2)
+                self.app.db_session.commit()
         return r
 
     async def close(self):

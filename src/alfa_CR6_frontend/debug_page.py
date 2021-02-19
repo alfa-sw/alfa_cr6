@@ -232,10 +232,12 @@ class DebugPage:
     def reset_jar_status_to_new(self):  # pylint: disable=no-self-use
 
         app = QApplication.instance()
-        for j in app.db_session.query(Jar).filter(Jar.status != "NEW").all():
+        # ~ for j in app.db_session.query(Jar).filter(Jar.status != "NEW").all():
+        for j in app.db_session.query(Jar).all():
             logging.warning(f"j:{j}")
             j.status = "NEW"
             j.position = "_"
+            j.json_properties = "{}"
         app.db_session.commit()
 
     async def run_test(self):  # pylint: disable=no-self-use

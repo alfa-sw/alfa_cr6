@@ -459,42 +459,28 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         logging.warning(f"{m.name}, j:{jar}")
 
         await m.update_tintometer_data(invalidate_cache=True)
+        self.update_jar_properties(jar)
 
-        _, _, unavailable_pigments = self.check_available_volumes(jar)
+        json_properties = json.loads(jar.json_properties)
+        unavailable_pigments = json_properties["unavailable_pigments"]
 
         insufficient_pigment_names = [k for k, v in unavailable_pigments.items() if v is None]
         if insufficient_pigment_names:
-
             msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{} on head {}.').format(
                 jar.barcode, insufficient_pigment_names, m.name)
-
             logging.warning(msg_)
             r = await self.wait_for_carousel_not_frozen(True, msg_)
-
             await m.update_tintometer_data(invalidate_cache=True)
-
-            ingredient_volume_map, _, _ = self.check_available_volumes(jar)
-            json_properties = json.loads(jar.json_properties)
-            json_properties["ingredient_volume_map"] = ingredient_volume_map
-            jar.json_properties = json.dumps(json_properties, indent=2)
+            self.update_jar_properties(jar)
 
         while True:
             r = await m.do_dispense(jar)
             if not r:
-                await self.wait_for_carousel_not_frozen(True, tr_('{} waiting for dispense position to get available.'.format(m.name)))
+                await self.wait_for_carousel_not_frozen(True, tr_('{} error in dispensing. I will retry.'.format(m.name)))
             else:
                 break
 
-        json_properties = json.loads(jar.json_properties)
-        for k, v in json_properties["ingredient_volume_map"].items():
-            if v.get(m.name):
-                v.pop(m.name)
-                
-        jar.json_properties = json.dumps(json_properties, indent=2)
-        self.db_session.commit()
-
         logging.warning(f"{m.name}, j:{jar}.")
-
         return r
 
     async def execute_carousel_steps(self, n_of_heads, jar):

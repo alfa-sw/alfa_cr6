@@ -168,9 +168,19 @@ class MachineHeadMockup:
     async def update_status(self, params=None):
         if params is None:
             params = {}
-        logging.warning("{}, params:{}.".format(self.letter, {k: f"0x{v:02X}" for k, v in params.items()}))
-        self.status.update(params)
-        await self.dump_status()
+        try:
+            def fmt(x):
+                if isinstance(x, int):
+                    ret = f"0x{x:02X}"
+                else:
+                    ret = f"{x}"
+                return ret
+                    
+            logging.warning("{}, params:{}.".format(self.letter, {k: fmt(v) for k, v in params.items()}))
+            self.status.update(params)
+            await self.dump_status()
+        except:
+            logging.error(traceback.format_exc())
 
     async def do_move(self, mask=EMPTY_MASK, set_or_reset="", duration=0, tgt_level="STANDBY"):
 
@@ -199,7 +209,7 @@ class MachineHeadMockup:
         await self.update_status(params=pars)
 
     async def handle_command(self, msg_out_dict):  # pylint: disable=too-many-branches,too-many-statements
-        # ~ logging.warning("{} {}, {}".format(self.index, self.letter, msg_out_dict))
+        logging.warning("{} {}, {}".format(self.index, self.letter, msg_out_dict))
 
         if msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
             await self.do_move(duration=0.5, tgt_level="DIAGNOSTIC")
@@ -207,7 +217,7 @@ class MachineHeadMockup:
         elif msg_out_dict["command"] == "KILL_EMULATOR":
             raise KeyboardInterrupt
 
-        elif msg_out_dict["command"] == "DISPENSATION":
+        elif msg_out_dict["command"] in ("DISPENSATION", "DISPENSE_FORMULA"):
             await self.do_move(duration=0.5, tgt_level="DISPENSING")
             await self.do_move(duration=5, tgt_level="STANDBY")
         elif msg_out_dict["command"] == "RESET":
@@ -360,6 +370,12 @@ class MachineHeadMockup:
                 pars["jar_photocells_status"] = self.status["jar_photocells_status"] | DISPENSING_POSITION_MASK
             elif output_action in (3, 6):
                 pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~DISPENSING_POSITION_MASK
+
+            if self.status["jar_photocells_status"] & DISPENSING_POSITION_MASK:
+                pars["container_presence"] = True
+            else:
+                pars["container_presence"] = False
+
         else:
             if self.letter == 'A':
                 if output_number == 1:
