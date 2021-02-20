@@ -77,3 +77,43 @@ def get_res(type, name):
 
     return res
 
+def get_encoding(path_to_file, key=None):
+
+    cmd_ = ["file", "-b", "--mime-encoding", path_to_file]
+    try:
+        p = subprocess.run(cmd_, stdout=subprocess.PIPE)
+        mime_encoding = p.stdout.decode().strip()
+        logging.warning(f"cmd_:{cmd_}, mime_encoding:{mime_encoding}")
+        assert mime_encoding
+        return mime_encoding
+    except Exception:
+        logging.warning(traceback.format_exc())
+
+    encodings = [
+        'ascii',
+        'utf_32',
+        'utf_32_be',
+        'utf_32_le',
+        'utf_16',
+        'utf_16_be',
+        'utf_16_le',
+        'utf_7',
+        'utf_8',
+        'utf_8_sig']
+
+    for e in encodings:
+        try:
+            codecs.lookup(e)
+            fd = codecs.open(path_to_file, 'br', encoding=e)
+            fd.readlines()
+            assert key is None or key in fd.read()
+            fd.seek(0)
+        except (UnicodeDecodeError, UnicodeError):
+            logging.info(f"skip e:{e}")
+        except Exception:
+            logging.warning(traceback.format_exc())
+        else:
+            logging.warning(f"path_to_file:{path_to_file}, e:{e}")
+            return e
+
+

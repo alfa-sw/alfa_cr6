@@ -22,10 +22,78 @@ from alfa_CR6_backend.globals import (
     KEYBOARD_PATH,
     EPSILON,
     get_version,
+    get_encoding,
     tr_)
 
 
 from alfa_CR6_backend.machine_head import MachineHead
+
+def parse_dat_order(path_to_dat_file):
+
+    def __find_items_in_line(items, l):
+        return not [i for i in items if i not in l]
+
+    sw_dat_keys = """
+    Marca
+    Regione
+    Codicecolore
+    Variante
+    Nomecolore
+    Secondo-nome
+    Anno
+    Contrassegno
+    Qualità
+    Fondo
+    Pittogrammi
+    Data modifica
+    Quantità
+    Cumulativo
+    """.split('\n')
+
+    sw_dat_start_line_items = [
+        "Tinta Base", "Peso", "Prezzo netto di vendita"]
+    sw_dat_end_line_items = ["Totale"]
+
+    properties = {
+        "meta": {},
+        "ingredients": [],
+    }
+    e = get_encoding(path_to_dat_file)
+
+    with codecs.open(path_to_dat_file, encoding=e) as fd:
+        lines = fd.readlines()
+
+    collecting_ingredients = False
+    for l in lines[:]:
+        toks = l.split(":")
+        if collecting_ingredients:
+            if __find_items_in_line(sw_dat_end_line_items, l):
+                collecting_ingredients = False
+            elif l.strip():
+                toks = [t.strip() for t in l.split()]
+                # ~ logging.warning(f"toks:{toks}")
+                if toks:
+                    new_item = {}
+                    new_item["pigment_name"] = toks[0]
+                    new_item["weight(g)"] = round(float(toks[1].replace(",", ".")), 4)
+                    new_item["description"] = toks[2]
+                    properties["ingredients"].append(new_item)
+            lines.remove(l)
+        elif not collecting_ingredients:
+            if __find_items_in_line(sw_dat_start_line_items, l):
+                collecting_ingredients = True
+                lines.remove(l)
+            elif len(toks) == 2:
+                k = toks[0].strip()
+                v = toks[1].strip()
+                if k in sw_dat_keys:
+                    properties["meta"][k] = v
+                    lines.remove(l)
+
+    properties["meta"]["extra_info"] = [
+        l.replace('\n', '').replace('\r', '').replace('\t', '').strip() for l in lines if l.strip()]
+
+    return properties
 
 
 def parse_json_order(path_to_json_file, json_schema_name):
