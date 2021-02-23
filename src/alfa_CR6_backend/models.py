@@ -255,10 +255,14 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         return compile_barcode(self.order.order_nr, self.index)
 
     @property
-    def unavailable_pigments(self):
+    def insufficient_pigments(self):
         _json_properties = json.loads(self.json_properties)
-        _json_properties.get("unavailable_pigments", {})
-        return _json_properties.get("unavailable_pigments", {})
+        return _json_properties.get("insufficient_pigments", {})
+
+    @property
+    def unknown_pigments(self):
+        _json_properties = json.loads(self.json_properties)
+        return _json_properties.get("unknown_pigments", {})
 
     def get_ingredients_for_machine(self, m):
         json_properties = json.loads(self.json_properties)

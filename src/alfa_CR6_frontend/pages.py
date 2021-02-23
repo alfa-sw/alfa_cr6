@@ -13,6 +13,7 @@ import logging
 import json
 import time
 import traceback
+import codecs
 from functools import partial
 
 from PyQt5.uic import loadUi
@@ -33,7 +34,7 @@ from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 from alfa_CR6_backend.dymo_printer import dymo_print
 from alfa_CR6_backend.globals import (
-    IMAGES_PATH, import_settings, get_res, tr_)
+    IMAGES_PATH, import_settings, get_res, get_encoding, tr_)
 
 g_settings = import_settings()
 
@@ -212,9 +213,10 @@ class JarTableModel(BaseTableModel):
                 if order:
                     query_ = query_.filter(Jar.order == order)
             query_ = query_.order_by(Jar.index.desc()).limit(100)
+
             def _fmt_status(o):
-                if o.unavailable_pigments:
-                    r = "{} *".format(o.status) 
+                if o.unknown_pigments:
+                    r = "{} *".format(o.status)
                 else:
                     r = o.status
                 return r
@@ -236,7 +238,7 @@ class JarTableModel(BaseTableModel):
             jar = query_.first()
 
         return jar
-        
+
     def remove_jar(self, barcode):
         order_nr, index = decompile_barcode(barcode)
         if self.session and order_nr and index >= 0:
@@ -583,10 +585,11 @@ class OrderPage(BaseStackedPage):
                 content = "{}"
                 msg_ = ""
                 jar = model.get_jar(barcode)
-                if jar and jar.unavailable_pigments:
+                if jar and jar.unknown_pigments:
                     msg_ = tr_("pigments to be added for barcode:\n {}").format(barcode)
                     content = '<div style="text-align: center;">'
-                    content += ''.join([f'<div>{k}: {round(float(v), 4)} gr</div>' for k, v in jar.unavailable_pigments.items()])
+                    content += ''.join([f'<div>{k}: {round(float(v), 4)} gr</div>' for k,
+                                        v in jar.unknown_pigments.items()])
                     content += '</div>'
 
                     self.main_window.open_input_dialog(
@@ -624,12 +627,16 @@ class OrderPage(BaseStackedPage):
 
             elif col == 1:  # view
                 content = "{}"
-                with open(os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)) as f:
-                    content = f.read(3000)
-                    try:
-                        content = json.dumps(json.loads(content), indent=2)
-                    except Exception:  # pylint: disable=broad-except
-                        logging.error(traceback.format_exc())
+                pth_ = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
+                e = get_encoding(pth_, key=None)
+                with codecs.open(pth_, encoding=e) as f:
+                    content = f.read(100 * 1000)
+                    split_ext = os.path.splitext(pth_)
+                    if split_ext[1:] and split_ext[1] == '.json':
+                        try:
+                            content = json.dumps(json.loads(content), indent=2)
+                        except Exception:  # pylint: disable=broad-except
+                            logging.error(traceback.format_exc())
 
                 self.main_window.open_input_dialog(
                     icon_name="SP_MessageBoxInformation",
@@ -934,7 +941,7 @@ class HomePage(BaseStackedPage):
                 status = m.status
                 crx_outputs_status = m.status.get('crx_outputs_status', 0x1)
                 if (not crx_outputs_status and
-                        status.get('status_level', '') in ("STANDBY", )  and 
+                        status.get('status_level', '') in ("STANDBY", ) and
                         QApplication.instance().carousel_frozen):
 
                     map_[head_index].setPixmap(self.main_window.tank_icon_map['green'])

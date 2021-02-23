@@ -398,8 +398,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 and self.last_answer["command"] == cmd_name + "_END"):
                             return True
                         return False
+                    msg_ = tr_("{} waiting for answer to cmd:{}").format(self.name, cmd_name)
 
-                    ret = await self.app.wait_for_condition(condition, timeout=30)
+                    ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_)
                     logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
                 else:
                     # TODO: wait for answer from macroprocessor
@@ -437,6 +438,21 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
                     if r:
                         r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
+
+            if r:
+                json_properties = json.loads(jar.json_properties)
+                ingredients = jar.get_ingredients_for_machine(self)
+                dispensed_quantities_gr = json_properties.get("dispensed_quantities_gr", {})
+                visited_head_names = json_properties.get("visited_head_names", [])
+                visited_head_names.append(self.name)
+                for k, v in ingredients.items():
+                    specific_weight = self.get_specific_weight(k)
+                    dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
+                json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
+                json_properties["visited_head_names"] = visited_head_names
+                jar.json_properties = json.dumps(json_properties, indent=2)
+                self.app.update_jar_properties(jar)
+
         return r
 
     async def close(self):

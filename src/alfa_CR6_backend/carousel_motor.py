@@ -95,131 +95,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         F = self.get_machine_head_by_letter("F")
         r = None
         try:
-            r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
+            r = await F.wait_for_jar_photocells_status(
+                "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
             if r:
-                r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=24 * 60 * 60)
+                r = await F.wait_for_jar_photocells_status(
+                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=24 * 60 * 60)
 
                 jar.update_live(pos="_")
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
-
-        return r
-
-    async def dispense_step(self, machine_letter, jar):
-
-        m = self.get_machine_head_by_letter(machine_letter)
-        self.main_window.update_status_data(m.index, m.status)
-
-        logging.warning(f"{m.name}, j:{jar}")
-
-        await m.update_tintometer_data(invalidate_cache=True)
-        self.update_jar_properties(jar)
-
-        json_properties = json.loads(jar.json_properties)
-        unavailable_pigments = json_properties["unavailable_pigments"]
-
-        insufficient_pigment_names = [k for k, v in unavailable_pigments.items() if v is None]
-        if insufficient_pigment_names:
-            msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{} on head {}.').format(
-                jar.barcode, insufficient_pigment_names, m.name)
-            logging.warning(msg_)
-            r = await self.wait_for_carousel_not_frozen(True, msg_)
-            await m.update_tintometer_data(invalidate_cache=True)
-            self.update_jar_properties(jar)
-
-        while True:
-            r = await m.do_dispense(jar)
-            if not r:
-                await self.wait_for_carousel_not_frozen(True, tr_('{} error in dispensing. I will retry.'.format(m.name)))
-            else:
-                ingredients = jar.get_ingredients_for_machine(m)
-                dispensed_quantities_gr = {}
-                for k, v in ingredients.items():
-                    specific_weight = m.get_specific_weight(k)
-                    dispensed_quantities_gr[k] = v * specific_weight
-                json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
-                jar.json_properties = json.dumps(json_properties, indent=2)
-                self.db_session.commit()
-                break
-
-        logging.warning(f"{m.name}, j:{jar}, jar.json_properties:{jar.json_properties}.")
-        return r
-
-    async def execute_carousel_steps(self, n_of_heads, jar):
-
-        sequence_6 = [
-            partial(self.move_01_02, *[jar, ]),
-            partial(self.dispense_step, *["A", jar]),
-            partial(self.move_02_04, *[jar, ]),
-            partial(self.dispense_step, ("B", jar)),
-            partial(self.move_03_04, (jar)),
-            partial(self.dispense_step, ("C", jar)),
-            partial(self.move_04_05, (jar)),
-            partial(self.move_05_06, (jar)),
-            partial(self.move_06_07, (jar)),
-            partial(self.dispense_step, ("D", jar)),
-            partial(self.move_07_08, (jar)),
-            partial(self.dispense_step, ("E", jar)),
-            partial(self.move_08_09, (jar)),
-            partial(self.dispense_step, ("F", jar)),
-            partial(self.move_09_10, (jar)),
-            partial(self.move_10_11, (jar)),
-            partial(self.move_11_12, (jar)),
-            partial(self.wait_for_jar_delivery, (jar)),
-        ]
-
-        sequence_4 = [
-            self.move_01_02,
-            partial(self.dispense_step, "A"),
-            self.move_02_04,
-            partial(self.dispense_step, "C"),
-            self.move_04_05,
-            self.move_05_06,
-            self.move_06_07,
-            partial(self.dispense_step, "D"),
-            self.move_07_09,
-            partial(self.dispense_step, "F"),
-            self.move_09_10,
-            self.move_10_11,
-            self.move_11_12,
-            self.wait_for_jar_delivery,
-        ]
-
-        if n_of_heads == 6:
-            sequence = sequence_6
-        elif n_of_heads == 4:
-            sequence = sequence_4
-
-        for i, step in enumerate(sequence):
-            logging.warning(f"step:{step}")
-            await self.wait_for_carousel_not_frozen(False, tr_("STEP {} -").format(i))
-            r = await step(jar)
-            await self.wait_for_carousel_not_frozen(not r, tr_("STEP {} +").format(i))
-
-        return r
-
-    async def move_from_to(self, jar, letter_from, letter_to):
-
-        logging.warning(f"j:{jar} {letter_from} -> {letter_to}")
-
-        FROM = self.get_machine_head_by_letter(letter_from)
-        TO = self.get_machine_head_by_letter(letter_to)
-
-        def condition():
-            return not FROM.status.get('crx_outputs_status', 0x0) & 0x01
-
-        r = await self.wait_for_dispense_position_available(letter_to, extra_check=condition)
-        if r:
-            await FROM.crx_outputs_management(0, 1)
-            await TO.crx_outputs_management(0, 2)
-            r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
-            await FROM.crx_outputs_management(0, 0)
-            await TO.crx_outputs_management(0, 0)
-            if r:
-                self.update_jar_position(jar=jar, machine_head=TO, pos=letter_to)
-
-        logging.warning(f"j:{jar} {letter_from} -> {letter_to} r:{r}")
 
         return r
 
@@ -335,6 +220,30 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await self.wait_for_carousel_not_frozen(True, tr_("please, remove completed items from output roller"))
             else:
                 break
+
+    async def move_from_to(self, jar, letter_from, letter_to):
+
+        logging.warning(f"j:{jar} {letter_from} -> {letter_to}")
+
+        FROM = self.get_machine_head_by_letter(letter_from)
+        TO = self.get_machine_head_by_letter(letter_to)
+
+        def condition():
+            return not FROM.status.get('crx_outputs_status', 0x0) & 0x01
+
+        r = await self.wait_for_dispense_position_available(letter_to, extra_check=condition)
+        if r:
+            await FROM.crx_outputs_management(0, 1)
+            await TO.crx_outputs_management(0, 2)
+            r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
+            await FROM.crx_outputs_management(0, 0)
+            await TO.crx_outputs_management(0, 0)
+            if r:
+                self.update_jar_position(jar=jar, machine_head=TO, pos=letter_to)
+
+        logging.warning(f"j:{jar} {letter_from} -> {letter_to} r:{r}")
+
+        return r
 
     async def move_00_01(self, silent=False):  # 'feed'
 
@@ -600,3 +509,86 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         value = map_2[params[1]]
         logging.warning(f"{head_letter} params:{params}: '{target}, {value}'")
         return await m.crx_outputs_management(*params)
+
+    async def dispense_step(self, machine_letter, jar):
+
+        m = self.get_machine_head_by_letter(machine_letter)
+        self.main_window.update_status_data(m.index, m.status)
+
+        await m.update_tintometer_data(invalidate_cache=True)
+        self.update_jar_properties(jar)
+        json_properties = json.loads(jar.json_properties)
+        insufficient_pigment_names = list(json_properties.get("insufficient_pigments", {}).keys())
+        if insufficient_pigment_names:
+            msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{} on head {}.').format(
+                jar.barcode, insufficient_pigment_names, m.name)
+            logging.warning(msg_)
+            r = await self.wait_for_carousel_not_frozen(True, msg_)
+            await m.update_tintometer_data(invalidate_cache=True)
+            self.update_jar_properties(jar)
+
+        r = await m.do_dispense(jar)
+        logging.warning(f"{m.name}, j:{jar}.")
+        logging.debug(f"jar.json_properties:{jar.json_properties}.")
+        return r
+
+    async def execute_carousel_steps(self, n_of_heads, jar):
+
+        sequence_6 = [
+            partial(self.move_01_02, *[jar, ]),
+            partial(self.dispense_step, *["A", jar]),
+            partial(self.move_02_04, *[jar, ]),
+            partial(self.dispense_step, ("B", jar)),
+            partial(self.move_03_04, (jar)),
+            partial(self.dispense_step, ("C", jar)),
+            partial(self.move_04_05, (jar)),
+            partial(self.move_05_06, (jar)),
+            partial(self.move_06_07, (jar)),
+            partial(self.dispense_step, ("D", jar)),
+            partial(self.move_07_08, (jar)),
+            partial(self.dispense_step, ("E", jar)),
+            partial(self.move_08_09, (jar)),
+            partial(self.dispense_step, ("F", jar)),
+            partial(self.move_09_10, (jar)),
+            partial(self.move_10_11, (jar)),
+            partial(self.move_11_12, (jar)),
+            partial(self.wait_for_jar_delivery, (jar)),
+        ]
+
+        sequence_4 = [
+            self.move_01_02,
+            partial(self.dispense_step, "A"),
+            self.move_02_04,
+            partial(self.dispense_step, "C"),
+            self.move_04_05,
+            self.move_05_06,
+            self.move_06_07,
+            partial(self.dispense_step, "D"),
+            self.move_07_09,
+            partial(self.dispense_step, "F"),
+            self.move_09_10,
+            self.move_10_11,
+            self.move_11_12,
+            self.wait_for_jar_delivery,
+        ]
+
+        if n_of_heads == 6:
+            sequence = sequence_6
+        elif n_of_heads == 4:
+            sequence = sequence_4
+
+        for i, step in enumerate(sequence):
+            logging.warning(f"step:{step}")
+            await self.wait_for_carousel_not_frozen(False, tr_("STEP {} -").format(i))
+
+            while True:
+                r = await step(jar)
+                if not r:
+                    id_ = jar and jar.barcode
+                    msg_ = tr_('barcode:{} error in STEP {}. I will retry.').format(id_, i)
+                    await self.wait_for_carousel_not_frozen(True, msg_)
+                else:
+                    break
+            await self.wait_for_carousel_not_frozen(not r, tr_("STEP {} +").format(i))
+
+        return r
