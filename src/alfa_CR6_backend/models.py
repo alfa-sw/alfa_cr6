@@ -41,6 +41,7 @@ global_session = None
 def generate_id():
     return str(uuid.uuid4())
 
+
 def compile_barcode(order_nr, index):
     return int(order_nr) + int(index) % 1000
 
@@ -258,6 +259,25 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         _json_properties = json.loads(self.json_properties)
         _json_properties.get("unavailable_pigments", {})
         return _json_properties.get("unavailable_pigments", {})
+
+    def get_ingredients_for_machine(self, m):
+        json_properties = json.loads(self.json_properties)
+        ingredient_volume_map = json_properties["ingredient_volume_map"]
+        ingredients = {}
+        for pigment_name in ingredient_volume_map.keys():
+            try:
+                val_ = ingredient_volume_map \
+                    and ingredient_volume_map.get(pigment_name) \
+                    and ingredient_volume_map[pigment_name].get(m.name)
+                if val_:
+                    ingredients[pigment_name] = val_
+            except Exception as e:  # pylint: disable=broad-except
+                self.app.handle_exception(e)
+                logging.error(traceback.format_exc())
+        logging.warning(f"{m.name} ingredients:{ingredients}")
+
+        return ingredients
+
 
 # ~ #######################
 class eventManager:

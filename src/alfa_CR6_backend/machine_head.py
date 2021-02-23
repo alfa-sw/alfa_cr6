@@ -65,6 +65,21 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
+    def get_specific_weight(self, pigment_name):
+
+        specific_weight = -1
+        for pig in self.pigment_list:
+            if pig["name"] == pigment_name:
+                specific_weight = pig["specific_weight"]
+                for pipe in pig["pipes"]:
+                    if pipe["enabled"]:
+                        if pipe["effective_specific_weight"] > EPSILON:
+                            specific_weight = pipe["effective_specific_weight"]
+
+        # ~ logging.warning(f"{self.name} {pigment_name} specific_weight:{specific_weight}")
+
+        return specific_weight
+
     def get_available_weight(self, pigment_name):
 
         available_gr = 0
@@ -77,14 +92,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         if pipe["effective_specific_weight"] > EPSILON:
                             specific_weight = pipe["effective_specific_weight"]
                         available_cc = max(
-                            0, pipe["current_level"] - pipe["minimum_level"]
-                        )
+                            0, pipe["current_level"] - pipe["minimum_level"])
                         if available_cc > EPSILON:
                             available_gr += available_cc * specific_weight
 
-        logging.warning(f"{self.name} {pigment_name} available_gr:{available_gr}, specific_weight:{specific_weight}")
+        # ~ logging.warning(f"{self.name} {pigment_name} available_gr:{available_gr}")
 
-        return available_gr, specific_weight
+        return available_gr
 
     async def update_tintometer_data(self, invalidate_cache=True):
 
@@ -397,19 +411,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def do_dispense(self, jar):  # pylint: disable=too-many-locals
 
-        jar_properties = json.loads(jar.json_properties)
-        ingredient_volume_map = jar_properties["ingredient_volume_map"]
-        ingredients = {}
-        for pigment_name in ingredient_volume_map.keys():
-            try:
-                val_ = ingredient_volume_map \
-                    and ingredient_volume_map.get(pigment_name) \
-                    and ingredient_volume_map[pigment_name].get(self.name)
-                if val_:
-                    ingredients[pigment_name] = val_
-            except Exception as e:  # pylint: disable=broad-except
-                self.app.handle_exception(e)
-
+        ingredients = jar.get_ingredients_for_machine(self)
         pars = {
             "package_name": "******* not valid name ****",
             "ingredients": ingredients,
@@ -420,6 +422,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if ingredients:
             # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
             allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
+
             def condition():
                 flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
                 flag = flag and self.status["status_level"] in allowed_status_levels
@@ -434,15 +437,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
                     if r:
                         r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
-            if r:
-                json_properties = json.loads(jar.json_properties)
-                dispensed_quantities_gr = {}
-                for k, v in ingredients.items():
-                    _, specific_weight = self.get_available_weight(k)
-                    dispensed_quantities_gr[k] = v * specific_weight
-                json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
-                jar.json_properties = json.dumps(json_properties, indent=2)
-                self.app.db_session.commit()
         return r
 
     async def close(self):

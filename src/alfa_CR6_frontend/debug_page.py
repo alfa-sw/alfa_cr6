@@ -337,7 +337,6 @@ class DebugPage:
 
             self.open_order_dialog()
 
-
         elif "delete\norders in db" in cmd_txt:
 
             self.delete_orders()
@@ -584,7 +583,7 @@ class DebugPage:
             html_ += "  <td>0x{0:04X}</td>".format(jar_ph_)
 
             # ~ html_ += "  <td>        {0:04b} {1:04b} | 0x{2:04X} {2:5d}</td>".format(
-                # ~ 0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_
+            # ~ 0xF & (photoc_ >> 4), 0xF & (photoc_ >> 0), photoc_
             # ~ )
             html_ += "  <td>        {0:04b} {1:04b} | 0x{2:02X} {2:5d}</td>".format(
                 0xF & (crx_outputs >> 4), 0xF & (crx_outputs >> 0), crx_outputs

@@ -356,11 +356,11 @@ class WebenginePage(BaseStackedPage):
         # ~ QScrollBar:vertical {width: 40px;}
         # ~ ::-webkit-scrollbar {width: 80px}
         # ~ """)
-        settings_ = self.webengine_view.settings()
+        # ~ settings_ = self.webengine_view.settings()
         # ~ pdfviewerenabled = settings_.testAttribute(settings_.PdfViewerEnabled)
-        pdfviewerenabled = settings_.setAttribute(30, True)
-        pdfviewerenabled = settings_.testAttribute(30)
-        logging.warning(f"pdfviewerenabled:{pdfviewerenabled}")
+        # ~ pdfviewerenabled = settings_.setAttribute(30, True)
+        # ~ pdfviewerenabled = settings_.testAttribute(30)
+        # ~ logging.warning(f"pdfviewerenabled:{pdfviewerenabled}")
         # ~ QWebEngineSettings::setAttribute(QWebEngineSettings::WebAttribute attribute, bool on)
 
         self.webengine_view.loadStarted.connect(self.__on_load_start)
@@ -945,8 +945,11 @@ class HomePage(BaseStackedPage):
 
     def update_jar_pixmaps(self):
 
-        _ = [f"{k} ({j['jar'].position[0]})" for k, j in QApplication.instance().get_jar_runners().items()]
-        self.running_jars_lbl.setText("\n".join(_))
+        list_ = []
+        for k, j in QApplication.instance().get_jar_runners().items():
+            _ = f"{k} ({j['jar'].position[0]})"
+            list_.append(_)
+        self.running_jars_lbl.setText("\n".join(list_))
 
         map_ = [
             (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),

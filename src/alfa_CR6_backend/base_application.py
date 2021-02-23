@@ -12,6 +12,7 @@ import logging
 import traceback
 import asyncio
 import json
+import codecs
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
@@ -27,6 +28,7 @@ from alfa_CR6_backend.globals import (
 
 
 from alfa_CR6_backend.machine_head import MachineHead
+
 
 def parse_dat_order(path_to_dat_file):
 
@@ -398,8 +400,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             ingredient_volume_map[pigment_name] = {}
             for m in self.machine_head_dict.values():
                 if m:
-                    available_gr, specific_weight = m.get_available_weight(pigment_name)
-                    if specific_weight > 0:
+                    specific_weight = m.get_specific_weight(pigment_name)
+                    available_gr = m.get_available_weight(pigment_name)
+                    if specific_weight > 0 and available_gr > EPSILON:
                         logging.warning(
                             f"{m.name} pigment_name:{pigment_name}, available_gr:{available_gr},"
                             f"requested_quantity_gr:{requested_quantity_gr}")
@@ -725,7 +728,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def get_jar_runners(self):
 
-        return self.__jar_runners
+        return [j for j in self.__jar_runners if j and j.get('jar')]
 
     async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):  # pylint: disable=too-many-statements
 

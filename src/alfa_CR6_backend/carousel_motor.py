@@ -133,9 +133,17 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             if not r:
                 await self.wait_for_carousel_not_frozen(True, tr_('{} error in dispensing. I will retry.'.format(m.name)))
             else:
+                ingredients = jar.get_ingredients_for_machine(m)
+                dispensed_quantities_gr = {}
+                for k, v in ingredients.items():
+                    specific_weight = m.get_specific_weight(k)
+                    dispensed_quantities_gr[k] = v * specific_weight
+                json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
+                jar.json_properties = json.dumps(json_properties, indent=2)
+                self.db_session.commit()
                 break
 
-        logging.warning(f"{m.name}, j:{jar}.")
+        logging.warning(f"{m.name}, j:{jar}, jar.json_properties:{jar.json_properties}.")
         return r
 
     async def execute_carousel_steps(self, n_of_heads, jar):
@@ -190,11 +198,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             await self.wait_for_carousel_not_frozen(not r, tr_("STEP {} +").format(i))
 
         return r
-
-
-        m = self.get_machine_head_by_letter(head_letter)
-        return await m.can_movement(params)
-
 
     async def move_from_to(self, jar, letter_from, letter_to):
 
