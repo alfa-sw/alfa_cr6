@@ -7,6 +7,8 @@ import sys
 import os
 import logging
 import subprocess
+import traceback
+import importlib
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -19,8 +21,6 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 
 EPSILON = 0.00001
 
-def tr_(lemma):
-    return lemma
 
 def import_settings():
 
@@ -40,6 +40,23 @@ def import_settings():
 
     return app_settings
 
+def tr_(lemma):
+
+    lemma_ = lemma
+
+    try:
+        s = import_settings()
+        s.LANGUAGE
+        pth_to_import = f'alfa_CR6_backend.lang.{s.LANGUAGE}'
+        # ~ logging.warning(f'pth_to_import:{pth_to_import}')
+        # ~ imported_module = importlib.import_module(pth_to_import, 'alfa_CR6_backend')
+        imported_module = importlib.import_module(pth_to_import)
+        lemma_ = imported_module.D.get(lemma, lemma)
+        # ~ logging.warning(f'{lemma} => {lemma_}')
+    except Exception:  # pylint: disable=broad-except
+        logging.error(traceback.format_exc())
+
+    return lemma_
 
 def get_version():
 
