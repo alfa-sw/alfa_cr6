@@ -954,8 +954,9 @@ class HomePage(BaseStackedPage):
 
         list_ = []
         for k, j in QApplication.instance().get_jar_runners().items():
-            _ = f"{k} ({j['jar'].position[0]})"
-            list_.append(_)
+            if j['jar'].position:
+                _ = f"{k} ({j['jar'].position[0]})"
+                list_.append(_)
         self.running_jars_lbl.setText("\n".join(list_))
 
         map_ = [
