@@ -38,7 +38,7 @@ def _create_printable_image(recipe_barcode, info_list):
             options = {
                 'dpi': 250,
                 'module_height': 7,
-                'font_size': 14,
+                'font_size': 15,
                 'text_distance': 0.75,
                 'compress':False,
                 }
