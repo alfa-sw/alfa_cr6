@@ -20,7 +20,7 @@ TMP_PATH = f"{DEPLOY_PATH}/tmp"
 TMP_BARCODE_IMAGE = f"{TMP_PATH}/tmp_file.png"
 PRINTER_MODEL = 'Dymo'
 
-def _create_printable_image(recipe_barcode):
+def _create_printable_image(recipe_barcode, info_list):
     """ create a printable image .png for DYMO 450 """
 
     response = {}
@@ -38,12 +38,31 @@ def _create_printable_image(recipe_barcode):
             options = {
                 'dpi': 250,
                 'module_height': 7,
-                'font_size': 15,
+                'font_size': 14,
                 'text_distance': 0.75,
                 'compress':False,
                 }
 
-            barcode_img.write(file_, options, recipe_barcode_text)
+            if info_list:
+                marca = info_list[0]
+                codicecolore = info_list[1]
+                secondonome = info_list[2]
+                quantità = info_list[3]
+
+                printable_info_list = []
+                printable_info_list.append(recipe_barcode)
+                if marca:
+                    printable_info_list.append(marca)
+                if secondonome:
+                    printable_info_list.append(secondonome)
+                if codicecolore and quantità:
+                    printable_info_list.append(f'{codicecolore}    {quantità}')
+
+                printable_text = '\n'.join(printable_info_list)
+
+                logging.warning(f'printable_text: {printable_text}')
+
+            barcode_img.write(file_, options, printable_text)
 
         logging.warning(f'Barcode {recipe_barcode} label created at {TMP_BARCODE_IMAGE}')
         response = {'result': 'OK', 'file': TMP_BARCODE_IMAGE}
@@ -87,8 +106,8 @@ def _check_dymo_printer_presence():
     return response
 
 
-def _print_label(barcode, fake):
-    res_printable_barcode = _create_printable_image(barcode)
+def _print_label(barcode, info_list, fake):
+    res_printable_barcode = _create_printable_image(barcode, info_list)
 
     if res_printable_barcode.get('result') == 'OK':
         _path = res_printable_barcode.get('file')
@@ -109,7 +128,7 @@ def _print_label(barcode, fake):
     return res_print
 
 
-def dymo_print(barcode=201027001001, fake=False):
+def dymo_print(barcode=201027001001, info_list=[], fake=False):
     logging.warning(f'barcode: {barcode} | fake: {fake}')
 
     if not fake:
@@ -120,7 +139,7 @@ def dymo_print(barcode=201027001001, fake=False):
     logging.warning(f'res_dymo_presence: {res_dymo_presence}')
 
     if res_dymo_presence.get('result') == 'OK':
-        result = _print_label(barcode, fake)
+        result = _print_label(barcode, info_list, fake)
     else:
         result = res_dymo_presence.get('error')
 
@@ -128,5 +147,25 @@ def dymo_print(barcode=201027001001, fake=False):
 
 if __name__ == "__main__":
 
-    res = dymo_print('201027001005')
+    sherwin_hyundai_info = ['HYU    HYUNDAI',   # Marca
+                           'U6G',               # Codicecolore
+                           'URBAN GREY MET.',   # Secondo-nome
+                           '0,55 Litro'         # Quantità
+                           ]
+    res = dymo_print(barcode='201027001005',
+                     info_list =sherwin_hyundai_info,
+                     fake=True)
     logging.warning(f'\t res: {res}')
+
+# NOTE
+# (venv) galasso@galassoVB:/opt/PROJECTS/alfa_cr6$ python src/alfa_CR6_backend/dymo_printer.py 
+# WARNING:root:barcode: 201027001005 | fake: True
+# WARNING:root:res_dymo_presence: {'result': 'OK', 'msg': 'Dymo plugged'}
+# WARNING:root:printable_text: 201027001005
+# HYU    HYUNDAI
+# URBAN GREY MET.
+# U6G   0,55 Litro
+# WARNING:root:Barcode 201027001005 label created at /opt/alfa_cr6/tmp/tmp_file.png
+# WARNING:root:response: {'result': 'OK', 'file': '/opt/alfa_cr6/tmp/tmp_file.png'}
+# WARNING:root:print_cups_cmd: lp -o fit-to-page /opt/alfa_cr6/tmp/tmp_file.png
+# WARNING:root:    res: {'result': 'OK', 'message': 'Printing label ..'}
