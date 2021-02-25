@@ -5,6 +5,8 @@ import logging
 # ~ LOG_LEVEL=logging.INFO,
 LOG_LEVEL = logging.WARNING
 
+LANGUAGE = "en"
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNTIME_FILES_ROOT = os.path.join(HERE, "../")
 
