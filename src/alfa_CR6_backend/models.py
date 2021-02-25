@@ -255,6 +255,25 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         return compile_barcode(self.order.order_nr, self.index)
 
     @property
+    def extra_lines_to_print(self):
+        _order_json_properties = json.loads(self.order.json_properties)
+
+        l1, l2, l3 = "", "", ""
+        try:
+            marca = _order_json_properties.get('meta', {}).get('Marca', '')
+            codicecolore = _order_json_properties.get('meta', {}).get('Codicecolore', '')
+            secondo_nome = _order_json_properties.get('meta', {}).get('Secondo-nome', '')
+            quantita = _order_json_properties.get('meta', {}).get('Quantità', '')
+            l1 = f"{marca.strip()}"
+            l2 = f"{secondo_nome.strip()}"
+            l3 = f"{codicecolore.strip()} {quantita.strip()}"
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            QApplication.instance().handle_exception(e)
+
+        return [l1, l2, l3]
+
+    @property
     def insufficient_pigments(self):
         _json_properties = json.loads(self.json_properties)
         return _json_properties.get("insufficient_pigments", {})
@@ -276,8 +295,9 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
                 if val_:
                     ingredients[pigment_name] = val_
             except Exception as e:  # pylint: disable=broad-except
-                self.app.handle_exception(e)
                 logging.error(traceback.format_exc())
+                QApplication.instance().handle_exception(e)
+
         logging.warning(f"{m.name} ingredients:{ingredients}")
 
         return ingredients

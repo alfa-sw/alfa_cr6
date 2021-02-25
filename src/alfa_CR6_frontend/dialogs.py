@@ -345,21 +345,23 @@ class EditDialog(BaseDialog):
             order.json_properties = json.dumps(_properties, indent=2)
 
             n_of_jars = self.n_of_jars_spinbox.value()
-            barcodes = []
+            jars_to_print = []
             for _indx in range(base_index, base_index + n_of_jars):
                 jar = Jar(order=order, size=0, index=_indx)
                 db_session.add(jar)
-                barcodes.append(jar.barcode)
+                jars_to_print.append(jar)
 
             db_session.commit()
 
             self.parent().order_page.populate_jar_table()
 
             logging.warning(f"self.print_check_box.isChecked() :{self.print_check_box.isChecked() }")
-            logging.warning(f"barcodes:{barcodes}")
             if self.print_check_box.isChecked():
-                for b in barcodes:
-                    response = dymo_print(str(b))
+                for j in jars_to_print:
+                    b = str(j.barcode)
+                    l1, l2, l3 = j.extra_lines_to_print
+                    logging.warning(f"b, l1, l2, l3:{[b, l1, l2, l3]}")
+                    response = dymo_print(b, l1, l2, l3)
                     logging.warning(f"response:{response}")
                     time.sleep(.05)
 

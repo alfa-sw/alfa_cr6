@@ -574,12 +574,12 @@ class OrderPage(BaseStackedPage):
                         json.dumps(json.loads(jar.json_properties), indent=2))
                     msg_ = tr_("do you want to print barcode:\n {} ?").format(barcode)
 
-                self.main_window.open_input_dialog(
-                    icon_name="SP_MessageBoxInformation",
-                    message=msg_,
-                    content=content,
-                    ok_cb=dymo_print,
-                    ok_cb_args=[str(barcode), ])
+                    self.main_window.open_input_dialog(
+                        icon_name="SP_MessageBoxInformation",
+                        message=msg_,
+                        content=content,
+                        ok_cb=dymo_print,
+                        ok_cb_args=[str(jar.barcode), ] + jar.extra_lines_to_print)
 
             elif col == 2:  # status
                 content = "{}"
@@ -645,36 +645,13 @@ class OrderPage(BaseStackedPage):
 
             elif col == 2:  # create order
 
-                app = QApplication.instance()
-
-                def cb():
-                    n = int(self.main_window.input_dialog.content_container.toPlainText())
-                    n = min(n, 20)
-                    logging.warning(f"n:{n}")
-                    order = app.create_order(
-                        os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name),
-                        json_schema_name="KCC",
-                        n_of_jars=n)
-                    barcodes = sorted([str(j.barcode) for j in order.jars])
-                    logging.warning(f"file_name:{file_name}, barcodes:{barcodes}")
-
-                    def cb_():
-                        for b in barcodes:
-                            response = dymo_print(str(b))
-                            logging.warning(f"response:{response}")
-                            time.sleep(.05)
-
-                    msg_ = tr_("confirm printing {} barcodes?").format(len(barcodes))
-                    self.main_window.open_input_dialog(message=msg_, content="{}".format(barcodes), ok_cb=cb_)
-
-                    model.remove_file(file_name)
-                    self.populate_file_table()
-                    self.populate_order_table()
-                    self.populate_jar_table()
-
                 _msg = tr_("confirm creating order from file (file will be deleted):\n '{}'?\n").format(file_name)
                 _msg += tr_('Please, insert below the number of jars.')
-                self.main_window.open_input_dialog(message=_msg, content="<span align='center'>1</span>", ok_cb=cb)
+                self.main_window.open_input_dialog(
+                    message=_msg,
+                    content="<span align='center'>1</span>",
+                    ok_cb=self.__create_order_cb,
+                    ok_cb_args=[model, file_name])
 
             elif col == 3:  # file name
                 pass
@@ -722,6 +699,36 @@ class OrderPage(BaseStackedPage):
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+
+    def __create_order_cb(self, model, file_name):
+
+        app = QApplication.instance()
+
+        n = int(self.main_window.input_dialog.content_container.toPlainText())
+        n = min(n, 20)
+        logging.warning(f"n:{n}")
+        order = app.create_order(
+            os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name),
+            json_schema_name="KCC",
+            n_of_jars=n)
+        args_to_print = sorted([[str(j.barcode), ] + j.extra_lines_to_print for j in order.jars])
+        logging.warning(f"file_name:{file_name}, args_to_print:{args_to_print}")
+
+        def cb_():
+            for a in args_to_print:
+                logging.warning(f"a:{a}")
+                response = dymo_print(*a)
+                logging.warning(f"response:{response}")
+                time.sleep(.05)
+
+        msg_ = tr_("confirm printing {} barcodes?").format(len(args_to_print))
+        self.main_window.open_input_dialog(message=msg_, content="{}".format(
+            [l[0] for l in args_to_print]), ok_cb=cb_)
+
+        model.remove_file(file_name)
+        self.populate_file_table()
+        self.populate_order_table()
+        self.populate_jar_table()
 
     def open_page(self):
 

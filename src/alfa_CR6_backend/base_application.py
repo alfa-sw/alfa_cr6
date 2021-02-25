@@ -35,7 +35,7 @@ def parse_dat_order(path_to_dat_file):
     def __find_items_in_line(items, l):
         return not [i for i in items if i not in l]
 
-    sw_dat_keys = """
+    sw_dat_keys_str = """
     Marca
     Regione
     Codicecolore
@@ -50,7 +50,9 @@ def parse_dat_order(path_to_dat_file):
     Data modifica
     Quantità
     Cumulativo
-    """.split('\n')
+    """
+
+    sw_dat_keys = [s.strip() for s in sw_dat_keys_str.split('\n')]
 
     sw_dat_start_line_items = [
         "Tinta Base", "Peso"]
