@@ -585,15 +585,17 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                     if properties:
                         description = f"{fname}"
-                        order = Order(
-                            json_properties=json.dumps(properties, indent=2),
-                            description=description,
-                        )
-                        self.db_session.add(order)
-                        for j in range(1, n_of_jars + 1):
-                            jar = Jar(order=order, index=j, size=0)
-                            self.db_session.add(jar)
-                        self.db_session.commit()
+
+                order = Order(
+                    json_properties=json.dumps(properties, indent=2),
+                    description=description)
+
+                self.db_session.add(order)
+                for j in range(1, n_of_jars + 1):
+                    jar = Jar(order=order, index=j, size=0)
+                    self.db_session.add(jar)
+                self.db_session.commit()
+
             except BaseException:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
                 order = None

@@ -132,7 +132,7 @@ def _print_label(barcode, line_1, line_2, line_3, fake):
 
 
 def dymo_print(barcode=201027001001, line_1='', line_2='', line_3='', fake=False):
-    logging.warning(f'barcode: {barcode}, [{line_1}, {line_2}, {line_3}] | fake: {fake}')
+    logging.warning(f'barcode: {barcode}, {[line_1, line_2, line_3]} | fake: {fake}')
 
     if not fake:
         res_dymo_presence = _check_dymo_printer_presence()
