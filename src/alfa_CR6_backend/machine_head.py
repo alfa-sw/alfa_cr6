@@ -140,7 +140,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.low_level_pipes:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
             self.app.main_window.open_alert_dialog(
-                f"{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}")
+                tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(self.name, self.low_level_pipes))
+
             self.app.show_reserve(self.index, True)
         else:
             self.app.show_reserve(self.index, False)
@@ -171,7 +172,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if (status.get("status_level") == "RESET"
                 and self.status.get("status_level") != "RESET"):
             await self.update_tintometer_data(invalidate_cache=True)
-            self.app.main_window.open_alert_dialog(f"{self.name} RESETTING")
+            self.app.main_window.open_alert_dialog(tr_("{} RESETTING").format(self.name))
 
         old_flag = self.status.get("jar_photocells_status", 0) & 0x001
         new_flag = status.get("jar_photocells_status", 0) & 0x001

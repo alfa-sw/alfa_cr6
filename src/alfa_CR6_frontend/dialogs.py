@@ -144,10 +144,14 @@ class BaseDialog(QFrame):
         self.remove_icon = QPixmap(get_res("IMAGE", "remove.png"))
         self.add_icon = QPixmap(get_res("IMAGE", "add.png"))
 
+        self.ok_button.setText(tr_("OK"))
         self.ok_button.setIcon(QIcon(self.green_icon))
-        self.esc_button.setIcon(QIcon(self.red_icon))
         self.ok_button.setAutoFillBackground(True)
+
+        self.esc_button.setText(tr_("Cancel"))
+        self.esc_button.setIcon(QIcon(self.red_icon))
         self.esc_button.setAutoFillBackground(True)
+
         self.hide()
 
 
