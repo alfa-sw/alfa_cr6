@@ -19,7 +19,7 @@ KEYBOARD_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "keyboard")
 
 CONF_PATH = "/opt/alfa_cr6/conf"
 
-EPSILON = 0.00001
+EPSILON = 0.0002
 
 
 def import_settings():

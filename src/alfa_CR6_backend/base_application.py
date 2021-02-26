@@ -753,7 +753,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             else:
                                 continue
                             vol = _quantity_gr / specific_weight
-                            ingredient_volume_map[pigment_name][m.name] = round(vol, 4)
+                            vol = round(vol, 4)
+                            ingredient_volume_map[pigment_name][m.name] = vol
                             total_volume += vol
                             requested_quantity_gr -= _quantity_gr
                             if requested_quantity_gr < EPSILON:
