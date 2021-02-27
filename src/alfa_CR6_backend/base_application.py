@@ -326,6 +326,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     async def __jar_task(self, barcode):  # pylint: disable=too-many-statements
 
         r = None
+        jar = None
         try:
 
             cntr = 0
@@ -367,13 +368,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 logging.warning(f"r:{r}")
 
         except asyncio.CancelledError:
-            jar.status = "ERROR"
-            jar.description = traceback.format_exc()
+            if jar:
+                jar.status = "ERROR"
+                # ~ jar.description = traceback.format_exc()
             logging.error(traceback.format_exc())
         except Exception as e:  # pylint: disable=broad-except
-            jar.status = "ERROR"
-            jar.description = traceback.format_exc()
+            if jar:
+                jar.status = "ERROR"
+                jar.description = traceback.format_exc()
             self.handle_exception(e)
+            logging.error(traceback.format_exc())
 
     def __clock_tick(self):
 
@@ -762,7 +766,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 # ~ the ingredient is known but not sufficiently available
                 insufficient_pigments[pigment_name] = requested_quantity_gr
                 ingredient_volume_map.pop(pigment_name)
-            if not ingredient_volume_map[pigment_name]:
+            if ingredient_volume_map.get(pigment_name) is not None and not ingredient_volume_map[pigment_name]:
                 # ~ the ingredient is not known
                 unknown_pigments[pigment_name] = requested_quantity_gr
                 ingredient_volume_map.pop(pigment_name)
