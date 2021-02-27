@@ -748,10 +748,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                                 f"requested_quantity_gr:{requested_quantity_gr}")
                             if available_gr >= requested_quantity_gr:
                                 _quantity_gr = requested_quantity_gr
-                            elif available_gr > 0:
-                                _quantity_gr = available_gr
                             else:
-                                continue
+                                _quantity_gr = available_gr
                             vol = _quantity_gr / specific_weight
                             vol = round(vol, 4)
                             ingredient_volume_map[pigment_name][m.name] = vol
@@ -763,14 +761,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if ingredient_volume_map[pigment_name] and requested_quantity_gr > EPSILON:
                 # ~ the ingredient is known but not sufficiently available
                 insufficient_pigments[pigment_name] = requested_quantity_gr
-                ingredient_volume_map[pigment_name] = None
-            if ingredient_volume_map[pigment_name] == {}:
+                ingredient_volume_map.pop(pigment_name)
+            if not ingredient_volume_map[pigment_name]:
                 # ~ the ingredient is not known
                 unknown_pigments[pigment_name] = requested_quantity_gr
+                ingredient_volume_map.pop(pigment_name)
 
-            for k in list(ingredient_volume_map.keys()):
-                if not ingredient_volume_map[k]:
-                    ingredient_volume_map.pop(k)
+        for k in list(ingredient_volume_map.keys()):
+            if not ingredient_volume_map[k]:
+                ingredient_volume_map.pop(k)
 
         jar_json_properties["ingredient_volume_map"] = ingredient_volume_map
         jar_json_properties["insufficient_pigments"] = insufficient_pigments
