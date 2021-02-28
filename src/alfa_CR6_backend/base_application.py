@@ -203,12 +203,12 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
 class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
 
     MACHINE_HEAD_INDEX_TO_NAME_MAP = {
-        0: "A_TOP_LEFT",
-        1: "F_BOTM_LEFT",
-        2: "B_TOP_CENTER",
-        3: "E_BOTM_CENTER",
-        4: "C_TOP_RIGHT",
-        5: "D_BOTM_RIGHT",
+        0: "A",
+        1: "F",
+        2: "B",
+        3: "E",
+        4: "C",
+        5: "D",
     }
     n_of_active_heads = 0
 
