@@ -41,6 +41,7 @@ def main():
         include_package_data=True,
         scripts=[
             'bin/alfa_CR6',
+            'bin/alfa_CR6_flask',
             'bin/alfa_CR6_test',
         ],
         install_requires=[
@@ -50,6 +51,9 @@ def main():
             'python-barcode',
             'Pillow',
             'aiohttp',
+            'flask',
+            'flask_admin',
+            'waitress',
         ],
     )
 

@@ -1,0 +1,10 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+  <p>Hello world</p>
+  
+  {% for l in links %}
+  <div> {{ l }} </div>
+  {% endfor %}
+
+{% endblock %}

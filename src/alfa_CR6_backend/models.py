@@ -304,7 +304,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
 
 # ~ #######################
-class eventManager:
+class dbEventManager:
 
     def __init__(self, session):
         self.to_be_deleted_object_list = set([])
@@ -356,7 +356,7 @@ def init_models(sqlite_connect_string):
     Session = sessionmaker(bind=engine)
     global_session = Session()
 
-    e = eventManager(global_session)
+    e = dbEventManager(global_session)
     e.install_listeners()
 
     return global_session
