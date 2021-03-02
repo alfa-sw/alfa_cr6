@@ -208,8 +208,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         2: "B",
         3: "E",
         4: "C",
-        5: "D",
-    }
+        5: "D",}
+
     n_of_active_heads = 0
 
     def __init__(self, main_window_class, settings, *args, **kwargs):
@@ -585,7 +585,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         fname = os.path.split(path_to_file)[1]
                         properties = parse_dat_order(path_to_file)
                     else:
-                        raise Exception(f"unknown file extension: {ext}")
+                        raise Exception(f"unknown file extension. split_ext:{split_ext}")
 
                     if properties:
                         description = f"{fname}"
@@ -726,6 +726,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         dispensed_quantities_gr = jar_json_properties.get('dispensed_quantities_gr', {})
         visited_head_names = jar_json_properties.get("visited_head_names", [])
+        old_insufficient_pigments = jar_json_properties.get("insufficient_pigments", {})
 
         ingredient_volume_map = {}
         insufficient_pigments = {}
@@ -766,9 +767,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 # ~ the ingredient is known but not sufficiently available
                 insufficient_pigments[pigment_name] = requested_quantity_gr
                 ingredient_volume_map.pop(pigment_name)
+
             if ingredient_volume_map.get(pigment_name) is not None and not ingredient_volume_map[pigment_name]:
-                # ~ the ingredient is not known
-                unknown_pigments[pigment_name] = requested_quantity_gr
+                if old_insufficient_pigments.get(pigment_name):
+                    insufficient_pigments[pigment_name] = old_insufficient_pigments[pigment_name]
+                else:
+                    # ~ the ingredient is not known
+                    unknown_pigments[pigment_name] = requested_quantity_gr
                 ingredient_volume_map.pop(pigment_name)
 
         for k in list(ingredient_volume_map.keys()):
