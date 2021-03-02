@@ -6,6 +6,7 @@
 # pylint: disable=invalid-name
 
 
+import random
 import logging
 import asyncio
 import json
@@ -275,8 +276,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         try:
             if self.ip_add:
                 url = "http://{}:{}/{}/{}".format(
-                    self.ip_add, self.http_port, "apiV1", path
-                )
+                    self.ip_add, self.http_port, "apiV1", path)
                 if self.aiohttp_clientsession is None:
                     self.aiohttp_clientsession = aiohttp.ClientSession()
                 with async_timeout.timeout(timeout):
@@ -301,6 +301,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def crx_outputs_management(self, output_number, output_action, timeout=30):
 
+        id_ = random.randint(1, 10000)
+
         r = None
         mask_ = 0x1 << output_number
         # ~ if self.__crx_inner_status[output_number]['value'] != 0 and output_action:
@@ -316,6 +318,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             ret = await self.app.wait_for_condition(condition_1, timeout=5, extra_info=msg_, stability_count=1)
 
             if ret:
+
+                logging.warning(f"head:{self.name} id_:{id_}, locking:{output_number}, output_action:{output_action}")
+
                 self.__crx_inner_status[output_number]['locked'] = True
                 try:
                     if output_action == 0:
@@ -331,10 +336,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     mask_ = 0x1 << output_number
                     msg_ = tr_("{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}").format(
                         self.name, output_number, output_action, self.status.get('crx_outputs_status', 0x0))
-
-                    # TODO: REMOVE THIS ASAP
-                    if self.status.get('status_level') == "DISPENSING":
-                        asyncio.sleep(.4)
 
                     if output_action:
                         def condition():
@@ -352,6 +353,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     self.app.handle_exception(e)
 
                 self.__crx_inner_status[output_number]['locked'] = False
+
+                logging.warning(f"head:{self.name} id_:{id_}, unlocking:{output_number}, output_action:{output_action}")
 
         return r
 
