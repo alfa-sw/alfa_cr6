@@ -332,6 +332,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     msg_ = tr_("{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}").format(
                         self.name, output_number, output_action, self.status.get('crx_outputs_status', 0x0))
 
+                    # TODO: REMOVE THIS ASAP
+                    if self.status.get('status_level') == "DISPENSING":
+                        asyncio.sleep(.4)
+
                     if output_action:
                         def condition():
                             return self.status.get('crx_outputs_status', 0x0) & mask_
