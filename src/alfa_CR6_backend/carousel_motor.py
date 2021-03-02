@@ -233,6 +233,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         r = await self.wait_for_dispense_position_available(letter_to, extra_check=condition)
         if r:
+            self.update_jar_position(jar=jar, pos=f"{letter_from}_{letter_to}")
+
             await FROM.crx_outputs_management(0, 1)
             await TO.crx_outputs_management(0, 2)
             r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
@@ -280,11 +282,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         A = self.get_machine_head_by_letter("A")
 
-        self.update_jar_position(jar=jar, machine_head=A, status="ENTERING", pos="IN_A")
+        self.update_jar_position(jar=jar, machine_head=A, status="ENTERING", pos="IN")
 
         def condition():
             return not A.status.get('crx_outputs_status', 0x0) & 0x02
         r = await self.wait_for_dispense_position_available("A", extra_check=condition)
+
+        self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
 
         if r:
             await A.crx_outputs_management(1, 2)

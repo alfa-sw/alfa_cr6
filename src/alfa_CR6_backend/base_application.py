@@ -454,7 +454,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals,unused-argument
 
         if int(barcode) == -1:
-            q = self.db_session.query(Jar).filter(~Jar.status.in_(["DONE", "ERROR"]))
+            q = self.db_session.query(Jar).filter(Jar.status.in_(["NEW"]))
             jar = q.first()
             if jar:
                 barcode = jar.barcode
