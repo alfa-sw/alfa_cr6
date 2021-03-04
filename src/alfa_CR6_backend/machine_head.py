@@ -6,6 +6,7 @@
 # pylint: disable=invalid-name
 
 
+import os
 import random
 import logging
 import asyncio
@@ -55,6 +56,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.last_answer = None
         self.cntr = 0
         self.time_stamp = 0
+
+        self.owned_barcodes = []
 
         self.__crx_inner_status = [
             {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
@@ -123,14 +126,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 if enabled_pipes:
                     pigment_list.append(pig)
 
-            with open(self.app.settings.TMP_PATH + f"{self.name}_pigment_list.json", "w") as f:
+            pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_pigment_list.json")
+            with open(pth_, "w") as f:
                 json.dump(pigment_list, f, indent=2)
 
             ret = await self.call_api_rest("package", "GET", {})
             package_list = ret.get("objects", [])
-            with open(
-                    self.app.settings.TMP_PATH + f"{self.name}_package_list.json", "w") as f:
-
+            pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_package_list.json")
+            with open(pth_, "w") as f:
                 json.dump(self.package_list, f, indent=2)
 
         self.pigment_list = pigment_list
@@ -186,7 +189,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             for output_number in range(4):
                 mask_ = 0x1 << output_number
                 if not int(crx_outputs_status) & mask_:
-                    self.__crx_inner_status[output_number] = {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0}
+                    self.__crx_inner_status[output_number]['value'] = 0
+                    self.__crx_inner_status[output_number]['timeout'] = 0
+                    self.__crx_inner_status[output_number]['t0'] = 0
 
             self.photocells_status = {
                 "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL": status["photocells_status"] & 0x001 and 1,
@@ -256,7 +261,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         and answer.get("command") is not None):
 
                     self.last_answer = answer
-                    logging.warning(f"{self.name} answer:{answer}")
+                    # ~ logging.warning(f"{self.name} answer:{answer}")
 
             elif msg_dict.get("type") == "time":
                 # ~ logging.warning(f"msg_dict:{msg_dict}")
@@ -299,9 +304,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return r_json_as_dict
 
-    async def crx_outputs_management(self, output_number, output_action, timeout=30):
+    async def crx_outputs_management(self, output_number, output_action, timeout=30, silent=True):
 
         id_ = random.randint(1, 10000)
+        logging.warning(f" {self.name} owned_barcodes:{self.owned_barcodes}, id_:{id_}")
 
         r = None
         mask_ = 0x1 << output_number
@@ -314,14 +320,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             def condition_1():
                 flag = not self.__crx_inner_status[output_number]['locked']
                 return flag
+
             msg_ = tr_("{} waiting for {} to get unlocked.").format(self.name, output_number)
+
             ret = await self.app.wait_for_condition(condition_1, timeout=5, extra_info=msg_, stability_count=1)
+            self.__crx_inner_status[output_number]['locked'] = True
+            logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_},   LOCKED")
 
             if ret:
 
-                logging.warning(f"head:{self.name} id_:{id_}, locking:{output_number}, output_action:{output_action}")
-
-                self.__crx_inner_status[output_number]['locked'] = True
                 try:
                     if output_action == 0:
                         self.__crx_inner_status[output_number]['timeout'] = 0
@@ -340,21 +347,22 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     if output_action:
                         def condition():
                             return self.status.get('crx_outputs_status', 0x0) & mask_
-                        r = await self.app.wait_for_condition(condition, timeout=3.3, show_alert=False, stability_count=1, step=0.1)
+                        r = await self.app.wait_for_condition(condition, timeout=7.3, show_alert=False, stability_count=1, step=0.1)
                     else:
                         def condition():
                             return not self.status.get('crx_outputs_status', 0x0) & mask_
-                        r = await self.app.wait_for_condition(condition, timeout=3.3, show_alert=False, stability_count=1, step=0.1)
+                        r = await self.app.wait_for_condition(condition, timeout=7.3, show_alert=False, stability_count=1, step=0.1)
 
                     if not r:
                         logging.error(f"msg_:{msg_}")
+                        if not silent:
+                            self.app.main_window.open_alert_dialog(msg=msg_)
 
                 except Exception as e:  # pylint: disable=broad-except
                     self.app.handle_exception(e)
 
-                self.__crx_inner_status[output_number]['locked'] = False
-
-                logging.warning(f"head:{self.name} id_:{id_}, unlocking:{output_number}, output_action:{output_action}")
+            self.__crx_inner_status[output_number]['locked'] = False
+            logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_}, UNLOCKED")
 
         return r
 
@@ -394,7 +402,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             }
             if self.websocket:
 
-                logging.warning(f"{self.name} cmd:{msg}")
+                # ~ logging.warning(f"{self.name} cmd:{msg}")
                 self.last_answer = None
                 ret = await self.websocket.send(json.dumps(msg))
 
@@ -416,6 +424,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
+            ret = None
+
         return ret
 
     async def do_dispense(self, jar):  # pylint: disable=too-many-locals

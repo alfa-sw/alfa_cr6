@@ -145,6 +145,7 @@ D = {
     "view"         :"view",
     'waiting for load_lifter roller available and stopped.':    'waiting for load_lifter roller available and stopped.',
     'waiting for unload lifter to be free, stopped.':    'waiting for unload lifter to be free, stopped.',
+    'POWER_OFF': 'POWER_OFF',
     'INIT': 'INIT',
     'IDLE': 'IDLE',
     'RESET': 'RESET',
@@ -157,4 +158,10 @@ D = {
     'ROTATING': 'ROTATING',
     'AUTOTEST': 'AUTOTEST',
     'JAR_POSITIONING': 'JAR_POSITIONING',
+    'NEW': 'NEW',
+    'PROGRESS': 'PROGRESS',
+    'ERR': 'ERR',
+    'ERROR': 'ERROR',
+    'DONE': 'DONE',
+    'PARTIAL': 'PARTIAL',
 }

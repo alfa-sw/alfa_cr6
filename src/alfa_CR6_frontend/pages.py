@@ -185,7 +185,7 @@ class OrderTableModel(BaseTableModel):
                 ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
 
         elif role == Qt.DisplayRole:
-            ret = self.results[index.row()][index.column()]
+            ret = tr_(self.results[index.row()][index.column()])
         return ret
 
 
@@ -217,9 +217,9 @@ class JarTableModel(BaseTableModel):
 
             def _fmt_status(o):
                 if o.unknown_pigments or o.insufficient_pigments:
-                    r = "{} !".format(o.status)
+                    r = [o.status, "!"]
                 else:
-                    r = o.status
+                    r = [o.status, ""]
                 return r
             self.results = [
                 ["", "", _fmt_status(o), o.barcode] for o in query_.all()
@@ -265,18 +265,25 @@ class JarTableModel(BaseTableModel):
             ret = self.barcode_C128_icon.scaled(80, 160, Qt.KeepAspectRatio)
 
         if role == Qt.DecorationRole and index.column() == 2:  # status
-            datum = str(index.data()).upper()
-            if "!" in datum:
+            # ~ datum = index.data()
+            datum = self.results[index.row()][index.column()]
+
+            logging.warning(f"datum:{datum}")
+
+            if "!" in datum[1]:
                 ret = self.orange_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "DONE" in datum:
+            elif "DONE" in datum[0]:
                 ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "ERR" in datum:
+            elif "ERR" in datum[0]:
                 ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "PROGRESS" in datum:
+            elif "PROGRESS" in datum[0]:
                 ret = self.yellow_icon.scaled(32, 32, Qt.KeepAspectRatio)
             else:
                 ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
 
+        elif role == Qt.DisplayRole and index.column() == 2:  # status
+            datum = self.results[index.row()][index.column()]
+            ret = tr_(datum[0]) + datum[1]
         elif role == Qt.DisplayRole:
             ret = self.results[index.row()][index.column()]
 

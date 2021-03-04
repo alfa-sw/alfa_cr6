@@ -30,7 +30,7 @@ from alfa_CR6_backend.globals import (
 from alfa_CR6_backend.machine_head import MachineHead
 
 
-def parse_dat_order(path_to_dat_file):
+def parse_dat_order(path_to_dat_file):# pylint: disable=too-many-locals
 
     def __find_items_in_line(items, l):
         return not [i for i in items if i not in l]
@@ -208,7 +208,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         2: "B",
         3: "E",
         4: "C",
-        5: "D",}
+        5: "D", }
 
     n_of_active_heads = 0
 
@@ -790,6 +790,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def update_jar_position(self, jar, machine_head=None, status=None, pos=None):
 
         if jar is not None:
+
+            for m in self.machine_head_dict.values():
+                if m:
+                    if m == machine_head:
+                        m.owned_barcodes.append(jar.barcode)
+                    else:
+                        if jar.barcode in m.owned_barcodes:
+                            m.owned_barcodes.remove(jar.barcode)
+
             m_name = machine_head.name[0] if machine_head else None
             logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
             try:

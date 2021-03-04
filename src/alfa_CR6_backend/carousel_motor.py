@@ -56,7 +56,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     """
 
     async def wait_for_condition(      # pylint: disable=too-many-arguments
-            self, condition, timeout, show_alert=True, extra_info="", stability_count=3, step=0.01):
+            self, condition, timeout, show_alert=True, extra_info="", stability_count=3, step=0.01, callback=None):
 
         ret = None
         t0 = time.time()
@@ -67,6 +67,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 if condition and condition():
                     counter += 1
                     if counter >= stability_count:
+                        if callback:
+                            callback()
                         ret = True
                         break
                 else:
@@ -144,9 +146,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if (D.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL') or
                 D.status.get('status_level') != 'STANDBY' or
                 D.status.get('crx_outputs_status', 0x0) & 0x02):
-            timeout_ = 20
+            timeout_ = 30.3
         else:
-            timeout_ = 5
+            timeout_ = 5.5
 
         def condition_11():
             return D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
@@ -160,6 +162,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     flag = not D.status.get('crx_outputs_status', 0x0) & 0x02
                     flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
                     flag = flag and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
+                    flag = flag and not D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
                     return flag
                 r = await self.wait_for_condition(condition_12, show_alert=False, timeout=10)
                 if r:
@@ -169,6 +172,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 if cntr > 12:
                     r = False
                     break
+
+        r = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
 
         return r
 
@@ -381,8 +386,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             def condition_1():
                 return not D.status.get('crx_outputs_status', 0x0) & 0x02
-            r = await self.wait_for_condition(condition_1, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
-            if r:
+            r1 = await self.wait_for_condition(condition_1, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+            if r1:
                 await D.crx_outputs_management(1, 2)
 
             self.update_jar_position(jar=jar, pos="D")
@@ -490,28 +495,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     async def single_move(self, head_letter, params):
 
         m = self.get_machine_head_by_letter(head_letter)
-
-        map_1 = {
-            'A': ['dispensing roller', 'input roller', ],
-            'F': ['dispensing roller', 'lifter roller', 'output roller', 'lifter', ],
-            'B': ['dispensing roller', ],
-            'E': ['dispensing roller', ],
-            'C': ['dispensing roller', 'lifter roller'],
-            'D': ['dispensing roller', 'lifter'],
-        }
-
-        map_2 = [
-            'Stop',
-            'Start CW',
-            'Start CW or UP till Photocell transition LIGHT - DARK',
-            'Start CW or UP till Photocell transition DARK - LIGHT',
-            'Start CCW',
-            'Start CCW or DOWN till Photocell transition LIGHT - DARK',
-            'Start CCW or DOWN till Photocell transition DARK - LIGHT',
-        ]
-        target = map_1[head_letter][params[0]]
-        value = map_2[params[1]]
-        logging.warning(f"{head_letter} params:{params}: '{target}, {value}'")
         return await m.crx_outputs_management(*params)
 
     async def dispense_step(self, machine_letter, jar):
@@ -581,18 +564,19 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         elif n_of_heads == 4:
             sequence = sequence_4
 
+        barcode_ = jar and jar.barcode
+
         for i, step in enumerate(sequence):
             logging.warning(f"step:{step}")
-            await self.wait_for_carousel_not_frozen(False, tr_("STEP {} -").format(i))
+            await self.wait_for_carousel_not_frozen(False, tr_("barcode:{}").format(barcode_) + tr_("STEP {} -").format(i))
 
             while True:
                 r = await step(jar)
                 if not r:
-                    id_ = jar and jar.barcode
-                    msg_ = tr_('barcode:{} error in STEP {}. I will retry.').format(id_, i)
+                    msg_ = tr_('barcode:{} error in STEP {}. I will retry.').format(barcode_, i)
                     await self.wait_for_carousel_not_frozen(True, msg_)
                 else:
                     break
-            await self.wait_for_carousel_not_frozen(not r, tr_("STEP {} +").format(i))
+            await self.wait_for_carousel_not_frozen(not r, tr_("barcode:{}").format(barcode_) + tr_("STEP {} +").format(i))
 
         return r
