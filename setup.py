@@ -32,6 +32,7 @@ def main():
         packages=find_packages(where='src'),
         package_dir={'': 'src'},
         data_files=[
+            ('alfa_CR6_flask/templates', list(glob.glob('src/alfa_CR6_flask/templates/*'))),
             ('alfa_CR6_frontend/help', list(glob.glob('src/alfa_CR6_frontend/help/*'))),
             ('alfa_CR6_frontend/images', list(glob.glob('src/alfa_CR6_frontend/images/*'))),
             ('alfa_CR6_frontend/keyboard', list(glob.glob('src/alfa_CR6_frontend/keyboard/*'))),
@@ -52,6 +53,7 @@ def main():
             'Pillow',
             'aiohttp',
             'flask',
+            'flask_sqlalchemy',
             'flask_admin',
             'waitress',
         ],
