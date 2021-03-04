@@ -17,6 +17,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH
+from alfa_CR6_backend.models import Event
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
@@ -32,111 +33,6 @@ from alfa_CR6_frontend.pages import (
 
 from alfa_CR6_frontend.keyboard import Keyboard
 
-
-ACTION_PAGE_LIST_0 = [
-    {"title": tr_("action 01 (head 1 or A)"),
-     "buttons": [
-         {"text": tr_("Start input roller"), "action_args": ("single_move", "A", {"Input_Roller": 1})},
-         {"text": tr_("Stop  input roller"), "action_args": ("single_move", "A", {"Input_Roller": 0})},
-         {"text": tr_("Start input roller to photocell"), "action_args": ("single_move", "A", {"Input_Roller": 2})},
-         {"text": tr_("move 00 01 ('feed')"), "action_args": ("move_00_01",)},
-         {"text": tr_("move 01 02 ('IN -> A')"), "action_args": ("move_01_02",)}, ],
-     "labels_args": [
-         ("A", "JAR_INPUT_ROLLER_PHOTOCELL", tr_("INPUT ROLLER PHOTOCELL")),
-         ("A", "JAR_DETECTION_MICROSWITCH_1", tr_("MICROSWITCH 1")),
-         ("A", "JAR_DETECTION_MICROSWITCH_2", tr_("MICROSWITCH 2")), ], },
-    {"title": tr_("action 02 (head 1 or A)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "A", {"Dispensing_Roller": 1})},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "A", {"Dispensing_Roller": 0})},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "A", {"Dispensing_Roller": 2})}, ],
-     "labels_args": [
-         ("A", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("A", "container_presence", tr_("CAN PRESENCE")), ], },
-    {"title": tr_("action 03 (head 3 or B)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "B", {"Dispensing_Roller": 1})},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "B", {"Dispensing_Roller": 0})},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "B", {"Dispensing_Roller": 2})}, ],
-     "labels_args": [
-         ("B", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("B", "container_presence", tr_("CAN PRESENCE")), ], },
-    {"title": tr_("action 04 (head 5, 6 or C, D)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "C", {"Dispensing_Roller": 1})},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "C", {"Dispensing_Roller": 0})},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "C", {"Dispensing_Roller": 2})},
-         {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
-         {"text": tr_("move 04 05 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
-         {"text": tr_("move 04 05 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
-     "labels_args": [
-         ("C", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("C", "container_presence", tr_("CAN PRESENCE")), ], },
-    {"title": tr_("action 05 (head 5, 6 or C, D)"),
-     "buttons": [
-         {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "C", {"Lifter_Roller": 2})},
-         {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "C", {"Lifter_Roller": 3})},
-         {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "C", {"Lifter_Roller": 0})},
-         {"text": tr_("Start lifter up"), "action_args": ("single_move", "D", {"Lifter": 1})},
-         {"text": tr_("Start lifter down"), "action_args": ("single_move", "D", {"Lifter": 2})},
-         {"text": tr_("Stop  lifter"), "action_args": ("single_move", "D", {"Lifter": 0})},
-         {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
-         {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
-         {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
-     "labels_args": [
-         ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
-         ("D", "LOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
-         ("D", "LOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")), ], },
-    {"title": tr_("action 06 (head 6 or D)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "D", {"Dispensing_Roller": 1})},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "D", {"Dispensing_Roller": 0})},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "D", {"Dispensing_Roller": 2})}, ],
-     "labels_args": [
-         ("D", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("D", "container_presence", tr_("CAN PRESENCE")), ], },
-    {"title": tr_("action 07 (head 4 or E)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "E", {"Dispensing_Roller": 1})},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "E", {"Dispensing_Roller": 0})},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "E", {"Dispensing_Roller": 2})}, ],
-     "labels_args": [
-         ("E", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("E", "container_presence", tr_("CAN PRESENCE")), ], },
-    {"title": tr_("action 08 (head 2 or F)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "F", {"Dispensing_Roller": 1})},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "F", {"Dispensing_Roller": 0})},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "F", {"Dispensing_Roller": 2})},
-         {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)}, ],
-     "labels_args": [
-         ("F", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("F", "container_presence", tr_("CAN PRESENCE")), ], },
-    {"title": tr_("action 09 (head 2 or F)"),
-     "buttons": [
-         {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "F", {"Lifter_Roller": 3})},
-         {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "F", {"Lifter_Roller": 0})},
-         {"text": tr_("Start lifter up"), "action_args": ("single_move", "F", {"Lifter": 1})},
-         {"text": tr_("Start lifter down"), "action_args": ("single_move", "F", {"Lifter": 2})},
-         {"text": tr_("Stop  lifter"), "action_args": ("single_move", "F", {"Lifter": 0})},
-         {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
-         {"text": tr_("move 10 11 ('DOWN -> UP')"), "action_args": ("move_10_11",)},
-         {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)}, ],
-     "labels_args": [
-         ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
-         ("F", "UNLOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
-         ("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")), ], },
-    {"title": tr_("action 10 (head 2 or F)"),
-     "buttons": [
-         {"text": tr_("Start  input roller"), "action_args": ("single_move", "F", {"Output_Roller": 3})},
-         {"text": tr_("Stop  input roller"), "action_args": ("single_move", "F", {"Output_Roller": 0})},
-         {"text": tr_("Start output roller to photocell dark"), "action_args": ("single_move", "F", {"Output_Roller": 1})},
-         {"text": tr_("Start output roller to photocell light"), "action_args": ("single_move", "F", {"Output_Roller": 2})},
-         {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},
-         {"text": tr_("move 12 00 ('deliver')"), "action_args": ("move_12_00",)}, ],
-     "labels_args": [
-         ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL", tr_("OUTPUT ROLLER PHOTOCELL")), ], },
-]
 
 ACTION_PAGE_LIST = [
     {"title": tr_("action 01 (head 1 or A)"),
@@ -241,8 +137,7 @@ ACTION_PAGE_LIST = [
          {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},
          {"text": tr_("move 12 00 ('deliver')"), "action_args": ("move_12_00",)}, ],
      "labels_args": [
-         ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL", tr_("OUTPUT ROLLER PHOTOCELL")), ], },
-]
+         ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL", tr_("OUTPUT ROLLER PHOTOCELL")), ], }, ]
 
 
 class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
@@ -535,6 +430,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.edit_dialog.show_dialog(order_nr)
         self.toggle_keyboard(on_off=True)
 
+        logging.warning(str(order_nr))
+
     def open_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
 
         self.input_dialog.show_dialog(
@@ -544,9 +441,28 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             ok_cb=ok_cb,
             ok_cb_args=ok_cb_args)
 
+        logging.warning(str(message))
+
     def open_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
 
         _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=args)
+
+        logging.warning(msg)
+
+        session = QApplication.instance().db_session
+        if session:
+            try:
+                e = Event(name='UI_DIALOG',
+                          level=f"{title}",
+                          severity='',
+                          source="MainWindow.open_alert_dialog",
+                          description=f"{msg}")
+
+                session.add(e)
+                session.commit()
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+                session.rollback()
 
     def open_frozen_dialog(self, msg, title="ALERT"):
 

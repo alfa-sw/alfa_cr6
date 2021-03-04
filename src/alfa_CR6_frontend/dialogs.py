@@ -101,8 +101,6 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
             self.buttonClicked.connect(on_button_clicked)
 
-        logging.error(msg)
-
         t = time.asctime()
         msg = "[{}]\n\n{}\n\n".format(t, msg)
 
@@ -304,17 +302,13 @@ class EditDialog(BaseDialog):
 
     def __on_formula_table_itemSelectionChanged(self):
 
-        logging.warning("")
-
         try:
+
             sel_items = self.formula_table.selectedItems()
             if sel_items:
                 sel_item = sel_items[0]
                 row = sel_item.row()
                 values_ = [self.formula_table.item(row, col).data(Qt.DisplayRole) for col in range(3)]
-
-                logging.warning(f"row:{row}, values_:{values_}")
-
                 self.pigment_combo.setCurrentText(str(values_[1]))
                 self.quantity_line_edit.setText(str(values_[2]))
 
