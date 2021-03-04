@@ -435,12 +435,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.update_jar_properties(jar)
 
             json_properties = json.loads(jar.json_properties)
-            total_volume = json_properties["total_volume"]
+            remaining_volume = json_properties["remaining_volume"]
 
-            if jar_volume < total_volume:
+            if jar_volume < remaining_volume:
                 jar = None
                 msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, total_volume)
+                msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, remaining_volume)
                 self.main_window.open_alert_dialog(msg_, title="ERROR")
                 logging.error(msg_)
         else:
@@ -640,13 +640,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         name=e,
                         level="ERROR",
                         severity="",
-                        source="crX_Application",
+                        source="BaseApplication.handle_exception",
                         description=descr)
                     a.db_session.add(evnt)
                     a.db_session.commit()
                 except BaseException:  # pylint: disable=broad-except
-                    a.db_session.rollback()
                     logging.error(traceback.format_exc())
+                    a.db_session.rollback()
 
     def toggle_freeze_carousel(self):
 
@@ -731,7 +731,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         ingredient_volume_map = {}
         insufficient_pigments = {}
         unknown_pigments = {}
-        total_volume = 0
+        remaining_volume = 0
         for i in order_ingredients:               # pylint: disable=too-many-nested-blocks
             pigment_name = i["pigment_name"]
             dispensed_quantity_gr = dispensed_quantities_gr.get(pigment_name, 0)
@@ -758,14 +758,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             vol = _quantity_gr / specific_weight
                             vol = round(vol, 4)
                             ingredient_volume_map[pigment_name][m.name] = vol
-                            total_volume += vol
+                            remaining_volume += vol
                             requested_quantity_gr -= _quantity_gr
                             if requested_quantity_gr < EPSILON:
                                 break
 
             if ingredient_volume_map[pigment_name] and requested_quantity_gr > EPSILON:
                 # ~ the ingredient is known but not sufficiently available
-                insufficient_pigments[pigment_name] = requested_quantity_gr
+                insufficient_pigments[pigment_name] = float(i["weight(g)"]) - dispensed_quantity_gr
                 ingredient_volume_map.pop(pigment_name)
 
             if ingredient_volume_map.get(pigment_name) is not None and not ingredient_volume_map[pigment_name]:
@@ -783,7 +783,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         jar_json_properties["ingredient_volume_map"] = ingredient_volume_map
         jar_json_properties["insufficient_pigments"] = insufficient_pigments
         jar_json_properties["unknown_pigments"] = unknown_pigments
-        jar_json_properties["total_volume"] = round(total_volume, 4)
+        jar_json_properties["remaining_volume"] = round(remaining_volume, 4)
         jar.json_properties = json.dumps(jar_json_properties, indent=2)
         self.db_session.commit()
 
