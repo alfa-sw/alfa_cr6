@@ -85,22 +85,22 @@ class DebugPage:
                 ("stop_all", "send a stop-movement cmd to all heads"),
                 ("alert", "test alert box"),
                 ("", "**"),
-                (
-                    "LIFTL\nUP",
-                    "send command UP to left lifter without waiting for any condition",
-                ),
-                (
-                    "LIFTL\nDOWN",
-                    "send command DOWN to left lifter without waiting for any condition",
-                ),
-                (
-                    "LIFTR\nUP",
-                    "send command UP to right lifter without waiting for any condition",
-                ),
-                (
-                    "LIFTR\nDOWN",
-                    "send command DOWN to right lifter without waiting for any condition",
-                ),
+                # ~ (
+                    # ~ "LIFTL\nUP",
+                    # ~ "send command UP to left lifter without waiting for any condition",
+                # ~ ),
+                # ~ (
+                    # ~ "LIFTL\nDOWN",
+                    # ~ "send command DOWN to left lifter without waiting for any condition",
+                # ~ ),
+                # ~ (
+                    # ~ "LIFTR\nUP",
+                    # ~ "send command UP to right lifter without waiting for any condition",
+                # ~ ),
+                # ~ (
+                    # ~ "LIFTR\nDOWN",
+                    # ~ "send command DOWN to right lifter without waiting for any condition",
+                # ~ ),
                 ("move_12_00", "deliver jar"),
             ]
         ):
@@ -373,25 +373,25 @@ class DebugPage:
             t = self.run_test()
             asyncio.ensure_future(t)
 
-        elif "LIFTR\nUP" in cmd_txt:
+        # ~ elif "LIFTR\nUP" in cmd_txt:
 
-            t = app.single_move("D", {"Lifter": 1})
-            asyncio.ensure_future(t)
+            # ~ t = app.single_move("D", {"Lifter": 1})
+            # ~ asyncio.ensure_future(t)
 
-        elif "LIFTR\nDOWN" in cmd_txt:
+        # ~ elif "LIFTR\nDOWN" in cmd_txt:
 
-            t = app.single_move("D", {"Lifter": 2})
-            asyncio.ensure_future(t)
+            # ~ t = app.single_move("D", {"Lifter": 2})
+            # ~ asyncio.ensure_future(t)
 
-        elif "LIFTL\nUP" in cmd_txt:
+        # ~ elif "LIFTL\nUP" in cmd_txt:
 
-            t = app.single_move("F", {"Lifter": 1})
-            asyncio.ensure_future(t)
+            # ~ t = app.single_move("F", {"Lifter": 1})
+            # ~ asyncio.ensure_future(t)
 
-        elif "LIFTL\nDOWN" in cmd_txt:
+        # ~ elif "LIFTL\nDOWN" in cmd_txt:
 
-            t = app.single_move("F", {"Lifter": 2})
-            asyncio.ensure_future(t)
+            # ~ t = app.single_move("F", {"Lifter": 2})
+            # ~ asyncio.ensure_future(t)
 
         elif "refresh" in cmd_txt:
             # ~ self.update_status()
