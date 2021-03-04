@@ -48,6 +48,7 @@ class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-a
         self.green_icon = QPixmap(get_res("IMAGE", "green.png"))
         self.red_icon = QPixmap(get_res("IMAGE", "red.png"))
         self.yellow_icon = QPixmap(get_res("IMAGE", "yellow.png"))
+        self.orange_icon = QPixmap(get_res("IMAGE", "orange.png"))
         self.blue_icon = QPixmap(get_res("IMAGE", "blue.png"))
         self.add_icon = QPixmap(get_res("IMAGE", "add.png"))
         self.edit_icon = QPixmap(get_res("IMAGE", "edit.png"))
@@ -215,8 +216,8 @@ class JarTableModel(BaseTableModel):
             query_ = query_.order_by(Jar.index.desc()).limit(100)
 
             def _fmt_status(o):
-                if o.unknown_pigments:
-                    r = "{} *".format(o.status)
+                if o.unknown_pigments or o.insufficient_pigments:
+                    r = "{} !".format(o.status)
                 else:
                     r = o.status
                 return r
@@ -265,7 +266,9 @@ class JarTableModel(BaseTableModel):
 
         if role == Qt.DecorationRole and index.column() == 2:  # status
             datum = str(index.data()).upper()
-            if "DONE" in datum:
+            if "!" in datum:
+                ret = self.orange_icon.scaled(32, 32, Qt.KeepAspectRatio)
+            elif "DONE" in datum:
                 ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
             elif "ERR" in datum:
                 ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
@@ -588,17 +591,26 @@ class OrderPage(BaseStackedPage):
                 content = "{}"
                 msg_ = ""
                 jar = model.get_jar(barcode)
-                if jar and jar.unknown_pigments:
-                    msg_ = tr_("pigments to be added for barcode:\n {}").format(barcode)
-                    content = '<div style="text-align: center;">'
-                    content += ''.join([f'<div>{k}: {round(float(v), 4)} gr</div>' for k,
-                                        v in jar.unknown_pigments.items()])
-                    content += '</div>'
+                if jar:
+                    if jar.insufficient_pigments or jar.unknown_pigments:
+                        msg_ = tr_("pigments to be added for barcode:\n {}").format(barcode)
 
-                    self.main_window.open_input_dialog(
-                        icon_name="SP_MessageBoxInformation",
-                        message=msg_,
-                        content=content)
+                        content = '<div style="text-align: center;">'
+
+                        content += ''.join([f'<div>{k}: {round(float(v), 4)} gr</div>' for k,
+                                            v in jar.unknown_pigments.items()])
+
+                        content += '<hr></hr>'
+
+                        content += ''.join([f'<div>{k}: {round(float(v), 4)} gr</div>' for k,
+                                            v in jar.insufficient_pigments.items()])
+
+                        content += '</div>'
+
+                        self.main_window.open_input_dialog(
+                            icon_name="SP_MessageBoxInformation",
+                            message=msg_,
+                            content=content)
 
             elif col == 3:  # barcode
                 pass
@@ -909,7 +921,7 @@ class HomePage(BaseStackedPage):
             self.service_6_btn,
         ]
         if map_[head_index]:
-            map_[head_index].setText(f"{status.get('status_level', 'empty')}")
+            map_[head_index].setText(tr_(f"{status.get('status_level', 'NONE')}"))
 
         map_ = [
             self.container_presence_1_label,
