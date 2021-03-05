@@ -14,6 +14,7 @@ import json
 import time
 import traceback
 import codecs
+import subprocess
 from functools import partial
 
 from PyQt5.uic import loadUi
@@ -268,7 +269,7 @@ class JarTableModel(BaseTableModel):
             # ~ datum = index.data()
             datum = self.results[index.row()][index.column()]
 
-            logging.warning(f"datum:{datum}")
+            logging.debug(f"datum:{datum}")
 
             if "!" in datum[1]:
                 ret = self.orange_icon.scaled(32, 32, Qt.KeepAspectRatio)
@@ -447,6 +448,8 @@ class OrderPage(BaseStackedPage):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
+        
+        self.setStyleSheet("font-size: 22px;")
 
         self.jar_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.order_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -648,17 +651,32 @@ class OrderPage(BaseStackedPage):
                     ok_cb=cb)
 
             elif col == 1:  # view
+
                 content = "{}"
-                pth_ = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
-                e = get_encoding(pth_, key=None)
-                with codecs.open(pth_, encoding=e) as f:
-                    content = f.read(100 * 1000)
-                    split_ext = os.path.splitext(pth_)
-                    if split_ext[1:] and split_ext[1] == '.json':
-                        try:
-                            content = json.dumps(json.loads(content), indent=2)
-                        except Exception:  # pylint: disable=broad-except
-                            logging.error(traceback.format_exc())
+                split_ext = os.path.splitext(file_name)
+                if split_ext[1:] and split_ext[1] == '.pdf':
+                    pth_ = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
+                    out_pth_ = f'{pth_}.txt'.replace(" ", "_")
+                    cmd_ = 'pdftotext -raw "{}" "{}"'.format(pth_, out_pth_)
+                    logging.warning(f"cmd_:{cmd_}")
+                    # ~ process = await asyncio.create_subprocess_exec(
+                        # ~ cmd_, stdout=asyncio.subprocess.PIPE, limit=10000)
+                    os.system(cmd_)
+                    # ~ stdout, stderr = await process.communicate()
+                    with open(out_pth_) as f:
+                        content = f.read().strip()
+                    subprocess.run(["rm", "-f", out_pth_])
+                else:
+                    pth_ = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
+                    e = get_encoding(pth_, key=None)
+                    with codecs.open(pth_, encoding=e) as f:
+                        content = f.read(100 * 1000)
+                        split_ext = os.path.splitext(pth_)
+                        if split_ext[1:] and split_ext[1] == '.json':
+                            try:
+                                content = json.dumps(json.loads(content), indent=2)
+                            except Exception:  # pylint: disable=broad-except
+                                logging.error(traceback.format_exc())
 
                 self.main_window.open_input_dialog(
                     icon_name="SP_MessageBoxInformation",
@@ -686,10 +704,11 @@ class OrderPage(BaseStackedPage):
 
         try:
             new_order = QApplication.instance().create_order()
-            msg = tr_("created order:{}.").format(new_order.order_nr)
-            self.main_window.open_alert_dialog(msg, title="INFO")
-            self.populate_order_table()
-            self.populate_jar_table()
+            if new_order:
+                msg = tr_("created order:{}.").format(new_order.order_nr)
+                self.main_window.open_alert_dialog(msg, title="INFO")
+                self.populate_order_table()
+                self.populate_jar_table()
 
             # ~ s = self.order_table_view.model().index(row, 0)
             # ~ e = self.order_table_view.model().index(row, 3)
@@ -733,19 +752,22 @@ class OrderPage(BaseStackedPage):
             os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name),
             json_schema_name="KCC",
             n_of_jars=n)
-        args_to_print = sorted([[str(j.barcode), ] + j.extra_lines_to_print for j in order.jars])
-        logging.warning(f"file_name:{file_name}, args_to_print:{args_to_print}")
 
-        def cb_():
-            for a in args_to_print:
-                logging.warning(f"a:{a}")
-                response = dymo_print(*a)
-                logging.warning(f"response:{response}")
-                time.sleep(.05)
+        if order:
 
-        msg_ = tr_("confirm printing {} barcodes?").format(len(args_to_print))
-        self.main_window.open_input_dialog(message=msg_, content="{}".format(
-            [l[0] for l in args_to_print]), ok_cb=cb_)
+            args_to_print = sorted([[str(j.barcode), ] + j.extra_lines_to_print for j in order.jars])
+            logging.warning(f"file_name:{file_name}, args_to_print:{args_to_print}")
+
+            def cb_():
+                for a in args_to_print:
+                    logging.warning(f"a:{a}")
+                    response = dymo_print(*a)
+                    logging.warning(f"response:{response}")
+                    time.sleep(.05)
+
+            msg_ = tr_("confirm printing {} barcodes?").format(len(args_to_print))
+            self.main_window.open_input_dialog(message=msg_, content="{}".format(
+                [l[0] for l in args_to_print]), ok_cb=cb_)
 
         model.remove_file(file_name)
         self.populate_file_table()

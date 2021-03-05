@@ -13,6 +13,7 @@ import traceback
 import asyncio
 import json
 import codecs
+import subprocess
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
@@ -29,8 +30,75 @@ from alfa_CR6_backend.globals import (
 
 from alfa_CR6_backend.machine_head import MachineHead
 
+def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals
+    
+    header_id = "KCC Color Navi Formulation"
 
-def parse_dat_order(path_to_dat_file):# pylint: disable=too-many-locals
+    path_to_txt_file = "{0}.txt".format(path_to_pdf_file)
+
+    cmd_ = ["pdftotext", path_to_pdf_file, path_to_txt_file]
+    subprocess.run(cmd_, check=False)
+    e = get_encoding(path_to_txt_file)
+
+    section_separator = "__________________________"
+    try:
+
+        with codecs.open(path_to_txt_file, encoding=e) as fd:
+            lines = [l.strip() for l in fd.readlines()]
+
+        assert header_id in lines[0], Exception(tr_("format error, missing header:'{}'").format(header_id))
+
+        section = 0
+        section_cntr = 0
+        meta = {}
+        ingredients = []
+        extra_info = []
+        for i, l in enumerate(lines):
+            if not l:
+                continue
+            try:
+                if section_separator in l:
+                    section += 1
+                    section_cntr = 0
+                else:
+                    if section == 0:
+                        toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                        if len(toks) == 2:
+                            meta[toks[0]] = toks[1]
+                    elif section == 1:
+                        if section_cntr % 2 == 0:
+                            toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                            description = toks[0]
+                            name = toks[1]
+                        else:
+                            value = round(float(l.split('(G)')[0]), 4)
+                            new_item = {}
+                            new_item["pigment_name"] = name
+                            new_item["weight(g)"] = value
+                            new_item["description"] = description
+                            ingredients.append(new_item)
+                    elif section == 2:
+                        extra_info.append(l)
+                    section_cntr += 1
+            except Exception:              # pylint: disable=broad-except
+                logging.error(f"fmt error in file:{path_to_txt_file} : line:{i}")
+                logging.error(traceback.format_exc())
+
+        meta["file name"] = os.path.split(path_to_pdf_file)[1]
+        meta["extra_info"] = "\n".join(extra_info)
+        properties = {
+            "meta": meta,
+            "ingredients": ingredients,
+        }
+    finally:
+
+        cmd_ = ["rm", "-f", path_to_txt_file]
+        subprocess.run(cmd_, check=False)
+
+    return properties
+
+
+def parse_sw_dat_order(path_to_dat_file):# pylint: disable=too-many-locals
 
     def __find_items_in_line(items, l):
         return not [i for i in items if i not in l]
@@ -100,7 +168,7 @@ def parse_dat_order(path_to_dat_file):# pylint: disable=too-many-locals
     return properties
 
 
-def parse_json_order(path_to_json_file, json_schema_name):
+def parse_sw_json_order(path_to_json_file, json_schema_name):
 
     properties = {}
     if json_schema_name == "KCC":
@@ -580,10 +648,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     split_ext = os.path.splitext(path_to_file)
                     if split_ext[1:] and split_ext[1] == '.json':
                         fname = os.path.split(path_to_file)[1]
-                        properties = parse_json_order(path_to_file, json_schema_name)
+                        properties = parse_sw_json_order(path_to_file, json_schema_name)
+                    elif split_ext[1:] and split_ext[1] == '.pdf':
+                        fname = os.path.split(path_to_file)[1]
+                        properties = parse_kcc_pdf_order(path_to_file)
                     elif split_ext[1:] and split_ext[1] == '.dat':
                         fname = os.path.split(path_to_file)[1]
-                        properties = parse_dat_order(path_to_file)
+                        properties = parse_sw_dat_order(path_to_file)
                     else:
                         raise Exception(f"unknown file extension. split_ext:{split_ext}")
 
@@ -600,10 +671,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.db_session.add(jar)
                 self.db_session.commit()
 
-            except BaseException:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
+            except Exception as e:  # pylint: disable=broad-except
                 order = None
                 self.db_session.rollback()
+                self.handle_exception(e)
 
         return order
 
