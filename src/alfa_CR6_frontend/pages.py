@@ -898,7 +898,7 @@ class HomePage(BaseStackedPage):
 
             map_ = dict(zip(service_btns, service_page_urls))
 
-            logging.warning(f"btn_name:{btn_name}, map_[btn]:{map_[btn]}, map_:{map_}")
+            logging.debug(f"btn_name:{btn_name}, map_[btn]:{map_[btn]}, map_:{map_}")
 
             self.main_window.webengine_page.open_page(map_[btn])
 

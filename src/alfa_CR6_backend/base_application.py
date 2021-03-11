@@ -16,6 +16,11 @@ import codecs
 import subprocess
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
+
+import websockets      # pylint: disable=import-error
+
+from flask import Markup # pylint: disable=import-error
+
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
@@ -30,8 +35,9 @@ from alfa_CR6_backend.globals import (
 
 from alfa_CR6_backend.machine_head import MachineHead
 
-def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals
-    
+
+def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
     header_id = "KCC Color Navi Formulation"
 
     path_to_txt_file = "{0}.txt".format(path_to_pdf_file)
@@ -41,7 +47,7 @@ def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals
     e = get_encoding(path_to_txt_file)
 
     section_separator = "__________________________"
-    try:
+    try:                        # pylint: disable=too-many-nested-blocks
 
         with codecs.open(path_to_txt_file, encoding=e) as fd:
             lines = [l.strip() for l in fd.readlines()]
@@ -98,7 +104,7 @@ def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals
     return properties
 
 
-def parse_sw_dat_order(path_to_dat_file):# pylint: disable=too-many-locals
+def parse_sw_dat_order(path_to_dat_file):  # pylint: disable=too-many-locals
 
     def __find_items_in_line(items, l):
         return not [i for i in items if i not in l]
@@ -268,6 +274,87 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
             app.handle_exception(e)
 
 
+class WsServer:   # pylint: disable=too-many-instance-attributes
+
+    def __init__(self, ws_host, ws_port):
+
+        self.ws_host = ws_host
+        self.ws_port = ws_port
+        asyncio.ensure_future(websockets.serve(self.new_client_handler, self.ws_host, self.ws_port))
+
+        self.ws_clients = []
+
+    def _format_to_html(self, type_, msg):
+
+        html_ = ""
+        html_ += '<div>'
+
+        if "device:machine:status" in type_:
+            for k, v in msg.items():
+                if k in ('status_level',
+                            'cycle_step',
+                            'error_code',
+                            'error_code',
+                            'current_temperature',
+                            'circuit_engaged',
+                            'container_presence',
+                            'error_message',
+                            'timestamp',
+                            'message_id',
+                            'last_update',
+                        ):
+                    html_ += "{}: {}<br/>".format(k, v)
+                elif  k in ('photocells_status',
+                            'jar_photocells_status',
+                            'crx_outputs_status',
+                        ):
+                    html_ += "{}: 0x{:02X}<br/>".format(k, int(v))
+                else:
+                    continue
+        elif type_ == "live_can_list":
+            for i in msg:
+                # ~ html_ += "<tr><td>{}</td></tr>".format(i)
+                html_ += "{}<br/>".format(i)
+
+        # ~ html_ += "</table>"
+        html_ += "</div>"
+
+        return Markup(html_)
+
+    async def broadcast_msg(self, type_, msg):
+
+        message = json.dumps({
+            'type': type_, 
+            'value': self._format_to_html(type_, msg),
+            'server_time': time.asctime(),
+        })
+        # ~ logging.warning("message:{}.".format(message))
+
+        for client in self.ws_clients:
+            await client.send(message)
+
+        return True
+
+    async def new_client_handler(self, websocket, path):
+        try:
+            logging.warning("appending websocket:{}, path:{}.".format(websocket, path))
+            self.ws_clients.append(websocket)
+            async for message in websocket:  # start listening for messages from ws client
+                await self.__handle_client_msg(websocket, message)
+        except BaseException:
+            logging.error(traceback.format_exc())
+        finally:
+            logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
+            self.ws_clients.remove(websocket)
+
+    async def __handle_client_msg(self, websocket, msg):
+        logging.warning("websocket:{}, msg:{}.".format(websocket, msg))
+        try:
+            msg_dict = json.loads(msg)  # TODO: implement message handler
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
+
 class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
 
     MACHINE_HEAD_INDEX_TO_NAME_MAP = {
@@ -297,6 +384,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__inner_loop_task_step = 0.02  # secs
 
         self.machine_head_dict = {}
+        self.ws_server = None
 
         self.__version = None
         # ~ self.__barcode_device = None
@@ -324,6 +412,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__tasks = [self.__create_inner_loop_task()]
 
         t = self.__create_barcode_task()
+        self.__tasks.append(t)
+
+        t = self.__create_ws_server_task('0.0.0.0', 13000)
         self.__tasks.append(t)
 
         for head_index, item in enumerate(self.settings.MACHINE_HEAD_IPADD_PORTS_LIST):
@@ -390,6 +481,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.machine_head_dict[head_index] = m
         await m.run()
         logging.warning(f" *** terminating machine: {m} *** ")
+
+    async def __create_ws_server_task(self, ws_server_addr, ws_server_port):
+
+        self.ws_server = WsServer(ws_server_addr, ws_server_port)
 
     async def __jar_task(self, barcode):  # pylint: disable=too-many-statements
 
@@ -571,14 +666,18 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if msg_dict.get("type") == "device:machine:status":
             status = msg_dict.get("value")
-            status = dict(status)
-            self.main_window.update_status_data(head_index, status)
+            if status is not None:
+                status = dict(status)
+                self.main_window.update_status_data(head_index, status)
 
-            if head_index == 0:
-                if status.get('status_level') == 'ALARM' and status.get('error_code') == 10:
-                    for m in self.machine_head_dict.values():
-                        if m and m.index != 0:
-                            await m.send_command(cmd_name="ABORT", params={})
+                ret = await self.ws_server.broadcast_msg(f'{msg_dict["type"]}_{head_index}', msg_dict["value"])
+                logging.debug("ret:{}".format(ret))
+
+                if head_index == 0:
+                    if status.get('status_level') == 'ALARM' and status.get('error_code') == 10:
+                        for m in self.machine_head_dict.values():
+                            if m and m.index != 0:
+                                await m.send_command(cmd_name="ABORT", params={})
 
         elif msg_dict.get("type") == "answer":
             answer = msg_dict.get("value")
@@ -861,7 +960,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def update_jar_position(self, jar, machine_head=None, status=None, pos=None):
 
         if jar is not None:
-
             for m in self.machine_head_dict.values():
                 if m:
                     if m == machine_head:
@@ -883,6 +981,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
+
+            self.main_window.home_page.update_jar_pixmaps()
+
+            live_can_list = [f"{k} ({j['jar'].position[0]}) {j['jar'].status}"
+                             for k, j in self.get_jar_runners().items() if j['jar'].position]
+            t = self.ws_server.broadcast_msg("live_can_list", live_can_list)
+            asyncio.ensure_future(t)
 
     def get_machine_head_by_letter(self, letter):  # pylint: disable=inconsistent-return-statements
 

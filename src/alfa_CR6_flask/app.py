@@ -8,8 +8,10 @@
 
 import sys
 import logging
+import json
+import datetime
 
-from flask import Markup, Flask          # pylint: disable=import-error
+from flask import Markup, Flask, request  # pylint: disable=import-error
 
 import flask_sqlalchemy          # pylint: disable=import-error
 import flask_admin               # pylint: disable=import-error
@@ -47,21 +49,71 @@ def init_admin(app, db):
             links = []
             for i, item in enumerate(settings.MACHINE_HEAD_IPADD_PORTS_LIST):
                 if item:
-                    ip, pw, ph = item
+                    ip, _, ph = item
                     l = Markup('<a href="http://{}:{}/admin" > HEAD {} admin </a>'.format(ip, ph, i))
                     links.append(l)
-            
-            ctx = {'links': links}
+
+            ctx = {
+                'links': links,
+                'ws_ip_addr_and_port': "{}:{}".format(request.host.split(':')[0], 13000)
+            }
 
             return self.render(template, **ctx)
 
-    class EventModelView(flask_admin.contrib.sqla.ModelView):
+    class CRXModelView(flask_admin.contrib.sqla.ModelView):
+
+        column_default_sort = ('date_created', True)
+
+        can_export = True
+        export_max_rows = 10000
+        export_types = ['csv', 'xls', 'json']
+
+        named_filter_urls = True
+        can_view_details = True
+        export_limit = 10 * 1000
+
+        def display_time_to_local_tz(self, context, obj, name):   # pylint: disable=unused-argument,no-self-use
+
+            value = getattr(obj, name)
+            value = value.replace(tzinfo=datetime.timezone.utc).astimezone().strftime("%d %b %Y (%I:%M:%S:%f %p) %Z")
+            return Markup(value)
+
+        def display_json_properties(self, context, obj, name):  # pylint: disable=unused-argument,no-self-use
+
+            json_properties = json.loads(obj.json_properties)
+            # ~ html_ = "<table>"
+            # ~ for k, v in json_properties.items():
+                # ~ html_ += "<tr><td>{}:{}</td></tr>".format(k, v)
+            # ~ html_ += "</table>"
+            html_ = "<div>"
+            for k, v in json_properties.items():
+                html_ += "<div><b>{}</b>:{}</div>".format(k, v)
+            html_ += "</div>"
+            
+            return Markup(html_)
+
+        column_formatters = {
+            'json_properties': display_json_properties,
+            'date_created': display_time_to_local_tz,
+            'date_modified': display_time_to_local_tz, }
+
+        column_filters = (
+            'description',
+            'date_created',
+            'description',)
+
+        column_searchable_list = (
+            'description',
+            'json_properties',
+            'description',)
+
+    class EventModelView(CRXModelView):
         pass
 
-    class JarModelView(flask_admin.contrib.sqla.ModelView):
+    class JarModelView(CRXModelView):
         pass
 
-    class OrderModelView(flask_admin.contrib.sqla.ModelView):
+    class OrderModelView(CRXModelView):
         pass
 
     index_view_ = CR6xAdminResources(url='/')    # pylint: disable=undefined-variable

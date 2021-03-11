@@ -419,7 +419,7 @@ class DebugPage:
 
         elif "read\nbarcode" in cmd_txt:
             status = app.machine_head_dict[0].status.copy()
-            status["jar_photocells_status"] = status["jar_photocells_status"] | 0x01
+            status["jar_photocells_status"] = status.get("jar_photocells_status", 0) | 0x01
 
             async def coro():
                 await app.machine_head_dict[0].update_status(status)
