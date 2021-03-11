@@ -283,6 +283,8 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         asyncio.ensure_future(websockets.serve(self.new_client_handler, self.ws_host, self.ws_port))
 
         self.ws_clients = []
+        
+        self.__version__ = get_version()
 
     def _format_to_html(self, type_, msg):
 
@@ -326,7 +328,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         message = json.dumps({
             'type': type_, 
             'value': self._format_to_html(type_, msg),
-            'server_time': time.asctime(),
+            'server_time': "{} - ver.:{}".format(time.asctime(), self.__version__),
         })
         # ~ logging.warning("message:{}.".format(message))
 
