@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import websockets      # pylint: disable=import-error
 
-from flask import Markup # pylint: disable=import-error
+from flask import Markup  # pylint: disable=import-error
 
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
@@ -283,7 +283,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         asyncio.ensure_future(websockets.serve(self.new_client_handler, self.ws_host, self.ws_port))
 
         self.ws_clients = []
-        
+
         self.__version__ = get_version()
 
     def _format_to_html(self, type_, msg):
@@ -291,29 +291,37 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         html_ = ""
         html_ += '<div>'
 
+        logging.debug(f" type_:{type_}")
+        logging.debug(f" msg:{msg}")
+
         if "device:machine:status" in type_:
-            for k, v in msg.items():
+            if isinstance(msg, dict):
+                status_list = [(k, v) for k, v in msg.items()]
+            elif isinstance(msg, list):
+                status_list = msg
+
+            for k, v in status_list:
                 if k in ('status_level',
-                            'cycle_step',
-                            'error_code',
-                            'error_code',
-                            'current_temperature',
-                            'circuit_engaged',
-                            'container_presence',
-                            'error_message',
-                            'timestamp',
-                            'message_id',
-                            'last_update',
-                        ):
+                         'cycle_step',
+                         'error_code',
+                         'error_code',
+                         'current_temperature',
+                         'circuit_engaged',
+                         'container_presence',
+                         'error_message',
+                         'timestamp',
+                         'message_id',
+                         'last_update',
+                         ):
                     html_ += "{}: {}<br/>".format(k, v)
-                elif  k in ('photocells_status',
-                            'jar_photocells_status',
-                            'crx_outputs_status',
-                        ):
+                elif k in ('photocells_status',
+                           'jar_photocells_status',
+                           'crx_outputs_status',
+                           ):
                     html_ += "{}: 0x{:02X}<br/>".format(k, int(v))
                 else:
                     continue
-        elif type_ == "live_can_list":
+        elif type_ == "live_can_list" and isinstance(msg, list):
             for i in msg:
                 # ~ html_ += "<tr><td>{}</td></tr>".format(i)
                 html_ += "{}<br/>".format(i)
@@ -325,15 +333,17 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
     async def broadcast_msg(self, type_, msg):
 
-        message = json.dumps({
-            'type': type_, 
-            'value': self._format_to_html(type_, msg),
-            'server_time': "{} - ver.:{}".format(time.asctime(), self.__version__),
-        })
-        # ~ logging.warning("message:{}.".format(message))
+        if self.ws_clients:
 
-        for client in self.ws_clients:
-            await client.send(message)
+            message = json.dumps({
+                'type': type_,
+                'value': self._format_to_html(type_, msg),
+                'server_time': "{} - ver.:{}".format(time.asctime(), self.__version__),
+            })
+            # ~ logging.warning("message:{}.".format(message))
+
+            for client in self.ws_clients:
+                await client.send(message)
 
         return True
 
@@ -343,7 +353,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
             self.ws_clients.append(websocket)
             async for message in websocket:  # start listening for messages from ws client
                 await self.__handle_client_msg(websocket, message)
-        except BaseException:
+        except BaseException: # pylint: disable=broad-except
             logging.error(traceback.format_exc())
         finally:
             logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
@@ -666,7 +676,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def on_head_msg_received(self, head_index, msg_dict):
 
-        if msg_dict.get("type") == "device:machine:status":
+        if msg_dict.get("type") == "device:machine:status":           # pylint: disable=too-many-nested-blocks
             status = msg_dict.get("value")
             if status is not None:
                 status = dict(status)
