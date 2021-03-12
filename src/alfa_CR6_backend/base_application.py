@@ -291,16 +291,17 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         html_ = ""
         html_ += '<div>'
 
-        logging.debug(f" type_:{type_}")
+        logging.debug(f"self:{self} type_:{type_}")
         logging.debug(f" msg:{msg}")
 
         if "device:machine:status" in type_:
             if isinstance(msg, dict):
-                status_list = [(k, v) for k, v in msg.items()]
+                status_list = list(msg.items())
             elif isinstance(msg, list):
                 status_list = msg
 
             for k, v in status_list:
+
                 if k in ('status_level',
                          'cycle_step',
                          'error_code',
@@ -311,14 +312,17 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                          'error_message',
                          'timestamp',
                          'message_id',
-                         'last_update',
-                         ):
-                    html_ += "{}: {}<br/>".format(k, v)
+                         'last_update'):
+                    html_ += "<b>{}</b>: {}<br/>".format(k, v)
+
                 elif k in ('photocells_status',
                            'jar_photocells_status',
-                           'crx_outputs_status',
-                           ):
-                    html_ += "{}: 0x{:02X}<br/>".format(k, int(v))
+                           'crx_outputs_status'):
+
+                    val_ = int(v)
+                    html_ += "<b>{}</b>: {:04b} {:04b} {:04b} | 0x{:04X}<br/>".format(
+                        k, 0xF & (val_ >> 8), 0xF & (val_ >> 4), 0xF & (val_ >> 0), val_)
+
                 else:
                     continue
         elif type_ == "live_can_list" and isinstance(msg, list):
@@ -334,11 +338,12 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
     async def broadcast_msg(self, type_, msg):
 
         if self.ws_clients:
-
             message = json.dumps({
                 'type': type_,
                 'value': self._format_to_html(type_, msg),
-                'server_time': "{} - ver.:{}".format(time.asctime(), self.__version__),
+                'server_time': "{} - ver.:{} - paused: {}.".format(
+                    time.strftime("%Y-%m-%d %H:%M:%S (%Z)"),
+                    self.__version__, QApplication.instance().carousel_frozen),
             })
             # ~ logging.warning("message:{}.".format(message))
 
@@ -347,13 +352,35 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
         return True
 
+    async def __refresh_client_info(self):
+
+        try:
+
+            for m in QApplication.instance().machine_head_dict.values():
+                if m:
+                    await self.broadcast_msg(f'device:machine:status_{m.index}', dict(m.status))
+
+            live_can_list = [
+                f"{k} ({j['jar'].position[0]}) {j['jar'].status}" for k, j in
+                QApplication.instance().get_jar_runners().items() if
+                j and j.get('jar') and j['jar'].position]
+
+            await self.broadcast_msg("live_can_list", live_can_list)
+
+        except BaseException:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
     async def new_client_handler(self, websocket, path):
         try:
             logging.warning("appending websocket:{}, path:{}.".format(websocket, path))
             self.ws_clients.append(websocket)
+
+            await self.__refresh_client_info()
+
             async for message in websocket:  # start listening for messages from ws client
                 await self.__handle_client_msg(websocket, message)
-        except BaseException: # pylint: disable=broad-except
+
+        except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
         finally:
             logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
@@ -363,6 +390,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         logging.warning("websocket:{}, msg:{}.".format(websocket, msg))
         try:
             msg_dict = json.loads(msg)  # TODO: implement message handler
+            logging.debug(f"msg_dict:{msg_dict}")
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
@@ -488,8 +516,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             ip_add,
             ws_port,
             http_port,
-            msg_handler=self.on_head_msg_received,
-        )
+            msg_handler=self.on_head_msg_received)
+
         self.machine_head_dict[head_index] = m
         await m.run()
         logging.warning(f" *** terminating machine: {m} *** ")
@@ -848,14 +876,21 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if self.main_window.debug_page:
             self.main_window.debug_page.update_status()
 
+        t = self.ws_server.broadcast_msg("", None)
+        asyncio.ensure_future(t)
+
     async def stop_all(self):
 
-        await self.get_machine_head_by_letter("A").can_movement()
-        await self.get_machine_head_by_letter("B").can_movement()
-        await self.get_machine_head_by_letter("C").can_movement()
-        await self.get_machine_head_by_letter("D").can_movement()
-        await self.get_machine_head_by_letter("E").can_movement()
-        await self.get_machine_head_by_letter("F").can_movement()
+        for m in self.machine_head_dict.values():
+            if m:
+                await m.can_movement()
+
+        # ~ await self.get_machine_head_by_letter("A").can_movement()
+        # ~ await self.get_machine_head_by_letter("B").can_movement()
+        # ~ await self.get_machine_head_by_letter("C").can_movement()
+        # ~ await self.get_machine_head_by_letter("D").can_movement()
+        # ~ await self.get_machine_head_by_letter("E").can_movement()
+        # ~ await self.get_machine_head_by_letter("F").can_movement()
 
     def ask_for_refill(self, head_index):
 

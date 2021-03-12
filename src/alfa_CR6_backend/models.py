@@ -86,8 +86,9 @@ def generate_order_nr():
 class BaseModel:  # pylint: disable=too-few-public-methods
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
-    date_created = Column(DateTime, default=datetime.now)
-    date_modified = Column(DateTime, default=datetime.now)
+    date_created = Column(DateTime, default=datetime.utcnow)
+    date_modified = Column(DateTime, default=datetime.utcnow)
+
     json_properties = Column(Unicode, default="{}")
     description = Column(Unicode(200))
 

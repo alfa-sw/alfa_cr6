@@ -6,6 +6,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=broad-except
 
+import os
 import sys
 import logging
 import json
@@ -38,7 +39,7 @@ def init_admin(app, db):
 
     settings = import_settings()
 
-    class CR6xAdminResources(flask_admin.AdminIndexView):
+    class CRX_AdminResources(flask_admin.AdminIndexView):
 
         @flask_admin.expose("/")
         @flask_admin.expose("/home")
@@ -60,7 +61,7 @@ def init_admin(app, db):
 
             return self.render(template, **ctx)
 
-    class CRXModelView(flask_admin.contrib.sqla.ModelView):
+    class CRX_ModelView(flask_admin.contrib.sqla.ModelView):
 
         column_default_sort = ('date_created', True)
 
@@ -75,21 +76,19 @@ def init_admin(app, db):
         def display_time_to_local_tz(self, context, obj, name):   # pylint: disable=unused-argument,no-self-use
 
             value = getattr(obj, name)
-            value = value.replace(tzinfo=datetime.timezone.utc).astimezone().strftime("%d %b %Y (%I:%M:%S:%f %p) %Z")
-            return Markup(value)
+            # ~ value_ = value.replace(tzinfo=datetime.timezone.utc).strftime("%Y-%m-%d %I:%M:%S:%f (%Z)")
+            value_local = value.replace(tzinfo=datetime.timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S:%f (%Z)")
+            return Markup(value_local)
 
         def display_json_properties(self, context, obj, name):  # pylint: disable=unused-argument,no-self-use
 
             json_properties = json.loads(obj.json_properties)
-            # ~ html_ = "<table>"
-            # ~ for k, v in json_properties.items():
-                # ~ html_ += "<tr><td>{}:{}</td></tr>".format(k, v)
-            # ~ html_ += "</table>"
+
             html_ = "<div>"
             for k, v in json_properties.items():
                 html_ += "<div><b>{}</b>:{}</div>".format(k, v)
             html_ += "</div>"
-            
+
             return Markup(html_)
 
         column_formatters = {
@@ -98,25 +97,52 @@ def init_admin(app, db):
             'date_modified': display_time_to_local_tz, }
 
         column_filters = (
-            'description',
             'date_created',
             'description',)
 
         column_searchable_list = (
-            'description',
             'json_properties',
             'description',)
 
-    class EventModelView(CRXModelView):
-        pass
+    class EventModelView(CRX_ModelView):
+        column_filters = (
+            'name',
+            'level',
+            'severity',
+            'source',
+            'date_created',
+            'description',)
 
-    class JarModelView(CRXModelView):
-        pass
+        column_searchable_list = (
+            'name',
+            'level',
+            'date_created',
+            'description',)
 
-    class OrderModelView(CRXModelView):
-        pass
+    class JarModelView(CRX_ModelView):
+        column_filters = (
+            'status',
+            'order.order_nr',
+            'date_created',
+            'description',)
 
-    index_view_ = CR6xAdminResources(url='/')    # pylint: disable=undefined-variable
+        column_searchable_list = (
+            'status',
+            'date_created',
+            'description',)
+
+    class OrderModelView(CRX_ModelView):
+        column_filters = (
+            'order_nr',
+            'date_created',
+            'description',)
+
+        column_searchable_list = (
+            'order_nr',
+            'date_created',
+            'description',)
+
+    index_view_ = CRX_AdminResources(url='/')    # pylint: disable=undefined-variable
     admin_ = flask_admin.base.Admin(app, name=_gettext('Alfa_CRX'), template_mode='bootstrap3', index_view=index_view_)
 
     admin_.add_view(JarModelView(Jar, db.session))               # pylint: disable=undefined-variable
@@ -137,6 +163,7 @@ def main():
     logging.warning(f'sqlalchemy_database_uri_ :{sqlalchemy_database_uri_ }')
     # ~ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + '/opt/alfa_cr6/data/CRx_v0_SW.sqlite'
     app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_database_uri_
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or '123456790'
 
     db = init_db(app)
     init_admin(app, db)
