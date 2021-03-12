@@ -51,11 +51,13 @@ def parse_arguments():
 
 
 def exec_(cmd_, dry):
+
     logging.info(f"dry:{dry} cmd_:{cmd_}")
     if not dry:
         ret_val = os.system(cmd_ + f"  >>{OUT_ERR_PTH} 2>&1 ")
         logging.info(f"ret_val:{ret_val}")
 
+    return ret_val 
 
 def build(args):
 
@@ -115,7 +117,9 @@ def install_target(args):
     ]
 
     for cmd_ in cmds:
-        exec_(cmd_, dry=args.dry_run)
+        r = exec_(cmd_, dry=args.dry_run)
+        if r:
+            break
         time.sleep(.1)
 
 def install_editable(args):
