@@ -32,15 +32,17 @@ def main():
         packages=find_packages(where='src'),
         package_dir={'': 'src'},
         data_files=[
-            ('alfa_CR6_ui/help', list(glob.glob('src/alfa_CR6_ui/help/*'))),
-            ('alfa_CR6_ui/images', list(glob.glob('src/alfa_CR6_ui/images/*'))),
-            ('alfa_CR6_ui/keyboard', list(glob.glob('src/alfa_CR6_ui/keyboard/*'))),
-            ('alfa_CR6_ui/ui', list(glob.glob('src/alfa_CR6_ui/ui/*'))),
+            ('alfa_CR6_flask/templates', list(glob.glob('src/alfa_CR6_flask/templates/*'))),
+            ('alfa_CR6_frontend/help', list(glob.glob('src/alfa_CR6_frontend/help/*'))),
+            ('alfa_CR6_frontend/images', list(glob.glob('src/alfa_CR6_frontend/images/*'))),
+            ('alfa_CR6_frontend/keyboard', list(glob.glob('src/alfa_CR6_frontend/keyboard/*'))),
+            ('alfa_CR6_frontend/ui', list(glob.glob('src/alfa_CR6_frontend/ui/*'))),
             ('alfa_CR6_test/fixtures', list(glob.glob('src/alfa_CR6_test/fixtures/*'))),
         ],
         include_package_data=True,
         scripts=[
             'bin/alfa_CR6',
+            'bin/alfa_CR6_flask',
             'bin/alfa_CR6_test',
         ],
         install_requires=[
@@ -50,6 +52,10 @@ def main():
             'python-barcode',
             'Pillow',
             'aiohttp',
+            'flask',
+            'flask_sqlalchemy',
+            'flask_admin',
+            'waitress',
         ],
     )
 

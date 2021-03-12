@@ -98,6 +98,7 @@ DISPENSING_POSITION_MASK = 0x0100
 
 
 class MachineHeadMockup:
+
     def __init__(self, index):
 
         self.index = index
@@ -143,6 +144,7 @@ class MachineHeadMockup:
             "mixer_door_status": True,
             "slave_enable_mask": [1, 11, 18, 19, 24, 25, 26, 27, 28, 29],
             "jar_photocells_status": 0,
+            "crx_outputs_status": 0x0,
             "error_message": "NO_ALARM",
             "timestamp": 1603142218.2367265,
             "message_id": 1001758,
@@ -166,9 +168,19 @@ class MachineHeadMockup:
     async def update_status(self, params=None):
         if params is None:
             params = {}
-        logging.warning("{}, params:{}.".format(self.index, params))
-        self.status.update(params)
-        await self.dump_status()
+        try:
+            def fmt(x):
+                if isinstance(x, int):
+                    ret = f"0x{x:02X}"
+                else:
+                    ret = f"{x}"
+                return ret
+                    
+            logging.warning("{}, params:{}.".format(self.letter, {k: fmt(v) for k, v in params.items()}))
+            self.status.update(params)
+            await self.dump_status()
+        except:
+            logging.error(traceback.format_exc())
 
     async def do_move(self, mask=EMPTY_MASK, set_or_reset="", duration=0, tgt_level="STANDBY"):
 
@@ -187,10 +199,7 @@ class MachineHeadMockup:
                     self.status["jar_photocells_status"] & ~mask
                 )
             elif set_or_reset == "toggle":
-                current_bit_val = self.status["jar_photocells_status"] & mask
-                pars["jar_photocells_status"] = (
-                    self.status["jar_photocells_status"] & ~current_bit_val
-                )
+                pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ mask
             if mask == DISPENSING_POSITION_MASK:
                 if set_or_reset == "set":
                     pars["container_presence"] = True
@@ -208,7 +217,7 @@ class MachineHeadMockup:
         elif msg_out_dict["command"] == "KILL_EMULATOR":
             raise KeyboardInterrupt
 
-        elif msg_out_dict["command"] == "DISPENSATION":
+        elif msg_out_dict["command"] in ("DISPENSATION", "DISPENSE_FORMULA"):
             await self.do_move(duration=0.5, tgt_level="DISPENSING")
             await self.do_move(duration=5, tgt_level="STANDBY")
         elif msg_out_dict["command"] == "RESET":
@@ -255,7 +264,7 @@ class MachineHeadMockup:
 
                 if self.index == 1:  # F
 
-                    if lifter == 1:  
+                    if lifter == 1:
                         await self.do_move(
                             UNLOAD_LIFTER_DOWN_MASK,
                             "reset",
@@ -263,7 +272,7 @@ class MachineHeadMockup:
                             tgt_level="JAR_POSITIONING",
                         )
                         await self.do_move(UNLOAD_LIFTER_UP_MASK, "set", duration=2)
-                    elif lifter == 2:  
+                    elif lifter == 2:
                         await self.do_move(
                             UNLOAD_LIFTER_UP_MASK,
                             "reset",
@@ -276,27 +285,18 @@ class MachineHeadMockup:
                             UNLOAD_LIFTER_DOWN_MASK,
                             "reset",
                             duration=1,
-                            tgt_level="JAR_POSITIONING",
-                        )
+                            tgt_level="JAR_POSITIONING")
                         await self.do_move(UNLOAD_LIFTER_UP_MASK, "set", duration=2)
                         await self.do_move(OUTPUT_ROLLER_MASK, "set", duration=2)
 
                 elif self.index == 5:  # C
                     if lifter == 1:  # 'DOWN -> UP'
                         await self.do_move(
-                            LOAD_LIFTER_DOWN_MASK,
-                            "reset",
-                            duration=1,
-                            tgt_level="JAR_POSITIONING",
-                        )
+                            LOAD_LIFTER_DOWN_MASK, "reset", duration=1, tgt_level="JAR_POSITIONING")
                         await self.do_move(LOAD_LIFTER_UP_MASK, "set", duration=2)
                     elif lifter == 2:  # 'UP -> DOWN'
                         await self.do_move(
-                            LOAD_LIFTER_UP_MASK,
-                            "reset",
-                            duration=1,
-                            tgt_level="JAR_POSITIONING",
-                        )
+                            LOAD_LIFTER_UP_MASK, "reset", duration=1, tgt_level="JAR_POSITIONING")
                         await self.do_move(LOAD_LIFTER_DOWN_MASK, "set", duration=2)
 
                 if input_roller == 2:  # feed = move_00_01 or -> IN
@@ -316,6 +316,151 @@ class MachineHeadMockup:
                     await self.do_move(OUTPUT_ROLLER_MASK, "set", duration=2)
                 elif output_roller == 2:
                     await self.do_move(OUTPUT_ROLLER_MASK, "reset", duration=4)
+        elif msg_out_dict["command"] == "CRX_OUTPUTS_MANAGEMENT":
+            output_number = int(msg_out_dict["params"]["Output_Number"])
+            output_action = int(msg_out_dict["params"]["Output_Action"])
+            mask = 0x1 << output_number
+
+            if output_action:
+                if self.status["crx_outputs_status"] & mask:
+                    logging.error(f'{self.letter} msg_out_dict["params"]:{msg_out_dict["params"]}, {self.status["crx_outputs_status"]}, {mask}')
+
+                crx_outputs_status = self.status["crx_outputs_status"] | mask
+
+            else:
+                crx_outputs_status = self.status["crx_outputs_status"] & ~mask
+
+            await self.update_status(params={"crx_outputs_status": crx_outputs_status})
+
+            # ~ logging.warning("{} {}, crx_outputs_status:{}".format(self.index, self.letter, self.status["crx_outputs_status"]))
+
+            asyncio.get_event_loop().call_later(2.0, self.do_move_by_crx_outputs, *[output_number, output_action])
+
+    def do_move_by_crx_outputs(self, output_number, output_action):  # pylint: disable=too-many-branches,too-many-statements
+
+        """
+        # ~ 'Output_Number': {'propertyOrder': 1, 'type': 'number', 'fmt': 'B',
+        # ~ 'description': "Outupt (roller or lifter) identification number related to a dispensing head. Values comprised between 0 - 3"},
+        # ~ 'Output_Action': {'propertyOrder': 2, 'type': 'number', 'fmt': 'B',
+        # ~ 'description': "Values:
+        # ~ 0 = Stop Movement,
+        # ~ 1 = Start Movement CW,
+        # ~ 2 = Start Movement CW or UP till Photocell transition LIGHT - DARK,
+        # ~ 3 = Start Movement CW or UP till Photocell transition DARK - LIGHT,
+        # ~ 4 = Start Movement CCW,
+        # ~ 5 = Start Movement CCW or DOWN till Photocell transition LIGHT - DARK,
+        # ~ 6 = Start Movement CCW or DOWN till Photocell transition DARK - LIGHT"}}}},
+
+        # Outputs meaning for each dispensing head:
+        # TESTA1: A 0 = DOSING ROLLER, 1 = INPUT ROLLER,
+        # TESTA2: F 0 = DOSING ROLLER, 1 = LIFTER_ROLLER, 2 = OUTPUT_ROLLER, 3 = LIFTER
+        # TESTA3: B 0 = DOSING ROLLER
+        # TESTA4: E 0 = DOSING ROLLER
+        # TESTA5: C 0 = DOSING ROLLER, 1 = LIFTER_ROLLER,
+        # TESTA6: D 0 = DOSING ROLLER, 1 = LIFTER
+        """
+
+        pars = {}
+
+        if output_number == 0:
+            if output_action in (1, 4):
+                current_bit_val = self.status["jar_photocells_status"] & DISPENSING_POSITION_MASK
+                pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~current_bit_val
+            elif output_action in (2, 5):
+                pars["jar_photocells_status"] = self.status["jar_photocells_status"] | DISPENSING_POSITION_MASK
+            elif output_action in (3, 6):
+                pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~DISPENSING_POSITION_MASK
+
+            if self.status["jar_photocells_status"] & DISPENSING_POSITION_MASK:
+                pars["container_presence"] = True
+            else:
+                pars["container_presence"] = False
+
+        else:
+            if self.letter == 'A':
+                if output_number == 1:
+                    if output_action in (1, 3):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~INPUT_ROLLER_MASK
+                    elif output_action in (2, ):
+                        if self.status["jar_photocells_status"] & INPUT_ROLLER_MASK:
+                            jar_photocells_status = self.status["jar_photocells_status"] & ~INPUT_ROLLER_MASK
+                            t = self.update_status(params={"jar_photocells_status": jar_photocells_status})
+                            asyncio.ensure_future(t)
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] | INPUT_ROLLER_MASK
+
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x02
+
+            elif self.letter == 'B':
+                pass
+
+            elif self.letter == 'C':
+                if output_number == 1:
+                    if output_action in (1, 4):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ LOAD_LIFTER_ROLLER_MASK
+                    elif output_action in (2, 5):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] | LOAD_LIFTER_ROLLER_MASK
+                    elif output_action in (3, 6):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~LOAD_LIFTER_ROLLER_MASK
+
+            elif self.letter == 'D':
+                if output_number == 1:
+                    if output_action in (2, 3):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] | LOAD_LIFTER_UP_MASK
+                        pars["jar_photocells_status"] = pars["jar_photocells_status"] & ~LOAD_LIFTER_DOWN_MASK
+                    elif output_action in (5, 6):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] | LOAD_LIFTER_DOWN_MASK
+                        pars["jar_photocells_status"] = pars["jar_photocells_status"] & ~LOAD_LIFTER_UP_MASK
+
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x02
+
+            elif self.letter == 'E':
+                pass
+
+            elif self.letter == 'F':
+                if output_number == 1:
+                    if output_action in (1, 4):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ UNLOAD_LIFTER_ROLLER_MASK
+                    elif output_action in (2, 5):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] | UNLOAD_LIFTER_ROLLER_MASK
+                    elif output_action in (3, 6):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~UNLOAD_LIFTER_ROLLER_MASK
+
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x02
+
+                elif output_number == 2:
+
+                    # ~ if output_action in (1, 4):
+                        # ~ pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ OUTPUT_ROLLER_MASK
+                    if output_action in (1, ):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ OUTPUT_ROLLER_MASK
+                    elif output_action in (4, ):
+                        if 'buffer_full' in sys.argv:
+                            pars["jar_photocells_status"] = self.status["jar_photocells_status"] | OUTPUT_ROLLER_MASK
+                        else:
+                            pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ OUTPUT_ROLLER_MASK
+
+                    elif output_action in (2, 5):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] | OUTPUT_ROLLER_MASK
+                    elif output_action in (3, 6):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~OUTPUT_ROLLER_MASK
+
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x04
+
+                elif output_number == 3:
+                    if output_action in (2, 3):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] | UNLOAD_LIFTER_UP_MASK
+                        pars["jar_photocells_status"] = pars["jar_photocells_status"] & ~UNLOAD_LIFTER_DOWN_MASK
+                    elif output_action in (5, 6):
+                        pars["jar_photocells_status"] = self.status["jar_photocells_status"] | UNLOAD_LIFTER_DOWN_MASK
+                        pars["jar_photocells_status"] = pars["jar_photocells_status"] & ~UNLOAD_LIFTER_UP_MASK
+
+                    pars["crx_outputs_status"] = self.status["crx_outputs_status"] & ~0x08
+
+        if not pars:
+            logging.warning(f"{self.letter}, output_number:{output_number}, output_action:{output_action}, pars:{pars}")
+        else:
+            t = self.update_status(params=pars)
+            asyncio.ensure_future(t)
 
     async def dump_status(self):
         raise Exception(f"to be overidden in {self}")
@@ -355,8 +500,6 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         # ~ channel = msg_dict['channel']
         msg_out_dict = msg_dict["msg_out_dict"]
 
-        await self.handle_command(msg_out_dict)
-
         answer = {
             "status_code": 0,
             "error": "no error",
@@ -369,6 +512,9 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         msg = json.dumps({"type": "answer", "value": answer})
         # ~ logging.warning("{} msg:{}".format(self.index, msg))
         asyncio.ensure_future(ws_client.send(msg))
+
+        # ~ asyncio.ensure_future(self.handle_command(msg_out_dict))
+        await self.handle_command(msg_out_dict)
 
     async def _new_client_handler(self, ws_client, path):
 
@@ -394,7 +540,12 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
             {"type": "device:machine:status", **{"value": self.status}}
         )
         for client in self.ws_clients:
-            await client.send(message)
+            try:
+                await client.send(message)
+                logging.debug("{}, message:{}.".format(self.letter, message))
+            except Exception:
+                logging.error(traceback.format_exc())
+                time.sleep(10)
 
 
 class MachineHeadMockupFile(MachineHeadMockup):

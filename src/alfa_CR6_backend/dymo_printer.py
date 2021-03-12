@@ -20,7 +20,8 @@ TMP_PATH = f"{DEPLOY_PATH}/tmp"
 TMP_BARCODE_IMAGE = f"{TMP_PATH}/tmp_file.png"
 PRINTER_MODEL = 'Dymo'
 
-def _create_printable_image(recipe_barcode):
+
+def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
     """ create a printable image .png for DYMO 450 """
 
     response = {}
@@ -40,12 +41,26 @@ def _create_printable_image(recipe_barcode):
                 'module_height': 7,
                 'font_size': 15,
                 'text_distance': 0.75,
-                'compress':False,
-                }
+                'compress': False,
+            }
 
-            barcode_img.write(file_, options, recipe_barcode_text)
+            line_1 = _line_lenght_checker(line_1)
+            line_2 = _line_lenght_checker(line_2)
+            line_3 = _line_lenght_checker(line_3)
 
-        logging.warning(f'Barcode {recipe_barcode} label created at {TMP_BARCODE_IMAGE}')
+            printable_info_list = []
+            printable_info_list.append(recipe_barcode)
+            printable_info_list.append(line_1)
+            printable_info_list.append(line_2)
+            printable_info_list.append(line_3)
+
+            printable_text = '\n'.join(printable_info_list)
+
+            logging.debug(f'printable_text: {printable_text}')
+
+            barcode_img.write(file_, options, printable_text)
+
+        logging.debug(f'Barcode {recipe_barcode} label created at {TMP_BARCODE_IMAGE}')
         response = {'result': 'OK', 'file': TMP_BARCODE_IMAGE}
     except Exception:   # pylint: disable=broad-except
         logging.error(traceback.format_exc())
@@ -55,15 +70,23 @@ def _create_printable_image(recipe_barcode):
     return response
 
 
+def _line_lenght_checker(line, line_lenght=17):
+    logging.debug(f'len: {len(line)} | line_lenght: {line_lenght}')
+    if len(line) > line_lenght:
+        line = line[:line_lenght]
+    logging.debug(f'line: {line}')
+    return line
+
+
 def _format_reply(command, shell=False, loggable=False):
     try:
         command_list = command.split(' ')
-        logging.warning('')
-        logging.warning('command_list -> {}'.format(command_list))
+        logging.debug('')
+        logging.debug('command_list -> {}'.format(command_list))
         os_cmd_reply = subprocess.check_output(command_list, shell=shell, stderr=subprocess.STDOUT).decode()
         reply_cmd = [i.strip() for i in os_cmd_reply.split('\n')]
         if loggable:
-            logging.warning('reply_cmd({}): {}'.format(type(reply_cmd), reply_cmd))
+            logging.debug('reply_cmd({}): {}'.format(type(reply_cmd), reply_cmd))
         reply = {'result': 'OK', 'data': reply_cmd}
     except subprocess.CalledProcessError as exc:
         err_code = exc.returncode
@@ -87,13 +110,13 @@ def _check_dymo_printer_presence():
     return response
 
 
-def _print_label(barcode, fake):
-    res_printable_barcode = _create_printable_image(barcode)
+def _print_label(barcode, line_1, line_2, line_3, fake):
+    res_printable_barcode = _create_printable_image(barcode, line_1, line_2, line_3)
 
     if res_printable_barcode.get('result') == 'OK':
         _path = res_printable_barcode.get('file')
         print_cups_cmd = f'lp -o fit-to-page {_path}'
-        logging.warning(f'print_cups_cmd: {print_cups_cmd}')
+        logging.debug(f'print_cups_cmd: {print_cups_cmd}')
 
         if not fake:
             #_res = _format_reply(print_cups_cmd)
@@ -103,14 +126,14 @@ def _print_label(barcode, fake):
         else:
             res_print = {'result': 'OK', 'message': 'Printing label ..'}
     else:
-        logging.critical('IMPOSSIBILE TO CREATE THE LABEL')
+        logging.error('IMPOSSIBILE TO CREATE THE LABEL')
         res_print = res_printable_barcode.get('error')
 
     return res_print
 
 
-def dymo_print(barcode=201027001001, fake=False):
-    logging.warning(f'barcode: {barcode} | fake: {fake}')
+def dymo_print(barcode=201027001001, line_1='', line_2='', line_3='', fake=False):
+    logging.debug(f'barcode: {barcode}, {[line_1, line_2, line_3]} | fake: {fake}')
 
     if not fake:
         res_dymo_presence = _check_dymo_printer_presence()
@@ -120,13 +143,37 @@ def dymo_print(barcode=201027001001, fake=False):
     logging.warning(f'res_dymo_presence: {res_dymo_presence}')
 
     if res_dymo_presence.get('result') == 'OK':
-        result = _print_label(barcode, fake)
+        result = _print_label(barcode, line_1, line_2, line_3, fake)
     else:
         result = res_dymo_presence.get('error')
 
     return result
 
+
 if __name__ == "__main__":
 
-    res = dymo_print('201027001005')
+    res = dymo_print(barcode='201027001005',
+                     line_1='12345678901234567890',
+                     line_2='acab',
+                     line_3='0,55 Litro',
+                     fake=True)
     logging.warning(f'\t res: {res}')
+
+# NOTE
+# (venv) galasso@galassoVB:/opt/PROJECTS/alfa_cr6$ python src/alfa_CR6_backend/dymo_printer.py
+# WARNING:root:barcode: 201027001005 | fake: True
+# WARNING:root:res_dymo_presence: {'result': 'OK', 'msg': 'Dymo plugged'}
+# WARNING:root:len: 20 | line_lenght: 17
+# WARNING:root:line: 12345678901234567
+# WARNING:root:len: 4 | line_lenght: 17
+# WARNING:root:line: acab
+# WARNING:root:len: 10 | line_lenght: 17
+# WARNING:root:line: 0,55 Litro
+# WARNING:root:printable_text: 201027001005
+# 12345678901234567
+# acab
+# 0,55 Litro
+# WARNING:root:Barcode 201027001005 label created at /opt/alfa_cr6/tmp/tmp_file.png
+# WARNING:root:response: {'result': 'OK', 'file': '/opt/alfa_cr6/tmp/tmp_file.png'}
+# WARNING:root:print_cups_cmd: lp -o fit-to-page /opt/alfa_cr6/tmp/tmp_file.png
+# WARNING:root:    res: {'result': 'OK', 'message': 'Printing label ..'}

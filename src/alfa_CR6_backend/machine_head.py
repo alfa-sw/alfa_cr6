@@ -5,14 +5,15 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 
-# ~ import os
-import time
+
+import os
+import random
 import logging
 import asyncio
 import json
 import traceback
+import time
 
-# ~ import concurrent
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
@@ -20,62 +21,15 @@ import websockets  # pylint: disable=import-error
 import aiohttp  # pylint: disable=import-error
 import async_timeout  # pylint: disable=import-error
 
-from alfa_CR6_ui.globals import EPSILON, tr_
+from alfa_CR6_backend.globals import EPSILON, tr_
 
 DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
 
 
 class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
 
-    """
-    # "jar photocells_status" mask bit coding:
-    # bit0: JAR_INPUT_ROLLER_PHOTOCELL
-    # bit1: JAR_LOAD_LIFTER_ROLLER_PHOTOCELL
-    # bit2: JAR_OUTPUT_ROLLER_PHOTOCELL
-    # bit3: LOAD_LIFTER_DOWN_PHOTOCELL
-    # bit4: LOAD_LIFTER_UP_PHOTOCELL
-    # bit5: UNLOAD_LIFTER_DOWN_PHOTOCELL
-    # bit6: UNLOAD_LIFTER_UP_PHOTOCELL
-    # bit7: JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL
-    # bit8: JAR_DISPENSING_POSITION_PHOTOCELL
-    # bit9: JAR_DETECTION_MICROSWITCH_1
-    # bit10:JAR_DETECTION_MICROSWITCH_2
-
-    {   'Dispensing_Roller':  {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement,
-                2 = Start Movement till Photocell transition LIGHT - DARK ','propertyOrder': 1, 'type': 'number', 'fmt': 'B'},
-        'Lifter_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement CW,
-                2 = Start Movement CW till Photocell transition LIGHT - DARK,
-                3 = Start Movement CCW,
-                4 = Start Movement CCW till Photocell transition DARK – LIGHT,
-                5 = Start Movement CCW till Photocell transition LIGHT- DARK', 'propertyOrder': 2, 'type': 'number', 'fmt': 'B'},
-        'Input_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement,
-                2 = Start Movement till Photocell transition LIGHT - DARK', 'propertyOrder': 3, 'type': 'number', 'fmt': 'B'},
-        'Lifter': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement Up till Photocell Up transition LIGHT – DARK,
-                2 = Start Movement Down till Photocell Down transition LIGHT – DARK', 'propertyOrder': 4, 'type': 'number', 'fmt': 'B'},
-        'Output_Roller': {'description': 'Values:
-                0 = Stop Movement,
-                1 = Start Movement CCW till Photocell transition LIGHT – DARK,
-                2 = Start Movement CCW till Photocell transition DARK - LIGHT with a Delay',
-                3 = Start Movement', 'propertyOrder': 5, 'type': 'number', 'fmt': 'B'}}}},:
-    """
-
     def __init__(  # pylint: disable=too-many-arguments
-            self,
-            index,
-            ip_add,
-            ws_port,
-            http_port,
-            msg_handler=None,
-            mockup_files_path=None,
-        ):
+            self, index, ip_add, ws_port, http_port, msg_handler=None, mockup_files_path=None):
 
         self.index = index
         self.name = QApplication.instance().MACHINE_HEAD_INDEX_TO_NAME_MAP[index]
@@ -103,13 +57,37 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.cntr = 0
         self.time_stamp = 0
 
+        self.owned_barcodes = []
+
+        self.__crx_inner_status = [
+            {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
+            {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
+            {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
+            {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
+        ]
+
     def __str__(self):
         return f"[{self.index}:{self.name}]"
+
+    def get_specific_weight(self, pigment_name):
+
+        specific_weight = -1
+        for pig in self.pigment_list:
+            if pig["name"] == pigment_name:
+                specific_weight = pig["specific_weight"]
+                for pipe in pig["pipes"]:
+                    if pipe["enabled"]:
+                        if pipe["effective_specific_weight"] > EPSILON:
+                            specific_weight = pipe["effective_specific_weight"]
+
+        # ~ logging.warning(f"{self.name} {pigment_name} specific_weight:{specific_weight}")
+
+        return specific_weight
 
     def get_available_weight(self, pigment_name):
 
         available_gr = 0
-        specific_weight = 1
+        specific_weight = -1
         for pig in self.pigment_list:
             if pig["name"] == pigment_name:
                 specific_weight = pig["specific_weight"]
@@ -118,12 +96,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         if pipe["effective_specific_weight"] > EPSILON:
                             specific_weight = pipe["effective_specific_weight"]
                         available_cc = max(
-                            0, pipe["current_level"] - pipe["minimum_level"]
-                        )
+                            0, pipe["current_level"] - pipe["minimum_level"])
                         if available_cc > EPSILON:
                             available_gr += available_cc * specific_weight
 
-        return available_gr, specific_weight
+        # ~ logging.warning(f"{self.name} {pigment_name} available_gr:{available_gr}")
+
+        return available_gr
 
     async def update_tintometer_data(self, invalidate_cache=True):
 
@@ -147,16 +126,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 if enabled_pipes:
                     pigment_list.append(pig)
 
-            with open(
-                    self.app.settings.TMP_PATH + f"{self.name}_pigment_list.json", "w"
-                ) as f:
+            pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_pigment_list.json")
+            with open(pth_, "w") as f:
                 json.dump(pigment_list, f, indent=2)
 
             ret = await self.call_api_rest("package", "GET", {})
             package_list = ret.get("objects", [])
-            with open(
-                    self.app.settings.TMP_PATH + f"{self.name}_package_list.json", "w"
-                ) as f:
+            pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_package_list.json")
+            with open(pth_, "w") as f:
                 json.dump(self.package_list, f, indent=2)
 
         self.pigment_list = pigment_list
@@ -167,7 +144,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if self.low_level_pipes:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
             self.app.main_window.open_alert_dialog(
-                f"{self.name} Please, Check Pipe Levels: low_level_pipes:{self.low_level_pipes}")
+                tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(self.name, self.low_level_pipes))
+
             self.app.show_reserve(self.index, True)
         else:
             self.app.show_reserve(self.index, False)
@@ -179,10 +157,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if not self.status:
             asyncio.ensure_future(self.update_tintometer_data())
 
-        if (
-                status.get("status_level") == "ALARM"
-                and self.status.get("status_level") != "ALARM"
-            ):
+        if (status.get("status_level") == "ALARM"
+                and self.status.get("status_level") != "ALARM"):
+
             self.app.freeze_carousel(True)
             msg_ = "{} ALARM. error_code:{}, error_message:{}".format(
                 self.name, status.get("error_code"), status.get("error_message"))
@@ -192,23 +169,30 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if self.index == 0:
                 if status.get("error_code") == 10:  # user button interrupt
                     for m in self.app.machine_head_dict.values():
-                        if m.index != 0:
+                        if m and m.index != 0:
                             t = m.send_command(cmd_name="ABORT", params={})
                             asyncio.ensure_future(t)
 
-        if (
-                status.get("status_level") == "RESET"
-                and self.status.get("status_level") != "RESET"
-            ):
+        if (status.get("status_level") == "RESET"
+                and self.status.get("status_level") != "RESET"):
             await self.update_tintometer_data(invalidate_cache=True)
-            self.app.main_window.open_alert_dialog(f"{self.name} RESETTING")
+            self.app.main_window.open_alert_dialog(tr_("{} RESETTING").format(self.name))
 
         old_flag = self.status.get("jar_photocells_status", 0) & 0x001
         new_flag = status.get("jar_photocells_status", 0) & 0x001
         if old_flag and not new_flag:
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
+
         try:
+            crx_outputs_status = self.status.get('crx_outputs_status')
+            for output_number in range(4):
+                mask_ = 0x1 << output_number
+                if not int(crx_outputs_status) & mask_:
+                    self.__crx_inner_status[output_number]['value'] = 0
+                    self.__crx_inner_status[output_number]['timeout'] = 0
+                    self.__crx_inner_status[output_number]['t0'] = 0
+
             self.photocells_status = {
                 "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL": status["photocells_status"] & 0x001 and 1,
                 "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL": status["photocells_status"] & 0x002 and 1,
@@ -249,14 +233,55 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ logging.warning("self.jar_photocells_status:{}".format(self.jar_photocells_status))
         return diff
 
+    async def handle_ws_recv(self):
+
+        msg = None
+        try:
+            msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
+        except asyncio.TimeoutError:
+            logging.warning(f"{self.name} time out while waiting in websocket.recv.")
+
+        self.cntr += 1
+
+        if msg:
+            msg_dict = dict(json.loads(msg))
+
+            if msg_dict.get("type") == "device:machine:status":
+                status = msg_dict.get("value")
+                status = dict(status)
+                if status:
+                    diff = await self.update_status(status)
+                    if diff:
+                        logging.info(f"{self.name} diff:{ diff }")
+
+            elif msg_dict.get("type") == "answer":
+                answer = msg_dict.get("value")
+                answer = dict(answer)
+                if (answer and answer.get("status_code") is not None
+                        and answer.get("command") is not None):
+
+                    self.last_answer = answer
+                    # ~ logging.warning(f"{self.name} answer:{answer}")
+
+            elif msg_dict.get("type") == "time":
+                # ~ logging.warning(f"msg_dict:{msg_dict}")
+                time_stamp = msg_dict.get("value")
+                if time_stamp:
+                    self.time_stamp = time_stamp
+
+            else:
+                logging.warning(f"{self.name} unknown type for msg_dict:{msg_dict}")
+
+            if self.msg_handler:
+                await self.msg_handler(self.index, msg_dict)
+
     async def call_api_rest(self, path: str, method: str, data: dict, timeout=10):
 
         r_json_as_dict = {}
         try:
             if self.ip_add:
                 url = "http://{}:{}/{}/{}".format(
-                    self.ip_add, self.http_port, "apiV1", path
-                )
+                    self.ip_add, self.http_port, "apiV1", path)
                 if self.aiohttp_clientsession is None:
                     self.aiohttp_clientsession = aiohttp.ClientSession()
                 with async_timeout.timeout(timeout):
@@ -278,6 +303,68 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.handle_exception(e)
 
         return r_json_as_dict
+
+    async def crx_outputs_management(self, output_number, output_action, timeout=30, silent=True):
+
+        id_ = random.randint(1, 10000)
+        logging.warning(f" {self.name} owned_barcodes:{self.owned_barcodes}, id_:{id_}")
+
+        r = None
+        mask_ = 0x1 << output_number
+        # ~ if self.__crx_inner_status[output_number]['value'] != 0 and output_action:
+        if self.status.get('crx_outputs_status', 0x0) & mask_ != 0 and output_action:
+            logging.error(
+                f"{self.name} SKIPPING CMD output_number:{output_number}, output_action:{output_action}, self.__crx_inner_status:{self.__crx_inner_status}")
+        else:
+
+            def condition_1():
+                flag = not self.__crx_inner_status[output_number]['locked']
+                return flag
+
+            msg_ = tr_("{} waiting for {} to get unlocked.").format(self.name, output_number)
+
+            ret = await self.app.wait_for_condition(condition_1, timeout=5, extra_info=msg_, stability_count=1)
+            self.__crx_inner_status[output_number]['locked'] = True
+            logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_},   LOCKED")
+
+            if ret:
+
+                try:
+                    if output_action == 0:
+                        self.__crx_inner_status[output_number]['timeout'] = 0
+                        self.__crx_inner_status[output_number]['t0'] = 0
+                    elif timeout:
+                        self.__crx_inner_status[output_number]['timeout'] = timeout
+                        self.__crx_inner_status[output_number]['t0'] = time.time()
+
+                    params = {"Output_Number": output_number, "Output_Action": output_action}
+                    r = await self.send_command("CRX_OUTPUTS_MANAGEMENT", params)
+                    self.__crx_inner_status[output_number]['value'] = output_action
+                    mask_ = 0x1 << output_number
+                    msg_ = tr_("{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}").format(
+                        self.name, output_number, output_action, self.status.get('crx_outputs_status', 0x0))
+
+                    if output_action:
+                        def condition():
+                            return self.status.get('crx_outputs_status', 0x0) & mask_
+                        r = await self.app.wait_for_condition(condition, timeout=7.3, show_alert=False, stability_count=1, step=0.1)
+                    else:
+                        def condition():
+                            return not self.status.get('crx_outputs_status', 0x0) & mask_
+                        r = await self.app.wait_for_condition(condition, timeout=7.3, show_alert=False, stability_count=1, step=0.1)
+
+                    if not r:
+                        logging.error(f"msg_:{msg_}")
+                        if not silent:
+                            self.app.main_window.open_alert_dialog(msg=msg_)
+
+                except Exception as e:  # pylint: disable=broad-except
+                    self.app.handle_exception(e)
+
+            self.__crx_inner_status[output_number]['locked'] = False
+            logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_}, UNLOCKED")
+
+        return r
 
     async def can_movement(self, params=None):
 
@@ -315,22 +402,21 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             }
             if self.websocket:
 
-                logging.warning(f"{self.name} cmd:{msg}")
+                # ~ logging.warning(f"{self.name} cmd:{msg}")
                 self.last_answer = None
                 ret = await self.websocket.send(json.dumps(msg))
 
                 if type_ == "command":
 
                     def condition():
-                        if (
-                                self.last_answer is not None
+                        if (self.last_answer is not None
                                 and self.last_answer["status_code"] == 0
-                                and self.last_answer["command"] == cmd_name + "_END"
-                            ):
+                                and self.last_answer["command"] == cmd_name + "_END"):
                             return True
                         return False
+                    msg_ = tr_("{} waiting for answer to cmd:{}").format(self.name, cmd_name)
 
-                    ret = await self.wait_for_condition(condition, timeout=30)
+                    ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_)
                     logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
                 else:
                     # TODO: wait for answer from macroprocessor
@@ -338,9 +424,73 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
+            ret = None
+
         return ret
 
+    async def do_dispense(self, jar):  # pylint: disable=too-many-locals
+
+        ingredients = jar.get_ingredients_for_machine(self)
+        pars = {
+            "package_name": "******* not valid name ****",
+            "ingredients": ingredients,
+        }
+        logging.warning(f"{self.name} pars:{pars}")
+
+        r = True
+        if ingredients:
+            # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
+            allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
+
+            def condition():
+                flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
+                flag = flag and self.status["status_level"] in allowed_status_levels
+                flag = flag and self.status["container_presence"]
+                return flag
+            msg_ = tr_(" before dispensing. Please check jar.")
+            r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
+            if r:
+                r = await self.send_command(
+                    cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
+                if r:
+                    r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
+                    if r:
+                        r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
+
+            if r:
+                json_properties = json.loads(jar.json_properties)
+                ingredients = jar.get_ingredients_for_machine(self)
+                dispensed_quantities_gr = json_properties.get("dispensed_quantities_gr", {})
+                visited_head_names = json_properties.get("visited_head_names", [])
+                visited_head_names.append(self.name)
+                for k, v in ingredients.items():
+                    specific_weight = self.get_specific_weight(k)
+                    dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
+                json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
+                json_properties["visited_head_names"] = visited_head_names
+                jar.json_properties = json.dumps(json_properties, indent=2)
+                self.app.update_jar_properties(jar)
+
+        return r
+
+    async def close(self):
+
+        if self.aiohttp_clientsession:
+            await self.aiohttp_clientsession.close()
+
+    async def __watch_dog_task(self):
+
+        while True:
+            await asyncio.sleep(1)
+            for output_number, output in enumerate(self.__crx_inner_status):
+                timeout = output['timeout']
+                t0 = output['t0']
+                if (timeout > 0 and t0 > 0) and (time.time() - t0 > timeout):
+                    self.crx_outputs_management(output_number, 0, timeout=0)
+
     async def run(self):
+        t = self.__watch_dog_task()
+        asyncio.ensure_future(t)
 
         ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
         while True:
@@ -349,11 +499,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     self.websocket = websocket
                     while True:
                         await self.handle_ws_recv()
-            except (
-                    OSError,
-                    ConnectionRefusedError,
-                    websockets.exceptions.ConnectionClosedError,
-                ) as e:
+            except (OSError, ConnectionRefusedError,
+                    websockets.exceptions.ConnectionClosedError) as e:
                 logging.error(f"e:{e}")
                 await asyncio.sleep(5)
             except Exception as e:  # pylint: disable=broad-except
@@ -362,64 +509,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 await asyncio.sleep(2)
         logging.warning(f" *** exiting *** ")
 
-    async def handle_ws_recv(self):
-
-        msg = None
-        try:
-            # TODO: review
-            # ~ msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
-            msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
-        # ~ except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
-        except asyncio.TimeoutError:
-            logging.warning(f"{self.name} time out while waiting in websocket.recv.")
-
-        self.cntr += 1
-
-        if msg:
-            msg_dict = dict(json.loads(msg))
-
-            if msg_dict.get("type") == "device:machine:status":
-                status = msg_dict.get("value")
-                status = dict(status)
-                if status:
-                    diff = await self.update_status(status)
-                    if diff:
-                        logging.info(f"{self.name} diff:{ diff }")
-
-            elif msg_dict.get("type") == "answer":
-                answer = msg_dict.get("value")
-                answer = dict(answer)
-                if (
-                        answer
-                        and answer.get("status_code") is not None
-                        and answer.get("command") is not None
-                    ):
-                    self.last_answer = answer
-                    logging.warning(f"{self.name} answer:{answer}")
-            elif msg_dict.get("type") == "time":
-                # ~ logging.warning(f"msg_dict:{msg_dict}")
-                time_stamp = msg_dict.get("value")
-                if time_stamp:
-                    self.time_stamp = time_stamp
-
-            if self.msg_handler:
-                await self.msg_handler(self.index, msg_dict)
-
     async def wait_for_jar_photocells_and_status_lev(  # pylint: disable=too-many-arguments
-            self,
-            bit_name,
-            on=True,
-            status_levels=None,
-            timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-            show_alert=True,
-        ):
+            self, bit_name, on=True, status_levels=None, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
 
         if status_levels is None:
             status_levels = ["STANDBY"]
 
         logging.warning(
-            f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}"
-        )
+            f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, timeout:{timeout}")
 
         try:
 
@@ -429,9 +526,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 flag = flag and self.status["status_level"] in status_levels
                 return flag
 
-            ret = await self.wait_for_condition(
-                condition, timeout=timeout, show_alert=False
-            )
+            ret = await self.app.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(
                 f"{self.name} bit_name:{bit_name}, on:{on}, status_levels:{status_levels}, ret:{ret}"
             )
@@ -447,8 +542,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.handle_exception(e)
 
     async def wait_for_jar_photocells_status(
-            self, bit_name, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True
-        ):
+            self, bit_name, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
+
         logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, timeout:{timeout}")
 
         try:
@@ -457,7 +552,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 flag = self.jar_photocells_status.get(bit_name, False)
                 return flag if on else not flag
 
-            ret = await self.wait_for_condition(
+            ret = await self.app.wait_for_condition(
                 condition, timeout=timeout, show_alert=False
             )
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
@@ -484,7 +579,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 flag = self.status["status_level"] in status_levels
                 return flag if on else not flag
 
-            ret = await self.wait_for_condition(
+            ret = await self.app.wait_for_condition(
                 condition, timeout=timeout, show_alert=show_alert
             )
             logging.warning(
@@ -500,75 +595,3 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             return ret
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
-
-    async def wait_for_condition(
-            self, condition, timeout, show_alert=True, extra_info=""):
-
-        t0 = time.time()
-        ret = condition()
-        while not ret and time.time() - t0 < timeout:
-            await asyncio.sleep(0.01)
-            ret = condition()
-        if not ret:
-            if show_alert:
-                _ = f"timeout expired! {self.name} timeout:{timeout} "
-                if extra_info:
-                    _ += str(extra_info)
-                logging.error(_)
-                self.app.main_window.open_alert_dialog(_)
-
-        return ret
-
-    async def do_dispense(self, jar):  # pylint: disable=too-many-locals
-
-        jar_properties = json.loads(jar.json_properties)
-        ingredient_volume_map = jar_properties["ingredient_volume_map"]
-        ingredients = {}
-        for pigment_name in ingredient_volume_map.keys():
-            try:
-                # ~ name_ = ingredient_volume_map and ingredient_volume_map.get(pigment_name) and ingredient_volume_map[pigment_name].get(self.name)
-                val_ = ingredient_volume_map \
-                    and ingredient_volume_map.get(pigment_name) \
-                    and ingredient_volume_map[pigment_name].get(self.name)
-                if val_:
-                    ingredients[pigment_name] = val_
-            except Exception as e:  # pylint: disable=broad-except
-                self.app.handle_exception(e)
-
-        pars = {
-            "package_name": "******* not valid name ****",
-            "ingredients": ingredients,
-        }
-        logging.warning(f"{self.name} pars:{pars}")
-
-        r = True
-        if ingredients:
-
-            def condition():
-                flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
-                flag = flag and self.status["status_level"] in ["STANDBY"]
-                flag = flag and self.status["container_presence"]
-                return flag
-
-            logging.warning(f"{self.name} condition():{condition()}")
-            r = await self.wait_for_condition(
-                condition,
-                timeout=30,
-                extra_info=" before dispensing. Please check jar.",
-            )
-            logging.warning(f"{self.name} r:{r}")
-
-            if r:
-                r = await self.send_command(
-                    cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
-                if r:
-                    r = await self.wait_for_status_level(["DISPENSING"], timeout=20)
-                    if r:
-                        r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
-
-        return r
-
-    async def close(self):
-
-        if self.aiohttp_clientsession:
-            await self.aiohttp_clientsession.close()

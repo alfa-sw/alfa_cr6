@@ -41,6 +41,7 @@ global_session = None
 def generate_id():
     return str(uuid.uuid4())
 
+
 def compile_barcode(order_nr, index):
     return int(order_nr) + int(index) % 1000
 
@@ -85,8 +86,9 @@ def generate_order_nr():
 class BaseModel:  # pylint: disable=too-few-public-methods
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
-    date_created = Column(DateTime, default=datetime.now)
-    date_modified = Column(DateTime, default=datetime.now)
+    date_created = Column(DateTime, default=datetime.utcnow)
+    date_modified = Column(DateTime, default=datetime.utcnow)
+
     json_properties = Column(Unicode, default="{}")
     description = Column(Unicode(200))
 
@@ -253,9 +255,57 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
     def barcode(self):
         return compile_barcode(self.order.order_nr, self.index)
 
+    @property
+    def extra_lines_to_print(self):
+        _order_json_properties = json.loads(self.order.json_properties)
+
+        l1, l2, l3 = "", "", ""
+        try:
+            marca = _order_json_properties.get('meta', {}).get('Marca', '')
+            codicecolore = _order_json_properties.get('meta', {}).get('Codicecolore', '')
+            secondo_nome = _order_json_properties.get('meta', {}).get('Secondo-nome', '')
+            quantita = _order_json_properties.get('meta', {}).get('Quantità', '')
+            l1 = f"{marca.strip()}"
+            l2 = f"{secondo_nome.strip()}"
+            l3 = f"{codicecolore.strip()} {quantita.strip()}"
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            QApplication.instance().handle_exception(e)
+
+        return [l1, l2, l3]
+
+    @property
+    def insufficient_pigments(self):
+        _json_properties = json.loads(self.json_properties)
+        return _json_properties.get("insufficient_pigments", {})
+
+    @property
+    def unknown_pigments(self):
+        _json_properties = json.loads(self.json_properties)
+        return _json_properties.get("unknown_pigments", {})
+
+    def get_ingredients_for_machine(self, m):
+        json_properties = json.loads(self.json_properties)
+        ingredient_volume_map = json_properties["ingredient_volume_map"]
+        ingredients = {}
+        for pigment_name in ingredient_volume_map.keys():
+            try:
+                val_ = ingredient_volume_map \
+                    and ingredient_volume_map.get(pigment_name) \
+                    and ingredient_volume_map[pigment_name].get(m.name)
+                if val_:
+                    ingredients[pigment_name] = val_
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+                QApplication.instance().handle_exception(e)
+
+        logging.warning(f"{m.name} ingredients:{ingredients}")
+
+        return ingredients
+
 
 # ~ #######################
-class eventManager:
+class dbEventManager:
 
     def __init__(self, session):
         self.to_be_deleted_object_list = set([])
@@ -307,7 +357,7 @@ def init_models(sqlite_connect_string):
     Session = sessionmaker(bind=engine)
     global_session = Session()
 
-    e = eventManager(global_session)
+    e = dbEventManager(global_session)
     e.install_listeners()
 
     return global_session

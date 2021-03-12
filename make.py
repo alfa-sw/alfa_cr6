@@ -51,11 +51,13 @@ def parse_arguments():
 
 
 def exec_(cmd_, dry):
+
     logging.info(f"dry:{dry} cmd_:{cmd_}")
     if not dry:
         ret_val = os.system(cmd_ + f"  >>{OUT_ERR_PTH} 2>&1 ")
         logging.info(f"ret_val:{ret_val}")
 
+    return ret_val 
 
 def build(args):
 
@@ -88,7 +90,7 @@ def deploy_conf_to_target(args):
     settings = args.app_settings
 
     cmds = [
-        f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
+        # ~ f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
         f"scp {PROJECT_ROOT}/conf/supervisor.target.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
         # ~ f"scp {PROJECT_ROOT}/conf/xhost.desktop {tgt_cred}:/opt/alfa/tmp/",
         # ~ f'ssh {tgt_cred} "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"',
@@ -110,11 +112,14 @@ def install_target(args):
         f"scp {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl {tgt_cred}:{TMP_PATH}/",
         f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip uninstall -y alfa_CR6"',
         f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip install {ignore_requires} {TMP_PATH}/alfa_CR6-{__version__}-py3-none-any.whl"',
+        f"rm -f {tgt_cred}:{TMP_PATH}/alfa_CR6-{__version__}-py3-none-any.whl",
         f'ssh {tgt_cred} "sudo supervisorctl reload"',
     ]
 
     for cmd_ in cmds:
-        exec_(cmd_, dry=args.dry_run)
+        r = exec_(cmd_, dry=args.dry_run)
+        if r:
+            break
         time.sleep(.1)
 
 def install_editable(args):
