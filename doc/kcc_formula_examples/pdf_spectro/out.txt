@@ -1,0 +1,410 @@
+*********
+file_name:./ABT.pdf.
+ingredients:[
+  {
+    "pigment_name": "K703",
+    "weight(g)": 7.15,
+    "description": "01"
+  },
+  {
+    "pigment_name": "K702",
+    "weight(g)": 5.15,
+    "description": "02"
+  },
+  {
+    "pigment_name": "K200",
+    "weight(g)": 3.66,
+    "description": "03"
+  },
+  {
+    "pigment_name": "K608",
+    "weight(g)": 1.24,
+    "description": "04"
+  },
+  {
+    "pigment_name": "K605",
+    "weight(g)": 0.27,
+    "description": "05"
+  },
+  {
+    "pigment_name": "K802",
+    "weight(g)": 4.12,
+    "description": "06"
+  },
+  {
+    "pigment_name": "K906",
+    "weight(g)": 3.32,
+    "description": "07"
+  },
+  {
+    "pigment_name": "K907",
+    "weight(g)": 1.85,
+    "description": "08"
+  },
+  {
+    "pigment_name": "K060",
+    "weight(g)": 5.47,
+    "description": "09"
+  },
+  {
+    "pigment_name": "K101",
+    "weight(g)": 0.82,
+    "description": "10"
+  },
+  {
+    "pigment_name": "BINDER",
+    "weight(g)": 66.97,
+    "description": "11"
+  }
+].
+meta:{
+  "Number": "010 ABT",
+  "CANDIDATE": "01",
+  "extra_info": "Total\n100.00(G)\nCurrent Weight\n100.00(G)\n2021-01-29 09:24"
+}.
+==========
+*********
+file_name:./EXL.pdf.
+ingredients:[
+  {
+    "pigment_name": "K703",
+    "weight(g)": 8.07,
+    "description": "01"
+  },
+  {
+    "pigment_name": "K702",
+    "weight(g)": 6.97,
+    "description": "02"
+  },
+  {
+    "pigment_name": "K401",
+    "weight(g)": 0.9,
+    "description": "03"
+  },
+  {
+    "pigment_name": "K611",
+    "weight(g)": 0.13,
+    "description": "04"
+  },
+  {
+    "pigment_name": "K601",
+    "weight(g)": 0.09,
+    "description": "05"
+  },
+  {
+    "pigment_name": "K900",
+    "weight(g)": 3.48,
+    "description": "06"
+  },
+  {
+    "pigment_name": "K904",
+    "weight(g)": 2.48,
+    "description": "07"
+  },
+  {
+    "pigment_name": "K907",
+    "weight(g)": 0.52,
+    "description": "08"
+  },
+  {
+    "pigment_name": "K102",
+    "weight(g)": 0.03,
+    "description": "09"
+  },
+  {
+    "pigment_name": "BINDER",
+    "weight(g)": 77.33,
+    "description": "10"
+  }
+].
+meta:{
+  "Number": "015",
+  "CANDIDATE": "01",
+  "extra_info": "Total\n100.00(G)\nCurrent Weight\n100.00(G)\n2021-01-29 09:30"
+}.
+==========
+*********
+file_name:./K23.pdf.
+ingredients:[
+  {
+    "pigment_name": "K205(LS K204)",
+    "weight(g)": 2.35,
+    "description": "01"
+  },
+  {
+    "pigment_name": "K616(LS K608)",
+    "weight(g)": 2.26,
+    "description": "02"
+  },
+  {
+    "pigment_name": "K406(LS K405)",
+    "weight(g)": 1.6,
+    "description": "03"
+  },
+  {
+    "pigment_name": "K803",
+    "weight(g)": 15.03,
+    "description": "04"
+  },
+  {
+    "pigment_name": "K806",
+    "weight(g)": 9.37,
+    "description": "05"
+  },
+  {
+    "pigment_name": "K904",
+    "weight(g)": 12.24,
+    "description": "06"
+  },
+  {
+    "pigment_name": "K060",
+    "weight(g)": 6.36,
+    "description": "07"
+  },
+  {
+    "pigment_name": "BINDER",
+    "weight(g)": 50.79,
+    "description": "08"
+  }
+].
+meta:{
+  "Number": "015",
+  "CANDIDATE": "01",
+  "extra_info": "Total\n100.00(G)\nCurrent Weight\n100.00(G)\n2021-01-29 09:29"
+}.
+==========
+*********
+file_name:./Metalic E5E.pdf.
+ingredients:[
+  {
+    "pigment_name": "K700",
+    "weight(g)": 6.5,
+    "description": "01"
+  },
+  {
+    "pigment_name": "K702",
+    "weight(g)": 5.05,
+    "description": "02"
+  },
+  {
+    "pigment_name": "K202",
+    "weight(g)": 1.79,
+    "description": "03"
+  },
+  {
+    "pigment_name": "K204",
+    "weight(g)": 0.8,
+    "description": "04"
+  },
+  {
+    "pigment_name": "K302",
+    "weight(g)": 2.23,
+    "description": "05"
+  },
+  {
+    "pigment_name": "K605",
+    "weight(g)": 2.48,
+    "description": "06"
+  },
+  {
+    "pigment_name": "K806",
+    "weight(g)": 3.66,
+    "description": "07"
+  },
+  {
+    "pigment_name": "K803",
+    "weight(g)": 1.49,
+    "description": "08"
+  },
+  {
+    "pigment_name": "K916",
+    "weight(g)": 10.04,
+    "description": "09"
+  },
+  {
+    "pigment_name": "K060",
+    "weight(g)": 5.94,
+    "description": "10"
+  },
+  {
+    "pigment_name": "BINDER",
+    "weight(g)": 60.0,
+    "description": "11"
+  }
+].
+meta:{
+  "Number": "020 E5E",
+  "HISTORY": "C1",
+  "extra_info": "Total\n100.00(G)\nCurrent Weight\n100.00(G)\n2021-01-29 09:25"
+}.
+==========
+*********
+file_name:./SAI.pdf.
+ingredients:[
+  {
+    "pigment_name": "K703",
+    "weight(g)": 0.53,
+    "description": "01"
+  },
+  {
+    "pigment_name": "K406(LS K405)",
+    "weight(g)": 0.13,
+    "description": "02"
+  },
+  {
+    "pigment_name": "K806",
+    "weight(g)": 17.8,
+    "description": "03"
+  },
+  {
+    "pigment_name": "K804",
+    "weight(g)": 3.29,
+    "description": "04"
+  },
+  {
+    "pigment_name": "K913",
+    "weight(g)": 1.96,
+    "description": "05"
+  },
+  {
+    "pigment_name": "K914",
+    "weight(g)": 1.55,
+    "description": "06"
+  },
+  {
+    "pigment_name": "K060",
+    "weight(g)": 14.82,
+    "description": "07"
+  },
+  {
+    "pigment_name": "K101",
+    "weight(g)": 0.72,
+    "description": "08"
+  },
+  {
+    "pigment_name": "BINDER",
+    "weight(g)": 59.21,
+    "description": "09"
+  }
+].
+meta:{
+  "Number": "018",
+  "CANDIDATE": "02",
+  "extra_info": "Total\n100.00(G)\nCurrent Weight\n100.00(G)\n2021-01-29 09:32"
+}.
+==========
+*********
+file_name:./Solid 1.pdf.
+ingredients:[
+  {
+    "pigment_name": "K700",
+    "weight(g)": 0.93,
+    "description": "01"
+  },
+  {
+    "pigment_name": "K202",
+    "weight(g)": 12.71,
+    "description": "02"
+  },
+  {
+    "pigment_name": "K610",
+    "weight(g)": 14.96,
+    "description": "03"
+  },
+  {
+    "pigment_name": "K100",
+    "weight(g)": 11.4,
+    "description": "04"
+  },
+  {
+    "pigment_name": "BINDER",
+    "weight(g)": 60.0,
+    "description": "05"
+  }
+].
+meta:{
+  "Number": "020 E5E",
+  "CANDIDATE": "01",
+  "extra_info": "Total\n100.00(G)\nCurrent Weight\n100.00(G)\n2021-01-29 10:20"
+}.
+==========
+*********
+file_name:./Solid2.pdf.
+ingredients:[
+  {
+    "pigment_name": "K701(LS K700)",
+    "weight(g)": 4.74,
+    "description": "01"
+  },
+  {
+    "pigment_name": "K406(LS K405)",
+    "weight(g)": 3.77,
+    "description": "02"
+  },
+  {
+    "pigment_name": "K205(LS K204)",
+    "weight(g)": 0.18,
+    "description": "03"
+  },
+  {
+    "pigment_name": "K616(LS K608)",
+    "weight(g)": 0.93,
+    "description": "04"
+  },
+  {
+    "pigment_name": "K100",
+    "weight(g)": 30.38,
+    "description": "05"
+  },
+  {
+    "pigment_name": "BINDER",
+    "weight(g)": 60.0,
+    "description": "06"
+  }
+].
+meta:{
+  "Number": "020 E5E",
+  "CANDIDATE": "01",
+  "extra_info": "Total\n100.00(G)\nCurrent Weight\n100.00(G)\n2021-01-29 10:22"
+}.
+==========
+*********
+file_name:./Solid3.pdf.
+ingredients:[
+  {
+    "pigment_name": "K701(LS K700)",
+    "weight(g)": 2.84,
+    "description": "01"
+  },
+  {
+    "pigment_name": "K406(LS K405)",
+    "weight(g)": 1.5,
+    "description": "02"
+  },
+  {
+    "pigment_name": "K205(LS K204)",
+    "weight(g)": 0.08,
+    "description": "03"
+  },
+  {
+    "pigment_name": "K616(LS K608)",
+    "weight(g)": 0.44,
+    "description": "04"
+  },
+  {
+    "pigment_name": "K100",
+    "weight(g)": 35.14,
+    "description": "05"
+  },
+  {
+    "pigment_name": "BINDER",
+    "weight(g)": 60.0,
+    "description": "06"
+  }
+].
+meta:{
+  "Number": "020",
+  "CANDIDATE": "01",
+  "extra_info": "Total\n100.00(G)\nCurrent Weight\n100.00(G)\n2021-01-29 10:24"
+}.
+==========

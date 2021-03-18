@@ -1,0 +1,37 @@
+
+25.02
+
+    - errori arrotondamento volumi dispensazione
+    - traduzioni
+
+
+23.02
+
+    info dell'ordine Sherwin-W da stampare nella etichetta:
+        - Marca
+        - Codicecolore
+        - Secondo-nome
+        - Quantità
+
+
+17.02
+
+- carosello messo in pausa con un can in uscita sull'ascensore
+- carosello messo in pausa con un can in ingresso (bar code letto, stato ENTERING)
+
+
+18.02
+
+- allungare tempo di on output roller al delivery del barattolo
+- aggiungi controllo outputs stopped prima di dare l'ok alla apertura coperchio per refill
+- logica di attesa lifter L: debolezza in caso di errore di D?
+- gestione pigmanto mancante/carente all'ingresso del barattolo in feed
+    pigmento presente ma con qtta insufficiente:
+        pausa e richiesta di refill
+        
+    pigmento non presente nella macchina in alcuna testa:
+        pausa e richiesta di refill
+        
+
+
+- comando di deliver: togli il controllo fotocell coperta
