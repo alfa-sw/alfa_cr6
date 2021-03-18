@@ -101,7 +101,8 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
             self.buttonClicked.connect(on_button_clicked)
 
-        t = time.asctime()
+        # ~ t = time.asctime()
+        t = time.strftime("%Y-%m-%d %H:%M:%S (%Z)")
         msg = "[{}]: {}\n\n{}\n\n".format(t, title, msg)
 
         self.setIcon(QMessageBox.Information)
