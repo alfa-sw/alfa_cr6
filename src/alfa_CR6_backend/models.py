@@ -87,7 +87,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
     date_created = Column(DateTime, default=datetime.utcnow)
-    date_modified = Column(DateTime, default=datetime.utcnow)
+    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     json_properties = Column(Unicode, default="{}")
     description = Column(Unicode(200))
@@ -318,7 +318,7 @@ class dbEventManager:
             session.query(cls).filter(cls.id == id_).delete()
             self.to_be_deleted_object_list.remove(item)
 
-    def check_limit_before_insert(self, mapper, connection, target):  # pylint: disable=unused-argument
+    def receive_before_insert(self, mapper, connection, target):  # pylint: disable=unused-argument
 
         exceeding_objects = target.check_size_limit(self.session)
         if exceeding_objects:
@@ -329,15 +329,18 @@ class dbEventManager:
 
         event.listen(self.session, 'after_flush', self.do_delete_pending_objects)
 
+        # ~ event.listen(self.session, 'pending_to_persistent', self.receive_pending_to_persistent)
+
         for n in globals():
             m = globals().get(n)
             try:
                 if isinstance(m, sqlalchemy.ext.declarative.api.DeclarativeMeta) and issubclass(m, BaseModel):
                     if m.row_count_limt > 0:
-                        event.listen(m, 'before_insert', self.check_limit_before_insert)
-                        logging.warning("m:{}, type(m):{}".format(m, type(m)))
+                        event.listen(m, 'before_insert', self.receive_before_insert)
+                        logging.info("m:{}, type(m):{}".format(m, type(m)))
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(e)
+
 
 
 def init_models(sqlite_connect_string):
