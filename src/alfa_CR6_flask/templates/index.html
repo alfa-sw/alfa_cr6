@@ -36,27 +36,39 @@
 
 	<table class="status_table">
 
-	<tr><th>A</th><th>B</th><th>C</th></tr>
-	<tr>
-	{% for i in (0, 2, 4) %}
-	<td><div class="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
-	{% endfor %}
-	</tr>
+		<tr><th>A</th><th>B</th><th>C</th></tr>
+		<tr>
+		{% for i in (0, 2, 4) %}
+		<td><div class="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
+		{% endfor %}
+		</tr>
 
-	<tr><th>F</th><th>E</th><th>D</th></tr>
-	<tr>
-	{% for i in (1, 3, 5) %}
-	<td><div class ="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
-	{% endfor %}
-	</tr>
+		<tr><th>F</th><th>E</th><th>D</th></tr>
+		<tr>
+		{% for i in (1, 3, 5) %}
+		<td><div class ="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
+		{% endfor %}
+		</tr>
 
 	</table>
+
+<input type="text" id="debug_button"></input>
+<input type="submit" onclick="send_debug_button();"></input>
 
 </div>
 
 <script>
 
 	var g_ws_client = null;
+	
+	var send_debug_button = function() {
+		var el = document.getElementById("debug_button"); 
+		if((el) && (g_ws_client)){
+			el.value;
+			console.debug('send_debug_button(), el.value: ' + el.value); 
+			g_ws_client.send({"debug_button": el.value});
+		}
+	}
 
 	var on_wsocket_open = function(event) {
 		console.debug('on_wsocket_open, event: ' + JSON.stringify(event)); 

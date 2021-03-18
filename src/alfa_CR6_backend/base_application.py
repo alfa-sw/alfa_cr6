@@ -391,6 +391,11 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         try:
             msg_dict = json.loads(msg)  # TODO: implement message handler
             logging.debug(f"msg_dict:{msg_dict}")
+            
+            if msg_dict.get("debug_button"):
+                app = QApplication.instance()
+                app.main_window.debug_page.on_button_group_clicked(msg_dict.get("debug_button"))
+            
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
