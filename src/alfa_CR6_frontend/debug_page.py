@@ -119,6 +119,7 @@ class DebugPage:
                 ("reset jar\ndb status", "reset all jar_status to NEW in db sqlite"),
                 ("reset all\n heads", "reset all heads"),
                 ("EXIT", "Beware! terminate the application"),
+                ("ALARM", "simulate ALARM"),
                 ("read\nbarcode", "simulate a bar code read"),
                 (
                     "delete\norders in db",
@@ -319,6 +320,12 @@ class DebugPage:
 
             m = app.machine_head_dict[0]
             t = m.send_command(cmd_name="KILL_EMULATOR", params={})
+            asyncio.ensure_future(t)
+
+        elif "ALARM" in cmd_txt:
+
+            m = app.machine_head_dict[0]
+            t = m.send_command(cmd_name="SIMULATE_ALARM", params={})
             asyncio.ensure_future(t)
 
         elif "reset all\n heads" in cmd_txt:

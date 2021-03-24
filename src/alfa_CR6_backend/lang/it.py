@@ -167,3 +167,7 @@ D = {
     'DONE': 'COMPLETO',
     'PARTIAL': 'PARZIALE',
 }
+
+from alfa_CR6_backend.lang import error_it
+
+D.update(error_it.D)

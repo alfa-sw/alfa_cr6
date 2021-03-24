@@ -161,8 +161,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 and self.status.get("status_level") != "ALARM"):
 
             self.app.freeze_carousel(True)
-            msg_ = "{} ALARM. error_code:{}, error_message:{}".format(
-                self.name, status.get("error_code"), status.get("error_message"))
+            msg_ = "{} ALARM. {}: {}, {}: {}".format(
+                self.name, tr_('error_code'), status.get("error_code"), tr_('error_message'), tr_(status.get("error_message")))
             logging.error(msg_)
             self.app.main_window.open_frozen_dialog(msg_)
 

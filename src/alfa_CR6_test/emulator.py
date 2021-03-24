@@ -214,6 +214,10 @@ class MachineHeadMockup:
         if msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
             await self.do_move(duration=0.5, tgt_level="DIAGNOSTIC")
 
+        elif msg_out_dict["command"] == "SIMULATE_ALARM":
+            await self.update_status(
+                params={"status_level": "ALARM", "error_code": 0xFF, "error_message": "TIMERMG_TEST_FAILED",})
+
         elif msg_out_dict["command"] == "KILL_EMULATOR":
             raise KeyboardInterrupt
 
@@ -326,15 +330,17 @@ class MachineHeadMockup:
                     logging.error(f'{self.letter} msg_out_dict["params"]:{msg_out_dict["params"]}, {self.status["crx_outputs_status"]}, {mask}')
 
                 crx_outputs_status = self.status["crx_outputs_status"] | mask
-
+                status_level = 'JAR_POSITIONING'
             else:
                 crx_outputs_status = self.status["crx_outputs_status"] & ~mask
+                status_level = 'STANDBY'
 
-            await self.update_status(params={"crx_outputs_status": crx_outputs_status})
+            await self.update_status(params={"status_level": status_level, "crx_outputs_status": crx_outputs_status})
 
             # ~ logging.warning("{} {}, crx_outputs_status:{}".format(self.index, self.letter, self.status["crx_outputs_status"]))
 
             asyncio.get_event_loop().call_later(2.0, self.do_move_by_crx_outputs, *[output_number, output_action])
+
 
     def do_move_by_crx_outputs(self, output_number, output_action):  # pylint: disable=too-many-branches,too-many-statements
 

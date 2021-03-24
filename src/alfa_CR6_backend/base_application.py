@@ -309,11 +309,13 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                          'current_temperature',
                          'circuit_engaged',
                          'container_presence',
-                         'error_message',
                          'timestamp',
                          'message_id',
                          'last_update'):
                     html_ += "<b>{}</b>: {}<br/>".format(k, v)
+
+                if k in ('error_message',):
+                    html_ += "<b>{}</b>: {} {}<br/>".format(k, v, tr_(v))
 
                 elif k in ('photocells_status',
                            'jar_photocells_status',
