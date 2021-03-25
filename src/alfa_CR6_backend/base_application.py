@@ -792,7 +792,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 description = ""
                 if path_to_file:
                     split_ext = os.path.splitext(path_to_file)
-                    if split_ext[1:] and split_ext[1] == '.json':
+                    if split_ext[1:] and split_ext[1] in ( '.json', '.txt'):
                         fname = os.path.split(path_to_file)[1]
                         properties = parse_sw_json_order(path_to_file, json_schema_name)
                     elif split_ext[1:] and split_ext[1] == '.pdf':

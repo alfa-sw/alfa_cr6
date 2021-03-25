@@ -38,21 +38,20 @@ def _handle_CRX_stream_upload(stream, filename):
         splitext = os.path.splitext(filename)
         splitname = os.path.split(filename)
         logging.info("splitext:{}, splitname:{}".format(splitext, splitname))
-        if splitext[1:] and splitname[1:] and splitext[1] in ('.json', '.dat', '.pdf'):
 
-            logging.warning(filename)
-            content = stream.read()
-            try:
-                cmd_ = ''
-                cmd_ += '. /opt/alfa_cr6/venv/bin/activate;'
-                cmd_ += 'python -c "from alfa_CR6_backend.globals import import_settings; s = import_settings(); print(s.WEBENGINE_DOWNLOAD_PATH, )"'
-                WEBENGINE_DOWNLOAD_PATH = subprocess.check_output(
-                    cmd_, shell=True, stderr=subprocess.STDOUT).decode()
-                pth_ = os.path.join(WEBENGINE_DOWNLOAD_PATH.strip(), filename)
-                open(pth_, 'wb').write(content)
-                flash_msgs.append('uploaded CRX file:{} to:{}.'.format(f.name, pth_))
-            except BaseException:
-                logging.error(traceback.format_exc())
+        logging.warning(filename)
+        content = stream.read()
+        try:
+            cmd_ = ''
+            cmd_ += '. /opt/alfa_cr6/venv/bin/activate;'
+            cmd_ += 'python -c "from alfa_CR6_backend.globals import import_settings; s = import_settings(); print(s.WEBENGINE_DOWNLOAD_PATH, )"'
+            WEBENGINE_DOWNLOAD_PATH = subprocess.check_output(
+                cmd_, shell=True, stderr=subprocess.STDOUT).decode()
+            pth_ = os.path.join(WEBENGINE_DOWNLOAD_PATH.strip(), filename)
+            open(pth_, 'wb').write(content)
+            flash_msgs.append('uploaded CRX file:{} to:{}.'.format(f.name, pth_))
+        except BaseException:
+            logging.error(traceback.format_exc())
 
     return flash_msgs
 
