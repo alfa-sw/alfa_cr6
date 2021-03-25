@@ -11,8 +11,13 @@ import sys
 import logging
 import json
 import datetime
+import traceback
+import tempfile
+import subprocess
 
-from flask import Markup, Flask, request  # pylint: disable=import-error
+from werkzeug.utils import secure_filename  # pylint: disable=import-error
+
+from flask import Markup, Flask, redirect, flash, request  # pylint: disable=import-error
 
 import flask_sqlalchemy          # pylint: disable=import-error
 import flask_admin               # pylint: disable=import-error
@@ -23,6 +28,33 @@ from waitress import serve       # pylint: disable=import-error
 from alfa_CR6_backend.models import Order, Jar, Event
 from alfa_CR6_backend.globals import import_settings
 
+# ~ from alfa_flask.admin import _handle_CRX_stream_upload
+
+def _handle_CRX_stream_upload(stream, filename):
+
+    flash_msgs = ['cannot create temp file']
+    with tempfile.NamedTemporaryFile() as f:
+        flash_msgs = []
+        splitext = os.path.splitext(filename)
+        splitname = os.path.split(filename)
+        logging.info("splitext:{}, splitname:{}".format(splitext, splitname))
+        if splitext[1:] and splitname[1:] and splitext[1] in ('.json', '.dat', '.pdf'):
+
+            logging.warning(filename)
+            content = stream.read()
+            try:
+                cmd_ = ''
+                cmd_ += '. /opt/alfa_cr6/venv/bin/activate;'
+                cmd_ += 'python -c "from alfa_CR6_backend.globals import import_settings; s = import_settings(); print(s.WEBENGINE_DOWNLOAD_PATH, )"'
+                WEBENGINE_DOWNLOAD_PATH = subprocess.check_output(
+                    cmd_, shell=True, stderr=subprocess.STDOUT).decode()
+                pth_ = os.path.join(WEBENGINE_DOWNLOAD_PATH.strip(), filename)
+                open(pth_, 'wb').write(content)
+                flash_msgs.append('uploaded CRX file:{} to:{}.'.format(f.name, pth_))
+            except BaseException:
+                logging.error(traceback.format_exc())
+
+    return flash_msgs
 
 def _gettext(s):
     return s
@@ -60,6 +92,27 @@ def init_admin(app, db):
             }
 
             return self.render(template, **ctx)
+
+        @flask_admin.expose('/upload', methods=('POST',))
+        def upload(self):     # pylint: disable=no-self-use
+
+            flash_msgs = []
+            try:
+                if request.method == 'POST':
+                    for stream in request.files.getlist('file'):
+                        filename = secure_filename(stream.filename)
+                        flash_msgs = flash_msgs + _handle_CRX_stream_upload(stream, filename)
+            except Exception as exc:  # pylint: disable=broad-except
+                flash_msgs.append('Error trying to upload files: {}'.format(exc))
+                logging.error(traceback.format_exc())
+
+            if flash_msgs:
+                flash(Markup("<br/>".join(flash_msgs)))
+
+            logging.warning("flash_msgs:{}".format(flash_msgs))
+            ret = redirect('/index')
+            logging.warning("ret:{}".format(ret))
+            return ret
 
     class CRX_ModelView(flask_admin.contrib.sqla.ModelView):
 
