@@ -20,7 +20,7 @@ KEYBOARD_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "keyboard")
 CONF_PATH = "/opt/alfa_cr6/conf"
 
 EPSILON = 0.0002
-
+IMPORTED_LANGUAGE_MODULES = {}
 
 def import_settings():
 
@@ -47,12 +47,10 @@ def tr_(lemma):
     try:
         s = import_settings()
         s.LANGUAGE
-        pth_to_import = f'alfa_CR6_backend.lang.{s.LANGUAGE}'
-        # ~ logging.warning(f'pth_to_import:{pth_to_import}')
-        # ~ imported_module = importlib.import_module(pth_to_import, 'alfa_CR6_backend')
-        imported_module = importlib.import_module(pth_to_import)
-        lemma_ = imported_module.D.get(lemma, lemma)
-        # ~ logging.warning(f'{lemma} => {lemma_}')
+        if not IMPORTED_LANGUAGE_MODULES.get(s.LANGUAGE):
+            pth_to_import = f'alfa_CR6_backend.lang.{s.LANGUAGE}'
+            IMPORTED_LANGUAGE_MODULES[s.LANGUAGE] = importlib.import_module(pth_to_import)
+        lemma_ = IMPORTED_LANGUAGE_MODULES[s.LANGUAGE].D.get(lemma, lemma)
     except Exception:  # pylint: disable=broad-except
         logging.error(traceback.format_exc())
 
