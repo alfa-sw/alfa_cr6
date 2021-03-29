@@ -19,6 +19,8 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import websockets      # pylint: disable=import-error
 
+import magic       # pylint: disable=import-error
+
 from flask import Markup  # pylint: disable=import-error
 
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
@@ -393,11 +395,11 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         try:
             msg_dict = json.loads(msg)  # TODO: implement message handler
             logging.debug(f"msg_dict:{msg_dict}")
-            
+
             if msg_dict.get("debug_button"):
                 app = QApplication.instance()
                 app.main_window.debug_page.on_button_group_clicked(msg_dict.get("debug_button"))
-            
+
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
@@ -791,18 +793,22 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 properties = {}
                 description = ""
                 if path_to_file:
-                    split_ext = os.path.splitext(path_to_file)
-                    if split_ext[1:] and split_ext[1] in ( '.json', '.txt'):
+                    mime = magic.Magic(mime=True)
+                    mime_type = mime.from_file(path_to_file)
+                    logging.warning("mime_type:{}".format(mime_type))
+                    if mime_type in ('application/json', ):
                         fname = os.path.split(path_to_file)[1]
                         properties = parse_sw_json_order(path_to_file, json_schema_name)
-                    elif split_ext[1:] and split_ext[1] == '.pdf':
-                        fname = os.path.split(path_to_file)[1]
-                        properties = parse_kcc_pdf_order(path_to_file)
-                    elif split_ext[1:] and split_ext[1] == '.dat':
-                        fname = os.path.split(path_to_file)[1]
-                        properties = parse_sw_dat_order(path_to_file)
                     else:
-                        raise Exception(f"unknown file extension. split_ext:{split_ext}")
+                        split_ext = os.path.splitext(path_to_file)
+                        if split_ext[1:] and split_ext[1] == '.pdf':
+                            fname = os.path.split(path_to_file)[1]
+                            properties = parse_kcc_pdf_order(path_to_file)
+                        elif split_ext[1:] and split_ext[1] == '.dat':
+                            fname = os.path.split(path_to_file)[1]
+                            properties = parse_sw_dat_order(path_to_file)
+                        else:
+                            raise Exception(f"unknown file extension. split_ext:{split_ext}")
 
                     if properties:
                         description = f"{fname}"
