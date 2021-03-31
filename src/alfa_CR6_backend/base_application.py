@@ -19,8 +19,6 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import websockets      # pylint: disable=import-error
 
-import magic       # pylint: disable=import-error
-
 from flask import Markup  # pylint: disable=import-error
 
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
@@ -32,10 +30,11 @@ from alfa_CR6_backend.globals import (
     EPSILON,
     get_version,
     get_encoding,
+    import_settings,
     tr_)
 
-
 from alfa_CR6_backend.machine_head import MachineHead
+from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 
 
 def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals, too-many-branches, too-many-statements
@@ -311,13 +310,11 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                          'current_temperature',
                          'circuit_engaged',
                          'container_presence',
+                         'error_message',
                          'timestamp',
                          'message_id',
                          'last_update'):
                     html_ += "<b>{}</b>: {}<br/>".format(k, v)
-
-                if k in ('error_message',):
-                    html_ += "<b>{}</b>: {} {}<br/>".format(k, v, tr_(v))
 
                 elif k in ('photocells_status',
                            'jar_photocells_status',
@@ -395,11 +392,6 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         try:
             msg_dict = json.loads(msg)  # TODO: implement message handler
             logging.debug(f"msg_dict:{msg_dict}")
-
-            if msg_dict.get("debug_button"):
-                app = QApplication.instance()
-                app.main_window.debug_page.on_button_group_clicked(msg_dict.get("debug_button"))
-
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
@@ -441,6 +433,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__runners = []
         self.__jar_runners = {}
 
+        self.chromium_wrapper = None
+
         if self.settings.SQLITE_CONNECT_STRING:
 
             from alfa_CR6_backend.models import init_models  # pylint: disable=import-outside-toplevel
@@ -459,6 +453,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def __init_tasks(self):
 
         self.__tasks = [self.__create_inner_loop_task()]
+
+        t = self.__create_chromium_wrapper_task()
+        self.__tasks.append(t)
 
         t = self.__create_barcode_task()
         self.__tasks.append(t)
@@ -498,6 +495,34 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.__runners = []
         self.__jar_runners = {}
+
+    async def __create_chromium_wrapper_task(self):
+
+        _settings = import_settings()
+
+        CHROMIUM_EXE = "chromium" 
+        PATH_TO_EXTENSION_KB = "/opt/chromium/extensions/virt_kbd/1.2.9.3_0/"
+        url_ = _settings.WEBENGINE_CUSTOMER_URL
+
+        self.chromium_wrapper = ChromiumWrapper()
+
+        await self.chromium_wrapper.start(
+            # ~ window_name="Sherwin-Williams", 
+            window_name="chromium", 
+            url=url_, 
+            opts='', 
+            chromium_exe=CHROMIUM_EXE, path_to_extension_kb=PATH_TO_EXTENSION_KB)
+
+        while True:
+            try:
+
+                if self.chromium_wrapper.process.returncode is not None:
+                    await self.chromium_wrapper.start(
+                        url=url_, opts='', chromium_exe=CHROMIUM_EXE, path_to_extension_kb=PATH_TO_EXTENSION_KB)
+
+                await asyncio.sleep(5.0)
+            except Exception:                # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
 
     async def __create_barcode_task(self):
 
@@ -793,22 +818,18 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 properties = {}
                 description = ""
                 if path_to_file:
-                    mime = magic.Magic(mime=True)
-                    mime_type = mime.from_file(path_to_file)
-                    logging.warning("mime_type:{}".format(mime_type))
-                    if mime_type in ('application/json', ):
+                    split_ext = os.path.splitext(path_to_file)
+                    if split_ext[1:] and split_ext[1] == '.json':
                         fname = os.path.split(path_to_file)[1]
                         properties = parse_sw_json_order(path_to_file, json_schema_name)
+                    elif split_ext[1:] and split_ext[1] == '.pdf':
+                        fname = os.path.split(path_to_file)[1]
+                        properties = parse_kcc_pdf_order(path_to_file)
+                    elif split_ext[1:] and split_ext[1] == '.dat':
+                        fname = os.path.split(path_to_file)[1]
+                        properties = parse_sw_dat_order(path_to_file)
                     else:
-                        split_ext = os.path.splitext(path_to_file)
-                        if split_ext[1:] and split_ext[1] == '.pdf':
-                            fname = os.path.split(path_to_file)[1]
-                            properties = parse_kcc_pdf_order(path_to_file)
-                        elif split_ext[1:] and split_ext[1] == '.dat':
-                            fname = os.path.split(path_to_file)[1]
-                            properties = parse_sw_dat_order(path_to_file)
-                        else:
-                            raise Exception(f"unknown file extension. split_ext:{split_ext}")
+                        raise Exception(f"unknown file extension. split_ext:{split_ext}")
 
                     if properties:
                         description = f"{fname}"

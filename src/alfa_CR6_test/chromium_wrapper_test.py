@@ -31,7 +31,6 @@ async def main():
         format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
 
     chromium_wrapper = ChromiumWrapper()
-    chromium_wrapper.PATH_TO_EXTENSION_KB = PATH_TO_EXTENSION_KB
 
     await chromium_wrapper.start(
         url="http://kccrefinish.co.kr/", opts='', chromium_exe=CHROMIUM_EXE, path_to_extension_kb=PATH_TO_EXTENSION_KB)

@@ -25,7 +25,7 @@ from alfa_CR6_frontend.dialogs import (
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
-    WebenginePage,
+    # ~ WebenginePage,
     HomePageSixHeads,
     HomePageFourHeads,
     ActionPage,
@@ -180,7 +180,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.help_page = HelpPage(parent=self)
         self.order_page = OrderPage(parent=self)
-        self.webengine_page = WebenginePage(parent=self)
+        # ~ self.webengine_page = WebenginePage(parent=self)
 
         if QApplication.instance().n_of_active_heads == 6:
             self.home_page = HomePageSixHeads(parent=self)
@@ -295,6 +295,13 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         try:
 
+            chromium_wrapper = QApplication.instance().chromium_wrapper
+            if chromium_wrapper:
+                if "browser" in btn_name:
+                    chromium_wrapper.window_remap(1)
+                else:
+                    chromium_wrapper.window_remap(0)
+
             if "keyboard" in btn_name:
                 self.toggle_keyboard()
 
@@ -305,10 +312,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             elif "order" in btn_name:
                 self.toggle_keyboard(on_off=False)
                 self.order_page.open_page()
-
-            elif "browser" in btn_name:
-                self.toggle_keyboard(on_off=True)
-                self.webengine_page.open_page()
 
             elif "global_status" in btn_name:
                 self.toggle_keyboard(on_off=False)
@@ -333,7 +336,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             on_off = not self.keyboard.isVisible()
 
         ls = [
-            self.webengine_page.webengine_view,
+            # ~ self.webengine_page.webengine_view,
             self.order_page.jar_table_view,
             self.order_page.order_table_view,
             self.order_page.file_table_view, ]
