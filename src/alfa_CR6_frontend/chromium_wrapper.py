@@ -103,10 +103,9 @@ class ChromiumWrapper:
 
     async def start(self, 
         url, 
-        window_name="KCC", 
         opts='', 
         chromium_exe="", 
-        path_to_extension_kb="/opt/chromium/extensions/gkiknnlmdgcmhmncldcmmnhhdiakielc/1.2.9.3_0/"):
+        path_to_extension_kb="./"):
 
         os.environ["DISPLAY"] = ":0.0"
 
@@ -118,7 +117,7 @@ class ChromiumWrapper:
         else:
             args_ = "{} --window-size=0,0 --window-position=10,10 --app={}".format(opts, url).split()
 
-        out_ = open("/dev/null")
+        out_ = open("/opt/alfa_cr6/log/chromium_wrapper.log", 'w')
 
         self.kill()
         await asyncio.sleep(1)
@@ -137,7 +136,7 @@ class ChromiumWrapper:
         while not wid:
             await asyncio.sleep(1.)
             wid = self.xdotool.search(pid=self.process.pid)
-            logging.warning(f"self.process.pid:{self.process.pid}, window_name:{window_name}, wid:{wid}")
+            logging.warning(f"self.process.pid:{self.process.pid}, wid:{wid}")
 
         self.window_id = wid
         logging.warning(f"self.window_id:{self.window_id}")
@@ -157,7 +156,8 @@ async def main():
 
     d = 10.0
     CHROMIUM_EXE = "chromium" 
-    PATH_TO_EXTENSION_KB = "/opt/chromium/extensions/virt_kbd/1.2.9.3_0/"
+    # ~ PATH_TO_EXTENSION_KB = "/opt/chromium/extensions/virt_kbd/1.2.9.3_0/"
+    PATH_TO_EXTENSION_KB = "/home/giovanni/snap/chromium/common/chromium/Default/Extensions/gkiknnlmdgcmhmncldcmmnhhdiakielc/1.2.9.3_0/"
     url_ = "http://kccrefinish.co.kr/"
 
     if sys.argv[1:]:
@@ -176,7 +176,7 @@ async def main():
     chromium_wrapper = ChromiumWrapper()
 
     await chromium_wrapper.start(
-        window_name="chromium", 
+        # ~ window_name="chromium", 
         url=url_, opts='', 
         chromium_exe=CHROMIUM_EXE, 
         path_to_extension_kb=PATH_TO_EXTENSION_KB)

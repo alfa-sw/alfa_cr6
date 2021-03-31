@@ -454,8 +454,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.__tasks = [self.__create_inner_loop_task()]
 
-        t = self.__create_chromium_wrapper_task()
-        self.__tasks.append(t)
+        if hasattr(self.settings, 'CHROMIUM_WRAPPER') and self.settings.CHROMIUM_WRAPPER:
+            t = self.__create_chromium_wrapper_task()
+            self.__tasks.append(t)
 
         t = self.__create_barcode_task()
         self.__tasks.append(t)
@@ -498,20 +499,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def __create_chromium_wrapper_task(self):
 
-        _settings = import_settings()
-
-        CHROMIUM_EXE = "chromium" 
-        PATH_TO_EXTENSION_KB = "/opt/chromium/extensions/virt_kbd/1.2.9.3_0/"
-        url_ = _settings.WEBENGINE_CUSTOMER_URL
+        chromium_exe = self.settings.CHROMIUM_EXE
+        path_to_extension_kb = self.settings.PATH_TO_EXTENSION_KB
+        url_ = self.settings.WEBENGINE_CUSTOMER_URL
 
         self.chromium_wrapper = ChromiumWrapper()
 
         await self.chromium_wrapper.start(
             # ~ window_name="Sherwin-Williams", 
-            window_name="chromium", 
-            url=url_, 
-            opts='', 
-            chromium_exe=CHROMIUM_EXE, path_to_extension_kb=PATH_TO_EXTENSION_KB)
+            # ~ window_name="chromium", 
+            url=url_, opts='', chromium_exe=chromium_exe, path_to_extension_kb=path_to_extension_kb)
 
         while True:
             try:

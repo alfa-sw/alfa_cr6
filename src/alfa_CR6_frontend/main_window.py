@@ -16,7 +16,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH
+from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH, import_settings
 from alfa_CR6_backend.models import Event
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
@@ -25,7 +25,7 @@ from alfa_CR6_frontend.dialogs import (
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
-    # ~ WebenginePage,
+    WebenginePage,
     HomePageSixHeads,
     HomePageFourHeads,
     ActionPage,
@@ -151,6 +151,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         super().__init__(parent)
         loadUi(get_res("UI", "main_window.ui"), self)
 
+        self.settings = import_settings()
+
         # ~ self.setStyleSheet("""
         # ~ QWidget {font-size: 24px; font-family: Times sans-serif;}
         # ~ QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
@@ -180,7 +182,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.help_page = HelpPage(parent=self)
         self.order_page = OrderPage(parent=self)
-        # ~ self.webengine_page = WebenginePage(parent=self)
+        
+        self.webengine_page = WebenginePage(parent=self)
 
         if QApplication.instance().n_of_active_heads == 6:
             self.home_page = HomePageSixHeads(parent=self)
@@ -295,12 +298,16 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         try:
 
-            chromium_wrapper = QApplication.instance().chromium_wrapper
-            if chromium_wrapper:
-                if "browser" in btn_name:
-                    chromium_wrapper.window_remap(1)
-                else:
-                    chromium_wrapper.window_remap(0)
+            if hasattr(self.settings, 'CHROMIUM_WRAPPER') and self.settings.CHROMIUM_WRAPPER:
+                chromium_wrapper = QApplication.instance().chromium_wrapper
+                if chromium_wrapper:
+                    if "browser" in btn_name:
+                        chromium_wrapper.window_remap(1)
+                    else:
+                        chromium_wrapper.window_remap(0)
+            else:
+                self.toggle_keyboard(on_off=False)
+                self.webengine_page.open_page()
 
             if "keyboard" in btn_name:
                 self.toggle_keyboard()
@@ -336,10 +343,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             on_off = not self.keyboard.isVisible()
 
         ls = [
-            # ~ self.webengine_page.webengine_view,
             self.order_page.jar_table_view,
             self.order_page.order_table_view,
             self.order_page.file_table_view, ]
+
+        if not hasattr(self.settings, 'CHROMIUM_WRAPPER') or not self.settings.CHROMIUM_WRAPPER:
+            ls.append(self.webengine_page.webengine_view)
 
         if on_off and not self.keyboard.isVisible():
             self.keyboard.show()
