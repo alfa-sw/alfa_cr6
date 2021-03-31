@@ -11,7 +11,7 @@ link: https://ubuntu.com/server/docs/service-cups
 <pre>
 $ sudo apt-get update
 $ sudo apt-get install -y cups printer-driver-dymo
-$ sudo usermod -aG lpadmin <username>
+$ sudo usermod -aG lpadmin username
 </pre>
 
 
