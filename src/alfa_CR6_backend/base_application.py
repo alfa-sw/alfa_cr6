@@ -36,6 +36,95 @@ from alfa_CR6_backend.globals import (
 from alfa_CR6_backend.machine_head import MachineHead
 
 
+def parse_sikkens_pdf_order(path_to_pdf_file, fixed_pitch=5):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+    path_to_txt_file = "{0}.txt".format(path_to_pdf_file)
+
+    cmd_ = " ".join(["pdftotext", "-fixed", f"{fixed_pitch}", path_to_pdf_file, path_to_txt_file]).split(' ')
+
+    subprocess.run(cmd_, check=False)
+    e = get_encoding(path_to_txt_file)
+
+    properties = {}
+
+    try: # pylint: disable=too-many-nested-blocks
+
+        with codecs.open(path_to_txt_file, encoding=e) as fd:
+            lines = [l.strip() for l in fd.readlines()]
+
+        section = 0
+        offset_value = 0
+        section_cntr = 0
+        meta = {}
+        ingredients = []
+        extra_info = []
+        formula_type = None
+        for i, l in enumerate(lines):
+            if not l:
+                continue
+            try:
+                l = l.strip()
+                if section == 0:
+                    section_cntr += 1
+                    if "Formula Colore" in l:
+                        toks = l.split(":")
+                        if toks[1:]:
+                            formula_type = toks[1].strip()
+                        section = 1
+                        section_cntr = 0
+                    else:
+                        if section_cntr > 3:
+                            meta[section_cntr - 3] = [t.strip() for t in l.split("   ") if t]
+                        else:
+                            extra_info.append(l)
+
+                elif section == 1:
+                    section_cntr += 1
+                    if "Messaggi" in l:
+                        section = 2
+                        section_cntr = 0
+                        extra_info.append(l)
+
+                    elif formula_type:
+                        toks = [t.strip() for t in l.split(" ")]
+                        if toks[2:]:
+                            value_ = toks[-1]
+                            if 'cumulativa' in formula_type.lower():
+                                value = float(value_) - offset_value
+                                offset_value += value
+                            else:
+                                value = float(value_)
+                            new_item = {}
+                            new_item["pigment_name"] = toks[0]
+                            new_item["weight(g)"] = round(value, 4)
+                            new_item["description"] = " ".join([t for t in toks[1:-1] if t])
+                            ingredients.append(new_item)
+                elif section == 2:
+                    section_cntr += 1
+                    extra_info.append(l)
+
+            except Exception:              # pylint: disable=broad-except
+                logging.error(f"fmt error in file:{path_to_txt_file} : line:{i}")
+                logging.error(traceback.format_exc())
+
+        meta["file name"] = os.path.split(path_to_pdf_file)[1]
+        meta["extra_info"] = ["\t".join([t.strip() for t in l.split("   ") if t]) for l in extra_info]
+        properties = {
+            "meta": meta,
+            "ingredients": ingredients,
+        }
+
+        total_lt = float(properties['meta'][1][1].split(' ')[0])
+        total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
+        logging.warning(f"total_lt:{total_lt}, total_gr:{total_gr}")
+
+    finally:
+        cmd_ = ["rm", "-f", path_to_txt_file]
+        subprocess.run(cmd_, check=False)
+
+    return properties
+
+
 def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
     header_id = "KCC Color Navi Formulation"
@@ -47,6 +136,9 @@ def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals, 
     e = get_encoding(path_to_txt_file)
 
     section_separator = "__________________________"
+
+    properties = {}
+
     try:                        # pylint: disable=too-many-nested-blocks
 
         with codecs.open(path_to_txt_file, encoding=e) as fd:
@@ -393,11 +485,11 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         try:
             msg_dict = json.loads(msg)  # TODO: implement message handler
             logging.debug(f"msg_dict:{msg_dict}")
-            
+
             if msg_dict.get("debug_button"):
                 app = QApplication.instance()
                 app.main_window.debug_page.on_button_group_clicked(msg_dict.get("debug_button"))
-            
+
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
@@ -792,7 +884,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 description = ""
                 if path_to_file:
                     split_ext = os.path.splitext(path_to_file)
-                    if split_ext[1:] and split_ext[1] in ( '.json', '.txt'):
+                    if split_ext[1:] and split_ext[1] in ('.json', '.txt'):
                         fname = os.path.split(path_to_file)[1]
                         properties = parse_sw_json_order(path_to_file, json_schema_name)
                     elif split_ext[1:] and split_ext[1] == '.pdf':
