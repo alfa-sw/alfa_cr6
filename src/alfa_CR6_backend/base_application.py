@@ -47,7 +47,7 @@ def parse_sikkens_pdf_order(path_to_pdf_file, fixed_pitch=5):  # pylint: disable
 
     properties = {}
 
-    try: # pylint: disable=too-many-nested-blocks
+    try:  # pylint: disable=too-many-nested-blocks
 
         with codecs.open(path_to_txt_file, encoding=e) as fd:
             lines = [l.strip() for l in fd.readlines()]
@@ -116,7 +116,9 @@ def parse_sikkens_pdf_order(path_to_pdf_file, fixed_pitch=5):  # pylint: disable
 
         total_lt = float(properties['meta'][1][1].split(' ')[0])
         total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
-        logging.warning(f"total_lt:{total_lt}, total_gr:{total_gr}")
+        if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
+            logging.error(f"total_lt:{total_lt}, total_gr:{total_gr}")
+            properties = {}
 
     finally:
         cmd_ = ["rm", "-f", path_to_txt_file]
