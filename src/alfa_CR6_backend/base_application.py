@@ -37,68 +37,150 @@ from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 
 
-def parse_kcc_pdf_order(path_to_pdf_file):   # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+def __parse_kcc_pdf(lines):
 
-    header_id = "KCC Color Navi Formulation"
+    section_separator = "__________________________"
+    section = 0
+    section_cntr = 0
+    meta = {}
+    ingredients = []
+    extra_info = []
+    properties = {}
+    for l in lines:
+
+        if not l:
+            continue
+
+        if section_separator in l:
+            section += 1
+            section_cntr = 0
+        else:
+            if section == 0:
+                toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                if len(toks) == 2:
+                    meta[toks[0]] = toks[1]
+            elif section == 1:
+                if section_cntr % 2 == 0:
+                    toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                    description = toks[0]
+                    name = toks[1]
+                else:
+                    value = round(float(l.split('(G)')[0]), 4)
+                    new_item = {}
+                    new_item["pigment_name"] = name
+                    new_item["weight(g)"] = value
+                    new_item["description"] = description
+                    ingredients.append(new_item)
+            elif section == 2:
+                extra_info.append(l)
+            section_cntr += 1
+
+    meta["extra_info"] = extra_info
+    properties = {
+        "meta": meta,
+        "ingredients": ingredients,
+    }
+
+    return properties
+
+def __parse_sikkens_pdf(lines):     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+    properties = {}
+    section = 0
+    offset_value = 0
+    section_cntr = 0
+    meta = {}
+    ingredients = []
+    extra_info = []
+    formula_type = None
+    for l in lines:
+        if not l:
+            continue
+        l = l.strip()
+        if section == 0:
+            section_cntr += 1
+            if "Formula Colore" in l:
+                toks = l.split(":")
+                if toks[1:]:
+                    formula_type = toks[1].strip()
+                section = 1
+                section_cntr = 0
+            else:
+                if section_cntr > 3:
+                    meta[section_cntr - 3] = [t.strip() for t in l.split("   ") if t]
+                else:
+                    extra_info.append(l)
+
+        elif section == 1:
+            section_cntr += 1
+            if "Messaggi" in l:
+                section = 2
+                section_cntr = 0
+                extra_info.append(l)
+
+            elif formula_type:
+                toks = [t.strip() for t in l.split(" ")]
+                if toks[2:]:
+                    value_ = toks[-1]
+                    if 'cumulativa' in formula_type.lower():
+                        value = float(value_) - offset_value
+                        offset_value += value
+                    else:
+                        value = float(value_)
+                    new_item = {}
+                    new_item["pigment_name"] = toks[0]
+                    new_item["weight(g)"] = round(value, 4)
+                    new_item["description"] = " ".join([t for t in toks[1:-1] if t])
+                    ingredients.append(new_item)
+        elif section == 2:
+            section_cntr += 1
+            extra_info.append(l)
+
+    meta["extra_info"] = ["\t".join([t.strip() for t in l.split("   ") if t]) for l in extra_info]
+    properties = {
+        "meta": meta,
+        "ingredients": ingredients,
+    }
+
+    total_lt = float(properties['meta'][1][1].split(' ')[0])
+    total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
+    if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
+        logging.error(f"total_lt:{total_lt}, total_gr:{total_gr}")
+        properties = {}
+
+    return properties
+
+def parse_pdf_order(path_to_pdf_file, fixed_pitch=5):
 
     path_to_txt_file = "{0}.txt".format(path_to_pdf_file)
 
-    cmd_ = ["pdftotext", path_to_pdf_file, path_to_txt_file]
+    cmd_ = " ".join(["pdftotext", "-fixed", f"{fixed_pitch}", path_to_pdf_file, path_to_txt_file]).split(' ')
+    logging.warning(f"cmd_:{cmd_}")
+
     subprocess.run(cmd_, check=False)
     e = get_encoding(path_to_txt_file)
 
-    section_separator = "__________________________"
-    try:                        # pylint: disable=too-many-nested-blocks
+    properties = {}
+
+    try:
 
         with codecs.open(path_to_txt_file, encoding=e) as fd:
             lines = [l.strip() for l in fd.readlines()]
 
-        assert header_id in lines[0], Exception(tr_("format error, missing header:'{}'").format(header_id))
+        if 'Anteprima Formula' in lines[0]:
+            properties = __parse_sikkens_pdf(lines)
+        elif "KCC Color Navi Formulation".split(' ') == [t.strip() for t in lines[0].split(' ') if t]:
+            properties = __parse_kcc_pdf(lines)
 
-        section = 0
-        section_cntr = 0
-        meta = {}
-        ingredients = []
-        extra_info = []
-        for i, l in enumerate(lines):
-            if not l:
-                continue
-            try:
-                if section_separator in l:
-                    section += 1
-                    section_cntr = 0
-                else:
-                    if section == 0:
-                        toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
-                        if len(toks) == 2:
-                            meta[toks[0]] = toks[1]
-                    elif section == 1:
-                        if section_cntr % 2 == 0:
-                            toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
-                            description = toks[0]
-                            name = toks[1]
-                        else:
-                            value = round(float(l.split('(G)')[0]), 4)
-                            new_item = {}
-                            new_item["pigment_name"] = name
-                            new_item["weight(g)"] = value
-                            new_item["description"] = description
-                            ingredients.append(new_item)
-                    elif section == 2:
-                        extra_info.append(l)
-                    section_cntr += 1
-            except Exception:              # pylint: disable=broad-except
-                logging.error(f"fmt error in file:{path_to_txt_file} : line:{i}")
-                logging.error(traceback.format_exc())
+        if properties.get('meta'):
+            properties['meta']["file name"] = os.path.split(path_to_pdf_file)[1]
 
-        meta["file name"] = os.path.split(path_to_pdf_file)[1]
-        meta["extra_info"] = "\n".join(extra_info)
-        properties = {
-            "meta": meta,
-            "ingredients": ingredients,
-        }
+    except Exception:              # pylint: disable=broad-except
+
+        logging.error(f"fmt error in file:{path_to_txt_file}")
+        logging.error(traceback.format_exc())
+
     finally:
-
         cmd_ = ["rm", "-f", path_to_txt_file]
         subprocess.run(cmd_, check=False)
 
@@ -821,7 +903,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         properties = parse_sw_json_order(path_to_file, json_schema_name)
                     elif split_ext[1:] and split_ext[1] == '.pdf':
                         fname = os.path.split(path_to_file)[1]
-                        properties = parse_kcc_pdf_order(path_to_file)
+                        for fp in (0, 5):
+                            properties = parse_pdf_order(path_to_file, fp)
+                            if properties.get('ingredients'):
+                                break
                     elif split_ext[1:] and split_ext[1] == '.dat':
                         fname = os.path.split(path_to_file)[1]
                         properties = parse_sw_dat_order(path_to_file)
