@@ -1126,7 +1126,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             for m in self.machine_head_dict.values():
                 if m:
                     if m == machine_head:
-                        m.owned_barcodes.append(jar.barcode)
+                        if not jar.barcode in m.owned_barcodes:
+                            m.owned_barcodes.append(jar.barcode)
                     else:
                         if jar.barcode in m.owned_barcodes:
                             m.owned_barcodes.remove(jar.barcode)

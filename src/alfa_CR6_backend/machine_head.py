@@ -161,8 +161,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 and self.status.get("status_level") != "ALARM"):
 
             self.app.freeze_carousel(True)
-            msg_ = "{} ALARM. {}: {}, {}: {}".format(
-                self.name, tr_('error_code'), status.get("error_code"), tr_('error_message'), tr_(status.get("error_message")))
+            msg_ = "{} ALARM. {}: {}, {}: {}".format(self.name, tr_('error_code'), status.get(
+                "error_code"), tr_('error_message'), tr_(status.get("error_message")))
             logging.error(msg_)
             self.app.main_window.open_frozen_dialog(msg_)
 
@@ -428,7 +428,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return ret
 
-    async def do_dispense(self, jar):  # pylint: disable=too-many-locals
+    async def do_dispense(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         ingredients = jar.get_ingredients_for_machine(self)
         pars = {
@@ -439,39 +439,75 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         r = True
         if ingredients:
-            # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
-            allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
 
-            def condition():
-                flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
-                flag = flag and self.status["status_level"] in allowed_status_levels
-                flag = flag and self.status["container_presence"]
-                return flag
-            msg_ = tr_(" before dispensing. Please check jar.")
-            r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
-            if r:
-                r = await self.send_command(
-                    cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
+            json_properties = json.loads(jar.json_properties)
+
+            dispensation_outcomes = json_properties.get("dispensation_outcomes", [])
+
+            failed_disps_ = list([(head_name, outcome)
+                                  for head_name, outcome in dispensation_outcomes if "success" not in outcome])
+
+            if not failed_disps_:
+                # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
+                allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
+
+                def condition():
+                    flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
+                    flag = flag and self.status["status_level"] in allowed_status_levels
+                    flag = flag and self.status["container_presence"]
+                    return flag
+                msg_ = tr_(" before dispensing. Please check jar.")
+                r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
                 if r:
-                    r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
-                    if r:
-                        r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
+                    jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
 
-            if r:
-                json_properties = json.loads(jar.json_properties)
+                    r = await self.send_command(
+                        cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
+
+                    if r:
+                        r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
+                        if r:
+                            # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
+                            def break_condition():
+                                return self.status["status_level"] in ['ALARM', 'RESET']
+
+                            r = await self.wait_for_status_level(
+                                ["STANDBY"], timeout=60 * 6, show_alert=False, break_condition=break_condition)
+                            if r:
+                                outcome_ = 'success'
+                            else:
+                                outcome_ = 'failure during dispensation'
+                        else:
+                            outcome_ = 'failure waiting for dispensation to start'
+                    else:
+                        outcome_ = 'failure in sending "DISPENSE_FORMULA" command'
+
                 ingredients = jar.get_ingredients_for_machine(self)
                 dispensed_quantities_gr = json_properties.get("dispensed_quantities_gr", {})
                 visited_head_names = json_properties.get("visited_head_names", [])
                 visited_head_names.append(self.name)
-                for k, v in ingredients.items():
-                    specific_weight = self.get_specific_weight(k)
-                    dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
-                json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
+
+                error_msg = ''
+                if outcome_ == 'success':
+                    for k, v in ingredients.items():
+                        specific_weight = self.get_specific_weight(k)
+                        dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
+                    json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
+                    jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
+                else:
+                    error_msg = "ERROR in dispensing:\n" + outcome_
+                    jar.update_live(machine_head=self, status='FAILURE', pos=None, t0=None)
+
+                json_properties.setdefault("dispensation_outcomes", [])
+                json_properties["dispensation_outcomes"].append((self.name, outcome_))
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2)
                 self.app.update_jar_properties(jar)
 
-        return r
+                if error_msg:
+                    await self.app.wait_for_carousel_not_frozen(True, msg=msg_)
+
+        return True
 
     async def close(self):
 
@@ -567,8 +603,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def wait_for_status_level(
-            self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
+    async def wait_for_status_level(     # pylint: disable=too-many-arguments
+            self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True, break_condition=None):
 
         logging.warning(
             f"{self.name} status_levels:{status_levels}, on:{on}, timeout:{timeout}")
@@ -580,7 +616,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 return flag if on else not flag
 
             ret = await self.app.wait_for_condition(
-                condition, timeout=timeout, show_alert=show_alert
+                condition, timeout=timeout, show_alert=show_alert, break_condition=break_condition
             )
             logging.warning(
                 f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}"

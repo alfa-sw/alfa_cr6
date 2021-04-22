@@ -1,3 +1,4 @@
+from alfa_CR6_backend.lang import error_kr
 D = {
     " ?": " ?",
     " before dispensing. Please check jar.": "기계가 조색하기 전, 캔을 확인해주세요.",
@@ -9,7 +10,7 @@ D = {
     "Condition not valid while reading barcode:{}": "Condition not valid while reading barcode:{}",
     "DISPENSING POSITION PHOTOCELL": "DISPENSING POSITION PHOTOCELL",
     "INPUT ROLLER PHOTOCELL": "INPUT ROLLER PHOTOCELL",
-    "Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n":    "Can volume not sufficient to dispense formula:{}.\nPlease, remove it.\n",
+    "Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n": "Can volume not sufficient to dispense formula:{}.\nPlease, remove it.\n",
     "LIFTER DOWN PHOTOCELL": "LIFTER DOWN PHOTOCELL",
     "LIFTER ROLLER PHOTOCELL": "LIFTER ROLLER PHOTOCELL",
     "LIFTER UP PHOTOCELL": "LIFTER UP PHOTOCELL",
@@ -40,12 +41,12 @@ D = {
     "Stop dispensing roller": "디스펜싱 롤러를 멈춤",
     "Too many files saved and not used. Please delete unused files.": "Too many files saved and not used. Please delete unused files.",
     "[{}] Files:  search by file name": "[{}] Files: search by file name",
-    "[{}] Jars:   search by status":    "[{}] Cans: search by status",
+    "[{}] Jars:   search by status": "[{}] Cans: search by status",
     "[{}] Orders: search by order nr.": "[{}] 오더넘버에 따라 배합을 확인",
     "\nRemember to check the volume.\n": "\nRemember to check the volume.\n",
     "\nand printing barcodes": "\nand printing barcodes",
-    "\npigments to be added by hand after dispensing:\n{}.":    "\npigments not present in the machine. Please add manually after dispensing:\n{}.",
-    "\npigments to be refilled before dispensing:{}. ({}/3)\n":    "\nplease refill pigments before dispensing:{}. ({}/3)\n",
+    "\npigments to be added by hand after dispensing:\n{}.": "\npigments not present in the machine. Please add manually after dispensing:\n{}.",
+    "\npigments to be refilled before dispensing:{}. ({}/3)\n": "\nplease refill pigments before dispensing:{}. ({}/3)\n",
     "\nwithout printing barcodes": "\nwithout printing barcodes",
     "action 01 (head 1 or A)": "action 01 (head 1 or A)",
     "action 02 (head 1 or A)": "action 02 (head 1 or A)",
@@ -106,13 +107,13 @@ D = {
     "move 10 11 ('DOWN -> UP')": "move 10 11 ('DOWN -> UP')",
     "move 11 12 ('UP -> OUT')": "move 11 12 ('UP -> OUT')",
     "move 12 00 ('deliver')": "move 12 00 ('deliver')",
-    "n. of jars\nto add:":    "n. of cans\nto add:",
+    "n. of jars\nto add:": "n. of cans\nto add:",
     "new": "new",
-    "no item selected. Please, select one to clone.":    "no item selected. Please, select one to copy.",
+    "no item selected. Please, select one to clone.": "no item selected. Please, select one to copy.",
     "order n.:": "order n.:",
     "pigment:": "pigment:",
     "pigments to be added for barcode:\n {}": "pigments to be added for barcode:\n {}",
-    "please, remove completed items from output roller":    "please, remove completed cans from output roller",
+    "please, remove completed items from output roller": "please, remove completed cans from output roller",
     "position:{}\n": "position:{}\n",
     "print\nbarcodes?": "print\nbarcodes?",
     "properties:{}\n": "properties:{}\n",
@@ -131,8 +132,8 @@ D = {
     "{} waiting for {} to get unlocked.": "{} waiting for {} to get unlocked.",
     '   OK   ': '   OK   ',
     ' Cancel ': ' Cancel ',
-    'Missing material for barcode {}.\n please refill pigments:{} on head {}.':    'Not enough product to dispense barcode {}.\n Please refill pigments:{} on head {}.',
-    'Please, insert below the number of jars.':    'Please, insert the number of cans below.',
+    'Missing material for barcode {}.\n please refill pigments:{} on head {}.': 'Not enough product to dispense barcode {}.\n Please refill pigments:{} on head {}.',
+    'Please, insert below the number of jars.': 'Please, insert the number of cans below.',
     'barcode:{} error in STEP {}. I will retry.': 'barcode:{} error in STEP {}. I will retry.',
     'modified.': 'modified.',
     'output roller is busy.': 'output roller is busy.',
@@ -164,8 +165,11 @@ D = {
     'ERROR': 'ERROR',
     'DONE': '완료됨',
     'PARTIAL': '부분완료',
+
+    'failure during dispensation': 'failure during dispensation',
+    'failure waiting for dispensation to start': 'failure waiting for dispensation to start',
+    'failure in sending "DISPENSE_FORMULA" command': 'failure in sending "DISPENSE_FORMULA" command',
 }
 
-from alfa_CR6_backend.lang import error_kr
 
 D.update(error_kr.D)

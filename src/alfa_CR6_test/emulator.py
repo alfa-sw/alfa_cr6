@@ -223,7 +223,12 @@ class MachineHeadMockup:
 
         elif msg_out_dict["command"] in ("DISPENSATION", "DISPENSE_FORMULA"):
             await self.do_move(duration=0.5, tgt_level="DISPENSING")
-            await self.do_move(duration=5, tgt_level="STANDBY")
+            if 'failure' in sys.argv:
+                await asyncio.sleep(3)
+                await self.update_status(
+                    params={"status_level": "ALARM", "error_code": 0xFF, "error_message": "******",})
+            else:
+                await self.do_move(duration=5, tgt_level="STANDBY")
         elif msg_out_dict["command"] == "RESET":
             await self.do_move(FULL_MASK, "reset", duration=0.1, tgt_level="RESET")
             if self.index == 5:

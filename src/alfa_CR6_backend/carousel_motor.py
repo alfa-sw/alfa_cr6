@@ -56,13 +56,18 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     """
 
     async def wait_for_condition(      # pylint: disable=too-many-arguments
-            self, condition, timeout, show_alert=True, extra_info="", stability_count=3, step=0.01, callback=None):
+            self, condition, timeout, show_alert=True, 
+            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None):
 
         ret = None
         t0 = time.time()
         counter = 0
         try:
             while time.time() - t0 < timeout:
+
+                if break_condition and break_condition():
+                    ret = False
+                    break
 
                 if condition and condition():
                     counter += 1
@@ -78,14 +83,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             if not ret:
 
-                _ = f"timeout expired! timeout:{timeout}.\n"
-                if extra_info:
-                    _ += str(extra_info)
+                if ret is None:
+                    _ = f"timeout expired! timeout:{timeout}.\n"
+                    if extra_info:
+                        _ += str(extra_info)
 
-                if show_alert:
-                    self.main_window.open_alert_dialog(_)
-                else:
-                    logging.warning(_)
+                    if show_alert:
+                        self.main_window.open_alert_dialog(_)
+                    else:
+                        logging.warning(_)
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)

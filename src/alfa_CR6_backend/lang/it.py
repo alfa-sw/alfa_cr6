@@ -1,3 +1,4 @@
+from alfa_CR6_backend.lang import error_it
 D = {
     " ?": " ?",
     " before dispensing. Please check jar.": " prima di dispensare, si prega di verificare il barattolo",
@@ -146,18 +147,18 @@ D = {
     'waiting for load_lifter roller available and stopped.': 'in attesa che la rulliera del sollevatore sia disponibile e ferma.',
     'waiting for unload lifter to be free, stopped.': 'in attesa che il sollevatore di scarico sia libero e fermo.',
 
-    'POWER_OFF': 'SPENTO',              
-    'INIT': 'INIT',                     
-    'IDLE': 'ATTESA',                   
-    'RESET': 'RESET',                   
-    'STANDBY': 'PRONTO',                
-    'DISPENSING': 'DISPENSAZIONE',      
-    'ALARM': 'ALLARME',                  
-    'DIAGNOSTIC': 'DIAGNOSTICA',        
-    'POSITIONING': 'POSIZIONAMENTO',    
-    'JUMP_TO_BOOT': 'JUMP_TO_BOOT',     
-    'ROTATING': 'ROTAZIONE',            
-    'AUTOTEST': 'AUTOTEST',             
+    'POWER_OFF': 'SPENTO',
+    'INIT': 'INIT',
+    'IDLE': 'ATTESA',
+    'RESET': 'RESET',
+    'STANDBY': 'PRONTO',
+    'DISPENSING': 'DISPENSAZIONE',
+    'ALARM': 'ALLARME',
+    'DIAGNOSTIC': 'DIAGNOSTICA',
+    'POSITIONING': 'POSIZIONAMENTO',
+    'JUMP_TO_BOOT': 'JUMP_TO_BOOT',
+    'ROTATING': 'ROTAZIONE',
+    'AUTOTEST': 'AUTOTEST',
     'JAR_POSITIONING': 'MOVIMENTAZIONE',
 
     'NEW': 'NUOVO',
@@ -166,8 +167,12 @@ D = {
     'ERROR': 'ERRORE',
     'DONE': 'COMPLETO',
     'PARTIAL': 'PARZIALE',
+
+    'success': 'successo',
+    'failure during dispensation': 'fallito durante la dispensazione',
+    'failure waiting for dispensation to start': 'fallito in attesa di inizio dispensazione',
+    'failure in sending "DISPENSE_FORMULA" command': 'fallito l\'invio del comando "DISPENSE_FORMULA"',
 }
 
-from alfa_CR6_backend.lang import error_it
 
 D.update(error_it.D)
