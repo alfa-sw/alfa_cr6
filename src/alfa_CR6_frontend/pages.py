@@ -448,7 +448,7 @@ class OrderPage(BaseStackedPage):
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
-        
+
         self.setStyleSheet("font-size: 22px;")
 
         self.jar_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -629,7 +629,7 @@ class OrderPage(BaseStackedPage):
             logging.error(traceback.format_exc())
             self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
 
-    def __on_file_table_clicked(self, index):
+    def __on_file_table_clicked(self, index):   # pylint: disable=too-many-locals
 
         datum = index.data()
         logging.warning(f"datum:{datum}")
@@ -660,12 +660,12 @@ class OrderPage(BaseStackedPage):
                     cmd_ = 'pdftotext -raw "{}" "{}"'.format(pth_, out_pth_)
                     logging.warning(f"cmd_:{cmd_}")
                     # ~ process = await asyncio.create_subprocess_exec(
-                        # ~ cmd_, stdout=asyncio.subprocess.PIPE, limit=10000)
+                    # ~ cmd_, stdout=asyncio.subprocess.PIPE, limit=10000)
                     os.system(cmd_)
                     # ~ stdout, stderr = await process.communicate()
                     with open(out_pth_) as f:
                         content = f.read().strip()
-                    subprocess.run(["rm", "-f", out_pth_])
+                    subprocess.run(["rm", "-f", out_pth_], check=False)
                 else:
                     pth_ = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
                     e = get_encoding(pth_, key=None)
@@ -801,6 +801,7 @@ class ActionPage(BaseStackedPage):
                 logging.error(traceback.format_exc())
 
     def __do_show_val(self, w, head_letter, bit_name, text):
+        logging.debug(f"self:{self}")
         try:
             m = QApplication.instance().get_machine_head_by_letter(head_letter)
             if bit_name.lower() == "container_presence":
@@ -1006,7 +1007,10 @@ class HomePage(BaseStackedPage):
         list_ = []
         for k, j in QApplication.instance().get_jar_runners().items():
             if j['jar'].position:
-                _ = f"{k} ({j['jar'].position[0]})"
+                if j['jar'].status == 'ERROR':
+                    _ = f"""<span style="color: red;">{k}*({j['jar'].position[0]})</span>"""
+                else:
+                    _ = f"{k} ({j['jar'].position[0]})"
                 list_.append(_)
         self.running_jars_lbl.setText("\n".join(list_))
 
@@ -1029,7 +1033,9 @@ class HomePage(BaseStackedPage):
             if lbl:
                 self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position)
 
-    def __set_pixmap_by_photocells(self, lbl, head_letters_bit_names, position=None, icon=None):
+    def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
+            self, lbl, head_letters_bit_names, position=None, icon=None):
+
         if lbl:
             def _get_bit(head_letter, bit_name):
                 m = QApplication.instance().get_machine_head_by_letter(head_letter)
@@ -1047,22 +1053,27 @@ class HomePage(BaseStackedPage):
                         lbl.setStyleSheet("QLabel {{}}")
                         lbl.setText("")
                     else:
-                        text = ""
+                        _text = ""
+                        _status = ""
                         for j in QApplication.instance().get_jar_runners().values():
                             pos = j["jar"].position
                             if pos == position:
+                                _status = j["jar"].status
                                 _bc = str(j["jar"].barcode)
-                                text = _bc[-6:-3] + "\n" + _bc[-3:]
+                                _text = _bc[-6:-3] + "\n" + _bc[-3:]
                                 break
 
-                        if text:
-                            _img_url = get_res("IMAGE", "jar-green.png")
+                        if _status == "ERROR":
+                            _img_url = get_res("IMAGE", "jar-red.png")
                         else:
-                            _img_url = get_res("IMAGE", "jar-gray.png")
+                            if _text:
+                                _img_url = get_res("IMAGE", "jar-green.png")
+                            else:
+                                _img_url = get_res("IMAGE", "jar-gray.png")
 
                         lbl.setStyleSheet(
                             'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
-                        lbl.setText(text)
+                        lbl.setText(_text)
                 else:
                     size = [0, 0] if false_condition else [32, 32]
                     pixmap = icon.scaled(*size, Qt.KeepAspectRatio)

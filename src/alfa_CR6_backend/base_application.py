@@ -1139,6 +1139,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     if j.get("jar"):
                         if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
                             raise Exception(tr_("duplicate {} in jar position list!").format(pos))
+
+                if jar.status == "ERROR":
+                    status = "ERROR"
+
                 jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
 
                 self.db_session.commit()

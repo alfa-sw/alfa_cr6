@@ -496,7 +496,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
                 else:
                     error_msg = "ERROR in dispensing:\n" + outcome_
-                    jar.update_live(machine_head=self, status='FAILURE', pos=None, t0=None)
+                    jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
 
                 json_properties.setdefault("dispensation_outcomes", [])
                 json_properties["dispensation_outcomes"].append((self.name, outcome_))
