@@ -1008,10 +1008,11 @@ class HomePage(BaseStackedPage):
         for k, j in QApplication.instance().get_jar_runners().items():
             if j['jar'].position:
                 if j['jar'].status == 'ERROR':
-                    _ = f"""<span style="color: red;">{k}*({j['jar'].position[0]})</span>"""
+                    _color = "#990000"
                 else:
-                    _ = f"{k} ({j['jar'].position[0]})"
-                list_.append(_)
+                    _color = "#005500"
+                _ = f"""<span style="color:{_color};background-color:#EEEEEE;">{k} ({j['jar'].position[0]})</span>"""
+                list_.append(f"{_ : >4}")
         self.running_jars_lbl.setText("\n".join(list_))
 
         map_ = [
