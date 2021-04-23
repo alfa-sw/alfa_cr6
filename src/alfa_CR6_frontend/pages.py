@@ -15,6 +15,7 @@ import time
 import traceback
 import codecs
 import subprocess
+import asyncio
 from functools import partial
 
 from PyQt5.uic import loadUi
@@ -410,9 +411,9 @@ class WebenginePage(BaseStackedPage):
     def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL):
 
         q_url = QUrl(url)
-        if q_url.toString() not in self.webengine_view.url().toString():
-            logging.warning(f"q_url:{q_url}")
-            self.webengine_view.setUrl(q_url)
+        # ~ if q_url.toString() not in self.webengine_view.url().toString():
+        logging.warning(f"q_url:{q_url}")
+        asyncio.get_event_loop().call_later(.5, partial(self.webengine_view.setUrl, q_url))
 
         self.parent().setCurrentWidget(self)
 
