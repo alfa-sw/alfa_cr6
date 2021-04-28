@@ -19,6 +19,8 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import websockets      # pylint: disable=import-error
 
+import magic       # pylint: disable=import-error
+
 from flask import Markup  # pylint: disable=import-error
 
 from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
@@ -30,237 +32,253 @@ from alfa_CR6_backend.globals import (
     EPSILON,
     get_version,
     get_encoding,
-    import_settings,
     tr_)
 
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 
+class OrderParser:
 
-def __parse_kcc_pdf(lines):
+    sikkens_txt_header = 'Octoral Information Services'
+    sikkens_pdf_header = 'Anteprima Formula'
+    kcc_pdf_header = "KCC Color Navi Formulation"
 
-    section_separator = "__________________________"
-    section = 0
-    section_cntr = 0
-    meta = {}
-    ingredients = []
-    extra_info = []
-    properties = {}
-    for l in lines:
+    @staticmethod
+    def parse_sikkens_txt(lines):
 
-        if not l:
-            continue
+        def __find_items_in_line(items, l):
+            return not [i for i in items if i not in l]
 
-        if section_separator in l:
-            section += 1
-            section_cntr = 0
-        else:
-            if section == 0:
-                toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
-                if len(toks) == 2:
-                    meta[toks[0]] = toks[1]
-            elif section == 1:
-                if section_cntr % 2 == 0:
-                    toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
-                    description = toks[0]
-                    name = toks[1]
-                else:
-                    value = round(float(l.split('(G)')[0]), 4)
-                    new_item = {}
-                    new_item["pigment_name"] = name
-                    new_item["weight(g)"] = value
-                    new_item["description"] = description
-                    ingredients.append(new_item)
-            elif section == 2:
-                extra_info.append(l)
-            section_cntr += 1
+        sw_dat_keys_str = """
+        Marca
+        Regione
+        Codicecolore
+        Variante
+        Nomecolore
+        Secondo-nome
+        Anno
+        Contrassegno
+        Qualità
+        Fondo
+        Pittogrammi
+        Data modifica
+        Quantità
+        Cumulativo
+        """
 
-    meta["extra_info"] = extra_info
-    properties = {
-        "meta": meta,
-        "ingredients": ingredients,
-    }
+        sw_dat_keys = [s.strip() for s in sw_dat_keys_str.split('\n')]
 
-    return properties
+        sw_dat_start_line_items = [
+            "Tinta Base", "Peso"]
+        sw_dat_end_line_items = ["Totale"]
 
-def __parse_sikkens_pdf(lines):     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        properties = {
+            "meta": {},
+            "ingredients": [],
+        }
 
-    properties = {}
-    section = 0
-    offset_value = 0
-    section_cntr = 0
-    meta = {}
-    ingredients = []
-    extra_info = []
-    formula_type = None
-    for l in lines:
-        if not l:
-            continue
-        l = l.strip()
-        if section == 0:
-            section_cntr += 1
-            if "Formula Colore" in l:
-                toks = l.split(":")
-                if toks[1:]:
-                    formula_type = toks[1].strip()
-                section = 1
+        collecting_ingredients = False
+        for l in lines[:]:
+            toks = l.split(":")
+            if collecting_ingredients:
+                if __find_items_in_line(sw_dat_end_line_items, l):
+                    collecting_ingredients = False
+                elif l.strip():
+                    toks = [t.strip() for t in l.split()]
+                    # ~ logging.warning(f"toks:{toks}")
+                    if toks:
+                        new_item = {}
+                        new_item["pigment_name"] = toks[0]
+                        new_item["weight(g)"] = round(float(toks[1].replace(",", ".")), 4)
+                        new_item["description"] = "" if len(toks) <= 2 else toks[2]
+                        properties["ingredients"].append(new_item)
+                lines.remove(l)
+            elif not collecting_ingredients:
+                if __find_items_in_line(sw_dat_start_line_items, l):
+                    collecting_ingredients = True
+                    lines.remove(l)
+                elif len(toks) == 2:
+                    k = toks[0].strip()
+                    v = toks[1].strip()
+                    if k in sw_dat_keys:
+                        properties["meta"][k] = v
+                        lines.remove(l)
+
+        properties["meta"]["extra_info"] = [
+            l.replace('\n', '').replace('\r', '').replace('\t', '').strip() for l in lines if l.strip()]
+
+        return properties
+
+    @staticmethod
+    def parse_kcc_pdf(lines):
+
+        section_separator = "__________________________"
+        section = 0
+        section_cntr = 0
+        meta = {}
+        ingredients = []
+        extra_info = []
+        properties = {}
+        for l in lines:
+
+            if not l:
+                continue
+
+            if section_separator in l:
+                section += 1
                 section_cntr = 0
             else:
-                if section_cntr > 3:
-                    meta[section_cntr - 3] = [t.strip() for t in l.split("   ") if t]
+                if section == 0:
+                    toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                    if len(toks) == 2:
+                        meta[toks[0]] = toks[1]
+                elif section == 1:
+                    if section_cntr % 2 == 0:
+                        toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                        description = toks[0]
+                        name = toks[1]
+                    else:
+                        value = round(float(l.split('(G)')[0]), 4)
+                        new_item = {}
+                        new_item["pigment_name"] = name
+                        new_item["weight(g)"] = value
+                        new_item["description"] = description
+                        ingredients.append(new_item)
+                elif section == 2:
+                    extra_info.append(l)
+                section_cntr += 1
+
+        meta["extra_info"] = extra_info
+        properties = {
+            "meta": meta,
+            "ingredients": ingredients,
+        }
+
+        return properties
+
+
+    @staticmethod
+    def parse_sikkens_pdf(lines):     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+        properties = {}
+        section = 0
+        offset_value = 0
+        section_cntr = 0
+        meta = {}
+        ingredients = []
+        extra_info = []
+        formula_type = None
+        for l in lines:
+            if not l:
+                continue
+            l = l.strip()
+            if section == 0:
+                section_cntr += 1
+                if "Formula Colore" in l:
+                    toks = l.split(":")
+                    if toks[1:]:
+                        formula_type = toks[1].strip()
+                    section = 1
+                    section_cntr = 0
                 else:
+                    if section_cntr > 3:
+                        meta[section_cntr - 3] = [t.strip() for t in l.split("   ") if t]
+                    else:
+                        extra_info.append(l)
+
+            elif section == 1:
+                section_cntr += 1
+                if "Messaggi" in l:
+                    section = 2
+                    section_cntr = 0
                     extra_info.append(l)
 
-        elif section == 1:
-            section_cntr += 1
-            if "Messaggi" in l:
-                section = 2
-                section_cntr = 0
+                elif formula_type:
+                    toks = [t.strip() for t in l.split(" ")]
+                    if toks[2:]:
+                        value_ = toks[-1]
+                        if 'cumulativa' in formula_type.lower():
+                            value = float(value_) - offset_value
+                            offset_value += value
+                        else:
+                            value = float(value_)
+                        new_item = {}
+                        new_item["pigment_name"] = toks[0]
+                        new_item["weight(g)"] = round(value, 4)
+                        new_item["description"] = " ".join([t for t in toks[1:-1] if t])
+                        ingredients.append(new_item)
+            elif section == 2:
+                section_cntr += 1
                 extra_info.append(l)
 
-            elif formula_type:
-                toks = [t.strip() for t in l.split(" ")]
-                if toks[2:]:
-                    value_ = toks[-1]
-                    if 'cumulativa' in formula_type.lower():
-                        value = float(value_) - offset_value
-                        offset_value += value
-                    else:
-                        value = float(value_)
-                    new_item = {}
-                    new_item["pigment_name"] = toks[0]
-                    new_item["weight(g)"] = round(value, 4)
-                    new_item["description"] = " ".join([t for t in toks[1:-1] if t])
-                    ingredients.append(new_item)
-        elif section == 2:
-            section_cntr += 1
-            extra_info.append(l)
+        meta["extra_info"] = ["\t".join([t.strip() for t in l.split("   ") if t]) for l in extra_info]
+        properties = {
+            "meta": meta,
+            "ingredients": ingredients,
+        }
 
-    meta["extra_info"] = ["\t".join([t.strip() for t in l.split("   ") if t]) for l in extra_info]
-    properties = {
-        "meta": meta,
-        "ingredients": ingredients,
-    }
+        total_lt = float(properties['meta'][1][1].split(' ')[0])
+        total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
+        if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
+            logging.error(f"total_lt:{total_lt}, total_gr:{total_gr}")
+            properties = {}
 
-    total_lt = float(properties['meta'][1][1].split(' ')[0])
-    total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
-    if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
-        logging.error(f"total_lt:{total_lt}, total_gr:{total_gr}")
+        return properties
+
+
+    @classmethod
+    def parse_pdf_order(cls, path_to_pdf_file, fixed_pitch=5):
+
+        path_to_txt_file = "{0}.txt".format(path_to_pdf_file)
+
+        cmd_ = " ".join(["pdftotext", "-fixed", f"{fixed_pitch}", path_to_pdf_file, path_to_txt_file]).split(' ')
+        logging.warning(f"cmd_:{cmd_}")
+
+        subprocess.run(cmd_, check=False)
+        e = get_encoding(path_to_txt_file)
+
         properties = {}
 
-    return properties
+        try:
 
-def parse_pdf_order(path_to_pdf_file, fixed_pitch=5):
+            with codecs.open(path_to_txt_file, encoding=e) as fd:
+                lines = [l.strip() for l in fd.readlines()]
 
-    path_to_txt_file = "{0}.txt".format(path_to_pdf_file)
-
-    cmd_ = " ".join(["pdftotext", "-fixed", f"{fixed_pitch}", path_to_pdf_file, path_to_txt_file]).split(' ')
-    logging.warning(f"cmd_:{cmd_}")
-
-    subprocess.run(cmd_, check=False)
-    e = get_encoding(path_to_txt_file)
-
-    properties = {}
-
-    try:
-
-        with codecs.open(path_to_txt_file, encoding=e) as fd:
-            lines = [l.strip() for l in fd.readlines()]
-
-        if 'Anteprima Formula' in lines[0]:
-            properties = __parse_sikkens_pdf(lines)
-        elif "KCC Color Navi Formulation".split(' ') == [t.strip() for t in lines[0].split(' ') if t]:
-            properties = __parse_kcc_pdf(lines)
-
-        if properties.get('meta'):
-            properties['meta']["file name"] = os.path.split(path_to_pdf_file)[1]
-
-    except Exception:              # pylint: disable=broad-except
-
-        logging.error(f"fmt error in file:{path_to_txt_file}")
-        logging.error(traceback.format_exc())
-
-    finally:
-        cmd_ = ["rm", "-f", path_to_txt_file]
-        subprocess.run(cmd_, check=False)
-
-    return properties
+            if cls.sikkens_pdf_header in lines[0]:
+                properties = cls.parse_sikkens_pdf(lines)
+            elif cls.kcc_pdf_header.split(' ') == [t.strip() for t in lines[0].split(' ') if t]:
+                properties = cls.parse_kcc_pdf(lines)
 
 
-def parse_sw_dat_order(path_to_dat_file):  # pylint: disable=too-many-locals
+        except Exception:              # pylint: disable=broad-except
 
-    def __find_items_in_line(items, l):
-        return not [i for i in items if i not in l]
+            logging.error(f"fmt error in file:{path_to_txt_file}")
+            logging.error(traceback.format_exc())
 
-    sw_dat_keys_str = """
-    Marca
-    Regione
-    Codicecolore
-    Variante
-    Nomecolore
-    Secondo-nome
-    Anno
-    Contrassegno
-    Qualità
-    Fondo
-    Pittogrammi
-    Data modifica
-    Quantità
-    Cumulativo
-    """
-
-    sw_dat_keys = [s.strip() for s in sw_dat_keys_str.split('\n')]
-
-    sw_dat_start_line_items = [
-        "Tinta Base", "Peso"]
-    sw_dat_end_line_items = ["Totale"]
-
-    properties = {
-        "meta": {},
-        "ingredients": [],
-    }
-    e = get_encoding(path_to_dat_file)
-
-    with codecs.open(path_to_dat_file, encoding=e) as fd:
-        lines = fd.readlines()
-
-    collecting_ingredients = False
-    for l in lines[:]:
-        toks = l.split(":")
-        if collecting_ingredients:
-            if __find_items_in_line(sw_dat_end_line_items, l):
-                collecting_ingredients = False
-            elif l.strip():
-                toks = [t.strip() for t in l.split()]
-                # ~ logging.warning(f"toks:{toks}")
-                if toks:
-                    new_item = {}
-                    new_item["pigment_name"] = toks[0]
-                    new_item["weight(g)"] = round(float(toks[1].replace(",", ".")), 4)
-                    new_item["description"] = "" if len(toks) <= 2 else toks[2]
-                    properties["ingredients"].append(new_item)
-            lines.remove(l)
-        elif not collecting_ingredients:
-            if __find_items_in_line(sw_dat_start_line_items, l):
-                collecting_ingredients = True
-                lines.remove(l)
-            elif len(toks) == 2:
-                k = toks[0].strip()
-                v = toks[1].strip()
-                if k in sw_dat_keys:
-                    properties["meta"][k] = v
-                    lines.remove(l)
-
-    properties["meta"]["extra_info"] = [
-        l.replace('\n', '').replace('\r', '').replace('\t', '').strip() for l in lines if l.strip()]
-
-    return properties
+        return properties
 
 
-def parse_sw_json_order(path_to_json_file, json_schema_name):
+    @classmethod
+    def parse_txt_order(cls, path_to_dat_file):  # pylint: disable=too-many-locals
 
-    properties = {}
-    if json_schema_name == "KCC":
+        properties = {}
+        lines = []
+
+        e = get_encoding(path_to_dat_file)
+        with codecs.open(path_to_dat_file, encoding=e) as fd:
+            lines = fd.readlines()
+
+        logging.warning(f"cls.sikkens_txt_header:{cls.sikkens_txt_header}, lines[0]:{lines[0]}")
+        if cls.sikkens_txt_header in lines[0]:
+            logging.warning(" ok ")
+            properties = cls.parse_sikkens_txt(lines)
+
+        return properties
+
+    @staticmethod
+    def parse_json_order(path_to_json_file):
+
+        properties = {}
 
         content = {}
         with open(path_to_json_file) as f:
@@ -286,10 +304,34 @@ def parse_sw_json_order(path_to_json_file, json_schema_name):
             new_item["weight(g)"] = item["weight(g)"]
             properties["ingredients"].append(new_item)
 
-    elif json_schema_name == "SW":
-        pass
+        return properties
 
-    return properties
+    def parse(self, path_to_file):
+
+        mime = magic.Magic(mime=True)
+        mime_type = mime.from_file(path_to_file)
+        logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}")
+
+        properties = {}
+        if mime_type == 'application/json':
+            properties = self.parse_json_order(path_to_file)
+        elif mime_type == 'application/pdf':
+            for fp in (0, 5):
+                logging.warning(f"trying fp:{fp} ...")
+                properties = self.parse_pdf_order(path_to_file, fp)
+                if properties.get('ingredients'):
+                    break
+        elif mime_type == 'text/plain':
+            properties = self.parse_txt_order(path_to_file)
+        else:
+            raise Exception(f"unknown mime_type:{mime_type}")
+
+        if properties.get('meta'):
+            properties['meta']['file name'] = os.path.split(path_to_file)[1]
+        else:
+            logging.error(f"path_to_file:{path_to_file}, properties:{properties}")
+
+        return properties
 
 
 class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-public-methods
@@ -588,8 +630,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.chromium_wrapper = ChromiumWrapper()
 
         await self.chromium_wrapper.start(
-            # ~ window_name="Sherwin-Williams", 
-            # ~ window_name="chromium", 
+            # ~ window_name="Sherwin-Williams",
+            # ~ window_name="chromium",
             url=url_, opts='', chromium_exe=chromium_exe, path_to_extension_kb=path_to_extension_kb)
 
         while True:
@@ -597,7 +639,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if self.chromium_wrapper.process.returncode is not None:
                     await self.chromium_wrapper.start(
-                        url=url_, opts='', chromium_exe=CHROMIUM_EXE, path_to_extension_kb=PATH_TO_EXTENSION_KB)
+                        url=url_, opts='', chromium_exe=chromium_exe, path_to_extension_kb=path_to_extension_kb)
 
                 await asyncio.sleep(5.0)
             except Exception:                # pylint: disable=broad-except
@@ -889,7 +931,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return cloned_order
 
-    def create_order(self, path_to_file=None, json_schema_name="KCC", n_of_jars=0):
+    def create_order(self, path_to_file=None, n_of_jars=0):
 
         order = None
         if self.db_session:
@@ -897,24 +939,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 properties = {}
                 description = ""
                 if path_to_file:
-                    split_ext = os.path.splitext(path_to_file)
-                    if split_ext[1:] and split_ext[1] == '.json':
-                        fname = os.path.split(path_to_file)[1]
-                        properties = parse_sw_json_order(path_to_file, json_schema_name)
-                    elif split_ext[1:] and split_ext[1] == '.pdf':
-                        fname = os.path.split(path_to_file)[1]
-                        for fp in (0, 5):
-                            properties = parse_pdf_order(path_to_file, fp)
-                            if properties.get('ingredients'):
-                                break
-                    elif split_ext[1:] and split_ext[1] == '.dat':
-                        fname = os.path.split(path_to_file)[1]
-                        properties = parse_sw_dat_order(path_to_file)
-                    else:
-                        raise Exception(f"unknown file extension. split_ext:{split_ext}")
+
+                    _parser = OrderParser()
+                    properties = _parser.parse(path_to_file)
 
                     if properties:
-                        description = f"{fname}"
+                        description = os.path.split(path_to_file)[1]
 
                 order = Order(
                     json_properties=json.dumps(properties, indent=2),
@@ -1126,7 +1156,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             for m in self.machine_head_dict.values():
                 if m:
                     if m == machine_head:
-                        if not jar.barcode in m.owned_barcodes:
+                        if jar.barcode not in m.owned_barcodes:
                             m.owned_barcodes.append(jar.barcode)
                     else:
                         if jar.barcode in m.owned_barcodes:

@@ -272,10 +272,11 @@ class JarTableModel(BaseTableModel):
 
             logging.debug(f"datum:{datum}")
 
-            if "!" in datum[1]:
-                ret = self.orange_icon.scaled(32, 32, Qt.KeepAspectRatio)
-            elif "DONE" in datum[0]:
-                ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
+            if "DONE" in datum[0]:
+                if "!" in datum[1]:
+                    ret = self.orange_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                else:
+                    ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
             elif "ERR" in datum[0]:
                 ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
             elif "PROGRESS" in datum[0]:
@@ -749,10 +750,8 @@ class OrderPage(BaseStackedPage):
         n = int(self.main_window.input_dialog.content_container.toPlainText())
         n = min(n, 20)
         logging.warning(f"n:{n}")
-        order = app.create_order(
-            os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name),
-            json_schema_name="KCC",
-            n_of_jars=n)
+        path_to_file = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
+        order = app.create_order(path_to_file, n_of_jars=n)
 
         if order:
 
@@ -770,7 +769,8 @@ class OrderPage(BaseStackedPage):
             self.main_window.open_input_dialog(message=msg_, content="{}".format(
                 [l[0] for l in args_to_print]), ok_cb=cb_)
 
-        model.remove_file(file_name)
+            model.remove_file(file_name)
+
         self.populate_file_table()
         self.populate_order_table()
         self.populate_jar_table()
