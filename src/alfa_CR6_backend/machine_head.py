@@ -460,6 +460,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
                 if r:
                     jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
+                    # ~ self.app.update_jar_position(jar, machine_head=self, status='DISPENSING')
 
                     r = await self.send_command(
                         cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
@@ -481,6 +482,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             outcome_ = 'failure waiting for dispensation to start'
                     else:
                         outcome_ = 'failure in sending "DISPENSE_FORMULA" command'
+                else:
+                    outcome_ = 'failure in waiting for dispensing condition'
 
                 ingredients = jar.get_ingredients_for_machine(self)
                 dispensed_quantities_gr = json_properties.get("dispensed_quantities_gr", {})
