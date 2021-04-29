@@ -68,25 +68,37 @@
 		</tr>
 
 	</table>
+</div>
 
 	<hr></hr>
-	<div>
-		<span>test input (debug only)</span><input type="text" id="debug_button"></input>
-		<input type="submit" onclick="send_debug_button();"></input>
+	<h4 class="glyphicon glyphicon-wrench" onclick="toggle_element_visibility('manhole_commander');"></h4>
+	<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
+		<span>Manhole commander (expert usage only):</span>
+		<input type="text" size="40" id="debug_command" onkeydown="if(event.keyCode === 13) {send_debug_cmd()};"></input>
+		<input type="submit" onclick="send_debug_cmd();"></input>
+		<span id="debug_answer"></span>
 	</div>
 
-
-</div>
 <script>
 
 	var g_ws_client = null;
 	
-	var send_debug_button = function() {
-		var el = document.getElementById("debug_button"); 
+	var toggle_element_visibility = function(el_id) {
+		var el = document.getElementById(el_id); 
+		if(el){
+			if (el.style.visibility === "hidden") {
+				el.style.visibility = "visible"; 
+			} else {
+				el.style.visibility = "hidden"; 
+			}
+		}
+	}
+	var send_debug_cmd = function() {
+		var el = document.getElementById("debug_command"); 
 		if((el) && (g_ws_client)){
 			el.value;
-			console.debug('send_debug_button(), el.value: ' + el.value); 
-			g_ws_client.send({"debug_button": el.value});
+			console.debug('send_debug_cmd(), el.value: ' + el.value); 
+			g_ws_client.send(JSON.stringify({"debug_command": el.value}));
 		}
 	}
 
@@ -103,14 +115,17 @@
 		var data = JSON.parse(event.data);
 //~ 		console.log('on_wsocket_message() data.value:', data.value)
 		var data_container_id = null;
-		console.log('data.type:', data.type)
+		console.log('on_wsocket_message() data.type:', data.type)
+		console.log('on_wsocket_message() data.value:', data.value)
 		var el = document.getElementById(data.type); 
 		if(el){
 			el.innerHTML = data.value;
 		}
-		var el1 = document.getElementById('server_time'); 
-		if(el1){
-			el1.innerHTML = data.server_time;
+		if (data.server_time) {
+			var el1 = document.getElementById('server_time'); 
+			if(el1){
+				el1.innerHTML = data.server_time;
+			}
 		}
 	};
 

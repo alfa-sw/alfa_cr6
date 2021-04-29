@@ -14,6 +14,7 @@ import asyncio
 import json
 import codecs
 import subprocess
+import html
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
@@ -405,8 +406,9 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
 
 class WsServer:   # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, ws_host, ws_port):
+    def __init__(self, parent, ws_host, ws_port):
 
+        self.parent = parent
         self.ws_host = ws_host
         self.ws_port = ws_port
         asyncio.ensure_future(websockets.serve(self.new_client_handler, self.ws_host, self.ws_port))
@@ -520,6 +522,20 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         try:
             msg_dict = json.loads(msg)  # TODO: implement message handler
             logging.debug(f"msg_dict:{msg_dict}")
+
+            if msg_dict.get("debug_command"):
+                try:
+                    cmd_ = msg_dict["debug_command"]
+                    ret = eval(cmd_)
+                except Exception as e:
+                    ret = str(e)
+                answer = json.dumps({
+                    'type': 'debug_answer',
+                    'value': html.escape(str(ret)),
+                })
+                await websocket.send(answer)
+                logging.warning(f"answer:{answer}")
+
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
@@ -683,7 +699,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def __create_ws_server_task(self, ws_server_addr, ws_server_port):
 
-        self.ws_server = WsServer(ws_server_addr, ws_server_port)
+        self.ws_server = WsServer(self, ws_server_addr, ws_server_port)
 
     async def __jar_task(self, barcode):  # pylint: disable=too-many-statements
 
