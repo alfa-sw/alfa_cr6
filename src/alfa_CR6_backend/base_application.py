@@ -255,6 +255,10 @@ class OrderParser:
             logging.error(f"fmt error in file:{path_to_txt_file}")
             logging.error(traceback.format_exc())
 
+        cmd_ = f'rm -f "{path_to_txt_file}"'
+        logging.warning(f"cmd_:{cmd_}")
+        os.system(cmd_)
+
         return properties
 
 
