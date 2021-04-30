@@ -258,21 +258,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
     @property
     def extra_lines_to_print(self):
         _order_json_properties = json.loads(self.order.json_properties)
-
-        l1, l2, l3 = "", "", ""
-        try:
-            marca = _order_json_properties.get('meta', {}).get('Marca', '')
-            codicecolore = _order_json_properties.get('meta', {}).get('Codicecolore', '')
-            secondo_nome = _order_json_properties.get('meta', {}).get('Secondo-nome', '')
-            quantita = _order_json_properties.get('meta', {}).get('Quantità', '')
-            l1 = f"{marca.strip()}"
-            l2 = f"{secondo_nome.strip()}"
-            l3 = f"{codicecolore.strip()} {quantita.strip()}"
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            QApplication.instance().handle_exception(e)
-
-        return [l1, l2, l3]
+        return _order_json_properties.get("extra_lines_to_print", "")
 
     @property
     def insufficient_pigments(self):

@@ -40,12 +40,12 @@ from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 
 class OrderParser:
 
-    sikkens_txt_header = 'Octoral Information Services'
+    sw_txt_header = 'Octoral Information Services'
     sikkens_pdf_header = 'Anteprima Formula'
     kcc_pdf_header = "KCC Color Navi Formulation"
 
     @staticmethod
-    def parse_sikkens_txt(lines):
+    def parse_sw_txt(lines):
 
         def __find_items_in_line(items, l):
             return not [i for i in items if i not in l]
@@ -107,6 +107,18 @@ class OrderParser:
 
         properties["meta"]["extra_info"] = [
             l.replace('\n', '').replace('\r', '').replace('\t', '').strip() for l in lines if l.strip()]
+
+        try:
+            marca = properties.get('meta', {}).get('Marca', '')
+            codicecolore = properties.get('meta', {}).get('Codicecolore', '')
+            secondo_nome = properties.get('meta', {}).get('Secondo-nome', '')
+            quantita = properties.get('meta', {}).get('Quantità', '')
+            l1 = f"{marca.strip()}"
+            l2 = f"{secondo_nome.strip()}"
+            l3 = f"{codicecolore.strip()} {quantita.strip()}"
+            properties["extra_lines_to_print"] = [l1, l2, l3]
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
 
         return properties
 
@@ -224,8 +236,17 @@ class OrderParser:
             logging.error(f"total_lt:{total_lt}, total_gr:{total_gr}")
             properties = {}
 
-        return properties
+        try:
+            t1 = properties.get('meta', {}).get(1, [""])[0]
+            t2 = properties.get('meta', {}).get(1, ["", ""])[1] 
+            t3 = properties.get('meta', {}).get(2, [""])[0] 
+            t4 = properties.get('meta', {}).get(3, [""])[0] 
+            properties["extra_lines_to_print"] = [f"{t1}", f"{t2} {t3}", f"{t4}"]
+            logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
 
+        return properties
 
     @classmethod
     def parse_pdf_order(cls, path_to_pdf_file, fixed_pitch=5):
@@ -273,10 +294,10 @@ class OrderParser:
         with codecs.open(path_to_dat_file, encoding=e) as fd:
             lines = fd.readlines()
 
-        logging.warning(f"cls.sikkens_txt_header:{cls.sikkens_txt_header}, lines[0]:{lines[0]}")
-        if cls.sikkens_txt_header in lines[0]:
+        logging.warning(f"cls.sw_txt_header:{cls.sw_txt_header}, lines[0]:{lines[0]}")
+        if cls.sw_txt_header in lines[0]:
             logging.warning(" ok ")
-            properties = cls.parse_sikkens_txt(lines)
+            properties = cls.parse_sw_txt(lines)
 
         return properties
 
