@@ -176,7 +176,7 @@ class MachineHeadMockup:
                     ret = f"{x}"
                 return ret
                     
-            logging.warning("{}, params:{}.".format(self.letter, {k: fmt(v) for k, v in params.items()}))
+            logging.info("{}, params:{}.".format(self.letter, {k: fmt(v) for k, v in params.items()}))
             self.status.update(params)
             await self.dump_status()
         except:
@@ -209,7 +209,7 @@ class MachineHeadMockup:
         await self.update_status(params=pars)
 
     async def handle_command(self, msg_out_dict):  # pylint: disable=too-many-branches,too-many-statements
-        logging.warning("{} {}, {}".format(self.index, self.letter, msg_out_dict))
+        logging.info("{} {}, {}".format(self.index, self.letter, msg_out_dict))
 
         if msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
             await self.do_move(duration=0.5, tgt_level="DIAGNOSTIC")
@@ -374,11 +374,18 @@ class MachineHeadMockup:
         pars = {}
 
         if output_number == 0:
+
             if output_action in (1, 4):
                 current_bit_val = self.status["jar_photocells_status"] & DISPENSING_POSITION_MASK
                 pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~current_bit_val
             elif output_action in (2, 5):
-                pars["jar_photocells_status"] = self.status["jar_photocells_status"] | DISPENSING_POSITION_MASK
+                if 'fail_on_transfer' in sys.argv and self.letter in sys.argv:
+                    logging.warning(f"sys.argv:{sys.argv}")
+                    sys.argv.remove('fail_on_transfer')
+                    # ~ sys.argv.remove(self.letter)
+                    logging.warning(f"sys.argv:{sys.argv}")
+                else:
+                    pars["jar_photocells_status"] = self.status["jar_photocells_status"] | DISPENSING_POSITION_MASK
             elif output_action in (3, 6):
                 pars["jar_photocells_status"] = self.status["jar_photocells_status"] & ~DISPENSING_POSITION_MASK
 
@@ -469,9 +476,9 @@ class MachineHeadMockup:
 
         if not pars:
             logging.warning(f"{self.letter}, output_number:{output_number}, output_action:{output_action}, pars:{pars}")
-        else:
-            t = self.update_status(params=pars)
-            asyncio.ensure_future(t)
+
+        t = self.update_status(params=pars)
+        asyncio.ensure_future(t)
 
     async def dump_status(self):
         raise Exception(f"to be overidden in {self}")
