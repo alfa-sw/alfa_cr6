@@ -119,17 +119,20 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         F = self.get_machine_head_by_letter("F")
         r = None
+
+        jar.update_live(pos="WAIT")
+
         try:
-            r = await F.wait_for_jar_photocells_status(
-                "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
-            if r:
+            # ~ r = await F.wait_for_jar_photocells_status(
+                # ~ "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
+            # ~ if r:
                 r = await F.wait_for_jar_photocells_status(
                     "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=24 * 60 * 60)
 
-                jar.update_live(pos="_")
-
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
+
+        jar.update_live(pos="_")
 
         return r
 
@@ -516,7 +519,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
                     def condition_12():
                         return not F.status.get('crx_outputs_status', 0x0) & 0x08
-                    r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+                    r = await self.wait_for_condition(condition_12, show_alert=True, timeout=2.0)
                     if r:
                         await F.crx_outputs_management(3, 5)
 
@@ -588,7 +591,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_09_10,
             self.move_10_11,
             self.move_11_12,
-            self.wait_for_jar_delivery,
         ]
 
         sequence_4 = [
@@ -605,7 +607,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_09_10,
             self.move_10_11,
             self.move_11_12,
-            self.wait_for_jar_delivery,
         ]
 
         if n_of_heads == 6:
@@ -633,5 +634,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 else:
                     break
             await self.wait_for_carousel_not_frozen(not r, tr_("barcode:{}").format(barcode_) + tr_("STEP {} +").format(i))
+
+        await self.wait_for_jar_delivery(jar)
 
         return r
