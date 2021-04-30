@@ -298,19 +298,20 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         try:
 
-            if hasattr(self.settings, 'CHROMIUM_WRAPPER') and self.settings.CHROMIUM_WRAPPER:
-                chromium_wrapper = QApplication.instance().chromium_wrapper
-                if chromium_wrapper:
-                    if "browser" in btn_name:
-                        chromium_wrapper.window_remap(1)
-                    else:
-                        chromium_wrapper.window_remap(0)
-            else:
-                self.toggle_keyboard(on_off=False)
-                self.webengine_page.open_page()
-
             if "keyboard" in btn_name:
                 self.toggle_keyboard()
+
+            elif "browser" in btn_name:
+                if hasattr(self.settings, 'CHROMIUM_WRAPPER') and self.settings.CHROMIUM_WRAPPER:
+                    chromium_wrapper = QApplication.instance().chromium_wrapper
+                    if chromium_wrapper:
+                        if "browser" in btn_name:
+                            chromium_wrapper.window_remap(1)
+                        else:
+                            chromium_wrapper.window_remap(0)
+                else:
+                    self.toggle_keyboard(on_off=False)
+                    self.webengine_page.open_page()
 
             elif "home" in btn_name:
                 self.toggle_keyboard(on_off=False)
