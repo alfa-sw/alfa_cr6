@@ -492,7 +492,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                     await self.broadcast_msg(f'device:machine:status_{m.index}', dict(m.status))
 
             live_can_list = [
-                f"{k} ({j['jar'].position[0]}) {j['jar'].status}" for k, j in
+                f"{k} ({j['jar'].position}) {j['jar'].status}" for k, j in
                 QApplication.instance().get_jar_runners().items() if
                 j and j.get('jar') and j['jar'].position]
 
@@ -527,7 +527,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                 try:
                     cmd_ = msg_dict["debug_command"]
                     ret = eval(cmd_)
-                except Exception as e:
+                except Exception as e:   # pylint: disable=broad-except
                     ret = str(e)
                 answer = json.dumps({
                     'type': 'debug_answer',
@@ -1202,7 +1202,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             self.main_window.home_page.update_jar_pixmaps()
 
-            live_can_list = [f"{k} ({j['jar'].position[0]}) {j['jar'].status}"
+            live_can_list = [f"{k} ({j['jar'].position}) {j['jar'].status}"
                              for k, j in self.get_jar_runners().items() if j['jar'].position]
             t = self.ws_server.broadcast_msg("live_can_list", live_can_list)
             asyncio.ensure_future(t)
