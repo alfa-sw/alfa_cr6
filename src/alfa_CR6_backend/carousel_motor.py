@@ -403,7 +403,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
         if r:
             await D.crx_outputs_management(1, 5)
-            r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=20)
+            r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=40)
             await D.crx_outputs_management(1, 0)
             if r:
                 self.update_jar_position(jar=jar, pos="LIFTR_DOWN")
@@ -479,7 +479,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
         if r:
             await F.crx_outputs_management(3, 2)
-            r = await F.wait_for_jar_photocells_status("UNLOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=20)
+            r = await F.wait_for_jar_photocells_status("UNLOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=40)
             await F.crx_outputs_management(3, 0)
             if r:
                 self.update_jar_position(jar=jar, pos="LIFTL_UP")
