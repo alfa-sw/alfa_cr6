@@ -258,7 +258,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
     @property
     def extra_lines_to_print(self):
         _order_json_properties = json.loads(self.order.json_properties)
-        return _order_json_properties.get("extra_lines_to_print", "")
+        return _order_json_properties.get("extra_lines_to_print", [])
 
     @property
     def insufficient_pigments(self):

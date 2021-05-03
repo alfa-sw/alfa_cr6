@@ -58,7 +58,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     def positions_already_engaged(self, positions, jar=None):
 
-        logging.warning(f"positions:{positions}, jar:{jar}")
+        # ~ logging.warning(f"positions:{positions}, jar:{jar}")
 
         flag = False
         try:
@@ -121,18 +121,20 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         r = None
 
         jar.update_live(pos="WAIT")
+        self.db_session.commit()
 
         try:
             # ~ r = await F.wait_for_jar_photocells_status(
-                # ~ "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
+            # ~ "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
             # ~ if r:
-                r = await F.wait_for_jar_photocells_status(
-                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=24 * 60 * 60)
+            r = await F.wait_for_jar_photocells_status(
+                "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=24 * 60 * 60)
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
         jar.update_live(pos="_")
+        self.db_session.commit()
 
         return r
 
@@ -216,20 +218,27 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         while True:
             def condition_1():
                 flag = not F.status.get('crx_outputs_status', 0x0) & 0x04
+                flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x02
                 flag = flag and not F.jar_photocells_status.get('JAR_OUTPUT_ROLLER_PHOTOCELL', False)
                 flag = flag and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', False)
+                flag = flag and not self.positions_already_engaged(["LIFTL_UP", "LIFTL_DOWN"], jar)
                 return flag
             r = await self.wait_for_condition(condition_1, show_alert=False, timeout=2.0)
+
             if not r:  # the output line is busy
                 def condition_120():
                     flag = not self.positions_already_engaged(["LIFTL_UP", "LIFTL_DOWN"], jar)
-                    flag = not F.status.get('crx_outputs_status', 0x0) & 0x04
+                    flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x04
+                    flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x02
                     return flag
+                # ~ wait for the preceding jar has finished
                 r = await self.wait_for_condition(condition_120, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
                 if r:
-                    await F.crx_outputs_management(2, 4)
-                    r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=5.5, show_alert=False)
-                    await F.crx_outputs_management(2, 0)
+                    # ~ try to deliver the preceding jar
+                    if F.jar_photocells_status.get('JAR_OUTPUT_ROLLER_PHOTOCELL', False):
+                        await F.crx_outputs_management(2, 4)
+                        r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=5.5, show_alert=False)
+                        await F.crx_outputs_management(2, 0)
 
             if r:
                 def condition_11():
@@ -237,16 +246,19 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 r = await self.wait_for_condition(condition_11, show_alert=False, timeout=10)
                 if not r:  # the lifter is not DOWN, we must call it
                     def condition_12():
-                        flag = not F.status.get('crx_outputs_status', 0x0) & 0x02
+                        flag = not self.positions_already_engaged(["LIFTL_UP", "LIFTL_DOWN"], jar)
+                        flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x02
                         flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x08
                         flag = flag and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', True)
                         return flag
                     r = await self.wait_for_condition(condition_12, show_alert=False, timeout=34)
                     if r:
+                        # ~ call the lifter
                         await F.crx_outputs_management(3, 5)
                 if r:
                     def condition():
-                        flag = not F.status.get('crx_outputs_status', 0x0) & 0x01
+                        flag = not self.positions_already_engaged(["LIFTL_UP", "LIFTL_DOWN"], jar)
+                        flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x01
                         flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x02
                         # ~ flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x04
                         flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x08
@@ -332,7 +344,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         r = await self.wait_for_dispense_position_available("A", extra_check=condition)
 
         if r:
-            if not self.positions_already_engaged(["IN_A",]):
+            if not self.positions_already_engaged(["IN_A", ]):
                 self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
                 await A.crx_outputs_management(1, 2)
                 await A.crx_outputs_management(0, 2)
@@ -618,22 +630,22 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         self.update_jar_position(jar=jar, status="ENTERING", pos="IN")
 
-        for i, step in enumerate(sequence):
-            logging.warning(f"step:{step}")
-            await self.wait_for_carousel_not_frozen(False, tr_("barcode:{}").format(barcode_) + tr_("STEP {} -").format(i))
+        for step in sequence:
+            _tag = str(step).split("bound method CarouselMotor.")
+            _tag = _tag[1:] and _tag[1].split(" ")[0]
+            _tag = "{} ({})".format(tr_(_tag), jar.position)
+            logging.warning(f"_tag:{_tag}")
 
             retry_counter = 0
             while True:
                 r = await step(jar)
-                retry_counter += 1
 
                 if not r:
                     retry_counter += 1
-                    msg_ = tr_('barcode:{} error in STEP {}. I will retry.').format(barcode_, i) + f" ({retry_counter})"
+                    msg_ = tr_('barcode:{} error in {}. I will retry.').format(barcode_, f"\n{_tag}\n") + f" ({retry_counter})"
                     await self.wait_for_carousel_not_frozen(True, msg_)
                 else:
                     break
-            await self.wait_for_carousel_not_frozen(not r, tr_("barcode:{}").format(barcode_) + tr_("STEP {} +").format(i))
 
         await self.wait_for_jar_delivery(jar)
 
