@@ -874,18 +874,19 @@ class HomePage(BaseStackedPage):
 
         self.reserve_movie = QMovie(get_res("IMAGE", "riserva.gif"))
 
-        self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
-        self.STEP_02_label.mouseReleaseEvent = lambda event: self.step_label_clicked("A")
-        self.STEP_03_label.mouseReleaseEvent = lambda event: self.step_label_clicked("B")
-        self.STEP_04_label.mouseReleaseEvent = lambda event: self.step_label_clicked("C")
-        self.STEP_05_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_UP")
-        self.STEP_06_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_DOWN")
-        self.STEP_07_label.mouseReleaseEvent = lambda event: self.step_label_clicked("D")
-        self.STEP_08_label.mouseReleaseEvent = lambda event: self.step_label_clicked("E")
-        self.STEP_09_label.mouseReleaseEvent = lambda event: self.step_label_clicked("F")
-        self.STEP_10_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_DOWN")
-        self.STEP_11_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_UP")
-        self.STEP_12_label.mouseReleaseEvent = lambda event: self.step_label_clicked("OUT")
+        
+        if self.STEP_01_label: self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
+        if self.STEP_02_label: self.STEP_02_label.mouseReleaseEvent = lambda event: self.step_label_clicked("A")
+        if self.STEP_03_label: self.STEP_03_label.mouseReleaseEvent = lambda event: self.step_label_clicked("B")
+        if self.STEP_04_label: self.STEP_04_label.mouseReleaseEvent = lambda event: self.step_label_clicked("C")
+        if self.STEP_05_label: self.STEP_05_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_UP")
+        if self.STEP_06_label: self.STEP_06_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_DOWN")
+        if self.STEP_07_label: self.STEP_07_label.mouseReleaseEvent = lambda event: self.step_label_clicked("D")
+        if self.STEP_08_label: self.STEP_08_label.mouseReleaseEvent = lambda event: self.step_label_clicked("E")
+        if self.STEP_09_label: self.STEP_09_label.mouseReleaseEvent = lambda event: self.step_label_clicked("F")
+        if self.STEP_10_label: self.STEP_10_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_DOWN")
+        if self.STEP_11_label: self.STEP_11_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_UP")
+        if self.STEP_12_label: self.STEP_12_label.mouseReleaseEvent = lambda event: self.step_label_clicked("OUT")
 
     def open_page(self):
 
