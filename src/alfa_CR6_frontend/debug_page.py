@@ -195,18 +195,8 @@ class DebugPage:
             m = named_map.get(name)
             t = None
             if command == "CANCEL":
-                try:
-                    barcode = int(name)
-                    tsks = app.get_jar_runners()
-                    t = tsks.get(barcode, {}).get("task")
-                    logging.warning(f"t:{t}, tsks:{tsks}.")
-                    if t:
-                        async def _coro():
-                            await t.cancel()
-                        asyncio.ensure_future(_coro())
-
-                except asyncio.CancelledError:
-                    logging.info(f"{ t } has been canceled now.")
+                barcode = int(name)
+                app.delete_jar_runner(barcode)
             elif command == "DIAGNOSTIC" and m:
                 t = m.send_command(
                     cmd_name="ENTER_DIAGNOSTIC",
@@ -412,17 +402,9 @@ class DebugPage:
 
         elif "clear\njars" in cmd_txt:
 
-            for k in app.get_jar_runners().keys():
-                t = app.get_jar_runners()[k]["task"]
-                try:
-                    t.cancel()
-
-                    async def _coro(_):
-                        await _
-
-                    asyncio.ensure_future(_coro(t))
-                except asyncio.CancelledError:
-                    logging.info(f"{ t } has been canceled now.")
+            for k in list(app.get_jar_runners().keys()):
+                barcode = int(k)
+                app.delete_jar_runner(barcode)
 
         elif "read\nbarcode" in cmd_txt:
             status = app.machine_head_dict[0].status.copy()

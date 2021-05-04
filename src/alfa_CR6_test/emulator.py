@@ -230,6 +230,14 @@ class MachineHeadMockup:
             else:
                 await self.do_move(duration=5, tgt_level="STANDBY")
         elif msg_out_dict["command"] == "RESET":
+
+            if self.index == 5:
+                self.status["jar_photocells_status"] = 0x0010  # set load_lifter_up_pc
+            elif self.index == 1:
+                self.status["jar_photocells_status"] = 0x0020  # set load_lifter_down_pc
+            else:
+                self.status["jar_photocells_status"] = 0x0000  # set load_lifter_up_pc
+            
             await self.do_move(FULL_MASK, "reset", duration=0.1, tgt_level="RESET")
             if self.index == 5:
                 await self.do_move(

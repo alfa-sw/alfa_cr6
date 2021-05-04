@@ -169,6 +169,7 @@ D = {
     'failure during dispensation': 'failure during dispensation',
     'failure waiting for dispensation to start': 'failure waiting for dispensation to start',
     'failure in sending "DISPENSE_FORMULA" command': 'failure in sending "DISPENSE_FORMULA" command',
+    "confirm removing {}?": "confirm removing {}?",
 }
 
 

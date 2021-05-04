@@ -38,6 +38,7 @@ from alfa_CR6_backend.globals import (
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 
+
 class OrderParser:
 
     sw_txt_header = 'Octoral Information Services'
@@ -45,7 +46,7 @@ class OrderParser:
     kcc_pdf_header = "KCC Color Navi Formulation"
 
     @staticmethod
-    def parse_sw_txt(lines):
+    def parse_sw_txt(lines):       # pylint: disable=too-many-locals
 
         def __find_items_in_line(items, l):
             return not [i for i in items if i not in l]
@@ -117,7 +118,7 @@ class OrderParser:
             l2 = f"{secondo_nome.strip()}"
             l3 = f"{codicecolore.strip()} {quantita.strip()}"
             properties["extra_lines_to_print"] = [l1, l2, l3]
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
         return properties
@@ -168,7 +169,6 @@ class OrderParser:
         }
 
         return properties
-
 
     @staticmethod
     def parse_sikkens_pdf(lines):     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
@@ -238,12 +238,12 @@ class OrderParser:
 
         try:
             t1 = properties.get('meta', {}).get(1, [""])[0]
-            t2 = properties.get('meta', {}).get(1, ["", ""])[1] 
-            t3 = properties.get('meta', {}).get(2, [""])[0] 
-            t4 = properties.get('meta', {}).get(3, [""])[0] 
+            t2 = properties.get('meta', {}).get(1, ["", ""])[1]
+            t3 = properties.get('meta', {}).get(2, [""])[0]
+            t4 = properties.get('meta', {}).get(3, [""])[0]
             properties["extra_lines_to_print"] = [f"{t1}", f"{t2} {t3}", f"{t4}"]
             logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
         return properties
@@ -271,7 +271,6 @@ class OrderParser:
             elif cls.kcc_pdf_header.split(' ') == [t.strip() for t in lines[0].split(' ') if t]:
                 properties = cls.parse_kcc_pdf(lines)
 
-
         except Exception:              # pylint: disable=broad-except
 
             logging.error(f"fmt error in file:{path_to_txt_file}")
@@ -282,7 +281,6 @@ class OrderParser:
         os.system(cmd_)
 
         return properties
-
 
     @classmethod
     def parse_txt_order(cls, path_to_dat_file):  # pylint: disable=too-many-locals
@@ -512,12 +510,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                 if m:
                     await self.broadcast_msg(f'device:machine:status_{m.index}', dict(m.status))
 
-            live_can_list = [
-                f"{k} ({j['jar'].position}) {j['jar'].status}" for k, j in
-                QApplication.instance().get_jar_runners().items() if
-                j and j.get('jar') and j['jar'].position]
-
-            await self.broadcast_msg("live_can_list", live_can_list)
+            self.refresh_can_list()
 
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -541,7 +534,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
     async def __handle_client_msg(self, websocket, msg):
         logging.warning("websocket:{}, msg:{}.".format(websocket, msg))
         try:
-            msg_dict = json.loads(msg)  # TODO: implement message handler
+            msg_dict = json.loads(msg)
             logging.debug(f"msg_dict:{msg_dict}")
 
             if msg_dict.get("debug_command"):
@@ -559,6 +552,16 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+
+    def refresh_can_list(self):
+
+        live_can_list = [
+            f"{k} ({j['jar'].position}) {j['jar'].status}" for k, j in
+            QApplication.instance().get_jar_runners().items() if
+            j and j.get('jar') and j['jar'].position]
+
+        t = self.broadcast_msg("live_can_list", live_can_list)
+        asyncio.ensure_future(t)
 
 
 class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
@@ -766,15 +769,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 r = await self.execute_carousel_steps(self.n_of_active_heads, jar)
                 logging.warning(f"r:{r}")
 
-        except asyncio.CancelledError:
-            if jar:
-                jar.status = "ERROR"
-                # ~ jar.description = traceback.format_exc()
-            logging.error(traceback.format_exc())
+        except asyncio.CancelledError as e:
+            logging.warning(f"cancelled: {barcode}")
         except Exception as e:  # pylint: disable=broad-except
             if jar:
                 jar.status = "ERROR"
                 jar.description = traceback.format_exc()
+                self.db_session.commit()
+
             self.handle_exception(e)
             logging.error(traceback.format_exc())
 
@@ -1092,18 +1094,28 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def delete_jar_runner(self, barcode):
 
-        j = self.__jar_runners.get(barcode)
-        if j:
-            try:
-                t = j["task"]
-                t.cancel()
+        try:
 
-                async def _coro(_):
-                    await _
-                asyncio.ensure_future(_coro(t))
-                self.__jar_runners.pop(barcode)
-            except Exception as e:  # pylint: disable=broad-except
-                self.handle_exception(e)
+            j = self.__jar_runners.pop(barcode)
+
+            j["jar"].status = "ERROR"
+            j["jar"].position = "REMOVED"
+            j["jar"].machine_head = None
+            self.db_session.commit()
+
+            logging.warning(f'cancelling:{j["task"]}')
+            r = j["task"].cancel()
+            logging.warning(f"cancelled. r:{r}")
+
+            logging.warning(f"deleting:{j}")
+            del j
+            logging.warning(f"deleted:{barcode}")
+
+            self.ws_server.refresh_can_list()
+
+        except Exception as e:  # pylint: disable=broad-except
+
+            self.handle_exception(e)
 
     def get_jar_runners(self):
 
@@ -1222,11 +1234,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.handle_exception(e)
 
             self.main_window.home_page.update_jar_pixmaps()
-
-            live_can_list = [f"{k} ({j['jar'].position}) {j['jar'].status}"
-                             for k, j in self.get_jar_runners().items() if j['jar'].position]
-            t = self.ws_server.broadcast_msg("live_can_list", live_can_list)
-            asyncio.ensure_future(t)
+            self.ws_server.refresh_can_list()
 
     def get_machine_head_by_letter(self, letter):  # pylint: disable=inconsistent-return-statements
 

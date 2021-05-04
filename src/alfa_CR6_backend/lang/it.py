@@ -172,6 +172,7 @@ D = {
     'failure during dispensation': 'fallito durante la dispensazione',
     'failure waiting for dispensation to start': 'fallito in attesa di inizio dispensazione',
     'failure in sending "DISPENSE_FORMULA" command': 'fallito l\'invio del comando "DISPENSE_FORMULA"',
+    "confirm removing {}?": "confermi la rimozione di: {}?",
 }
 
 

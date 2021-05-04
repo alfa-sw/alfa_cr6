@@ -647,6 +647,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 else:
                     break
 
+            await self.wait_for_carousel_not_frozen(not r, tr_("barcode:{}").format(barcode_) + tr_("STEP {} +").format(f"\n{_tag}\n"))
+
         await self.wait_for_jar_delivery(jar)
 
         return r

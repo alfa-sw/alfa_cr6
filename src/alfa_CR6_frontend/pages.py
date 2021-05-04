@@ -159,8 +159,10 @@ class OrderTableModel(BaseTableModel):
             order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
 
             for j in self.session.query(Jar).filter(Jar.order == order).all():
-                self.session.delete(j)
+
                 QApplication.instance().delete_jar_runner(j.barcode)
+
+                self.session.delete(j)
 
             self.session.delete(order)
             self.session.commit()
@@ -243,6 +245,9 @@ class JarTableModel(BaseTableModel):
         return jar
 
     def remove_jar(self, barcode):
+
+        QApplication.instance().delete_jar_runner(barcode)
+
         order_nr, index = decompile_barcode(barcode)
         if self.session and order_nr and index >= 0:
             order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
@@ -253,8 +258,6 @@ class JarTableModel(BaseTableModel):
             r = query_.delete()
             logging.warning(f"r:{r}")
             self.session.commit()
-
-            QApplication.instance().delete_jar_runner(barcode)
 
     def data(self, index, role):
         if not index.isValid():
@@ -871,6 +874,19 @@ class HomePage(BaseStackedPage):
 
         self.reserve_movie = QMovie(get_res("IMAGE", "riserva.gif"))
 
+        self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
+        self.STEP_02_label.mouseReleaseEvent = lambda event: self.step_label_clicked("A")
+        self.STEP_03_label.mouseReleaseEvent = lambda event: self.step_label_clicked("B")
+        self.STEP_04_label.mouseReleaseEvent = lambda event: self.step_label_clicked("C")
+        self.STEP_05_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_UP")
+        self.STEP_06_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_DOWN")
+        self.STEP_07_label.mouseReleaseEvent = lambda event: self.step_label_clicked("D")
+        self.STEP_08_label.mouseReleaseEvent = lambda event: self.step_label_clicked("E")
+        self.STEP_09_label.mouseReleaseEvent = lambda event: self.step_label_clicked("F")
+        self.STEP_10_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_DOWN")
+        self.STEP_11_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_UP")
+        self.STEP_12_label.mouseReleaseEvent = lambda event: self.step_label_clicked("OUT")
+
     def open_page(self):
 
         self.parent().setCurrentWidget(self)
@@ -1112,6 +1128,42 @@ class HomePage(BaseStackedPage):
             else:
                 _label.setText("")
                 _label.hide()
+
+    def step_label_clicked(self, position):
+
+        logging.warning(f"position:{position}")
+
+        app = QApplication.instance()
+        if app.carousel_frozen:
+
+            moving_heads = [m for m in app.machine_head_dict.values()
+                            if m.status.get('status_level') not in ['STANDBY', 'DIAGNOSTIC']]
+
+            if not moving_heads:
+
+                try:
+                    jar = None
+                    for j in app.get_jar_runners().values():
+                        if j and j['jar'] and j['jar'].position and (j['jar'].position == position):
+                            logging.warning(f"j['jar']:{j['jar']}")
+                            logging.warning(f"j['jar'].machine_head:{j['jar'].machine_head}")
+                            jar = j['jar']
+                            break
+                    if jar:
+
+                        def _remove_jar():
+                            logging.warning(f"removing:{jar.barcode}")
+                            try:
+                                app.delete_jar_runner(jar.barcode)
+                                self.update_jar_pixmaps()
+                            except Exception:   # pylint: disable=broad-except
+                                logging.error(traceback.format_exc())
+
+                        msg_ = tr_("confirm removing {}?").format(jar.barcode)
+                        self.main_window.open_input_dialog(message=msg_, content="", ok_cb=_remove_jar)
+
+                except Exception:   # pylint: disable=broad-except
+                    logging.error(traceback.format_exc())
 
 
 class HomePageSixHeads(HomePage):
