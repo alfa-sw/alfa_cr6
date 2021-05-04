@@ -358,9 +358,8 @@ class EditDialog(BaseDialog):
             if self.print_check_box.isChecked():
                 for j in jars_to_print:
                     b = str(j.barcode)
-                    l1, l2, l3 = j.extra_lines_to_print
-                    logging.warning(f"b, l1, l2, l3:{[b, l1, l2, l3]}")
-                    response = dymo_print(b, l1, l2, l3)
+                    logging.warning(f"b, j.extra_lines_to_print:{b, j.extra_lines_to_print}")
+                    response = dymo_print(b, *j.extra_lines_to_print)
                     logging.warning(f"response:{response}")
                     time.sleep(.05)
 

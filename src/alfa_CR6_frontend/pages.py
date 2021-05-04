@@ -1137,8 +1137,7 @@ class HomePage(BaseStackedPage):
         app = QApplication.instance()
         if app.carousel_frozen:
 
-            moving_heads = [m for m in app.machine_head_dict.values()
-                            if m.status.get('status_level') not in ['STANDBY', 'DIAGNOSTIC']]
+            moving_heads = [m for m in app.machine_head_dict.values() if m and m.status.get('status_level') not in ['STANDBY', 'DIAGNOSTIC']]
 
             if not moving_heads:
 
