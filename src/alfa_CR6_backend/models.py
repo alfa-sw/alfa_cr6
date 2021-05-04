@@ -43,14 +43,13 @@ def generate_id():
 
 
 def compile_barcode(order_nr, index):
-    return int(order_nr) + int(index) % 1000
-
+    barcode = int(order_nr) + int(index) % 1000
+    return str(barcode)
 
 def decompile_barcode(barcode):
     order_nr = 1000 * (int(barcode) // int(1000))
     index = int(barcode) % 1000
     return int(order_nr), int(index)
-
 
 def generate_order_nr():
 

@@ -854,13 +854,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals,unused-argument
 
+        barcode = str(barcode)
         if int(barcode) == -1:
             q = self.db_session.query(Jar).filter(Jar.status.in_(["NEW"]))
             jar = q.first()
             if jar:
                 barcode = jar.barcode
 
-        logging.warning(f" ###### barcode:{barcode}")
+        logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
 
         if not self.ready_to_read_a_barcode:
 
@@ -1096,6 +1097,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         try:
 
+            barcode = str(barcode)
             j = self.__jar_runners.pop(barcode)
 
             j["jar"].status = "ERROR"
