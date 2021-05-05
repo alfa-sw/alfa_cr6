@@ -506,8 +506,10 @@ class AliasDialog(BaseDialog):
 
         super().__init__(*args, **kwargs)
 
+        self.warning_lbl.setText('')
+
         self.alias_txt_label.setText(
-            tr_("Please, select a pigment on the left, then insert below a list of altermative names, a name for each line.") +
+            tr_("Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ") +
             tr_("(Trailing whitespaces will be discarded)"""))
         self.alias_txt_label.setWordWrap(True)
 
@@ -525,6 +527,8 @@ class AliasDialog(BaseDialog):
         if self.warning_lbl.text():
             msg = tr_("confirm saving changes")
             msg += tr_(" ?")
+            # ~ msg += "\n"
+            # ~ msg += json.dumps(self.alias_dict)
             self.parent().open_alert_dialog(msg, title="ALERT", callback=self._do_save_changes)
         else:
             self.hide()
@@ -595,13 +599,20 @@ class AliasDialog(BaseDialog):
                 sel_item = sel_items[0]
                 row = sel_item.row()
                 name_ = self.pigment_table.item(row, 0).data(Qt.DisplayRole)
-                logging.warning(f"name_:{name_}")
+                # ~ logging.warning(f"name_:{name_}")
                 txt_ = "\n".join(self.alias_dict.get(name_, []))
-                if self.old_sel_pigment_name:
-                    self.alias_dict[self.old_sel_pigment_name] = [
-                        l.strip() for l in self.alias_txt_edit.toPlainText().split('\n') if l.strip()]
 
+                if self.old_sel_pigment_name:
+                    new_ = [l.strip() for l in self.alias_txt_edit.toPlainText().split('\n') if l.strip()]
+                    # ~ logging.warning(f"new_:{new_}, self.alias_dict.get(self.old_sel_pigment_name):{self.alias_dict.get(self.old_sel_pigment_name)}")
+                    if new_ != self.alias_dict.get(self.old_sel_pigment_name):
+                        self.alias_dict[self.old_sel_pigment_name] = new_
+                        self.warning_lbl.setText(tr_('modified.'))
+
+                if self.alias_txt_edit.receivers(self.alias_txt_edit.textChanged):
+                    self.alias_txt_edit.textChanged.disconnect()
                 self.alias_txt_edit.setPlainText(txt_)
+                self.alias_txt_edit.textChanged.connect(lambda: self.warning_lbl.setText(tr_('modified.')))
                 self.old_sel_pigment_name = name_
 
         except Exception as e:  # pylint: disable=broad-except
@@ -629,6 +640,8 @@ class AliasDialog(BaseDialog):
             self.__set_row(row, pig_)
 
         self.alias_txt_edit.setPlainText('')
+        self.warning_lbl.setText('')
+        self.old_sel_pigment_name = None
 
         index = self.pigment_table.model().index(0, 0)
         self.pigment_table.selectionModel().select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
