@@ -45,6 +45,27 @@ class OrderParser:
     sikkens_pdf_header = 'Anteprima Formula'
     kcc_pdf_header = "KCC Color Navi Formulation"
 
+    def substitute_aliases(self, properties):
+
+        try:
+            _alias_file = os.path.join(QApplication.instance().settings.DATA_PATH, "pigment_alias.json")
+            with open(_alias_file) as f:
+                alias_dict = json.load(f)
+
+            ingredients = properties.get('ingredients', [])
+            for i in ingredients:
+                pigment_name = i["pigment_name"]
+                for k, v in alias_dict.items():
+                    if pigment_name in v:
+                        i["pigment_name"] = k
+                        logging.warning(f"pigment_name:{pigment_name}, k:{k}")
+                        break
+
+        except Exception as e:  # pylint:disable=broad-except
+            logging.error(f"e:{e}")
+
+        return properties
+
     @staticmethod
     def parse_sw_txt(lines):       # pylint: disable=too-many-locals
 
@@ -354,6 +375,8 @@ class OrderParser:
             properties['meta']['file name'] = os.path.split(path_to_file)[1]
         else:
             logging.error(f"path_to_file:{path_to_file}, properties:{properties}")
+
+        properties = self.substitute_aliases(properties)
 
         return properties
 

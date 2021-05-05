@@ -8,6 +8,7 @@
 # pylint: disable=too-many-lines
 # pylint: disable=too-few-public-methods
 
+import os
 import logging
 import json
 import time
@@ -17,7 +18,7 @@ import random
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
-    Qt, QSize)
+    Qt, QSize, QItemSelectionModel)
 
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
@@ -493,5 +494,143 @@ class InputDialog(BaseDialog):
                         f"exception:{e}", title="ERROR", callback=None, args=None)
 
             self.ok_button.clicked.connect(on_ok_button_clicked)
+
+        self.show()
+
+
+class AliasDialog(BaseDialog):
+
+    ui_file_name = "alias_dialog.ui"
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.alias_txt_label.setText(
+            tr_("Please, select a pigment on the left, then insert below a list of altermative names, a name for each line.") +
+            tr_("(Trailing whitespaces will be discarded)"""))
+        self.alias_txt_label.setWordWrap(True)
+
+        self.ok_button.clicked.connect(self.__save_changes)
+        self.esc_button.clicked.connect(self.__discard_changes)
+
+        self.pigment_table.itemSelectionChanged.connect(self.__on_pigment_table_itemSelectionChanged)
+
+        self.alias_file_path = None
+        self.alias_dict = None
+        self.old_sel_pigment_name = None
+
+    def __save_changes(self):
+
+        if self.warning_lbl.text():
+            msg = tr_("confirm saving changes")
+            msg += tr_(" ?")
+            self.parent().open_alert_dialog(msg, title="ALERT", callback=self._do_save_changes)
+        else:
+            self.hide()
+
+    def __discard_changes(self):
+
+        if self.warning_lbl.text():
+            msg = tr_("confirm discarding changes?")
+            self.parent().open_alert_dialog(msg, title="ALERT", callback=self.hide)
+        else:
+            self.hide()
+
+    def _do_save_changes(self, and_hide=True):
+
+        indexes = self.pigment_table.selectionModel().selectedIndexes()
+        if indexes:
+            index = self.pigment_table.model().index(
+                (indexes[0].row() + 1) %
+                self.pigment_table.rowCount(), indexes[0].column())
+            self.pigment_table.selectionModel().select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+
+        self._dump_to_file()
+
+        if and_hide:
+            self.hide()
+
+    def _dump_to_file(self):
+
+        if not os.path.exists(self.alias_file_path):
+            os.makedirs(self.alias_file_path)
+        _alias_file = os.path.join(self.alias_file_path, "pigment_alias.json")
+
+        try:
+            with open(_alias_file, 'w') as f:
+                json.dump(self.alias_dict, f, indent=2)
+        except Exception as e:  # pylint:disable=broad-except
+            logging.error(f"e:{e}")
+
+    def _load_from_file(self):
+
+        self.alias_dict = {}
+
+        if not os.path.exists(self.alias_file_path):
+            os.makedirs(self.alias_file_path)
+        _alias_file = os.path.join(self.alias_file_path, "pigment_alias.json")
+        try:
+            with open(_alias_file) as f:
+                self.alias_dict = json.load(f)
+        except Exception as e:  # pylint:disable=broad-except
+            logging.error(f"e:{e}")
+
+    def __set_row(self, row, pig):
+
+        bgcol = QColor(pig.get("rgb"))
+        self.pigment_table.setItem(row, 0, QTableWidgetItem(str(pig['name'])))
+        self.pigment_table.setItem(row, 1, QTableWidgetItem(str(pig['description'])))
+
+        if bgcol:
+            self.pigment_table.item(row, 1).setBackground(bgcol)
+
+    def __on_pigment_table_itemSelectionChanged(self):
+
+        try:
+
+            sel_items = self.pigment_table.selectedItems()
+
+            if sel_items:
+                sel_item = sel_items[0]
+                row = sel_item.row()
+                name_ = self.pigment_table.item(row, 0).data(Qt.DisplayRole)
+                logging.warning(f"name_:{name_}")
+                txt_ = "\n".join(self.alias_dict.get(name_, []))
+                if self.old_sel_pigment_name:
+                    self.alias_dict[self.old_sel_pigment_name] = [
+                        l.strip() for l in self.alias_txt_edit.toPlainText().split('\n') if l.strip()]
+
+                self.alias_txt_edit.setPlainText(txt_)
+                self.old_sel_pigment_name = name_
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(
+                f"exception:{e}", title="ERROR", callback=None, args=None)
+
+    def show_dialog(self, alias_file_path):
+
+        self.alias_file_path = alias_file_path
+
+        self._load_from_file()
+
+        _available_pigments = {}
+        for m in QApplication.instance().machine_head_dict.values():
+            if m:
+                for p in m.pigment_list:
+                    _available_pigments[p['name']] = p
+
+        self.pigment_table.clearContents()
+        self.pigment_table.setRowCount(len(_available_pigments))
+        self.pigment_table.setColumnCount(2)
+
+        for row, pig_ in enumerate(_available_pigments.values()):
+            self.__set_row(row, pig_)
+
+        self.alias_txt_edit.setPlainText('')
+
+        index = self.pigment_table.model().index(0, 0)
+        self.pigment_table.selectionModel().select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
 
         self.show()

@@ -21,7 +21,8 @@ from alfa_CR6_backend.models import Event
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
-    InputDialog)
+    InputDialog,
+    AliasDialog)
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
@@ -243,6 +244,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.input_dialog = InputDialog(self)
         self.edit_dialog = EditDialog(self)
+        self.alias_dialog = AliasDialog(self)
 
     def __init_action_pages(self):
 
@@ -437,6 +439,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self.home_page.update_tank_pixmaps()
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+
+    def open_alias_dialog(self):
+
+        self.alias_dialog.show_dialog(self.settings.DATA_PATH)
 
     def open_edit_dialog(self, order_nr):
 

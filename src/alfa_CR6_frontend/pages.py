@@ -7,6 +7,7 @@
 # pylint: disable=no-name-in-module
 # pylint: disable=too-many-lines
 # pylint: disable=too-few-public-methods
+# pylint: disable=multiple-statements
 
 import os
 import logging
@@ -478,6 +479,8 @@ class OrderPage(BaseStackedPage):
         self.search_file_table_last_time = 0
         self.search_jar_table_last_time = 0
 
+        self.edit_aliases_btn.clicked.connect(self.main_window.open_alias_dialog)
+
     def populate_order_table(self):
 
         t = time.time()
@@ -874,7 +877,6 @@ class HomePage(BaseStackedPage):
 
         self.reserve_movie = QMovie(get_res("IMAGE", "riserva.gif"))
 
-        
         if self.STEP_01_label: self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
         if self.STEP_02_label: self.STEP_02_label.mouseReleaseEvent = lambda event: self.step_label_clicked("A")
         if self.STEP_03_label: self.STEP_03_label.mouseReleaseEvent = lambda event: self.step_label_clicked("B")
