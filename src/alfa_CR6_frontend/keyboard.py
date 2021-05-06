@@ -62,6 +62,12 @@ class Keyboard(QWidget):
     def __init__(self, parent=None, keyboard_path=None, geometry=[0, 760, 1900, 256]):
         super().__init__(parent)
 
+        self.special_keys_dict = {
+            "LANG": self.lang.upper(),
+            "Shift": "Shift",
+        }
+
+
         if keyboard_path is None:
             keyboard_path = QApplication.instance().keyboard_path
 
@@ -108,6 +114,9 @@ class Keyboard(QWidget):
 
         layout = QGridLayout()
         for button in self.buttons:
+
+            # ~ logging.warning(f"button:{button}")
+
             button.button.setFocusPolicy(Qt.NoFocus)
             button.button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
             if self.special_key(button.key):
@@ -146,16 +155,13 @@ class Keyboard(QWidget):
         for b in self.buttons:
             b.button.show()
 
-    def ev_definitions(self, key):
-        ev_dict = {  # for chars not handled by e.kEY_<key>
-            "LANG": self.lang.upper(),
-            "Shift": "Shift",
-        }
-
-        return ev_dict.get(key, key)
 
     def special_key(self, key):
-        if self.ev_definitions(False):
+
+        logging.warning(f"key:{key}")
+
+        ret = self.special_keys_dict.get(key, False)
+        if ret:
             return True
         else:
             return False
@@ -194,7 +200,7 @@ class Keyboard(QWidget):
 
     def i18n(self, le):
 
-        l = self.ev_definitions(le)
+        l = self.special_keys_dict.get(le, le)
 
         latin_korean = {'normal': {
             'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': 'ㅅ', 'y': 'ㅛ', 'u': 'ㅕ', 'i': 'ㅑ', 'o': 'ㅐ', 'p': 'ㅔ',
@@ -227,6 +233,7 @@ class Keyboard(QWidget):
             button.button.setText(self.i18n(button.label))
 
     def change(self, item):
+
         if item == 'Shift':
             self.shifted = not self.shifted
         elif item == "LANG":
@@ -246,7 +253,6 @@ class Keyboard(QWidget):
             if self.shifted:
                 keys = self.shifted_symbol(keys)
             self.pushdispatcher(keys)
-            # ~ logging.warning(f"keys:{keys}")
 
     def shifted_symbol(self, keys):
         start = [KeyAction(e.ecodes['KEY_LEFTSHIFT'], True)]
