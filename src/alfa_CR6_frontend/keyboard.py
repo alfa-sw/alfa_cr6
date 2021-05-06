@@ -25,33 +25,34 @@ except Exception:
 KeyButton = namedtuple('KeyButton', 'key label posx posy endx endy button')
 KeyAction = namedtuple('KeyAction', 'key push')
 
-""" http://www.keyboard-layout-editor.com/ 
+""" http://www.keyboard-layout-editor.com/
 
     Impostazione tastiera
     apt get install ibus-hangul
-    Impostazone manuale del Raspberry per usare ibus e di ibus per abilitare il toggle 
-    hangul; dovrebbe comparire il simbolo relativo in alto a destra si puo' switchare 
-    manualmente da caratteri latini a coreani con SHIFT - SPACE, in tastiere dove il 
-    tasto HANGEUL non e' presente per verificare o modificare la tastiera si puo' 
+    Impostazone manuale del Raspberry per usare ibus e di ibus per abilitare il toggle
+    hangul; dovrebbe comparire il simbolo relativo in alto a destra si puo' switchare
+    manualmente da caratteri latini a coreani con SHIFT - SPACE, in tastiere dove il
+    tasto HANGEUL non e' presente per verificare o modificare la tastiera si puo'
     switchare da italiano a coreano e provari i vari tasti con o senza shift
     NOTE:
-    alcuni caratteri coreani possono essere shiftati, ma la maggior parte rimangono 
-    uguali (non esistono lettere maiuscole ma ci sono piu' caratteri che nella tastiera 
-    QWERTY).Alcuni caratteri si compongono tra loro, quindi bisogna digitarne uno alla 
+    alcuni caratteri coreani possono essere shiftati, ma la maggior parte rimangono
+    uguali (non esistono lettere maiuscole ma ci sono piu' caratteri che nella tastiera
+    QWERTY).Alcuni caratteri si compongono tra loro, quindi bisogna digitarne uno alla
     volta, cancellando i precedenti o aggiungendo uno spazio per evitare di avere dei caratteri composti.
     PARTE CODICE
-    la tastera e' realizzata tramite il widget QGridLayout che viene valorizzato tramite 
+    la tastera e' realizzata tramite il widget QGridLayout che viene valorizzato tramite
     layout.addWidget( Widget, posX, posY, [endX, endY] ).
-    Il layout della tastiera e' definito tramite un json ( riferimento http://www.keyboard-layout-editor.com/ per creare 
-    il layout della tastiera e di conseguenza il json), con lettere e eventuali opzioni di spaziatura (W: larghezza del 
+    Il layout della tastiera e' definito tramite un json ( riferimento http://www.keyboard-layout-editor.com/ per creare
+    il layout della tastiera e di conseguenza il json), con lettere e eventuali opzioni di spaziatura (W: larghezza del
     pulsante, H: altezza, X: spazio tra i tasti)
     La traduzione caratteri latini/coreani e' definita in latin_korean nella funzione i18n()
-    Dato che il pulsante KEY_HANGEUL e' solo un toggle, per essere sicuri che lo stato sia quello desiderato 
+    Dato che il pulsante KEY_HANGEUL e' solo un toggle, per essere sicuri che lo stato sia quello desiderato
     viene passato un "KEY_ESC", che fa uscire dalla modalita' di input coreana.
-    Successivamente viene premuto KEY_HANGEUL alla bisogna, in modo da assicurarsi di avere la situazione 
+    Successivamente viene premuto KEY_HANGEUL alla bisogna, in modo da assicurarsi di avere la situazione
     della tastiera locale sempre corrispondente all'input.
 
 """
+
 
 class Keyboard(QWidget):
     buttons = []
@@ -66,7 +67,6 @@ class Keyboard(QWidget):
             "LANG": self.lang.upper(),
             "Shift": "Shift",
         }
-
 
         if keyboard_path is None:
             keyboard_path = QApplication.instance().keyboard_path
@@ -155,7 +155,6 @@ class Keyboard(QWidget):
         for b in self.buttons:
             b.button.show()
 
-
     def special_key(self, key):
 
         # ~ logging.warning(f"key:{key}")
@@ -196,20 +195,19 @@ class Keyboard(QWidget):
             ret = el
         else:
             ret = self.symbol_act(el.upper().split('\n')[-1])
-        return ret 
+        return ret
 
     def i18n(self, le):
 
         l = self.special_keys_dict.get(le, le)
 
-        latin_korean = {'normal': {
-            'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': 'ㅅ', 'y': 'ㅛ', 'u': 'ㅕ', 'i': 'ㅑ', 'o': 'ㅐ', 'p': 'ㅔ',
-            'a': 'ㅁ', 's': 'ㄴ', 'd': 'ㅇ', 'f': 'ㄹ', 'g': 'ㅎ', 'h': 'ㅗ', 'j': 'ㅓ', 'k': 'ㅏ', 'l': 'ㅣ',
-            'z': 'ㅋ', 'x': 'ㅌ', 'c': 'ㅊ', 'v': 'ㅍ', 'b': 'ㅠ', 'n': 'ㅜ', 'm': 'ㅡ'
-        },
+        latin_korean = {
+            'normal': {
+                'q': 'ㅂ', 'w': 'ㅈ', 'e': 'ㄷ', 'r': 'ㄱ', 't': 'ㅅ', 'y': 'ㅛ', 'u': 'ㅕ', 'i': 'ㅑ', 'o': 'ㅐ', 'p': 'ㅔ',
+                'a': 'ㅁ', 's': 'ㄴ', 'd': 'ㅇ', 'f': 'ㄹ', 'g': 'ㅎ', 'h': 'ㅗ', 'j': 'ㅓ', 'k': 'ㅏ', 'l': 'ㅣ',
+                'z': 'ㅋ', 'x': 'ㅌ', 'c': 'ㅊ', 'v': 'ㅍ', 'b': 'ㅠ', 'n': 'ㅜ', 'm': 'ㅡ'},
             'shifted': {
-            'q': 'ㅃ', 'w': 'ㅉ', 'e': 'ㄸ', 'r': 'ㄲ', 't': 'ㅆ',
-            'o': 'ㅒ', 'p': 'ㅖ'}
+                'q': 'ㅃ', 'w': 'ㅉ', 'e': 'ㄸ', 'r': 'ㄲ', 't': 'ㅆ', 'o': 'ㅒ', 'p': 'ㅖ'}
         }
 
         if self.shifted:
@@ -237,17 +235,21 @@ class Keyboard(QWidget):
         if item == 'Shift':
             self.shifted = not self.shifted
         elif item == "LANG":
-            if self.lang == "en":
-                self.lang = "kr"
-                self.hangeul_toggle(set_hangeul=True)
-            elif self.lang == "kr":
-                self.lang = "en"
-                self.hangeul_toggle(set_hangeul=False)
+            # TODO: multi lang NOT implemented
+            logging.warning(f"multi lang NOT implemented")
+            if 0:
+                if self.lang == "en":
+                    self.lang = "kr"
+                    self.hangeul_toggle(set_hangeul=True)
+                elif self.lang == "kr":
+                    self.lang = "en"
+                    self.hangeul_toggle(set_hangeul=False)
+
         self.redraw_buttons()
 
     def on_pushButton_clicked(self, key):
 
-        if  has_evdev:
+        if has_evdev:
             keys = [KeyAction(key, True),
                     KeyAction(key, False)]
             if self.shifted:
