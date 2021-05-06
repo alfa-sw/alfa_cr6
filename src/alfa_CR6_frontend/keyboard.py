@@ -158,7 +158,7 @@ class Keyboard(QWidget):
 
     def special_key(self, key):
 
-        logging.warning(f"key:{key}")
+        # ~ logging.warning(f"key:{key}")
 
         ret = self.special_keys_dict.get(key, False)
         if ret:
