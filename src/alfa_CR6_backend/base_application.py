@@ -46,7 +46,7 @@ class OrderParser:
     kcc_pdf_header = "KCC Color Navi Formulation"
 
     @staticmethod
-    def substitute_aliases(properties):
+    def _substitute_aliases(properties):
 
         try:
             _alias_file = os.path.join(QApplication.instance().settings.DATA_PATH, "pigment_alias.json")
@@ -144,6 +144,34 @@ class OrderParser:
             properties["extra_lines_to_print"] = [l1, l2, l3]
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+
+        return properties
+
+    @staticmethod
+    def parse_kcc_json(content):
+
+        properties = {}
+
+        properties["meta"] = {}
+
+        for k in [
+                "color to compare",
+                "basic information",
+                "automobile information",
+                "note"]:
+            properties["meta"][k] = content.get(k)
+
+        sz = content.get("total", "100")
+        sz = "1000" if sz.lower() == "1l" else sz
+        properties["size(cc)"] = sz
+
+        properties["ingredients"] = []
+        for item in content.get("color information", {}):
+            new_item = {}
+            new_item["pigment_name"] = item["Color MixingAgen"]
+            new_item["description"] = item["Color Mixing Agen Name"]
+            new_item["weight(g)"] = item["weight(g)"]
+            properties["ingredients"].append(new_item)
 
         return properties
 
@@ -292,8 +320,15 @@ class OrderParser:
 
             if cls.sikkens_pdf_header in lines[0]:
                 properties = cls.parse_sikkens_pdf(lines)
+
+                if properties.get('meta'):
+                    properties['meta']['header'] = cls.sikkens_pdf_header
+
             elif cls.kcc_pdf_header.split(' ') == [t.strip() for t in lines[0].split(' ') if t]:
                 properties = cls.parse_kcc_pdf(lines)
+
+                if properties.get('meta'):
+                    properties['meta']['header'] = cls.kcc_pdf_header
 
         except Exception:              # pylint: disable=broad-except
 
@@ -318,39 +353,25 @@ class OrderParser:
 
         logging.warning(f"cls.sw_txt_header:{cls.sw_txt_header}, lines[0]:{lines[0]}")
         if cls.sw_txt_header in lines[0]:
-            logging.warning(" ok ")
             properties = cls.parse_sw_txt(lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.sw_txt_header
 
         return properties
 
-    @staticmethod
-    def parse_json_order(path_to_json_file):
+    @classmethod
+    def parse_json_order(cls, path_to_json_file):
 
         properties = {}
 
-        content = {}
         with open(path_to_json_file) as f:
             content = json.load(f)
 
-        properties["meta"] = {}
-        for k in [
-                "color to compare",
-                "basic information",
-                "automobile information",
-                "note"]:
-            properties["meta"][k] = content.get(k)
+            properties = cls.parse_kcc_json(content)
 
-        sz = content.get("total", "100")
-        sz = "1000" if sz.lower() == "1l" else sz
-        properties["size(cc)"] = sz
-
-        properties["ingredients"] = []
-        for item in content.get("color information", {}):
-            new_item = {}
-            new_item["pigment_name"] = item["Color MixingAgen"]
-            new_item["description"] = item["Color Mixing Agen Name"]
-            new_item["weight(g)"] = item["weight(g)"]
-            properties["ingredients"].append(new_item)
+            if properties.get('meta'):
+                properties['meta']['header'] = 'kcc_json'
 
         return properties
 
@@ -377,7 +398,7 @@ class OrderParser:
         if properties.get('meta'):
             properties['meta']['file name'] = os.path.split(path_to_file)[1]
 
-            properties = self.substitute_aliases(properties)
+            properties = self._substitute_aliases(properties)
 
         else:
             logging.error(f"path_to_file:{path_to_file}, properties:{properties}")
@@ -483,7 +504,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                          'cycle_step',
                          'error_code',
                          'error_code',
-                         'current_temperature',
+                         'temperature',
                          'circuit_engaged',
                          'container_presence',
                          'error_message',
