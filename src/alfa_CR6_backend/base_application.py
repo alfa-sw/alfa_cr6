@@ -45,7 +45,8 @@ class OrderParser:
     sikkens_pdf_header = 'Anteprima Formula'
     kcc_pdf_header = "KCC Color Navi Formulation"
 
-    def substitute_aliases(self, properties):
+    @staticmethod
+    def substitute_aliases(properties):
 
         try:
             _alias_file = os.path.join(QApplication.instance().settings.DATA_PATH, "pigment_alias.json")
@@ -59,6 +60,8 @@ class OrderParser:
                     if pigment_name in v:
                         i["pigment_name"] = k
                         logging.warning(f"pigment_name:{pigment_name}, k:{k}")
+                        properties['meta'].setdefault('alias', [])
+                        properties['meta']['alias'].append((pigment_name, k))
                         break
 
         except Exception as e:  # pylint:disable=broad-except
@@ -373,10 +376,11 @@ class OrderParser:
 
         if properties.get('meta'):
             properties['meta']['file name'] = os.path.split(path_to_file)[1]
+
+            properties = self.substitute_aliases(properties)
+
         else:
             logging.error(f"path_to_file:{path_to_file}, properties:{properties}")
-
-        properties = self.substitute_aliases(properties)
 
         return properties
 
