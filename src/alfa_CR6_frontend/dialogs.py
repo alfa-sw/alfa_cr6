@@ -13,6 +13,7 @@ import logging
 import json
 import time
 import traceback
+import copy
 import random
 
 
@@ -93,7 +94,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         if self.ok_callback:
             def on_button_clicked(btn):
                 logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
-                logging.warning(f"self.buttons().index(btn):{self.buttons().index(btn)}")
+                # ~ logging.warning(f"self.buttons().index(btn):{self.buttons().index(btn)}")
 
                 # ~ if "ok" in btn.text().lower():
                 if "ok" in btn.objectName().lower():
@@ -525,10 +526,10 @@ class AliasDialog(BaseDialog):
     def __save_changes(self):
 
         if self.warning_lbl.text():
+
             msg = tr_("confirm saving changes")
             msg += tr_(" ?")
-            # ~ msg += "\n"
-            # ~ msg += json.dumps(self.alias_dict)
+            # ~ msg += f"\n{json.dumps(self.alias_dict)}"
             self.parent().open_alert_dialog(msg, title="ALERT", callback=self._do_save_changes)
         else:
             self.hide()
@@ -541,7 +542,7 @@ class AliasDialog(BaseDialog):
         else:
             self.hide()
 
-    def _do_save_changes(self, and_hide=True):
+    def _do_save_changes(self):
 
         indexes = self.pigment_table.selectionModel().selectedIndexes()
         if indexes:
@@ -552,20 +553,46 @@ class AliasDialog(BaseDialog):
 
         self._dump_to_file()
 
-        if and_hide:
-            self.hide()
+        self.hide()
 
     def _dump_to_file(self):
 
-        if not os.path.exists(self.alias_file_path):
-            os.makedirs(self.alias_file_path)
-        _alias_file = os.path.join(self.alias_file_path, "pigment_alias.json")
+        # ~ logging.warning("")
 
-        try:
-            with open(_alias_file, 'w') as f:
-                json.dump(self.alias_dict, f, indent=2)
-        except Exception as e:  # pylint:disable=broad-except
-            logging.error(f"e:{e}")
+        if self._validate_alias_dict(self.alias_dict):
+
+            if not os.path.exists(self.alias_file_path):
+                os.makedirs(self.alias_file_path)
+            _alias_file = os.path.join(self.alias_file_path, "pigment_alias.json")
+
+            try:
+                with open(_alias_file, 'w') as f:
+                    json.dump(self.alias_dict, f, indent=2)
+            except Exception as e:  # pylint:disable=broad-except
+                logging.error(f"e:{e}")
+
+    def _validate_alias_dict(self, alias_dict=None):
+
+        if alias_dict is None:
+            alias_dict = self.alias_dict
+
+        _total_list = []
+        _duplicated_list = []
+        for k, v in alias_dict.items():
+            for i in v:
+                if i not in _total_list:
+                    _total_list.append(i)
+                else:
+                    _duplicated_list.append((i, k))
+
+        # ~ logging.warning(f"_duplicated_list:{_duplicated_list}")
+
+        if _duplicated_list:
+            self.parent().open_alert_dialog(tr_("data not valid. duplicated alias:") + f" {_duplicated_list}",
+                                            title="ERROR", callback=None, args=None)
+            return False
+
+        return True
 
     def _load_from_file(self):
 
@@ -579,6 +606,9 @@ class AliasDialog(BaseDialog):
                 self.alias_dict = json.load(f)
         except Exception as e:  # pylint:disable=broad-except
             logging.error(f"e:{e}")
+
+        if not self._validate_alias_dict(self.alias_dict):
+            self.alias_dict = {}
 
     def __set_row(self, row, pig):
 
@@ -595,6 +625,8 @@ class AliasDialog(BaseDialog):
 
             sel_items = self.pigment_table.selectedItems()
 
+            # ~ logging.warning(f"sel_items:{sel_items}")
+
             if sel_items:
                 sel_item = sel_items[0]
                 row = sel_item.row()
@@ -602,12 +634,16 @@ class AliasDialog(BaseDialog):
                 # ~ logging.warning(f"name_:{name_}")
                 txt_ = "\n".join(self.alias_dict.get(name_, []))
 
+                _tmp_alias_dict = copy.deepcopy(self.alias_dict)
+
                 if self.old_sel_pigment_name:
                     new_ = [l.strip() for l in self.alias_txt_edit.toPlainText().split('\n') if l.strip()]
-                    # ~ logging.warning(f"new_:{new_}, self.alias_dict.get(self.old_sel_pigment_name):{self.alias_dict.get(self.old_sel_pigment_name)}")
-                    if new_ != self.alias_dict.get(self.old_sel_pigment_name):
-                        self.alias_dict[self.old_sel_pigment_name] = new_
+                    if new_ != _tmp_alias_dict.get(self.old_sel_pigment_name):
+                        _tmp_alias_dict[self.old_sel_pigment_name] = new_
                         self.warning_lbl.setText(tr_('modified.'))
+
+                if self._validate_alias_dict(_tmp_alias_dict):
+                    self.alias_dict = _tmp_alias_dict
 
                 if self.alias_txt_edit.receivers(self.alias_txt_edit.textChanged):
                     self.alias_txt_edit.textChanged.disconnect()
@@ -645,5 +681,7 @@ class AliasDialog(BaseDialog):
 
         index = self.pigment_table.model().index(0, 0)
         self.pigment_table.selectionModel().select(index, QItemSelectionModel.ClearAndSelect | QItemSelectionModel.Rows)
+
+        self.move(360 + random.randint(-80, 80), 2)
 
         self.show()
