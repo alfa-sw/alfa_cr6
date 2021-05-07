@@ -1146,22 +1146,25 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         try:
 
             barcode = str(barcode)
-            j = self.__jar_runners.pop(barcode)
 
-            j["jar"].status = "ERROR"
-            j["jar"].position = "REMOVED"
-            j["jar"].machine_head = None
-            self.db_session.commit()
+            if self.__jar_runners.get(barcode):
+                
+                j = self.__jar_runners.pop(barcode)
 
-            logging.warning(f'cancelling:{j["task"]}')
-            r = j["task"].cancel()
-            logging.warning(f"cancelled. r:{r}")
+                j["jar"].status = "ERROR"
+                j["jar"].position = "REMOVED"
+                j["jar"].machine_head = None
+                self.db_session.commit()
 
-            logging.warning(f"deleting:{j}")
-            del j
-            logging.warning(f"deleted:{barcode}")
+                logging.warning(f'cancelling:{j["task"]}')
+                r = j["task"].cancel()
+                logging.warning(f"cancelled. r:{r}")
 
-            self.ws_server.refresh_can_list()
+                logging.warning(f"deleting:{j}")
+                del j
+                logging.warning(f"deleted:{barcode}")
+
+                self.ws_server.refresh_can_list()
 
         except Exception as e:  # pylint: disable=broad-except
 
