@@ -96,8 +96,6 @@ D = {
     "move 02 04 ('A -> C')": "move 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "move 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "move 04 05 ('C -> UP')",
-    "move 04 05 ('DOWN -> D')": "move 04 05 ('DOWN -> D')",
-    "move 04 05 ('UP -> DOWN')": "move 04 05 ('UP -> DOWN')",
     "move 05 06 ('UP -> DOWN')": "move 05 06 ('UP -> DOWN')",
     "move 06 07 ('DOWN -> D')": "move 06 07 ('DOWN -> D')",
     "move 07 08 ('D -> E')": "move 07 08 ('D -> E')",

@@ -69,8 +69,8 @@ ACTION_PAGE_LIST = [
          {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "C", [0, 0])},
          {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "C", [0, 2])},
          {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
-         {"text": tr_("move 04 05 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
-         {"text": tr_("move 04 05 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
+         {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
+         {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
      "labels_args": [
          ("C", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
          ("C", "container_presence", tr_("CAN PRESENCE")), ], },
