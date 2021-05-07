@@ -85,9 +85,11 @@ def init_admin(app, db):
                     l = Markup('<a href="http://{}:{}/admin" > HEAD {} admin </a>'.format(ip, ph, i))
                     links.append(l)
 
+            logging.warning(f"request.host:{request.host}")
             ctx = {
                 'links': links,
-                'ws_ip_addr_and_port': "{}:{}".format(request.host.split(':')[0], 13000)
+                'ws_ip_addr_and_port': "{}:{}".format(request.host.split(':')[0], 13000),
+                'alfa40_admin_url': "http://{}:{}/admin".format(request.host.split(':')[0], 8080),
             }
 
             return self.render(template, **ctx)
