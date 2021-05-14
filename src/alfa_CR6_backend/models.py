@@ -46,37 +46,36 @@ def compile_barcode(order_nr, index):
     barcode = int(order_nr) + int(index) % 1000
     return str(barcode)
 
+
 def decompile_barcode(barcode):
     order_nr = 1000 * (int(barcode) // int(1000))
     index = int(barcode) % 1000
     return int(order_nr), int(index)
+
 
 def generate_order_nr():
 
     global global_session  # pylint: disable=global-statement
 
     today = date.today()
-    midnight = datetime.combine(today, datetime.min.time())
-    daily_cntr = 0
+
+    date_number = (
+        today.year % 100 * 10000 + today.month * 100 + today.day) * 1000 * 1000
 
     order = (
         global_session.query(Order)
-        .filter(Order.date_created >= midnight)
+        .filter(Order.order_nr > date_number)
         .order_by(Order.order_nr.desc())
         .first()
     )
-    # ~ logging.warning(f"order:{order}")
     if order:
-        daily_cntr = (order.order_nr / 1000) % 1000
+        new_number = order.order_nr + 1000
+    else:
+        new_number = date_number + 1000
 
-    order_nr = (
-        (today.year % 100 * 10000 + today.month * 100 + today.day) * 1000
-        + daily_cntr
-        + 1
-    )
-    order_nr = int(order_nr * 1000)
+    order_nr = int(new_number)
 
-    # ~ logging.warning(f"order_nr:{order_nr}")
+    logging.warning(f"order_nr:{order_nr}, date_number:{date_number}, order:{order}")
 
     return order_nr
 
@@ -325,7 +324,6 @@ class dbEventManager:
                         logging.info("m:{}, type(m):{}".format(m, type(m)))
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(e)
-
 
 
 def init_models(sqlite_connect_string):
