@@ -1001,43 +1001,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         )
         asyncio.get_event_loop().close()
 
-    def clone_order(self, order_nr, n_of_jars=0):
-
-        cloned_order = None
-        if self.db_session:
-            try:
-                order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).one()
-                cloned_order = Order(
-                    json_properties=order.json_properties,
-                    description=order.description,
-                )
-                self.db_session.add(cloned_order)
-                for j in range(1, n_of_jars + 1):
-                    jar = Jar(order=cloned_order, index=j, size=0)
-                    self.db_session.add(jar)
-                self.db_session.commit()
-            except BaseException:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-                order = None
-                self.db_session.rollback()
-
-        return cloned_order
-
-    def create_order(self, path_to_file=None, n_of_jars=0):
+    def _do_create_order(self, properties, description, n_of_jars):
 
         order = None
         if self.db_session:
             try:
-                properties = {}
-                description = ""
-                if path_to_file:
-
-                    _parser = OrderParser()
-                    properties = _parser.parse(path_to_file)
-
-                    if properties:
-                        description = os.path.split(path_to_file)[1]
-
                 order = Order(
                     json_properties=json.dumps(properties, indent=2),
                     description=description)
@@ -1052,6 +1020,36 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 order = None
                 self.db_session.rollback()
                 self.handle_exception(e)
+
+        return order
+
+    def clone_order(self, order_nr, n_of_jars=0):
+
+        cloned_order = None
+
+        try:
+            order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).one()
+            properties = json.loads(order.json_properties)
+            cloned_order = self._do_create_order(properties, order.description, n_of_jars)
+        except Exception as e:  # pylint: disable=broad-except
+            self.handle_exception(e)
+
+        return cloned_order
+
+    def create_order(self, path_to_file=None, n_of_jars=0):
+
+        properties = {}
+        description = ""
+        order = None
+        try:
+            if path_to_file:
+                _parser = OrderParser()
+                properties = _parser.parse(path_to_file)
+                if properties:
+                    description = os.path.split(path_to_file)[1]
+            order = self._do_create_order(properties, description, n_of_jars)
+        except Exception as e:  # pylint: disable=broad-except
+            self.handle_exception(e)
 
         return order
 
@@ -1148,7 +1146,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             barcode = str(barcode)
 
             if self.__jar_runners.get(barcode):
-                
+
                 j = self.__jar_runners.pop(barcode)
 
                 j["jar"].status = "ERROR"
