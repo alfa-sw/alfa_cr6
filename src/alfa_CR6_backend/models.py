@@ -37,6 +37,9 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 
 global_session = None
 
+def set_global_session(session):
+    global global_session  # pylint: disable=global-statement
+    global_session = session
 
 def generate_id():
     return str(uuid.uuid4())

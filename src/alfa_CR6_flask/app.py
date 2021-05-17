@@ -25,10 +25,11 @@ import flask_admin.contrib.sqla  # pylint: disable=import-error
 
 from waitress import serve       # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Order, Jar, Event
+from alfa_CR6_backend.models import Order, Jar, Event, set_global_session
 from alfa_CR6_backend.globals import import_settings
 
 # ~ from alfa_flask.admin import _handle_CRX_stream_upload
+
 
 def _handle_CRX_stream_upload(stream, filename):
 
@@ -54,6 +55,7 @@ def _handle_CRX_stream_upload(stream, filename):
             logging.error(traceback.format_exc())
 
     return flash_msgs
+
 
 def _gettext(s):
     return s
@@ -220,6 +222,9 @@ def main():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or '123456790'
 
     db = init_db(app)
+
+    set_global_session(db.session)
+
     init_admin(app, db)
 
     HOST, PORT = '0.0.0.0', 8090
