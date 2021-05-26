@@ -440,7 +440,8 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
             for path_ in evdev.list_devices():
                 device_ = evdev.InputDevice(path_)
                 logging.warning(f"device_:{ device_ }")
-                if "barcode reader" in str(device_).lower():
+                d_ = str(device_).lower()
+                if ("barcode" in d_):
                     self._device = device_
                     logging.warning(f"BARCODE DEVICE FOUND. self._device:{ self._device }")
                     break
