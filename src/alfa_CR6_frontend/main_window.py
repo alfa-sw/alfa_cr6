@@ -468,20 +468,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         logging.warning(msg)
 
-        session = QApplication.instance().db_session
-        if session:
-            try:
-                e = Event(name='UI_DIALOG',
-                          level=f"{title}",
-                          severity='',
-                          source="MainWindow.open_alert_dialog",
-                          description=f"{msg}")
-
-                session.add(e)
-                session.commit()
-            except Exception as e:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-                session.rollback()
+        QApplication.instance().insert_db_event(
+            name='UI_DIALOG', level=f"{title}", severity='', source="MainWindow.open_alert_dialog", description=f"{msg}")        
 
     def open_frozen_dialog(self, msg, title="ALERT"):
 

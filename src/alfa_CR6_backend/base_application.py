@@ -8,13 +8,15 @@
 
 import os
 import time
-import logging
 import traceback
 import asyncio
 import json
 import codecs
 import subprocess
 import html
+import logging
+
+import logging.handlers
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
@@ -744,6 +746,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         logging.warning(f" #### terminating barcode reader: {b} #### ")
 
     async def __create_inner_loop_task(self):
+
         try:
             while self.run_flag:
 
@@ -900,7 +903,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         logging.warning(f"jar:{jar}")
         return jar
 
-    async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals,unused-argument
+    async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals
 
         barcode = str(barcode)
         if int(barcode) == -1:
@@ -977,6 +980,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         return self.__version
 
     def run_forever(self):
+
+        QApplication.instance().insert_db_event(
+            name='START', level="INFO", severity='', source="BaseApplication.run_forever", description=tr_("started application"))
 
         self.main_window.show()
 
@@ -1066,7 +1072,22 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
-    def handle_exception(self, e, ui_msg=None, db_event=None):  # pylint:  disable=no-self-use
+    def insert_db_event(self, name="", level="ERROR", severity="", source="", description=""):   # pylint: disable=too-many-arguments
+
+        try:
+            evnt = Event(
+                name=name,
+                level=level,
+                severity=severity,
+                source=source,
+                description=description)
+            self.db_session.add(evnt)
+            self.db_session.commit()
+        except BaseException:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.db_session.rollback()
+
+    def handle_exception(self, e, ui_msg=None, insert_in_db=True):  # pylint:  disable=no-self-use
 
         if not ui_msg:
             ui_msg = e
@@ -1074,25 +1095,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         logging.error(traceback.format_exc())
 
-        if db_event is None:
-            db_event = self.settings.STORE_EXCEPTIONS_TO_DB_AS_DEFAULT
-
-        if db_event:
-            a = QApplication.instance()
-            if a and a.db_session:
-                try:
-                    descr = "{} {}".format(ui_msg, traceback.format_exc())
-                    evnt = Event(
-                        name=e,
-                        level="ERROR",
-                        severity="",
-                        source="BaseApplication.handle_exception",
-                        description=descr)
-                    a.db_session.add(evnt)
-                    a.db_session.commit()
-                except BaseException:  # pylint: disable=broad-except
-                    logging.error(traceback.format_exc())
-                    a.db_session.rollback()
+        if insert_in_db:
+            descr = "{} {}".format(ui_msg, traceback.format_exc())
+            self.insert_db_event(
+                name=str(e), level="ERROR", severity="", source="BaseApplication.handle_exception", description=descr)
 
     def toggle_freeze_carousel(self):
 
