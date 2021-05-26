@@ -525,7 +525,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 timeout = output['timeout']
                 t0 = output['t0']
                 if (timeout > 0 and t0 > 0) and (time.time() - t0 > timeout):
-                    self.crx_outputs_management(output_number, 0, timeout=0)
+                    logging.warning(f"{self.name}, {output_number}, output:{output}")
+                    await self.crx_outputs_management(output_number, 0, timeout=0)
 
     async def run(self):
         t = self.__watch_dog_task()
@@ -591,9 +592,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 flag = self.jar_photocells_status.get(bit_name, False)
                 return flag if on else not flag
 
-            ret = await self.app.wait_for_condition(
-                condition, timeout=timeout, show_alert=False
-            )
+            ret = await self.app.wait_for_condition(condition, timeout=timeout, show_alert=False)
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
 
             if not ret and show_alert:
@@ -619,11 +618,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 return flag if on else not flag
 
             ret = await self.app.wait_for_condition(
-                condition, timeout=timeout, show_alert=show_alert, break_condition=break_condition
-            )
+                condition, timeout=timeout, show_alert=show_alert, break_condition=break_condition)
             logging.warning(
-                f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}"
-            )
+                f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}")
 
             if not ret and show_alert:
                 _ = tr_('timeout expired!\n{} on:{}, status_levels:{}, timeout:{}.').format(
