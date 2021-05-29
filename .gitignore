@@ -19,7 +19,7 @@
 *egg-info/
 
 *__pycache__*
-git.diff
+git*.diff
 
 __tmp__
 *.session

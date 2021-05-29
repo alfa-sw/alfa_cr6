@@ -1088,7 +1088,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.error(traceback.format_exc())
             self.db_session.rollback()
 
-    def handle_exception(self, e, ui_msg=None, insert_in_db=True):  # pylint:  disable=no-self-use
+    def handle_exception(self, e, ui_msg=None, insert_in_db=False):  # pylint:  disable=no-self-use
 
         if not ui_msg:
             ui_msg = e
