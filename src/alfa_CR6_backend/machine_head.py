@@ -110,7 +110,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
 
         if invalidate_cache:
-            ret = await self.call_api_rest("pigment", "GET", {})
+            ret = await self.call_api_rest("pigment", "GET", {}, timeout=15)
             pigment_list = []
             low_level_pipes = []
             for pig in ret.get("objects", []):
@@ -282,6 +282,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if self.ip_add:
                 url = "http://{}:{}/{}/{}".format(
                     self.ip_add, self.http_port, "apiV1", path)
+
+                logging.warning(f" url:{url}")
+
                 if self.aiohttp_clientsession is None:
                     self.aiohttp_clientsession = aiohttp.ClientSession()
                 with async_timeout.timeout(timeout):
@@ -300,7 +303,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         r.reason == "OK"
                     ), f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
         except Exception as e:  # pylint: disable=broad-except
-            self.app.handle_exception(e)
+            self.app.handle_exception(f"{url}, {e}")
 
         return r_json_as_dict
 

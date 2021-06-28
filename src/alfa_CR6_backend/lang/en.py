@@ -1,6 +1,7 @@
 from alfa_CR6_backend.lang import error_en
 D = {
     " ?": " ?",
+    "alias": "alias",
     " before dispensing. Please check jar.": " Please check the can before dispensing.",
     ",\ncreating {} jars": ",\ncreating {} cans",
     "CAN PRESENCE": "CAN PRESENCE",

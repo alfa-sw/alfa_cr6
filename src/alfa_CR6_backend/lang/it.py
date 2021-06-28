@@ -1,6 +1,7 @@
 from alfa_CR6_backend.lang import error_it
 D = {
     " ?": " ?",
+    "alias": "alias",
     " before dispensing. Please check jar.": " prima di dispensare, si prega di verificare il barattolo",
     ",\ncreating {} jars": ",\ncreare {} barattoli",
     "CAN PRESENCE": "PRESENZA BARATTOLO",
