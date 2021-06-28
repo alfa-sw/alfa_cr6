@@ -437,11 +437,12 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
             app = QApplication.instance()
 
             buffer = ""
-            for path_ in evdev.list_devices():
-                device_ = evdev.InputDevice(path_)
+            device_list = [evdev.InputDevice(p) for p in  evdev.list_devices()]
+            device_list.sort(key=str)
+            for device_ in device_list:
                 logging.warning(f"device_:{ device_ }")
-                d_ = str(device_).lower()
-                if ("barcode" in d_):
+                s_ = str(device_)
+                if "LWTEK Barcode Scanner" in s_ or "Manufacturer Barcode Reader" in s_:
                     self._device = device_
                     logging.warning(f"BARCODE DEVICE FOUND. self._device:{ self._device }")
                     break
@@ -453,6 +454,7 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                 async for event in self._device.async_read_loop():
                     keyEvent = evdev.categorize(event)
                     type_key_event = evdev.ecodes.EV_KEY  # pylint:  disable=no-member
+                    logging.warning(f"type_key_event:{type_key_event} ({event.type})")
                     if event.type == type_key_event and keyEvent.keystate == 0:
                         # key_up = 0
                         if keyEvent.keycode == "KEY_ENTER":
