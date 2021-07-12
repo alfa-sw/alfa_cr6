@@ -471,6 +471,8 @@ class OrderPage(BaseStackedPage):
         self.new_order_btn.setText(tr_("new"))
         self.clone_order_btn.setText(tr_("copy"))
 
+        self.edit_aliases_btn.setText(tr_("alias"))
+
         self.search_order_line.textChanged.connect(self.populate_order_table)
         self.search_jar_line.textChanged.connect(self.populate_jar_table)
         self.search_file_line.textChanged.connect(self.populate_file_table)

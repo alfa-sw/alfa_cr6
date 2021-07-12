@@ -64,7 +64,7 @@ D = {
     "barcode:{} has status {}.\n": "{} 바코드의 상태가 {}.\n",
     "barcode:{} not found.\nPlease, remove the can.\n": "{}바코드를 찾을 수 없습니다. \n 캔을 제거해주세요.", # the barcode reader has read a barcode not present in database, it cannot be handled 
     "carousel is paused.": "자동 작업이 멈춤.", 
-    "cloned order:{} \n from:{}.": "copied order:{} \n from:{}.", # the application has copied an order from an existing one "기존에 있는 오더를 복사하였습니다"
+    "cloned order:{} \n from:{}.": "기존에 있는 오더를 복사하였습니다",
     "confirm creating order from file (file will be deleted):\n '{}'?\n": "\n파일로부터 오더를 생성하시겠습니까?(파일은 삭제됨):\n '{}'",
     "confirm deleting file\n '{}' ?": "\n {} 파일을 삭제하시겠습니까?",
     "confirm deleting jar\n '{}' ?": "\n {} 캔을 삭제하시겠습니까?",
@@ -139,7 +139,7 @@ D = {
     'barcode:{} error in STEP {}. I will retry.': "바코드 {}가 {}단계에서 에러 상태입니다. 재시도하겠습니다",
     'modified.': "변경되었습니다",
     'output roller is busy.': '배출구 롤러에 이미 어뎁터가 있습니다',
-    "order nr.": "order nr.", "오더 넘버"
+    "order nr.": "오더 넘버",
     "status": "상태",
     'timeout expired!\n{} bit_name:{}, on:{}, status_levels:{}, timeout:{}.': "시간 초과되었습니다 ! \n{} bit_name:{}, on:{}, status_levels:{}, timeout:{}",
     'timeout expired!\n{} bit_name:{}, on:{}, timeout:{}.': "시간 초과되었습니다 ! \n{} bit_name:{}, on:{}, timeout:{}.",

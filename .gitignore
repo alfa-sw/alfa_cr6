@@ -21,7 +21,7 @@
 *__pycache__*
 git*.diff
 
-__tmp__
+__*__
 *.session
 
 *.log
