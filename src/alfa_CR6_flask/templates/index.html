@@ -67,6 +67,17 @@
 	</table>
 </div>
 
+    </p><p>
+
+    <label>Current Language: {{ current_language }} |</label>
+		
+    <b> Change Language to: </b> 
+	<input class="btn btn-primary" type="submit" value="ENGLISH" onclick="change_language('en');"></input>
+	<input class="btn btn-primary" type="submit" value="ITALIAN" onclick="change_language('it');"></input>
+	<input class="btn btn-primary" type="submit" value="KOREAN " onclick="change_language('kr');"></input>
+	<label>(WARN application will be restarted)</label>
+	</p>
+
 	<hr></hr>
 	<h4 class="glyphicon glyphicon-wrench" onclick="toggle_element_visibility('manhole_commander');"></h4>
 	<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
@@ -100,6 +111,18 @@
 			g_ws_client.send(JSON.stringify({"debug_command": el.value}));
 		}
 	}
+
+	var change_language = function(lang_) {
+
+		var msg_ = "Confirm changing language to " + lang_ + "? WARN: Application will be restarted.";
+		if (window.confirm(msg_)) {
+			console.debug('change_language(), lang_: ' + lang_); 
+			var cmd = {"command": 'change_language', 'params': {'lang': lang_}};
+			cmd = JSON.stringify(cmd);
+			console.debug('change_language(), cmd: ' + cmd); 
+			g_ws_client.send(cmd);
+		};
+	};
 
 	var on_wsocket_open = function(event) {
 		console.debug('on_wsocket_open, event: ' + JSON.stringify(event)); 

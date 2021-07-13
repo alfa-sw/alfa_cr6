@@ -92,6 +92,7 @@ def init_admin(app, db):
                 'links': links,
                 'ws_ip_addr_and_port': "{}:{}".format(request.host.split(':')[0], 13000),
                 'alfa40_admin_url': "http://{}:{}/admin".format(request.host.split(':')[0], 8080),
+                'current_language': settings.LANGUAGE,
             }
 
             return self.render(template, **ctx)

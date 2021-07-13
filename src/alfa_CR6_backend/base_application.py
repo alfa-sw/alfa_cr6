@@ -35,6 +35,7 @@ from alfa_CR6_backend.globals import (
     EPSILON,
     get_version,
     get_encoding,
+    set_language,
     tr_)
 
 from alfa_CR6_backend.machine_head import MachineHead
@@ -603,6 +604,12 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         try:
             msg_dict = json.loads(msg)
             logging.debug(f"msg_dict:{msg_dict}")
+
+            if msg_dict.get("command"):
+                if msg_dict["command"] == "change_language":
+                    params = msg_dict.get("params", {})
+                    lang = params.get("lang")
+                    set_language(lang)
 
             if msg_dict.get("debug_command"):
                 try:
