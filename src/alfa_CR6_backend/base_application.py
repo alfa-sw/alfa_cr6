@@ -175,6 +175,12 @@ class OrderParser:
             new_item["weight(g)"] = item["weight(g)"]
             properties["ingredients"].append(new_item)
 
+        properties["extra_lines_to_print"] = []
+        if content.get("color code"):
+            properties["extra_lines_to_print"].append(f'{ content["color code"] }')
+        if content.get("total"):
+            properties["extra_lines_to_print"].append(f'{ content["total"] }')
+
         return properties
 
     @staticmethod
@@ -220,7 +226,15 @@ class OrderParser:
         properties = {
             "meta": meta,
             "ingredients": ingredients,
+            "extra_lines_to_print": [],
         }
+
+        if meta.get("Number") and meta["Number"].split(' ')[1:]:
+            properties["extra_lines_to_print"].append(f'{ meta["Number"].split(" ")[1] }')
+        if extra_info[1:]:
+            properties["extra_lines_to_print"].append(f"{extra_info[1]}")
+
+        logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
 
         return properties
 
