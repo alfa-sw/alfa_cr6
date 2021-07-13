@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
 
 from alfa_CR6_backend.models import Jar, Order
 from alfa_CR6_backend.dymo_printer import dymo_print
-from alfa_CR6_backend.globals import tr_
+from alfa_CR6_backend.globals import tr_, set_language
 
 
 class DebugPage:
@@ -213,6 +213,15 @@ class DebugPage:
                 )
             elif command == "UPDATE" and m:
                 t = m.update_tintometer_data(invalidate_cache=True)
+
+            elif command == "LANG":
+                def ok_cb_(lang_):
+                    logging.warning(f"lang_:{ lang_ }")
+                    set_language(lang_)
+                lang_ = name
+                msg_ = tr_("confirm changing language to: {}? \n (WARN: application will be restarted)").format(lang_)
+                QApplication.instance().main_window.open_input_dialog(message=msg_, ok_cb=ok_cb_, ok_cb_args=[lang_, ])
+
             if t is not None:
                 asyncio.ensure_future(t)
         else:
@@ -487,6 +496,14 @@ class DebugPage:
         else:
             html_ += '<b color="#00EE00">carousel_frozen:{}</b>'.format(app.carousel_frozen)
         html_ += " - mirco: 0x{:02X} 0x{:02X}".format(s1, s2)
+
+        html_ += "</p><p>"
+
+        html_ += """ <b>Change Language to: </b> """
+        html_ += """ <a href="LANG@en">ENGLISH</a> - """
+        html_ += """ <a href="LANG@it">ITALIAN</a> - """
+        html_ += """ <a href="LANG@kr">KOREAN</a> """
+
         html_ += "</p>"
 
         html_ += "<table>"

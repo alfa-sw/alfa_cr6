@@ -16,7 +16,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH, import_settings
+from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH, import_settings, set_language
 from alfa_CR6_backend.models import Event
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
@@ -169,6 +169,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.menu_btn_group.buttonClicked.connect(self.on_menu_btn_group_clicked)
 
+        self.menu_line_edit.returnPressed.connect(self.on_menu_line_edit_return_pressed)
+
         self.keyboard = Keyboard(self, keyboard_path=KEYBOARD_PATH)
         self.keyboard.setWindowFlags(Qt.WindowStaysOnTopHint)
         self.keyboard.setGeometry(
@@ -183,7 +185,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.help_page = HelpPage(parent=self)
         self.order_page = OrderPage(parent=self)
-        
+
         self.webengine_page = WebenginePage(parent=self)
 
         if QApplication.instance().n_of_active_heads == 6:
@@ -293,6 +295,24 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def get_stacked_widget(self):
         return self.stacked_widget
+
+    def on_menu_line_edit_return_pressed(self):
+
+        map_ = {
+            "english": 'en',
+            "italian": 'it',
+            "korean": 'kr',
+        }
+
+        def ok_cb_(lang_):
+            logging.warning(f"lang_:{ lang_ }")
+            set_language(lang_)
+
+        txt_ = self.menu_line_edit.text()
+        if map_.get(txt_):
+            lang_ = map_[txt_]
+            msg_ = tr_("confirm changing language to: {}? \n (WARN: application will be restarted)").format(lang_)
+            self.open_input_dialog(message=msg_, ok_cb=ok_cb_, ok_cb_args=[lang_, ])
 
     def on_menu_btn_group_clicked(self, btn):
 
@@ -469,7 +489,11 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         logging.warning(msg)
 
         QApplication.instance().insert_db_event(
-            name='UI_DIALOG', level=f"{title}", severity='', source="MainWindow.open_alert_dialog", description=f"{msg}")        
+            name='UI_DIALOG',
+            level=f"{title}",
+            severity='',
+            source="MainWindow.open_alert_dialog",
+            description=f"{msg}")
 
     def open_frozen_dialog(self, msg, title="ALERT"):
 
