@@ -118,7 +118,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 enabled_pipes = [pipe for pipe in pig["pipes"] if pipe["enabled"]]
 
                 low_level_pipes += [
-                    pipe["name"]
+                    (pipe["name"], pig["name"])
                     for pipe in enabled_pipes
                     if pipe["current_level"] < pipe["reserve_level"]
                 ]

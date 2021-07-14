@@ -580,6 +580,13 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
             self.refresh_can_list()
 
+            msg_ = json.dumps({
+                'type': 'current_language_label',
+                'value': self.parent.settings.LANGUAGE,
+            })
+            for client in self.ws_clients:
+                await client.send(msg_)
+
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
@@ -626,6 +633,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+
 
     def refresh_can_list(self):
 
@@ -888,7 +896,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if jar:
 
             if jar.status in ["DONE", "ERROR"]:
-                msg_ = tr_("barcode:{} has status {}.\n").format(barcode, jar.status)
+                msg_ = tr_("barcode:{} has status {}.\n").format(barcode, tr_(jar.status))
                 self.main_window.open_alert_dialog(msg_, title="WARNING")
 
             A = self.get_machine_head_by_letter("A")

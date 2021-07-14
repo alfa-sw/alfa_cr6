@@ -69,9 +69,10 @@
 
     </p><p>
 
-    <label>Current Language: {{ current_language }} |</label>
-		
-    <b> Change Language to: </b> 
+    <label>Current Language:</label> 
+	<label id="current_language_label">{{ current_language }}</label>
+	-
+	<b> Change Language to: </b> 
 	<input class="btn btn-primary" type="submit" value="ENGLISH" onclick="change_language('en');"></input>
 	<input class="btn btn-primary" type="submit" value="ITALIAN" onclick="change_language('it');"></input>
 	<input class="btn btn-primary" type="submit" value="KOREAN " onclick="change_language('kr');"></input>

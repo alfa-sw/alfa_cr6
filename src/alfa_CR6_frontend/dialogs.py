@@ -507,11 +507,13 @@ class AliasDialog(BaseDialog):
 
         super().__init__(*args, **kwargs)
 
+        self.title_lbl.setText(tr_("edit alias for pigment names"))
+
         self.warning_lbl.setText('')
 
         self.alias_txt_label.setText(
             tr_("Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ") +
-            tr_("(Trailing whitespaces will be discarded)"""))
+            tr_("(Trailing whitespaces will be discarded)"))
         self.alias_txt_label.setWordWrap(True)
 
         self.ok_button.clicked.connect(self.__save_changes)

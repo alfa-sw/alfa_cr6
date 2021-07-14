@@ -164,11 +164,20 @@ D = {
     'ERROR': 'ERROR',
     'DONE': 'DONE',
     'PARTIAL': 'PARTIAL',
+
     'success': 'success',
     'failure during dispensation': 'failure during dispensation',
     'failure waiting for dispensation to start': 'failure waiting for dispensation to start',
     'failure in sending "DISPENSE_FORMULA" command': 'failure in sending "DISPENSE_FORMULA" command',
     "confirm removing {}?": "confirm removing {}?",
+
+    "edit alias for pigment names": "edit alias for pigment names",
+    "data not valid. duplicated alias:": "data not valid. duplicated alias:",
+
+    "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": 
+        "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ",
+
+    "(Trailing whitespaces will be discarded)": "(Trailing whitespaces will be discarded)",
 }
 
 
