@@ -104,7 +104,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return available_gr
 
-    async def update_tintometer_data(self, invalidate_cache=True):
+    async def update_tintometer_data(self, invalidate_cache=True, silent=1):
 
         # ~ logging.warning(
         # ~ f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
@@ -142,9 +142,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         # ~ logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
         if self.low_level_pipes:
-            logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
-            self.app.main_window.open_alert_dialog(
-                tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(self.name, self.low_level_pipes))
+            if not silent:
+                logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
+                self.app.main_window.open_alert_dialog(
+                    tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(self.name, self.low_level_pipes))
 
             self.app.show_reserve(self.index, True)
         else:
@@ -155,7 +156,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         logging.debug("status:{}".format(status))
 
         if not self.status:
-            asyncio.ensure_future(self.update_tintometer_data())
+            asyncio.ensure_future(self.update_tintometer_data(silent=False))
 
         if (status.get("status_level") == "ALARM"
                 and self.status.get("status_level") != "ALARM"):
@@ -175,7 +176,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         if (status.get("status_level") == "RESET"
                 and self.status.get("status_level") != "RESET"):
-            await self.update_tintometer_data(invalidate_cache=True)
+            await self.update_tintometer_data(invalidate_cache=True, silent=False)
             self.app.main_window.open_alert_dialog(tr_("{} RESETTING").format(self.name))
 
         old_flag = self.status.get("jar_photocells_status", 0) & 0x001
@@ -275,7 +276,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if self.msg_handler:
                 await self.msg_handler(self.index, msg_dict)
 
-    async def call_api_rest(self, path: str, method: str, data: dict, timeout=10, expected_ret_type='json'):
+    async def call_api_rest(self,   # pylint: disable=too-many-arguments
+                            path: str, method: str, data: dict, timeout=10, expected_ret_type='json'):
 
         ret = None
         try:
@@ -299,7 +301,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             ret = await r.json()
                         else:
                             ret = await r.text()
-                    assert (r.reason == "OK"), f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
+                    assert (
+                        r.reason == "OK"), f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
 
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(f"{url}, {e}")
