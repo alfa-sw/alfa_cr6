@@ -177,7 +177,7 @@ D = {
     "data not valid. duplicated alias:": "중복된 조색제 명입니다",
     "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ":
         "본 페이지는 조색제명을 관리하는 프로그램으로 사용자가 임의로 수정할 경우 기기에 심각한 오류를 발생시킬 수 있습니다. ",
-    "(Trailing whitespaces will be discarded)": "(반드시 관리자의 감독하에 조작하시기 바랍니다)"
+    "(Trailing whitespaces will be discarded)": "(반드시 관리자의 감독하에 조작하시기 바랍니다)",
 }
 
 D.update(error_kr.D)

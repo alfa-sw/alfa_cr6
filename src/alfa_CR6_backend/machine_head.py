@@ -110,7 +110,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
 
         if invalidate_cache:
-            ret = await self.call_api_rest("pigment", "GET", {}, timeout=15)
+            ret = await self.call_api_rest("apiV1/pigment", "GET", {}, timeout=15)
             pigment_list = []
             low_level_pipes = []
             for pig in ret.get("objects", []):
@@ -130,7 +130,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             with open(pth_, "w") as f:
                 json.dump(pigment_list, f, indent=2)
 
-            ret = await self.call_api_rest("package", "GET", {})
+            ret = await self.call_api_rest("apiV1/package", "GET", {})
             package_list = ret.get("objects", [])
             pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_package_list.json")
             with open(pth_, "w") as f:
@@ -275,16 +275,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if self.msg_handler:
                 await self.msg_handler(self.index, msg_dict)
 
-    async def call_api_rest(self, path: str, method: str, data: dict, timeout=10):
+    async def call_api_rest(self, path: str, method: str, data: dict, timeout=10, expected_ret_type='json'):
 
-        r_json_as_dict = {}
+        ret = None
         try:
             if self.ip_add:
-                url = "http://{}:{}/{}/{}".format(
-                    self.ip_add, self.http_port, "apiV1", path)
-
+                url = "http://{}:{}/{}".format(self.ip_add, self.http_port, path)
                 logging.warning(f" url:{url}")
-
                 if self.aiohttp_clientsession is None:
                     self.aiohttp_clientsession = aiohttp.ClientSession()
                 with async_timeout.timeout(timeout):
@@ -297,15 +294,17 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                     async with context_mngr(*args) as response:
                         r = response
-                        r_json_as_dict = await r.json()
+                        if expected_ret_type == 'json':
+                            ret = {}
+                            ret = await r.json()
+                        else:
+                            ret = await r.text()
+                    assert (r.reason == "OK"), f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
 
-                    assert (
-                        r.reason == "OK"
-                    ), f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(f"{url}, {e}")
 
-        return r_json_as_dict
+        return ret
 
     async def crx_outputs_management(self, output_number, output_action, timeout=30, silent=True):
 

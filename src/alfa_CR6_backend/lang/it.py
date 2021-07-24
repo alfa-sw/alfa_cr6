@@ -85,7 +85,7 @@ D = {
     "duplicate {} in jar position list!": "duplicazione {} nella lista dei barattoli!",
     "edit": "modifica",
     "edit or add item:": "modifica o aggiungi una pasta:",
-    "file name": "nome del file",
+    "file name": "nome file",
     "file_name:{}": "nome del file:{}",
     "hit 'OK' to unfreeze it": "premi 'OK' per riavviare l'automazione",
     "loaded:": "caricato:",

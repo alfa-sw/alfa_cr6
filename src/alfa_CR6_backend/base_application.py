@@ -161,8 +161,10 @@ class OrderParser:
                 "color to compare",
                 "basic information",
                 "automobile information",
+                "color code",
+                "total",
                 "note"]:
-            properties["meta"][k] = content.get(k)
+            properties["meta"][k] = content.get(k, "")
 
         sz = content.get("total", "100")
         sz = "1000" if sz.lower() == "1l" else sz
@@ -230,10 +232,13 @@ class OrderParser:
             "extra_lines_to_print": [],
         }
 
-        if meta.get("Number") and meta["Number"].split(' ')[1:]:
-            properties["extra_lines_to_print"].append(f'{ meta["Number"].split(" ")[1] }')
-        if extra_info[1:]:
-            properties["extra_lines_to_print"].append(f"{extra_info[1]}")
+        _toks = meta.get("Number", []) and meta["Number"].split(' ')
+        _line = (_toks[1:] and _toks[1]) or "" 
+        properties["extra_lines_to_print"].append(f'{_line}')
+        properties["meta"]["color code"] = f"{_line}"
+
+        _line = (extra_info[1:] and extra_info[1]) or ""
+        properties["extra_lines_to_print"].append(f"{_line}")
 
         logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
 
@@ -607,18 +612,39 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
             self.ws_clients.remove(websocket)
 
     async def __handle_client_msg(self, websocket, msg):
+
         logging.warning("websocket:{}, msg:{}.".format(websocket, msg))
+
         try:
             msg_dict = json.loads(msg)
             logging.debug(f"msg_dict:{msg_dict}")
 
             if msg_dict.get("command"):
+
                 if msg_dict["command"] == "change_language":
                     params = msg_dict.get("params", {})
                     lang = params.get("lang")
                     set_language(lang)
 
+                elif msg_dict["command"] == "ask_platform_info":
+                    params = msg_dict.get("params", {})
+                    head_letter = params.get("head_letter")
+                    m = self.parent.get_machine_head_by_letter(head_letter)
+
+                    path = "admin/platform?cmd=info"
+                    method = "GET"
+                    data = {}
+                    ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='html')
+                    title = f'<a href="#">[back to top]</a> <h3> head:{head_letter} platform info:</h3>'
+
+                    answer = json.dumps({
+                        'type': 'ask_platform_info_answer',
+                        'value': title + html.unescape(ret),
+                    })
+                    await websocket.send(answer)
+
             if msg_dict.get("debug_command"):
+
                 try:
                     cmd_ = msg_dict["debug_command"]
                     ret = eval(cmd_)
@@ -1083,8 +1109,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if path_to_file:
                 _parser = OrderParser()
                 properties = _parser.parse(path_to_file)
-                if properties:
-                    description = os.path.split(path_to_file)[1]
+                # ~ if properties:
+                    # ~ if properties.get("meta", {}).get("color code"):
+                        # ~ description = properties["meta"]["color code"]
+                    # ~ else:
+                        # ~ description = os.path.split(path_to_file)[1]
             order = self._do_create_order(properties, description, n_of_jars)
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)

@@ -39,6 +39,9 @@ from alfa_CR6_backend.dymo_printer import dymo_print
 from alfa_CR6_backend.globals import (
     IMAGES_PATH, import_settings, get_res, get_encoding, tr_)
 
+
+import magic       # pylint: disable=import-error
+
 g_settings = import_settings()
 
 
@@ -138,18 +141,23 @@ class OrderTableModel(BaseTableModel):
     def __init__(self, parent, *args):
         super().__init__(parent, *args)
         self.session = QApplication.instance().db_session
-        self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr.")]
+        self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr."), tr_("file name")]
         filter_text = parent.search_order_line.text()
 
         if self.session:
             query_ = self.session.query(Order)
             query_ = query_.filter(Order.order_nr.contains(filter_text))
-            # ~ query_ = query_.order_by(Order.order_nr.desc())
+            query_ = query_.order_by(Order.order_nr.desc())
             query_ = query_.limit(100)
-            self.results = [
-                ["", "", o.status, o.order_nr] for o in query_.all()
-            ]
-            self.results.sort()
+
+            self.results = []
+            for o in query_.all():
+                properties = json.loads(o.json_properties)
+                c_code = properties.get("meta", {}).get("file name", '')
+                item = ["", "", o.status, o.order_nr, c_code]
+                self.results.append(item)
+
+            # ~ self.results.sort()
 
         else:
             self.results = [[]]
@@ -422,26 +430,50 @@ class WebenginePage(BaseStackedPage):
 
         self.parent().setCurrentWidget(self)
 
+    @staticmethod
+    def __adjust_downloaded_file_name(full_name):
+
+        mime = magic.Magic(mime=True)
+        mime_type = mime.from_file(full_name)
+        logging.warning(f"full_name:{full_name}, mime_type:{mime_type}")
+
+        if mime_type == 'application/json':
+
+            with open(full_name) as f:
+                content = json.load(f)
+                color_code = content.get("color code")
+                if color_code:
+                    head, _ = (full_name)
+                    os.rename(full_name, f"{head}{color_code}.json")
+                else:
+                    os.rename(full_name, f"{full_name}.json")
+        else:
+            toks = mime_type.split("/")
+            ext = toks[1:] and toks[1]
+            if ext:
+                os.rename(full_name, f"{full_name}.{ext}")
+
     def __on_downloadRequested(self, download):
 
         logging.warning(f"download:{download}.")
         _msgs = {
-            0: "Download has been requested, but has not been accepted yet.",
-            1: "Download is in progress.",
-            2: "Download completed successfully.",
-            3: "Download has been cancelled.",
-            4: "Download has been interrupted (by the server or because of lost connectivity).",
+            0: tr_("Download has been requested, but has not been accepted yet."),
+            1: tr_("Download is in progress."),
+            2: tr_("Download completed successfully."),
+            3: tr_("Download has been cancelled."),
+            4: tr_("Download has been interrupted (by the server or because of lost connectivity)."),
         }
         if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
             os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
-        _name = time.strftime("%Y-%m-%d_%H:%M:%S") + ".json"
+        _name = time.strftime("%Y-%m-%d_%H:%M:%S")
         full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
         download.setPath(full_name)
         download.accept()
 
         def _cb():
-            _msg = "file name:{}\n\n ".format(_name) + tr_(_msgs[download.state()])
+            _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
             self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
+            self.__adjust_downloaded_file_name(full_name)
 
         download.finished.connect(_cb)
 
@@ -863,7 +895,7 @@ class ActionPage(BaseStackedPage):
 
 class HomePage(BaseStackedPage):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs):  # pylint:disable=too-many-branches
 
         super().__init__(*args, **kwargs)
 

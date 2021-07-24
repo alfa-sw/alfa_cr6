@@ -50,26 +50,34 @@
 	
 	<table class="status_table">
 
-		<tr><th>A</th><th>B</th><th>C</th></tr>
 		<tr>
-		{% for i in (0, 2, 4) %}
-		<td><div class="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
-		{% endfor %}
+			{% for i in ('A', 'B', 'C') %}
+			<th><input class="btn btn-primary" style="width:100px;" title="push button to ask platform info" type="submit" value="{{ i }}" onclick="ask_platform_info('{{ i }}');"></input></th>
+			{% endfor %}
+		</tr>
+		<tr>
+			{% for i in (0, 2, 4) %}
+			<td><div class="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
+			{% endfor %}
 		</tr>
 
-		<tr><th>F</th><th>E</th><th>D</th></tr>
 		<tr>
-		{% for i in (1, 3, 5) %}
-		<td><div class ="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
-		{% endfor %}
+			{% for i in ('F', 'E', 'D') %}
+			<th><input class="btn btn-primary" style="width:100px;" title="push button to ask platform info" type="submit" value="{{ i }}" onclick="ask_platform_info('{{ i }}');"></input></th>
+			{% endfor %}
+		</tr>
+		<tr>
+			{% for i in (1, 3, 5) %}
+			<td><div class ="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
+			{% endfor %}
 		</tr>
 
 	</table>
 </div>
+<div>
+	<div><hr></hr></div>
 
-    </p><p>
-
-    <label>Current Language:</label> 
+	<label>Current Language:</label> 
 	<label id="current_language_label">{{ current_language }}</label>
 	-
 	<b> Change Language to: </b> 
@@ -77,9 +85,11 @@
 	<input class="btn btn-primary" type="submit" value="ITALIAN" onclick="change_language('it');"></input>
 	<input class="btn btn-primary" type="submit" value="KOREAN " onclick="change_language('kr');"></input>
 	<label>(WARN application will be restarted)</label>
-	</p>
 
-	<hr></hr>
+	<div><hr></hr></div>
+
+	<div id="ask_platform_info_answer"></div>
+
 	<h4 class="glyphicon glyphicon-wrench" onclick="toggle_element_visibility('manhole_commander');"></h4>
 	<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
 		<span>Manhole commander (expert usage only):</span>
@@ -87,8 +97,8 @@
 		<input type="submit" onclick="send_debug_cmd();"></input>
 		<span id="debug_answer"></span>
 	</div>
+</div>
 
-	<div><hr></hr></div>
 
 <script>
 
@@ -113,6 +123,14 @@
 		}
 	}
 
+	var ask_platform_info = function(head_letter) {
+
+		console.debug('ask_platform_info(), head_letter: ' + head_letter); 
+		var cmd = {"command": 'ask_platform_info', 'params': {'head_letter': head_letter}};
+		cmd = JSON.stringify(cmd);
+		g_ws_client.send(cmd);
+	};
+
 	var change_language = function(lang_) {
 
 		var msg_ = "Confirm changing language to " + lang_ + "? WARN: Application will be restarted.";
@@ -120,7 +138,6 @@
 			console.debug('change_language(), lang_: ' + lang_); 
 			var cmd = {"command": 'change_language', 'params': {'lang': lang_}};
 			cmd = JSON.stringify(cmd);
-			console.debug('change_language(), cmd: ' + cmd); 
 			g_ws_client.send(cmd);
 		};
 	};
@@ -143,6 +160,7 @@
 		var el = document.getElementById(data.type); 
 		if(el){
 			el.innerHTML = data.value;
+			el.scrollIntoView();
 		}
 		if (data.server_time) {
 			var el1 = document.getElementById('server_time'); 

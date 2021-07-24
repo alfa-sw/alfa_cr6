@@ -74,7 +74,7 @@ def test_all():
 
         try:
 
-            c = APP.machine_head_dict[0].call_api_rest('pipe', 'GET', {})
+            c = APP.machine_head_dict[0].call_api_rest('apiV1/pipe', 'GET', {})
             t = asyncio.ensure_future(c)
             # ~ logging.warning(f"call_api_rest(() -> t:{t}")
 
