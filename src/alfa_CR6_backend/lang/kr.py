@@ -126,7 +126,7 @@ D = {
     "status:{}\n": "\n의 상태 :{}",
     "test alert message": "테스트 알림 메시지",
     "{} already in progress!": "{}은 이미 진행중입니다!",
-    "{} Please, Check Pipe Levels: low_level_pipes:{}": "{} 캐니스터의 조색제 잔량을 확인해주세요",
+    "{} Please, Check Pipe Levels: low_level_pipes:{}": "{}\n 캐니스터의 조색제 잔량을 확인해주세요 \n{}",
     "{} RESETTING": "{}모듈을 재시작하는 중 입니다",
     "{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}": "CRX_OUTPUTS_MANAGEMENT을 기다려주세요",
     "{} waiting for answer to cmd:{}": "cmd로 응답 대기중입니다",

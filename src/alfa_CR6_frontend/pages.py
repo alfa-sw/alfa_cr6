@@ -924,6 +924,13 @@ class HomePage(BaseStackedPage):
         if self.STEP_11_label: self.STEP_11_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_UP")
         if self.STEP_12_label: self.STEP_12_label.mouseReleaseEvent = lambda event: self.step_label_clicked("OUT")
 
+        if self.reserve_1_label: self.reserve_1_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(0)
+        if self.reserve_2_label: self.reserve_2_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(1)
+        if self.reserve_3_label: self.reserve_3_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(2)
+        if self.reserve_4_label: self.reserve_4_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(3)
+        if self.reserve_5_label: self.reserve_5_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(4)
+        if self.reserve_6_label: self.reserve_6_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(5)
+
     def open_page(self):
 
         self.parent().setCurrentWidget(self)
@@ -1201,6 +1208,14 @@ class HomePage(BaseStackedPage):
                 except Exception:   # pylint: disable=broad-except
                     logging.error(traceback.format_exc())
 
+    def reserve_label_clicked(self, head_index):
+
+        logging.warning(f"head_index:{head_index}")
+
+        m = QApplication.instance().machine_head_dict[head_index]
+        if m.low_level_pipes:
+            QApplication.instance().main_window.open_alert_dialog(
+                tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(m.name, m.low_level_pipes))
 
 class HomePageSixHeads(HomePage):
 
