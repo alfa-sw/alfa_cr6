@@ -187,7 +187,7 @@ class OrderParser:
         return properties
 
     @staticmethod
-    def parse_kcc_pdf(lines):
+    def parse_kcc_pdf(lines):  # pylint: disable=too-many-locals
 
         section_separator = "__________________________"
         section = 0
@@ -233,11 +233,11 @@ class OrderParser:
         }
 
         _toks = meta.get("Number", []) and meta["Number"].split(' ')
-        _line = (_toks[1:] and _toks[1]) or "" 
+        _line = (_toks[1] if _toks[1:] else '')
         properties["extra_lines_to_print"].append(f'{_line}')
         properties["meta"]["color code"] = f"{_line}"
 
-        _line = (extra_info[1:] and extra_info[1]) or ""
+        _line = (extra_info[1] if extra_info[1:] else '')
         properties["extra_lines_to_print"].append(f"{_line}")
 
         logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
@@ -457,7 +457,7 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
             app = QApplication.instance()
 
             buffer = ""
-            device_list = [evdev.InputDevice(p) for p in  evdev.list_devices()]
+            device_list = [evdev.InputDevice(p) for p in evdev.list_devices()]
             device_list.sort(key=str)
             for device_ in device_list:
                 logging.warning(f"device_:{ device_ }")
@@ -611,7 +611,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
             logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
             self.ws_clients.remove(websocket)
 
-    async def __handle_client_msg(self, websocket, msg):
+    async def __handle_client_msg(self, websocket, msg):  # pylint: disable=too-many-locals
 
         logging.warning("websocket:{}, msg:{}.".format(websocket, msg))
 
@@ -647,7 +647,7 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
                 try:
                     cmd_ = msg_dict["debug_command"]
-                    ret = eval(cmd_)
+                    ret = eval(cmd_)     # pylint: disable=eval-used
                 except Exception as e:   # pylint: disable=broad-except
                     ret = str(e)
                 answer = json.dumps({
@@ -659,7 +659,6 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-
 
     def refresh_can_list(self):
 
@@ -1040,7 +1039,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def run_forever(self):
 
         QApplication.instance().insert_db_event(
-            name='START', level="INFO", severity='', source="BaseApplication.run_forever", description=tr_("started application"))
+            name='START',
+            level="INFO",
+            severity='',
+            source="BaseApplication.run_forever",
+            description=tr_("started application"))
 
         self.main_window.show()
 
@@ -1109,11 +1112,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if path_to_file:
                 _parser = OrderParser()
                 properties = _parser.parse(path_to_file)
-                # ~ if properties:
-                    # ~ if properties.get("meta", {}).get("color code"):
-                        # ~ description = properties["meta"]["color code"]
-                    # ~ else:
-                        # ~ description = os.path.split(path_to_file)[1]
             order = self._do_create_order(properties, description, n_of_jars)
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
@@ -1253,6 +1251,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         jar_json_properties = json.loads(jar.json_properties)
         order_json_properties = json.loads(jar.order.json_properties)
 
+        logging.warning(f"jar.order.description.upper():{jar.order.description.upper()}")
+
         order_ingredients = jar_json_properties.get('order_ingredients')
         if order_ingredients is None:
             order_ingredients = order_json_properties.get('ingredients', {})
@@ -1275,27 +1275,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 continue
 
             ingredient_volume_map[pigment_name] = {}
-            for m in self.machine_head_dict.values():
-                if m and m.name not in visited_head_names:
-                    specific_weight = m.get_specific_weight(pigment_name)
-                    if specific_weight > 0:
-                        ingredient_volume_map[pigment_name][m.name] = 0
-                        available_gr = m.get_available_weight(pigment_name)
-                        if available_gr > EPSILON:
-                            logging.warning(
-                                f"{m.name} pigment_name:{pigment_name}, available_gr:{available_gr},"
-                                f"requested_quantity_gr:{requested_quantity_gr}")
-                            if available_gr >= requested_quantity_gr:
-                                _quantity_gr = requested_quantity_gr
-                            else:
-                                _quantity_gr = available_gr
-                            vol = _quantity_gr / specific_weight
-                            vol = round(vol, 4)
-                            ingredient_volume_map[pigment_name][m.name] = vol
-                            remaining_volume += vol
-                            requested_quantity_gr -= _quantity_gr
-                            if requested_quantity_gr < EPSILON:
-                                break
+
+            requested_quantity_gr, remaining_volume = self._build_ingredient_volume_map_helper(
+                ingredient_volume_map, visited_head_names, pigment_name, requested_quantity_gr, remaining_volume)
 
             if ingredient_volume_map[pigment_name] and requested_quantity_gr > EPSILON:
                 # ~ the ingredient is known but not sufficiently available
@@ -1319,6 +1301,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         jar_json_properties["unknown_pigments"] = unknown_pigments
         jar_json_properties["remaining_volume"] = round(remaining_volume, 4)
         jar.json_properties = json.dumps(jar_json_properties, indent=2)
+
         self.db_session.commit()
 
     def update_jar_position(self, jar, machine_head=None, status=None, pos=None):
@@ -1354,8 +1337,78 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.main_window.home_page.update_jar_pixmaps()
             self.ws_server.refresh_can_list()
 
-    def get_machine_head_by_letter(self, letter):  # pylint: disable=inconsistent-return-statements
+    def get_machine_head_by_letter(self, letter):
 
+        ret = None
         for m in self.machine_head_dict.values():
             if m and m.name[0] == letter:
-                return m
+                ret = m
+                break
+        return ret
+
+    async def crate_purge_all_order(self, ):
+
+        purge_all_map = {}
+        ingredients = []
+        for m in self.machine_head_dict.values():
+            purge_all_map.setdefault(m.name, [])
+            ret = await m.call_api_rest("apiV1/pipe", "GET", {}, timeout=15)
+            for p in ret.get("objects", []):
+                if p['enabled'] and p['pigment'] and p['sync']:
+
+                    specific_weight = p['pigment']['specific_weight']
+                    if p["effective_specific_weight"] > EPSILON:
+                        specific_weight = p["effective_specific_weight"]
+
+                    item = {
+                        'name': p['name'],
+                        'qtity': p['purge_volume'],
+                        'description': 'purge',
+                        'pigment_name': p['pigment']['name'],
+                        'specific_weight': specific_weight,
+                    }
+                    purge_all_map[m.name].append(item)
+
+                    ingredient = {
+                        'pigment_name': p['pigment']['name'],
+                        'weight(g)': p['purge_volume'] * specific_weight,
+                        'description': 'purge',
+                    }
+                    ingredients.append(ingredient)
+
+        properties = {
+            'meta': {
+                "extra_info": 'PURGE ALL',
+                'file name': tr_("PURGE_ALL"),
+                "purge_all_map": purge_all_map,
+            },
+            "extra_lines_to_print": [tr_("PURGE ALL"), ],
+            "ingredients": ingredients,
+        }
+        description = "PURGE ALL"
+        self._do_create_order(properties, description, n_of_jars=0)
+        self.main_window.order_page.populate_order_table()
+
+
+    def _build_ingredient_volume_map_helper(  # pylint: disable=too-many-arguments
+            self, ingredient_volume_map, visited_head_names, pigment_name, requested_quantity_gr, remaining_volume):
+
+        for m in self.machine_head_dict.values():
+            if m and m.name not in visited_head_names:
+                specific_weight = m.get_specific_weight(pigment_name)
+                if specific_weight > 0:
+                    ingredient_volume_map[pigment_name][m.name] = 0
+                    available_gr = m.get_available_weight(pigment_name)
+                    if available_gr > EPSILON:
+                        if available_gr >= requested_quantity_gr:
+                            _quantity_gr = requested_quantity_gr
+                        else:
+                            _quantity_gr = available_gr
+                        vol = _quantity_gr / specific_weight
+                        vol = round(vol, 4)
+                        ingredient_volume_map[pigment_name][m.name] = vol
+                        remaining_volume += vol
+                        requested_quantity_gr -= _quantity_gr
+                        if requested_quantity_gr < EPSILON:
+                            break
+        return requested_quantity_gr, remaining_volume

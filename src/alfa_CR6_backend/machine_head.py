@@ -110,46 +110,46 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
 
         if invalidate_cache:
-            ret = await self.call_api_rest("apiV1/pigment", "GET", {}, timeout=15)
             pigment_list = []
             low_level_pipes = []
-            for pig in ret.get("objects", []):
+            package_list = []
+            ret = await self.call_api_rest("apiV1/pigment", "GET", {}, timeout=15)
+            if ret:
+                for pig in ret.get("objects", []):
 
-                enabled_pipes = [pipe for pipe in pig["pipes"] if pipe["enabled"]]
+                    enabled_pipes = [pipe for pipe in pig["pipes"] if pipe["enabled"]]
 
-                low_level_pipes += [
-                    (pipe["name"], pig["name"])
-                    for pipe in enabled_pipes
-                    if pipe["current_level"] < pipe["reserve_level"]
-                ]
+                    low_level_pipes += [
+                        (pipe["name"], pig["name"])
+                        for pipe in enabled_pipes
+                        if pipe["current_level"] < pipe["reserve_level"]
+                    ]
 
-                if enabled_pipes:
-                    pigment_list.append(pig)
+                    if enabled_pipes:
+                        pigment_list.append(pig)
+
+            ret = await self.call_api_rest("apiV1/package", "GET", {})
+            if ret:
+                package_list = ret.get("objects", [])
+
+            pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_package_list.json")
+            with open(pth_, "w") as f:
+                json.dump(self.package_list, f, indent=2)
 
             pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_pigment_list.json")
             with open(pth_, "w") as f:
                 json.dump(pigment_list, f, indent=2)
 
-            ret = await self.call_api_rest("apiV1/package", "GET", {})
-            package_list = ret.get("objects", [])
-            pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_package_list.json")
-            with open(pth_, "w") as f:
-                json.dump(self.package_list, f, indent=2)
+            self.pigment_list = pigment_list
+            self.low_level_pipes = low_level_pipes
+            self.package_list = package_list
 
-        self.pigment_list = pigment_list
-        self.low_level_pipes = low_level_pipes
-        self.package_list = package_list
+        self.app.show_reserve(self.index, bool(self.low_level_pipes))
 
-        # ~ logging.warning(f"{self.name} {[p['name'] for p in self.pigment_list]}")
-        if self.low_level_pipes:
-            if not silent:
-                logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
-                self.app.main_window.open_alert_dialog(
-                    tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(self.name, self.low_level_pipes))
-
-            self.app.show_reserve(self.index, True)
-        else:
-            self.app.show_reserve(self.index, False)
+        if self.low_level_pipes and not silent:
+            logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
+            self.app.main_window.open_alert_dialog(
+                tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(self.name, self.low_level_pipes))
 
     async def update_status(self, status):
 
@@ -440,7 +440,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             "package_name": "******* not valid name ****",
             "ingredients": ingredients,
         }
-        logging.warning(f"{self.name} pars:{pars}")
+        # ~ logging.warning(f"{self.name} pars:{pars}")
 
         r = True
         if ingredients:
@@ -467,8 +467,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
                     # ~ self.app.update_jar_position(jar, machine_head=self, status='DISPENSING')
 
-                    r = await self.send_command(
-                        cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
+                    if "PURGE" in jar.order.description.upper():
+
+                        pars['items'] = pars.pop("ingredients")
+
+                        r = await self.send_command(
+                            cmd_name="PURGE", type_="macro", params=pars)
+                    else:
+                        r = await self.send_command(
+                            cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
 
                     if r:
                         r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
@@ -497,11 +504,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 error_msg = ''
                 if outcome_ == 'success':
-                    for k, v in ingredients.items():
-                        specific_weight = self.get_specific_weight(k)
-                        dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
-                    json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
-                    jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
+                    if "PURGE" not in jar.order.description.upper():
+                        for k, v in ingredients.items():
+                            specific_weight = self.get_specific_weight(k)
+                            dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
+                        json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
+                        jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
                 else:
                     error_msg = "ERROR in dispensing:\n" + outcome_
                     jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)

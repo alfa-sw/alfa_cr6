@@ -221,7 +221,7 @@ class MachineHeadMockup:
         elif msg_out_dict["command"] == "KILL_EMULATOR":
             raise KeyboardInterrupt
 
-        elif msg_out_dict["command"] in ("DISPENSATION", "DISPENSE_FORMULA"):
+        elif msg_out_dict["command"] in ("DISPENSATION", "DISPENSE_FORMULA", "PURGE"):
             await self.do_move(duration=0.5, tgt_level="DISPENSING")
             if 'failure' in sys.argv:
                 await asyncio.sleep(3)

@@ -500,6 +500,8 @@ class OrderPage(BaseStackedPage):
         self.new_order_btn.clicked.connect(self.__on_new_order_clicked)
         self.clone_order_btn.clicked.connect(self.__on_clone_order_clicked)
 
+        self.purge_all_btn.clicked.connect(self.__on_purge_all_clicked)
+
         self.new_order_btn.setText(tr_("new"))
         self.clone_order_btn.setText(tr_("copy"))
 
@@ -554,6 +556,11 @@ class OrderPage(BaseStackedPage):
                 logging.error(traceback.format_exc())
 
             self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(file_model.rowCount()))
+
+    def __on_purge_all_clicked(self):
+
+        t = QApplication.instance().crate_purge_all_order()
+        asyncio.ensure_future(t)
 
     def __on_order_table_clicked(self, index):
 

@@ -17,7 +17,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH, import_settings, set_language
-from alfa_CR6_backend.models import Event
+# ~ from alfa_CR6_backend.models import Event
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,

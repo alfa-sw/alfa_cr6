@@ -178,6 +178,7 @@ D = {
         "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ",
 
     "(Trailing whitespaces will be discarded)": "(Trailing whitespaces will be discarded)",
+    "PURGE_ALL": "PURGE ALL",
 }
 
 

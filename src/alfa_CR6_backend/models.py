@@ -17,6 +17,8 @@ from datetime import datetime
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
+from jsonschema import validate  # pylint: disable=import-error
+
 from sqlalchemy import (      # pylint: disable=import-error
     create_engine,
     Column,
@@ -30,8 +32,6 @@ from sqlalchemy import (      # pylint: disable=import-error
 
 import sqlalchemy.ext.declarative  # pylint: disable=import-error
 from sqlalchemy.orm import sessionmaker, relationship    # pylint: disable=import-error
-
-from jsonschema import validate  # pylint: disable=import-error
 
 Base = sqlalchemy.ext.declarative.declarative_base()
 
@@ -272,21 +272,26 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         return _json_properties.get("unknown_pigments", {})
 
     def get_ingredients_for_machine(self, m):
-        json_properties = json.loads(self.json_properties)
-        ingredient_volume_map = json_properties["ingredient_volume_map"]
-        ingredients = {}
-        for pigment_name in ingredient_volume_map.keys():
-            try:
-                val_ = ingredient_volume_map \
-                    and ingredient_volume_map.get(pigment_name) \
-                    and ingredient_volume_map[pigment_name].get(m.name)
-                if val_:
-                    ingredients[pigment_name] = val_
-            except Exception as e:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-                QApplication.instance().handle_exception(e)
 
-        logging.warning(f"{m.name} ingredients:{ingredients}")
+        ingredients = {}
+        json_properties = json.loads(self.json_properties)
+        if "PURGE" in self.order.description.upper():
+            order_json_properties = json.loads(self.order.json_properties)
+            ingredients = order_json_properties.get("meta", {}).get("purge_all_map", {}).get(m.name)
+        else:
+            ingredient_volume_map = json_properties["ingredient_volume_map"]
+            for pigment_name in ingredient_volume_map.keys():
+                try:
+                    val_ = ingredient_volume_map \
+                        and ingredient_volume_map.get(pigment_name) \
+                        and ingredient_volume_map[pigment_name].get(m.name)
+                    if val_:
+                        ingredients[pigment_name] = val_
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.error(traceback.format_exc())
+                    QApplication.instance().handle_exception(e)
+
+        # ~ logging.warning(f"{m.name} ingredients:{ingredients}")
 
         return ingredients
 
