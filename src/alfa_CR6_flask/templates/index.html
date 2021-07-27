@@ -155,12 +155,12 @@
 		var data = JSON.parse(event.data);
 //~ 		console.log('on_wsocket_message() data.value:', data.value)
 		var data_container_id = null;
-		console.log('on_wsocket_message() data.type:', data.type)
-		console.log('on_wsocket_message() data.value:', data.value)
+//~ 		console.log('on_wsocket_message() data.type:', data.type)
+//~ 		console.log('on_wsocket_message() data.value:', data.value)
 		var el = document.getElementById(data.type); 
 		if(el){
 			el.innerHTML = data.value;
-			el.scrollIntoView();
+//~ 			el.scrollIntoView();
 		}
 		if (data.server_time) {
 			var el1 = document.getElementById('server_time'); 

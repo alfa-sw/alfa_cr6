@@ -161,6 +161,9 @@ def init_admin(app, db):
             'json_properties',
             'description',)
 
+        column_exclude_list = (
+            'json_properties',)
+
     class EventModelView(CRX_ModelView):
         column_filters = (
             'name',

@@ -18,7 +18,7 @@ import logging
 
 import logging.handlers
 
-from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication # pylint: disable=no-name-in-module
 
 import websockets      # pylint: disable=import-error
 
@@ -40,6 +40,7 @@ from alfa_CR6_backend.globals import (
 
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
+from alfa_CR6_frontend.dialogs import (ModalMessageBox,)
 
 
 class OrderParser:
@@ -605,11 +606,14 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
             async for message in websocket:  # start listening for messages from ws client
                 await self.__handle_client_msg(websocket, message)
 
+        except (asyncio.exceptions.CancelledError, websockets.exceptions.ConnectionClosedError):  # pylint: disable=broad-except
+            logging.warning("")
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
         finally:
-            logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
-            self.ws_clients.remove(websocket)
+            if websocket in self.ws_clients:
+                logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
+                self.ws_clients.remove(websocket)
 
     async def __handle_client_msg(self, websocket, msg):  # pylint: disable=too-many-locals
 
@@ -707,6 +711,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__tasks = []
         self.__runners = []
         self.__jar_runners = {}
+
+        self.__tasks_to_freeze = 0
+        self.__modal_freeze_msgbox = None
 
         self.chromium_wrapper = None
 
@@ -890,13 +897,48 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def __clock_tick(self):
 
-        for k in list(self.__jar_runners.keys()):
-            j = self.__jar_runners[k]
-            task = j["task"]
-            if task.done():
-                task.cancel()
-                logging.warning("deleting:{}".format(j))
-                self.__jar_runners.pop(k)
+        __tasks_to_freeze = []
+        try:
+            for k in list(self.__jar_runners.keys()):
+                _runner = self.__jar_runners[k]
+                _task = _runner["task"]
+                if _task.done():
+                    _task.cancel()
+                    logging.warning("deleting:{}".format(_runner))
+                    self.__jar_runners.pop(k)
+                    _runner = None
+
+                if self.carousel_frozen and _runner and not _runner.get("frozen"):
+                    _task = _runner["task"]
+                    if _task not in __tasks_to_freeze:
+                        __tasks_to_freeze.append(_task)
+
+            n = len(__tasks_to_freeze)
+            if self.__tasks_to_freeze != n:
+                self.__tasks_to_freeze = n
+                logging.warning(f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
+                if self.__tasks_to_freeze:
+                    msg = tr_("please wait while pausing all movements...")
+                    if not self.__modal_freeze_msgbox:
+                        self.__modal_freeze_msgbox = ModalMessageBox(parent=self.main_window, msg=msg, title="ALERT")
+                    else:
+                        self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
+                        self.__modal_freeze_msgbox.show()
+                    self.__modal_freeze_msgbox.enable_buttons(False)
+                else:
+                    if self.__modal_freeze_msgbox:
+                        msg = "\n\n{}\n\n".format(tr_("all movements are paused"))
+                        self.__modal_freeze_msgbox.setText(msg)
+                logging.warning(f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
+
+        except Exception as e:  # pylint: disable=broad-except
+            self.handle_exception(e)
+            logging.error(traceback.format_exc())
+
+        finally:
+            if not __tasks_to_freeze and self.__modal_freeze_msgbox:
+                self.__modal_freeze_msgbox.enable_buttons(True)
+                self.__modal_freeze_msgbox.close()
 
     async def get_and_check_jar_from_barcode(self, barcode):  # pylint: disable=too-many-locals,too-many-branches
 
@@ -1174,6 +1216,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
                 self.main_window.show_carousel_frozen(self.carousel_frozen)
 
+        if not self.carousel_frozen and self.__modal_freeze_msgbox:
+            self.__modal_freeze_msgbox.enable_buttons(True)
+            self.__modal_freeze_msgbox.close()
+
         if self.main_window.debug_page:
             self.main_window.debug_page.update_status()
 
@@ -1243,8 +1289,21 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.freeze_carousel(True)
             self.main_window.open_frozen_dialog(msg)
 
+        _runner = None
+        if self.carousel_frozen:
+            _t = asyncio.current_task()
+            for k in self.__jar_runners:
+                if _t is self.__jar_runners[k].get('task'):
+                    _runner = self.__jar_runners[k]
+                    _runner['frozen'] = True
+                    logging.warning(f"_t:{_t.get_name()} frozen:{_runner['frozen']}")
+                    break
+
         while self.carousel_frozen:
             await asyncio.sleep(0.2)
+
+        if _runner:
+            _runner['frozen'] = False
 
     def update_jar_properties(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
