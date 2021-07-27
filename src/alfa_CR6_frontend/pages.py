@@ -438,13 +438,12 @@ class WebenginePage(BaseStackedPage):
         logging.warning(f"full_name:{full_name}, mime_type:{mime_type}")
 
         if mime_type == 'application/json':
-
             with open(full_name) as f:
                 content = json.load(f)
                 color_code = content.get("color code")
                 if color_code:
-                    head, _ = (full_name)
-                    os.rename(full_name, f"{head}{color_code}.json")
+                    head, _ = os.path.split(full_name)
+                    os.rename(full_name, os.path.join(head, f"{color_code}.json"))
                 else:
                     os.rename(full_name, f"{full_name}.json")
         else:
@@ -471,9 +470,13 @@ class WebenginePage(BaseStackedPage):
         download.accept()
 
         def _cb():
-            _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
-            self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
-            self.__adjust_downloaded_file_name(full_name)
+            try:
+                _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
+                self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
+                self.__adjust_downloaded_file_name(full_name)
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+                self.main_window.open_alert_dialog(f"exception:{e}", title="DOWNLOAD ERROR")
 
         download.finished.connect(_cb)
 
