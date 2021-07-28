@@ -179,6 +179,9 @@ D = {
         "본 페이지는 조색제명을 관리하는 프로그램으로 사용자가 임의로 수정할 경우 기기에 심각한 오류를 발생시킬 수 있습니다. ",
     "(Trailing whitespaces will be discarded)": "(반드시 관리자의 감독하에 조작하시기 바랍니다)",
     "PURGE_ALL": "모듈 전체 퍼지",
+
+    "please, wait while finishing all pending operations ...": "보류 중인 모든 작업을 완료하는 동안 잠시만 기다려 주십시오...",
+    "all operations are paused": "모든 작업이 일시 중지됨",
 }
 
 D.update(error_kr.D)

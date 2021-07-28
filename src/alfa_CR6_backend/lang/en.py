@@ -179,6 +179,8 @@ D = {
 
     "(Trailing whitespaces will be discarded)": "(Trailing whitespaces will be discarded)",
     "PURGE_ALL": "PURGE ALL",
+    "please, wait while finishing all pending operations ...": "please, wait while finishing all pending operations ...",
+    "all operations are paused": "all operations are paused",
 }
 
 
