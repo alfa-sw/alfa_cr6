@@ -638,6 +638,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             retry_counter = 0
             while True:
+
+                await self.wait_for_carousel_not_frozen(freeze=False, msg="")
+
                 r = await step(jar)
 
                 if not r:

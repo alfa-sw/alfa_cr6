@@ -881,6 +881,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     break
 
             if jar:
+                self.__jar_runners[barcode]['frozen'] = False
                 r = await self.execute_carousel_steps(self.n_of_active_heads, jar)
                 logging.warning(f"r:{r}")
 
@@ -897,7 +898,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def __clock_tick(self):
 
-        __tasks_to_freeze = []
+        _tasks_to_freeze = []
         try:
             for k in list(self.__jar_runners.keys()):
                 _runner = self.__jar_runners[k]
@@ -908,17 +909,25 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.__jar_runners.pop(k)
                     _runner = None
 
-                if self.carousel_frozen and _runner and not _runner.get("frozen"):
+                _flag = _runner and not _runner.get("frozen") 
+                _flag = _flag and 'ENTER' not in _runner["jar"].status
+                _flag = _flag and 'OUT' not in _runner["jar"].status
+                _flag = _flag and 'WAIT' not in _runner["jar"].position
+                _flag = _flag and '_' not in _runner["jar"].position
+                if self.carousel_frozen and _flag:
                     _task = _runner["task"]
-                    if _task not in __tasks_to_freeze:
-                        __tasks_to_freeze.append(_task)
+                    if _task not in _tasks_to_freeze:
+                        _tasks_to_freeze.append((_task, k))
 
-            n = len(__tasks_to_freeze)
+            n = len(_tasks_to_freeze)
             if self.__tasks_to_freeze != n:
                 self.__tasks_to_freeze = n
-                logging.warning(f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
+                logging.warning(f'__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, '
+                                f'__tasks_to_freeze:{self.__tasks_to_freeze}'
+                                f', {[(t.get_name(), k) for t, k in _tasks_to_freeze]}')
+
                 if self.__tasks_to_freeze:
-                    msg = tr_("please wait while pausing all movements...")
+                    msg = tr_("please, wait while finishing all pending operations ...")
                     if not self.__modal_freeze_msgbox:
                         self.__modal_freeze_msgbox = ModalMessageBox(parent=self.main_window, msg=msg, title="ALERT")
                     else:
@@ -927,7 +936,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.__modal_freeze_msgbox.enable_buttons(False)
                 else:
                     if self.__modal_freeze_msgbox:
-                        msg = "\n\n{}\n\n".format(tr_("all movements are paused"))
+                        msg = "\n\n{}\n\n".format(tr_("all operations are paused"))
                         self.__modal_freeze_msgbox.setText(msg)
                 logging.warning(f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
 
@@ -936,7 +945,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.error(traceback.format_exc())
 
         finally:
-            if not __tasks_to_freeze and self.__modal_freeze_msgbox:
+            if not _tasks_to_freeze and self.__modal_freeze_msgbox:
                 self.__modal_freeze_msgbox.enable_buttons(True)
                 self.__modal_freeze_msgbox.close()
 
@@ -1044,7 +1053,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 else:
                     # let's run a task that will manage the jar through the entire path inside the system
                     t = self.__jar_task(barcode)
-                    self.__jar_runners[barcode] = {"task": asyncio.ensure_future(t)}
+                    self.__jar_runners[barcode] = {
+                        "task": asyncio.ensure_future(t),
+                        "frozen": True,
+                    }
                     self.main_window.show_barcode(barcode, is_ok=True)
                     logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
 

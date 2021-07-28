@@ -492,9 +492,9 @@ class DebugPage:
 
         html_ += "<p>"
         if app.carousel_frozen:
-            html_ += '<b color="#EE0000">carousel_frozen:{}</b>'.format(app.carousel_frozen)
+            html_ += '<b style="color:#AA0000;">carousel_frozen:{}</b>'.format(app.carousel_frozen)
         else:
-            html_ += '<b color="#00EE00">carousel_frozen:{}</b>'.format(app.carousel_frozen)
+            html_ += '<b style="color:#00AA00;">carousel_frozen:{}</b>'.format(app.carousel_frozen)
         html_ += " - mirco: 0x{:02X} 0x{:02X}".format(s1, s2)
 
         html_ += "</p><p>"
