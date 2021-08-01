@@ -222,6 +222,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 flag = flag and not F.jar_photocells_status.get('JAR_OUTPUT_ROLLER_PHOTOCELL', False)
                 flag = flag and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', False)
                 flag = flag and not self.positions_already_engaged(["LIFTL_UP", "LIFTL_DOWN"], jar)
+                flag = flag and not F.check_alarm_923()
                 return flag
             r = await self.wait_for_condition(condition_1, show_alert=False, timeout=2.0)
 
@@ -432,6 +433,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         def condition():
             flag = not self.positions_already_engaged(["D", "LIFTR_DOWN"], jar)
             flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
+            flag = flag and not D.check_alarm_923()
             return flag
         r = await self.wait_for_dispense_position_available("D", extra_check=condition)
 
