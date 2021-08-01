@@ -18,6 +18,8 @@ import logging
 
 import logging.handlers
 
+from functools import partial
+
 from PyQt5.QtWidgets import QApplication # pylint: disable=no-name-in-module
 
 import websockets      # pylint: disable=import-error
@@ -909,31 +911,35 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.__jar_runners.pop(k)
                     _runner = None
 
-                _flag = _runner and not _runner.get("frozen") 
+                _flag = self.carousel_frozen
+                _flag = _flag and _runner and not _runner.get("frozen")
                 _flag = _flag and 'ENTER' not in _runner["jar"].status
                 _flag = _flag and 'OUT' not in _runner["jar"].status
                 _flag = _flag and 'WAIT' not in _runner["jar"].position
                 _flag = _flag and '_' not in _runner["jar"].position
-                if self.carousel_frozen and _flag:
-                    _task = _runner["task"]
-                    if _task not in _tasks_to_freeze:
-                        _tasks_to_freeze.append((_task, k))
+                _flag = _flag and _task not in _tasks_to_freeze
+                if _flag:
+                    _tasks_to_freeze.append((_task, k))
 
             n = len(_tasks_to_freeze)
             if self.__tasks_to_freeze != n:
                 self.__tasks_to_freeze = n
-                logging.warning(f'__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, '
-                                f'__tasks_to_freeze:{self.__tasks_to_freeze}'
+                logging.warning(f'__tasks_to_freeze:{self.__tasks_to_freeze}'
                                 f', {[(t.get_name(), k) for t, k in _tasks_to_freeze]}')
 
                 if self.__tasks_to_freeze:
                     msg = tr_("please, wait while finishing all pending operations ...")
+                    msg += "\n{}".format([k for t, k in _tasks_to_freeze])
+
                     if not self.__modal_freeze_msgbox:
                         self.__modal_freeze_msgbox = ModalMessageBox(parent=self.main_window, msg=msg, title="ALERT")
                     else:
                         self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
                         self.__modal_freeze_msgbox.show()
-                    self.__modal_freeze_msgbox.enable_buttons(False)
+                    self.__modal_freeze_msgbox.enable_buttons(False, False)
+
+                    asyncio.get_event_loop().call_later(10, partial(self.__modal_freeze_msgbox.enable_buttons, False, True))
+
                 else:
                     if self.__modal_freeze_msgbox:
                         msg = "\n\n{}\n\n".format(tr_("all operations are paused"))
@@ -946,7 +952,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         finally:
             if not _tasks_to_freeze and self.__modal_freeze_msgbox:
-                self.__modal_freeze_msgbox.enable_buttons(True)
+                self.__modal_freeze_msgbox.enable_buttons(True, True)
                 self.__modal_freeze_msgbox.close()
 
     async def get_and_check_jar_from_barcode(self, barcode):  # pylint: disable=too-many-locals,too-many-branches
@@ -1229,7 +1235,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.main_window.show_carousel_frozen(self.carousel_frozen)
 
         if not self.carousel_frozen and self.__modal_freeze_msgbox:
-            self.__modal_freeze_msgbox.enable_buttons(True)
+            self.__modal_freeze_msgbox.enable_buttons(True, True)
             self.__modal_freeze_msgbox.close()
 
         if self.main_window.debug_page:

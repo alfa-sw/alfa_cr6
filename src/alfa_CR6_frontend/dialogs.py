@@ -38,9 +38,12 @@ from alfa_CR6_backend.globals import get_res, tr_
 
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
 
-    def enable_buttons(self, flag):
+    def enable_buttons(self, flag_ok, flag_esc):
         for i, b in enumerate(self.buttons()):
-            b.setEnabled(flag)
+            if i == 0:
+                b.setEnabled(flag_esc)
+            elif i == 1:
+                b.setEnabled(flag_ok)
 
     def __init__(self, msg="", title="", parent=None, ok_callback=None, ok_callback_args=None):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
