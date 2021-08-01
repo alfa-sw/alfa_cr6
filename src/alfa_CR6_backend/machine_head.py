@@ -644,3 +644,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             return ret
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
+
+    async def check_alarm_923(self):
+
+        flag = self.status["status_level"] in ['ALARM',]
+        flag = flag and int(self.status["error_code"]) in [923,]
+        return flag

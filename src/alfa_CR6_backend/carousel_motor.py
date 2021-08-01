@@ -283,6 +283,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             flag = not FROM.status.get('crx_outputs_status', 0x0) & 0x01
             flag = flag and not self.positions_already_engaged([letter_from, letter_to], jar)
+            flag = flag and not FROM.check_alarm_923()
+            flag = flag and not TO.check_alarm_923()
             return flag
 
         r = await self.wait_for_dispense_position_available(letter_to, extra_check=condition)
