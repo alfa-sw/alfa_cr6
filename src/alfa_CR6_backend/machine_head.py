@@ -140,6 +140,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             with open(pth_, "w") as f:
                 json.dump(pigment_list, f, indent=2)
 
+            pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_low_level_pipes.json")
+            with open(pth_, "w") as f:
+                json.dump(low_level_pipes, f, indent=2)
+
             self.pigment_list = pigment_list
             self.low_level_pipes = low_level_pipes
             self.package_list = package_list
@@ -395,7 +399,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             examples:
                 self.send_command(cmd_name="RESET", params={'mode': 0}, type_='command', channel='machine')
                 self.send_command(cmd_name="PURGE", params={'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}, type_='macro')
-                self.send_command(cmd_name="PURGE", params={'items': [{'name': 'B01', 'qtity': 2.1}, {'name': 'C03', 'qtity': 1.1}, ]}, type_='macro')
                 self.send_command(cmd_name='DISPENSE_FORMULA', type_='macro', params={'package_name': '******* not valid name ****', 'ingredients': {'K205': 85.5859375}})
         """
         ret = None
@@ -433,9 +436,30 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return ret
 
+    async def get_ingredients_for_purge_all(self, ):
+
+        ingredients = []
+        ret = await self.call_api_rest("apiV1/pipe", "GET", {}, timeout=15)
+        for p in ret.get("objects", []):
+            flag = p['enabled'] and p['pigment'] and p['sync']
+            flag = flag and p['current_level'] - p['minimum_level'] > p['purge_volume']
+            if flag:
+                ingredient = {
+                    'name': p['name'],
+                    'qtity': p['purge_volume'],
+                    'pigment_name': p['pigment']['name'],
+                }
+                ingredients.append(ingredient)
+
+        return ingredients
+
     async def do_dispense(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
-        ingredients = jar.get_ingredients_for_machine(self)
+        if "PURGE ALL" in jar.order.description.upper():
+            ingredients = await self.get_ingredients_for_purge_all()
+        else:
+            ingredients = jar.get_ingredients_for_machine(self)
+
         pars = {
             "package_name": "******* not valid name ****",
             "ingredients": ingredients,
@@ -445,83 +469,88 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         r = True
         if ingredients:
 
-            json_properties = json.loads(jar.json_properties)
+            try:
 
-            dispensation_outcomes = json_properties.get("dispensation_outcomes", [])
+                json_properties = json.loads(jar.json_properties)
 
-            failed_disps_ = list([(head_name, outcome)
-                                  for head_name, outcome in dispensation_outcomes if "success" not in outcome])
+                dispensation_outcomes = json_properties.get("dispensation_outcomes", [])
 
-            if not failed_disps_:
-                # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
-                allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
+                failed_disps_ = list([(head_name, outcome)
+                                      for head_name, outcome in dispensation_outcomes if "success" not in outcome])
 
-                def condition():
-                    flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
-                    flag = flag and self.status["status_level"] in allowed_status_levels
-                    flag = flag and self.status["container_presence"]
-                    return flag
-                msg_ = tr_(" before dispensing. Please check jar.")
-                r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
-                if r:
-                    jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
-                    # ~ self.app.update_jar_position(jar, machine_head=self, status='DISPENSING')
+                if not failed_disps_:
+                    # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
+                    allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
 
-                    if "PURGE" in jar.order.description.upper():
-
-                        pars['items'] = pars.pop("ingredients")
-
-                        r = await self.send_command(
-                            cmd_name="PURGE", type_="macro", params=pars)
-                    else:
-                        r = await self.send_command(
-                            cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
-
+                    def condition():
+                        flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
+                        flag = flag and self.status["status_level"] in allowed_status_levels
+                        flag = flag and self.status["container_presence"]
+                        return flag
+                    msg_ = tr_(" before dispensing. Please check jar.")
+                    r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
                     if r:
-                        r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
-                        if r:
-                            # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
-                            def break_condition():
-                                return self.status["status_level"] in ['ALARM', 'RESET']
+                        jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
+                        # ~ self.app.update_jar_position(jar, machine_head=self, status='DISPENSING')
 
-                            r = await self.wait_for_status_level(
-                                ["STANDBY"], timeout=60 * 6, show_alert=False, break_condition=break_condition)
-                            if r:
-                                outcome_ = 'success'
-                            else:
-                                outcome_ = 'failure during dispensation'
+                        if "PURGE ALL" in jar.order.description.upper():
+
+                            pars['items'] = pars.pop("ingredients")
+
+                            r = await self.send_command(
+                                cmd_name="PURGE", type_="macro", params=pars)
                         else:
-                            outcome_ = 'failure waiting for dispensation to start'
+                            r = await self.send_command(
+                                cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
+
+                        if r:
+                            r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
+                            if r:
+                                # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
+                                def break_condition():
+                                    return self.status["status_level"] in ['ALARM', 'RESET']
+
+                                r = await self.wait_for_status_level(
+                                    ["STANDBY"], timeout=60 * 6, show_alert=False, break_condition=break_condition)
+                                if r:
+                                    outcome_ = 'success'
+                                else:
+                                    outcome_ = 'failure during dispensation'
+                            else:
+                                outcome_ = 'failure waiting for dispensation to start'
+                        else:
+                            outcome_ = 'failure in sending "DISPENSE_FORMULA" command'
                     else:
-                        outcome_ = 'failure in sending "DISPENSE_FORMULA" command'
-                else:
-                    outcome_ = 'failure in waiting for dispensing condition'
+                        outcome_ = 'failure in waiting for dispensing condition'
 
-                ingredients = jar.get_ingredients_for_machine(self)
-                dispensed_quantities_gr = json_properties.get("dispensed_quantities_gr", {})
-                visited_head_names = json_properties.get("visited_head_names", [])
-                visited_head_names.append(self.name)
+                    ingredients = jar.get_ingredients_for_machine(self)
+                    dispensed_quantities_gr = json_properties.get("dispensed_quantities_gr", {})
+                    visited_head_names = json_properties.get("visited_head_names", [])
+                    visited_head_names.append(self.name)
 
-                error_msg = ''
-                if outcome_ == 'success':
-                    if "PURGE" not in jar.order.description.upper():
-                        for k, v in ingredients.items():
-                            specific_weight = self.get_specific_weight(k)
-                            dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
-                        json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
-                        jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
-                else:
-                    error_msg = "ERROR in dispensing:\n" + outcome_
-                    jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
+                    error_msg = ''
+                    if outcome_ == 'success':
+                        if "PURGE ALL" not in jar.order.description.upper():
+                            for k, v in ingredients.items():
+                                specific_weight = self.get_specific_weight(k)
+                                dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
+                            json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
+                            jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
+                    else:
+                        error_msg = "ERROR in dispensing:\n" + outcome_
+                        jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
 
-                json_properties.setdefault("dispensation_outcomes", [])
-                json_properties["dispensation_outcomes"].append((self.name, outcome_))
-                json_properties["visited_head_names"] = visited_head_names
-                jar.json_properties = json.dumps(json_properties, indent=2)
-                self.app.update_jar_properties(jar)
+                    json_properties.setdefault("dispensation_outcomes", [])
+                    json_properties["dispensation_outcomes"].append((self.name, outcome_))
+                    json_properties["visited_head_names"] = visited_head_names
+                    jar.json_properties = json.dumps(json_properties, indent=2)
+                    self.app.update_jar_properties(jar)
 
-                if error_msg:
-                    await self.app.wait_for_carousel_not_frozen(True, msg=msg_)
+                    if error_msg:
+                        await self.app.wait_for_carousel_not_frozen(True, msg=msg_)
+
+            except Exception as e:  # pylint: disable=broad-except
+                self.app.handle_exception(e)
 
         return True
 

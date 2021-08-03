@@ -1425,42 +1425,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def crate_purge_all_order(self, ):
 
-        purge_all_map = {}
-        ingredients = []
-        for m in self.machine_head_dict.values():
-            purge_all_map.setdefault(m.name, [])
-            ret = await m.call_api_rest("apiV1/pipe", "GET", {}, timeout=15)
-            for p in ret.get("objects", []):
-                if p['enabled'] and p['pigment'] and p['sync']:
-
-                    specific_weight = p['pigment']['specific_weight']
-                    if p["effective_specific_weight"] > EPSILON:
-                        specific_weight = p["effective_specific_weight"]
-
-                    item = {
-                        'name': p['name'],
-                        'qtity': p['purge_volume'],
-                        'description': 'purge',
-                        'pigment_name': p['pigment']['name'],
-                        'specific_weight': specific_weight,
-                    }
-                    purge_all_map[m.name].append(item)
-
-                    ingredient = {
-                        'pigment_name': p['pigment']['name'],
-                        'weight(g)': p['purge_volume'] * specific_weight,
-                        'description': 'purge',
-                    }
-                    ingredients.append(ingredient)
-
         properties = {
             'meta': {
                 "extra_info": 'PURGE ALL',
                 'file name': tr_("PURGE_ALL"),
-                "purge_all_map": purge_all_map,
             },
             "extra_lines_to_print": [tr_("PURGE ALL"), ],
-            "ingredients": ingredients,
+            "ingredients": [],
         }
         description = "PURGE ALL"
         self._do_create_order(properties, description, n_of_jars=0)
