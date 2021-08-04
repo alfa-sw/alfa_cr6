@@ -436,27 +436,40 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return ret
 
-    async def get_ingredients_for_purge_all(self, ):
+    async def get_ingredients_for_purge_all(self, jar):
 
         ingredients = []
+        missing_ingredients = []
         ret = await self.call_api_rest("apiV1/pipe", "GET", {}, timeout=15)
         for p in ret.get("objects", []):
-            flag = p['enabled'] and p['pigment'] and p['sync']
-            flag = flag and p['current_level'] - p['minimum_level'] > p['purge_volume']
-            if flag:
+            if p['enabled'] and p['pigment'] and p['sync']:
                 ingredient = {
                     'name': p['name'],
                     'qtity': p['purge_volume'],
                     'pigment_name': p['pigment']['name'],
                 }
-                ingredients.append(ingredient)
+                if p['current_level'] - p['minimum_level'] > p['purge_volume']:
+                    ingredients.append(ingredient)
+                else:
+                    missing_ingredients.append(ingredient)
+
+        jar_json_properties = json.loads(jar.json_properties)
+
+        jar_json_properties["PURGE ALL"] = True
+
+        jar_json_properties.setdefault(self.name, {})
+        jar_json_properties[self.name]["ingredients"] = ingredients
+        jar_json_properties[self.name]["missing_ingredients"] = missing_ingredients
+        jar.json_properties = json.dumps(jar_json_properties, indent=2)
+
+        QApplication.instance().db_session.commit()
 
         return ingredients
 
     async def do_dispense(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         if "PURGE ALL" in jar.order.description.upper():
-            ingredients = await self.get_ingredients_for_purge_all()
+            ingredients = await self.get_ingredients_for_purge_all(jar)
         else:
             ingredients = jar.get_ingredients_for_machine(self)
 
@@ -491,7 +504,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
                     if r:
                         jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
-                        # ~ self.app.update_jar_position(jar, machine_head=self, status='DISPENSING')
 
                         if "PURGE ALL" in jar.order.description.upper():
 
@@ -499,9 +511,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                             r = await self.send_command(
                                 cmd_name="PURGE", type_="macro", params=pars)
+
+                            timeout_ = 60 * 12
+
                         else:
                             r = await self.send_command(
                                 cmd_name="DISPENSE_FORMULA", type_="macro", params=pars)
+
+                            timeout_ = 60 * 6
 
                         if r:
                             r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
@@ -511,7 +528,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                     return self.status["status_level"] in ['ALARM', 'RESET']
 
                                 r = await self.wait_for_status_level(
-                                    ["STANDBY"], timeout=60 * 6, show_alert=False, break_condition=break_condition)
+                                    ["STANDBY"], timeout=timeout_, show_alert=False, break_condition=break_condition)
                                 if r:
                                     outcome_ = 'success'
                                 else:

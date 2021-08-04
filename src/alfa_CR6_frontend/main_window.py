@@ -313,6 +313,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             lang_ = map_[txt_]
             msg_ = tr_("confirm changing language to: {}? \n (WARN: application will be restarted)").format(lang_)
             self.open_input_dialog(message=msg_, ok_cb=ok_cb_, ok_cb_args=[lang_, ])
+        elif 'alarm' in txt_:
+            self.open_alert_dialog('TEST ALERT MESSAGE', title="ALERT", callback=None, args=None)
 
     def on_menu_btn_group_clicked(self, btn):
 

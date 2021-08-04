@@ -477,9 +477,8 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                 async for event in self._device.async_read_loop():
                     keyEvent = evdev.categorize(event)
                     type_key_event = evdev.ecodes.EV_KEY  # pylint:  disable=no-member
-                    logging.warning(f"type_key_event:{type_key_event} ({event.type})")
-                    if event.type == type_key_event and keyEvent.keystate == 0:
-                        # key_up = 0
+                    # ~ logging.warning(f"type_key_event:{type_key_event} ({event.type})")
+                    if event.type == type_key_event and keyEvent.keystate == 0: # key_up = 0
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:12]
                             logging.warning(f"buffer:{buffer}")
