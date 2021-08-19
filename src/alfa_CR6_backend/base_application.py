@@ -640,13 +640,31 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                     method = "GET"
                     data = {}
                     ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='html')
-                    title = f'<a href="#">[back to top]</a> <h3> head:{head_letter} platform info:</h3>'
+                    title = f'<b> head:{head_letter} platform info:</b> <a href="#">[back to top]</a>'
 
                     answer = json.dumps({
-                        'type': 'ask_platform_info_answer',
+                        'type': 'ask_platform_answer',
                         'value': title + html.unescape(ret),
                     })
                     await websocket.send(answer)
+
+                elif msg_dict["command"] == "ask_temperature_logs":
+                    params = msg_dict.get("params", {})
+                    head_letter = params.get("head_letter")
+                    m = self.parent.get_machine_head_by_letter(head_letter)
+
+                    path = "admin/platform?cmd=temperature_logs"
+                    method = "GET"
+                    data = {}
+                    ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='html')
+                    title = f'<b> head:{head_letter} temperature logs:</b> <a href="#">[back to top]</a>'
+
+                    answer = json.dumps({
+                        'type': 'ask_platform_answer',
+                        'value': title + html.unescape(ret),
+                    })
+                    await websocket.send(answer)
+
 
             if msg_dict.get("debug_command"):
 

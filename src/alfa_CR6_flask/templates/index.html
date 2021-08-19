@@ -5,7 +5,7 @@
   
 <style>
 	th, td {
-	  padding: 10px;
+	  padding: 4px;
 	}
 
 	table{
@@ -14,10 +14,24 @@
 	  width: 100%;
 	}
 
+	th{
+		background-color: #EFEFFF;
+	}
+
 	.scrollable {
 	  background-color: #FFFFCC;
 	  height: 300px;
 	  overflow: auto;
+	}
+
+	.button-tool {
+		border: 1px solid light-grey;
+		border-radius: 4px;
+		width:80px;
+		height: 24px;
+		background-color:#AAAACC;
+		padding: 6px;
+		text-align: center;
 	}
 
 	.block_container {
@@ -29,7 +43,6 @@
 
 
 
-<div><a href="{{ alfa40_admin_url }}" target="_blank">alfa40_admin_url</a></div>
 <div class="block_container">
 
 	<form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
@@ -52,7 +65,13 @@
 
 		<tr>
 			{% for i in ('A', 'B', 'C') %}
-			<th><input class="btn btn-primary" style="width:100px;" title="push button to ask platform info" type="submit" value="{{ i }}" onclick="ask_platform_info('{{ i }}');"></input></th>
+			<th>
+				<span class="label label-info" style="padding:6px;">{{ i }}</span>
+				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info" 
+							onclick="ask_platform_info('{{ i }}');"></span>
+				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs" 
+							onclick="ask_temperature_logs('{{ i }}');"></span>
+			</th>
 			{% endfor %}
 		</tr>
 		<tr>
@@ -63,7 +82,13 @@
 
 		<tr>
 			{% for i in ('F', 'E', 'D') %}
-			<th><input class="btn btn-primary" style="width:100px;" title="push button to ask platform info" type="submit" value="{{ i }}" onclick="ask_platform_info('{{ i }}');"></input></th>
+			<th>
+				<span class="label label-info" style="padding:6px;">{{ i }}</span>
+				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info" 
+							onclick="ask_platform_info('{{ i }}');"></span>
+				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs" 
+							onclick="ask_temperature_logs('{{ i }}');"></span>
+			</th>
 			{% endfor %}
 		</tr>
 		<tr>
@@ -75,28 +100,34 @@
 	</table>
 </div>
 <div>
-	<div><hr></hr></div>
-
-	<label>Current Language:</label> 
-	<label id="current_language_label">{{ current_language }}</label>
-	-
-	<b> Change Language to: </b> 
-	<input class="btn btn-primary" type="submit" value="ENGLISH" onclick="change_language('en');"></input>
-	<input class="btn btn-primary" type="submit" value="ITALIAN" onclick="change_language('it');"></input>
-	<input class="btn btn-primary" type="submit" value="KOREAN " onclick="change_language('kr');"></input>
-	<label>(WARN application will be restarted)</label>
+	<div id="ask_platform_answer"></div>
 
 	<div><hr></hr></div>
+	<div>
+		<a href="{{ alfa40_admin_url }}" target="_blank">alfa40_admin_url</a>
+		|
+		<label>Current Language:</label> 
+		<label id="current_language_label">{{ current_language }}</label>
+		-
+		<b> Change Language to: </b> 
+		<input class="btn btn-primary" type="submit" value="ENGLISH" onclick="change_language('en');"></input>
+		<input class="btn btn-primary" type="submit" value="ITALIAN" onclick="change_language('it');"></input>
+		<input class="btn btn-primary" type="submit" value="KOREAN " onclick="change_language('kr');"></input>
+		<label>(WARN application will be restarted)</label>
+	</div>
 
-	<div id="ask_platform_info_answer"></div>
+	<div><hr></hr></div>
 
-	<h4 class="glyphicon glyphicon-wrench" onclick="toggle_element_visibility('manhole_commander');"></h4>
+	<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
 	<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
 		<span>Manhole commander (expert usage only):</span>
 		<input type="text" size="40" id="debug_command" onkeydown="if(event.keyCode === 13) {send_debug_cmd()};"></input>
 		<input type="submit" onclick="send_debug_cmd();"></input>
 		<span id="debug_answer"></span>
 	</div>
+
+	<div><hr></hr></div>
+
 </div>
 
 
@@ -122,6 +153,14 @@
 			g_ws_client.send(JSON.stringify({"debug_command": el.value}));
 		}
 	}
+
+	var ask_temperature_logs = function(head_letter) {
+
+		console.debug('ask_temperature_logs(), head_letter: ' + head_letter); 
+		var cmd = {"command": 'ask_temperature_logs', 'params': {'head_letter': head_letter}};
+		cmd = JSON.stringify(cmd);
+		g_ws_client.send(cmd);
+	};
 
 	var ask_platform_info = function(head_letter) {
 
