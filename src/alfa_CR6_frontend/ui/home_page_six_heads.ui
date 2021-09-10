@@ -1412,6 +1412,120 @@
     </size>
    </property>
   </widget>
+  <widget class="QLabel" name="expiry_1_label">
+   <property name="geometry">
+    <rect>
+     <x>710</x>
+     <y>240</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="expiry_2_label">
+   <property name="geometry">
+    <rect>
+     <x>710</x>
+     <y>600</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="expiry_3_label">
+   <property name="geometry">
+    <rect>
+     <x>1080</x>
+     <y>240</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="expiry_4_label">
+   <property name="geometry">
+    <rect>
+     <x>1080</x>
+     <y>600</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="expiry_5_label">
+   <property name="geometry">
+    <rect>
+     <x>1460</x>
+     <y>240</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="expiry_6_label">
+   <property name="geometry">
+    <rect>
+     <x>1460</x>
+     <y>600</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_3_btn</zorder>
@@ -1474,6 +1588,12 @@
   <zorder>head_id_2_lbl</zorder>
   <zorder>head_id_6_lbl</zorder>
   <zorder>head_id_4_lbl</zorder>
+  <zorder>expiry_1_label</zorder>
+  <zorder>expiry_2_label</zorder>
+  <zorder>expiry_3_label</zorder>
+  <zorder>expiry_4_label</zorder>
+  <zorder>expiry_5_label</zorder>
+  <zorder>expiry_6_label</zorder>
  </widget>
  <resources/>
  <connections/>

@@ -920,6 +920,7 @@ class HomePage(BaseStackedPage):
         self.action_btn_group.buttonClicked.connect(self.on_action_btn_group_clicked)
 
         self.reserve_movie = QMovie(get_res("IMAGE", "riserva.gif"))
+        self.expiry_movie = QMovie(get_res("IMAGE", "expiry.gif"))
 
         if self.STEP_01_label: self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
         if self.STEP_02_label: self.STEP_02_label.mouseReleaseEvent = lambda event: self.step_label_clicked("A")
@@ -940,6 +941,13 @@ class HomePage(BaseStackedPage):
         if self.reserve_4_label: self.reserve_4_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(3)
         if self.reserve_5_label: self.reserve_5_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(4)
         if self.reserve_6_label: self.reserve_6_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(5)
+
+        if self.expiry_1_label: self.expiry_1_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(0)
+        if self.expiry_2_label: self.expiry_2_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(1)
+        if self.expiry_3_label: self.expiry_3_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(2)
+        if self.expiry_4_label: self.expiry_4_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(3)
+        if self.expiry_5_label: self.expiry_5_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(4)
+        if self.expiry_6_label: self.expiry_6_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(5)
 
     def open_page(self):
 
@@ -1008,6 +1016,34 @@ class HomePage(BaseStackedPage):
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.main_window.open_alert_dialog(f"btn_name:{btn_name} exception:{e}", title="ERROR")
+
+    def update_expired_products(self, head_index):
+
+        map_ = [
+            self.expiry_1_label,
+            self.expiry_2_label,
+            self.expiry_3_label,
+            self.expiry_4_label,
+            self.expiry_5_label,
+            self.expiry_6_label,
+        ]
+
+        m = QApplication.instance().machine_head_dict.get(head_index)
+        try:
+            if m and map_[head_index]:
+
+                logging.warning(f"head_index:{head_index}, m.expired_products:{m.expired_products}")
+
+                if m.expired_products:
+                    map_[head_index].setMovie(self.expiry_movie)
+                    self.expiry_movie.start()
+                    map_[head_index].show()
+                else:
+                    map_[head_index].setText("")
+                    map_[head_index].hide()
+
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
 
     def update_service_btns__presences_and_lifters(self, head_index):
 
@@ -1218,6 +1254,18 @@ class HomePage(BaseStackedPage):
                 except Exception:   # pylint: disable=broad-except
                     logging.error(traceback.format_exc())
 
+    def expiry_label_clicked(self, head_index):
+
+        logging.warning(f"head_index:{head_index}")
+
+        m = QApplication.instance().machine_head_dict[head_index]
+        if m.expired_products:
+
+            keys_ = ('pipe_name', 'pigment_name', 'production_date', 'lot_number')
+            txt_ = [{k: p['QR_code_info'][k] for k in keys_} for p in m.expired_products if p.get('QR_code_info')]
+
+            QApplication.instance().main_window.open_alert_dialog(tr_("{} expired produtcs:{}").format(m.name, txt_))
+
     def reserve_label_clicked(self, head_index):
 
         logging.warning(f"head_index:{head_index}")
@@ -1246,6 +1294,9 @@ class HomePageFourHeads(HomePage):
 
     refill_3_lbl = None
     refill_4_lbl = None
+
+    expiry_3_label = None
+    expiry_4_label = None
 
     reserve_3_label = None
     reserve_4_label = None

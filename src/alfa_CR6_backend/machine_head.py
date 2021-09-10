@@ -56,6 +56,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.last_answer = None
         self.cntr = 0
         self.time_stamp = 0
+        self.expired_products = None
 
         self.owned_barcodes = []
 
@@ -273,6 +274,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 time_stamp = msg_dict.get("value")
                 if time_stamp:
                     self.time_stamp = time_stamp
+
+            elif msg_dict.get("type") == "expired_products":
+                expired_products = msg_dict.get("value")
+                self.expired_products = expired_products
 
             else:
                 logging.warning(f"{self.name} unknown type for msg_dict:{msg_dict}")

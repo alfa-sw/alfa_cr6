@@ -1097,6 +1097,82 @@
     </size>
    </property>
   </widget>
+  <widget class="QLabel" name="expiry_1_label">
+   <property name="geometry">
+    <rect>
+     <x>880</x>
+     <y>240</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="expiry_2_label">
+   <property name="geometry">
+    <rect>
+     <x>880</x>
+     <y>600</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="expiry_6_label">
+   <property name="geometry">
+    <rect>
+     <x>1280</x>
+     <y>600</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="expiry_5_label">
+   <property name="geometry">
+    <rect>
+     <x>1280</x>
+     <y>240</y>
+     <width>56</width>
+     <height>100</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/Riserva.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_6_btn</zorder>
@@ -1145,11 +1221,15 @@
   <zorder>head_id_5_lbl</zorder>
   <zorder>head_id_6_lbl</zorder>
   <zorder>head_id_2_lbl</zorder>
+  <zorder>expiry_1_label</zorder>
+  <zorder>expiry_2_label</zorder>
+  <zorder>expiry_6_label</zorder>
+  <zorder>expiry_5_label</zorder>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="action_btn_group"/>
   <buttongroup name="service_btn_group"/>
+  <buttongroup name="action_btn_group"/>
  </buttongroups>
 </ui>
