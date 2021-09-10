@@ -447,10 +447,11 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
         "KEY_0": "0",
     }
 
-    def __init__(self, barcode_handler):
+    def __init__(self, barcode_handler, identification_string):
 
         self.barcode_handler = barcode_handler
         self._device = None
+        self._identification_string = identification_string
 
     async def run(self):
 
@@ -465,7 +466,8 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
             for device_ in device_list:
                 logging.warning(f"device_:{ device_ }")
                 s_ = str(device_)
-                if "LWTEK Barcode Scanner" in s_ or "Manufacturer Barcode Reader" in s_:
+
+                if self._identification_string in s_:
                     self._device = device_
                     logging.warning(f"BARCODE DEVICE FOUND. self._device:{ self._device }")
                     break
@@ -482,8 +484,13 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:12]
                             logging.warning(f"buffer:{buffer}")
+
                             if self.barcode_handler:
-                                await self.barcode_handler(buffer)
+                                try:
+                                    await self.barcode_handler(buffer)
+                                except Exception as e:  # pylint: disable=broad-except
+                                    app.handle_exception(e)
+
                             buffer = ""
                         else:
                             buffer += self.BARCODE_DEVICE_KEY_CODE_MAP.get(
@@ -824,7 +831,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def __create_barcode_task(self):
 
-        b = BarCodeReader(self.on_barcode_read)
+        _bc_identification_string = "Barcode"
+        if hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
+            _bc_identification_string = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+
+        b = BarCodeReader(self.on_barcode_read, _bc_identification_string)
         await b.run()
         logging.warning(f" #### terminating barcode reader: {b} #### ")
 

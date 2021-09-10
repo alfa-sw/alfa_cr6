@@ -118,11 +118,11 @@ class Reader:
                 if event.type == type_key_event and keyEvent.keystate == 0:
                     # key_up = 0
                     if keyEvent.keycode == "KEY_ENTER":
-                        buffer = buffer[:12]
                         logging.warning(f"buffer:{buffer}")
+                        buffer = buffer[:12]
                         buffer = ""
                     else:
-                        buffer += BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode, "*")
+                        buffer += BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode, keyEvent.keycode + ', ')
 
 
 def main():
