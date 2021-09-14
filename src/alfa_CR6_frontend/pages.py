@@ -1032,7 +1032,7 @@ class HomePage(BaseStackedPage):
         try:
             if m and map_[head_index]:
 
-                logging.warning(f"head_index:{head_index}, m.expired_products:{m.expired_products}")
+                # ~ logging.warning(f"head_index:{head_index}, m.expired_products:{m.expired_products}")
 
                 if m.expired_products:
                     map_[head_index].setMovie(self.expiry_movie)
@@ -1262,7 +1262,7 @@ class HomePage(BaseStackedPage):
         if m.expired_products:
 
             keys_ = ('pipe_name', 'pigment_name', 'production_date', 'lot_number')
-            txt_ = [{k: p['QR_code_info'][k] for k in keys_} for p in m.expired_products if p.get('QR_code_info')]
+            txt_ = [{tr_(k): p['QR_code_info'][k] for k in keys_} for p in m.expired_products if p.get('QR_code_info')]
 
             QApplication.instance().main_window.open_alert_dialog(tr_("{} expired produtcs:{}").format(m.name, txt_))
 

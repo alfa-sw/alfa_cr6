@@ -25,10 +25,8 @@ import flask_admin.contrib.sqla  # pylint: disable=import-error
 
 from waitress import serve       # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Order, Jar, Event, set_global_session
+from alfa_CR6_backend.models import Order, Jar, Event, Document, set_global_session
 from alfa_CR6_backend.globals import import_settings
-
-# ~ from alfa_flask.admin import _handle_CRX_stream_upload
 
 
 def _handle_CRX_stream_upload(stream, filename):
@@ -68,7 +66,7 @@ def init_db(app):
     return db
 
 
-def init_admin(app, db):
+def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-statements
 
     settings = import_settings()
 
@@ -202,12 +200,29 @@ def init_admin(app, db):
             'date_created',
             'description',)
 
+    class DocumentModelView(CRX_ModelView):
+
+        column_filters = (
+            'name',
+            'type',
+            'description',
+            'json_properties',
+            'date_created',)
+
+        column_searchable_list = (
+            'name',
+            'type',
+            'description',
+            'json_properties',)
+
+
     index_view_ = CRX_AdminResources(url='/')    # pylint: disable=undefined-variable
     admin_ = flask_admin.base.Admin(app, name=_gettext('Alfa_CRX'), template_mode='bootstrap3', index_view=index_view_)
 
-    admin_.add_view(JarModelView(Jar, db.session))               # pylint: disable=undefined-variable
-    admin_.add_view(OrderModelView(Order, db.session))               # pylint: disable=undefined-variable
-    admin_.add_view(EventModelView(Event, db.session))               # pylint: disable=undefined-variable
+    admin_.add_view(JarModelView(Jar, db.session))            # pylint: disable=undefined-variable
+    admin_.add_view(OrderModelView(Order, db.session))        # pylint: disable=undefined-variable
+    admin_.add_view(EventModelView(Event, db.session))        # pylint: disable=undefined-variable
+    admin_.add_view(DocumentModelView(Document, db.session))  # pylint: disable=undefined-variable
 
 
 def main():
@@ -229,7 +244,7 @@ def main():
 
     set_global_session(db.session)
 
-    init_admin(app, db)
+    init_admin_and_define_view_classes(app, db)
 
     HOST, PORT = '0.0.0.0', 8090
     logging.warning("start serving admin UI on http://{}:{}".format(HOST, PORT))

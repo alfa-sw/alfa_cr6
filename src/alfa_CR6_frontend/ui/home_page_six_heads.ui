@@ -706,7 +706,7 @@
   <widget class="QLabel" name="reserve_1_label">
    <property name="geometry">
     <rect>
-     <x>789</x>
+     <x>790</x>
      <y>240</y>
      <width>56</width>
      <height>100</height>
@@ -764,7 +764,7 @@
    <property name="geometry">
     <rect>
      <x>790</x>
-     <y>600</y>
+     <y>610</y>
      <width>56</width>
      <height>100</height>
     </rect>
@@ -783,7 +783,7 @@
    <property name="geometry">
     <rect>
      <x>1170</x>
-     <y>600</y>
+     <y>610</y>
      <width>56</width>
      <height>100</height>
     </rect>
@@ -802,7 +802,7 @@
    <property name="geometry">
     <rect>
      <x>1560</x>
-     <y>600</y>
+     <y>610</y>
      <width>56</width>
      <height>100</height>
     </rect>
@@ -1435,7 +1435,7 @@
    <property name="geometry">
     <rect>
      <x>710</x>
-     <y>600</y>
+     <y>610</y>
      <width>56</width>
      <height>100</height>
     </rect>
@@ -1453,7 +1453,7 @@
   <widget class="QLabel" name="expiry_3_label">
    <property name="geometry">
     <rect>
-     <x>1080</x>
+     <x>1090</x>
      <y>240</y>
      <width>56</width>
      <height>100</height>
@@ -1472,8 +1472,8 @@
   <widget class="QLabel" name="expiry_4_label">
    <property name="geometry">
     <rect>
-     <x>1080</x>
-     <y>600</y>
+     <x>1090</x>
+     <y>610</y>
      <width>56</width>
      <height>100</height>
     </rect>
@@ -1491,7 +1491,7 @@
   <widget class="QLabel" name="expiry_5_label">
    <property name="geometry">
     <rect>
-     <x>1460</x>
+     <x>1480</x>
      <y>240</y>
      <width>56</width>
      <height>100</height>
@@ -1510,8 +1510,8 @@
   <widget class="QLabel" name="expiry_6_label">
    <property name="geometry">
     <rect>
-     <x>1460</x>
-     <y>600</y>
+     <x>1480</x>
+     <y>610</y>
      <width>56</width>
      <height>100</height>
     </rect>

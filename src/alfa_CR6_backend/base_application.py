@@ -1119,7 +1119,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.main_window.debug_page.add_answer(head_index, answer)
 
         elif msg_dict.get("type") == "expired_products":
-            logging.warning(f"msg_dict:{msg_dict}")
+            # ~ logging.warning(f"msg_dict:{msg_dict}")
             expired_products = msg_dict.get("value")
             if expired_products:
                 self.main_window.home_page.update_expired_products(head_index)

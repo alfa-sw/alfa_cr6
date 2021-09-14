@@ -23,6 +23,7 @@ from sqlalchemy import (      # pylint: disable=import-error
     create_engine,
     Column,
     Unicode,
+    UnicodeText,
     Integer,
     BigInteger,
     DateTime,
@@ -37,9 +38,11 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 
 global_session = None
 
+
 def set_global_session(session):
     global global_session  # pylint: disable=global-statement
     global_session = session
+
 
 def generate_id():
     return str(uuid.uuid4())
@@ -90,21 +93,24 @@ class BaseModel:  # pylint: disable=too-few-public-methods
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    json_properties = Column(Unicode, default="{}")
-    description = Column(Unicode(200))
+    json_properties = Column(UnicodeText, default="{}")
+    description = Column(Unicode)
 
     json_properties_schema = {}
 
-    row_count_limt = 10000
+    row_count_limt = 10 * 1000
 
-    def validate_json_properties(self, instance):
+    def validate_json_properties(self):
 
         ret = None
 
         try:
-            validate(instance=instance, schema=self.json_properties_schema)
-            ret = json.dumps(instance, indent=2)
+            if self.json_properties_schema and validate(
+                    instance=self.json_properties, schema=self.json_properties_schema):
+
+                ret = True
         except Exception:  # pylint: disable=broad-except
+
             logging.error(traceback.format_exc())
 
         return ret
@@ -292,7 +298,25 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         return ingredients
 
 
+class Document(Base, BaseModel):  # pylint: disable=too-few-public-methods
+
+    """ General purpose model (table) to let the integration of future features be smoother.
+    """
+
+    __tablename__ = "document"
+
+    row_count_limt = 10 * 1000
+
+    name = Column(Unicode(32), nullable=False, index=True)
+    type = Column(UnicodeText, default='')
+    UniqueConstraint('name', 'type', 'date_created')
+
+    def __str__(self):
+        return "{}_{}_{}".format(self.name, self.type, self.date_created)
+
 # ~ #######################
+
+
 class dbEventManager:
 
     def __init__(self, session):
