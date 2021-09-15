@@ -447,18 +447,18 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
         "KEY_0": "0",
     }
 
-    def __init__(self, barcode_handler, identification_string):
+    def __init__(self, barcode_handler, identification_string, exception_handler=None):
 
         self.barcode_handler = barcode_handler
-        self._device = None
         self._identification_string = identification_string
+        self.exception_handler = exception_handler
 
-    async def run(self):
+        self._device = None
+
+    async def run(self):      # pylint: disable=too-many-branches
 
         try:
             import evdev  # pylint: disable=import-error, import-outside-toplevel
-
-            app = QApplication.instance()
 
             buffer = ""
             device_list = [evdev.InputDevice(p) for p in evdev.list_devices()]
@@ -489,20 +489,26 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                                 try:
                                     await self.barcode_handler(buffer)
                                 except Exception as e:  # pylint: disable=broad-except
-                                    app.handle_exception(e)
+                                    if self.exception_handler:
+                                        self.exception_handler(e)
+                                    else:
+                                        logging.error(traceback.format_exc())
 
                             buffer = ""
                         else:
-                            buffer += self.BARCODE_DEVICE_KEY_CODE_MAP.get(
-                                keyEvent.keycode, "*"
-                            )
+                            filtered_ch_ = self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode)
+                            if filtered_ch_:
+                                buffer += filtered_ch_
 
         except asyncio.CancelledError:
             pass
         except ImportError:
             logging.warning("cannot import evdev, runinng without barcode reader.")
         except Exception as e:  # pylint: disable=broad-except
-            app.handle_exception(e)
+            if self.exception_handler:
+                self.exception_handler(e)
+            else:
+                logging.error(traceback.format_exc())
 
 
 class WsServer:   # pylint: disable=too-many-instance-attributes
@@ -835,7 +841,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
             _bc_identification_string = self.settings.BARCODE_READER_IDENTIFICATION_STRING
 
-        b = BarCodeReader(self.on_barcode_read, _bc_identification_string)
+        b = BarCodeReader(self.on_barcode_read, _bc_identification_string, exception_handler=self.handle_exception)
         await b.run()
         logging.warning(f" #### terminating barcode reader: {b} #### ")
 
@@ -1048,13 +1054,21 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals
 
         barcode = str(barcode)
-        if int(barcode) == -1:
-            q = self.db_session.query(Jar).filter(Jar.status.in_(["NEW"]))
-            jar = q.first()
-            if jar:
-                barcode = jar.barcode
+        try:
+            if int(barcode) == -1:
+                q = self.db_session.query(Jar).filter(Jar.status.in_(["NEW"]))
+                jar = q.first()
+                if jar:
+                    barcode = jar.barcode
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(f"barcode:{barcode}")
+            barcode = ""
 
         logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
+
+        if not barcode:
+            return
 
         if not self.ready_to_read_a_barcode:
 

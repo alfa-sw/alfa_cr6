@@ -25,9 +25,7 @@ lrwxrwxrwx 1 root root 9 Jun 28 14:39 usb-NOVATEK_USB_Keyboard-if01-event-mouse 
 lrwxrwxrwx 1 root root 9 Jun 28 15:02 usb-SIGMACH1P_U+P_Mouse-event-mouse -> ../event2
 lrwxrwxrwx 1 root root 9 Jun 28 15:02 usb-SIGMACH1P_U+P_Mouse-mouse -> ../mouse0
 
-"""
 
-"""
 >>> import evdev; ls_ = [str(evdev.InputDevice(p)) for p in  evdev.list_devices()]; ls_.sort(); [print(i) for i in ls_]
 device /dev/input/event0, name "Manufacturer Barcode Reader", phys "usb-0000:01:00.0-1.2.1/input0"
 device /dev/input/event1, name "ILITEK ILITEK-TP", phys "usb-0000:01:00.0-1.2.2.3/input0"
@@ -44,6 +42,8 @@ lrwxrwxrwx 1 root root 9 Jun 28 14:39 platform-fd500000.pcie-pci-0000:01:00.0-us
 lrwxrwxrwx 1 root root 9 Jun 28 14:39 platform-fd500000.pcie-pci-0000:01:00.0-usb-0:1.3.3:1.1-event-mouse -> ../event6
 """
 
+
+
 # ~ import os
 import sys
 # ~ import time
@@ -54,29 +54,28 @@ import subprocess
 
 import evdev  # pylint: disable=import-error, import-outside-toplevel
 
-BARCODE_DEVICE_KEY_CODE_MAP = {
-    "KEY_SPACE": " ",
-    "KEY_1": "1",
-    "KEY_2": "2",
-    "KEY_3": "3",
-    "KEY_4": "4",
-    "KEY_5": "5",
-    "KEY_6": "6",
-    "KEY_7": "7",
-    "KEY_8": "8",
-    "KEY_9": "9",
-    "KEY_0": "0",
-}
-
-DEVICE_NAME = sys.argv[1:] and sys.argv[1]
-
-# ~ import evdev; ls_ = [str(evdev.InputDevice(p)) for p in  evdev.list_devices()]; ls_.sort(); [print(i) for i in ls_]
+from alfa_CR6_backend.base_application import BarCodeReader
 
 class Reader:
 
     scanner_device = None
 
-    def search_device_by_id(self, ):
+    BARCODE_DEVICE_KEY_CODE_MAP = {
+        "KEY_SPACE": " ",
+        "KEY_1": "1",
+        "KEY_2": "2",
+        "KEY_3": "3",
+        "KEY_4": "4",
+        "KEY_5": "5",
+        "KEY_6": "6",
+        "KEY_7": "7",
+        "KEY_8": "8",
+        "KEY_9": "9",
+        "KEY_0": "0",
+    }
+
+    @staticmethod
+    def search_device_by_id():
 
         # ~ lrwxrwxrwx 1 root root 9 Jun 28 15:02 usb-LWTEK_Barcode_Scanner_00000000011C-event-kbd -> ../event0
         cmd_ = "ls -l /dev/input/by-id/"
@@ -122,13 +121,43 @@ class Reader:
                         buffer = buffer[:12]
                         buffer = ""
                     else:
-                        buffer += BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode, keyEvent.keycode + ', ')
+                        buffer += self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode, keyEvent.keycode + ', ')
 
 
-def main():
+def one():
 
-    fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
-    logging.basicConfig(stream=sys.stdout, level=logging.WARNING, format=fmt_)
+    identification_string = "usb-0000:01:00.0-1.2.4"
+
+
+    if sys.argv[1:] and sys.argv[1]:
+        identification_string = sys.argv[1]
+
+    logging.warning(f"identification_string:{identification_string}.")
+
+    def barcode_handler(barcode):
+        logging.warning(f"barcode:{barcode}.")
+
+    barcode_reader = None
+    try:
+        barcode_reader = BarCodeReader(barcode_handler, identification_string, exception_handler=None)
+        t = barcode_reader.run()
+
+        asyncio.ensure_future(t)
+        asyncio.get_event_loop().run_forever()
+
+    except KeyboardInterrupt:
+        pass
+
+    except Exception:  # pylint: disable=broad-except
+        logging.error(traceback.format_exc())
+
+    if barcode_reader and barcode_reader._device:   # pylint: disable=protected-access
+        barcode_reader._device.close()              # pylint: disable=protected-access
+
+    asyncio.get_event_loop().stop()
+    asyncio.get_event_loop().close()
+
+def two():
 
     reader = None
     try:
@@ -149,5 +178,14 @@ def main():
     asyncio.get_event_loop().stop()
     asyncio.get_event_loop().close()
 
+
+
+
+def main():
+
+    fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
+    logging.basicConfig(stream=sys.stdout, level=logging.WARNING, format=fmt_)
+
+    one()
 
 main()
