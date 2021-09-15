@@ -560,7 +560,8 @@ class OrderPage(BaseStackedPage):
 
             self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(file_model.rowCount()))
 
-    def __on_purge_all_clicked(self):
+    @staticmethod
+    def __on_purge_all_clicked():
 
         t = QApplication.instance().crate_purge_all_order()
         asyncio.ensure_future(t)
@@ -905,7 +906,7 @@ class ActionPage(BaseStackedPage):
 
 class HomePage(BaseStackedPage):
 
-    def __init__(self, *args, **kwargs):  # pylint:disable=too-many-branches
+    def __init__(self, *args, **kwargs):  # pylint:disable=too-many-branches, too-many-statements
 
         super().__init__(*args, **kwargs)
 
@@ -1254,19 +1255,8 @@ class HomePage(BaseStackedPage):
                 except Exception:   # pylint: disable=broad-except
                     logging.error(traceback.format_exc())
 
-    def expiry_label_clicked(self, head_index):
-
-        logging.warning(f"head_index:{head_index}")
-
-        m = QApplication.instance().machine_head_dict[head_index]
-        if m.expired_products:
-
-            keys_ = ('pipe_name', 'pigment_name', 'production_date', 'lot_number')
-            txt_ = [{tr_(k): p['QR_code_info'][k] for k in keys_} for p in m.expired_products if p.get('QR_code_info')]
-
-            QApplication.instance().main_window.open_alert_dialog(tr_("{} expired produtcs:{}").format(m.name, txt_))
-
-    def reserve_label_clicked(self, head_index):
+    @staticmethod
+    def reserve_label_clicked(head_index):
 
         logging.warning(f"head_index:{head_index}")
 
@@ -1274,6 +1264,37 @@ class HomePage(BaseStackedPage):
         if m.low_level_pipes:
             QApplication.instance().main_window.open_alert_dialog(
                 tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(m.name, m.low_level_pipes))
+    @staticmethod
+    def expiry_label_clicked(head_index):
+
+        logging.warning(f"head_index:{head_index}")
+
+        m = QApplication.instance().machine_head_dict[head_index]
+        if m.expired_products:           # pylint: disable=too-many-nested-blocks
+
+            try:
+                # ~ txt_ = [{tr_(k): p['QR_code_info'].get(k) for k in keys_} for p in m.expired_products if p.get('QR_code_info')]
+
+                keys_ = ('pipe_name', 'pigment_name', 'production_date', 'lot_number')
+                info_ = []
+                for p in m.expired_products:
+                    if p.get('QR_code_info'):
+                        QR_code_info = p['QR_code_info']
+                        item = {}
+                        for k in keys_:
+                            try:
+                                if QR_code_info and QR_code_info.get(k):
+                                    item[tr_(k)] = QR_code_info[k]
+                            except Exception:   # pylint: disable=broad-except
+                                logging.error(traceback.format_exc())
+                        info_.append(item)
+
+                QApplication.instance().main_window.open_alert_dialog(tr_("{} expired produtcs:{}").format(m.name, info_))
+
+            except Exception as e:   # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+                self.main_window.open_alert_dialog(f"exception:{e}")
+
 
 class HomePageSixHeads(HomePage):
 
