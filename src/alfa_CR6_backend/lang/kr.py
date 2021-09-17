@@ -128,8 +128,8 @@ D = {
     "{} already in progress!": "{}은 이미 진행중입니다!",
     "{} Please, Check Pipe Levels: low_level_pipes:{}": "{}\n 캐니스터의 조색제 잔량을 확인해주세요 \n{}",
     "{} RESETTING": "{}모듈을 재시작하는 중 입니다",
-    "{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}": 
-            "바코드 {}은 배출구 CRX {}를 대기중입니다. {} 실행. Crx 배출구 상태는 {}와 같습니다",
+    "{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}":
+        "바코드 {}은 배출구 CRX {}를 대기중입니다. {} 실행. Crx 배출구 상태는 {}와 같습니다",
     "{} waiting for answer to cmd:{}": "{}는, cmd로 응답 대기중입니다: {}",
     "{} waiting for {} to get unlocked.": "{}는 {}가 풀리길 기다리고있습니다",
     "   OK   ": "   확인   ",
@@ -183,6 +183,8 @@ D = {
 
     "please, wait while finishing all pending operations ...": "보류 중인 모든 작업을 완료하는 동안 잠시만 기다려 주십시오...",
     "all operations are paused": "모든 작업이 일시 중지됨",
+
+    "{} expired produtcs:{}": "{} \n 만료된 제품:{}",
 }
 
 D.update(error_kr.D)

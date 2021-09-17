@@ -1275,16 +1275,18 @@ class HomePage(BaseStackedPage):
             try:
                 # ~ txt_ = [{tr_(k): p['QR_code_info'].get(k) for k in keys_} for p in m.expired_products if p.get('QR_code_info')]
 
-                keys_ = ('pipe_name', 'pigment_name', 'production_date', 'lot_number')
+                # ~ keys_ = ('pipe_name', 'pigment_name', 'production_date', 'lot_number')
+                keys_ = ('pipe_name', 'pigment_name')
                 info_ = []
                 for p in m.expired_products:
                     if p.get('QR_code_info'):
                         QR_code_info = p['QR_code_info']
-                        item = {}
+                        item = []
                         for k in keys_:
                             try:
                                 if QR_code_info and QR_code_info.get(k):
-                                    item[tr_(k)] = QR_code_info[k]
+                                    # ~ item[tr_(k)] = QR_code_info[k]
+                                    item.append(QR_code_info[k])
                             except Exception:   # pylint: disable=broad-except
                                 logging.error(traceback.format_exc())
                         info_.append(item)
