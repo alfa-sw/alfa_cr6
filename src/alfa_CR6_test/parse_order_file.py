@@ -6,7 +6,7 @@ import logging
 import json
 import glob
 
-from alfa_CR6_backend.base_application import OrderParser
+from alfa_CR6_backend.order_parser import OrderParser
 
 
 def main():
@@ -19,8 +19,10 @@ def main():
 
     for path_to_file in sys.argv[1:]:
 
-        print(path_to_file)    
+        logging.warning(path_to_file)
+
         properties = _parser.parse(path_to_file)
-        # ~ logging.warning(json.dumps(properties, indent=2))
+
+        logging.warning(json.dumps(properties, indent=2))
 
 main()
