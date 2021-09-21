@@ -15,6 +15,7 @@ import logging
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
+import xmltodict   # pylint: disable=import-error
 import magic       # pylint: disable=import-error
 
 from alfa_CR6_backend.globals import get_encoding
@@ -31,23 +32,62 @@ class OrderParser:
     def _substitute_aliases(properties):
 
         try:
-            _alias_file = os.path.join(QApplication.instance().settings.DATA_PATH, "pigment_alias.json")
-            with open(_alias_file) as f:
-                alias_dict = json.load(f)
+            if QApplication.instance():
+                _alias_file = os.path.join(QApplication.instance().settings.DATA_PATH, "pigment_alias.json")
+                with open(_alias_file) as f:
+                    alias_dict = json.load(f)
 
-            ingredients = properties.get('ingredients', [])
-            for i in ingredients:
-                pigment_name = i["pigment_name"]
-                for k, v in alias_dict.items():
-                    if pigment_name in v:
-                        i["pigment_name"] = k
-                        logging.warning(f"pigment_name:{pigment_name}, k:{k}")
-                        properties['meta'].setdefault('alias', [])
-                        properties['meta']['alias'].append((pigment_name, k))
-                        break
+                ingredients = properties.get('ingredients', [])
+                for i in ingredients:
+                    pigment_name = i["pigment_name"]
+                    for k, v in alias_dict.items():
+                        if pigment_name in v:
+                            i["pigment_name"] = k
+                            logging.warning(f"pigment_name:{pigment_name}, k:{k}")
+                            properties['meta'].setdefault('alias', [])
+                            properties['meta']['alias'].append((pigment_name, k))
+                            break
 
         except Exception as e:  # pylint:disable=broad-except
+            logging.error(traceback.format_exc())
             logging.error(f"e:{e}")
+
+        return properties
+
+    @staticmethod
+    def parse_mcm_csv(lines):       # pylint: disable=too-many-locals
+        logging.warning(f"lines:{lines}")
+        properties = {
+            "meta": {},
+            "ingredients": [],
+        }
+
+        section = 0
+        keys_ = []
+        items_ = []
+        for l in lines:
+            if section == 0:
+                if not l.strip():
+                    section = 1
+                else:
+                    toks = l.strip().split(';')
+                    if toks[1:]:
+                        properties['meta'][toks[0]] = toks[1]
+            elif section == 1:
+                keys_ = l.split(';')
+                section = 2
+            elif section == 2:
+                vals_ = l.split(';')
+                new_item = dict(zip(keys_, vals_))
+                items_.append(new_item)
+
+        for item_ in items_:
+            if item_['Mischlack']:
+                properties["ingredients"].append({
+                    "pigment_name": item_['Mischlack'],
+                    "weight(g)": round(float(item_['Waage']), 4),
+                    "description": item_['Name']
+                })
 
         return properties
 
@@ -343,6 +383,29 @@ class OrderParser:
         return properties
 
     @classmethod
+    def parse_xml_order(cls, path_to_file):  # pylint: disable=too-many-locals
+
+        properties = {}
+
+        try:
+
+            e = get_encoding(path_to_file)
+            with codecs.open(path_to_file, encoding=e) as fd:
+                xml_doc = fd.read()
+                d_ = xmltodict.parse(xml_doc, encoding=e)
+                if d_.get("COLORFORMULA"):
+                    properties["meta"] = d_["COLORFORMULA"]["FORMULA"].copy()
+
+                # ~ print(json.dumps(d_, indent=2, ensure_ascii=False))
+
+        except Exception:              # pylint: disable=broad-except
+
+            logging.error(f"fmt error in file:{path_to_file}")
+            logging.error(traceback.format_exc())
+
+        return properties
+
+    @classmethod
     def parse_txt_order(cls, path_to_dat_file):  # pylint: disable=too-many-locals
 
         properties = {}
@@ -352,12 +415,17 @@ class OrderParser:
         with codecs.open(path_to_dat_file, encoding=e) as fd:
             lines = fd.readlines()
 
-        logging.warning(f"cls.sw_txt_header:{cls.sw_txt_header}, lines[0]:{lines[0]}")
         if cls.sw_txt_header in lines[0]:
             properties = cls.parse_sw_txt(lines)
 
-            if properties.get('meta'):
+            if properties.get('meta') is not None:
                 properties['meta']['header'] = cls.sw_txt_header
+
+        elif cls.mcm_csv_header in lines[0]:
+            properties = cls.parse_mcm_csv(lines)
+
+            if properties.get('meta') is not None:
+                properties['meta']['header'] = cls.mcm_csv_header
 
         return properties
 
@@ -393,6 +461,8 @@ class OrderParser:
                     break
         elif mime_type == 'text/plain':
             properties = self.parse_txt_order(path_to_file)
+        elif mime_type == 'text/xml':
+            properties = self.parse_xml_order(path_to_file)
         else:
             raise Exception(f"unknown mime_type:{mime_type}")
 

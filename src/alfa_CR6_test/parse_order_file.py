@@ -23,6 +23,6 @@ def main():
 
         properties = _parser.parse(path_to_file)
 
-        logging.warning(json.dumps(properties, indent=2))
+        logging.warning(json.dumps(properties, indent=2, ensure_ascii=False))
 
 main()
