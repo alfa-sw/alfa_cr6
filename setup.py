@@ -58,6 +58,7 @@ def main():
             'flask_admin',
             'waitress',
             'python-magic',
+            'xmltodict',
         ],
     )
 
