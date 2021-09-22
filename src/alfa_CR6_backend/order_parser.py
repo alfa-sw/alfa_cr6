@@ -28,6 +28,9 @@ class OrderParser:
     sikkens_pdf_header = 'Anteprima Formula'
     kcc_pdf_header = "KCC Color Navi Formulation"
 
+    def __init__(self, exception_handler=None):
+        self.exception_handler = exception_handler
+
     @staticmethod
     def _substitute_aliases(properties):
 
@@ -54,13 +57,53 @@ class OrderParser:
 
         return properties
 
+    @classmethod
+    def parse_nro_xml(cls, xml_as_dict):
+
+        properties = {
+            "meta": {},
+            "ingredients": [],
+            "extra_lines_to_print": [],
+        }
+
+        if xml_as_dict.get("COLORFORMULA"):
+            properties["meta"] = xml_as_dict["COLORFORMULA"]["FORMULA"].copy()
+
+            formulaitem = xml_as_dict["COLORFORMULA"]["FORMULAITEMS"]["FORMULAITEM"].copy()
+
+            properties["ingredients"] = []
+            for item in formulaitem:
+                properties["ingredients"].append({
+                    "pigment_name": item["COLORANT"],
+                    "weight(g)": round(float(item["AMOUNT"]), 4),
+                    "description": ""
+                })
+
+            innercolorcode = properties["meta"].get("INNERCOLORCODE", "")
+            brand = properties["meta"].get("BRAND", "")
+            product = properties["meta"].get("PRODUCT", "")
+            amount = properties["meta"].get("AMOUNT", "")
+
+            properties["extra_lines_to_print"].append(f'{brand}')
+            properties["extra_lines_to_print"].append(f'{innercolorcode}')
+            properties["extra_lines_to_print"].append(f'{product}, {amount}')
+
+            # ~ logging.warning(json.dumps(formulaitem, indent=2, ensure_ascii=False))
+
+        return properties
+
     @staticmethod
-    def parse_mcm_csv(lines):       # pylint: disable=too-many-locals
+    def parse_mcm_csv(lines):
         logging.warning(f"lines:{lines}")
         properties = {
             "meta": {},
             "ingredients": [],
+            "extra_lines_to_print": [],
         }
+
+        properties["extra_lines_to_print"].append(",".join([l.strip() for l in lines[1:2]]))
+        properties["extra_lines_to_print"].append(",".join([l.strip() for l in lines[2:3]]))
+        properties["extra_lines_to_print"].append(",".join([l.strip() for l in lines[3:5]]))
 
         section = 0
         keys_ = []
@@ -85,7 +128,7 @@ class OrderParser:
             if item_['Mischlack']:
                 properties["ingredients"].append({
                     "pigment_name": item_['Mischlack'],
-                    "weight(g)": round(float(item_['Waage']), 4),
+                    "weight(g)": round(float(item_['Waage'].replace(",", "")), 4),
                     "description": item_['Name']
                 })
 
@@ -342,11 +385,11 @@ class OrderParser:
         return properties
 
     @classmethod
-    def parse_pdf_order(cls, path_to_pdf_file, fixed_pitch=5):
+    def parse_pdf_order(cls, path_to_file, fixed_pitch=5):
 
-        path_to_txt_file = "{0}.txt".format(path_to_pdf_file)
+        path_to_txt_file = "{0}.txt".format(path_to_file)
 
-        cmd_ = " ".join(["pdftotext", "-fixed", f"{fixed_pitch}", path_to_pdf_file, path_to_txt_file]).split(' ')
+        cmd_ = " ".join(["pdftotext", "-fixed", f"{fixed_pitch}", path_to_file, path_to_txt_file]).split(' ')
         logging.warning(f"cmd_:{cmd_}")
 
         subprocess.run(cmd_, check=False)
@@ -387,32 +430,25 @@ class OrderParser:
 
         properties = {}
 
-        try:
+        e = get_encoding(path_to_file)
+        with codecs.open(path_to_file, encoding=e) as fd:
+            xml_as_dict = xmltodict.parse(fd.read(), encoding=e)
 
-            e = get_encoding(path_to_file)
-            with codecs.open(path_to_file, encoding=e) as fd:
-                xml_doc = fd.read()
-                d_ = xmltodict.parse(xml_doc, encoding=e)
-                if d_.get("COLORFORMULA"):
-                    properties["meta"] = d_["COLORFORMULA"]["FORMULA"].copy()
+            properties = cls.parse_nro_xml(xml_as_dict)
 
-                # ~ print(json.dumps(d_, indent=2, ensure_ascii=False))
-
-        except Exception:              # pylint: disable=broad-except
-
-            logging.error(f"fmt error in file:{path_to_file}")
-            logging.error(traceback.format_exc())
+        if properties.get('meta'):
+            properties['meta']['header'] = 'nro_xml'
 
         return properties
 
     @classmethod
-    def parse_txt_order(cls, path_to_dat_file):  # pylint: disable=too-many-locals
+    def parse_txt_order(cls, path_to_file):  # pylint: disable=too-many-locals
 
         properties = {}
         lines = []
 
-        e = get_encoding(path_to_dat_file)
-        with codecs.open(path_to_dat_file, encoding=e) as fd:
+        e = get_encoding(path_to_file)
+        with codecs.open(path_to_file, encoding=e) as fd:
             lines = fd.readlines()
 
         if cls.sw_txt_header in lines[0]:
@@ -430,12 +466,13 @@ class OrderParser:
         return properties
 
     @classmethod
-    def parse_json_order(cls, path_to_json_file):
+    def parse_json_order(cls, path_to_file):
 
         properties = {}
 
-        with open(path_to_json_file) as f:
-            content = json.load(f)
+        e = get_encoding(path_to_file)
+        with codecs.open(path_to_file, encoding=e) as fd:
+            content = json.load(fd)
 
             properties = cls.parse_kcc_json(content)
 
@@ -451,27 +488,36 @@ class OrderParser:
         logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}")
 
         properties = {}
-        if mime_type == 'application/json':
-            properties = self.parse_json_order(path_to_file)
-        elif mime_type == 'application/pdf':
-            for fp in (0, 5):
-                logging.warning(f"trying fp:{fp} ...")
-                properties = self.parse_pdf_order(path_to_file, fp)
-                if properties.get('ingredients'):
-                    break
-        elif mime_type == 'text/plain':
-            properties = self.parse_txt_order(path_to_file)
-        elif mime_type == 'text/xml':
-            properties = self.parse_xml_order(path_to_file)
-        else:
-            raise Exception(f"unknown mime_type:{mime_type}")
 
-        if properties.get('meta'):
-            properties['meta']['file name'] = os.path.split(path_to_file)[1]
+        try:
+            if mime_type == 'application/json':
+                properties = self.parse_json_order(path_to_file)
+            elif mime_type == 'application/pdf':
+                for fp in (0, 5):
+                    logging.warning(f"trying fp:{fp} ...")
+                    properties = self.parse_pdf_order(path_to_file, fp)
+                    if properties.get('ingredients'):
+                        break
+            elif mime_type == 'text/plain':
+                properties = self.parse_txt_order(path_to_file)
+            elif mime_type == 'text/xml':
+                properties = self.parse_xml_order(path_to_file)
+            else:
+                raise Exception(f"unknown mime_type:{mime_type}")
 
-            properties = self._substitute_aliases(properties)
+            if properties.get('meta'):
+                properties['meta']['file name'] = os.path.split(path_to_file)[1]
 
-        else:
-            logging.error(f"path_to_file:{path_to_file}, properties:{properties}")
+                properties = self._substitute_aliases(properties)
+
+            else:
+                logging.error(f"path_to_file:{path_to_file}, properties:{properties}")
+
+        except Exception as e:              # pylint: disable=broad-except
+
+            logging.error(f"fmt error in file:{path_to_file}")
+            logging.error(traceback.format_exc())
+            if self.exception_handler:
+                self.exception_handler(e)
 
         return properties

@@ -828,7 +828,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         order = None
         try:
             if path_to_file:
-                _parser = OrderParser()
+                _parser = OrderParser(exception_handler=self.handle_exception)
                 properties = _parser.parse(path_to_file)
             order = self._do_create_order(properties, description, n_of_jars)
         except Exception as e:  # pylint: disable=broad-except
