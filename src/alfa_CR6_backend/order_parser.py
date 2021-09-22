@@ -198,17 +198,14 @@ class OrderParser:
         properties["meta"]["extra_info"] = [
             l.replace('\n', '').replace('\r', '').replace('\t', '').strip() for l in lines if l.strip()]
 
-        try:
-            marca = properties.get('meta', {}).get('Marca', '')
-            codicecolore = properties.get('meta', {}).get('Codicecolore', '')
-            secondo_nome = properties.get('meta', {}).get('Secondo-nome', '')
-            quantita = properties.get('meta', {}).get('Quantità', '')
-            l1 = f"{marca.strip()}"
-            l2 = f"{secondo_nome.strip()}"
-            l3 = f"{codicecolore.strip()} {quantita.strip()}"
-            properties["extra_lines_to_print"] = [l1, l2, l3]
-        except Exception:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
+        marca = properties.get('meta', {}).get('Marca', '')
+        codicecolore = properties.get('meta', {}).get('Codicecolore', '')
+        secondo_nome = properties.get('meta', {}).get('Secondo-nome', '')
+        quantita = properties.get('meta', {}).get('Quantità', '')
+        l1 = f"{marca.strip()}"
+        l2 = f"{secondo_nome.strip()}"
+        l3 = f"{codicecolore.strip()} {quantita.strip()}"
+        properties["extra_lines_to_print"] = [l1, l2, l3]
 
         return properties
 
@@ -372,15 +369,12 @@ class OrderParser:
             logging.error(f"total_lt:{total_lt}, total_gr:{total_gr}")
             properties = {}
 
-        try:
-            t1 = properties.get('meta', {}).get(1, [""])[0]
-            t2 = properties.get('meta', {}).get(1, ["", ""])[1]
-            t3 = properties.get('meta', {}).get(2, [""])[0]
-            t4 = properties.get('meta', {}).get(3, [""])[0]
-            properties["extra_lines_to_print"] = [f"{t1}", f"{t2} {t3}", f"{t4}"]
-            logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
-        except Exception:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
+        t1 = properties.get('meta', {}).get(1, [""])[0]
+        t2 = properties.get('meta', {}).get(1, ["", ""])[1]
+        t3 = properties.get('meta', {}).get(2, [""])[0]
+        t4 = properties.get('meta', {}).get(3, [""])[0]
+        properties["extra_lines_to_print"] = [f"{t1}", f"{t2} {t3}", f"{t4}"]
+        logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
 
         return properties
 
@@ -397,27 +391,21 @@ class OrderParser:
 
         properties = {}
 
-        try:
+        with codecs.open(path_to_txt_file, encoding=e) as fd:
+            lines = [l.strip() for l in fd.readlines()]
 
-            with codecs.open(path_to_txt_file, encoding=e) as fd:
-                lines = [l.strip() for l in fd.readlines()]
+        if cls.sikkens_pdf_header in lines[0]:
+            properties = cls.parse_sikkens_pdf(lines)
 
-            if cls.sikkens_pdf_header in lines[0]:
-                properties = cls.parse_sikkens_pdf(lines)
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.sikkens_pdf_header
 
-                if properties.get('meta'):
-                    properties['meta']['header'] = cls.sikkens_pdf_header
+        elif cls.kcc_pdf_header.split(' ') == [t.strip() for t in lines[0].split(' ') if t]:
+            properties = cls.parse_kcc_pdf(lines)
 
-            elif cls.kcc_pdf_header.split(' ') == [t.strip() for t in lines[0].split(' ') if t]:
-                properties = cls.parse_kcc_pdf(lines)
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.kcc_pdf_header
 
-                if properties.get('meta'):
-                    properties['meta']['header'] = cls.kcc_pdf_header
-
-        except Exception:              # pylint: disable=broad-except
-
-            logging.error(f"fmt error in file:{path_to_txt_file}")
-            logging.error(traceback.format_exc())
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         logging.warning(f"cmd_:{cmd_}")
@@ -503,7 +491,7 @@ class OrderParser:
             elif mime_type == 'text/xml':
                 properties = self.parse_xml_order(path_to_file)
             else:
-                raise Exception(f"unknown mime_type:{mime_type}")
+                raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}")
 
             if properties.get('meta'):
                 properties['meta']['file name'] = os.path.split(path_to_file)[1]
