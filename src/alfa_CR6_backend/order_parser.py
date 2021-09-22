@@ -101,10 +101,6 @@ class OrderParser:
             "extra_lines_to_print": [],
         }
 
-        properties["extra_lines_to_print"].append(",".join([l.strip() for l in lines[1:2]]))
-        properties["extra_lines_to_print"].append(",".join([l.strip() for l in lines[2:3]]))
-        properties["extra_lines_to_print"].append(",".join([l.strip() for l in lines[3:5]]))
-
         section = 0
         keys_ = []
         items_ = []
@@ -131,6 +127,14 @@ class OrderParser:
                     "weight(g)": round(float(item_['Waage'].replace(",", "")), 4),
                     "description": item_['Name']
                 })
+
+        hersteller = properties['meta'].get("Hersteller")
+        oem_code   = properties['meta'].get("OEM-Code"  )
+        name       = properties['meta'].get("Name"      )
+        menge      = properties['meta'].get("Menge"     )
+        properties["extra_lines_to_print"].append(f"{hersteller}")
+        properties["extra_lines_to_print"].append(f"{oem_code} | {menge}")
+        properties["extra_lines_to_print"].append(f"{name}")
 
         return properties
 
