@@ -200,6 +200,25 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'date_created',
             'description',)
 
+        def display_description(self, context, obj, name):
+            description = getattr(obj, 'description')
+            json_properties = getattr(obj, 'json_properties')
+            
+            try:
+                meta = json.loads(json_properties).get("meta")
+                file_name = meta.get("file name")
+                _html = f"{file_name}"
+                if description:
+                    _html += f", {description}"
+            except Exception:
+                _html = description
+                logging.warning(traceback.format_exc())
+
+            return Markup(_html)
+            
+        column_formatters = CRX_ModelView.column_formatters.copy()
+        column_formatters.update({'description': display_description})
+
     class DocumentModelView(CRX_ModelView):
 
         column_filters = (
@@ -219,7 +238,7 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
     index_view_ = CRX_AdminResources(url='/')    # pylint: disable=undefined-variable
     admin_ = flask_admin.base.Admin(app, name=_gettext('Alfa_CRX'), template_mode='bootstrap3', index_view=index_view_)
 
-    admin_.add_view(JarModelView(Jar, db.session))            # pylint: disable=undefined-variable
+    admin_.add_view(JarModelView(Jar, db.session, "Can"))            # pylint: disable=undefined-variable
     admin_.add_view(OrderModelView(Order, db.session))        # pylint: disable=undefined-variable
     admin_.add_view(EventModelView(Event, db.session))        # pylint: disable=undefined-variable
     admin_.add_view(DocumentModelView(Document, db.session))  # pylint: disable=undefined-variable
