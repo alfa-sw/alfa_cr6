@@ -17,6 +17,7 @@ import logging.handlers
 
 from functools import partial
 
+from PyQt5.QtCore import QEventLoop      # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication # pylint: disable=no-name-in-module
 
 import websockets      # pylint: disable=import-error
@@ -456,12 +457,20 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def __create_inner_loop_task(self):
 
+        timeout_ms = 100
         try:
             while self.run_flag:
 
-                self.processEvents()  # gui events
+                if self.hasPendingEvents():
+                    self.processEvents(QEventLoop.AllEvents, timeout_ms)
+
+                if self.hasPendingEvents():
+                    dt = 0
+                else:
+                    dt = 0.001
+                await asyncio.sleep(dt)
+
                 self.__clock_tick()  # timer events
-                await asyncio.sleep(self.__inner_loop_task_step)
 
         except asyncio.CancelledError:
             pass
