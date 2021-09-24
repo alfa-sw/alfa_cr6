@@ -314,7 +314,10 @@ class BaseStackedPage(QFrame):
 
         super().__init__(*args, **kwargs)
 
-        loadUi(get_res("UI", self.ui_file_name), self)
+        try:
+            loadUi(get_res("UI", self.ui_file_name), self)
+        except:
+            logging.error(traceback.format_exc())
 
         self.main_window = self.parent()
         self.main_window.stacked_widget.addWidget(self)
@@ -438,14 +441,17 @@ class WebenginePage(BaseStackedPage):
         logging.warning(f"full_name:{full_name}, mime_type:{mime_type}")
 
         if mime_type == 'application/json':
-            with open(full_name) as f:
-                content = json.load(f)
-                color_code = content.get("color code")
-                if color_code:
-                    head, _ = os.path.split(full_name)
-                    os.rename(full_name, os.path.join(head, f"{color_code}.json"))
-                else:
-                    os.rename(full_name, f"{full_name}.json")
+            try:
+                with open(full_name) as f:
+                    content = json.load(f)
+                    color_code = content.get("color code")
+                    if color_code:
+                        head, _ = os.path.split(full_name)
+                        os.rename(full_name, os.path.join(head, f"{color_code}.json"))
+                    else:
+                        os.rename(full_name, f"{full_name}.json")
+            except:
+                logging.error(traceback.format_exc())
         else:
             toks = mime_type.split("/")
             ext = toks[1:] and toks[1]
@@ -455,6 +461,8 @@ class WebenginePage(BaseStackedPage):
     def __on_downloadRequested(self, download):
 
         logging.warning(f"download:{download}.")
+        # ~ logging.warning(f"dir(download):{dir(download)}.")
+        logging.warning(f"download.path():{download.path()}.")
         _msgs = {
             0: tr_("Download has been requested, but has not been accepted yet."),
             1: tr_("Download is in progress."),
