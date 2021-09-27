@@ -463,11 +463,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if self.hasPendingEvents():
                     self.processEvents(QEventLoop.AllEvents, timeout_ms)
-
-                if self.hasPendingEvents():
                     dt = 0
                 else:
-                    dt = 0.001
+                    dt = 0.05
                 await asyncio.sleep(dt)
 
                 self.__clock_tick()  # timer events
