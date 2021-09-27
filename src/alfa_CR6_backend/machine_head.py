@@ -321,7 +321,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     async def crx_outputs_management(self, output_number, output_action, timeout=30, silent=True):
 
         id_ = random.randint(1, 10000)
-        logging.warning(f" {self.name} owned_barcodes:{self.owned_barcodes}, id_:{id_}")
+        # ~ logging.warning(f" {self.name} owned_barcodes:{self.owned_barcodes}, id_:{id_}")
 
         r = None
         mask_ = 0x1 << output_number
@@ -339,7 +339,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             ret = await self.app.wait_for_condition(condition_1, timeout=5, extra_info=msg_, stability_count=1)
             self.__crx_inner_status[output_number]['locked'] = True
-            logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_},   LOCKED")
+            # ~ logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_},   LOCKED")
 
             if ret:
 
@@ -376,7 +376,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     self.app.handle_exception(e)
 
             self.__crx_inner_status[output_number]['locked'] = False
-            logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_}, UNLOCKED")
+            # ~ logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_}, UNLOCKED")
 
         return r
 
