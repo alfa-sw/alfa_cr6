@@ -105,7 +105,7 @@ def get_encoding(path_to_file, key=None):
     try:
         p = subprocess.run(cmd_, stdout=subprocess.PIPE)
         mime_encoding = p.stdout.decode().strip()
-        logging.warning(f"cmd_:{cmd_}, mime_encoding:{mime_encoding}")
+        # ~ logging.warning(f"cmd_:{cmd_}, mime_encoding:{mime_encoding}")
         assert mime_encoding
         return mime_encoding
     except Exception:

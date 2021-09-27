@@ -94,7 +94,7 @@ class OrderParser:
 
     @staticmethod
     def parse_mcm_csv(lines):
-        logging.warning(f"lines:{lines}")
+        # ~ logging.warning(f"lines:{lines}")
         properties = {
             "meta": {},
             "ingredients": [],
@@ -303,7 +303,7 @@ class OrderParser:
         _line = (extra_info[1] if extra_info[1:] else '')
         properties["extra_lines_to_print"].append(f"{_line}")
 
-        logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
+        # ~ logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
 
         return properties
 
@@ -378,7 +378,7 @@ class OrderParser:
         t3 = properties.get('meta', {}).get(2, [""])[0]
         t4 = properties.get('meta', {}).get(3, [""])[0]
         properties["extra_lines_to_print"] = [f"{t1}", f"{t2} {t3}", f"{t4}"]
-        logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
+        # ~ logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
 
         return properties
 
@@ -387,8 +387,8 @@ class OrderParser:
 
         path_to_txt_file = "{0}.txt".format(path_to_file)
 
-        cmd_ = " ".join(["pdftotext", "-fixed", f"{fixed_pitch}", path_to_file, path_to_txt_file]).split(' ')
-        logging.warning(f"cmd_:{cmd_}")
+        cmd_ = ["pdftotext", "-fixed", f"{fixed_pitch}", path_to_file, path_to_txt_file]
+        # ~ logging.warning(f"cmd_:{cmd_}")
 
         subprocess.run(cmd_, check=False)
         e = get_encoding(path_to_txt_file)
@@ -412,7 +412,7 @@ class OrderParser:
 
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
-        logging.warning(f"cmd_:{cmd_}")
+        # ~ logg    ing.warning(f"cmd_:{cmd_}")
         os.system(cmd_)
 
         return properties
@@ -477,19 +477,24 @@ class OrderParser:
 
         mime = magic.Magic(mime=True)
         mime_type = mime.from_file(path_to_file)
-        logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}")
+        # ~ logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}")
 
         properties = {}
 
         try:
             if mime_type == 'application/json':
                 properties = self.parse_json_order(path_to_file)
+
             elif mime_type == 'application/pdf':
                 for fp in (0, 5):
-                    logging.warning(f"trying fp:{fp} ...")
-                    properties = self.parse_pdf_order(path_to_file, fp)
-                    if properties.get('ingredients'):
-                        break
+                    try:
+                        # ~ logging.warning(f"trying fp:{fp} ...")
+                        properties = self.parse_pdf_order(path_to_file, fp)
+                        if properties.get('ingredients'):
+                            break
+                    except Exception as e:              # pylint: disable=broad-except
+                        logging.warning(e)
+
             elif mime_type == 'text/plain':
                 properties = self.parse_txt_order(path_to_file)
             elif mime_type == 'text/xml':
