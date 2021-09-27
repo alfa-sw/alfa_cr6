@@ -1,0 +1,41 @@
+<html>
+<head>
+    <title>test page</title>
+</head>
+<body>
+
+    <center style="padding-top:100px">
+        <h2>test page</h2>
+    </center>
+    <div id="counter">0</div><br><br>
+    <a href="#" onclick="open_popup();">open popup</a><br><br>
+    <a href="#" onclick="increment_counter();">increment counter</a><br><br>
+    <a href="https://kccrefinish.co.kr/user/color/colorData_view/1QZUuT7Q003"> download kccrefinish json info </a><br><br>
+    <a href="https://it.wikipedia.org/"> wikipedia </a><br><br>
+    <a href="https://doc.qt.io/qt-5/reference-overview.html"> doc.qt.io/qt-5/reference-overview </a><br><br>
+    <a href="https://www.google.com/"> www.google.com </a><br><br>
+    <a href="BACK HOME -------"> reload </a><br><br>
+
+    <script language="javascript">
+        var open_popup = function(obj) {
+            try
+            {
+                alert("opening new window ...");
+                window.open('https://www.google.com'); 
+            } catch(e) {
+                alert("error: ", JSON.stringify(e));
+            }
+        }
+        var increment_counter = function(obj) {
+            try
+            {
+                var counter_el = document.getElementById('counter');
+                counter_el.innerHTML = parseInt(counter_el.innerHTML) + 1;
+            } catch(e) {
+                alert("error: ", JSON.stringify(e));
+            }
+        }
+    </script>
+
+</body>
+</html>
