@@ -19,6 +19,8 @@ import subprocess
 import asyncio
 from functools import partial
 
+import requests
+
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (Qt, QVariant, QAbstractTableModel)
 
@@ -316,7 +318,7 @@ class BaseStackedPage(QFrame):
 
         try:
             loadUi(get_res("UI", self.ui_file_name), self)
-        except:
+        except Exception:   # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
         self.main_window = self.parent()
@@ -378,6 +380,22 @@ class WebenginePage(BaseStackedPage):
         super().__init__(*args, **kwargs)
 
         self.webengine_view = QWebEngineView(self)
+
+        page = self.webengine_view.page()
+        settings = page.settings()
+        profile = page.profile()
+
+        profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
+        profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
+        profile.setHttpCacheType(QWebEngineProfile.MemoryHttpCache)
+        # ~ profile.setHttpCacheType(QWebEngineProfile.DiskHttpCache)
+
+        profile.downloadRequested.connect(self.__on_downloadRequested)
+
+        self.webengine_view.loadStarted.connect(self.__on_load_start)
+        self.webengine_view.loadProgress.connect(self.__on_load_progress)
+        self.webengine_view.loadFinished.connect(self.__on_load_finish)
+
         self.webengine_view.setGeometry(8, 28, 1904, 960)
         self.start_page_url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
         self.webengine_view.setUrl(self.start_page_url)
@@ -392,15 +410,6 @@ class WebenginePage(BaseStackedPage):
         # ~ pdfviewerenabled = settings_.testAttribute(30)
         # ~ logging.warning(f"pdfviewerenabled:{pdfviewerenabled}")
         # ~ QWebEngineSettings::setAttribute(QWebEngineSettings::WebAttribute attribute, bool on)
-
-        self.webengine_view.loadStarted.connect(self.__on_load_start)
-        self.webengine_view.loadProgress.connect(self.__on_load_progress)
-        self.webengine_view.loadFinished.connect(self.__on_load_finish)
-
-        QWebEngineProfile.defaultProfile().downloadRequested.connect(self.__on_downloadRequested)
-
-        QWebEngineProfile.defaultProfile().setCachePath(g_settings.WEBENGINE_CACHE_PATH)
-        QWebEngineProfile.defaultProfile().setPersistentStoragePath(g_settings.WEBENGINE_CACHE_PATH)
 
         self.__load_progress = 0
         self.start_load = tr_("start load:")
@@ -429,9 +438,30 @@ class WebenginePage(BaseStackedPage):
         q_url = QUrl(url)
         # ~ if q_url.toString() not in self.webengine_view.url().toString():
         logging.warning(f"q_url:{q_url}")
-        asyncio.get_event_loop().call_later(.5, partial(self.webengine_view.setUrl, q_url))
+        # ~ asyncio.get_event_loop().call_later(.01, partial(self.webengine_view.setUrl, q_url))
+        self.webengine_view.setUrl(q_url)
 
         self.parent().setCurrentWidget(self)
+
+    @staticmethod
+    def __handle_KCC_specific_gravity_lot(full_name):
+        """
+        https://kccrefinish.co.kr/user/color/colorData_view/1QZUuT7Q003
+        """
+
+        try:
+            mime = magic.Magic(mime=True)
+            mime_type = mime.from_file(full_name)
+            logging.warning(f"full_name:{full_name}, mime_type:{mime_type}")
+
+            for ip, _, port in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST:
+                with open(full_name) as f:
+                    r = requests.post(f'http://{ip}:{port}/admin/upload', files={'file': f})
+                    logging.warning(f"r.ok:{r.ok}")
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            QApplication.instance().main_window.open_alert_dialog(f"exception:{e}", title="ERROR")
 
     @staticmethod
     def __adjust_downloaded_file_name(full_name):
@@ -450,7 +480,7 @@ class WebenginePage(BaseStackedPage):
                         os.rename(full_name, os.path.join(head, f"{color_code}.json"))
                     else:
                         os.rename(full_name, f"{full_name}.json")
-            except:
+            except Exception:   # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
         else:
             toks = mime_type.split("/")
@@ -470,21 +500,39 @@ class WebenginePage(BaseStackedPage):
             3: tr_("Download has been cancelled."),
             4: tr_("Download has been interrupted (by the server or because of lost connectivity)."),
         }
-        if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
-            os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
-        _name = time.strftime("%Y-%m-%d_%H:%M:%S")
-        full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
-        download.setPath(full_name)
-        download.accept()
 
-        def _cb():
-            try:
-                _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
-                self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
-                self.__adjust_downloaded_file_name(full_name)
-            except Exception as e:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-                self.main_window.open_alert_dialog(f"exception:{e}", title="DOWNLOAD ERROR")
+        if "Specific Gravity_LOT" in download.path():
+
+            _name = download.path()
+            full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, "KCC_lot_specific_info")
+            download.setPath(full_name)
+            download.accept()
+
+            def _cb():
+                try:
+                    _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
+                    self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
+                    self.__handle_KCC_specific_gravity_lot(full_name)
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.error(traceback.format_exc())
+                    self.main_window.open_alert_dialog(f"exception:{e}", title="DOWNLOAD ERROR")
+
+        else:
+            if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
+                os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
+            _name = time.strftime("%Y-%m-%d_%H:%M:%S")
+            full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
+            download.setPath(full_name)
+            download.accept()
+
+            def _cb():
+                try:
+                    _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
+                    self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
+                    self.__adjust_downloaded_file_name(full_name)
+                except Exception as e:  # pylint: disable=broad-except
+                    logging.error(traceback.format_exc())
+                    self.main_window.open_alert_dialog(f"exception:{e}", title="DOWNLOAD ERROR")
 
         download.finished.connect(_cb)
 
@@ -1303,7 +1351,7 @@ class HomePage(BaseStackedPage):
 
             except Exception as e:   # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
-                self.main_window.open_alert_dialog(f"exception:{e}")
+                QApplication.instance().main_window.open_alert_dialog(f"exception:{e}")
 
 
 class HomePageSixHeads(HomePage):

@@ -101,6 +101,7 @@ class DebugPage:
                     # ~ "LIFTR\nDOWN",
                     # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
+                ("open URL\nin text bar", "open the URL in text bar at bottom."),
                 ("move_12_00", "deliver jar"),
             ]
         ):
@@ -461,6 +462,9 @@ class DebugPage:
             except BaseException:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
+        elif "open URL\nin text bar" in cmd_txt:
+            url_ = app.main_window.menu_line_edit.text()
+            app.main_window.webengine_page.open_page(url_)
         else:
             app.run_a_coroutine_helper(cmd_txt)
 
