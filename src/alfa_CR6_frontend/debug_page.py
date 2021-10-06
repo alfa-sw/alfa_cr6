@@ -27,6 +27,7 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
 from alfa_CR6_backend.models import Jar, Order
 from alfa_CR6_backend.dymo_printer import dymo_print
 from alfa_CR6_backend.globals import tr_, set_language
+from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
 
 class DebugPage:
@@ -101,7 +102,10 @@ class DebugPage:
                     # ~ "LIFTR\nDOWN",
                     # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
+                ("download KCC\nlot info file", "download KCC file with specific gravity lot info"),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
+                ("", "**"),
+                ("", "**"),
                 ("move_12_00", "deliver jar"),
             ]
         ):
@@ -465,6 +469,9 @@ class DebugPage:
         elif "open URL\nin text bar" in cmd_txt:
             url_ = app.main_window.menu_line_edit.text()
             app.main_window.webengine_page.open_page(url_)
+        elif "download KCC\nlot info file" in cmd_txt:
+            t = download_KCC_specific_gravity_lot()
+            asyncio.ensure_future(t)
         else:
             app.run_a_coroutine_helper(cmd_txt)
 

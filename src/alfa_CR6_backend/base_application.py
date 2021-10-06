@@ -6,6 +6,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=too-many-lines
 
+import os
 import time
 import traceback
 import asyncio
@@ -18,9 +19,11 @@ import logging.handlers
 from functools import partial
 
 from PyQt5.QtCore import QEventLoop      # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QApplication # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
-import websockets      # pylint: disable=import-error
+import websockets  # pylint: disable=import-error
+import magic  # pylint: disable=import-error
+import aiohttp  # pylint: disable=import-error
 
 from flask import Markup  # pylint: disable=import-error
 
@@ -39,6 +42,57 @@ from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.order_parser import OrderParser
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 from alfa_CR6_frontend.dialogs import ModalMessageBox
+
+
+async def download_KCC_specific_gravity_lot():
+
+    url_ = "https://kccrefinish.co.kr/file/filedownload/1QZUuT7Q003"
+    tmp_file_path_ = "/opt/alfa_cr6/tmp/kcc_lot_specific_info.json"
+
+    logging.warning(f'int(time().strftime("%H")):{int(time.strftime("%H"))}')
+
+    if os.path.exists(tmp_file_path_) and (
+            int(time.strftime("%H")) > 6 or (
+                time.time() - int(os.path.getmtime(tmp_file_path_)) < 12 * 60 * 60)):
+        return
+
+    async with aiohttp.ClientSession() as aiohttp_session:
+        try:
+            async with aiohttp_session.get(url_) as resp:
+                assert resp.ok, f"failure downloading url_:{url_}"
+
+                content = await resp.text()
+                with open(tmp_file_path_, 'w') as f:
+                    f.write(content)
+
+                mime = magic.Magic(mime=True)
+                mime_type = mime.from_file(tmp_file_path_)
+                for ip, _, port in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST:
+                    logging.warning(f"ip:port {ip}:{port}")
+                    with open(tmp_file_path_, 'rb') as f:
+                        try:
+                            data = aiohttp.FormData()
+                            data.add_field('file', f, filename='kcc_lot_specific_info.json',
+                                           content_type=mime_type)
+                            async with aiohttp_session.post(f'http://{ip}:{port}/admin/upload', data=data) as resp:
+                                resp_json = await resp.json()
+                                assert resp.ok and resp_json.get('result') == 'ok', f"failure uploading to:{ip}:{port}"
+                        except Exception as e:  # pylint: disable=broad-except
+                            logging.error(traceback.format_exc())
+                            QApplication.instance().insert_db_event(
+                                name=str(e),
+                                level="ERROR",
+                                severity="",
+                                source="download_KCC_specific_gravity_lot",
+                                description="{} | {}".format(
+                                    f"http://{ip}:{port}/admin/upload",
+                                    traceback.format_exc()))
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            QApplication.instance().insert_db_event(
+                name="DOWNLOAD", description=str(e), level="ERROR",
+                severity="", source="download_KCC_specific_gravity_lot")
 
 
 class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-public-methods
@@ -90,7 +144,7 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                     keyEvent = evdev.categorize(event)
                     type_key_event = evdev.ecodes.EV_KEY  # pylint:  disable=no-member
                     # ~ logging.warning(f"type_key_event:{type_key_event} ({event.type})")
-                    if event.type == type_key_event and keyEvent.keystate == 0: # key_up = 0
+                    if event.type == type_key_event and keyEvent.keystate == 0:  # key_up = 0
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:12]
                             logging.warning(f"buffer:{buffer}")
@@ -288,7 +342,6 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                     })
                     await websocket.send(answer)
 
-
             if msg_dict.get("debug_command"):
 
                 try:
@@ -458,17 +511,35 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     async def __create_inner_loop_task(self):
 
         timeout_ms = 100
+        last_check_KCC_specific_gravity_lot_time = 0
         try:
             while self.run_flag:
 
-                if self.hasPendingEvents():
-                    self.processEvents(QEventLoop.AllEvents, timeout_ms)
-                    dt = 0
-                else:
-                    dt = 0.05
-                await asyncio.sleep(dt)
+                try:
+                    if self.hasPendingEvents():
+                        self.processEvents(QEventLoop.AllEvents, timeout_ms)
+                        dt = 0
+                    else:
+                        dt = 0.05
+                    await asyncio.sleep(dt)
+                except Exception as e:  # pylint: disable=broad-except
+                    self.handle_exception(e)
 
-                self.__clock_tick()  # timer events
+                try:
+                    self.__check_jars_to_freeze()
+                except Exception as e:  # pylint: disable=broad-except
+                    self.handle_exception(e)
+
+                if hasattr(self.settings, "DOWNLOAD_KCC_LOT_STEP") and self.settings.DOWNLOAD_KCC_LOT_STEP:
+                    if time.time() - last_check_KCC_specific_gravity_lot_time > self.settings.DOWNLOAD_KCC_LOT_STEP:
+                        try:
+                            last_check_KCC_specific_gravity_lot_time = time.time()
+                            logging.warning(
+                                f"last_check_KCC_specific_gravity_lot_time:{last_check_KCC_specific_gravity_lot_time}")
+                            await download_KCC_specific_gravity_lot()
+
+                        except Exception as e:  # pylint: disable=broad-except
+                            self.handle_exception(e)
 
         except asyncio.CancelledError:
             pass
@@ -548,7 +619,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.handle_exception(e)
             logging.error(traceback.format_exc())
 
-    def __clock_tick(self):
+    def __check_jars_to_freeze(self):
 
         _tasks_to_freeze = []
         try:
@@ -594,7 +665,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     if self.__modal_freeze_msgbox:
                         msg = "\n\n{}\n\n".format(tr_("all operations are paused"))
                         self.__modal_freeze_msgbox.setText(msg)
-                logging.warning(f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
+                logging.warning(
+                    f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
@@ -753,7 +825,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             expired_products = msg_dict.get("value")
             if expired_products:
                 self.main_window.home_page.update_expired_products(head_index)
-
 
     def get_version(self):
 
@@ -1101,7 +1172,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         description = "PURGE ALL"
         self._do_create_order(properties, description, n_of_jars=0)
         self.main_window.order_page.populate_order_table()
-
 
     def _build_ingredient_volume_map_helper(  # pylint: disable=too-many-arguments
             self, ingredient_volume_map, visited_head_names, pigment_name, requested_quantity_gr, remaining_volume):

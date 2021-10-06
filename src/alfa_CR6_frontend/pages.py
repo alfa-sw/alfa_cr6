@@ -19,8 +19,6 @@ import subprocess
 import asyncio
 from functools import partial
 
-import requests
-
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (Qt, QVariant, QAbstractTableModel)
 
@@ -382,13 +380,11 @@ class WebenginePage(BaseStackedPage):
         self.webengine_view = QWebEngineView(self)
 
         page = self.webengine_view.page()
-        settings = page.settings()
         profile = page.profile()
 
         profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
         profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
         profile.setHttpCacheType(QWebEngineProfile.MemoryHttpCache)
-        # ~ profile.setHttpCacheType(QWebEngineProfile.DiskHttpCache)
 
         profile.downloadRequested.connect(self.__on_downloadRequested)
 
@@ -444,26 +440,6 @@ class WebenginePage(BaseStackedPage):
         self.parent().setCurrentWidget(self)
 
     @staticmethod
-    def __handle_KCC_specific_gravity_lot(full_name):
-        """
-        https://kccrefinish.co.kr/user/color/colorData_view/1QZUuT7Q003
-        """
-
-        try:
-            mime = magic.Magic(mime=True)
-            mime_type = mime.from_file(full_name)
-            logging.warning(f"full_name:{full_name}, mime_type:{mime_type}")
-
-            for ip, _, port in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST:
-                with open(full_name) as f:
-                    r = requests.post(f'http://{ip}:{port}/admin/upload', files={'file': f})
-                    logging.warning(f"r.ok:{r.ok}")
-
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            QApplication.instance().main_window.open_alert_dialog(f"exception:{e}", title="ERROR")
-
-    @staticmethod
     def __adjust_downloaded_file_name(full_name):
 
         mime = magic.Magic(mime=True)
@@ -501,38 +477,21 @@ class WebenginePage(BaseStackedPage):
             4: tr_("Download has been interrupted (by the server or because of lost connectivity)."),
         }
 
-        if "Specific Gravity_LOT" in download.path():
+        if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
+            os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
+        _name = time.strftime("%Y-%m-%d_%H:%M:%S")
+        full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
+        download.setPath(full_name)
+        download.accept()
 
-            _name = download.path()
-            full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, "KCC_lot_specific_info")
-            download.setPath(full_name)
-            download.accept()
-
-            def _cb():
-                try:
-                    _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
-                    self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
-                    self.__handle_KCC_specific_gravity_lot(full_name)
-                except Exception as e:  # pylint: disable=broad-except
-                    logging.error(traceback.format_exc())
-                    self.main_window.open_alert_dialog(f"exception:{e}", title="DOWNLOAD ERROR")
-
-        else:
-            if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
-                os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
-            _name = time.strftime("%Y-%m-%d_%H:%M:%S")
-            full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
-            download.setPath(full_name)
-            download.accept()
-
-            def _cb():
-                try:
-                    _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
-                    self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
-                    self.__adjust_downloaded_file_name(full_name)
-                except Exception as e:  # pylint: disable=broad-except
-                    logging.error(traceback.format_exc())
-                    self.main_window.open_alert_dialog(f"exception:{e}", title="DOWNLOAD ERROR")
+        def _cb():
+            try:
+                _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
+                self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
+                self.__adjust_downloaded_file_name(full_name)
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+                self.main_window.open_alert_dialog(f"exception:{e}", title="DOWNLOAD ERROR")
 
         download.finished.connect(_cb)
 
