@@ -7,7 +7,6 @@
 
 
 import os
-import random
 import logging
 import asyncio
 import json
@@ -29,7 +28,7 @@ DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
 class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
 
     def __init__(  # pylint: disable=too-many-arguments
-            self, index, ip_add, ws_port, http_port, msg_handler=None, mockup_files_path=None):
+            self, index, ip_add, ws_port, http_port, ws_msg_handler=None, mockup_files_path=None):
 
         self.index = index
         self.name = QApplication.instance().MACHINE_HEAD_INDEX_TO_NAME_MAP[index]
@@ -49,7 +48,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.ip_add = ip_add
         self.ws_port = ws_port
         self.http_port = http_port
-        self.msg_handler = msg_handler
+        self.ws_msg_handler = ws_msg_handler
         self.mockup_files_path = mockup_files_path
 
         self.websocket = None
@@ -239,8 +238,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ logging.warning("self.jar_photocells_status:{}".format(self.jar_photocells_status))
         return diff
 
-    async def handle_ws_recv(self):
+    async def handle_ws_recv(self):     # pylint: disable=too-many-branches
 
+        propagate_to_ws_msg_handler = True
         msg = None
         try:
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
@@ -270,20 +270,23 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     # ~ logging.warning(f"{self.name} answer:{answer}")
 
             elif msg_dict.get("type") == "time":
-                # ~ logging.warning(f"msg_dict:{msg_dict}")
+                propagate_to_ws_msg_handler = False
                 time_stamp = msg_dict.get("value")
                 if time_stamp:
                     self.time_stamp = time_stamp
 
             elif msg_dict.get("type") == "expired_products":
                 expired_products = msg_dict.get("value")
-                self.expired_products = expired_products
+                if self.expired_products != expired_products:
+                    self.expired_products = expired_products
+                else:
+                    propagate_to_ws_msg_handler = False
 
             else:
                 logging.warning(f"{self.name} unknown type for msg_dict:{msg_dict}")
 
-            if self.msg_handler:
-                await self.msg_handler(self.index, msg_dict)
+            if propagate_to_ws_msg_handler and self.ws_msg_handler:
+                await self.ws_msg_handler(self.index, msg_dict)
 
     async def call_api_rest(self,   # pylint: disable=too-many-arguments
                             path: str, method: str, data: dict, timeout=10, expected_ret_type='json'):
@@ -320,7 +323,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def crx_outputs_management(self, output_number, output_action, timeout=30, silent=True):
 
-        id_ = random.randint(1, 10000)
+        # ~ id_ = random.randint(1, 10000)
         # ~ logging.warning(f" {self.name} owned_barcodes:{self.owned_barcodes}, id_:{id_}")
 
         r = None

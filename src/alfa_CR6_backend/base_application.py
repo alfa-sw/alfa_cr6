@@ -553,7 +553,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             ip_add,
             ws_port,
             http_port,
-            msg_handler=self.on_head_msg_received)
+            ws_msg_handler=self.on_head_msg_received)
 
         self.machine_head_dict[head_index] = m
         await m.run()
@@ -821,10 +821,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.main_window.debug_page.add_answer(head_index, answer)
 
         elif msg_dict.get("type") == "expired_products":
-            # ~ logging.warning(f"msg_dict:{msg_dict}")
-            expired_products = msg_dict.get("value")
-            if expired_products:
-                self.main_window.home_page.update_expired_products(head_index)
+            self.main_window.home_page.update_expired_products(head_index)
 
     def get_version(self):
 
