@@ -130,6 +130,7 @@ class Keyboard(QWidget):
         self.setLayout(layout)
 
         self.uinput = None
+        logging.warning(f"has_evdev:{has_evdev}")
         if has_evdev:
             try:
 
@@ -139,11 +140,11 @@ class Keyboard(QWidget):
                     os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
 
                 self.uinput = UInput()
+                logging.warning(f"self.uinput:{self.uinput}")
 
             except Exception:
                 logging.error(traceback.format_exc())
 
-        logging.warning(f"self.uinput:{self.uinput}")
 
     def hide(self):
         super().hide()
