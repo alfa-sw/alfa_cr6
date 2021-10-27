@@ -5,6 +5,12 @@ import logging
 # ~ LOG_LEVEL=logging.INFO,
 LOG_LEVEL = logging.WARNING
 
+# ~ BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
+BARCODE_READER_IDENTIFICATION_STRING = "Barcode"
+
+# ~ DOWNLOAD_KCC_LOT_STEP = 10*60
+DOWNLOAD_KCC_LOT_STEP = 60 * 60
+
 LANGUAGE = "en"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
