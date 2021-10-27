@@ -220,9 +220,9 @@ class DebugPage:
                 t = m.update_tintometer_data(invalidate_cache=True)
 
             elif command == "LANG":
-                def ok_cb_(lang_):
-                    logging.warning(f"lang_:{ lang_ }")
-                    set_language(lang_)
+                def ok_cb_(_lang):
+                    logging.warning(f"_lang:{ _lang }")
+                    set_language(_lang)
                 lang_ = name
                 msg_ = tr_("confirm changing language to: {}? \n (WARN: application will be restarted)").format(lang_)
                 QApplication.instance().main_window.open_input_dialog(message=msg_, ok_cb=ok_cb_, ok_cb_args=[lang_, ])
@@ -514,6 +514,7 @@ class DebugPage:
         html_ += """ <a href="LANG@en">ENGLISH</a> - """
         html_ += """ <a href="LANG@it">ITALIAN</a> - """
         html_ += """ <a href="LANG@kr">KOREAN</a> """
+        html_ += """ <a href="LANG@kr">GERMAN</a> """
 
         html_ += "</p>"
 

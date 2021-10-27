@@ -22,9 +22,11 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 EPSILON = 0.0002
 IMPORTED_LANGUAGE_MODULES = {}
 
+LANGUAGES = ["it", 'en', 'kr', 'de']
+
 def set_language(lang):
 
-    if lang in ["it", 'en', 'kr']:
+    if lang in LANGUAGES:
         cmd_ = f"""sed -i 's/LANGUAGE.=.".."/LANGUAGE = "{lang}"/g' /opt/alfa_cr6/conf/app_settings.py"""
         os.system(cmd_)
         os.system("kill -9 {}".format(os.getpid()))
