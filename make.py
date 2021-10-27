@@ -32,8 +32,8 @@ def parse_arguments():
         '--log_level',
         default='INFO',
         help='level of verbosity in logging messages default: %(default)s.')
-    parser.add_argument('-t', '--target_credentials', default='admin@192.168.1.100', help='default: "%(default)s".')
-    parser.add_argument('-s', '--app_settings', default='app_settings.production', help='default: "%(default)s".')
+    parser.add_argument('-t', '--target_credentials', default='admin@192.168.0.100', help='default: "%(default)s".')
+    parser.add_argument('-s', '--app_settings', default='app_settings.target', help='default: "%(default)s".')
     parser.add_argument('-i', '--ignore_requires', help='if not None, ignore_requires in installing. default: "%(default)s".', action='store_const', const=1)
     parser.add_argument('-d', '--dry_run', action='store_const', const=True,
                         help='dry run: if not None, just test, do nothing. default: "%(default)s".')
@@ -46,6 +46,10 @@ def parse_arguments():
     parser.add_argument('-D', '--deploy_db_to_target', action='store_const', const=1,
                         help='action: copy the sqlite db to target, *BEWARE* overwriting it!')
     parser.add_argument('-S', '--deploy_and_execute_target_scripts', action='store_const', const=1)
+    parser.add_argument('-V', '--virtenv_on_target', action='store_const', const=True,
+                        help='action: build virtual env on target.')
+    parser.add_argument('-A', '--enable_desktop_autologin_on_target', action='store_const', const=True,
+                        help='action: enable desktop (i.e. GUI) autologin on target. Raspberrypi only.')
 
     return parser.parse_args()
 
@@ -71,11 +75,11 @@ def makedirs_on_target(args):
 
     tgt_cred = args.target_credentials
 
-    for pth in (VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, TMP_PATH, SCRIPTS_PATH):
-        cmd_ = f'ssh {tgt_cred} "if [ ! -e {pth} ]; then mkdir -p {pth} ;fi"'
+    for pth in (DEPLOY_PATH, VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, TMP_PATH, SCRIPTS_PATH):
+        cmd_ = f'ssh {tgt_cred} "if [ ! -e {pth} ]; then sudo mkdir -p {pth} ;fi"'
         exec_(cmd_, dry=args.dry_run)
-        # cmd_ = f'ssh {tgt_cred} "sudo chmod -R a+rw {pth}"'
-        # exec_(cmd_, dry=args.dry_run)
+    cmd_ = f'ssh {tgt_cred} "sudo chown -R admin:admin {DEPLOY_PATH}"'
+    exec_(cmd_, dry=args.dry_run)
 
 def deploy_db_to_target(args):
 
@@ -90,7 +94,7 @@ def deploy_conf_to_target(args):
     settings = args.app_settings
 
     cmds = [
-        # ~ f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
+        f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
         f"scp {PROJECT_ROOT}/conf/supervisor.target.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
         # ~ f"scp {PROJECT_ROOT}/conf/xhost.desktop {tgt_cred}:/opt/alfa/tmp/",
         # ~ f'ssh {tgt_cred} "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"',
@@ -145,6 +149,20 @@ def deploy_and_execute_target_scripts(args):
 
         time.sleep(.1)
 
+def enable_desktop_autologin_on_target(args):
+
+    tgt_cred = args.target_credentials
+
+    cmd_ = f'ssh {tgt_cred} "sudo raspi-config nonint do_boot_behaviour B4"'
+    exec_(cmd_, dry=args.dry_run)
+
+def virtenv_on_target(args):
+
+    tgt_cred = args.target_credentials
+
+    cmd_ = f'ssh {tgt_cred} "virtualenv --system-site-packages --clear -p /usr/bin/python3 /opt/alfa_cr6/venv"'
+    exec_(cmd_, dry=args.dry_run)
+
 def main():
 
     args = parse_arguments()
@@ -171,6 +189,10 @@ def main():
         deploy_conf_to_target(args)
     if args.deploy_and_execute_target_scripts:
         deploy_and_execute_target_scripts(args)
+    if args.virtenv_on_target:
+        virtenv_on_target(args)
+    if args.enable_desktop_autologin_on_target:
+        enable_desktop_autologin_on_target(args)
 
 
 main()
