@@ -16,7 +16,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH, import_settings, set_language
+from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP
 # ~ from alfa_CR6_backend.models import Event
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
@@ -298,19 +298,13 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def on_menu_line_edit_return_pressed(self):
 
-        map_ = {
-            "english": 'en',
-            "italian": 'it',
-            "korean": 'kr',
-        }
-
         def ok_cb_(lang_):
             logging.warning(f"lang_:{ lang_ }")
             set_language(lang_)
 
         txt_ = self.menu_line_edit.text()
-        if map_.get(txt_):
-            lang_ = map_[txt_]
+        if LANGUAGE_MAP.get(txt_):
+            lang_ = LANGUAGE_MAP[txt_]
             msg_ = tr_("confirm changing language to: {}? \n (WARN: application will be restarted)").format(lang_)
             self.open_input_dialog(message=msg_, ok_cb=ok_cb_, ok_cb_args=[lang_, ])
         elif 'alarm' in txt_:

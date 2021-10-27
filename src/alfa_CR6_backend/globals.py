@@ -2,6 +2,9 @@
 
 # pylint: disable=missing-docstring
 # pylint: disable=logging-format-interpolation
+# pylint: disable=line-too-long
+# pylint: disable=invalid-name
+# pylint: disable=too-many-lines
 
 import sys
 import os
@@ -9,6 +12,7 @@ import logging
 import subprocess
 import traceback
 import importlib
+import codecs
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -22,11 +26,16 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 EPSILON = 0.0002
 IMPORTED_LANGUAGE_MODULES = {}
 
-LANGUAGES = ["it", 'en', 'kr', 'de']
+LANGUAGE_MAP = {
+    "english": 'en',
+    "italian": 'it',
+    "korean": 'kr',
+    "german": 'de',
+}
 
 def set_language(lang):
 
-    if lang in LANGUAGES:
+    if lang in list(LANGUAGE_MAP.values()):
         cmd_ = f"""sed -i 's/LANGUAGE.=.".."/LANGUAGE = "{lang}"/g' /opt/alfa_cr6/conf/app_settings.py"""
         os.system(cmd_)
         os.system("kill -9 {}".format(os.getpid()))
@@ -38,7 +47,7 @@ def import_settings():
     sys.path.remove(CONF_PATH)
 
     for pth in (app_settings.LOGS_PATH,
-                app_settings.TMP_PATH ,
+                app_settings.TMP_PATH,
                 app_settings.DATA_PATH,
                 app_settings.CUSTOM_PATH,
                 app_settings.WEBENGINE_DOWNLOAD_PATH,
@@ -55,7 +64,6 @@ def tr_(lemma):
 
     try:
         s = import_settings()
-        s.LANGUAGE
         if not IMPORTED_LANGUAGE_MODULES.get(s.LANGUAGE):
             pth_to_import = f'alfa_CR6_backend.lang.{s.LANGUAGE}'
             IMPORTED_LANGUAGE_MODULES[s.LANGUAGE] = importlib.import_module(pth_to_import)
@@ -84,7 +92,7 @@ def get_version():
 
     return _ver
 
-def get_res(type, name):
+def get_res(_type, name):
 
     res = None
     _settings = import_settings()
@@ -92,11 +100,11 @@ def get_res(type, name):
     if os.path.exists(os.path.join(_settings.CUSTOM_PATH, name)):
         res = os.path.join(_settings.CUSTOM_PATH, name)
     else:
-        if type == 'IMAGE':
+        if _type == 'IMAGE':
             res = os.path.join(IMAGES_PATH, name)
-        elif type == 'HELP': 
+        elif _type == 'HELP':
             res = os.path.join(HELP_PATH, name)
-        elif type == 'UI': 
+        elif _type == 'UI':
             res = os.path.join(UI_PATH, name)
 
     return res
@@ -105,12 +113,12 @@ def get_encoding(path_to_file, key=None):
 
     cmd_ = ["file", "-b", "--mime-encoding", path_to_file]
     try:
-        p = subprocess.run(cmd_, stdout=subprocess.PIPE)
+        p = subprocess.run(cmd_, stdout=subprocess.PIPE, check=False)
         mime_encoding = p.stdout.decode().strip()
         # ~ logging.warning(f"cmd_:{cmd_}, mime_encoding:{mime_encoding}")
         assert mime_encoding
         return mime_encoding
-    except Exception:
+    except Exception:   # pylint: disable=broad-except
         logging.warning(traceback.format_exc())
 
     encodings = [
@@ -134,10 +142,8 @@ def get_encoding(path_to_file, key=None):
             fd.seek(0)
         except (UnicodeDecodeError, UnicodeError):
             logging.info(f"skip e:{e}")
-        except Exception:
+        except Exception:   # pylint: disable=broad-except
             logging.warning(traceback.format_exc())
         else:
             logging.warning(f"path_to_file:{path_to_file}, e:{e}")
             return e
-
-

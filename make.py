@@ -54,11 +54,14 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def exec_(cmd_, dry):
+def exec_(cmd_, dry, silent=True):
 
     logging.info(f"dry:{dry} cmd_:{cmd_}")
     if not dry:
-        ret_val = os.system(cmd_ + f"  >>{OUT_ERR_PTH} 2>&1 ")
+        if silent:
+            ret_val = os.system(cmd_ + f"  >>{OUT_ERR_PTH} 2>&1 ")
+        else:
+            ret_val = os.system(cmd_)
         logging.info(f"ret_val:{ret_val}")
 
     return ret_val 
@@ -66,9 +69,9 @@ def exec_(cmd_, dry):
 def build(args):
 
     cmd_ = f"cd {PROJECT_ROOT};. {VENV_PATH}/bin/activate; python setup.py bdist_wheel "
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_, dry=args.dry_run, silent=0)
     cmd_ = f"ls -l {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl"
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_, dry=args.dry_run, silent=0)
 
 
 def makedirs_on_target(args):

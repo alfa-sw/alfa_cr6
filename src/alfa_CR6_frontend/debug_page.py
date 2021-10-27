@@ -513,8 +513,8 @@ class DebugPage:
         html_ += """ <b>Change Language to: </b> """
         html_ += """ <a href="LANG@en">ENGLISH</a> - """
         html_ += """ <a href="LANG@it">ITALIAN</a> - """
-        html_ += """ <a href="LANG@kr">KOREAN</a> """
-        html_ += """ <a href="LANG@kr">GERMAN</a> """
+        html_ += """ <a href="LANG@kr">KOREAN</a> - """
+        html_ += """ <a href="LANG@de">GERMAN</a> """
 
         html_ += "</p>"
 

@@ -21,9 +21,9 @@ from functools import partial
 from PyQt5.QtCore import QEventLoop      # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
+import aiohttp  # pylint: disable=import-error
 import websockets  # pylint: disable=import-error
 import magic  # pylint: disable=import-error
-import aiohttp  # pylint: disable=import-error
 
 from flask import Markup  # pylint: disable=import-error
 
