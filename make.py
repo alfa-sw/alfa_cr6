@@ -69,9 +69,9 @@ def exec_(cmd_, dry, silent=True):
 def build(args):
 
     cmd_ = f"cd {PROJECT_ROOT};. {VENV_PATH}/bin/activate; python setup.py bdist_wheel "
-    exec_(cmd_, dry=args.dry_run, silent=0)
+    exec_(cmd_, dry=args.dry_run)
     cmd_ = f"ls -l {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl"
-    exec_(cmd_, dry=args.dry_run, silent=0)
+    exec_(cmd_, dry=args.dry_run)
 
 
 def makedirs_on_target(args):

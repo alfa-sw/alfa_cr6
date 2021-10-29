@@ -1,4 +1,4 @@
-from alfa_CR6_backend.lang import error_it
+from alfa_CR6_backend.lang import error_de
 
 D = {
     " ?": " ?",
@@ -180,4 +180,4 @@ D = {
 }
 
 
-D.update(error_it.D)
+D.update(error_de.D)
