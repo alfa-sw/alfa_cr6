@@ -255,8 +255,15 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
             logging.error(e)
 
     def __str__(self):
-        return "[m:{}, status:{}, position:{}, {}:{}]".format(
-            self.machine_head, self.status, self.position, self.order.order_nr, self.index)
+
+        try:
+            ret = "[m:{}, status:{}, position:{}, {}:{}]".format(
+                self.machine_head, self.status, self.position, self.order.order_nr, self.index)
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(e)
+            ret = f"{e}"
+
+        return ret
 
     @property
     def barcode(self):

@@ -67,26 +67,28 @@ async def download_KCC_specific_gravity_lot():
 
                 mime = magic.Magic(mime=True)
                 mime_type = mime.from_file(tmp_file_path_)
-                for ip, _, port in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST:
-                    logging.warning(f"ip:port {ip}:{port}")
-                    with open(tmp_file_path_, 'rb') as f:
-                        try:
-                            data = aiohttp.FormData()
-                            data.add_field('file', f, filename='kcc_lot_specific_info.json',
-                                           content_type=mime_type)
-                            async with aiohttp_session.post(f'http://{ip}:{port}/admin/upload', data=data) as resp:
-                                resp_json = await resp.json()
-                                assert resp.ok and resp_json.get('result') == 'ok', f"failure uploading to:{ip}:{port}"
-                        except Exception as e:  # pylint: disable=broad-except
-                            logging.error(traceback.format_exc())
-                            QApplication.instance().insert_db_event(
-                                name=str(e),
-                                level="ERROR",
-                                severity="",
-                                source="download_KCC_specific_gravity_lot",
-                                description="{} | {}".format(
-                                    f"http://{ip}:{port}/admin/upload",
-                                    traceback.format_exc()))
+                app = QApplication.instance()
+                if app:
+                    for ip, _, port in app.settings.MACHINE_HEAD_IPADD_PORTS_LIST:
+                        logging.warning(f"ip:port {ip}:{port}")
+                        with open(tmp_file_path_, 'rb') as f:
+                            try:
+                                data = aiohttp.FormData()
+                                data.add_field('file', f, filename='kcc_lot_specific_info.json',
+                                               content_type=mime_type)
+                                async with aiohttp_session.post(f'http://{ip}:{port}/admin/upload', data=data) as resp:
+                                    resp_json = await resp.json()
+                                    assert resp.ok and resp_json.get('result') == 'ok', f"failure uploading to:{ip}:{port}"
+                            except Exception as e:  # pylint: disable=broad-except
+                                logging.error(traceback.format_exc())
+                                QApplication.instance().insert_db_event(
+                                    name=str(e),
+                                    level="ERROR",
+                                    severity="",
+                                    source="download_KCC_specific_gravity_lot",
+                                    description="{} | {}".format(
+                                        f"http://{ip}:{port}/admin/upload",
+                                        traceback.format_exc()))
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -645,8 +647,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             n = len(_tasks_to_freeze)
             if self.__tasks_to_freeze != n:
                 self.__tasks_to_freeze = n
-                logging.warning(f'__tasks_to_freeze:{self.__tasks_to_freeze}'
-                                f', {[(t.get_name(), k) for t, k in _tasks_to_freeze]}')
+                # ~ logging.warning(f'__tasks_to_freeze:{self.__tasks_to_freeze}'
+                                # ~ f', {[(t.get_name(), k) for t, k in _tasks_to_freeze]}')
 
                 if self.__tasks_to_freeze:
                     msg = tr_("please, wait while finishing all pending operations ...")
@@ -1047,7 +1049,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if _t is self.__jar_runners[k].get('task'):
                     _runner = self.__jar_runners[k]
                     _runner['frozen'] = True
-                    logging.warning(f"_t:{_t.get_name()} frozen:{_runner['frozen']}")
+                    # ~ logging.warning(f"_t:{_t.get_name()} frozen:{_runner['frozen']}")
                     break
 
         while self.carousel_frozen:

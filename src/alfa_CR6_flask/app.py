@@ -203,11 +203,13 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
         def display_description(self, context, obj, name):
             description = getattr(obj, 'description')
             json_properties = getattr(obj, 'json_properties')
-            
+
+            _html = ''
             try:
-                meta = json.loads(json_properties).get("meta")
+                meta = json.loads(json_properties).get("meta", {})
                 file_name = meta.get("file name")
-                _html = f"{file_name}"
+                if file_name:
+                    _html += f"{file_name}"
                 if description:
                     _html += f", {description}"
             except Exception:
