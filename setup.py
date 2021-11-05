@@ -23,6 +23,7 @@ def main():
         url='https://gitlab.com/alfa-sw/alfa_cr6',
         author='giovanni angeli per alfadispenser srl',
         author_email='giovanniangeli@alfadispenser.com',
+        python_requires='>=3.7.0',
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Programming Language :: Python :: 3',
