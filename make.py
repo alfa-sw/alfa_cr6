@@ -24,6 +24,8 @@ SCRIPTS_PATH = f"{DEPLOY_PATH}/scripts"
 
 OUT_ERR_PTH = f"{PROJECT_ROOT}/make.err.out"
 
+args = {}
+
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description='development tool for build/install.')
@@ -32,36 +34,39 @@ def parse_arguments():
         '--log_level',
         default='INFO',
         help='level of verbosity in logging messages default: %(default)s.')
-    parser.add_argument('-t', '--target_credentials', default='admin@192.168.0.100', help='default: "%(default)s".')
-    parser.add_argument('-s', '--app_settings', default='app_settings.target', help='default: "%(default)s".')
-    parser.add_argument('-i', '--ignore_requires', help='if not None, ignore_requires in installing. default: "%(default)s".', action='store_const', const=1)
-    parser.add_argument('-d', '--dry_run', action='store_const', const=True,
-                        help='dry run: if not None, just test, do nothing. default: "%(default)s".')
+    parser.add_argument('-t', '--target_credentials', default='admin@192.168.0.100', help='ssh credentials to target. default: "%(default)s".')
+    parser.add_argument('-s', '--app_settings', default='app_settings.target', help='select the app conf file. default: "%(default)s".')
+    parser.add_argument('-i', '--ignore_requires', default=False, help='ignore_requires in installing. default: "%(default)s".')
+    parser.add_argument('-d', '--dry_run', default=False, help='dry run: just test, do nothing. default: "%(default)s".')
+    parser.add_argument('-v', '--verbose', default=False, help='verbose: print to stdout messages, while executing commands. default: "%(default)s".')
 
     parser.add_argument('-b', '--build', help='action: build the wheel.', action='store_const', const=1)
-    parser.add_argument('-e', '--install_editable', action='store_const', const=1)
-    parser.add_argument('-I', '--install_target', action='store_const', const=1)
-    parser.add_argument('-M', '--makedirs_on_target', action='store_const', const=1)
-    parser.add_argument('-C', '--deploy_conf_to_target', action='store_const', const=1)
+    parser.add_argument('-e', '--install_editable', help='action: install om host in edit mode.', action='store_const', const=1)
+    parser.add_argument('-I', '--install_target', help='action: install om target.', action='store_const', const=1)
+    parser.add_argument('-M', '--makedirs_on_target', help='action: make dirs on target', action='store_const', const=1)
+    parser.add_argument('-C', '--deploy_conf_to_target', help='action: copy conf files to target', action='store_const', const=1)
     parser.add_argument('-D', '--deploy_db_to_target', action='store_const', const=1,
                         help='action: copy the sqlite db to target, *BEWARE* overwriting it!')
-    parser.add_argument('-S', '--deploy_and_execute_target_scripts', action='store_const', const=1)
     parser.add_argument('-V', '--virtenv_on_target', action='store_const', const=True,
                         help='action: build virtual env on target.')
     parser.add_argument('-A', '--enable_desktop_autologin_on_target', action='store_const', const=True,
                         help='action: enable desktop (i.e. GUI) autologin on target. Raspberrypi only.')
 
+    parser.add_argument('-S', '--deploy_and_execute_target_scripts', action='store_const', const=1, help='DEPRECATED. action: If in doubt, avoid doing it!')
+
     return parser.parse_args()
 
 
-def exec_(cmd_, dry, silent=True):
+def exec_(cmd_):
 
-    logging.info(f"dry:{dry} cmd_:{cmd_}")
-    if not dry:
-        if silent:
-            ret_val = os.system(cmd_ + f"  >>{OUT_ERR_PTH} 2>&1 ")
-        else:
+    global args
+
+    logging.info(f"args.dry_run:{args.dry_run}, args.verbose:{args.verbose}, cmd_:{cmd_}")
+    if not args.dry_run:
+        if args.verbose:
             ret_val = os.system(cmd_)
+        else:
+            ret_val = os.system(cmd_ + f"  >>{OUT_ERR_PTH} 2>&1 ")
         logging.info(f"ret_val:{ret_val}")
 
     return ret_val 
@@ -69,9 +74,9 @@ def exec_(cmd_, dry, silent=True):
 def build(args):
 
     cmd_ = f"cd {PROJECT_ROOT};. {VENV_PATH}/bin/activate; python setup.py bdist_wheel "
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_)
     cmd_ = f"ls -l {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl"
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_)
 
 
 def makedirs_on_target(args):
@@ -80,16 +85,16 @@ def makedirs_on_target(args):
 
     for pth in (DEPLOY_PATH, VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, TMP_PATH, SCRIPTS_PATH):
         cmd_ = f'ssh {tgt_cred} "if [ ! -e {pth} ]; then sudo mkdir -p {pth} ;fi"'
-        exec_(cmd_, dry=args.dry_run)
+        exec_(cmd_)
     cmd_ = f'ssh {tgt_cred} "sudo chown -R admin:admin {DEPLOY_PATH}"'
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_)
 
 def deploy_db_to_target(args):
 
     tgt_cred = args.target_credentials
 
     cmd_ = f"scp {DATA_PATH}/cr6_Vx_test.sqlite {tgt_cred}:{DATA_PATH}/"
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_)
 
 def deploy_conf_to_target(args):
 
@@ -105,11 +110,11 @@ def deploy_conf_to_target(args):
     ]
 
     for cmd_ in cmds:
-        exec_(cmd_, dry=args.dry_run)
+        exec_(cmd_)
 
         time.sleep(.1)
 
-def install_target(args):
+def install_target(args, silent=False):
 
     tgt_cred = args.target_credentials
     settings = args.app_settings
@@ -124,7 +129,7 @@ def install_target(args):
     ]
 
     for cmd_ in cmds:
-        r = exec_(cmd_, dry=args.dry_run)
+        r = exec_(cmd_)
         if r:
             break
         time.sleep(.1)
@@ -134,7 +139,7 @@ def install_editable(args):
     ignore_requires = '--ignore-requires --no-dependencies ' if args.ignore_requires else ''
 
     cmd_ = f"cd {PROJECT_ROOT};. {VENV_PATH}/bin/activate;pip uninstall -y {__app_name__}; pip install {ignore_requires} -e ./"
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_)
 
 def deploy_and_execute_target_scripts(args):
 
@@ -148,7 +153,7 @@ def deploy_and_execute_target_scripts(args):
     ]
 
     for cmd_ in cmds:
-        exec_(cmd_, dry=args.dry_run)
+        exec_(cmd_)
 
         time.sleep(.1)
 
@@ -157,16 +162,18 @@ def enable_desktop_autologin_on_target(args):
     tgt_cred = args.target_credentials
 
     cmd_ = f'ssh {tgt_cred} "sudo raspi-config nonint do_boot_behaviour B4"'
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_)
 
 def virtenv_on_target(args):
 
     tgt_cred = args.target_credentials
 
     cmd_ = f'ssh {tgt_cred} "virtualenv --system-site-packages --clear -p /usr/bin/python3 /opt/alfa_cr6/venv"'
-    exec_(cmd_, dry=args.dry_run)
+    exec_(cmd_)
 
 def main():
+
+    global args
 
     args = parse_arguments()
 
@@ -182,8 +189,6 @@ def main():
         build(args)
     if args.install_editable:
         install_editable(args)
-    if args.install_target:
-        install_target(args)
     if args.makedirs_on_target:
         makedirs_on_target(args)
     if args.deploy_db_to_target:
@@ -196,6 +201,8 @@ def main():
         virtenv_on_target(args)
     if args.enable_desktop_autologin_on_target:
         enable_desktop_autologin_on_target(args)
+    if args.install_target:
+        install_target(args)
 
 
 main()
