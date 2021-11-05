@@ -26,7 +26,7 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
 
 from alfa_CR6_backend.models import Jar, Order
 from alfa_CR6_backend.dymo_printer import dymo_print
-from alfa_CR6_backend.globals import tr_, set_language
+from alfa_CR6_backend.globals import tr_, set_language, LANGUAGE_MAP
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
 
@@ -102,9 +102,9 @@ class DebugPage:
                     # ~ "LIFTR\nDOWN",
                     # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
+                ("minimize\nmain window", ""),
                 ("download KCC\nlot info file", "download KCC file with specific gravity lot info"),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
-                ("", "**"),
                 ("", "**"),
                 ("move_12_00", "deliver jar"),
             ]
@@ -472,6 +472,10 @@ class DebugPage:
         elif "download KCC\nlot info file" in cmd_txt:
             t = download_KCC_specific_gravity_lot()
             asyncio.ensure_future(t)
+
+        elif "minimize\nmain window" in cmd_txt:
+            app.main_window.showMinimized()
+
         else:
             app.run_a_coroutine_helper(cmd_txt)
 
@@ -510,12 +514,16 @@ class DebugPage:
 
         html_ += "</p><p>"
 
+        # ~ html_ += """ <b>Change Language to: </b> """
+        # ~ html_ += """ <a href="LANG@en">ENGLISH</a> - """
+        # ~ html_ += """ <a href="LANG@it">ITALIAN</a> - """
+        # ~ html_ += """ <a href="LANG@kr">KOREAN</a> - """
+        # ~ html_ += """ <a href="LANG@de">GERMAN</a> """
         html_ += """ <b>Change Language to: </b> """
-        html_ += """ <a href="LANG@en">ENGLISH</a> - """
-        html_ += """ <a href="LANG@it">ITALIAN</a> - """
-        html_ += """ <a href="LANG@kr">KOREAN</a> - """
-        html_ += """ <a href="LANG@de">GERMAN</a> """
+        for k, v in LANGUAGE_MAP.items():
+            html_ += f""" <a href="LANG@{v}">{k.upper()}</a> - """
 
+        html_ += "</p>"
         html_ += "</p>"
 
         html_ += "<table>"

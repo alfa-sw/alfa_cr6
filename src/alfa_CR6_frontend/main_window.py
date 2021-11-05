@@ -339,7 +339,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.toggle_keyboard(on_off=False)
                 self.order_page.open_page()
 
-            elif "global_status" in btn_name:
+            elif "debug_page" in btn_name:
                 self.toggle_keyboard(on_off=False)
                 self.stacked_widget.setCurrentWidget(self.debug_page.main_frame)
 

@@ -166,7 +166,7 @@
       <string notr="true">menu_btn_group</string>
      </attribute>
     </widget>
-    <widget class="QPushButton" name="global_status_btn">
+    <widget class="QPushButton" name="debug_page_btn">
      <property name="geometry">
       <rect>
        <x>150</x>
