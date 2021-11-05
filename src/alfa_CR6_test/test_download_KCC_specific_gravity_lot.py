@@ -26,4 +26,4 @@ fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(mess
 logging.basicConfig(stream=sys.stdout, level='WARNING', format=fmt_)
 
 
-asyncio.run(download_KCC_specific_gravity_lot(dry=True))
+asyncio.run(download_KCC_specific_gravity_lot())
