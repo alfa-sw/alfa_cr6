@@ -59,6 +59,9 @@ def main():
             'waitress',
             'python-magic',
             'xmltodict',
+            'evdev',
+            'PyQt5',
+            'PyQtWebEngine',
         ],
     )
 
