@@ -292,9 +292,9 @@ class Keyboard(QWidget):
     def push(self, keys):
         if self.uinput:
             self.uinput.write(e.EV_KEY, keys[0].key, 1)
-            QTimer.singleShot(50, lambda: self.pushdispatcher(keys[1:]))
+            QTimer.singleShot(10, lambda: self.pushdispatcher(keys[1:]))
 
     def pull(self, keys):
         if self.uinput:
             self.uinput.write(e.EV_KEY, keys[0].key, 0)
-            QTimer.singleShot(50, lambda: self.pushdispatcher(keys[1:]))
+            QTimer.singleShot(10, lambda: self.pushdispatcher(keys[1:]))
