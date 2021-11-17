@@ -635,7 +635,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     _runner = None
 
                 _flag = self.carousel_frozen
-                _flag = _flag and _runner and not _runner.get("frozen")
+                _flag = _flag and _runner
+                _flag = _flag and not _runner.get("frozen")
+                _flag = _flag and _runner.get("jar")
+                _flag = _flag and _runner["jar"].status and _runner["jar"].position
                 _flag = _flag and 'ENTER' not in _runner["jar"].status
                 _flag = _flag and 'OUT' not in _runner["jar"].status
                 _flag = _flag and 'WAIT' not in _runner["jar"].position
