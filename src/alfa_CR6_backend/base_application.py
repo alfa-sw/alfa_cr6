@@ -946,6 +946,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def handle_exception(self, e, ui_msg=None, insert_in_db=False):  # pylint:  disable=no-self-use
 
+        if "CancelledError" in traceback.format_exc():
+            logging.warning(traceback.format_exc())
+            raise
+
         if not ui_msg:
             ui_msg = e
         self.main_window.open_alert_dialog(ui_msg, title="ERROR")
