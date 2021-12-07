@@ -148,6 +148,7 @@ class OrderTableModel(BaseTableModel):
             query_ = self.session.query(Order)
             query_ = query_.filter(Order.order_nr.contains(filter_text))
             query_ = query_.order_by(Order.order_nr.desc())
+            query_ = query_.join(Jar).filter(Jar.status != "DELETED")
             query_ = query_.limit(100)
 
             self.results = []
@@ -171,9 +172,10 @@ class OrderTableModel(BaseTableModel):
 
                 QApplication.instance().delete_jar_runner(j.barcode)
 
-                self.session.delete(j)
+                # ~ self.session.delete(j)
+                j.status = 'DELETED'
 
-            self.session.delete(order)
+            # ~ self.session.delete(order)
             self.session.commit()
 
     def data(self, index, role):
@@ -220,6 +222,7 @@ class JarTableModel(BaseTableModel):
 
         if self.session:
             query_ = self.session.query(Jar)
+            query_ = query_.filter(Jar.status != "DELETED")
             if filter_text:
                 query_ = query_.filter(Jar.status.contains(filter_text))
             if order_nr is not None:
@@ -264,8 +267,12 @@ class JarTableModel(BaseTableModel):
             query_ = self.session.query(Jar)
             query_ = query_.filter(Jar.order == order)
             query_ = query_.filter(Jar.index == index)
-            r = query_.delete()
-            logging.warning(f"r:{r}")
+
+            # ~ r = query_.delete()
+            # ~ logging.warning(f"r:{r}")
+            for j in query_.all():
+                j.status = 'DELETED'
+
             self.session.commit()
 
     def data(self, index, role):

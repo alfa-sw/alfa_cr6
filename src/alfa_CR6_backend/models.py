@@ -210,8 +210,11 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "jar"
+
+    status_choices = ['NEW', 'PROGRESS', 'DONE', 'ERROR', 'DELETED', ]
+
     status = Column(
-        Unicode, default="NEW", doc="one of ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]")
+        Unicode, default="NEW", doc=f"one of {status_choices}")
     index = Column(Integer, default=0, doc="position of this jar inside the order")
     size = Column(
         Integer,

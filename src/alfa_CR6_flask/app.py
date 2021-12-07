@@ -22,6 +22,7 @@ from flask import Markup, Flask, redirect, flash, request  # pylint: disable=imp
 import flask_sqlalchemy          # pylint: disable=import-error
 import flask_admin               # pylint: disable=import-error
 import flask_admin.contrib.sqla  # pylint: disable=import-error
+from flask_admin.contrib.sqla.filters import FilterEqual, FilterNotEqual
 
 from waitress import serve       # pylint: disable=import-error
 
@@ -69,6 +70,14 @@ def init_db(app):
 def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-statements
 
     settings = import_settings()
+
+    class FilterOrderByJarStatusNotEqual(FilterNotEqual):
+        def apply(self, query, value, alias=None):
+            return query.join(Jar).filter(Jar.status != value)
+
+    class FilterOrderByJarStatusEqual(FilterEqual):
+        def apply(self, query, value, alias=None):
+            return query.join(Jar).filter(Jar.status == value)
 
     class CRX_AdminResources(flask_admin.AdminIndexView):
 
@@ -137,7 +146,10 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
 
         def display_json_properties(self, context, obj, name):  # pylint: disable=unused-argument,no-self-use
 
-            json_properties = json.loads(obj.json_properties)
+            try:
+                json_properties = json.loads(obj.json_properties)
+            except Exception:
+                json_properties = traceback.format_exc()
 
             html_ = "<div>"
             for k, v in json_properties.items():
@@ -190,7 +202,10 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'description',)
 
     class OrderModelView(CRX_ModelView):
+
         column_filters = (
+            FilterOrderByJarStatusEqual(column=None, name='can status', options=[(c, c) for c in Jar.status_choices]),
+            FilterOrderByJarStatusNotEqual(column=None, name='can status', options=[(c, c) for c in Jar.status_choices]),
             'order_nr',
             'date_created',
             'description',)
@@ -217,9 +232,16 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
                 logging.warning(traceback.format_exc())
 
             return Markup(_html)
-            
+
         column_formatters = CRX_ModelView.column_formatters.copy()
         column_formatters.update({'description': display_description})
+
+        # Need this so the filter options are always up-to-date
+        @flask_admin.expose('/')
+        def index_view(self):
+            self._refresh_filters_cache()
+            return super().index_view()
+
 
     class DocumentModelView(CRX_ModelView):
 
