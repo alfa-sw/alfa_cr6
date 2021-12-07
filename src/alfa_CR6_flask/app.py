@@ -22,7 +22,7 @@ from flask import Markup, Flask, redirect, flash, request  # pylint: disable=imp
 import flask_sqlalchemy          # pylint: disable=import-error
 import flask_admin               # pylint: disable=import-error
 import flask_admin.contrib.sqla  # pylint: disable=import-error
-from flask_admin.contrib.sqla.filters import FilterEqual, FilterNotEqual
+from flask_admin.contrib.sqla.filters import FilterInList  # pylint: disable=import-error
 
 from waitress import serve       # pylint: disable=import-error
 
@@ -71,13 +71,10 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
 
     settings = import_settings()
 
-    class FilterOrderByJarStatusNotEqual(FilterNotEqual):
-        def apply(self, query, value, alias=None):
-            return query.join(Jar).filter(Jar.status != value)
-
-    class FilterOrderByJarStatusEqual(FilterEqual):
-        def apply(self, query, value, alias=None):
-            return query.join(Jar).filter(Jar.status == value)
+    class FilterOrderByJarStatusInList(FilterInList):  # pylint: disable=too-few-public-methods
+        def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
+            return query.join(Jar).filter(Jar.status.in_(value))
+            # ~ return query.filter(self.get_column(alias).in_(value))
 
     class CRX_AdminResources(flask_admin.AdminIndexView):
 
@@ -203,9 +200,17 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
 
     class OrderModelView(CRX_ModelView):
 
+        column_list = (
+            'order_nr',
+            'date_created',
+            'date_modified',
+            'description',
+            'jars')
+
+        column_labels = dict(jars='Cans status')
+
         column_filters = (
-            FilterOrderByJarStatusEqual(column=None, name='can status', options=[(c, c) for c in Jar.status_choices]),
-            FilterOrderByJarStatusNotEqual(column=None, name='can status', options=[(c, c) for c in Jar.status_choices]),
+            FilterOrderByJarStatusInList(column=None, name='can status', options=[(c, c) for c in Jar.status_choices]),
             'order_nr',
             'date_created',
             'description',)
@@ -215,7 +220,7 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'date_created',
             'description',)
 
-        def display_description(self, context, obj, name):
+        def display_description(self, context, obj, name): # pylint: disable=unused-argument, no-self-use
             description = getattr(obj, 'description')
             json_properties = getattr(obj, 'json_properties')
 
@@ -233,15 +238,30 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
 
             return Markup(_html)
 
+        def display_jars_status(self, context, obj, name): # pylint: disable=unused-argument, no-self-use
+            jars = getattr(obj, 'jars')
+            jars_statuses = {j.status for j in jars}
+
+            _html = ''
+            try:
+                _html += f"{jars_statuses}"
+            except Exception:
+                _html = jars
+                logging.warning(traceback.format_exc())
+
+            return Markup(_html)
+
         column_formatters = CRX_ModelView.column_formatters.copy()
-        column_formatters.update({'description': display_description})
+        column_formatters.update({
+            'description': display_description,
+            'jars': display_jars_status,
+        })
 
         # Need this so the filter options are always up-to-date
         @flask_admin.expose('/')
         def index_view(self):
             self._refresh_filters_cache()
             return super().index_view()
-
 
     class DocumentModelView(CRX_ModelView):
 
@@ -257,7 +277,6 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'type',
             'description',
             'json_properties',)
-
 
     index_view_ = CRX_AdminResources(url='/')    # pylint: disable=undefined-variable
     admin_ = flask_admin.base.Admin(app, name=_gettext('Alfa_CRX'), template_mode='bootstrap3', index_view=index_view_)
