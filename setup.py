@@ -52,7 +52,7 @@ def main():
             'SQLAlchemy<1.4.0', # api changed in 1.4.0
             'jsonschema',
             'python-barcode',
-            'Pillow',
+            # ~ 'Pillow',
             'aiohttp',
             'flask',
             'flask_sqlalchemy',
