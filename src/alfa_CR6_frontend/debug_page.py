@@ -105,7 +105,7 @@ class DebugPage:
                 ("minimize\nmain window", ""),
                 ("download KCC\nlot info file", "download KCC file with specific gravity lot info"),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
-                ("", "**"),
+                ("open admin\npage", "."),
                 ("move_12_00", "deliver jar"),
             ]
         ):
@@ -466,9 +466,14 @@ class DebugPage:
             except BaseException:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
+        elif "open admin\npage" in cmd_txt:
+            url_ = 'http://127.0.0.1:8090/'
+            app.main_window.webengine_page.open_page(url_)
+
         elif "open URL\nin text bar" in cmd_txt:
             url_ = app.main_window.menu_line_edit.text()
             app.main_window.webengine_page.open_page(url_)
+
         elif "download KCC\nlot info file" in cmd_txt:
             t = download_KCC_specific_gravity_lot()
             asyncio.ensure_future(t)
