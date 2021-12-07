@@ -336,7 +336,6 @@ class EditDialog(BaseDialog):
             jar = db_session.query(Jar).filter(Jar.order == order).order_by(Jar.index.desc()).first()
             base_index = jar.index + 1 if jar else 1
 
-            _meta = json.loads(self.meta_text_edit.toPlainText())
             _ingredients = []
             cols = self.formula_table.columnCount()
             rows = self.formula_table.rowCount()
@@ -349,7 +348,12 @@ class EditDialog(BaseDialog):
                 _ingredients.append(ingredient)
 
             _properties = json.loads(order.json_properties)
-            _properties.update({'ingredients': _ingredients, 'meta': _meta})
+
+            # ~ _meta = json.loads(self.meta_text_edit.toPlainText())
+            # ~ _properties.update({'ingredients': _ingredients, 'meta': _meta})
+
+            _properties.update({'ingredients': _ingredients})
+
             order.json_properties = json.dumps(_properties, indent=2)
 
             n_of_jars = self.n_of_jars_spinbox.value()
