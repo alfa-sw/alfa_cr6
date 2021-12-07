@@ -672,13 +672,13 @@ class DebugPage:
                     response = dymo_print(str(bc))
                     logging.warning(f"response:{response}")
 
-                def cb():
-                    for b in barcodes:
+                def cb(barcodes_):
+                    for b in barcodes_:
                         msg_ = f"confirm printing:{b} ?"
                         app.main_window.open_alert_dialog(msg_, callback=cb_, args=[b])
 
-                msg_ = f"creted order with {len(order.jars)} jars. barcodes:\n{barcodes_str} \nclick 'OK' to print barcodes."
-                app.main_window.open_alert_dialog(msg_, callback=cb)
+                msg_ = f"created order with {len(order.jars)} jars. barcodes:\n{barcodes_str} \nclick 'OK' to print barcodes."
+                app.main_window.open_alert_dialog(msg_, callback=cb, args=[barcodes])
 
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
