@@ -9,14 +9,11 @@
 
 import os
 import sys
-import pathlib
-import traceback
 import logging
 import subprocess
 import argparse
-from barcode import EAN13                   # pylint: disable=import-error
-from barcode.writer import ImageWriter      # pylint: disable=import-error
 
+from alfa_CR6_backend.dymo_printer import dymo_print, _create_printable_image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PATH_TMP_FILE = HERE + os.path.sep + 'tmp_file.png'
@@ -26,47 +23,6 @@ DEFAULT_TEST_SETTINGS = {'recipe_barcode': '201027001001',
                          'recipe_manufacturer': 'VOLKSWAGEN-AUDI',
                          'recipe_car_model': 'A4',
                          'recipe_qty': '1 L'}
-
-
-def _create_printable_image():
-    """ create a printable image .png for DYMO 450 Turbo """
-
-    response = {}
-    try:
-
-        if not os.path.exists(PATH_TMP_FILE):
-            with open(PATH_TMP_FILE, 'w'):
-                pass
-
-        with open(PATH_TMP_FILE, 'wb') as file_:
-            barcode_img = EAN13(DEFAULT_TEST_SETTINGS.get('recipe_barcode'), writer=ImageWriter())
-
-            options = {
-                'dpi': 250,
-                'module_height': 7,
-                # 'quiet_zone': 0,
-                'font_size': 15,
-                'text_distance': 0.75,
-                'compress':False,
-                }
-
-            logging.debug('barcode_img({}) -> {}'.format(type(barcode_img), barcode_img))
-
-            custom_text = '{}\n{} {}\n{}\n{}'.format(DEFAULT_TEST_SETTINGS.get('recipe_barcode'),
-                                                     DEFAULT_TEST_SETTINGS.get('recipe_color_code'),
-                                                     DEFAULT_TEST_SETTINGS.get('recipe_manufacturer'),
-                                                     DEFAULT_TEST_SETTINGS.get('recipe_car_model'),
-                                                     DEFAULT_TEST_SETTINGS.get('recipe_qty'),)
-            barcode_img.write(file_, options, custom_text)
-
-        logging.info('Image created at {}'.format(PATH_TMP_FILE))
-        response = {'result': 'OK', 'file': PATH_TMP_FILE}
-    except Exception:   # pylint: disable=broad-except
-        logging.error(traceback.format_exc())
-        response = {'result': 'KO', 'error': traceback.format_exc()}
-
-    logging.debug('response: {}'.format(response))
-    return response
 
 
 def send_cups_cmd(action, params):
@@ -117,7 +73,13 @@ def send_cups_cmd(action, params):
 
 
 def print_label():
-    resp = _create_printable_image()
+
+    recipe_barcode = '201027001001'
+    line_1 = "12345678901234567890"
+    line_2 = "BBB" "---" "CCC" "+++" "DDD"
+    line_3 = "xxxxxxxxxxxxxxxxxx"
+
+    resp = _create_printable_image(recipe_barcode, line_1, line_2, line_3)
 
     if resp.get('result') == 'OK':
         send_cups_cmd('cups_print_label', resp)
@@ -142,7 +104,7 @@ def parse_options(args):   # pylint: disable=dangerous-default-value
     return parser.parse_args(args)
 
 
-def test_all(args=["-t", "check"]):
+def test_all(args):
 
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt_)
@@ -153,17 +115,16 @@ def test_all(args=["-t", "check"]):
     if options.test == 'check':
         send_cups_cmd('os_check_printer_presence', {})
     elif options.test == 'print':
-        print_label()
+        test_dymo_print()
     elif options.test == 'all':
         res_ = send_cups_cmd('os_check_printer_presence', {})
         if res_.get('result') == 'OK':
             print_label()
     else:
-        logging.warning('Script endend without being used!')
-        os.system('python test_dymo_labeler.py -h')
+        os.system(f'python {__file__} -h')
 
 
-def test_dymo_print()
+def test_dymo_print():
     dymo_print_res = dymo_print(
         barcode='201027001005',
         line_1='12345678901234567890',
@@ -174,6 +135,7 @@ def test_dymo_print()
 
 
 if __name__ == "__main__":
+
     test_all(sys.argv[1:])
 
 # useful links
