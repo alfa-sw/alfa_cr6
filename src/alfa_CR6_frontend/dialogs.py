@@ -421,7 +421,7 @@ class EditDialog(BaseDialog):
         size = properties.get("size(cc)", "")
         meta = properties.get("meta", {})
         title = meta.get("basic information", {}).get("kcc code", tr_("order n.:"))
-        meta_content = json.dumps(meta, indent=2)
+        meta_content = json.dumps(meta, indent=2, ensure_ascii=False)
 
         self.order_nr_lbl.setText(title)
 
