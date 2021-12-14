@@ -143,6 +143,7 @@ def parse_options(args):   # pylint: disable=dangerous-default-value
 
 
 def test_all(args=["-t", "check"]):
+
     fmt_ = '[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s'
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt_)
 
@@ -160,6 +161,16 @@ def test_all(args=["-t", "check"]):
     else:
         logging.warning('Script endend without being used!')
         os.system('python test_dymo_labeler.py -h')
+
+
+def test_dymo_print()
+    dymo_print_res = dymo_print(
+        barcode='201027001005',
+        line_1='12345678901234567890',
+        line_2='acab',
+        line_3='0,55 Litro',
+        fake=True)
+    logging.warning(f'\t res: {dymo_print_res}')
 
 
 if __name__ == "__main__":

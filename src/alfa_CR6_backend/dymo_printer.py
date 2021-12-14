@@ -5,7 +5,6 @@
 # pylint: disable=too-many-function-args
 # pylint: disable=missing-function-docstring
 # pylint: disable=logging-format-interpolation
-# pylint: disable=logging-fstring-interpolation
 # pylint: disable=line-too-long
 
 import os
@@ -15,24 +14,25 @@ import subprocess
 from barcode import EAN13                   # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
 
-DEPLOY_PATH = "/opt/alfa_cr6"
-TMP_PATH = f"{DEPLOY_PATH}/tmp"
-TMP_BARCODE_IMAGE = f"{TMP_PATH}/tmp_file.png"
-PRINTER_MODEL = 'Dymo'
+from alfa_CR6_backend.globals import import_settings
 
 
 def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
     """ create a printable image .png for DYMO 450 """
 
+    settings = import_settings()
+
+    tmp_barcode_image = f"/opt/alfa_cr6/tmp/tmp_file.png"
+
     response = {}
     try:
 
-        if not os.path.exists(TMP_BARCODE_IMAGE):
-            with open(TMP_BARCODE_IMAGE, 'w'):
+        if not os.path.exists(tmp_barcode_image):
+            with open(tmp_barcode_image, 'w'):
                 pass
-            logging.warning('empty TMP_BARCODE_IMAGE created')
+            logging.warning(f'empty file created at:{tmp_barcode_image}')
 
-        with open(TMP_BARCODE_IMAGE, 'wb') as file_:
+        with open(tmp_barcode_image, 'wb') as file_:
             recipe_barcode_text = f'{recipe_barcode}'
             barcode_img = EAN13(recipe_barcode_text, writer=ImageWriter())
 
@@ -43,6 +43,9 @@ def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
                 'text_distance': 0.75,
                 'compress': False,
             }
+
+            if hasattr(settings, 'PRINT_LABEL_FONT_PATH') and settings.PRINT_LABEL_FONT_PATH:
+                options.update({'font_path': settings.PRINT_LABEL_FONT_PATH})
 
             line_1 = _line_lenght_checker(line_1)
             line_2 = _line_lenght_checker(line_2)
@@ -60,8 +63,8 @@ def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
 
             barcode_img.write(file_, options, printable_text)
 
-        logging.debug(f'Barcode {recipe_barcode} label created at {TMP_BARCODE_IMAGE}')
-        response = {'result': 'OK', 'file': TMP_BARCODE_IMAGE}
+        logging.debug(f'Barcode {recipe_barcode} label created at {tmp_barcode_image}')
+        response = {'result': 'OK', 'file': tmp_barcode_image}
     except Exception:   # pylint: disable=broad-except
         logging.error(traceback.format_exc())
         response = {'result': 'KO', 'error': traceback.format_exc()}
@@ -98,11 +101,11 @@ def _format_reply(command, shell=False, loggable=False):
 
 
 def _check_dymo_printer_presence():
+
     _res_ = _format_reply('lsusb', True, True)
     _res = _res_.get('data')
-    label_writer = '-'.join([PRINTER_MODEL, 'CoStar'])
-    dymo_printer = [elem for elem in _res if label_writer in elem]
-    if dymo_printer:
+
+    if [elem for elem in _res if 'Dymo-CoStar' in elem]:
         response = {'result': 'OK', 'msg': 'Dymo plugged'}
     else:
         response = {'result': 'KO', 'error': 'Dymo not plugged'}
@@ -148,32 +151,3 @@ def dymo_print(barcode=201027001001, line_1='', line_2='', line_3='', fake=False
         result = res_dymo_presence.get('error')
 
     return result
-
-
-if __name__ == "__main__":
-
-    res = dymo_print(barcode='201027001005',
-                     line_1='12345678901234567890',
-                     line_2='acab',
-                     line_3='0,55 Litro',
-                     fake=True)
-    logging.warning(f'\t res: {res}')
-
-# NOTE
-# (venv) galasso@galassoVB:/opt/PROJECTS/alfa_cr6$ python src/alfa_CR6_backend/dymo_printer.py
-# WARNING:root:barcode: 201027001005 | fake: True
-# WARNING:root:res_dymo_presence: {'result': 'OK', 'msg': 'Dymo plugged'}
-# WARNING:root:len: 20 | line_lenght: 17
-# WARNING:root:line: 12345678901234567
-# WARNING:root:len: 4 | line_lenght: 17
-# WARNING:root:line: acab
-# WARNING:root:len: 10 | line_lenght: 17
-# WARNING:root:line: 0,55 Litro
-# WARNING:root:printable_text: 201027001005
-# 12345678901234567
-# acab
-# 0,55 Litro
-# WARNING:root:Barcode 201027001005 label created at /opt/alfa_cr6/tmp/tmp_file.png
-# WARNING:root:response: {'result': 'OK', 'file': '/opt/alfa_cr6/tmp/tmp_file.png'}
-# WARNING:root:print_cups_cmd: lp -o fit-to-page /opt/alfa_cr6/tmp/tmp_file.png
-# WARNING:root:    res: {'result': 'OK', 'message': 'Printing label ..'}
