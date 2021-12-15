@@ -22,7 +22,7 @@ from flask import Markup, Flask, redirect, flash, request  # pylint: disable=imp
 import flask_sqlalchemy          # pylint: disable=import-error
 import flask_admin               # pylint: disable=import-error
 import flask_admin.contrib.sqla  # pylint: disable=import-error
-from flask_admin.contrib.sqla.filters import FilterInList  # pylint: disable=import-error
+from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # pylint: disable=import-error
 
 from waitress import serve       # pylint: disable=import-error
 
@@ -74,7 +74,18 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
     class FilterOrderByJarStatusInList(FilterInList):  # pylint: disable=too-few-public-methods
         def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
             return query.join(Jar).filter(Jar.status.in_(value))
-            # ~ return query.filter(self.get_column(alias).in_(value))
+
+    class FilterOrderByJarStatusNotInList(FilterNotInList):  # pylint: disable=too-few-public-methods
+        def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
+            return query.join(Jar).filter(~Jar.status.in_(value))
+
+    class FilterOrderByJarPositionInList(FilterInList):  # pylint: disable=too-few-public-methods
+        def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
+            return query.join(Jar).filter(Jar.position.in_(value))
+
+    class FilterOrderByJarPositionNotInList(FilterNotInList):  # pylint: disable=too-few-public-methods
+        def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
+            return query.join(Jar).filter(~Jar.position.in_(value))
 
     class CRX_AdminResources(flask_admin.AdminIndexView):
 
@@ -189,12 +200,14 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
     class JarModelView(CRX_ModelView):
         column_filters = (
             'status',
+            'position',
             'order.order_nr',
             'date_created',
             'description',)
 
         column_searchable_list = (
             'status',
+            'position',
             'date_created',
             'description',)
 
@@ -205,12 +218,17 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'date_created',
             'date_modified',
             'description',
-            'jars')
+            'jars status',
+            'jars position',
+        )
 
         column_labels = dict(jars='Cans status')
 
         column_filters = (
             FilterOrderByJarStatusInList(column=None, name='can status', options=[(c, c) for c in Jar.status_choices]),
+            FilterOrderByJarStatusNotInList(column=None, name='can status', options=[(c, c) for c in Jar.status_choices]),
+            FilterOrderByJarPositionInList(column=None, name='can position', options=[(c, c) for c in Jar.position_choices]),
+            FilterOrderByJarPositionNotInList(column=None, name='can position', options=[(c, c) for c in Jar.position_choices]),
             'order_nr',
             'date_created',
             'description',)
@@ -238,13 +256,26 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
 
             return Markup(_html)
 
-        def display_jars_status(self, context, obj, name): # pylint: disable=unused-argument, no-self-use
+        def display_jar_status(self, context, obj, name): # pylint: disable=unused-argument, no-self-use
             jars = getattr(obj, 'jars')
-            jars_statuses = {j.status for j in jars}
+            jar_statuses = {j.status for j in jars}
 
             _html = ''
             try:
-                _html += f"{jars_statuses}"
+                _html += f"{jar_statuses or ''}"
+            except Exception:
+                _html = jars
+                logging.warning(traceback.format_exc())
+
+            return Markup(_html)
+
+        def display_jar_position(self, context, obj, name): # pylint: disable=unused-argument, no-self-use
+            jars = getattr(obj, 'jars')
+            jar_positions = {j.position for j in jars}
+
+            _html = ''
+            try:
+                _html += f"{jar_positions or ''}"
             except Exception:
                 _html = jars
                 logging.warning(traceback.format_exc())
@@ -254,7 +285,8 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
         column_formatters = CRX_ModelView.column_formatters.copy()
         column_formatters.update({
             'description': display_description,
-            'jars': display_jars_status,
+            'jars status': display_jar_status,
+            'jars position': display_jar_position,
         })
 
         # Need this so the filter options are always up-to-date

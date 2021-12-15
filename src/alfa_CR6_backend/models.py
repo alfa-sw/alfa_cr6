@@ -211,18 +211,15 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "jar"
 
-    status_choices = ['NEW', 'PROGRESS', 'DONE', 'ERROR', 'DELETED', ]
+    status_choices = ['NEW', 'PROGRESS', 'DONE', 'ERROR', ]
+    position_choices = ["REMOVED", "-", "LIFTR_UP", "LIFTR_DOWN", "IN", "OUT", "WAIT", "DELETED", ] + list("ABCDEF")
 
-    status = Column(
-        Unicode, default="NEW", doc=f"one of {status_choices}")
+    status = Column(Unicode, default="NEW", doc=f"one of {status_choices}")
     index = Column(Integer, default=0, doc="position of this jar inside the order")
     size = Column(
-        Integer,
-        nullable=False,
+        Integer, nullable=False, 
         doc="one of [0x0, 0x1, 0x2, 0x3] corresponging to the combinations of MICROSWITCH 1 and 2")
-    position = Column(
-        Unicode,
-        doc="one of [None, 'step_1', 'step_1,step_2', 'step_2', 'step_2,step_3', ..., 'step_11,step_12', 'step_12']")
+    position = Column(Unicode, doc=f"one of {position_choices}", default="-")
 
     order_id = Column(Unicode, ForeignKey("order.id"), nullable=False)
     order = relationship("Order", back_populates="jars")
