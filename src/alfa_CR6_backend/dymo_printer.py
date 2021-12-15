@@ -102,7 +102,7 @@ def dymo_print(barcode=201027001001, line_1='', line_2='', line_3='', fake=False
                 logging.debug(f'_print_cups_cmd: {_print_cups_cmd}')
 
                 if not fake:
-                    res_print = _exec_cmd(print_cups_cmd)
+                    res_print = _exec_cmd(_print_cups_cmd)
                     ret = {'result': 'OK', 'msg': res_print}
                 else:
                     ret = {'result': 'OK', 'msg': 'Dry run, not printed'}
