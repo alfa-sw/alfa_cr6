@@ -211,6 +211,11 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'date_created',
             'description',)
 
+        form_choices = {
+            'position': [(c, c) for c in Jar.position_choices],
+            'status': [(c, c) for c in Jar.status_choices],
+        }
+
     class OrderModelView(CRX_ModelView):
 
         column_list = (

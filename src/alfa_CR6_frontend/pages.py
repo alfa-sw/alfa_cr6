@@ -148,11 +148,12 @@ class OrderTableModel(BaseTableModel):
             query_ = self.session.query(Order)
             query_ = query_.filter(Order.order_nr.contains(filter_text))
             query_ = query_.order_by(Order.order_nr.desc())
-            query_ = query_.join(Jar).filter(Jar.position != "DELETED")
-            query_ = query_.limit(100)
+            query_1 = query_.filter(~ Order.jars.any()).limit(100)
+            N = query_1.count()
+            query_2 = query_.join(Jar).filter(Jar.position != "DELETED").limit(100-N)
 
             self.results = []
-            for o in query_.all():
+            for o in query_1.all() + query_2.all():
                 properties = json.loads(o.json_properties)
                 c_code = properties.get("meta", {}).get("file name", '')
                 item = ["", "", o.status, o.order_nr, c_code]
