@@ -242,8 +242,15 @@ class OrderParser:
             properties["ingredients"].append(new_item)
 
         properties["extra_lines_to_print"] = []
+
+        color_code_and_multi_name = ""
         if content.get("color code"):
-            properties["extra_lines_to_print"].append(f'{ content["color code"] }')
+            color_code_and_multi_name += f'{content["color code"]}'
+        if content.get("multi name"):
+            color_code_and_multi_name += f' {content["multi name"]}'
+        if color_code_and_multi_name:
+            properties["extra_lines_to_print"].append(color_code_and_multi_name)
+
         if content.get("total"):
             properties["extra_lines_to_print"].append(f'{ content["total"] }')
 
