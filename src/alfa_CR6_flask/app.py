@@ -17,7 +17,7 @@ import subprocess
 
 from werkzeug.utils import secure_filename  # pylint: disable=import-error
 
-from flask import Markup, Flask, redirect, flash, request  # pylint: disable=import-error
+from flask import (Markup, Flask, redirect, flash, request, send_file)   # pylint: disable=import-error
 
 import flask_sqlalchemy          # pylint: disable=import-error
 import flask_admin               # pylint: disable=import-error
@@ -27,7 +27,24 @@ from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # py
 from waitress import serve       # pylint: disable=import-error
 
 from alfa_CR6_backend.models import Order, Jar, Event, Document, set_global_session
-from alfa_CR6_backend.globals import import_settings
+from alfa_CR6_backend.globals import import_settings, CONF_PATH
+
+def _dict_to_html_table(_dict, recursive=True):
+
+    if not isinstance(_dict, dict):
+        return str(_dict)
+
+    _html_table = '<table class="table table-striped table-bordered"><tr>'
+    if recursive:
+        _html_table += '</tr><tr>'.join(
+            ['<td>{}:</td> <td>{}</td>'.format(k, _dict_to_html_table(v)) for k, v in _dict.items()])
+        _html_table += '</tr></table>'
+    else:
+        _html_table += '</tr><tr>'.join(
+            ['<td>{}:</td> <td>{}</td>'.format(k, v) for k, v in _dict.items()])
+        _html_table += '</tr></table>'
+
+    return _html_table
 
 def _handle_CRX_stream_upload(stream, filename):
 
@@ -86,52 +103,6 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
         def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
             return query.join(Jar).filter(~Jar.position.in_(value))
 
-    class CRX_AdminResources(flask_admin.AdminIndexView):
-
-        @flask_admin.expose("/")
-        @flask_admin.expose("/home")
-        @flask_admin.expose("/index")
-        def index(self, ):
-            template = "/index.html"
-
-            links = []
-            for i, item in enumerate(settings.MACHINE_HEAD_IPADD_PORTS_LIST):
-                if item:
-                    ip, _, ph = item
-                    l = Markup('<a href="http://{}:{}/admin" > HEAD {} admin </a>'.format(ip, ph, i))
-                    links.append(l)
-
-            logging.warning(f"request.host:{request.host}")
-            ctx = {
-                'links': links,
-                'ws_ip_addr_and_port': "{}:{}".format(request.host.split(':')[0], 13000),
-                'alfa40_admin_url': "http://{}:{}/admin".format(request.host.split(':')[0], 8080),
-                'current_language': settings.LANGUAGE,
-            }
-
-            return self.render(template, **ctx)
-
-        @flask_admin.expose('/upload', methods=('POST',))
-        def upload(self):     # pylint: disable=no-self-use
-
-            flash_msgs = []
-            try:
-                if request.method == 'POST':
-                    for stream in request.files.getlist('file'):
-                        filename = secure_filename(stream.filename)
-                        flash_msgs = flash_msgs + _handle_CRX_stream_upload(stream, filename)
-            except Exception as exc:  # pylint: disable=broad-except
-                flash_msgs.append('Error trying to upload files: {}'.format(exc))
-                logging.error(traceback.format_exc())
-
-            if flash_msgs:
-                flash(Markup("<br/>".join(flash_msgs)))
-
-            logging.warning("flash_msgs:{}".format(flash_msgs))
-            ret = redirect('/index')
-            logging.warning("ret:{}".format(ret))
-            return ret
-
     class CRX_ModelView(ModelView):
 
         named_filter_urls = True
@@ -158,11 +129,10 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             try:
                 json_properties = json.loads(obj.json_properties)
             except Exception:
-                json_properties = traceback.format_exc()
+                json_properties = {'exc': traceback.format_exc()}
 
             html_ = "<div>"
-            for k, v in json_properties.items():
-                html_ += "<div><b>{}</b>:{}</div>".format(k, v)
+            html_ += _dict_to_html_table(json_properties)
             html_ += "</div>"
 
             return Markup(html_)
@@ -203,8 +173,8 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
         column_list = (
             'order',
             'index',
-            'status',
             'position',
+            'status',
             'date_created',
             'date_modified',
             'description',
@@ -250,11 +220,11 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
 
         column_list = (
             'order_nr',
+            'can status',
+            'can position',
             'date_created',
             'date_modified',
             'description',
-            'can status',
-            'can position',
         )
 
         column_labels = dict(jars='Cans status')
@@ -354,6 +324,93 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'type',
             'description',
             'json_properties',)
+
+
+    class CRX_AdminResources(flask_admin.AdminIndexView):
+
+        @flask_admin.expose("/")
+        @flask_admin.expose("/home")
+        @flask_admin.expose("/index")
+        def index(self, ):
+            template = "/index.html"
+
+            links = []
+            for i, item in enumerate(settings.MACHINE_HEAD_IPADD_PORTS_LIST):
+                if item:
+                    ip, _, ph = item
+                    l = Markup('<a href="http://{}:{}/admin" > HEAD {} admin </a>'.format(ip, ph, i))
+                    links.append(l)
+
+            logging.warning(f"request.host:{request.host}")
+            ctx = {
+                'links': links,
+                'ws_ip_addr_and_port': "{}:{}".format(request.host.split(':')[0], 13000),
+                'alfa40_admin_url': "http://{}:{}/admin".format(request.host.split(':')[0], 8080),
+                'current_language': settings.LANGUAGE,
+            }
+
+            return self.render(template, **ctx)
+
+        @flask_admin.expose('/upload', methods=('POST',))
+        def upload(self):     # pylint: disable=no-self-use
+
+            flash_msgs = []
+            try:
+                if request.method == 'POST':
+                    for stream in request.files.getlist('file'):
+                        filename = secure_filename(stream.filename)
+                        flash_msgs = flash_msgs + _handle_CRX_stream_upload(stream, filename)
+            except Exception as exc:  # pylint: disable=broad-except
+                flash_msgs.append('Error trying to upload files: {}'.format(exc))
+                logging.error(traceback.format_exc())
+
+            if flash_msgs:
+                flash(Markup("<br/>".join(flash_msgs)))
+
+            logging.warning("flash_msgs:{}".format(flash_msgs))
+            ret = redirect('/index')
+            return ret
+
+        @flask_admin.expose('/download', methods=('GET',))
+        def download(self):     # pylint: disable=no-self-use
+
+            data_set_name = request.args.get('data_set_name', 'full_db')
+            # ~ compress_data = request.args.get('compress_data')
+            # ~ export_limit = request.args.get('export_limit', 50 * 1000)
+
+            logging.warning("data_set_name:{}".format(data_set_name))
+
+            flash_msgs = []
+            file_to_send = None
+            out_fname = None
+            try:
+                if data_set_name.lower() == 'full_db':
+                    file_to_send = '/' + settings.SQLITE_CONNECT_STRING.split('///')[1]
+                    out_fname = '{}_{}'.format(datetime.datetime.now().isoformat(timespec='seconds'), os.path.basename(file_to_send))
+                if data_set_name.lower() == 'app_settings':
+                    file_to_send = os.path.join(CONF_PATH, "app_settings.py")
+                    out_fname = '{}_{}'.format(datetime.datetime.now().isoformat(timespec='seconds'), os.path.basename(file_to_send))
+                else:
+                    flash_msgs = "unknown data_set_name: {}".format(data_set_name.lower())
+            except Exception as exc:  # pylint: disable=broad-except
+                flash_msgs.append('Error trying to download files: {}'.format(exc))
+                logging.error(traceback.format_exc())
+
+            if flash_msgs:
+                flash(Markup("<br/>".join(flash_msgs)))
+
+            if file_to_send and out_fname:
+                logging.warning("file_to_send:{}, out_fname:{}".format(file_to_send, out_fname))
+                return send_file(
+                    file_to_send,
+                    mimetype='application/octet-stream',
+                    as_attachment=True,
+                    attachment_filename=out_fname
+                )
+
+            logging.warning("flash_msgs:{}".format(flash_msgs))
+            ret = redirect('/index')
+            return ret
 
     index_view_ = CRX_AdminResources(url='/')    # pylint: disable=undefined-variable
     admin_ = flask_admin.base.Admin(app, name=_gettext('Alfa_CRX'), template_mode='bootstrap3', index_view=index_view_)
