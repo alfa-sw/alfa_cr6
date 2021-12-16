@@ -21,14 +21,13 @@ from flask import Markup, Flask, redirect, flash, request  # pylint: disable=imp
 
 import flask_sqlalchemy          # pylint: disable=import-error
 import flask_admin               # pylint: disable=import-error
-import flask_admin.contrib.sqla  # pylint: disable=import-error
+from flask_admin.contrib.sqla import ModelView  # pylint: disable=import-error
 from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # pylint: disable=import-error
 
 from waitress import serve       # pylint: disable=import-error
 
 from alfa_CR6_backend.models import Order, Jar, Event, Document, set_global_session
 from alfa_CR6_backend.globals import import_settings
-
 
 def _handle_CRX_stream_upload(stream, filename):
 
@@ -133,7 +132,9 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             logging.warning("ret:{}".format(ret))
             return ret
 
-    class CRX_ModelView(flask_admin.contrib.sqla.ModelView):
+    class CRX_ModelView(ModelView):
+
+        named_filter_urls = True
 
         column_default_sort = ('date_created', True)
 
@@ -198,6 +199,17 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'description',)
 
     class JarModelView(CRX_ModelView):
+
+        column_list = (
+            'order',
+            'index',
+            'status',
+            'position',
+            'date_created',
+            'date_modified',
+            'description',
+        )
+
         column_filters = (
             'status',
             'position',
@@ -215,6 +227,24 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'position': [(c, c) for c in Jar.position_choices],
             'status': [(c, c) for c in Jar.status_choices],
         }
+        def _display_order(self, context, obj, name): # pylint: disable=unused-argument, no-self-use
+            order = getattr(obj, 'order')
+            # ~ link = f"/order/?flt0_order_nr_equals={order.order_nr}"
+            link = f"/order/details/?id={order.id}"
+            _html = ''
+            try:
+                _html += f"""<a href="{link}">{order.order_nr}</a>"""
+            except Exception:
+                _html = order
+                logging.warning(traceback.format_exc())
+
+            return Markup(_html)
+
+        column_formatters = CRX_ModelView.column_formatters.copy()
+        column_formatters.update({
+            'order': _display_order,
+        })
+
 
     class OrderModelView(CRX_ModelView):
 
@@ -223,8 +253,8 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
             'date_created',
             'date_modified',
             'description',
-            'jars status',
-            'jars position',
+            'can status',
+            'can position',
         )
 
         column_labels = dict(jars='Cans status')
@@ -263,11 +293,16 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
 
         def display_jar_status(self, context, obj, name): # pylint: disable=unused-argument, no-self-use
             jars = getattr(obj, 'jars')
-            jar_statuses = {j.status for j in jars}
+
+            jar_status_list = [j.status for j in jars]
+            jar_statuses = [(s, jar_status_list.count(s)) for s in set(jar_status_list)]
+            jar_statuses = sorted(jar_statuses, key=lambda x: x[1])
+
+            link = f"/jar/?sort=1&flt0_order_order_order_nr_equals={getattr(obj, 'order_nr')}"
 
             _html = ''
             try:
-                _html += f"{jar_statuses or ''}"
+                _html += f"""<a href="{link}">{'<br/>'.join([str(i) for i in jar_statuses])}</a>"""
             except Exception:
                 _html = jars
                 logging.warning(traceback.format_exc())
@@ -276,11 +311,16 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
 
         def display_jar_position(self, context, obj, name): # pylint: disable=unused-argument, no-self-use
             jars = getattr(obj, 'jars')
-            jar_positions = {j.position for j in jars}
+
+            # ~ jar_positions = {j.position for j in jars}
+
+            jar_position_list = [j.position for j in jars]
+            jar_positions = [(s, jar_position_list.count(s)) for s in set(jar_position_list)]
+            jar_positions = sorted(jar_positions, key=lambda x: x[1])
 
             _html = ''
             try:
-                _html += f"{jar_positions or ''}"
+                _html += f"{'<br/>'.join([str(i) for i in jar_positions])}"
             except Exception:
                 _html = jars
                 logging.warning(traceback.format_exc())
@@ -290,8 +330,8 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
         column_formatters = CRX_ModelView.column_formatters.copy()
         column_formatters.update({
             'description': display_description,
-            'jars status': display_jar_status,
-            'jars position': display_jar_position,
+            'can status': display_jar_status,
+            'can position': display_jar_position,
         })
 
         # Need this so the filter options are always up-to-date
@@ -318,8 +358,8 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
     index_view_ = CRX_AdminResources(url='/')    # pylint: disable=undefined-variable
     admin_ = flask_admin.base.Admin(app, name=_gettext('Alfa_CRX'), template_mode='bootstrap3', index_view=index_view_)
 
-    admin_.add_view(JarModelView(Jar, db.session, "Can"))            # pylint: disable=undefined-variable
     admin_.add_view(OrderModelView(Order, db.session))        # pylint: disable=undefined-variable
+    admin_.add_view(JarModelView(Jar, db.session, "Can"))            # pylint: disable=undefined-variable
     admin_.add_view(EventModelView(Event, db.session))        # pylint: disable=undefined-variable
     admin_.add_view(DocumentModelView(Document, db.session))  # pylint: disable=undefined-variable
 

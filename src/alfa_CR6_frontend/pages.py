@@ -168,12 +168,15 @@ class OrderTableModel(BaseTableModel):
         logging.warning(f"order_nr:{order_nr}, self.session:{self.session}")
         if self.session:
             order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
-
-            for j in self.session.query(Jar).filter(Jar.order == order).all():
-
-                QApplication.instance().delete_jar_runner(j.barcode)
-
+            if not order.jars:
+                j = Jar(order=order, index=1, size=0)
                 j.position = 'DELETED'
+                j.status = 'VIRTUAL'
+                self.session.add(j)
+            else:
+                for j in order.jars:
+                    QApplication.instance().delete_jar_runner(j.barcode)
+                    j.position = 'DELETED'
 
             self.session.commit()
 
