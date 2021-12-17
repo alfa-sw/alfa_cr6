@@ -32,7 +32,7 @@ from sqlalchemy import (      # pylint: disable=import-error
     event)
 
 import sqlalchemy.ext.declarative  # pylint: disable=import-error
-from sqlalchemy.orm import sessionmaker, relationship    # pylint: disable=import-error
+from sqlalchemy.orm import (sessionmaker, relationship, validates)    # pylint: disable=import-error
 
 Base = sqlalchemy.ext.declarative.declarative_base()
 
@@ -100,20 +100,13 @@ class BaseModel:  # pylint: disable=too-few-public-methods
 
     row_count_limt = 10 * 1000
 
-    def validate_json_properties(self):
-
-        ret = None
-
-        try:
-            if self.json_properties_schema and validate(
-                    instance=self.json_properties, schema=self.json_properties_schema):
-
-                ret = True
-        except Exception:  # pylint: disable=broad-except
-
-            logging.error(traceback.format_exc())
-
-        return ret
+    @validates('json_properties')
+    def validate_json_properties(self, key, value):
+        if self.json_properties_schema :
+            validate(instance=self.json_properties, schema=self.json_properties_schema)
+        else:
+            json.loads(value)
+        return value
 
     @classmethod
     def check_size_limit(cls, session):
@@ -337,6 +330,14 @@ class dbEventManager:
             session.query(cls).filter(cls.id == id_).delete()
             self.to_be_deleted_object_list.remove(item)
 
+    def receive_after_update(self, mapper, connection, target):  # pylint: disable=unused-argument
+
+        logging.warning(f"mapper({type(mapper)}):{mapper}, target:{target}")
+
+    def receive_before_update(self, mapper, connection, target):  # pylint: disable=unused-argument
+
+        logging.warning(f"mapper({type(mapper)}):{mapper}, target:{target}")
+
     def receive_before_insert(self, mapper, connection, target):  # pylint: disable=unused-argument
 
         exceeding_objects = target.check_size_limit(self.session)
@@ -354,6 +355,8 @@ class dbEventManager:
             m = globals().get(n)
             try:
                 if isinstance(m, sqlalchemy.ext.declarative.api.DeclarativeMeta) and issubclass(m, BaseModel):
+                    # ~ event.listen(m, 'after_update', self.receive_after_update)
+                    # ~ event.listen(m, 'before_update', self.receive_before_update)
                     if m.row_count_limt > 0:
                         event.listen(m, 'before_insert', self.receive_before_insert)
                         logging.info("m:{}, type(m):{}".format(m, type(m)))
