@@ -15,7 +15,7 @@ import time
 import traceback
 import copy
 import random
-
+from datetime import datetime
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
@@ -349,6 +349,8 @@ class EditDialog(BaseDialog):
 
             _properties = json.loads(order.json_properties)
 
+            _meta = _properties.get("meta", {})
+            _meta.update({"modified": datetime.now().isoformat(" ", timespec='seconds')})
             # ~ _meta = json.loads(self.meta_text_edit.toPlainText())
             # ~ _properties.update({'ingredients': _ingredients, 'meta': _meta})
 
