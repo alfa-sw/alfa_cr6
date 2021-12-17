@@ -4,7 +4,7 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
-
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
 import logging
@@ -12,8 +12,7 @@ import traceback
 import json
 import uuid
 import time
-from datetime import date
-from datetime import datetime
+from datetime import (date, datetime)
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
@@ -38,15 +37,8 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 
 global_session = None
 
-
-def set_global_session(session):
-    global global_session  # pylint: disable=global-statement
-    global_session = session
-
-
 def generate_id():
     return str(uuid.uuid4())
-
 
 def compile_barcode(order_nr, index):
     barcode = int(order_nr) + int(index) % 1000
@@ -61,7 +53,9 @@ def decompile_barcode(barcode):
 
 def generate_order_nr():
 
-    global global_session  # pylint: disable=global-statement
+    global global_session  # pylint: disable=global-statement, global-variable-not-assigned
+
+    assert global_session
 
     today = date.today()
 
@@ -102,10 +96,14 @@ class BaseModel:  # pylint: disable=too-few-public-methods
 
     @validates('json_properties')
     def validate_json_properties(self, key, value):
+
+        assert key == 'json_properties'
+
         if self.json_properties_schema :
             validate(instance=self.json_properties, schema=self.json_properties_schema)
         else:
             json.loads(value)
+
         return value
 
     @classmethod
@@ -205,7 +203,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
     __tablename__ = "jar"
 
     status_choices = ['NEW', 'PROGRESS', 'DONE', 'ERROR', 'VIRTUAL']
-    position_choices = ["REMOVED", "-", "LIFTR_UP", "LIFTR_DOWN", "IN", "OUT", "WAIT", "DELETED", ] + list("ABCDEF")
+    position_choices = ["REMOVED", "_", "LIFTR_UP", "LIFTR_DOWN", "IN", "OUT", "WAIT", "DELETED", ] + list("ABCDEF")
 
     status = Column(Unicode, default="NEW", doc=f"one of {status_choices}")
     index = Column(Integer, default=0, doc="position of this jar inside the order")
@@ -332,11 +330,11 @@ class dbEventManager:
 
     def receive_after_update(self, mapper, connection, target):  # pylint: disable=unused-argument
 
-        logging.warning(f"mapper({type(mapper)}):{mapper}, target:{target}")
+        logging.warning(f"self:{self}, mapper({type(mapper)}):{mapper}, target:{target}")
 
     def receive_before_update(self, mapper, connection, target):  # pylint: disable=unused-argument
 
-        logging.warning(f"mapper({type(mapper)}):{mapper}, target:{target}")
+        logging.warning(f"self:{self}, mapper({type(mapper)}):{mapper}, target:{target}")
 
     def receive_before_insert(self, mapper, connection, target):  # pylint: disable=unused-argument
 

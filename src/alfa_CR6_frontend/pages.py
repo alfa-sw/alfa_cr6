@@ -8,6 +8,7 @@
 # pylint: disable=too-many-lines
 # pylint: disable=too-few-public-methods
 # pylint: disable=multiple-statements
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
 import logging
@@ -369,7 +370,7 @@ class HelpPage(BaseStackedPage):
 
         if hasattr(self.context_widget, 'help_file_name') and self.context_widget.help_file_name:
             help_file_name = self.context_widget.help_file_name
-            with open(get_res("HELP", help_file_name)) as f:
+            with open(get_res("HELP", help_file_name, encoding='UTF-8')) as f:
                 content = f.read()
                 self.help_text_browser.setHtml(content)
             self.parent().setCurrentWidget(self)
@@ -457,7 +458,7 @@ class WebenginePage(BaseStackedPage):
 
         if mime_type == 'application/json':
             try:
-                with open(full_name) as f:
+                with open(full_name, encoding='UTF-8') as f:
                     content = json.load(f)
                     color_code = content.get("color code")
                     if color_code:
@@ -740,7 +741,7 @@ class OrderPage(BaseStackedPage):
                     # ~ cmd_, stdout=asyncio.subprocess.PIPE, limit=10000)
                     os.system(cmd_)
                     # ~ stdout, stderr = await process.communicate()
-                    with open(out_pth_) as f:
+                    with open(out_pth_, encoding='UTF-8') as f:
                         content = f.read().strip()
                     subprocess.run(["rm", "-f", out_pth_], check=False)
                 else:

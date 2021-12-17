@@ -5,6 +5,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=too-many-lines
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import logging
 import json

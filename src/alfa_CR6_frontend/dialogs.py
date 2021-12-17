@@ -7,6 +7,7 @@
 # pylint: disable=no-name-in-module
 # pylint: disable=too-many-lines
 # pylint: disable=too-few-public-methods
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
 import logging
@@ -292,7 +293,7 @@ class EditDialog(BaseDialog):
                 sel_item = sel_items[0]
                 row = sel_item.row()
                 description = self.formula_table.item(row, 3).data(Qt.DisplayRole)
-                sel_pigment_name = self.formula_table.item(row, 1).data(Qt.DisplayRole)
+                # ~ sel_pigment_name = self.formula_table.item(row, 1).data(Qt.DisplayRole)
             else:
                 if len(indexes) >= 1:
                     raise Exception(tr_(' Pigment {} is already present.'.format(pigment_name)))
@@ -581,7 +582,7 @@ class AliasDialog(BaseDialog):
             _alias_file = os.path.join(self.alias_file_path, "pigment_alias.json")
 
             try:
-                with open(_alias_file, 'w') as f:
+                with open(_alias_file, 'w', encoding='UTF-8') as f:
                     json.dump(self.alias_dict, f, indent=2)
             except Exception as e:  # pylint:disable=broad-except
                 logging.error(f"e:{e}")
@@ -617,7 +618,7 @@ class AliasDialog(BaseDialog):
             os.makedirs(self.alias_file_path)
         _alias_file = os.path.join(self.alias_file_path, "pigment_alias.json")
         try:
-            with open(_alias_file) as f:
+            with open(_alias_file, encoding='UTF-8') as f:
                 self.alias_dict = json.load(f)
         except Exception as e:  # pylint:disable=broad-except
             logging.error(f"e:{e}")

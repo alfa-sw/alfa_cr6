@@ -5,6 +5,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=broad-except
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
 import sys
@@ -26,23 +27,25 @@ from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # py
 
 from waitress import serve       # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Order, Jar, Event, Document, set_global_session
+from alfa_CR6_backend.models import Order, Jar, Event, Document
 from alfa_CR6_backend.globals import import_settings, CONF_PATH
 
-def _dict_to_html_table(_dict, recursive=True):
+def _to_html_table(_obj, rec_lev=0):
 
-    if not isinstance(_dict, dict):
-        return str(_dict)
-
-    _html_table = '<table class="table table-striped table-bordered"><tr>'
-    if recursive:
+    max_rec_lev = 3
+    _html_table = ""
+    if isinstance(_obj, dict) and rec_lev < max_rec_lev:
+        _html_table = '<table class="table table-striped table-bordered"><tr>'
         _html_table += '</tr><tr>'.join(
-            ['<td>{}:</td> <td>{}</td>'.format(k, _dict_to_html_table(v)) for k, v in _dict.items()])
+            ['<td>{}:</td> <td>{}</td>'.format(k, _to_html_table(v, rec_lev+1)) for k, v in _obj.items()])
+        _html_table += '</tr></table>'
+    elif isinstance(_obj, list) and rec_lev < max_rec_lev:
+        _html_table = '<table class="table table-striped table-bordered"><tr>'
+        _html_table += '</tr><tr>'.join(
+            ['<td>{}</td>'.format(_to_html_table(v, rec_lev+1)) for v in _obj])
         _html_table += '</tr></table>'
     else:
-        _html_table += '</tr><tr>'.join(
-            ['<td>{}:</td> <td>{}</td>'.format(k, v) for k, v in _dict.items()])
-        _html_table += '</tr></table>'
+        _html_table += str(_obj)
 
     return _html_table
 
@@ -64,7 +67,8 @@ def _handle_CRX_stream_upload(stream, filename):
             WEBENGINE_DOWNLOAD_PATH = subprocess.check_output(
                 cmd_, shell=True, stderr=subprocess.STDOUT).decode()
             pth_ = os.path.join(WEBENGINE_DOWNLOAD_PATH.strip(), filename)
-            open(pth_, 'wb').write(content)
+            with open(pth_, 'wb') as f:
+                f.write(content)
             flash_msgs.append('uploaded CRX file:{} to:{}.'.format(f.name, pth_))
         except BaseException:
             logging.error(traceback.format_exc())
@@ -132,7 +136,7 @@ def init_admin_and_define_view_classes(app, db):    # pylint: disable=too-many-s
                 json_properties = {'exc': traceback.format_exc()}
 
             html_ = "<div>"
-            html_ += _dict_to_html_table(json_properties)
+            html_ += _to_html_table(json_properties)
             html_ += "</div>"
 
             return Markup(html_)
@@ -437,8 +441,6 @@ def main():
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or '123456790'
 
     db = init_db(app)
-
-    set_global_session(db.session)
 
     init_admin_and_define_view_classes(app, db)
 

@@ -4,6 +4,7 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
 import traceback
@@ -37,7 +38,7 @@ class OrderParser:
         try:
             if QApplication.instance():
                 _alias_file = os.path.join(QApplication.instance().settings.DATA_PATH, "pigment_alias.json")
-                with open(_alias_file) as f:
+                with open(_alias_file, encoding='UTF-8') as f:
                     alias_dict = json.load(f)
 
                 ingredients = properties.get('ingredients', [])

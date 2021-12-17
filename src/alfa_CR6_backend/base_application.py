@@ -5,6 +5,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=too-many-lines
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
 import time
@@ -62,7 +63,7 @@ async def download_KCC_specific_gravity_lot():
                 assert resp.ok, f"failure downloading url_:{url_}"
 
                 content = await resp.text()
-                with open(tmp_file_path_, 'w') as f:
+                with open(tmp_file_path_, 'w', encoding='UTF-8') as f:
                     f.write(content)
 
                 mime = magic.Magic(mime=True)
@@ -139,7 +140,7 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                     break
 
             if not self._device:
-                logging.error(f"****** !!!! BARCODE DEVICE NOT FOUND !!! ******")
+                logging.error("****** !!!! BARCODE DEVICE NOT FOUND !!! ******")
             else:
                 self._device.grab()  # become the sole recipient of all incoming input events from this device
                 async for event in self._device.async_read_loop():
@@ -398,7 +399,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.db_session = None
         self.ready_to_read_a_barcode = True
 
-        self.__inner_loop_task_step = 0.02  # secs
+        # ~ self.__inner_loop_task_step = 0.02  # secs
 
         self.machine_head_dict = {}
         self.ws_server = None
@@ -610,7 +611,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 r = await self.execute_carousel_steps(self.n_of_active_heads, jar)
                 logging.warning(f"r:{r}")
 
-        except asyncio.CancelledError as e:
+        except asyncio.CancelledError:
             logging.warning(f"cancelled: {barcode}")
         except Exception as e:  # pylint: disable=broad-except
             if jar:
@@ -754,7 +755,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if jar:
                     barcode = jar.barcode
 
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logging.error(f"barcode:{barcode}")
             barcode = ""
 
@@ -786,7 +787,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 self.ready_to_read_a_barcode = False
 
-                if barcode in self.__jar_runners.keys():
+                if barcode in self.__jar_runners:
                     error = tr_("{} already in progress!").format(barcode)
                     self.main_window.open_alert_dialog(error, title="ERROR")
                     logging.error(error)
@@ -948,7 +949,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if "CancelledError" in traceback.format_exc():
             logging.warning(traceback.format_exc())
-            raise
+            raise # pylint:  disable=misplaced-bare-raise
 
         if not ui_msg:
             ui_msg = e
@@ -1052,11 +1053,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         _runner = None
         if self.carousel_frozen:
             _t = asyncio.current_task()
-            for k in self.__jar_runners:
-                if _t is self.__jar_runners[k].get('task'):
-                    _runner = self.__jar_runners[k]
+            for v in self.__jar_runners.values():
+                if _t is v.get('task'):
+                    _runner = v
                     _runner['frozen'] = True
-                    # ~ logging.warning(f"_t:{_t.get_name()} frozen:{_runner['frozen']}")
                     break
 
         while self.carousel_frozen:

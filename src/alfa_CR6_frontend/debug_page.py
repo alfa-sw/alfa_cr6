@@ -4,9 +4,8 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
-# pylint: disable=bad-continuation
 # pylint: disable=protected-access
-
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
 import time
@@ -294,8 +293,7 @@ class DebugPage:
                     app.db_session.rollback()
 
         app.main_window.open_alert_dialog(
-            f"confirm deleting db data?", callback=delete_all_
-        )
+            "confirm deleting db data?", callback=delete_all_)
 
     def view_orders(self):  # pylint: disable=no-self-use, too-many-branches
 
@@ -658,8 +656,14 @@ class DebugPage:
             fileNames = dialog.selectedFiles()
         logging.warning(f"fileNames:{fileNames}")
 
-        # ~ fname, filter = QFileDialog.getOpenFileName(self.main_frame, 'Open file', '/opt/alfa_cr6/data/',"json order file (*.json)", options=QFileDialog.DontUseNativeDialog)
-        # ~ logging.warning(f"fname:{fname}, filter:{filter}")
+        def cb_(bc):
+            response = dymo_print(str(bc))
+            logging.warning(f"response:{response}")
+
+        def cb(barcodes_):
+            for b in barcodes_:
+                msg_ = f"confirm printing:{b} ?"
+                app.main_window.open_alert_dialog(msg_, callback=cb_, args=[b])
 
         for fname in fileNames:
             order = None
@@ -667,15 +671,6 @@ class DebugPage:
                 order = app.create_order(fname, n_of_jars=6)
                 barcodes = sorted([str(j.barcode) for j in order.jars])
                 barcodes_str = "\n".join([str(j.barcode) for j in order.jars])
-
-                def cb_(bc):
-                    response = dymo_print(str(bc))
-                    logging.warning(f"response:{response}")
-
-                def cb(barcodes_):
-                    for b in barcodes_:
-                        msg_ = f"confirm printing:{b} ?"
-                        app.main_window.open_alert_dialog(msg_, callback=cb_, args=[b])
 
                 msg_ = f"created order with {len(order.jars)} jars. barcodes:\n{barcodes_str} \nclick 'OK' to print barcodes."
                 app.main_window.open_alert_dialog(msg_, callback=cb, args=[barcodes])

@@ -7,6 +7,7 @@
 # pylint: disable=no-name-in-module
 # pylint: disable=too-many-lines
 # pylint: disable=too-few-public-methods
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import logging
 import traceback
@@ -16,8 +17,8 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from alfa_CR6_backend.globals import get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP
-# ~ from alfa_CR6_backend.models import Event
+from alfa_CR6_backend.globals import (
+    get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP)
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,

@@ -6,6 +6,7 @@
 # pylint: disable=missing-function-docstring
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
 import traceback
@@ -22,12 +23,12 @@ def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
 
     settings = import_settings()
 
-    tmp_barcode_image = f"/opt/alfa_cr6/tmp/tmp_file.png"
+    tmp_barcode_image = "/opt/alfa_cr6/tmp/tmp_file.png"
 
     response = None
 
     if not os.path.exists(tmp_barcode_image):
-        with open(tmp_barcode_image, 'w'):
+        with open(tmp_barcode_image, 'w', encoding='UTF-8'):
             pass
         logging.warning(f'empty file created at:{tmp_barcode_image}')
 

@@ -5,6 +5,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=too-many-lines
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import sys
 import os
@@ -136,10 +137,10 @@ def get_encoding(path_to_file, key=None):
     for e in encodings:
         try:
             codecs.lookup(e)
-            fd = codecs.open(path_to_file, 'br', encoding=e)
-            fd.readlines()
-            assert key is None or key in fd.read()
-            fd.seek(0)
+            with codecs.open(path_to_file, 'br', encoding=e) as fd:
+                fd.readlines()
+                assert key is None or key in fd.read()
+                fd.seek(0)
         except (UnicodeDecodeError, UnicodeError):
             logging.info(f"skip e:{e}")
         except Exception:   # pylint: disable=broad-except
@@ -147,3 +148,5 @@ def get_encoding(path_to_file, key=None):
         else:
             logging.warning(f"path_to_file:{path_to_file}, e:{e}")
             return e
+
+    return ''

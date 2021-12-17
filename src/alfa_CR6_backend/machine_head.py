@@ -4,6 +4,7 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 
 import os
@@ -134,15 +135,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 package_list = ret.get("objects", [])
 
             pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_package_list.json")
-            with open(pth_, "w") as f:
+            with open(pth_, "w", encoding='UTF-8') as f:
                 json.dump(self.package_list, f, indent=2)
 
             pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_pigment_list.json")
-            with open(pth_, "w") as f:
+            with open(pth_, "w", encoding='UTF-8') as f:
                 json.dump(pigment_list, f, indent=2)
 
             pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_low_level_pipes.json")
-            with open(pth_, "w") as f:
+            with open(pth_, "w", encoding='UTF-8') as f:
                 json.dump(low_level_pipes, f, indent=2)
 
             self.pigment_list = pigment_list
@@ -495,10 +496,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             dispensation_outcomes = json_properties.get("dispensation_outcomes", [])
 
-            failed_disps_ = list([(head_name, outcome)
-                                  for head_name, outcome in dispensation_outcomes if "success" not in outcome])
+            failed_disps_ = [(head_name, outcome) for head_name, outcome in
+                    dispensation_outcomes if "success" not in outcome]
 
-            if not failed_disps_:
+            if not list(failed_disps_):
                 # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
                 allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
 
@@ -610,7 +611,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 logging.error(f"e:{e}")
                 logging.error(traceback.format_exc())
                 await asyncio.sleep(2)
-        logging.warning(f" *** exiting *** ")
+        logging.warning(" *** exiting *** ")
 
     async def wait_for_jar_photocells_and_status_lev(  # pylint: disable=too-many-arguments
             self, bit_name, on=True, status_levels=None, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True):
