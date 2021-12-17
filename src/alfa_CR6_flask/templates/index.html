@@ -117,9 +117,11 @@
 
 	<div><hr></hr></div>
 
-	<a href="{{ alfa40_admin_url }}" target="_blank">open alfa40_admin_url</a> |
-	<a href="/download?data_set_name=full_db">download supervisor db</a> |
-	<a href="/download?data_set_name=app_settings">download supervisor app_settings</a> |
+	<span>
+		<a style="color:black;" class="button-tool" href="{{ alfa40_admin_url }}" target="_blank">open alfa40_admin_url</a> |
+		<a style="color:black;" class="button-tool" href="/download?data_set_name=full_db">download supervisor db</a> |       
+		<a style="color:black;" class="button-tool" href="/download?data_set_name=app_settings">download supervisor app_settings</a> |
+	</span>
 	<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
 	<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
 		<span>Manhole commander (expert usage only):</span>
