@@ -748,62 +748,48 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals
 
         barcode = str(barcode)
-        try:
-            if int(barcode) == -1:
-                q = self.db_session.query(Jar).filter(Jar.status.in_(["NEW"]))
-                jar = q.first()
-                if jar:
-                    barcode = jar.barcode
-
-        except Exception:  # pylint: disable=broad-except
-            logging.error(f"barcode:{barcode}")
-            barcode = ""
-
         logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
 
-        if not barcode:
-            return
+        if not barcode or not self.ready_to_read_a_barcode:
 
-        if not self.ready_to_read_a_barcode:
+            logging.warning(f"skipping barcode:{barcode}")
+            self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
 
-            logging.warning(f"not ready to read, skipping barcode:{barcode}")
-            self.main_window.show_barcode(f"skipping barcode:{barcode}", is_ok=False)
-            return
+        else:
 
-        try:
+            try:
 
-            self.main_window.show_barcode(barcode, is_ok=True)
+                self.main_window.show_barcode(barcode, is_ok=True)
 
-            A = self.get_machine_head_by_letter("A")
-            # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
-            r = await A.wait_for_jar_photocells_and_status_lev(
-                "JAR_INPUT_ROLLER_PHOTOCELL", on=True, status_levels=["STANDBY"]
-            )
-            if not r:
-                msg_ = tr_("Condition not valid while reading barcode:{}").format(barcode)
-                self.main_window.open_alert_dialog(msg_)
-                logging.error(msg_)
-            else:
-
-                self.ready_to_read_a_barcode = False
-
-                if barcode in self.__jar_runners:
-                    error = tr_("{} already in progress!").format(barcode)
-                    self.main_window.open_alert_dialog(error, title="ERROR")
-                    logging.error(error)
-                    self.main_window.show_barcode(barcode, is_ok=False)
+                A = self.get_machine_head_by_letter("A")
+                # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
+                r = await A.wait_for_jar_photocells_and_status_lev(
+                    "JAR_INPUT_ROLLER_PHOTOCELL", on=True, status_levels=["STANDBY"]
+                )
+                if not r:
+                    msg_ = tr_("Condition not valid while reading barcode:{}").format(barcode)
+                    self.main_window.open_alert_dialog(msg_)
+                    logging.error(msg_)
                 else:
-                    # let's run a task that will manage the jar through the entire path inside the system
-                    t = self.__jar_task(barcode)
-                    self.__jar_runners[barcode] = {
-                        "task": asyncio.ensure_future(t),
-                        "frozen": True,
-                    }
-                    self.main_window.show_barcode(barcode, is_ok=True)
-                    logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
 
-        except Exception as e:  # pylint: disable=broad-except
-            self.handle_exception(e)
+                    self.ready_to_read_a_barcode = False
+
+                    if barcode in self.__jar_runners:
+                        error = tr_("{} already in progress!").format(barcode)
+                        self.main_window.open_alert_dialog(error, title="ERROR")
+                        logging.error(error)
+                        self.main_window.show_barcode(barcode, is_ok=False)
+                    else:
+                        # let's run a task that will manage the jar through the entire path inside the system
+                        t = self.__jar_task(barcode)
+                        self.__jar_runners[barcode] = {
+                            "task": asyncio.ensure_future(t), "frozen": True}
+
+                        self.main_window.show_barcode(barcode, is_ok=True)
+                        logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
+
+            except Exception as e:  # pylint: disable=broad-except
+                self.handle_exception(e)
 
     async def on_head_msg_received(self, head_index, msg_dict):
 

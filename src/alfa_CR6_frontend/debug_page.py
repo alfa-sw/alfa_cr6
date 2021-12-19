@@ -419,19 +419,29 @@ class DebugPage:
                 app.delete_jar_runner(barcode)
 
         elif "read\nbarcode" in cmd_txt:
-            status = app.machine_head_dict[0].status.copy()
-            status["jar_photocells_status"] = status.get("jar_photocells_status", 0) | 0x01
 
-            async def coro():
-                await app.machine_head_dict[0].update_status(status)
-                await app.on_head_msg_received(
-                    head_index=0,
-                    msg_dict={"type": "device:machine:status", "value": status},
-                )
-                await app.on_barcode_read(-1)
+            allowed_status_list = ["NEW", "DONE"]
+            q = app.db_session.query(Jar).filter(Jar.status.in_(allowed_status_list)).filter(Jar.position != "DELETED")
+            jar = q.first()
+            if jar:
+                barcode = jar.barcode
 
-            t = coro()
-            asyncio.ensure_future(t)
+                status = app.machine_head_dict[0].status.copy()
+                status["jar_photocells_status"] = status.get("jar_photocells_status", 0) | 0x01 # set JAR_INPUT_ROLLER_PHOTOCELL bit 
+
+
+                async def coro():
+                    await app.machine_head_dict[0].update_status(status)
+                    await app.on_head_msg_received(
+                        head_index=0,
+                        msg_dict={"type": "device:machine:status", "value": status},
+                    )
+                    await app.on_barcode_read(barcode)
+
+                t = coro()
+                asyncio.ensure_future(t)
+            else:
+                app.main_window.open_alert_dialog("cant find a valid can in db (NEW and not DELETED)")
 
         elif "complete" in cmd_txt:
 
