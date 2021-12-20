@@ -86,20 +86,20 @@ class DebugPage:
                 ("alert", "test alert box"),
                 ("", "**"),
                 # ~ (
-                    # ~ "LIFTL\nUP",
-                    # ~ "send command UP to left lifter without waiting for any condition",
+                # ~ "LIFTL\nUP",
+                # ~ "send command UP to left lifter without waiting for any condition",
                 # ~ ),
                 # ~ (
-                    # ~ "LIFTL\nDOWN",
-                    # ~ "send command DOWN to left lifter without waiting for any condition",
+                # ~ "LIFTL\nDOWN",
+                # ~ "send command DOWN to left lifter without waiting for any condition",
                 # ~ ),
                 # ~ (
-                    # ~ "LIFTR\nUP",
-                    # ~ "send command UP to right lifter without waiting for any condition",
+                # ~ "LIFTR\nUP",
+                # ~ "send command UP to right lifter without waiting for any condition",
                 # ~ ),
                 # ~ (
-                    # ~ "LIFTR\nDOWN",
-                    # ~ "send command DOWN to right lifter without waiting for any condition",
+                # ~ "LIFTR\nDOWN",
+                # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
                 ("minimize\nmain window", ""),
                 ("download KCC\nlot info file", "download KCC file with specific gravity lot info"),
@@ -236,8 +236,7 @@ class DebugPage:
     def reset_jar_status_to_new(self):  # pylint: disable=no-self-use
 
         app = QApplication.instance()
-        # ~ for j in app.db_session.query(Jar).filter(Jar.status != "NEW").all():
-        for j in app.db_session.query(Jar).all():
+        for j in app.db_session.query(Jar).filter(Jar.position != "DELETED").all():
             logging.warning(f"j:{j}")
             j.status = "NEW"
             j.position = "_"
@@ -415,20 +414,17 @@ class DebugPage:
         elif "clear\njars" in cmd_txt:
 
             for k in list(app.get_jar_runners().keys()):
-                barcode = int(k)
-                app.delete_jar_runner(barcode)
+                app.delete_jar_runner(int(k))
 
         elif "read\nbarcode" in cmd_txt:
 
-            allowed_status_list = ["NEW", "DONE"]
-            q = app.db_session.query(Jar).filter(Jar.status.in_(allowed_status_list)).filter(Jar.position != "DELETED")
+            q = app.db_session.query(Jar).filter(Jar.status.in_(("NEW", "DONE")))
+            q = q.filter(Jar.position != "DELETED").order_by(Jar.date_created)
             jar = q.first()
             if jar:
-                barcode = jar.barcode
-
                 status = app.machine_head_dict[0].status.copy()
-                status["jar_photocells_status"] = status.get("jar_photocells_status", 0) | 0x01 # set JAR_INPUT_ROLLER_PHOTOCELL bit 
-
+                status["jar_photocells_status"] = status.get(
+                    "jar_photocells_status", 0) | 0x01  # set JAR_INPUT_ROLLER_PHOTOCELL bit
 
                 async def coro():
                     await app.machine_head_dict[0].update_status(status)
@@ -436,7 +432,7 @@ class DebugPage:
                         head_index=0,
                         msg_dict={"type": "device:machine:status", "value": status},
                     )
-                    await app.on_barcode_read(barcode)
+                    await app.on_barcode_read(jar.barcode)
 
                 t = coro()
                 asyncio.ensure_future(t)

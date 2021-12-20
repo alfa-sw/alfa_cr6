@@ -149,18 +149,20 @@ class OrderTableModel(BaseTableModel):
             query_ = self.session.query(Order)
             query_ = query_.filter(Order.order_nr.contains(filter_text))
             query_ = query_.order_by(Order.order_nr.desc())
+
             query_1 = query_.filter(~ Order.jars.any()).limit(100)
+
             N = query_1.count()
+
             query_2 = query_.join(Jar).filter(Jar.position != "DELETED").limit(100-N)
 
             self.results = []
             for o in query_1.all() + query_2.all():
-                properties = json.loads(o.json_properties)
-                c_code = properties.get("meta", {}).get("file name", '')
-                item = ["", "", o.status, o.order_nr, c_code]
+                file_name = o.get_json_property('meta', {}).get("file name", '')
+                item = ["", "", o.status, o.order_nr, file_name]
                 self.results.append(item)
 
-            # ~ self.results.sort()
+            self.results.sort(key=lambda x: x[3], reverse=True)
 
         else:
             self.results = [[]]
@@ -240,9 +242,8 @@ class JarTableModel(BaseTableModel):
                 else:
                     r = [o.status, ""]
                 return r
-            self.results = [
-                ["", "", _fmt_status(o), o.barcode] for o in query_.all()
-            ]
+            self.results = [["", "", _fmt_status(o), o.barcode] for o in query_.all()]
+            self.results.sort(key=lambda x: x[3], reverse=True)
         else:
             self.results = [[]]
 
@@ -370,7 +371,7 @@ class HelpPage(BaseStackedPage):
 
         if hasattr(self.context_widget, 'help_file_name') and self.context_widget.help_file_name:
             help_file_name = self.context_widget.help_file_name
-            with open(get_res("HELP", help_file_name, encoding='UTF-8')) as f:
+            with open(get_res("HELP", help_file_name), encoding='UTF-8') as f:
                 content = f.read()
                 self.help_text_browser.setHtml(content)
             self.parent().setCurrentWidget(self)

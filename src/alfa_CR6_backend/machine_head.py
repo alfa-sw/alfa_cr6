@@ -478,7 +478,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def do_dispense(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
-        if "PURGE ALL" in jar.order.description.upper():
+        if jar.order and jar.order.description and "PURGE ALL" in jar.order.description.upper():
             ingredients = await self.get_ingredients_for_purge_all(jar)
         else:
             ingredients = jar.get_ingredients_for_machine(self)

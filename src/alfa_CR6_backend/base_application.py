@@ -1056,8 +1056,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         jar_json_properties = json.loads(jar.json_properties)
         order_json_properties = json.loads(jar.order.json_properties)
 
-        logging.warning(f"jar.order.description.upper():{jar.order.description.upper()}")
-
         order_ingredients = jar_json_properties.get('order_ingredients')
         if order_ingredients is None:
             order_ingredients = order_json_properties.get('ingredients', {})

@@ -132,6 +132,15 @@ class BaseModel:  # pylint: disable=too-few-public-methods
         return exceeding_objects
 
 
+    def get_json_property(self, key, default):
+        value = default
+        try:
+            _properties = json.loads(self.json_properties)
+            value = _properties.get(key, default)
+        except Exception as exc:  # pylint: disable=broad-except
+            logging.error(f"self:{self}, exc:{exc}")
+        return value
+
 class User(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "user"
@@ -248,7 +257,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
             app = QApplication.instance()
             app.main_window.debug_page.update_status()
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(e)
+            logging.error(f"{e}")
 
     def __str__(self):
 
@@ -256,7 +265,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
             ret = "[m:{}, status:{}, position:{}, {}:{}]".format(
                 self.machine_head, self.status, self.position, self.order.order_nr, self.index)
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(e)
+            logging.error(f"{e}")
             ret = f"{e}"
 
         return ret
