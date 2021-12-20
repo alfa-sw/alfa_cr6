@@ -4,6 +4,7 @@
   <p></p>
   
 <style>
+	.container {width: 90%;}
 	th, td {
 	  padding: 4px;
 	}
@@ -45,24 +46,14 @@
 
 <div class="block_container">
 
-	<form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
-		<table class="head_table">
+	<table class="head_table">
 		<tr>
 		<td id="server_time" width="30%"></td>
 		<td id="live_can_list" width="30%"></td>
-		<td width="20%" title="upload formula files (.dat, .pdf, .json)">
-			<label for="input_file">choose a formula file to upload<br/>(.dat, .pdf, .json)</label>
-			<input class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
-		</td>
-		<td width="6%">
-			<input class="btn btn-primary" type="submit" value="upload"><img width="32px" src="static/images/upload.png"></img></input>
-		</td>
 		</tr>
-		</table>
-	</form>
-	
-	<table class="status_table">
+	</table>
 
+	<table>
 		<tr>
 			{% for i in ('A', 'B', 'C') %}
 			<th>
@@ -129,7 +120,21 @@
 		<input type="submit" onclick="send_debug_cmd();"></input>
 		<span id="debug_answer"></span>
 	</div>
-
+	<table>
+	<form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
+	<tr>
+		<td width="30%" title="upload formula files (.dat, .pdf, .json)">
+			<label for="input_file">upload settings or full db</label>
+			<input class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
+		</td>
+		<td width="30%">
+			<input class="btn btn-primary" type="submit" value="upload"><img width="32px" src="static/images/upload.png"></img></input>
+		</td>
+		<td width="40%">
+		</td>
+	</tr>
+	</form>
+	</table>
 	<div><hr></hr></div>
 
 </div>

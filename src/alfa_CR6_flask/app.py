@@ -14,9 +14,6 @@ import json
 import datetime
 import traceback
 import tempfile
-import subprocess
-
-from werkzeug.utils import secure_filename  # pylint: disable=import-error
 
 from flask import (Markup, Flask, redirect, flash, request, send_file)  # pylint: disable=import-error
 
@@ -51,33 +48,6 @@ def _to_html_table(_obj, rec_lev=0):
         _html += str(_obj)
 
     return _html
-
-def _handle_CRX_stream_upload(stream, filename):
-
-    flash_msgs = ['cannot create temp file']
-    with tempfile.NamedTemporaryFile() as f:
-        flash_msgs = []
-        splitext = os.path.splitext(filename)
-        splitname = os.path.split(filename)
-        logging.info("splitext:{}, splitname:{}".format(splitext, splitname))
-
-        logging.warning(filename)
-        content = stream.read()
-        try:
-            cmd_ = ''
-            cmd_ += '. /opt/alfa_cr6/venv/bin/activate;'
-            cmd_ += 'python -c "from alfa_CR6_backend.globals import import_settings; s = import_settings(); print(s.WEBENGINE_DOWNLOAD_PATH, )"'
-            WEBENGINE_DOWNLOAD_PATH = subprocess.check_output(
-                cmd_, shell=True, stderr=subprocess.STDOUT).decode()
-            pth_ = os.path.join(WEBENGINE_DOWNLOAD_PATH.strip(), filename)
-            with open(pth_, 'wb') as f:
-                f.write(content)
-            flash_msgs.append('uploaded CRX file:{} to:{}.'.format(f.name, pth_))
-        except BaseException:
-            logging.error(traceback.format_exc())
-
-    return flash_msgs
-
 
 def _gettext(s):
     return s
@@ -118,7 +88,6 @@ class CRX_ModelView(ModelView):
     def display_time_to_local_tz(self, context, obj, name):   # pylint: disable=unused-argument,no-self-use
 
         value = getattr(obj, name)
-        # ~ value_ = value.replace(tzinfo=datetime.timezone.utc).strftime("%Y-%m-%d %I:%M:%S:%f (%Z)")
         value_local = value.replace(tzinfo=datetime.timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S:%f (%Z)")
         return Markup(value_local)
 
@@ -366,8 +335,33 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
         try:
             if request.method == 'POST':
                 for stream in request.files.getlist('file'):
-                    filename = secure_filename(stream.filename)
-                    flash_msgs = flash_msgs + _handle_CRX_stream_upload(stream, filename)
+                    split_ext = os.path.splitext(stream.filename)
+                    logging.warning(f"stream.mimetype:{stream.mimetype}, stream.filename:{stream.filename}, split_ext:{split_ext}.")
+
+                    if "app_settings.py" in stream.filename.lower():
+                        with open(os.path.join(SETTINGS.CONF_PATH, 'app_settings.py'), 'wb') as f:
+                            f.write(stream.read())
+                        flash_msgs.append("app settings overwritten. {}".format(stream.filename))
+
+                    elif split_ext[1:] and split_ext[1] == '.sqlite':
+                        orig_pth = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
+                        logging.warning("orig_pth:{}".format(orig_pth))
+                        if os.path.split(orig_pth)[1] in os.path.split(stream.filename)[1]:
+                            back_pth = orig_pth + ".BACK"
+                            temp_pth = orig_pth + ".TEMP"
+                            with open(temp_pth, 'wb') as f:
+                                f.write(stream.read())
+                            os.system("cp -a {} {}".format(orig_pth, back_pth))
+                            os.system("cp -a {} {}".format(temp_pth, orig_pth))
+                            flash_msgs.append('uploaded new sqlite db: {}.'.format(stream.filename))
+                        else:
+                            msg = 'ERROR invlaid file name {}. Check db version'.format(stream.filename)
+                            flash_msgs.append(msg)
+                            logging.error(msg)
+                    else:
+                        msg = 'unknown file {}.'.format(stream.filename)
+                        flash_msgs.append(msg)
+
         except Exception as exc:  # pylint: disable=broad-except
             flash_msgs.append('Error trying to upload files: {}'.format(exc))
             logging.error(traceback.format_exc())
@@ -393,13 +387,13 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
         out_fname = None
         try:
             if data_set_name.lower() == 'full_db':
-                file_to_send = '/' + SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
+                file_to_send = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
                 out_fname = '{}_{}'.format(datetime.datetime.now().isoformat(timespec='seconds'), os.path.basename(file_to_send))
-            if data_set_name.lower() == 'app_settings':
+            elif data_set_name.lower() == 'app_settings':
                 file_to_send = os.path.join(CONF_PATH, "app_settings.py")
                 out_fname = '{}_{}'.format(datetime.datetime.now().isoformat(timespec='seconds'), os.path.basename(file_to_send))
             else:
-                flash_msgs = "unknown data_set_name: {}".format(data_set_name.lower())
+                flash_msgs.append("unknown data_set_name: {}".format(data_set_name.lower()))
         except Exception as exc:  # pylint: disable=broad-except
             flash_msgs.append('Error trying to download files: {}'.format(exc))
             logging.error(traceback.format_exc())
