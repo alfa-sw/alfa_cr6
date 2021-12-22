@@ -511,7 +511,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 msg_ = tr_(" before dispensing. Please check jar.")
                 r = await self.app.wait_for_condition(condition, timeout=31, extra_info=msg_)
                 if r:
-                    jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
+                    # ~ jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
+                    jar.update_live(machine_head=self, pos=None, t0=None)
 
                     if "PURGE ALL" in jar.order.description.upper():
 

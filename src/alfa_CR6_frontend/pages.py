@@ -158,7 +158,11 @@ class OrderTableModel(BaseTableModel):
 
             self.results = []
             for o in query_1.all() + query_2.all():
-                file_name = o.get_json_property('meta', {}).get("file name", '')
+                try:
+                    file_name = o.get_json_property('meta', {}).get("file name", '')
+                except Exception:  # pylint: disable=broad-except
+                    logging.warning(traceback.format_exc())
+                    file_name = ''
                 item = ["", "", o.status, o.order_nr, file_name]
                 self.results.append(item)
 

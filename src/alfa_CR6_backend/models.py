@@ -366,7 +366,13 @@ class dbEventManager:
         for n in globals():
             m = globals().get(n)
             try:
-                if isinstance(m, sqlalchemy.ext.declarative.api.DeclarativeMeta) and issubclass(m, BaseModel):
+                _cls_ = None
+                if hasattr(sqlalchemy.ext.declarative, 'DeclarativeMeta'):
+                    _cls_ = sqlalchemy.ext.declarative.DeclarativeMeta
+                elif hasattr(sqlalchemy.ext.declarative, 'api'):
+                    _cls_ = sqlalchemy.ext.declarative.api.DeclarativeMeta
+
+                if isinstance(m, _cls_) and issubclass(m, BaseModel):
                     # ~ event.listen(m, 'after_update', self.receive_after_update)
                     # ~ event.listen(m, 'before_update', self.receive_before_update)
                     if m.row_count_limt > 0:

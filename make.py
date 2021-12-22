@@ -103,7 +103,7 @@ def deploy_conf_to_target(args):
 
     cmds = [
         f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
-        f"scp {PROJECT_ROOT}/conf/supervisor.target.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
+        # ~ f"scp {PROJECT_ROOT}/conf/supervisor.target.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
         # ~ f"scp {PROJECT_ROOT}/conf/xhost.desktop {tgt_cred}:/opt/alfa/tmp/",
         # ~ f'ssh {tgt_cred} "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"',
         # ~ f'ssh {tgt_cred} "sudo chown pi:pi /home/pi/.config/autostart/xhost.desktop"',

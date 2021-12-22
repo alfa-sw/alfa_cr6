@@ -79,7 +79,8 @@ async def download_KCC_specific_gravity_lot():
                                                content_type=mime_type)
                                 async with aiohttp_session.post(f'http://{ip}:{port}/admin/upload', data=data) as resp:
                                     resp_json = await resp.json()
-                                    assert resp.ok and resp_json.get('result') == 'ok', f"failure uploading to:{ip}:{port}"
+                                    assert resp.ok and resp_json.get(
+                                        'result') == 'ok', f"failure uploading to:{ip}:{port}"
                             except Exception as e:  # pylint: disable=broad-except
                                 logging.error(traceback.format_exc())
                                 QApplication.instance().insert_db_event(
@@ -364,10 +365,17 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
     def refresh_can_list(self):
 
-        live_can_list = [
-            f"{k} ({j['jar'].position}) {j['jar'].status}" for k, j in
-            QApplication.instance().get_jar_runners().items() if
-            j and j.get('jar') and j['jar'].position]
+        live_can_list = []
+        for k, j in QApplication.instance().get_jar_runners().items():
+            if j and j.get('jar'):
+                machine_sts_lev = ''
+                code_str = f"""<a href="/jar/details/?id={j.get('jar').id}">{k}</a>"""
+                if j['jar'].machine_head:
+                    _sts_lev = j['jar'].machine_head.status and j['jar'].machine_head.status.get("status_level")
+                    machine_sts_lev = f"{j['jar'].machine_head.name}:{_sts_lev}"
+                _live_can = f"{code_str} {j['jar'].status} [{j['jar'].position}, {machine_sts_lev}]"
+
+                live_can_list.append(_live_can)
 
         t = self.broadcast_msg("live_can_list", live_can_list)
         asyncio.ensure_future(t)
@@ -652,7 +660,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if self.__tasks_to_freeze != n:
                 self.__tasks_to_freeze = n
                 # ~ logging.warning(f'__tasks_to_freeze:{self.__tasks_to_freeze}'
-                                # ~ f', {[(t.get_name(), k) for t, k in _tasks_to_freeze]}')
+                # ~ f', {[(t.get_name(), k) for t, k in _tasks_to_freeze]}')
 
                 if self.__tasks_to_freeze:
                     msg = tr_("please, wait while finishing all pending operations ...")
@@ -801,6 +809,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 ret = await self.ws_server.broadcast_msg(f'{msg_dict["type"]}_{head_index}', msg_dict["value"])
                 logging.debug("ret:{}".format(ret))
+                self.ws_server.refresh_can_list()
 
                 if head_index == 0:
                     if status.get('status_level') == 'ALARM' and status.get('error_code') == 10:
@@ -935,7 +944,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if "CancelledError" in traceback.format_exc():
             logging.warning(traceback.format_exc())
-            raise # pylint:  disable=misplaced-bare-raise
+            raise  # pylint:  disable=misplaced-bare-raise
 
         if not ui_msg:
             ui_msg = e

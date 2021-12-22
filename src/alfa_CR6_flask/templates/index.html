@@ -8,17 +8,14 @@
 	th, td {
 	  padding: 4px;
 	}
-
 	table{
 	  border: 1px solid light-grey;
 	  border-collapse: collapse;
 	  width: 100%;
 	}
-
 	th{
 		background-color: #EFEFFF;
 	}
-
 	.scrollable {
 	  background-color: #FFFFCC;
 	  height: 300px;
@@ -34,15 +31,10 @@
 		padding: 6px;
 		text-align: center;
 	}
-
 	.block_container {
 		background-color: #CCF7F7;
-//~ 		margin-left: 30px;
-//~ 		margin-right: 30px;
 	}
 </style>
-
-
 
 <div class="block_container">
 
@@ -92,7 +84,6 @@
 </div>
 <div>
 	<div id="ask_platform_answer"></div>
-
 	<div><hr></hr></div>
 	<div>
 		<label>Current Language:</label> 
@@ -105,45 +96,48 @@
 		<input class="btn btn-primary" type="submit" value="GERMAN" onclick="change_language('de');"></input>
 		<label>(WARN application will be restarted)</label>
 	</div>
-
 	<div><hr></hr></div>
-
-	<span>
-		<a style="color:black;" class="button-tool" href="{{ alfa40_admin_url }}" target="_blank">open alfa40_admin_url</a> |
-		<a style="color:black;" class="button-tool" href="/download?data_set_name=full_db">download supervisor db</a> |       
-		<a style="color:black;" class="button-tool" href="/download?data_set_name=app_settings">download supervisor app_settings</a> |
-	</span>
-	<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
-	<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
-		<span>Manhole commander (expert usage only):</span>
-		<input type="text" size="40" id="debug_command" onkeydown="if(event.keyCode === 13) {send_debug_cmd()};"></input>
-		<input type="submit" onclick="send_debug_cmd();"></input>
-		<span id="debug_answer"></span>
-	</div>
-	<table>
-	<form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
+	<table class="table-striped table-bordered">
 	<tr>
-		<td width="30%" title="upload formula files (.dat, .pdf, .json)">
+		<th width="10%"></th><th width="30%">download </th><th width="40%" colspan="2">upload </th><th></th>
+	</tr>
+	<tr><form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
+		<td>
+			<a href="{{ alfa40_admin_url }}" target="_blank">open alfa40_admin_url</a>
+		</td>
+		<td>
+			<a class="btn btn-primary" href="/download?data_set_name=full_db">download supervisor db</a>
+			<a class="btn btn-primary" href="/download?data_set_name=app_settings">download supervisor app_settings</a>
+		</td>
+		<td title="upload files: full db (.sqlite) or application settings (app_settings.py)">
 			<label for="input_file">upload settings or full db</label>
 			<input class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
 		</td>
-		<td width="30%">
+		<td>
 			<input class="btn btn-primary" type="submit" value="upload"><img width="32px" src="static/images/upload.png"></img></input>
 		</td>
-		<td width="40%">
+		<td>
+		</td>
+	</form></tr>
+	<tr>
+		<td colspan="5">
+			<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
+			<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
+				<span>Manhole commander (expert usage only):</span>
+				<input type="text" size="40" id="debug_command" onkeydown="if(event.keyCode === 13) {send_debug_cmd()};"></input>
+				<input type="submit" onclick="send_debug_cmd();"></input>
+				<span id="debug_answer"></span>
+			</div>
 		</td>
 	</tr>
-	</form>
 	</table>
 	<div><hr></hr></div>
-
 </div>
-
 
 <script>
 
 	var g_ws_client = null;
-	
+
 	var toggle_element_visibility = function(el_id) {
 		var el = document.getElementById(el_id); 
 		if(el){
@@ -201,14 +195,10 @@
 	};
 	var on_wsocket_message = function(event) {
 		var data = JSON.parse(event.data);
-//~ 		console.log('on_wsocket_message() data.value:', data.value)
 		var data_container_id = null;
-//~ 		console.log('on_wsocket_message() data.type:', data.type)
-//~ 		console.log('on_wsocket_message() data.value:', data.value)
 		var el = document.getElementById(data.type); 
 		if(el){
 			el.innerHTML = data.value;
-//~ 			el.scrollIntoView();
 		}
 		if (data.server_time) {
 			var el1 = document.getElementById('server_time'); 
@@ -226,7 +216,6 @@
 			g_ws_client.onopen = on_wsocket_open;  
 			g_ws_client.onclose = on_wsocket_close;
 			g_ws_client.onmessage = on_wsocket_message;
-			// console.log(ws_server_url +" g_ws_client: ", g_ws_client);
 		} else {
 			if ((g_ws_client) && (g_ws_client.readyState == 1)/* OPEN */) {
 				try {
