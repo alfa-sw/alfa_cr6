@@ -37,13 +37,16 @@ Base = sqlalchemy.ext.declarative.declarative_base()
 
 global_session = None
 
+
 def set_global_session(db_session):
 
     global global_session  # pylint: disable=global-statement
     global_session = db_session
 
+
 def generate_id():
     return str(uuid.uuid4())
+
 
 def compile_barcode(order_nr, index):
     barcode = int(order_nr) + int(index) % 1000
@@ -104,7 +107,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
 
         assert key == 'json_properties'
 
-        if self.json_properties_schema :
+        if self.json_properties_schema:
             validate(instance=self.json_properties, schema=self.json_properties_schema)
         else:
             json.loads(value)
@@ -131,7 +134,6 @@ class BaseModel:  # pylint: disable=too-few-public-methods
 
         return exceeding_objects
 
-
     def get_json_property(self, key, default):
         value = default
         try:
@@ -140,6 +142,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
         except Exception as exc:  # pylint: disable=broad-except
             logging.error(f"self:{self}, exc:{exc}")
         return value
+
 
 class User(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
@@ -186,7 +189,7 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "order"
     order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
-    jars = relationship("Jar")
+    jars = relationship("Jar", cascade="all, delete-orphan")
 
     json_properties = Column(Unicode, default='{"meta": "", "ingrdients": []}')
 
@@ -196,18 +199,20 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
     @property
     def status(self):
         sts_ = "NEW"
-        new_jars = [j for j in self.jars if j.status == 'NEW']
-        progress_jars = [j for j in self.jars if j.status == 'PROGRESS']
-        error_jars = [j for j in self.jars if j.status == 'ERROR']
-        done_jars = [j for j in self.jars if j.status == 'DONE']
-        if error_jars:
+        counters = {}
+        for j in self.jars:
+            counters.setdefault(j.status, 0)
+            counters[j.status] += 1
+        if counters.get("ERROR"):
             sts_ = "ERROR"
-        elif progress_jars:
+        elif counters.get("PROGRESS"):
             sts_ = "PROGRESS"
-        elif new_jars and done_jars:
+        elif counters.get("NEW") and counters.get("DONE"):
             sts_ = "PARTIAL"
-        elif not new_jars and done_jars:
+        elif not counters.get("NEW") and counters.get("DONE"):
             sts_ = "DONE"
+
+        # ~ logging.warning(f"sts_:{sts_}, counters:{counters}")
 
         return sts_
 

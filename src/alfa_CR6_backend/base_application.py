@@ -714,8 +714,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if jar:
 
             if jar.status in ["DONE", "ERROR"]:
-                msg_ = tr_("barcode:{} has status {}.\n").format(barcode, tr_(jar.status))
-                self.main_window.open_alert_dialog(msg_, title="WARNING")
+                args, fmt = (barcode, tr_(jar.status)), "barcode:{} has status {}.\n"
+                self.main_window.open_alert_dialog(args, fmt=fmt, title="WARNING")
 
             A = self.get_machine_head_by_letter("A")
             jar_size = A.jar_size_detect
@@ -747,14 +747,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 logging.error(msg_)
         else:
             jar = None
-            msg_ = tr_("barcode:{} not found.\nPlease, remove it.\n").format(barcode)
-            self.main_window.open_alert_dialog(msg_, title="ERROR")
+            args, fmt = (barcode, ), "barcode:{} not found.\nPlease, remove it.\n"
+            self.main_window.open_alert_dialog(args, fmt=fmt, title="WARNING")
 
         logging.warning(f"jar:{jar}")
         return jar
 
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals
 
+        ret = None
         barcode = str(barcode)
         logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
 
@@ -775,17 +776,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     "JAR_INPUT_ROLLER_PHOTOCELL", on=True, status_levels=["STANDBY"]
                 )
                 if not r:
-                    msg_ = tr_("Condition not valid while reading barcode:{}").format(barcode)
-                    self.main_window.open_alert_dialog(msg_)
-                    logging.error(msg_)
+                    args, fmt = (barcode, ), "Condition not valid while reading barcode:{}"
+                    self.main_window.open_alert_dialog(args, fmt=fmt)
+                    logging.error(fmt.format(*args))
                 else:
 
                     self.ready_to_read_a_barcode = False
 
                     if barcode in self.__jar_runners:
-                        error = tr_("{} already in progress!").format(barcode)
-                        self.main_window.open_alert_dialog(error, title="ERROR")
-                        logging.error(error)
+                        args, fmt = (barcode, ), "{} already in progress!"
+                        self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                         self.main_window.show_barcode(barcode, is_ok=False)
                     else:
                         # let's run a task that will manage the jar through the entire path inside the system
@@ -795,9 +795,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                         self.main_window.show_barcode(barcode, is_ok=True)
                         logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
-
+                        ret = barcode
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
+
+        return ret
 
     async def on_head_msg_received(self, head_index, msg_dict):
 
@@ -925,37 +927,25 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
-    def insert_db_event(self, name="", level="ERROR", severity="", source="", description=""):   # pylint: disable=too-many-arguments
+    # ~ def insert_db_event(self, name="", level="ERROR", severity="", source="", description=""):   # pylint: disable=too-many-arguments
+    def insert_db_event(self, **args):
 
         try:
-            evnt = Event(
-                name=name,
-                level=level,
-                severity=severity,
-                source=source,
-                description=description)
-            self.db_session.add(evnt)
+            evt = Event(**args)
+            self.db_session.add(evt)
             self.db_session.commit()
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.db_session.rollback()
 
-    def handle_exception(self, e, ui_msg=None, insert_in_db=False):  # pylint:  disable=no-self-use
+    def handle_exception(self, e):  # pylint:  disable=no-self-use
 
         if "CancelledError" in traceback.format_exc():
             logging.warning(traceback.format_exc())
             raise  # pylint:  disable=misplaced-bare-raise
 
-        if not ui_msg:
-            ui_msg = e
-        self.main_window.open_alert_dialog(ui_msg, title="ERROR")
-
+        self.main_window.open_alert_dialog(f"{e}", title="ERROR")
         logging.error(traceback.format_exc())
-
-        if insert_in_db:
-            descr = "{} {}".format(ui_msg, traceback.format_exc())
-            self.insert_db_event(
-                name=str(e), level="ERROR", severity="", source="BaseApplication.handle_exception", description=descr)
 
     def toggle_freeze_carousel(self):
 
@@ -1000,7 +990,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         name = self.MACHINE_HEAD_INDEX_TO_NAME_MAP[head_index]
         msg = f"freezing carousel for refill of head {name}"
         logging.warning(msg)
-        self.main_window.open_alert_dialog(msg, title="INFO")
+
+        args, fmt = (name, ), "freezing carousel for refill of head {}"
+        self.main_window.open_alert_dialog(args, fmt=fmt, title="INFO")
+        logging.warning(fmt.format(*args))
+
         self.freeze_carousel(True)
 
     def show_reserve(self, head_index, flag):

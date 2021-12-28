@@ -421,18 +421,25 @@ class DebugPage:
             q = app.db_session.query(Jar).filter(Jar.status.in_(("NEW", "DONE")))
             q = q.filter(Jar.position != "DELETED").order_by(Jar.date_created)
             jar = q.first()
-            if jar:
-                status = app.machine_head_dict[0].status.copy()
-                status["jar_photocells_status"] = status.get(
-                    "jar_photocells_status", 0) | 0x01  # set JAR_INPUT_ROLLER_PHOTOCELL bit
+            async def set_JAR_INPUT_ROLLER_PHOTOCELL_bit(on_off):
+                # set JAR_INPUT_ROLLER_PHOTOCELL bit
+                sts_ = app.machine_head_dict[0].status.copy()
 
+                if on_off:
+                    sts_["jar_photocells_status"] = sts_ .get("jar_photocells_status", 0) | 0x01
+                else:
+                    sts_["jar_photocells_status"] = sts_.get("jar_photocells_status", 0) & ~ 0x01
+
+                await app.machine_head_dict[0].update_status(sts_)
+                await app.on_head_msg_received(
+                    head_index=0, msg_dict={"type": "device:machine:status", "value": sts_})
+
+            if jar:
                 async def coro():
-                    await app.machine_head_dict[0].update_status(status)
-                    await app.on_head_msg_received(
-                        head_index=0,
-                        msg_dict={"type": "device:machine:status", "value": status},
-                    )
-                    await app.on_barcode_read(jar.barcode)
+                    await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(True) # set JAR_INPUT_ROLLER_PHOTOCELL bit
+                    barcode = await app.on_barcode_read(jar.barcode)
+                    if barcode is None:
+                        await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(False) # reset JAR_INPUT_ROLLER_PHOTOCELL bit
 
                 t = coro()
                 asyncio.ensure_future(t)

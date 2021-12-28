@@ -11,6 +11,7 @@
 
 import logging
 import traceback
+import json
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
@@ -299,6 +300,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def on_menu_line_edit_return_pressed(self):
 
+        logging.warning("")
+
         def ok_cb_(lang_):
             logging.warning(f"lang_:{ lang_ }")
             set_language(lang_)
@@ -309,7 +312,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             msg_ = tr_("confirm changing language to: {}? \n (WARN: application will be restarted)").format(lang_)
             self.open_input_dialog(message=msg_, ok_cb=ok_cb_, ok_cb_args=[lang_, ])
         elif 'alarm' in txt_:
-            self.open_alert_dialog('TEST ALERT MESSAGE', title="ALERT", callback=None, args=None)
+            # ~ self.open_alert_dialog('TEST ALERT MESSAGE', title="ALERT", callback=None, args=None)
+            args, fmt = ('sample', ), "TEST ALERT MESSAGE: {}"
+            self.open_alert_dialog(args, fmt=fmt, title="ALERT")
 
     def on_menu_btn_group_clicked(self, btn):
 
@@ -349,13 +354,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.help_page.open_page()
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.open_alert_dialog(
-                f"btn_name:{btn_name} exception:{e}",
-                title="ERROR",
-                callback=None,
-                args=None,
-            )
+            self.handle_exception(e)
 
     def toggle_keyboard(self, on_off=None):
 
@@ -468,7 +467,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         logging.warning(str(order_nr))
 
-    def open_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
+    def open_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):  # pylint: disable=too-many-arguments
 
         self.input_dialog.show_dialog(
             icon_name=icon_name,
@@ -479,9 +478,17 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         logging.warning(str(message))
 
-    def open_alert_dialog(self, msg, title="ALERT", callback=None, args=None):
+    def open_alert_dialog(self, args, title="ALERT", fmt=None, callback=None, cb_args=None):  # pylint: disable=too-many-arguments
 
-        _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=args)
+        if fmt is not None:
+            msg = tr_(fmt).format(*args)
+            msg_ = fmt.format(*args)
+        else:
+            msg = str(args)
+            msg_ = ''
+        json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg})
+
+        _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args)
 
         logging.warning(msg)
 
@@ -490,17 +497,18 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             level=f"{title}",
             severity='',
             source="MainWindow.open_alert_dialog",
-            description=f"{msg}")
+            json_properties=json_properties_,
+            description=f"{msg_ or msg}")
 
     def open_frozen_dialog(self, msg, title="ALERT"):
 
         callback = QApplication.instance().freeze_carousel
-        args = [False, ]
+        cb_args = [False, ]
         logging.info(msg)
         msg_ = tr_("carousel is paused.")
         msg_ += f'\n------------------------------\n"{msg}"\n------------------------------\n'
         msg_ += tr_("hit 'OK' to unfreeze it")
-        self.open_alert_dialog(msg_, title=title, callback=callback, args=args)
+        self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args)
 
     def show_barcode(self, barcode, is_ok=False):
 

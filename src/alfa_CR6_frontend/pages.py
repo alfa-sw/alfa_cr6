@@ -105,10 +105,13 @@ class FileTableModel(BaseTableModel):
         filter_text = parent.search_file_line.text()
         name_list_ = [p for p in os.listdir(path) if filter_text in p][:101]
         if len(name_list_) >= 100:
-            self.open_alert_dialog(
-                tr_("Too many files saved and not used. Please delete unused files."),
-                title="ERROR",
-            )
+            # ~ self.open_alert_dialog(
+                # ~ tr_("Too many files saved and not used. Please delete unused files."),
+                # ~ title="ERROR",
+            # ~ )
+            args, fmt = (), "Too many files saved and not used. Please delete unused files."
+            self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+
         name_list_.sort(reverse=True)
         self.results = [["", "", "", p] for p in name_list_]
 
@@ -196,7 +199,8 @@ class OrderTableModel(BaseTableModel):
         elif role == Qt.DecorationRole and index.column() == 1:  # edit
             ret = self.edit_icon.scaled(32, 32, Qt.KeepAspectRatio)
         if role == Qt.DecorationRole and index.column() == 2:  # status
-            datum = str(index.data()).upper()
+            # ~ datum = str(index.data()).upper()
+            datum = self.results[index.row()][index.column()]
             if "DONE" in datum:
                 ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
             elif "ERR" in datum:
@@ -505,8 +509,7 @@ class WebenginePage(BaseStackedPage):
                 self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
                 self.__adjust_downloaded_file_name(full_name)
             except Exception as e:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-                self.main_window.open_alert_dialog(f"exception:{e}", title="DOWNLOAD ERROR")
+                QApplication.instance().handle_exception(e)
 
         download.finished.connect(_cb)
 
@@ -599,14 +602,14 @@ class OrderPage(BaseStackedPage):
     def __on_order_table_clicked(self, index):
 
         datum = index.data()
-        logging.warning(f"datum:{datum}")
+        # ~ logging.warning(f"datum:{datum}")
         try:
             col = index.column()
             row = index.row()
             model = index.model()
             order_nr = model.results[row][3]
 
-            logging.warning(f"row:{row}, col:{col}, order_nr:{order_nr}")
+            logging.warning(f"datum:{datum}, row:{row}, col:{col}, order_nr:{order_nr}")
             if col == 0:  # delete
 
                 def cb():
@@ -632,8 +635,7 @@ class OrderPage(BaseStackedPage):
                 self.populate_jar_table()
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+            QApplication.instance().handle_exception(e)
 
     def __on_jar_table_clicked(self, index):  # pylint: disable=too-many-locals
 
@@ -709,8 +711,7 @@ class OrderPage(BaseStackedPage):
                 pass
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+            QApplication.instance().handle_exception(e)
 
     def __on_file_table_clicked(self, index):   # pylint: disable=too-many-locals
 
@@ -780,8 +781,7 @@ class OrderPage(BaseStackedPage):
                 pass
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+            QApplication.instance().handle_exception(e)
 
     def __on_new_order_clicked(self):
 
@@ -798,8 +798,7 @@ class OrderPage(BaseStackedPage):
             # ~ self.formula_table.selectionModel().select(QItemSelection(s, e), QItemSelectionModel.ClearAndSelect)
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+            QApplication.instance().handle_exception(e)
 
     def __on_clone_order_clicked(self):
 
@@ -821,8 +820,7 @@ class OrderPage(BaseStackedPage):
             else:
                 self.main_window.open_alert_dialog(tr_("no item selected. Please, select one to clone."))
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR", callback=None, args=None)
+            QApplication.instance().handle_exception(e)
 
     def __create_order_cb(self, model, file_name):
 
@@ -1014,8 +1012,7 @@ class HomePage(BaseStackedPage):
             self.main_window.webengine_page.open_page(map_[btn])
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"btn_name:{btn_name} exception:{e}", title="ERROR")
+            QApplication.instance().handle_exception(e)
 
     def on_action_btn_group_clicked(self, btn):
 
@@ -1045,8 +1042,7 @@ class HomePage(BaseStackedPage):
                     self.main_window.update_status_data(i)
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            self.main_window.open_alert_dialog(f"btn_name:{btn_name} exception:{e}", title="ERROR")
+            QApplication.instance().handle_exception(e)
 
     def update_expired_products(self, head_index):
 
@@ -1172,8 +1168,9 @@ class HomePage(BaseStackedPage):
             if lbl:
                 self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position)
 
+    @staticmethod
     def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
-            self, lbl, head_letters_bit_names, position=None, icon=None):
+            lbl, head_letters_bit_names, position=None, icon=None):
 
         if lbl:
             def _get_bit(head_letter, bit_name):
@@ -1221,8 +1218,7 @@ class HomePage(BaseStackedPage):
                 lbl.show()
 
             except Exception as e:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-                self.main_window.open_alert_dialog(f"exception:{e}", title="ERROR")
+                QApplication.instance().handle_exception(e)
 
     def show_reserve(self, head_index, flag=None):
 
@@ -1323,9 +1319,8 @@ class HomePage(BaseStackedPage):
 
                 QApplication.instance().main_window.open_alert_dialog(tr_("{} expired produtcs:{}").format(m.name, info_))
 
-            except Exception as e:   # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-                QApplication.instance().main_window.open_alert_dialog(f"exception:{e}")
+            except Exception as e:  # pylint: disable=broad-except
+                QApplication.instance().handle_exception(e)
 
 
 class HomePageSixHeads(HomePage):

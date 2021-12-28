@@ -407,8 +407,7 @@ class EditDialog(BaseDialog):
     def __discard_changes(self):
 
         if self.warning_lbl.text():
-            msg = tr_("confirm discarding changes?")
-            self.parent().open_alert_dialog(msg, title="ALERT", callback=self.hide)
+            self.parent().open_alert_dialog((), fmt="confirm discarding changes?", title="ALERT", callback=self.hide)
         else:
             self.hide()
 
@@ -553,8 +552,7 @@ class AliasDialog(BaseDialog):
     def __discard_changes(self):
 
         if self.warning_lbl.text():
-            msg = tr_("confirm discarding changes?")
-            self.parent().open_alert_dialog(msg, title="ALERT", callback=self.hide)
+            self.parent().open_alert_dialog((), fmt="confirm discarding changes?", title="ALERT", callback=self.hide)
         else:
             self.hide()
 

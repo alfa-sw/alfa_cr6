@@ -154,8 +154,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         if self.low_level_pipes and not silent:
             logging.warning(f"{self.name} low_level_pipes:{self.low_level_pipes}")
-            self.app.main_window.open_alert_dialog(
-                tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(self.name, self.low_level_pipes))
+            args, fmt = (self.name, self.low_level_pipes), "{} Please, Check Pipe Levels: low_level_pipes:{}"
+            self.app.main_window.open_alert_dialog(args, fmt=fmt)
 
     async def update_status(self, status):
 
@@ -168,10 +168,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 and self.status.get("status_level") != "ALARM"):
 
             self.app.freeze_carousel(True)
-            msg_ = "{} ALARM. {}: {}, {}: {}".format(self.name, tr_('error_code'), status.get(
+            _ = "{} ALARM. {}: {}, {}: {}".format(self.name, tr_('error_code'), status.get(
                 "error_code"), tr_('error_message'), tr_(status.get("error_message")))
-            logging.error(msg_)
-            self.app.main_window.open_frozen_dialog(msg_)
+            logging.error(_)
+            self.app.main_window.open_frozen_dialog(_)
 
             if self.index == 0:
                 if status.get("error_code") == 10:  # user button interrupt
@@ -183,7 +183,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if (status.get("status_level") == "RESET"
                 and self.status.get("status_level") != "RESET"):
             await self.update_tintometer_data(invalidate_cache=True, silent=False)
-            self.app.main_window.open_alert_dialog(tr_("{} RESETTING").format(self.name))
+
+            self.app.main_window.open_alert_dialog((self.name, ), fmt="{} RESETTING")
 
         old_flag = self.status.get("jar_photocells_status", 0) & 0x001
         new_flag = status.get("jar_photocells_status", 0) & 0x001
@@ -375,7 +376,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     if not r:
                         logging.error(f"msg_:{msg_}")
                         if not silent:
-                            self.app.main_window.open_alert_dialog(msg=msg_)
+                            self.app.main_window.open_alert_dialog(msg_)
 
                 except Exception as e:  # pylint: disable=broad-except
                     self.app.handle_exception(e)
@@ -497,7 +498,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             dispensation_outcomes = json_properties.get("dispensation_outcomes", [])
 
             failed_disps_ = [(head_name, outcome) for head_name, outcome in
-                    dispensation_outcomes if "success" not in outcome]
+                             dispensation_outcomes if "success" not in outcome]
 
             if not list(failed_disps_):
                 # ~ allowed_status_levels = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'DISPENSING', 'JAR_POSITIONING']
@@ -559,7 +560,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     if "PURGE ALL" not in jar.order.description.upper():
                         for k, v in ingredients.items():
                             specific_weight = self.get_specific_weight(k)
-                            dispensed_quantities_gr[k] = dispensed_quantities_gr.get(k, 0) + round(v * specific_weight, 4)
+                            dispensed_quantities_gr[k] = dispensed_quantities_gr.get(
+                                k, 0) + round(v * specific_weight, 4)
                         json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
                         jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
                 else:
@@ -637,10 +639,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             )
 
             if not ret and show_alert:
-                _ = tr_('timeout expired!\n{} bit_name:{}, on:{}, status_levels:{}, timeout:{}.').format(
-                    self.name, bit_name, on, status_levels, timeout)
-                self.app.main_window.open_alert_dialog(_)
-                logging.error(_)
+                args = (self.name, bit_name, on, status_levels, timeout)
+                fmt = 'timeout expired!\n{} bit_name:{}, on:{}, status_levels:{}, timeout:{}.'
+                self.app.main_window.open_alert_dialog(args, fmt=fmt, title="ALERT")
 
             return ret
         except Exception as e:  # pylint: disable=broad-except
@@ -661,10 +662,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             logging.warning(f"{self.name} bit_name:{bit_name}, on:{on}, ret:{ret}")
 
             if not ret and show_alert:
-                _ = tr_('timeout expired!\n{} bit_name:{}, on:{}, timeout:{}.').format(
-                    self.name, bit_name, on, timeout)
-                self.app.main_window.open_alert_dialog(_)
-                logging.error(_)
+                args = (self.name, bit_name, on, timeout)
+                fmt = 'timeout expired!\n{} bit_name:{}, on:{}, timeout:{}.'
+                self.app.main_window.open_alert_dialog(args, fmt=fmt, title="ALERT")
 
             return ret
         except Exception as e:  # pylint: disable=broad-except
@@ -688,10 +688,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 f"{self.name} status_levels:{status_levels}, on:{on}, ret:{ret}")
 
             if not ret and show_alert:
-                _ = tr_('timeout expired!\n{} on:{}, status_levels:{}, timeout:{}.').format(
-                    self.name, on, status_levels, timeout)
-                self.app.main_window.open_alert_dialog(_)
-                logging.error(_)
+                args = (self.name, on, status_levels, timeout)
+                fmt = 'timeout expired!\n{} on:{}, status_levels:{}, timeout:{}.'
+                self.app.main_window.open_alert_dialog(args, fmt=fmt)
 
             return ret
         except Exception as e:  # pylint: disable=broad-except
@@ -699,7 +698,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def check_alarm_923(self):
 
-        flag = self.status["status_level"] in ['ALARM',]
-        flag = flag and int(self.status["error_code"]) in [923,]
+        flag = self.status["status_level"] in ['ALARM', ]
+        flag = flag and int(self.status["error_code"]) in [923, ]
 
         return flag
