@@ -13,7 +13,7 @@ import logging
 import json
 import datetime
 import traceback
-import tempfile
+# ~ import tempfile
 
 from flask import (Markup, Flask, redirect, flash, request, send_file)  # pylint: disable=import-error
 
@@ -198,6 +198,7 @@ class OrderModelView(CRX_ModelView):
 
     column_list = (
         'order_nr',
+        'status',
         'can status',
         'can position',
         'date_created',
@@ -240,6 +241,16 @@ class OrderModelView(CRX_ModelView):
     def _display_description(self, context, obj, name): # pylint: disable=unused-argument
         return self.display_description(context, obj, name)
 
+    def _display_status(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
+        _html = ''
+        try:
+            _html += f"""{obj.status}"""
+        except Exception:
+            _html = ''
+            logging.warning(traceback.format_exc())
+
+        return Markup(_html)
+
     def _display_jar_status(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
         jars = getattr(obj, 'jars')
 
@@ -277,6 +288,7 @@ class OrderModelView(CRX_ModelView):
     column_formatters = CRX_ModelView.column_formatters.copy()
     column_formatters.update({
         'description': _display_description,
+        'status': _display_status,
         'can status': _display_jar_status,
         'can position': _display_jar_position,
     })
@@ -346,7 +358,8 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
                     elif split_ext[1:] and split_ext[1] == '.sqlite':
                         orig_pth = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
                         logging.warning("orig_pth:{}".format(orig_pth))
-                        if os.path.split(orig_pth)[1] in os.path.split(stream.filename)[1]:
+                        # ~ if os.path.split(orig_pth)[1] in os.path.split(stream.filename)[1]:
+                        if 'cr' in stream.filename.lower():
                             back_pth = orig_pth + ".BACK"
                             temp_pth = orig_pth + ".TEMP"
                             with open(temp_pth, 'wb') as f:
