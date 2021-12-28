@@ -134,10 +134,13 @@ class Keyboard(QWidget):
         if has_evdev:
             try:
 
-                import getpass
-                logging.warning(f"getpass.getuser():{getpass.getuser()}")
-                if getpass.getuser() == 'admin':
-                    os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
+                from subprocess import run
+                from getpass import getuser
+                _user = getuser()
+                logging.warning(f"_user:{_user}")
+                if _user == 'admin':
+                    # ~ os.system("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput")
+                    out_ = run("sudo chgrp input /dev/uinput ; sudo chmod 770 /dev/uinput", shell=True, check=False)
 
                 self.uinput = UInput()
                 logging.warning(f"self.uinput:{self.uinput}")
