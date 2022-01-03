@@ -13,7 +13,10 @@ import logging
 import json
 import datetime
 import traceback
-# ~ import tempfile
+
+from pathlib import Path
+from zipfile import ZIP_DEFLATED, ZipFile
+from base64 import urlsafe_b64encode, urlsafe_b64decode
 
 from flask import (Markup, Flask, redirect, flash, request, send_file)  # pylint: disable=import-error
 
@@ -25,9 +28,45 @@ from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # py
 from waitress import serve       # pylint: disable=import-error
 
 from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session)
-from alfa_CR6_backend.globals import (import_settings, CONF_PATH)
+from alfa_CR6_backend.globals import (import_settings, CONF_PATH, get_alfa_serialnumber)
 
 SETTINGS = import_settings()
+
+def scrambler(path: str, mode: ["obfuscate", "unobfuscate"]):
+    try:
+        modified = b''
+        with open(path, 'rb') as f:
+            original = f.read()
+            if mode == "obfuscate":
+                modified = urlsafe_b64encode(original)
+            elif mode == "unobfuscate":
+                modified = urlsafe_b64decode(original)
+            else:
+                raise Exception(f'invalid parameter mode:{mode}')
+        with open(path, 'wb') as f:
+            f.write(modified)
+    except Exception:
+        logging.error(traceback.format_exc())
+
+def unzip_to_dir(dest_dir: str, source_path: str):
+
+    if hasattr(SETTINGS, 'obfuscate_settings') and SETTINGS.obfuscate_settings:
+        scrambler(source_path, "unobfuscate")
+
+    with ZipFile(source_path, 'r') as zip_ref:
+        logging.warning(f"zip_ref.namelist():{zip_ref.namelist()}")
+        zip_ref.extractall(dest_dir)
+
+def zip_from_dir(dest_path: str, source_dir: str, exclude_pattern: str):
+
+    src_path = Path(source_dir)
+    with ZipFile(dest_path, 'w', ZIP_DEFLATED) as zf:
+        for file in src_path.rglob('*'):
+            if not exclude_pattern in file.parts:
+                zf.write(file, file.relative_to(src_path.parent))
+
+    if hasattr(SETTINGS, 'obfuscate_settings') and SETTINGS.obfuscate_settings:
+        scrambler(dest_path, "obfuscate")
 
 def _to_html_table(_obj, rec_lev=0):
 
@@ -355,6 +394,15 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
                             f.write(stream.read())
                         flash_msgs.append("app settings overwritten. {}".format(stream.filename))
 
+                    elif "settings.zip" in stream.filename.lower():
+
+                        temp_pth = os.path.join(SETTINGS.TMP_PATH, "settings.zip")
+                        dest_pth = os.path.join(CONF_PATH, "..")
+                        with open(temp_pth, 'wb') as f:
+                            f.write(stream.read())
+                        unzip_to_dir(dest_dir=dest_pth, source_path=temp_pth)
+                        flash_msgs.append(f'unzipped settings from:{stream.filename} to :{dest_pth}.')
+
                     elif split_ext[1:] and split_ext[1] == '.sqlite':
                         orig_pth = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
                         logging.warning("orig_pth:{}".format(orig_pth))
@@ -398,13 +446,20 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
         flash_msgs = []
         file_to_send = None
         out_fname = None
+        alfa_serialnumber = get_alfa_serialnumber()
         try:
+            timestamp_ = datetime.datetime.now().isoformat(timespec='seconds')
             if data_set_name.lower() == 'full_db':
                 file_to_send = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
-                out_fname = '{}_{}'.format(datetime.datetime.now().isoformat(timespec='seconds'), os.path.basename(file_to_send))
+                out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
+            elif data_set_name.lower() == 'settings.zip':
+                temp_pth = os.path.join(SETTINGS.TMP_PATH, "settings.zip")
+                zip_from_dir(dest_path=temp_pth, source_dir=CONF_PATH, exclude_pattern="__pycache__")
+                file_to_send = temp_pth
+                out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             elif data_set_name.lower() == 'app_settings':
                 file_to_send = os.path.join(CONF_PATH, "app_settings.py")
-                out_fname = '{}_{}'.format(datetime.datetime.now().isoformat(timespec='seconds'), os.path.basename(file_to_send))
+                out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             else:
                 flash_msgs.append("unknown data_set_name: {}".format(data_set_name.lower()))
         except Exception as exc:  # pylint: disable=broad-except

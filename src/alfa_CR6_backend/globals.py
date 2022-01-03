@@ -5,6 +5,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
 # pylint: disable=too-many-lines
+# pylint: disable=broad-except
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import sys
@@ -33,6 +34,26 @@ LANGUAGE_MAP = {
     "korean": 'kr',
     "german": 'de',
 }
+
+_ALFA_SN = None
+
+def get_alfa_serialnumber():
+
+    global _ALFA_SN    # pylint: disable=global-statement
+
+    if _ALFA_SN is None:
+        try:
+            cmd_ = """
+            . /opt/alfa/venv/bin/activate;
+            python -c "from alfa_common.platform import get_alfa_serialnumber; print(get_alfa_serialnumber())"
+            """
+            _ALFA_SN = subprocess.check_output(cmd_, shell=True, stderr=subprocess.STDOUT).decode()
+            _ALFA_SN = _ALFA_SN.strip()
+        except Exception:
+            logging.error(traceback.format_exc())
+            _ALFA_SN = None
+
+    return _ALFA_SN or "00000000"
 
 def set_language(lang):
 

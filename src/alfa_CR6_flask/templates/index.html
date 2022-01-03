@@ -99,15 +99,16 @@
 	<div><hr></hr></div>
 	<table class="table-striped table-bordered">
 	<tr>
-		<th width="10%"></th><th width="30%">download </th><th width="40%" colspan="2">upload </th><th></th>
+		<th width="10%"></th><th width="40%">download </th><th width="40%" colspan="2">upload </th><th></th>
 	</tr>
 	<tr><form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
 		<td>
 			<a href="{{ alfa40_admin_url }}" target="_blank">open alfa40_admin_url</a>
 		</td>
 		<td>
-			<a class="btn btn-primary" href="/download?data_set_name=full_db">download supervisor db</a>
-			<a class="btn btn-primary" href="/download?data_set_name=app_settings">download supervisor app_settings</a>
+			<a class="btn btn-primary" href="/download?data_set_name=full_db">supervisor db</a>
+			<a class="btn btn-primary" href="/download?data_set_name=settings.zip">supervisor settings.zip</a>
+			<a class="btn btn-primary" href="/download?data_set_name=app_settings">supervisor app_settings</a>
 		</td>
 		<td title="upload files: full db (.sqlite) or application settings (app_settings.py)">
 			<label for="input_file">upload settings or full db</label>
