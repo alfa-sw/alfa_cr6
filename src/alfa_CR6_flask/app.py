@@ -463,15 +463,15 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
                 temp_pth = os.path.join(SETTINGS.TMP_PATH, "data_and_conf.zip")
                 cmd_ = f"sudo chown -R admin:admin {SETTINGS.CONF_PATH}"
                 subprocess.run(cmd_, check=False, shell=True)
-                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.CONF_PATH, exclude_patterns=("__pycache__",), mode="w")
-                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.DATA_PATH, exclude_patterns=("cache", "webengine",), mode="a")
+                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.CONF_PATH, exclude_patterns=("cache", "back", "temp"), mode="w")
+                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.DATA_PATH, exclude_patterns=("webengine", "cache", "back", "temp"), mode="a")
                 subprocess.run(cmd_, check=False, shell=True)
                 file_to_send = temp_pth
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             elif data_set_name.lower() == 'log_and_tmp.zip':
                 temp_pth = os.path.join(SETTINGS.TMP_PATH, "log_and_tmp.zip")
-                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.LOG_PATH, exclude_patterns=[], mode="w")
-                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.TMP_PATH, exclude_patterns=("cache", ), mode="a")
+                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.LOGS_PATH, exclude_patterns=[], mode="w")
+                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.TMP_PATH, exclude_patterns=("cache", "log_and_tmp", ".zip", ".whl"), mode="a")
                 file_to_send = temp_pth
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             elif data_set_name.lower() == 'app_settings':
