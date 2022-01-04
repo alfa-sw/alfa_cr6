@@ -505,9 +505,9 @@ class WebenginePage(BaseStackedPage):
 
         def _cb():
             try:
-                _msg = "file name:{}\n\n ".format(_name) + _msgs[download.state()]
-                self.main_window.open_alert_dialog(_msg, title="ALERT", callback=None, args=None)
                 self.__adjust_downloaded_file_name(full_name)
+                args_ = tr_("file name:{}").format(_name) + "\n\n" + _msgs[download.state()]
+                self.main_window.open_alert_dialog(args_, title="ALERT")
             except Exception as e:  # pylint: disable=broad-except
                 QApplication.instance().handle_exception(e)
 
