@@ -14,6 +14,7 @@ import asyncio
 import json
 import html
 import logging
+import types
 
 import logging.handlers
 
@@ -37,6 +38,7 @@ from alfa_CR6_backend.globals import (
     EPSILON,
     get_version,
     set_language,
+    import_settings,
     tr_)
 
 from alfa_CR6_backend.machine_head import MachineHead
@@ -200,7 +202,13 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
         logging.debug(f"self:{self} type_:{type_}")
         logging.debug(f" msg:{msg}")
 
-        if "device:machine:status" in type_:
+        if type_ == "live_can_list" and isinstance(msg, list):
+            for i in msg:
+                # ~ html_ += "<tr><td>{}</td></tr>".format(i)
+                html_ += "{}<br/>".format(i)
+
+        elif "device:machine:status" in type_:
+
             if isinstance(msg, dict):
                 status_list = list(msg.items())
             elif isinstance(msg, list):
@@ -231,10 +239,9 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
 
                 else:
                     continue
-        elif type_ == "live_can_list" and isinstance(msg, list):
-            for i in msg:
-                # ~ html_ += "<tr><td>{}</td></tr>".format(i)
-                html_ += "{}<br/>".format(i)
+
+        else:
+            html_ += f"unknown type_:{type_} msg:{msg}<br/>"
 
         # ~ html_ += "</table>"
         html_ += "</div>"
@@ -311,6 +318,19 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
                     params = msg_dict.get("params", {})
                     lang = params.get("lang")
                     set_language(lang)
+
+                elif msg_dict["command"] == "ask_settings":
+                    S = import_settings()
+                    s_ = [f"{i}: {getattr(S, i)}" for i in dir(S) if not i.startswith("_") and not isinstance(getattr(S, i), types.ModuleType)]
+
+                    answ_ = html.unescape('<br/>'.join(s_))
+                    logging.warning(f"answ_:{answ_}.")
+
+                    answer = json.dumps({
+                        'type': 'ask_settings_answer',
+                        'value': answ_,
+                    })
+                    await websocket.send(answer)
 
                 elif msg_dict["command"] == "ask_platform_info":
                     params = msg_dict.get("params", {})
