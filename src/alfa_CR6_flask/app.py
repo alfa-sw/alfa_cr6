@@ -474,7 +474,7 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
                 zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.TMP_PATH, exclude_patterns=("cache", "log_and_tmp", ".zip", ".whl"), mode="a")
                 file_to_send = temp_pth
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif data_set_name.lower() == 'app_settings':
+            elif data_set_name.lower() == 'app_settings.py':
                 file_to_send = os.path.join(SETTINGS.CONF_PATH, "app_settings.py")
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             else:
