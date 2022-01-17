@@ -1317,7 +1317,7 @@ class HomePage(BaseStackedPage):
                                 logging.error(traceback.format_exc())
                         info_.append(item)
 
-                QApplication.instance().main_window.open_alert_dialog(tr_("{} expired produtcs:{}").format(m.name, info_))
+                QApplication.instance().main_window.open_alert_dialog((m.name, info_), fmt="{} expired produtcs:{}")
 
             except Exception as e:  # pylint: disable=broad-except
                 QApplication.instance().handle_exception(e)

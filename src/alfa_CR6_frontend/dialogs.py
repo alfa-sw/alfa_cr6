@@ -275,8 +275,7 @@ class EditDialog(BaseDialog):
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.parent().open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None)
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
     def __on_set_item_clicked(self):
 
@@ -308,8 +307,7 @@ class EditDialog(BaseDialog):
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.parent().open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None)
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
     def __on_formula_table_itemSelectionChanged(self):
 
@@ -325,8 +323,7 @@ class EditDialog(BaseDialog):
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.parent().open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None)
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
     def __do_save_changes(self):  # pylint: disable=too-many-locals
 
@@ -382,8 +379,7 @@ class EditDialog(BaseDialog):
         except BaseException as e:  # pylint: disable=broad-except
             db_session.rollback()
             logging.error(traceback.format_exc())
-            self.parent().open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None)
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
         self.hide()
 
@@ -504,8 +500,7 @@ class InputDialog(BaseDialog):
                     ok_cb(*args_)
                 except Exception as e:  # pylint: disable=broad-except
                     logging.error(traceback.format_exc())
-                    self.parent().open_alert_dialog(
-                        f"exception:{e}", title="ERROR", callback=None, args=None)
+                    self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
             self.ok_button.clicked.connect(on_ok_button_clicked)
 
@@ -602,8 +597,7 @@ class AliasDialog(BaseDialog):
         # ~ logging.warning(f"_duplicated_list:{_duplicated_list}")
 
         if _duplicated_list:
-            self.parent().open_alert_dialog(tr_("data not valid. duplicated alias:") + f" {_duplicated_list}",
-                                            title="ERROR", callback=None, args=None)
+            self.parent().open_alert_dialog(tr_("data not valid. duplicated alias:") + f" {_duplicated_list}", title="ERROR")
             return False
 
         return True
@@ -667,8 +661,7 @@ class AliasDialog(BaseDialog):
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            self.parent().open_alert_dialog(
-                f"exception:{e}", title="ERROR", callback=None, args=None)
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
     def show_dialog(self, alias_file_path):
 
