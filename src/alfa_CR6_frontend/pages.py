@@ -64,6 +64,8 @@ class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-a
         # ~ self.item_font = QFont('Times sans-serif', 32)
         self.results = [[]]
 
+        self.main_window = QApplication.instance().main_window
+
     def rowCount(self, parent=None):
         logging.debug(f"parent:{parent}")
         return len(self.results)
