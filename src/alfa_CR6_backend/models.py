@@ -200,9 +200,12 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
     def status(self):
         sts_ = "NEW"
         counters = {}
+
         for j in self.jars:
-            counters.setdefault(j.status, 0)
-            counters[j.status] += 1
+            if j.position != "DELETED":
+                counters.setdefault(j.status, 0)
+                counters[j.status] += 1
+
         if counters.get("ERROR"):
             sts_ = "ERROR"
         elif counters.get("PROGRESS"):

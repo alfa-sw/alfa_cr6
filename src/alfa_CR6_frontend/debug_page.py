@@ -28,6 +28,42 @@ from alfa_CR6_backend.dymo_printer import dymo_print
 from alfa_CR6_backend.globals import tr_, set_language, LANGUAGE_MAP
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
+def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE")):
+
+    app = QApplication.instance()
+
+    # ~ q = app.db_session.query(Jar).filter(Jar.status.in_(("NEW", "DONE")))
+    q = app.db_session.query(Jar).filter(Jar.status.in_(allowed_jar_statuses))
+    q = q.filter(Jar.position != "DELETED").order_by(Jar.date_created)
+    jar = q.first()
+
+    async def set_JAR_INPUT_ROLLER_PHOTOCELL_bit(on_off):
+        # set JAR_INPUT_ROLLER_PHOTOCELL bit
+        sts_ = app.machine_head_dict[0].status.copy()
+
+        if on_off:
+            sts_["jar_photocells_status"] = sts_ .get("jar_photocells_status", 0) | 0x01
+        else:
+            sts_["jar_photocells_status"] = sts_.get("jar_photocells_status", 0) & ~ 0x01
+
+        await app.machine_head_dict[0].update_status(sts_)
+        await app.on_head_msg_received(
+            head_index=0, msg_dict={"type": "device:machine:status", "value": sts_})
+
+    if jar:
+        async def coro():
+            await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(True) # set JAR_INPUT_ROLLER_PHOTOCELL bit
+            barcode = await app.on_barcode_read(jar.barcode)
+            if barcode is None:
+                await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(False) # reset JAR_INPUT_ROLLER_PHOTOCELL bit
+
+        t = coro()
+        asyncio.ensure_future(t)
+    else:
+        app.main_window.open_alert_dialog(f"cant find a valid can in db (not DELETED and with status in {allowed_jar_statuses})")
+
+
+
 
 class DebugPage:
 
@@ -418,33 +454,7 @@ class DebugPage:
 
         elif "read\nbarcode" in cmd_txt:
 
-            q = app.db_session.query(Jar).filter(Jar.status.in_(("NEW", "DONE")))
-            q = q.filter(Jar.position != "DELETED").order_by(Jar.date_created)
-            jar = q.first()
-            async def set_JAR_INPUT_ROLLER_PHOTOCELL_bit(on_off):
-                # set JAR_INPUT_ROLLER_PHOTOCELL bit
-                sts_ = app.machine_head_dict[0].status.copy()
-
-                if on_off:
-                    sts_["jar_photocells_status"] = sts_ .get("jar_photocells_status", 0) | 0x01
-                else:
-                    sts_["jar_photocells_status"] = sts_.get("jar_photocells_status", 0) & ~ 0x01
-
-                await app.machine_head_dict[0].update_status(sts_)
-                await app.on_head_msg_received(
-                    head_index=0, msg_dict={"type": "device:machine:status", "value": sts_})
-
-            if jar:
-                async def coro():
-                    await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(True) # set JAR_INPUT_ROLLER_PHOTOCELL bit
-                    barcode = await app.on_barcode_read(jar.barcode)
-                    if barcode is None:
-                        await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(False) # reset JAR_INPUT_ROLLER_PHOTOCELL bit
-
-                t = coro()
-                asyncio.ensure_future(t)
-            else:
-                app.main_window.open_alert_dialog("cant find a valid can in db (NEW and not DELETED)")
+            simulate_read_barcode()
 
         elif "complete" in cmd_txt:
 

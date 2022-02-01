@@ -40,6 +40,7 @@ from alfa_CR6_backend.dymo_printer import dymo_print
 from alfa_CR6_backend.globals import (
     IMAGES_PATH, import_settings, get_res, get_encoding, tr_)
 
+from alfa_CR6_frontend.debug_page import simulate_read_barcode
 
 import magic       # pylint: disable=import-error
 
@@ -1021,7 +1022,12 @@ class HomePage(BaseStackedPage):
         btn_name = btn.objectName()
         try:
             if "feed" in btn_name:
-                QApplication.instance().run_a_coroutine_helper("move_00_01")
+                if hasattr(g_settings, 'SIMULATE_READ_BARCODE') and getattr(g_settings, 'SIMULATE_READ_BARCODE'):
+                    allowed_jar_statuses = g_settings.SIMULATE_READ_BARCODE.get("allowed_jar_statuses", ("NEW", "DONE"))
+                    simulate_read_barcode(allowed_jar_statuses)
+                else:
+                    QApplication.instance().run_a_coroutine_helper("move_00_01")
+                
             elif "deliver" in btn_name:
                 QApplication.instance().run_a_coroutine_helper("move_12_00")
             elif "freeze_carousel" in btn_name:
