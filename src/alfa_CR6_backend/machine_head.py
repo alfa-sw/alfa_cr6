@@ -171,7 +171,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             _ = "{} ALARM. {}: {}, {}: {}".format(self.name, tr_('error_code'), status.get(
                 "error_code"), tr_('error_message'), tr_(status.get("error_message")))
             logging.error(_)
-            self.app.main_window.open_frozen_dialog(_)
+            self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True)
 
             if self.index == 0:
                 if status.get("error_code") == 10:  # user button interrupt

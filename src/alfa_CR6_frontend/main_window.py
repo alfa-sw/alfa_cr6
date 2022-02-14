@@ -500,15 +500,18 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             json_properties=json_properties_,
             description=f"{msg_ or msg}")
 
-    def open_frozen_dialog(self, msg, title="ALERT"):
+    def open_frozen_dialog(self, msg, title="ALERT", force_explicit_restart=False):
 
-        callback = QApplication.instance().freeze_carousel
-        cb_args = [False, ]
         logging.info(msg)
         msg_ = tr_("carousel is paused.")
         msg_ += f'\n------------------------------\n"{msg}"\n------------------------------\n'
-        msg_ += tr_("hit 'OK' to unfreeze it")
-        self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args)
+        if force_explicit_restart:
+            self.open_alert_dialog(msg_, title=title)
+        else:
+            msg_ += tr_("hit 'OK' to unfreeze it")
+            callback = QApplication.instance().freeze_carousel
+            cb_args = [False, ]
+            self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args)
 
     def show_barcode(self, barcode, is_ok=False):
 

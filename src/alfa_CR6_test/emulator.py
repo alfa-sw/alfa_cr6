@@ -205,7 +205,7 @@ class MachineHeadMockup:
                     ret = f"{x}"
                 return ret
                     
-            logging.info("{}, params:{}.".format(self.letter, {k: fmt(v) for k, v in params.items()}))
+            logging.info("{}:{}, params:{}.".format(self.index, self.letter, {k: fmt(v) for k, v in params.items()}))
             self.status.update(params)
             await self.dump_status()
         except:
