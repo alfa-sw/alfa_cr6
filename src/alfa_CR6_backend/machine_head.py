@@ -670,6 +670,31 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
 
+    async def get_stabilized_jar_size(self, time_out_sec=1., max_cntr=3):
+
+        t0 = time.time()
+        _jar_size_detect = None
+        cntr = 0
+        ret = None
+        while 1:
+
+            if _jar_size_detect != self.jar_size_detect:
+                _jar_size_detect = self.jar_size_detect
+                cntr = 0
+            else:
+                cntr += 1
+
+            if cntr >= max_cntr:
+                ret = self.jar_size_detect
+                break
+
+            if time.time() - t0 > time_out_sec:
+                break
+
+            await asyncio.sleep(.1)
+
+        return ret
+
     async def wait_for_status_level(     # pylint: disable=too-many-arguments
             self, status_levels, on=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=True, break_condition=None):
 

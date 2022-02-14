@@ -13,8 +13,8 @@ import traceback
 import asyncio
 import json
 import html
-import logging
 import types
+import logging
 
 import logging.handlers
 
@@ -738,7 +738,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.main_window.open_alert_dialog(args, fmt=fmt, title="WARNING")
 
             A = self.get_machine_head_by_letter("A")
-            jar_size = A.jar_size_detect
+            # ~ jar_size = A.jar_size_detect
+            jar_size = await A.get_stabilized_jar_size()
             package_size_list = []
             for m in [m_ for m_ in self.machine_head_dict.values() if m_]:
                 await m.update_tintometer_data(invalidate_cache=True)
