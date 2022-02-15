@@ -433,11 +433,7 @@ class EditDialog(BaseDialog):
         self.formula_table.setRowCount(len(ingredients))
         self.formula_table.setColumnCount(4)
 
-        self.available_pigments = {}
-        for m in QApplication.instance().machine_head_dict.values():
-            if m:
-                for pig in m.pigment_list:
-                    self.available_pigments[pig["name"]] = pig
+        self.available_pigments = QApplication.instance().get_available_pigments()
 
         # ~ logging.warning(f"self.available_pigments:{self.available_pigments}.")
         self.pigment_combo.clear()
@@ -669,11 +665,7 @@ class AliasDialog(BaseDialog):
 
         self._load_from_file()
 
-        _available_pigments = {}
-        for m in QApplication.instance().machine_head_dict.values():
-            if m:
-                for p in m.pigment_list:
-                    _available_pigments[p['name']] = p
+        _available_pigments = QApplication.instance().get_available_pigments()
 
         self.pigment_table.clearContents()
         self.pigment_table.setRowCount(len(_available_pigments))

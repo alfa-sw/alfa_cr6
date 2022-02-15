@@ -252,7 +252,7 @@ class DebugPage:
                     channel="machine",
                 )
             elif command == "UPDATE" and m:
-                t = m.update_tintometer_data(invalidate_cache=True)
+                t = m.update_tintometer_data()
 
             elif command == "LANG":
                 def ok_cb_(_lang):
