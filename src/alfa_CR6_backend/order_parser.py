@@ -25,9 +25,14 @@ from alfa_CR6_backend.globals import get_encoding
 class OrderParser:
 
     mcm_csv_header = 'BASE'
-    sw_txt_header = 'Octoral Information Services'
     sikkens_pdf_header = 'Anteprima Formula'
     kcc_pdf_header = "KCC Color Navi Formulation"
+
+    # ~ sw_txt_header = 'Octoral Information Services'
+    sw_txt_headers = [
+      "Intelligent Colour Retrieval & Information Services",
+      "Octoral Information Services"
+    ]
 
     def __init__(self, exception_handler=None):
         self.exception_handler = exception_handler
@@ -451,11 +456,13 @@ class OrderParser:
         with codecs.open(path_to_file, encoding=e) as fd:
             lines = fd.readlines()
 
-        if cls.sw_txt_header in lines[0]:
+        if [_hdr for _hdr in cls.sw_txt_headers if _hdr in lines[0]]:
+
+            header = lines[0].strip()
             properties = cls.parse_sw_txt(lines)
 
             if properties.get('meta') is not None:
-                properties['meta']['header'] = cls.sw_txt_header
+                properties['meta']['header'] = header
 
         elif cls.mcm_csv_header in lines[0]:
             properties = cls.parse_mcm_csv(lines)

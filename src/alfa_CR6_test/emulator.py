@@ -151,6 +151,35 @@ class MachineHeadMockup:
             "last_update": "2020-10-19 23:16:58 CEST",
         }
 
+        if self.letter == "D":
+            def _start_load_liftr_up():
+                msg_out_dict = {
+                    "command": "CRX_OUTPUTS_MANAGEMENT",
+                    "params": {"Output_Number": 1, "Output_Action": 2}
+                }
+                asyncio.ensure_future(self.handle_command(msg_out_dict))
+                msg_out_dict = {
+                    "command": "CRX_OUTPUTS_MANAGEMENT",
+                    "params": {"Output_Number": 1, "Output_Action": 0}
+                }
+                asyncio.ensure_future(self.handle_command(msg_out_dict))
+            asyncio.get_event_loop().call_later(3, _start_load_liftr_up)
+
+        elif self.letter == "F":
+            def _start_unload_liftr_down():
+                msg_out_dict = {
+                    "command": "CRX_OUTPUTS_MANAGEMENT",
+                    'params': {'Output_Number': 3, 'Output_Action': 5}
+                }
+                asyncio.ensure_future(self.handle_command(msg_out_dict))
+                msg_out_dict = {
+                    "command": "CRX_OUTPUTS_MANAGEMENT",
+                    'params': {'Output_Number': 3, 'Output_Action': 0}
+                }
+                asyncio.ensure_future(self.handle_command(msg_out_dict))
+
+            asyncio.get_event_loop().call_later(5, _start_unload_liftr_down)
+
         if self.index == 5:
             self.status["jar_photocells_status"] = 0x0010  # set load_lifter_up_pc
         elif self.index == 1:
@@ -176,7 +205,7 @@ class MachineHeadMockup:
                     ret = f"{x}"
                 return ret
                     
-            logging.info("{}, params:{}.".format(self.letter, {k: fmt(v) for k, v in params.items()}))
+            logging.info("{}:{}, params:{}.".format(self.index, self.letter, {k: fmt(v) for k, v in params.items()}))
             self.status.update(params)
             await self.dump_status()
         except:
