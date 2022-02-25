@@ -349,12 +349,13 @@ class EditDialog(BaseDialog):
 
             _meta = _properties.get("meta", {})
             _meta.update({"modified": datetime.now().isoformat(" ", timespec='seconds')})
-            # ~ _meta = json.loads(self.meta_text_edit.toPlainText())
-            # ~ _properties.update({'ingredients': _ingredients, 'meta': _meta})
 
             _properties.update({'ingredients': _ingredients})
-
             order.json_properties = json.dumps(_properties, indent=2)
+
+            QApplication.instance().do_fill_unknown_pigment_list(order)
+
+            # ~ logging.warning(f"order.json_properties:{order.json_properties}")
 
             n_of_jars = self.n_of_jars_spinbox.value()
             jars_to_print = []

@@ -890,17 +890,25 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         )
         asyncio.get_event_loop().close()
 
-    def _do_create_order(self, properties, description, n_of_jars):
+    def do_fill_unknown_pigment_list(self, order):
+
+        _properties = json.loads(order.json_properties)
 
         _available_pigments = self.get_available_pigments()
         _available_pigment_names = list(_available_pigments.keys())
         _unknown_pigments = {}
-        for _item in properties["ingredients"]:
+        for _item in _properties.get("ingredients", []):
             pigment_name = _item.get("pigment_name")
             weight = _item.get("weight(g)")
             if pigment_name not in _available_pigment_names and pigment_name and weight:
                 _unknown_pigments[pigment_name] = weight
-        properties["unknown_pigments"] = _unknown_pigments
+        _properties["unknown_pigments"] = _unknown_pigments
+
+        order.json_properties = json.dumps(_properties, indent=2)
+        
+        # ~ logging.warning(f"order.json_properties:{order.json_properties}")
+
+    def _do_create_order(self, properties, description, n_of_jars):
 
         order = None
         if self.db_session:
@@ -908,6 +916,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 order = Order(
                     json_properties=json.dumps(properties, indent=2),
                     description=description)
+
+                self.do_fill_unknown_pigment_list(order)
 
                 self.db_session.add(order)
                 for j in range(1, n_of_jars + 1):
