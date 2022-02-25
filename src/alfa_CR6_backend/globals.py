@@ -16,6 +16,8 @@ import traceback
 import importlib
 import codecs
 
+import redis
+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "ui")
@@ -40,6 +42,16 @@ _ALFA_SN = None
 def get_alfa_serialnumber():
 
     global _ALFA_SN    # pylint: disable=global-statement
+
+    if _ALFA_SN is None:
+        try:
+            r = redis.Redis()
+            alfa_conf = json.loads(r.get('ALFA_CONFIG'))
+            if alfa_conf:
+                _ALFA_SN = alfa_conf.get('ALFA_SERIAL_NUMBER')
+        except Exception:
+            logging.error(traceback.format_exc())
+            _ALFA_SN = None
 
     if _ALFA_SN is None:
         try:

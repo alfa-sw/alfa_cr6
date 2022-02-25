@@ -1097,7 +1097,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         order_ingredients = jar_json_properties.get('order_ingredients')
         if order_ingredients is None:
-            order_ingredients = order_json_properties.get('ingredients', {})
+            order_ingredients = order_json_properties.get('ingredients', [])
             jar_json_properties["order_ingredients"] = order_ingredients
 
         dispensed_quantities_gr = jar_json_properties.get('dispensed_quantities_gr', {})
@@ -1144,7 +1144,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         jar_json_properties["remaining_volume"] = round(remaining_volume, 4)
         jar.json_properties = json.dumps(jar_json_properties, indent=2)
 
-        _diff = get_dict_diff(order_json_properties["unknown_pigments"], jar_json_properties["unknown_pigments"])
+        d1 = order_json_properties.get("unknown_pigments", {})
+        d2 = jar_json_properties.get("unknown_pigments", {})
+        _diff = get_dict_diff(d1, d2)
         if _diff:
             msg = tr_("pigments in machine db have changed, check can label. diff:{}").format(_diff)
             self.main_window.open_alert_dialog(f"{msg}", title="ALERT")
