@@ -887,6 +887,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def _do_create_order(self, properties, description, n_of_jars):
 
+        # ~ _available_pigments = self.get_available_pigments()
+        # ~ _available_pigment_names = list(_available_pigments.keys())
+        # ~ _unknown_pigments = {}
+        # ~ for _item in properties.get('ingredients', []):
+            # ~ pigment_name = _item.get("pigment_name")
+            # ~ weight = _item.get("weight(g)")
+            # ~ if pigment_name not in _available_pigment_names and pigment_name and weight:
+                # ~ _unknown_pigments[pigment_name] = weight
+        # ~ properties["unknown_pigments"] = _unknown_pigments
+
         order = None
         if self.db_session:
             try:
@@ -1082,7 +1092,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         order_ingredients = jar_json_properties.get('order_ingredients')
         if order_ingredients is None:
-            order_ingredients = order_json_properties.get('ingredients', {})
+            order_ingredients = order_json_properties.get('ingredients', [])
             jar_json_properties["order_ingredients"] = order_ingredients
 
         dispensed_quantities_gr = jar_json_properties.get('dispensed_quantities_gr', {})
@@ -1128,6 +1138,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         jar_json_properties["unknown_pigments"] = unknown_pigments
         jar_json_properties["remaining_volume"] = round(remaining_volume, 4)
         jar.json_properties = json.dumps(jar_json_properties, indent=2)
+
+        # ~ d1 = order_json_properties.get("unknown_pigments", {})
+        # ~ d2 = jar_json_properties.get("unknown_pigments", {})
+        # ~ _diff = get_dict_diff(d1, d2)
+        # ~ if _diff:
+            # ~ msg = tr_("pigments in machine db have changed, check can label. diff:{}").format(_diff)
+            # ~ self.main_window.open_alert_dialog(f"{msg}", title="ALERT")
 
         self.db_session.commit()
 

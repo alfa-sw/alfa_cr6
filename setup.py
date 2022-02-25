@@ -62,6 +62,7 @@ def main():
             'python-magic',
             'xmltodict',
             'evdev',
+            'redis',
             # ~ 'PyQt5',
             # ~ 'PyQtWebEngine',
         ],
