@@ -18,8 +18,9 @@ import subprocess
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 from base64 import urlsafe_b64encode, urlsafe_b64decode
+from http import HTTPStatus
 
-from flask import (Markup, Flask, redirect, flash, request, send_file)  # pylint: disable=import-error
+from flask import (Markup, Flask, redirect, flash, request, send_file, current_app)  # pylint: disable=import-error
 
 import flask_sqlalchemy  # pylint: disable=import-error
 import flask_admin  # pylint: disable=import-error
@@ -385,6 +386,29 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
         }
 
         return self.render(template, **ctx)
+
+    @flask_admin.expose('/upload_formula_file', methods=('POST',))
+    def upload_formula_file(self):     # pylint: disable=no-self-use
+        _msgs = []
+        _status = HTTPStatus.BAD_REQUEST
+        try:
+            if request.method == 'POST':
+                for stream in request.files.getlist('file'):
+                    logging.warning(f"stream.mimetype:{stream.mimetype}, stream.filename:{stream.filename}.")
+                    pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), stream.filename)
+                    with open(pth_, 'wb') as f:
+                        f.write(stream.read())
+                    _status = HTTPStatus.OK
+                    _msgs.append("formula file uploaded. {}".format(stream.filename))
+        except Exception as exc:  # pylint: disable=broad-except
+            _msgs.append('Error trying to upload formula file: {}'.format(exc))
+            logging.error(traceback.format_exc())
+
+        ret = current_app.response_class(
+            json.dumps({'msg': _msgs}, ensure_ascii=False),
+            status=_status, content_type='application/json; charset=utf-8')
+        logging.warning("ret:{}".format(ret))
+        return ret
 
     @flask_admin.expose('/upload', methods=('POST',))
     def upload(self):     # pylint: disable=no-self-use
