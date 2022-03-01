@@ -21,6 +21,8 @@ from alfa_CR6_backend.globals import import_settings
 def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
     """ create a printable image .png for DYMO 450 """
 
+    recipe_barcode = str(recipe_barcode)
+
     settings = import_settings()
 
     tmp_barcode_image = "/opt/alfa_cr6/tmp/tmp_file.png"
@@ -32,24 +34,29 @@ def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
             pass
         logging.warning(f'empty file created at:{tmp_barcode_image}')
 
+    options = {
+        'dpi': 250,
+        'module_height': 7,
+        'font_size': 15,
+        'text_distance': 0.75,
+        'compress': False,
+        'line_lenght': 17,
+        'rotate': 0,
+    }
+
+    if hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
+        options.update(settings.PRINT_LABEL_OPTONS)
+
+    logging.warning(f'options:{options}')
+
     with open(tmp_barcode_image, 'wb') as file_:
         recipe_barcode_text = f'{recipe_barcode}'
-        barcode_img = EAN13(recipe_barcode_text, writer=ImageWriter())
 
-        options = {
-            'dpi': 250,
-            'module_height': 7,
-            'font_size': 15,
-            'text_distance': 0.75,
-            'compress': False,
-        }
+        l_lenght = options.pop('line_lenght')
 
-        if hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
-            options.update(settings.PRINT_LABEL_OPTONS)
-
-        line_1 = _line_lenght_checker(line_1)
-        line_2 = _line_lenght_checker(line_2)
-        line_3 = _line_lenght_checker(line_3)
+        line_1 = _line_lenght_checker(line_1, line_lenght=l_lenght)
+        line_2 = _line_lenght_checker(line_2, line_lenght=l_lenght)
+        line_3 = _line_lenght_checker(line_3, line_lenght=l_lenght)
 
         printable_info_list = []
         printable_info_list.append(recipe_barcode)
@@ -59,9 +66,14 @@ def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
 
         printable_text = '\n'.join(printable_info_list)
 
-        barcode_img.write(file_, options, printable_text)
+        EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
 
         response = tmp_barcode_image
+
+    rotate = options.pop('rotate')
+    if response and rotate:
+        from PIL import Image   # pylint: disable=import-outside-toplevel
+        Image.open(tmp_barcode_image).rotate(rotate, expand=1).save(tmp_barcode_image)
 
     logging.warning('response: {}'.format(response))
 

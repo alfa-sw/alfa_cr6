@@ -349,12 +349,13 @@ class EditDialog(BaseDialog):
 
             _meta = _properties.get("meta", {})
             _meta.update({"modified": datetime.now().isoformat(" ", timespec='seconds')})
-            # ~ _meta = json.loads(self.meta_text_edit.toPlainText())
-            # ~ _properties.update({'ingredients': _ingredients, 'meta': _meta})
 
             _properties.update({'ingredients': _ingredients})
-
             order.json_properties = json.dumps(_properties, indent=2)
+
+            QApplication.instance().do_fill_unknown_pigment_list(order)
+
+            # ~ logging.warning(f"order.json_properties:{order.json_properties}")
 
             n_of_jars = self.n_of_jars_spinbox.value()
             jars_to_print = []
@@ -433,11 +434,7 @@ class EditDialog(BaseDialog):
         self.formula_table.setRowCount(len(ingredients))
         self.formula_table.setColumnCount(4)
 
-        self.available_pigments = {}
-        for m in QApplication.instance().machine_head_dict.values():
-            if m:
-                for pig in m.pigment_list:
-                    self.available_pigments[pig["name"]] = pig
+        self.available_pigments = QApplication.instance().get_available_pigments()
 
         # ~ logging.warning(f"self.available_pigments:{self.available_pigments}.")
         self.pigment_combo.clear()
@@ -669,11 +666,7 @@ class AliasDialog(BaseDialog):
 
         self._load_from_file()
 
-        _available_pigments = {}
-        for m in QApplication.instance().machine_head_dict.values():
-            if m:
-                for p in m.pigment_list:
-                    _available_pigments[p['name']] = p
+        _available_pigments = QApplication.instance().get_available_pigments()
 
         self.pigment_table.clearContents()
         self.pigment_table.setRowCount(len(_available_pigments))

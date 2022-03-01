@@ -4,12 +4,16 @@ import os
 import sys
 import pathlib
 import traceback
+import time
 import logging
 
-from alfa_CR6_backend.dymo_printer import _create_printable_image
+from alfa_CR6_backend.dymo_printer import (_create_printable_image, dymo_print)
 
 from alfa_CR6_backend.globals import import_settings
 
+# ~ lpoptions -d DYMO_LabelWriter_450 -o media=custom_25.4x54.02mm_25.4x54.02mm
+# ~ lpoptions -d DYMO_LabelWriter_450 -o media=custom_25.4x54.02mm
+# ~ lpoptions -d DYMO_LabelWriter_450 -o media=custom_54.02x70.0mm_54.02x70.0mm
 
 settings = import_settings()
 
@@ -32,9 +36,19 @@ settings.PRINT_LABEL_OPTONS = {'font_path': '/usr/share/fonts/truetype/unfonts-c
 # ~ settings.PRINT_LABEL_OPTONS = {'font_path': '/usr/share/fonts/truetype/unfonts-extra/UnVada.ttf'}
 
 recipe_barcode = '201027001001'
-line_1 = "12345678901234567890"
-line_2 = "BBB" "---" "CCC" "+++" "DDD"
-line_3 = "현대자동차통근버스"
 
-_create_printable_image(recipe_barcode, line_1, line_2, line_3)
+settings.PRINT_LABEL_OPTONS['dpi'] = 240
+settings.PRINT_LABEL_OPTONS['module_height'] = 8
+settings.PRINT_LABEL_OPTONS['module_width'] = .8
+settings.PRINT_LABEL_OPTONS['line_lenght'] = 100
+settings.PRINT_LABEL_OPTONS['font_size'] = 22
+settings.PRINT_LABEL_OPTONS['rotate'] = 0
+
+a = "\n".join([f"{k}: {v}" for k, v in settings.PRINT_LABEL_OPTONS.items()][1:])
+b = "1234567890123456789012345678901234567890\n=\n=\n=\n"
+c = str(time.asctime())
+
+dymo_print(barcode=201027001001, line_1=a, line_2=b, line_3=c)
+
+logging.warning(time.asctime())
 

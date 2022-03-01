@@ -46,6 +46,11 @@ from alfa_CR6_backend.order_parser import OrderParser
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 from alfa_CR6_frontend.dialogs import ModalMessageBox
 
+def get_dict_diff(dict1, dict2):
+    set1 = set(dict1.items())
+    set2 = set(dict2.items())
+    diff = set1 ^ set2
+    return diff
 
 async def download_KCC_specific_gravity_lot():
 
@@ -742,7 +747,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             jar_size = await A.get_stabilized_jar_size()
             package_size_list = []
             for m in [m_ for m_ in self.machine_head_dict.values() if m_]:
-                await m.update_tintometer_data(invalidate_cache=True)
+                await m.update_tintometer_data()
                 logging.warning(f"{m.name}")
 
                 for s in [p["size"] for p in m.package_list]:
@@ -885,17 +890,25 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         )
         asyncio.get_event_loop().close()
 
-    def _do_create_order(self, properties, description, n_of_jars):
+    def do_fill_unknown_pigment_list(self, order):
 
-        # ~ _available_pigments = self.get_available_pigments()
-        # ~ _available_pigment_names = list(_available_pigments.keys())
-        # ~ _unknown_pigments = {}
-        # ~ for _item in properties.get('ingredients', []):
-            # ~ pigment_name = _item.get("pigment_name")
-            # ~ weight = _item.get("weight(g)")
-            # ~ if pigment_name not in _available_pigment_names and pigment_name and weight:
-                # ~ _unknown_pigments[pigment_name] = weight
-        # ~ properties["unknown_pigments"] = _unknown_pigments
+        _properties = json.loads(order.json_properties)
+
+        _available_pigments = self.get_available_pigments()
+        _available_pigment_names = list(_available_pigments.keys())
+        _unknown_pigments = {}
+        for _item in _properties.get("ingredients", []):
+            pigment_name = _item.get("pigment_name")
+            weight = _item.get("weight(g)")
+            if pigment_name not in _available_pigment_names and pigment_name and weight:
+                _unknown_pigments[pigment_name] = weight
+        _properties["unknown_pigments"] = _unknown_pigments
+
+        order.json_properties = json.dumps(_properties, indent=2)
+        
+        # ~ logging.warning(f"order.json_properties:{order.json_properties}")
+
+    def _do_create_order(self, properties, description, n_of_jars):
 
         order = None
         if self.db_session:
@@ -903,6 +916,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 order = Order(
                     json_properties=json.dumps(properties, indent=2),
                     description=description)
+
+                self.do_fill_unknown_pigment_list(order)
 
                 self.db_session.add(order)
                 for j in range(1, n_of_jars + 1):
@@ -1139,12 +1154,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         jar_json_properties["remaining_volume"] = round(remaining_volume, 4)
         jar.json_properties = json.dumps(jar_json_properties, indent=2)
 
-        # ~ d1 = order_json_properties.get("unknown_pigments", {})
-        # ~ d2 = jar_json_properties.get("unknown_pigments", {})
-        # ~ _diff = get_dict_diff(d1, d2)
-        # ~ if _diff:
-            # ~ msg = tr_("pigments in machine db have changed, check can label. diff:{}").format(_diff)
-            # ~ self.main_window.open_alert_dialog(f"{msg}", title="ALERT")
+        d1 = order_json_properties.get("unknown_pigments", {})
+        d2 = jar_json_properties.get("unknown_pigments", {})
+        _diff = get_dict_diff(d1, d2)
+        if _diff:
+            msg = tr_("pigments in machine db have changed, check can label. diff:{}").format(_diff)
+            self.main_window.open_alert_dialog(f"{msg}", title="ALERT")
 
         self.db_session.commit()
 
@@ -1190,7 +1205,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 break
         return ret
 
-    async def crate_purge_all_order(self, ):
+    def create_purge_all_order(self, ):
 
         properties = {
             'meta': {
@@ -1226,3 +1241,23 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         if requested_quantity_gr < EPSILON:
                             break
         return requested_quantity_gr, remaining_volume
+
+    def get_available_pigments(self):
+
+        available_pigments = {}
+        for m in self.machine_head_dict.values():
+            if m:
+
+                for pig in m.pigment_list:
+                    available_pigments[pig["name"]] = pig
+
+        return available_pigments
+
+    @staticmethod
+    def update_tintometer_data_on_all_heads():
+
+        for m in QApplication.instance().machine_head_dict.values():
+            if m:
+                if not m.pigment_list:
+                    t = m.update_tintometer_data()
+                    asyncio.ensure_future(t)

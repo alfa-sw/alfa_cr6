@@ -136,7 +136,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_package_list.json")
             with open(pth_, "w", encoding='UTF-8') as f:
-                json.dump(self.package_list, f, indent=2)
+                json.dump(package_list, f, indent=2)
 
             pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_pigment_list.json")
             with open(pth_, "w", encoding='UTF-8') as f:
@@ -182,7 +182,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         if (status.get("status_level") == "RESET"
                 and self.status.get("status_level") != "RESET"):
-            await self.update_tintometer_data(invalidate_cache=True, silent=False)
+            await self.update_tintometer_data(silent=False)
 
             self.app.main_window.open_alert_dialog((self.name, ), fmt="{} RESETTING")
 

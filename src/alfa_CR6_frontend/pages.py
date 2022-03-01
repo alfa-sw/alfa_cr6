@@ -17,7 +17,6 @@ import time
 import traceback
 import codecs
 import subprocess
-import asyncio
 from functools import partial
 
 from PyQt5.uic import loadUi
@@ -599,8 +598,7 @@ class OrderPage(BaseStackedPage):
     @staticmethod
     def __on_purge_all_clicked():
 
-        t = QApplication.instance().crate_purge_all_order()
-        asyncio.ensure_future(t)
+        QApplication.instance().create_purge_all_order()
 
     def __on_order_table_clicked(self, index):
 
@@ -868,6 +866,7 @@ class OrderPage(BaseStackedPage):
         self.populate_file_table()
         self.parent().setCurrentWidget(self)
 
+        QApplication.instance().update_tintometer_data_on_all_heads()
 
 class ActionPage(BaseStackedPage):
 
@@ -1027,7 +1026,7 @@ class HomePage(BaseStackedPage):
                     simulate_read_barcode(allowed_jar_statuses)
                 else:
                     QApplication.instance().run_a_coroutine_helper("move_00_01")
-                
+
             elif "deliver" in btn_name:
                 QApplication.instance().run_a_coroutine_helper("move_12_00")
             elif "freeze_carousel" in btn_name:

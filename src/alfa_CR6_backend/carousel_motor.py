@@ -571,7 +571,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         m = self.get_machine_head_by_letter(machine_letter)
         self.main_window.update_status_data(m.index, m.status)
 
-        await m.update_tintometer_data(invalidate_cache=True)
+        await m.update_tintometer_data()
         self.update_jar_properties(jar)
         json_properties = json.loads(jar.json_properties)
         insufficient_pigment_names = list(json_properties.get("insufficient_pigments", {}).keys())
@@ -580,7 +580,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 jar.barcode, insufficient_pigment_names, m.name)
             logging.warning(msg_)
             r = await self.wait_for_carousel_not_frozen(True, msg_)
-            await m.update_tintometer_data(invalidate_cache=True)
+            await m.update_tintometer_data()
             self.update_jar_properties(jar)
 
         r = await m.do_dispense(jar)
