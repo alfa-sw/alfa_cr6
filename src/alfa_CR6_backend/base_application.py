@@ -25,7 +25,7 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import aiohttp  # pylint: disable=import-error
 import websockets  # pylint: disable=import-error
-import magic  # pylint: disable=import-error
+# ~ import magic  # pylint: disable=import-error
 
 from flask import Markup  # pylint: disable=import-error
 
@@ -72,32 +72,37 @@ async def download_KCC_specific_gravity_lot():
                 content = await resp.text()
                 with open(tmp_file_path_, 'w', encoding='UTF-8') as f:
                     f.write(content)
+                    f.flush()
 
-                mime = magic.Magic(mime=True)
-                mime_type = mime.from_file(tmp_file_path_)
+                # ~ mime = magic.Magic(mime=True)
+                # ~ mime_type = mime.from_file(tmp_file_path_)
                 app = QApplication.instance()
                 if app:
                     for ip, _, port in app.settings.MACHINE_HEAD_IPADD_PORTS_LIST:
-                        logging.warning(f"ip:port {ip}:{port}")
-                        with open(tmp_file_path_, 'rb') as f:
-                            try:
-                                data = aiohttp.FormData()
-                                data.add_field('file', f, filename='kcc_lot_specific_info.json',
-                                               content_type=mime_type)
-                                async with aiohttp_session.post(f'http://{ip}:{port}/admin/upload', data=data) as resp:
-                                    resp_json = await resp.json()
-                                    assert resp.ok and resp_json.get(
-                                        'result') == 'ok', f"failure uploading to:{ip}:{port}"
-                            except Exception as e:  # pylint: disable=broad-except
-                                logging.error(traceback.format_exc())
-                                QApplication.instance().insert_db_event(
-                                    name=str(e),
-                                    level="ERROR",
-                                    severity="",
-                                    source="download_KCC_specific_gravity_lot",
-                                    description="{} | {}".format(
-                                        f"http://{ip}:{port}/admin/upload",
-                                        traceback.format_exc()))
+                        if ip in ["localhost", "127.0.0.1"]:
+                            os.system(f"rsync {tmp_file_path_} /opt/alfa/data/KCC_lot_specific_info.json")
+                        else:
+                            logging.warning(f"ip:port {ip}:{port}")
+                            with open(tmp_file_path_, 'rb') as f:
+                                try:
+                                    data = aiohttp.FormData()
+                                    data.add_field('file', f, filename='kcc_lot_specific_info.json',
+                                                   content_type='application/json; charset=utf-8')
+                                                   # ~ content_type=mime_type)
+                                    async with aiohttp_session.post(f'http://{ip}:{port}/admin/upload', data=data) as resp:
+                                        resp_json = await resp.json()
+                                        assert resp.ok and resp_json.get(
+                                            'result') == 'ok', f"failure uploading to:{ip}:{port}"
+                                except Exception as e:  # pylint: disable=broad-except
+                                    logging.error(traceback.format_exc())
+                                    QApplication.instance().insert_db_event(
+                                        name=str(e),
+                                        level="ERROR",
+                                        severity="",
+                                        source="download_KCC_specific_gravity_lot",
+                                        description="{} | {}".format(
+                                            f"http://{ip}:{port}/admin/upload",
+                                            traceback.format_exc()))
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -905,7 +910,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         _properties["unknown_pigments"] = _unknown_pigments
 
         order.json_properties = json.dumps(_properties, indent=2)
-        
+
         # ~ logging.warning(f"order.json_properties:{order.json_properties}")
 
     def _do_create_order(self, properties, description, n_of_jars):
