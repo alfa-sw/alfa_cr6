@@ -577,7 +577,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             last_check_KCC_specific_gravity_lot_time = time.time()
                             logging.warning(
                                 f"last_check_KCC_specific_gravity_lot_time:{last_check_KCC_specific_gravity_lot_time}")
-                            await download_KCC_specific_gravity_lot()
+                            # ~ await download_KCC_specific_gravity_lot()
+                            asyncio.ensure_future(download_KCC_specific_gravity_lot())
 
                         except Exception as e:  # pylint: disable=broad-except
                             self.handle_exception(e)
