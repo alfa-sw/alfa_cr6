@@ -19,7 +19,7 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 import xmltodict   # pylint: disable=import-error
 import magic       # pylint: disable=import-error
 
-from alfa_CR6_backend.globals import get_encoding
+from alfa_CR6_backend.globals import (get_encoding, tr_)
 
 
 class OrderParser:
@@ -30,8 +30,8 @@ class OrderParser:
 
     # ~ sw_txt_header = 'Octoral Information Services'
     sw_txt_headers = [
-      "Intelligent Colour Retrieval & Information Services",
-      "Octoral Information Services"
+        "Intelligent Colour Retrieval & Information Services",
+        "Octoral Information Services"
     ]
 
     def __init__(self, exception_handler=None):
@@ -135,9 +135,9 @@ class OrderParser:
                 })
 
         hersteller = properties['meta'].get("Hersteller")
-        oem_code   = properties['meta'].get("OEM-Code"  )
-        name       = properties['meta'].get("Name"      )
-        menge      = properties['meta'].get("Menge"     )
+        oem_code = properties['meta'].get("OEM-Code")
+        name = properties['meta'].get("Name")
+        menge = properties['meta'].get("Menge")
         properties["extra_lines_to_print"].append(f"{hersteller}")
         properties["extra_lines_to_print"].append(f"{oem_code} | {menge}")
         properties["extra_lines_to_print"].append(f"{name}")
@@ -423,7 +423,6 @@ class OrderParser:
             if properties.get('meta'):
                 properties['meta']['header'] = cls.kcc_pdf_header
 
-
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logg    ing.warning(f"cmd_:{cmd_}")
         os.system(cmd_)
@@ -527,9 +526,11 @@ class OrderParser:
 
         except Exception as e:              # pylint: disable=broad-except
 
-            logging.error(f"fmt error in file:{path_to_file}")
+            logging.error(f"format error in file:{path_to_file}")
             logging.error(traceback.format_exc())
+
             if self.exception_handler:
-                self.exception_handler(e)
+                msg = tr_("format error in file:{} \n {}").format(path_to_file, e)
+                self.exception_handler(msg)
 
         return properties
