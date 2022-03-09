@@ -529,8 +529,11 @@ class OrderParser:
             logging.error(f"format error in file:{path_to_file}")
             logging.error(traceback.format_exc())
 
+            msg = tr_("format error in file:{} \n {}").format(path_to_file, e)
+
+            properties.setdefault("meta", {})
+            properties['meta']['error'] = msg
             if self.exception_handler:
-                msg = tr_("format error in file:{} \n {}").format(path_to_file, e)
                 self.exception_handler(msg)
 
         return properties
