@@ -119,15 +119,17 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if ret:
                 for pig in ret.get("objects", []):
 
-                    enabled_pipes = [pipe for pipe in pig["pipes"] if pipe["enabled"]]
+                    enabled_and_synced_pipes = [
+                        pipe for pipe in pig["pipes"] if
+                        pipe["enabled"] and pipe["sync"]]
 
                     low_level_pipes += [
                         (pipe["name"], pig["name"])
-                        for pipe in enabled_pipes
+                        for pipe in enabled_and_synced_pipes
                         if pipe["current_level"] < pipe["reserve_level"]
                     ]
 
-                    if enabled_pipes:
+                    if enabled_and_synced_pipes:
                         pigment_list.append(pig)
 
             ret = await self.call_api_rest("apiV1/package", "GET", {})
