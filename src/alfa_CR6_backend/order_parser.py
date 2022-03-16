@@ -28,7 +28,6 @@ class OrderParser:
     sikkens_pdf_header = 'Anteprima Formula'
     kcc_pdf_header = "KCC Color Navi Formulation"
 
-    # ~ sw_txt_header = 'Octoral Information Services'
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
         "Octoral Information Services"
@@ -521,8 +520,9 @@ class OrderParser:
 
                 properties = self._substitute_aliases(properties)
 
-            else:
-                logging.error(f"path_to_file:{path_to_file}, properties:{properties}")
+            err_msg = tr_("properties not valid:{}").format(properties)[:400]
+            assert properties.get('meta') is not None, err_msg
+            assert not properties['meta'].get('error'), err_msg
 
         except Exception as e:              # pylint: disable=broad-except
 
@@ -533,6 +533,12 @@ class OrderParser:
 
             properties.setdefault("meta", {})
             properties['meta']['error'] = msg
+
+            # ~ e = get_encoding(path_to_file)
+            with codecs.open(path_to_file, 'rb') as fd:
+                file_content = fd.read()[:10000]
+                properties['meta']['file_content'] = str(file_content)
+
             if self.exception_handler:
                 self.exception_handler(msg)
 
