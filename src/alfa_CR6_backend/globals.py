@@ -32,9 +32,11 @@ IMPORTED_LANGUAGE_MODULES = {}
 
 LANGUAGE_MAP = {
     "english": 'en',
-    "italian": 'it',
     "korean": 'kr',
+    "italian": 'it',
+    "french": 'fr',
     "german": 'de',
+    "spanish": 'es',
 }
 
 _ALFA_SN = None

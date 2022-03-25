@@ -30,7 +30,7 @@ from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # py
 from waitress import serve       # pylint: disable=import-error
 
 from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session)
-from alfa_CR6_backend.globals import (import_settings, get_alfa_serialnumber)
+from alfa_CR6_backend.globals import (LANGUAGE_MAP, import_settings, get_alfa_serialnumber)
 
 SETTINGS = import_settings()
 
@@ -383,6 +383,7 @@ class CRX_AdminResources(flask_admin.AdminIndexView):
             'ws_ip_addr_and_port': "{}:{}".format(request.host.split(':')[0], 13000),
             'alfa40_admin_url': "http://{}:{}/admin".format(request.host.split(':')[0], 8080),
             'current_language': SETTINGS.LANGUAGE,
+            'language_map': LANGUAGE_MAP,
         }
 
         return self.render(template, **ctx)

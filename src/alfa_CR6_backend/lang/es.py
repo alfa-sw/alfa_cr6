@@ -45,8 +45,7 @@ D = {
     "[{}] Jars:   search by status": "[{}] Botes:   buscar por estado",
     "[{}] Orders: search by order nr.": "[{}] Pedidos: buscar por n.º de pedido",
     "\nRemember to check the volume.\n": "\nNo olvide comprobar el volumen\n",
-    "\nand printing barcodes": "
-e imprimir el código de barras",
+    "\nand printing barcodes": "\ne imprimir el código de barras",
     "\npigments to be added by hand after dispensing:\n{}.": "\npastas para añadir manualmente al final de la dispensación:\n{}.",
     "\npigments to be refilled before dispensing:{}. ({}/3)\n": "\npastas para rellenar antes de dispensar:{}. ({}/3)\n",
     "\nwithout printing barcodes": "\nsin imprimir el código de barras",
@@ -177,7 +176,7 @@ e imprimir el código de barras",
     "PURGE_ALL": "PURGE ALL",
     "please, wait while finishing all pending operations ...": "espere a que finalicen las operaciones en curso...",
     "all operations are paused": "todas las unidades están en pausa",
-    }
+}
 
 
-    D.update(error_it.D)
+D.update(error_it.D)
