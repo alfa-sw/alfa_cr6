@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import (
     QHeaderView)
 
 from PyQt5.Qt import QUrl
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile, QWebEnginePage
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 from alfa_CR6_backend.dymo_printer import dymo_print
@@ -45,6 +45,139 @@ import magic       # pylint: disable=import-error
 
 g_settings = import_settings()
 
+class PopUpWebEnginePage(QWebEnginePage):
+
+    external_windows = []
+    cntr = 0
+    cls_profile = None
+
+    def __init__(self, parent):
+        super().__init__(parent)
+
+    def createWindow(self, _type):
+
+        if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
+            os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
+
+        logging.warning(f"_type:{_type}, self.cntr:{self.cntr}, external_windows:{len(self.external_windows)}.")
+
+        if len(self.external_windows) > 2:
+            for w in self.external_windows[:-2]:
+                w.close()
+                del w
+        self.external_windows = self.external_windows[-2:]
+
+        page = PopUpWebEnginePage(self.parent())
+
+        page.urlChanged.connect(page.change_url)
+
+        w = QWebEngineView()
+        self.external_windows.append(w)
+        self.cntr += 1
+        w.setGeometry((50*self.cntr)%500, (80*self.cntr)%500, 400, 200)
+        w.show()
+        page.setView(w)
+
+        if self.cls_profile is None:
+            self.cls_profile = self.profile()
+            self.cls_profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
+            self.cls_profile.setHttpCacheType(QWebEngineProfile.MemoryHttpCache)
+            self.cls_profile.downloadRequested.connect(self.on_downloadRequested)
+
+        return page
+
+    def change_url(self, url):
+
+        logging.warning(f"url:{url}.")
+
+        view_ = self.view()
+        if view_:
+            view_.setUrl(url)
+            view_.show()
+        return False
+
+    def on_downloadRequested(self, download):
+
+        logging.warning(f"download:{download}.")
+
+        download.setDownloadDirectory(g_settings.WEBENGINE_DOWNLOAD_PATH)
+
+        # ~ logging.warning(f"dir(download):{dir(download)}.")
+        pth = download.path()
+        logging.warning(f"type(pth):{type(pth)}, pth:{pth}.")
+        _msgs = {
+            0: tr_("Download has been requested, but has not been accepted yet."),
+            1: tr_("Download is in progress."),
+            2: tr_("Download completed successfully."),
+            3: tr_("Download has been cancelled."),
+            4: tr_("Download has been interrupted (by the server or because of lost connectivity)."),
+        }
+
+        # ~ _name = time.strftime("%Y-%m-%d_%H:%M:%S")
+        # ~ full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
+        # ~ download.setPath(full_name)
+        # ~ logging.warning(f"full_name:{full_name}")
+
+        def _cb():
+
+            logging.warning(f" state:{_msgs[download.state()]}")
+
+            pth = download.path()
+            logging.warning(f"type(pth):{type(pth)}, pth:{pth}.")
+
+            if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
+                os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
+            # ~ os.system(f'mv "{pth}" "{g_settings.WEBENGINE_DOWNLOAD_PATH}"')
+            os.system(f'ls -l "{pth}"')
+            
+
+
+            # ~ try:
+                # ~ self.__adjust_downloaded_file_name(full_name)
+                # ~ args_ = tr_("file name:{}").format(_name) + "\n\n" + _msgs[download.state()]
+                # ~ logging.warning(args_)
+                # ~ if QApplication.instance().main_window.open_alert_dialog:
+                    # ~ QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
+            # ~ except Exception as e:  # pylint: disable=broad-except
+                # ~ QApplication.instance().handle_exception(e)
+
+        download.finished.connect(_cb)
+
+        download.accept()
+
+    @staticmethod
+    def __adjust_downloaded_file_name(full_name):
+
+        mime = magic.Magic(mime=True)
+        mime_type = mime.from_file(full_name)
+        logging.warning(f"full_name:{full_name}, mime_type:{mime_type}")
+
+        if mime_type == 'application/json':
+            try:
+                with open(full_name, encoding='UTF-8') as f:
+                    content = json.load(f)
+                    color_code = content.get("color code")
+                    if color_code:
+                        head, _ = os.path.split(full_name)
+                        os.rename(full_name, os.path.join(head, f"{color_code}.json"))
+                    else:
+                        os.rename(full_name, f"{full_name}.json")
+            except Exception:   # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+        else:
+            toks = mime_type.split("/")
+            ext = toks[1:] and toks[1]
+            if ext:
+                os.rename(full_name, f"{full_name}.{ext}")
+
+    def javaScriptConsoleMessage(self, *args):
+
+        logging.warning(f"args:{args}.")
+        # ~ for arg in args:
+            # ~ logging.warning(f"arg:{arg}.")
+
+        # ~ if "Uncaught TypeError: data.close is not a function" in args:
+            # ~ pass
 
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
 
@@ -369,7 +502,7 @@ class HelpPage(BaseStackedPage):
         elif link_s.startswith("#ext:"):
             url_ = link_s.split("#ext:")[1]
             logging.warning(f"url_:{url_}")
-            self.main_window.webengine_page.open_page(url_)
+            self.main_window.browser_page.open_page(url_)
 
     def open_page(self):
 
@@ -390,24 +523,19 @@ class HelpPage(BaseStackedPage):
             self.main_window.open_alert_dialog(_msg, title="ALERT")
 
 
-class WebenginePage(BaseStackedPage):
+class BrowserPage(BaseStackedPage):
 
-    ui_file_name = "webengine_page.ui"
+    ui_file_name = "browser_page.ui"
     help_file_name = 'webengine.html'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.webengine_view = QWebEngineView(self)
+        self.popup_webengine_page = PopUpWebEnginePage(self)
+        self.webengine_view.setPage(self.popup_webengine_page)
 
-        page = self.webengine_view.page()
-        profile = page.profile()
-
-        profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
-        profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
-        profile.setHttpCacheType(QWebEngineProfile.MemoryHttpCache)
-
-        profile.downloadRequested.connect(self.__on_downloadRequested)
+        self.url_lbl.mouseReleaseEvent = lambda event: self.__on_click_url_label()
 
         self.webengine_view.loadStarted.connect(self.__on_load_start)
         self.webengine_view.loadProgress.connect(self.__on_load_progress)
@@ -432,6 +560,9 @@ class WebenginePage(BaseStackedPage):
         self.start_load = tr_("start load:")
         self.loading = tr_("loading:")
         self.loaded = tr_("loaded:")
+
+    def __on_click_url_label(self):
+        logging.warning(f"self.webengine_view:{self.webengine_view}")
 
     def __on_load_start(self):
         self.__load_progress = 0
@@ -459,61 +590,6 @@ class WebenginePage(BaseStackedPage):
         self.webengine_view.setUrl(q_url)
 
         self.parent().setCurrentWidget(self)
-
-    @staticmethod
-    def __adjust_downloaded_file_name(full_name):
-
-        mime = magic.Magic(mime=True)
-        mime_type = mime.from_file(full_name)
-        logging.warning(f"full_name:{full_name}, mime_type:{mime_type}")
-
-        if mime_type == 'application/json':
-            try:
-                with open(full_name, encoding='UTF-8') as f:
-                    content = json.load(f)
-                    color_code = content.get("color code")
-                    if color_code:
-                        head, _ = os.path.split(full_name)
-                        os.rename(full_name, os.path.join(head, f"{color_code}.json"))
-                    else:
-                        os.rename(full_name, f"{full_name}.json")
-            except Exception:   # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-        else:
-            toks = mime_type.split("/")
-            ext = toks[1:] and toks[1]
-            if ext:
-                os.rename(full_name, f"{full_name}.{ext}")
-
-    def __on_downloadRequested(self, download):
-
-        logging.warning(f"download:{download}.")
-        # ~ logging.warning(f"dir(download):{dir(download)}.")
-        logging.warning(f"download.path():{download.path()}.")
-        _msgs = {
-            0: tr_("Download has been requested, but has not been accepted yet."),
-            1: tr_("Download is in progress."),
-            2: tr_("Download completed successfully."),
-            3: tr_("Download has been cancelled."),
-            4: tr_("Download has been interrupted (by the server or because of lost connectivity)."),
-        }
-
-        if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
-            os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
-        _name = time.strftime("%Y-%m-%d_%H:%M:%S")
-        full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
-        download.setPath(full_name)
-        download.accept()
-
-        def _cb():
-            try:
-                self.__adjust_downloaded_file_name(full_name)
-                args_ = tr_("file name:{}").format(_name) + "\n\n" + _msgs[download.state()]
-                self.main_window.open_alert_dialog(args_, title="ALERT")
-            except Exception as e:  # pylint: disable=broad-except
-                QApplication.instance().handle_exception(e)
-
-        download.finished.connect(_cb)
 
 
 class OrderPage(BaseStackedPage):
@@ -1013,7 +1089,7 @@ class HomePage(BaseStackedPage):
 
             logging.debug(f"btn_name:{btn_name}, map_[btn]:{map_[btn]}, map_:{map_}")
 
-            self.main_window.webengine_page.open_page(map_[btn])
+            self.main_window.browser_page.open_page(map_[btn])
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)

@@ -4,43 +4,35 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
-# pylint: disable=broad-except
+# pylint: disable=too-many-lines
+# pylint: disable=too-few-public-methods
+# pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 """
 . /opt/alfa_cr6/venv/bin/activate
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/test_WebenginePage.py
 """
 
+import os
 import sys
-import time
 import logging
 import traceback
 import asyncio
 
+from functools import partial
 
-from PyQt5.QtCore import QEventLoop, QUrl
-from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+from PyQt5.QtCore import QEventLoop, QUrl # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget # pylint: disable=no-name-in-module
 
-
-from alfa_CR6_frontend.pages import WebenginePage
-from alfa_CR6_backend.globals import import_settings
+from alfa_CR6_frontend.pages import BrowserPage # pylint: disable=import-error
+from alfa_CR6_backend.globals import import_settings # pylint: disable=import-error
 
 g_settings = import_settings()
 
-class CustomWebEnginePage(QWebEnginePage):
-    """ Custom WebEnginePage to customize how we handle link navigation """
-    external_windows = []
-    def acceptNavigationRequest(self, url,  _type, isMainFrame):
-        logging.warning(f" ######################### url,  _type, isMainFrame:{(url,  _type, isMainFrame)}")
-        if "BACK HOME -------" in str(url):
-            url_ = QUrl.fromLocalFile("/opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/test_WebenginePage.html")
-        else:
-            return super().acceptNavigationRequest(url,  _type, isMainFrame)
-
 
 class Application(QApplication):
-    # ~ pass
+
+    main_window = None
 
     def processEvents(self, *args, **kwargs):
         if self.hasPendingEvents():
@@ -49,50 +41,47 @@ class Application(QApplication):
             if r:
                 logging.warning(f"r :{r}")
 
+    async def create_inner_loop_task(self):
+
+        try:
+            while 1:
+                timeout_ms = 100
+                try:
+                    if self.hasPendingEvents():
+                        self.processEvents(QEventLoop.AllEvents, timeout_ms)
+                        dt = 0
+                    else:
+                        dt = 0.05
+                    await asyncio.sleep(dt)
+                except Exception as e:  # pylint: disable=broad-except
+                    self.handle_exception(e)
+        except asyncio.CancelledError:
+            pass
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
+    def handle_exception(self, e):  # pylint:  disable=no-self-use
+
+        if "CancelledError" in traceback.format_exc():
+            logging.warning(traceback.format_exc())
+            raise  # pylint:  disable=misplaced-bare-raise
+
+        logging.error(traceback.format_exc())
+
 class MainWindow(QMainWindow):
 
-    def __init__(self, *args, **kwargs):
-        super(MainWindow, self).__init__(*args, **kwargs)
+    def __init__(self, url_, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
         self.stacked_widget = QStackedWidget(self)
-        self.setGeometry(100, 200, 1800, 600)
+        self.setGeometry(100, 200, 1200, 600)
         self.setCentralWidget(self.stacked_widget)
-        self.webengine_page = WebenginePage(parent=self)
+        self.browser = BrowserPage(parent=self)
+        self.browser.open_page(url_)
 
-        self.customwebenginepage = CustomWebEnginePage()
+    def open_alert_dialog(self, args_, title="ALERT"):
 
-        self.webengine_page.webengine_view.setPage(self.customwebenginepage)
-
-        url_ = QUrl.fromLocalFile("/opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/test_WebenginePage.html")
-        self.webengine_page.open_page(url=url_)
-
-    def open_alert_dialog(self, _msg, title="ALERT", callback=None, args=None):
-        logging.warning(f"""
-************************* 
-*************************
-_msg:{_msg}
-*************************
-************************* """)
-
-async def create_inner_loop_task(app):
-
-    try:
-        cntr = 0
-        while 1:
-
-            timeout_ms = 100
-            app.processEvents(QEventLoop.AllEvents, timeout_ms)
-            if app.hasPendingEvents():
-                dt = 0
-            else:
-                dt = 0.01
-
-            await asyncio.sleep(dt)
-
-    except asyncio.CancelledError:
-        pass
-    except Exception as e:  # pylint: disable=broad-except
-        logging.error(traceback.format_exc())
+        logging.warning(f"args_:{args_}, title:{title}")
 
 def main():
 
@@ -101,15 +90,20 @@ def main():
         format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
     logging.warning(f"g_settings:{g_settings}")
     app = Application(sys.argv)
-    window = MainWindow()
+
+    here = os.path.dirname(os.path.abspath(__file__))
+    # ~ url_ = QUrl.fromLocalFile(os.path.join(here, "test_WebenginePage.html"))
+    # ~ url_ = QUrl("http://www.autorefinishes.co.kr/")
+    url_ = QUrl("https://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=KS-071-2&PaintTy=WQ")
+    # ~ url_ = QUrl("http://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=EES-1429&PaintTy=WQ#")
+    window = MainWindow(url_)
+    app.main_window = window
     window.show()
-    t = create_inner_loop_task(app)
+
+    t = app.create_inner_loop_task()
     asyncio.ensure_future(t)
     asyncio.get_event_loop().run_forever()
-    # ~ app.exec_()
 
+if __name__ == "__main__":
 
-
-
-
-main()
+    main()

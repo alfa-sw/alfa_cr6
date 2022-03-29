@@ -489,11 +489,11 @@ class DebugPage:
 
         elif "open admin\npage" in cmd_txt:
             url_ = 'http://127.0.0.1:8090/'
-            app.main_window.webengine_page.open_page(url_)
+            app.main_window.browser_page.open_page(url_)
 
         elif "open URL\nin text bar" in cmd_txt:
             url_ = app.main_window.menu_line_edit.text()
-            app.main_window.webengine_page.open_page(url_)
+            app.main_window.browser_page.open_page(url_)
 
         elif "download KCC\nlot info file" in cmd_txt:
             t = download_KCC_specific_gravity_lot()

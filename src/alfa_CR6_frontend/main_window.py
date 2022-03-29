@@ -28,7 +28,7 @@ from alfa_CR6_frontend.dialogs import (
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
-    WebenginePage,
+    BrowserPage,
     HomePageSixHeads,
     HomePageFourHeads,
     ActionPage,
@@ -188,7 +188,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.help_page = HelpPage(parent=self)
         self.order_page = OrderPage(parent=self)
 
-        self.webengine_page = WebenginePage(parent=self)
+        self.browser_page = BrowserPage(parent=self)
 
         if QApplication.instance().n_of_active_heads == 6:
             self.home_page = HomePageSixHeads(parent=self)
@@ -335,7 +335,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                             chromium_wrapper.window_remap(0)
                 else:
                     self.toggle_keyboard(on_off=False)
-                    self.webengine_page.open_page()
+                    self.browser_page.open_page()
 
             elif "home" in btn_name:
                 self.toggle_keyboard(on_off=False)
@@ -367,7 +367,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self.order_page.file_table_view, ]
 
         if not hasattr(self.settings, 'CHROMIUM_WRAPPER') or not self.settings.CHROMIUM_WRAPPER:
-            ls.append(self.webengine_page.webengine_view)
+            ls.append(self.browser_page.webengine_view)
 
         if on_off and not self.keyboard.isVisible():
             self.keyboard.show()
