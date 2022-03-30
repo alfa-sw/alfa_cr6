@@ -12,6 +12,11 @@
 import logging
 import traceback
 import json
+import platform
+
+if 'BPI-M5' in platform.release() and 'bananapi' in platform.node():
+    import ctypes
+    ctypes.CDLL('libGLX_mesa.so.0', ctypes.RTLD_GLOBAL)
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
