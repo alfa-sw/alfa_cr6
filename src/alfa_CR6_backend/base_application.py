@@ -1168,7 +1168,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         d2 = jar_json_properties.get("unknown_pigments", {})
         _diff = get_dict_diff(d1, d2)
         if _diff:
-            msg = tr_("pigments in machine db have changed, check can label. diff:{}").format(_diff)
+            msg = f"{jar.barcode}\n"
+            msg += tr_("pigments in machine db have changed, check can label. diff:{}").format(_diff)
             self.main_window.open_alert_dialog(f"{msg}", title="ALERT")
 
         self.db_session.commit()
