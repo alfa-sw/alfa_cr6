@@ -243,7 +243,7 @@ class OrderParser:
             new_item = {}
             new_item["pigment_name"] = item["Color MixingAgen"]
             new_item["description"] = item["Color Mixing Agen Name"]
-            new_item["weight(g)"] = item["weight(g)"]
+            new_item["weight(g)"] = round(float(item["weight(g)"]), 4)
             properties["ingredients"].append(new_item)
 
         properties["extra_lines_to_print"] = []

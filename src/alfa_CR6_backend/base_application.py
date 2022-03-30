@@ -907,7 +907,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             pigment_name = _item.get("pigment_name")
             weight = _item.get("weight(g)")
             if pigment_name not in _available_pigment_names and pigment_name and weight:
-                _unknown_pigments[pigment_name] = weight
+                _unknown_pigments[pigment_name] = float(weight)
         _properties["unknown_pigments"] = _unknown_pigments
 
         order.json_properties = json.dumps(_properties, indent=2)
