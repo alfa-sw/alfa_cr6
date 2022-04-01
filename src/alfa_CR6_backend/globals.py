@@ -15,8 +15,9 @@ import subprocess
 import traceback
 import importlib
 import codecs
+import json
 
-import redis
+import redis # pylint: disable=import-error
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -48,13 +49,14 @@ def get_alfa_serialnumber():
     if _ALFA_SN is None:
         try:
             r = redis.Redis()
-            alfa_conf = json.loads(r.get('ALFA_CONFIG'))
+            alfa_conf = r.get('ALFA_CONFIG')
+            if not alfa_conf:
+                alfa_conf = r.get('ALFA_CONFIG:1')
             if alfa_conf:
-                _ALFA_SN = alfa_conf.get('ALFA_SERIAL_NUMBER')
+                _ALFA_SN = json.loads(alfa_conf).get('ALFA_SERIAL_NUMBER')
         except Exception:
             logging.error(traceback.format_exc())
             _ALFA_SN = None
-
     if _ALFA_SN is None:
         try:
             cmd_ = """
@@ -62,6 +64,8 @@ def get_alfa_serialnumber():
             python -c "from alfa_common.platform import get_alfa_serialnumber; print(get_alfa_serialnumber())"
             """
             _ALFA_SN = subprocess.check_output(cmd_, shell=True, stderr=subprocess.STDOUT).decode()
+            if "ERROR" in _ALFA_SN:
+                raise Exception(f"_ALFA_SN:{_ALFA_SN}")
             _ALFA_SN = _ALFA_SN.strip()
         except Exception:
             logging.error(traceback.format_exc())
