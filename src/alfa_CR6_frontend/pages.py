@@ -17,6 +17,7 @@ import time
 import traceback
 import codecs
 import subprocess
+# ~ import webbrowser
 from functools import partial
 
 from PyQt5.uic import loadUi
@@ -32,7 +33,11 @@ from PyQt5.QtWidgets import (
     QHeaderView)
 
 from PyQt5.Qt import QUrl
-from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile, QWebEnginePage
+from PyQt5.QtWebEngineWidgets import (
+    QWebEngineView, 
+    QWebEngineProfile, 
+    QWebEnginePage, 
+    QWebEngineSettings)
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 from alfa_CR6_backend.dymo_printer import dymo_print
@@ -47,56 +52,97 @@ g_settings = import_settings()
 
 class PopUpWebEnginePage(QWebEnginePage):
 
-    external_windows = []
+    cls_child_view = None
+    cls_child_page = None
     cntr = 0
     cls_profile = None
+    cls_parent = None
+
+    download_msgs = {
+        0: tr_("Download has been requested, but has not been accepted yet."),
+        1: tr_("Download is in progress."),
+        2: tr_("Download completed successfully."),
+        3: tr_("Download has been cancelled."),
+        4: tr_("Download has been interrupted (by the server or because of lost connectivity)."),
+    }
 
     def __init__(self, parent):
-        super().__init__(parent)
 
-    def createWindow(self, _type):
+        self.html_0_fmt = """ downloading: {} """
+        self.html_1_fmt = """ {} {} downloaded."""
+
+        super().__init__()
+        self.cls_parent = parent
 
         if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
             os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
 
-        logging.warning(f"_type:{_type}, self.cntr:{self.cntr}, external_windows:{len(self.external_windows)}.")
+    def createWindow(self, _type):
 
-        if len(self.external_windows) > 2:
-            for w in self.external_windows[:-2]:
-                w.close()
-                del w
-        self.external_windows = self.external_windows[-2:]
-
-        page = PopUpWebEnginePage(self.parent())
-
-        page.urlChanged.connect(page.change_url)
-
-        w = QWebEngineView()
-        self.external_windows.append(w)
-        self.cntr += 1
-        w.setGeometry((50*self.cntr)%500, (80*self.cntr)%500, 400, 200)
-        w.show()
-        page.setView(w)
-
-        if self.cls_profile is None:
+        if self.cls_child_page is None:
+            self.cls_child_page = PopUpWebEnginePage(self.cls_parent)
+            self.cls_child_view = QWebEngineView()
+            self.cls_child_page.setView(self.cls_child_view)
             self.cls_profile = self.profile()
             self.cls_profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
             self.cls_profile.setHttpCacheType(QWebEngineProfile.MemoryHttpCache)
             self.cls_profile.downloadRequested.connect(self.on_downloadRequested)
 
-        return page
+            self.cls_child_page.settings().setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, True)
+
+            self.cls_child_page.urlChanged.connect(self.change_url)
+
+        logging.warning(f"_type:{_type}, self.cntr:{self.cntr}, cls_child_view:{self.cls_child_view}.")
+        logging.warning(f"self.cls_child_page.settings():{self.cls_child_page.settings()}.")
+
+        self.cntr += 1
+
+        self.cls_child_view.setGeometry((50*self.cntr)%500, (80*self.cntr)%500, 400, 200)
+        self.cls_child_view.show()
+
+        return self.cls_child_page
 
     def change_url(self, url):
 
         logging.warning(f"url:{url}.")
+        if 'colormix_toXml.asp' in f"{url}":
+            logging.warning(" ************* ")
+            pass
+        else:
+            if self.cls_child_view:
+                logging.warning("")
+                self.cls_child_view.setUrl(url)
+                self.cls_child_view.show()
 
-        view_ = self.view()
-        if view_:
-            view_.setUrl(url)
-            view_.show()
         return False
 
-    def on_downloadRequested(self, download):
+    def download_finished_callback(cls, download):
+
+        pth = download.path()
+        logging.warning(f"state:{cls.download_msgs[download.state()]}, pth:{pth}, cls.cls_child_view:{cls.cls_child_view}.")
+
+        if cls.cls_child_view:
+
+            cls.cls_child_view.setHtml(cls.html_1_fmt.format( 
+                g_settings.WEBENGINE_DOWNLOAD_PATH, cls.download_msgs[download.state()]))
+
+            cls.cls_child_view.show()
+
+        # ~ w = cls.cls_child_views.pop(0)
+        # ~ w.close()
+        # ~ del w
+
+        # ~ try:
+            # ~ cls.__adjust_downloaded_file_name(full_name)
+            # ~ args_ = tr_("file name:{}").format(_name) + "\n\n" + self.download_msgs[download.state()]
+            # ~ logging.warning(args_)
+            # ~ if QApplication.instance().main_window.open_alert_dialog:
+                # ~ QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
+        # ~ except Exception as e:  # pylint: disable=broad-except
+            # ~ QApplication.instance().handle_exception(e)
+
+
+    def on_downloadRequested(cls, download):
 
         logging.warning(f"download:{download}.")
 
@@ -105,48 +151,20 @@ class PopUpWebEnginePage(QWebEnginePage):
         # ~ logging.warning(f"dir(download):{dir(download)}.")
         pth = download.path()
         logging.warning(f"type(pth):{type(pth)}, pth:{pth}.")
-        _msgs = {
-            0: tr_("Download has been requested, but has not been accepted yet."),
-            1: tr_("Download is in progress."),
-            2: tr_("Download completed successfully."),
-            3: tr_("Download has been cancelled."),
-            4: tr_("Download has been interrupted (by the server or because of lost connectivity)."),
-        }
+
+        if cls.cls_child_view:
+            cls.cls_child_view.setHtml(cls.html_0_fmt.format(pth))
 
         # ~ _name = time.strftime("%Y-%m-%d_%H:%M:%S")
         # ~ full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
         # ~ download.setPath(full_name)
         # ~ logging.warning(f"full_name:{full_name}")
-
-        def _cb():
-
-            logging.warning(f" state:{_msgs[download.state()]}")
-
-            pth = download.path()
-            logging.warning(f"type(pth):{type(pth)}, pth:{pth}.")
-
-            if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
-                os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
-            # ~ os.system(f'mv "{pth}" "{g_settings.WEBENGINE_DOWNLOAD_PATH}"')
-            os.system(f'ls -l "{pth}"')
-            
-
-
-            # ~ try:
-                # ~ self.__adjust_downloaded_file_name(full_name)
-                # ~ args_ = tr_("file name:{}").format(_name) + "\n\n" + _msgs[download.state()]
-                # ~ logging.warning(args_)
-                # ~ if QApplication.instance().main_window.open_alert_dialog:
-                    # ~ QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
-            # ~ except Exception as e:  # pylint: disable=broad-except
-                # ~ QApplication.instance().handle_exception(e)
-
-        download.finished.connect(_cb)
+        download.finished.connect(partial(cls.download_finished_callback, download))
 
         download.accept()
 
     @staticmethod
-    def __adjust_downloaded_file_name(full_name):
+    def adjust_downloaded_file_name(full_name):
 
         mime = magic.Magic(mime=True)
         mime_type = mime.from_file(full_name)
@@ -170,7 +188,8 @@ class PopUpWebEnginePage(QWebEnginePage):
             if ext:
                 os.rename(full_name, f"{full_name}.{ext}")
 
-    def javaScriptConsoleMessage(self, *args):
+    @classmethod
+    def javaScriptConsoleMessage(cls, *args):
 
         logging.warning(f"args:{args}.")
         # ~ for arg in args:
@@ -544,17 +563,6 @@ class BrowserPage(BaseStackedPage):
         self.webengine_view.setGeometry(8, 28, 1904, 960)
         self.start_page_url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
         self.webengine_view.setUrl(self.start_page_url)
-
-        # ~ self.webengine_view.setStyleSheet("""
-        # ~ QScrollBar:vertical {width: 40px;}
-        # ~ ::-webkit-scrollbar {width: 80px}
-        # ~ """)
-        # ~ settings_ = self.webengine_view.settings()
-        # ~ pdfviewerenabled = settings_.testAttribute(settings_.PdfViewerEnabled)
-        # ~ pdfviewerenabled = settings_.setAttribute(30, True)
-        # ~ pdfviewerenabled = settings_.testAttribute(30)
-        # ~ logging.warning(f"pdfviewerenabled:{pdfviewerenabled}")
-        # ~ QWebEngineSettings::setAttribute(QWebEngineSettings::WebAttribute attribute, bool on)
 
         self.__load_progress = 0
         self.start_load = tr_("start load:")
