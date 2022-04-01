@@ -64,6 +64,8 @@ def get_alfa_serialnumber():
             python -c "from alfa_common.platform import get_alfa_serialnumber; print(get_alfa_serialnumber())"
             """
             _ALFA_SN = subprocess.check_output(cmd_, shell=True, stderr=subprocess.STDOUT).decode()
+            if "ERROR" in _ALFA_SN:
+                raise Exception(f"_ALFA_SN:{_ALFA_SN}")
             _ALFA_SN = _ALFA_SN.strip()
         except Exception:
             logging.error(traceback.format_exc())
