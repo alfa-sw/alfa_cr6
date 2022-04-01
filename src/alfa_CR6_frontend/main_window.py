@@ -14,10 +14,6 @@ import traceback
 import json
 import platform
 
-if 'BPI-M5' in platform.release() and 'bananapi' in platform.node():
-    import ctypes
-    ctypes.CDLL('libGLX_mesa.so.0', ctypes.RTLD_GLOBAL)
-
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon
@@ -40,7 +36,6 @@ from alfa_CR6_frontend.pages import (
     HelpPage)
 
 from alfa_CR6_frontend.keyboard import Keyboard
-
 
 ACTION_PAGE_LIST = [
     {"title": tr_("action 01 (head 1 or A)"),
