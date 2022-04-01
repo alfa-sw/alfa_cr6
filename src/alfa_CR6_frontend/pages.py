@@ -34,9 +34,9 @@ from PyQt5.QtWidgets import (
 
 from PyQt5.Qt import QUrl
 from PyQt5.QtWebEngineWidgets import (
-    QWebEngineView, 
-    QWebEngineProfile, 
-    QWebEnginePage, 
+    QWebEngineView,
+    QWebEngineProfile,
+    QWebEnginePage,
     QWebEngineSettings)
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
@@ -50,11 +50,12 @@ import magic       # pylint: disable=import-error
 
 g_settings = import_settings()
 
+
 class PopUpWebEnginePage(QWebEnginePage):
 
     cls_child_view = None
     cls_child_page = None
-    cntr = 0
+    cls_cntr = 0
     cls_profile = None
     cls_parent = None
 
@@ -92,12 +93,12 @@ class PopUpWebEnginePage(QWebEnginePage):
 
             self.cls_child_page.urlChanged.connect(self.change_url)
 
-        logging.warning(f"_type:{_type}, self.cntr:{self.cntr}, cls_child_view:{self.cls_child_view}.")
-        logging.warning(f"self.cls_child_page.settings():{self.cls_child_page.settings()}.")
+        logging.warning(f"_type:{_type}, self.cls_cntr:{self.cls_cntr}, cls_child_view:{self.cls_child_view}.")
+        # ~ logging.warning(f"self.cls_child_page.settings():{self.cls_child_page.settings()}.")
 
-        self.cntr += 1
+        self.cls_cntr += 1
 
-        self.cls_child_view.setGeometry((50*self.cntr)%500, (80*self.cntr)%500, 400, 200)
+        self.cls_child_view.setGeometry((50 * self.cls_cntr) % 500, (80 * self.cls_cntr) % 500, 400, 200)
         self.cls_child_view.show()
 
         return self.cls_child_page
@@ -106,60 +107,53 @@ class PopUpWebEnginePage(QWebEnginePage):
 
         logging.warning(f"url:{url}.")
         if 'colormix_toXml.asp' in f"{url}":
-            logging.warning(" ************* ")
-            pass
+            logging.info(" ************* ")
         else:
             if self.cls_child_view:
-                logging.warning("")
+                logging.info("")
                 self.cls_child_view.setUrl(url)
                 self.cls_child_view.show()
 
         return False
 
-    def download_finished_callback(cls, download):
+    def download_finished_callback(self, download):
 
-        pth = download.path()
-        logging.warning(f"state:{cls.download_msgs[download.state()]}, pth:{pth}, cls.cls_child_view:{cls.cls_child_view}.")
+        pth = download.downloadDirectory()
+        logging.warning(
+            f"state:{self.download_msgs[download.state()]}, pth:{pth}, self.cls_child_view:{self.cls_child_view}.")
 
-        if cls.cls_child_view:
+        if self.cls_child_view:
 
-            cls.cls_child_view.setHtml(cls.html_1_fmt.format( 
-                g_settings.WEBENGINE_DOWNLOAD_PATH, cls.download_msgs[download.state()]))
+            if QApplication.instance().main_window.open_alert_dialog:
+                args_ = self.html_1_fmt.format(download.downloadFileName(), self.download_msgs[download.state()])
+                QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
 
-            cls.cls_child_view.show()
-
-        # ~ w = cls.cls_child_views.pop(0)
-        # ~ w.close()
-        # ~ del w
+            self.cls_child_view.close()
+            del self.cls_child_view
 
         # ~ try:
             # ~ cls.__adjust_downloaded_file_name(full_name)
             # ~ args_ = tr_("file name:{}").format(_name) + "\n\n" + self.download_msgs[download.state()]
             # ~ logging.warning(args_)
             # ~ if QApplication.instance().main_window.open_alert_dialog:
-                # ~ QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
+            # ~ QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
         # ~ except Exception as e:  # pylint: disable=broad-except
             # ~ QApplication.instance().handle_exception(e)
 
-
-    def on_downloadRequested(cls, download):
-
-        logging.warning(f"download:{download}.")
+    def on_downloadRequested(self, download):
 
         download.setDownloadDirectory(g_settings.WEBENGINE_DOWNLOAD_PATH)
 
-        # ~ logging.warning(f"dir(download):{dir(download)}.")
-        pth = download.path()
-        logging.warning(f"type(pth):{type(pth)}, pth:{pth}.")
+        logging.warning(f"download:{download}, download.downloadDirectory():{download.downloadDirectory()}.")
 
-        if cls.cls_child_view:
-            cls.cls_child_view.setHtml(cls.html_0_fmt.format(pth))
+        args_ = self.html_0_fmt.format(download.downloadFileName())
+        QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
 
         # ~ _name = time.strftime("%Y-%m-%d_%H:%M:%S")
         # ~ full_name = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, _name)
         # ~ download.setPath(full_name)
         # ~ logging.warning(f"full_name:{full_name}")
-        download.finished.connect(partial(cls.download_finished_callback, download))
+        download.finished.connect(partial(self.download_finished_callback, download))
 
         download.accept()
 
@@ -193,10 +187,11 @@ class PopUpWebEnginePage(QWebEnginePage):
 
         logging.warning(f"args:{args}.")
         # ~ for arg in args:
-            # ~ logging.warning(f"arg:{arg}.")
+        # ~ logging.warning(f"arg:{arg}.")
 
         # ~ if "Uncaught TypeError: data.close is not a function" in args:
-            # ~ pass
+        # ~ pass
+
 
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
 
@@ -260,8 +255,8 @@ class FileTableModel(BaseTableModel):
         name_list_ = [p for p in os.listdir(path) if filter_text in p][:101]
         if len(name_list_) >= 100:
             # ~ self.open_alert_dialog(
-                # ~ tr_("Too many files saved and not used. Please delete unused files."),
-                # ~ title="ERROR",
+            # ~ tr_("Too many files saved and not used. Please delete unused files."),
+            # ~ title="ERROR",
             # ~ )
             args, fmt = (), "Too many files saved and not used. Please delete unused files."
             self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
@@ -311,7 +306,7 @@ class OrderTableModel(BaseTableModel):
 
             N = query_1.count()
 
-            query_2 = query_.join(Jar).filter(Jar.position != "DELETED").limit(100-N)
+            query_2 = query_.join(Jar).filter(Jar.position != "DELETED").limit(100 - N)
 
             self.results = []
             for o in query_1.all() + query_2.all():
@@ -954,6 +949,7 @@ class OrderPage(BaseStackedPage):
 
         QApplication.instance().update_tintometer_data_on_all_heads()
 
+
 class ActionPage(BaseStackedPage):
 
     ui_file_name = "action_frame.ui"
@@ -1039,32 +1035,56 @@ class HomePage(BaseStackedPage):
         self.reserve_movie = QMovie(get_res("IMAGE", "riserva.gif"))
         self.expiry_movie = QMovie(get_res("IMAGE", "expiry.gif"))
 
-        if self.STEP_01_label: self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
-        if self.STEP_02_label: self.STEP_02_label.mouseReleaseEvent = lambda event: self.step_label_clicked("A")
-        if self.STEP_03_label: self.STEP_03_label.mouseReleaseEvent = lambda event: self.step_label_clicked("B")
-        if self.STEP_04_label: self.STEP_04_label.mouseReleaseEvent = lambda event: self.step_label_clicked("C")
-        if self.STEP_05_label: self.STEP_05_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_UP")
-        if self.STEP_06_label: self.STEP_06_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_DOWN")
-        if self.STEP_07_label: self.STEP_07_label.mouseReleaseEvent = lambda event: self.step_label_clicked("D")
-        if self.STEP_08_label: self.STEP_08_label.mouseReleaseEvent = lambda event: self.step_label_clicked("E")
-        if self.STEP_09_label: self.STEP_09_label.mouseReleaseEvent = lambda event: self.step_label_clicked("F")
-        if self.STEP_10_label: self.STEP_10_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_DOWN")
-        if self.STEP_11_label: self.STEP_11_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_UP")
-        if self.STEP_12_label: self.STEP_12_label.mouseReleaseEvent = lambda event: self.step_label_clicked("OUT")
+        if self.STEP_01_label:
+            self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
+        if self.STEP_02_label:
+            self.STEP_02_label.mouseReleaseEvent = lambda event: self.step_label_clicked("A")
+        if self.STEP_03_label:
+            self.STEP_03_label.mouseReleaseEvent = lambda event: self.step_label_clicked("B")
+        if self.STEP_04_label:
+            self.STEP_04_label.mouseReleaseEvent = lambda event: self.step_label_clicked("C")
+        if self.STEP_05_label:
+            self.STEP_05_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_UP")
+        if self.STEP_06_label:
+            self.STEP_06_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTR_DOWN")
+        if self.STEP_07_label:
+            self.STEP_07_label.mouseReleaseEvent = lambda event: self.step_label_clicked("D")
+        if self.STEP_08_label:
+            self.STEP_08_label.mouseReleaseEvent = lambda event: self.step_label_clicked("E")
+        if self.STEP_09_label:
+            self.STEP_09_label.mouseReleaseEvent = lambda event: self.step_label_clicked("F")
+        if self.STEP_10_label:
+            self.STEP_10_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_DOWN")
+        if self.STEP_11_label:
+            self.STEP_11_label.mouseReleaseEvent = lambda event: self.step_label_clicked("LIFTL_UP")
+        if self.STEP_12_label:
+            self.STEP_12_label.mouseReleaseEvent = lambda event: self.step_label_clicked("OUT")
 
-        if self.reserve_1_label: self.reserve_1_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(0)
-        if self.reserve_2_label: self.reserve_2_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(1)
-        if self.reserve_3_label: self.reserve_3_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(2)
-        if self.reserve_4_label: self.reserve_4_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(3)
-        if self.reserve_5_label: self.reserve_5_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(4)
-        if self.reserve_6_label: self.reserve_6_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(5)
+        if self.reserve_1_label:
+            self.reserve_1_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(0)
+        if self.reserve_2_label:
+            self.reserve_2_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(1)
+        if self.reserve_3_label:
+            self.reserve_3_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(2)
+        if self.reserve_4_label:
+            self.reserve_4_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(3)
+        if self.reserve_5_label:
+            self.reserve_5_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(4)
+        if self.reserve_6_label:
+            self.reserve_6_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(5)
 
-        if self.expiry_1_label: self.expiry_1_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(0)
-        if self.expiry_2_label: self.expiry_2_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(1)
-        if self.expiry_3_label: self.expiry_3_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(2)
-        if self.expiry_4_label: self.expiry_4_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(3)
-        if self.expiry_5_label: self.expiry_5_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(4)
-        if self.expiry_6_label: self.expiry_6_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(5)
+        if self.expiry_1_label:
+            self.expiry_1_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(0)
+        if self.expiry_2_label:
+            self.expiry_2_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(1)
+        if self.expiry_3_label:
+            self.expiry_3_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(2)
+        if self.expiry_4_label:
+            self.expiry_4_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(3)
+        if self.expiry_5_label:
+            self.expiry_5_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(4)
+        if self.expiry_6_label:
+            self.expiry_6_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(5)
 
     def open_page(self):
 
@@ -1346,7 +1366,8 @@ class HomePage(BaseStackedPage):
         app = QApplication.instance()
         if app.carousel_frozen:
 
-            moving_heads = [m for m in app.machine_head_dict.values() if m and m.status.get('status_level') not in ['STANDBY', 'DIAGNOSTIC']]
+            moving_heads = [m for m in app.machine_head_dict.values() if m and m.status.get('status_level')
+                            not in ['STANDBY', 'DIAGNOSTIC']]
 
             if not moving_heads:
 
@@ -1383,6 +1404,7 @@ class HomePage(BaseStackedPage):
         if m.low_level_pipes:
             QApplication.instance().main_window.open_alert_dialog(
                 tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(m.name, m.low_level_pipes))
+
     @staticmethod
     def expiry_label_clicked(head_index):
 

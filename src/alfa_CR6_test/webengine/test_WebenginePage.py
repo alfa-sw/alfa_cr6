@@ -22,7 +22,7 @@ import asyncio
 from functools import partial
 
 from PyQt5.QtCore import QEventLoop, QUrl # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import QMainWindow, QApplication, QStackedWidget # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QStackedWidget, QMessageBox) # pylint: disable=no-name-in-module
 
 from alfa_CR6_frontend.pages import BrowserPage # pylint: disable=import-error
 from alfa_CR6_backend.globals import import_settings # pylint: disable=import-error
@@ -82,6 +82,9 @@ class MainWindow(QMainWindow):
     def open_alert_dialog(self, args_, title="ALERT"):
 
         logging.warning(f"args_:{args_}, title:{title}")
+        msgBox = QMessageBox()
+        msgBox.setText(f"{args_}")
+        msgBox.exec()
 
 def main():
 
