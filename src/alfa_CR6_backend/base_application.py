@@ -25,7 +25,6 @@ from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import aiohttp  # pylint: disable=import-error
 import websockets  # pylint: disable=import-error
-# ~ import magic  # pylint: disable=import-error
 
 from flask import Markup  # pylint: disable=import-error
 
@@ -962,11 +961,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 _parser = OrderParser(exception_handler=self.handle_exception)
                 properties = _parser.parse(path_to_file)
 
-            if properties.get('meta') is not None and not properties['meta'].get('error'):
+                if not properties['meta'].get('error'):
+                    order = self._do_create_order(properties, description, n_of_jars)
+            else:
                 order = self._do_create_order(properties, description, n_of_jars)
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
+
+        logging.warning(f"path_to_file:{path_to_file}, n_of_jars:{n_of_jars}, order:{order}.")
 
         return order
 

@@ -586,13 +586,11 @@ class BrowserPage(BaseStackedPage):
 
     def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL):
 
-        q_url = QUrl(url)
-        # ~ if q_url.toString() not in self.webengine_view.url().toString():
-        logging.warning(f"q_url:{q_url}")
-        # ~ asyncio.get_event_loop().call_later(.01, partial(self.webengine_view.setUrl, q_url))
-        self.webengine_view.setUrl(q_url)
-
-        self.parent().setCurrentWidget(self)
+        logging.warning(f"url:{url}.")
+        if url:
+            q_url = QUrl(url)
+            self.webengine_view.setUrl(q_url)
+            self.parent().setCurrentWidget(self)
 
 
 class OrderPage(BaseStackedPage):

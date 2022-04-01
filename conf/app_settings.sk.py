@@ -22,8 +22,7 @@ CUSTOM_PATH =  os.path.join(HERE, "custom_sk")
 WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "web_download")
 WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "web_cache")
 
-# ~ WEBENGINE_CUSTOMER_URL = "https://www.sikkensvr.com/"
-WEBENGINE_CUSTOMER_URL = "https://www.octoral.com/"
+WEBENGINE_CUSTOMER_URL = ""
 
 SQLITE_CONNECT_STRING = f"sqlite:///{DATA_PATH}/CRx_v0.sqlite"
 
