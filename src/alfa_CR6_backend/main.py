@@ -6,6 +6,7 @@
 
 import sys
 import logging
+import platform
 
 from alfa_CR6_backend.carousel_motor import CarouselMotor
 from alfa_CR6_backend.globals import import_settings

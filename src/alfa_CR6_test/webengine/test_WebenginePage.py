@@ -74,7 +74,7 @@ class MainWindow(QMainWindow):
         super().__init__(*args, **kwargs)
 
         self.stacked_widget = QStackedWidget(self)
-        self.setGeometry(100, 200, 1200, 600)
+        self.setGeometry(100, 100, 1500, 800)
         self.setCentralWidget(self.stacked_widget)
         self.browser = BrowserPage(parent=self)
         self.browser.open_page(url_)
