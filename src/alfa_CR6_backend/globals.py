@@ -25,6 +25,7 @@ UI_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "ui")
 IMAGES_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "images")
 HELP_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "help")
 KEYBOARD_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "keyboard")
+SCHEMAS_PATH = os.path.join(HERE, "schemas")
 
 CONF_PATH = "/opt/alfa_cr6/conf"
 

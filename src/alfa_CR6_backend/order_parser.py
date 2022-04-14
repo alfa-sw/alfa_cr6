@@ -13,13 +13,14 @@ import codecs
 import subprocess
 import logging
 
+import jsonschema
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 import xmltodict   # pylint: disable=import-error
 import magic       # pylint: disable=import-error
 
-from alfa_CR6_backend.globals import (get_encoding, tr_)
+from alfa_CR6_backend.globals import (get_encoding, tr_, SCHEMAS_PATH)
 
 
 class OrderParser:
@@ -215,6 +216,19 @@ class OrderParser:
         l2 = f"{secondo_nome.strip()}"
         l3 = f"{codicecolore.strip()} {quantita.strip()}"
         properties["extra_lines_to_print"] = [l1, l2, l3]
+
+        return properties
+
+
+    def parse_sw_json(content):
+
+        schema_ = json.load(open(os.path.join(SCHEMAS_PATH, 'SW_formula_file_schema.json')))
+        jsonschema.validate(schema_, content)
+
+        properties = content
+
+        for i in properties.get("ingredients"):
+            i["pigment_name"] = i.pop("code")
 
         return properties
 
@@ -478,11 +492,13 @@ class OrderParser:
         e = get_encoding(path_to_file)
         with codecs.open(path_to_file, encoding=e) as fd:
             content = json.load(fd)
-
-            properties = cls.parse_kcc_json(content)
-
-            if properties.get('meta'):
-                properties['meta']['header'] = 'kcc_json'
+            if content.get("header") == "SW CRx formula file":
+                properties = cls.parse_sw_json(content)
+                properties['meta']['header'] = content['header']
+            else:
+                properties = cls.parse_kcc_json(content)
+                if properties.get('meta'):
+                    properties['meta']['header'] = 'kcc_json'
 
         return properties
 
