@@ -219,16 +219,22 @@ class OrderParser:
 
         return properties
 
-
+    @staticmethod
     def parse_sw_json(content):
 
-        schema_ = json.load(open(os.path.join(SCHEMAS_PATH, 'SW_formula_file_schema.json')))
-        jsonschema.validate(schema_, content)
+        properties = {}
 
-        properties = content
+        fname = os.path.join(SCHEMAS_PATH, 'SW_formula_file_schema.json')
+        with open(fname, encoding='UTF-8') as fd:
+            schema_ = json.load(fd)
+            jsonschema.validate(schema_, content)
+            properties = content
+            for i in properties.get("ingredients"):
+                i["pigment_name"] = i.pop("code")
 
-        for i in properties.get("ingredients"):
-            i["pigment_name"] = i.pop("code")
+            # TODO: add extra_lines_to_print
+            properties["extra_lines_to_print"] = [
+            ]
 
         return properties
 
