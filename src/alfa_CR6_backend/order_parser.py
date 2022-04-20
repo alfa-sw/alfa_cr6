@@ -28,6 +28,7 @@ class OrderParser:
     mcm_csv_header = 'BASE'
     sikkens_pdf_header = 'Anteprima Formula'
     kcc_pdf_header = "KCC Color Navi Formulation"
+    cpl_pdf_header = "MixingSys"
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -282,6 +283,66 @@ class OrderParser:
         return properties
 
     @staticmethod
+    def parse_cpl_pdf(lines):  # pylint: disable=too-many-locals
+
+        properties = {}
+        meta = {}
+
+        keys_0 = ['Make', 'Color description', 'Color code', 'Tone', 'Type', 'Years']
+        keys_1 = ['Code', 'Description', 'Weights', 'Cumul']
+
+        lines_ = [l for l in lines if l]
+
+        positions = [lines_[2].find(k) for k in keys_0] + [len(lines_[2])]
+        vals = []
+        for p1, p2 in zip(positions[:-1], positions[1:]):
+            val = lines_[3][p1:p2].strip()
+            vals.append(val)
+        meta = dict(zip(keys_0, vals))
+
+        section = 0
+        ingreds = []
+        for l in lines_[4:]:
+            toks = [t.strip() for t in l.split("  ") if t.strip()]
+            if section == 0:
+                if "Formula date:" in l and "Panel:" in l:
+                    meta['Panel'] = l.split("Panel:")[1].split(' ')[0]
+                    section = 1
+            elif section == 1:
+                if "Color Box info" in l:
+                    meta['quantity'] = f"{toks[0].split(' ')[0]} LITERS"
+                    section = 2
+            elif section == 2:
+                s0 = {i.strip() for i in toks}
+                s1 = set(keys_1)
+                s2 = s0.intersection(s1)
+                if len(s2) == len(keys_1):
+                    section = 3
+            elif section == 3:
+                if "Alternative descriptions" in l:
+                    section = 4
+                else:
+                    item = dict(zip(keys_1, toks))
+                    item["pigment_name"] = item.pop("Code")
+                    item["weight(g)"] = round(float(item.pop("Weights")), 4)
+                    item["description"] = item.pop("Description")
+                    item.pop("Cumul")
+                    ingreds.append(item)
+
+        properties["meta"] = meta
+        properties["ingredients"] = ingreds
+
+        # ~ -Make -Color description -Color code -Type -Panel -Liters
+        properties["extra_lines_to_print"] = [
+            meta.get('Color description', ''),
+            f"{meta.get('Make', '')}; {meta.get('Color code', '')}",
+            f"{meta.get('Type', '')}; {meta.get('quantity', '')}; {meta.get('Panel', '')}",
+        ]
+        logging.warning(f"properties:{properties}")
+
+        return properties
+
+    @staticmethod
     def parse_kcc_pdf(lines):  # pylint: disable=too-many-locals
 
         section_separator = "__________________________"
@@ -419,8 +480,10 @@ class OrderParser:
 
         path_to_txt_file = "{0}.txt".format(path_to_file)
 
-        cmd_ = ["pdftotext", "-fixed", f"{fixed_pitch}", path_to_file, path_to_txt_file]
-        # ~ logging.warning(f"cmd_:{cmd_}")
+        if fixed_pitch is None:
+            cmd_ = ["pdftotext", "-layout", path_to_file, path_to_txt_file]
+        else:
+            cmd_ = ["pdftotext", "-fixed", f"{fixed_pitch}", path_to_file, path_to_txt_file]
 
         subprocess.run(cmd_, check=False)
         e = get_encoding(path_to_txt_file)
@@ -441,6 +504,12 @@ class OrderParser:
 
             if properties.get('meta'):
                 properties['meta']['header'] = cls.kcc_pdf_header
+
+        elif cls.cpl_pdf_header in " ".join(lines[0:1]):
+            properties = cls.parse_cpl_pdf(lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.cpl_pdf_header
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logg    ing.warning(f"cmd_:{cmd_}")
@@ -521,7 +590,7 @@ class OrderParser:
                 properties = self.parse_json_order(path_to_file)
 
             elif mime_type == 'application/pdf':
-                for fp in (0, 5):
+                for fp in (None, 0, 5):
                     try:
                         # ~ logging.warning(f"trying fp:{fp} ...")
                         properties = self.parse_pdf_order(path_to_file, fp)
