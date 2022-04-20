@@ -25,7 +25,8 @@ def main():
             logging.warning(f"{path_to_file} ingredients:{len(properties.get('ingredients', []))}")
 
             assert properties.get('ingredients')
-            logging.warning(json.dumps(properties, indent=2, ensure_ascii=False))
+            # ~ logging.warning(json.dumps(properties, indent=2, ensure_ascii=False))
+            logging.warning(f"extra_lines_to_print:{properties['extra_lines_to_print']}")
 
     except:
 

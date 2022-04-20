@@ -40,7 +40,7 @@ def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
         'font_size': 15,
         'text_distance': 0.75,
         'compress': False,
-        'line_lenght': 17,
+        'line_lenght': 24,
         'rotate': 0,
     }
 

@@ -176,7 +176,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True)
 
             if self.index == 0:
-                if status.get("error_code") == 10:  # user button interrupt
+                if status.get("error_code") in (10, "USER_INTERRUPT"):  # user button interrupt
                     for m in self.app.machine_head_dict.values():
                         if m and m.index != 0:
                             t = m.send_command(cmd_name="ABORT", params={})
