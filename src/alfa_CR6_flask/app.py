@@ -116,7 +116,7 @@ class FilterOrderByJarPositionNotInList(FilterNotInList):  # pylint: disable=too
     def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
         return query.join(Jar).filter(~Jar.position.in_(value))
 
-class CRX_ModelView(ModelView):
+class Base_ModelView(ModelView):
 
     list_template = 'admin/list.html'
 
@@ -167,7 +167,7 @@ class CRX_ModelView(ModelView):
     column_exclude_list = (
         'json_properties',)
 
-class EventModelView(CRX_ModelView):
+class EventModelView(Base_ModelView):
     column_filters = (
         'name',
         'level',
@@ -182,7 +182,7 @@ class EventModelView(CRX_ModelView):
         'date_created',
         'description',)
 
-class JarModelView(CRX_ModelView):
+class JarModelView(Base_ModelView):
 
     column_list = (
         'order',
@@ -234,14 +234,14 @@ class JarModelView(CRX_ModelView):
         order = getattr(obj, 'order')
         return OrderModelView.display_description(context, order, name)
 
-    column_formatters = CRX_ModelView.column_formatters.copy()
+    column_formatters = Base_ModelView.column_formatters.copy()
     column_formatters.update({
         'order': _display_order,
         'order_description': _display_order_description,
     })
 
 
-class OrderModelView(CRX_ModelView):
+class OrderModelView(Base_ModelView):
 
     column_list = (
         'order_nr',
@@ -332,7 +332,7 @@ class OrderModelView(CRX_ModelView):
 
         return Markup(_html)
 
-    column_formatters = CRX_ModelView.column_formatters.copy()
+    column_formatters = Base_ModelView.column_formatters.copy()
     column_formatters.update({
         'description': _display_description,
         'status': _display_status,
@@ -346,7 +346,7 @@ class OrderModelView(CRX_ModelView):
         self._refresh_filters_cache()
         return super().index_view()
 
-class DocumentModelView(CRX_ModelView):
+class DocumentModelView(Base_ModelView):
 
     column_filters = (
         'name',
@@ -362,7 +362,7 @@ class DocumentModelView(CRX_ModelView):
         'json_properties',)
 
 
-class CRX_AdminResources(flask_admin.AdminIndexView):
+class AdminIndexView(flask_admin.AdminIndexView):
 
     @flask_admin.expose("/")
     @flask_admin.expose("/home")
@@ -536,7 +536,7 @@ def init_admin(app):
 
     db = init_db(app)
 
-    index_view_ = CRX_AdminResources(url='/')
+    index_view_ = AdminIndexView(url='/')
     admin_ = flask_admin.base.Admin(app, name=_gettext('Alfa_CRX'), template_mode='bootstrap3', index_view=index_view_)
 
     admin_.add_view(OrderModelView(Order, db.session))
@@ -544,6 +544,7 @@ def init_admin(app):
     admin_.add_view(EventModelView(Event, db.session))
     admin_.add_view(DocumentModelView(Document, db.session))
 
+    return admin_
 
 def main():
 
@@ -558,7 +559,8 @@ def main():
     app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_database_uri_
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or '123456790'
 
-    init_admin(app)
+    admin = init_admin(app)
+    logging.warning(f'admin:{admin}')
 
     HOST, PORT = '0.0.0.0', 8090
     logging.warning("start serving admin UI on http://{}:{}".format(HOST, PORT))

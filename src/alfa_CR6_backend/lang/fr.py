@@ -171,7 +171,8 @@ D = {
     "confirm removing {}?": "confirmez-vous la suppression de : {} ?",
     "edit alias for pigment names": "edit alias for pigment names",
     "data not valid. duplicated alias:": "data not valid. duplicated alias:",
-    "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ",
+    "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": 
+        "Veuillez sélectionner un pigment sur la gauche, puis insérez ci-dessous une liste de noms alternatifs, un nom pour chaque ligne.",
     "(Trailing whitespaces will be discarded)": "(Trailing whitespaces will be discarded)",
     "PURGE_ALL": "PURGE ALL",
     "please, wait while finishing all pending operations ...": "attendez la fin des opérations en cours ...",

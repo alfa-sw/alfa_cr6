@@ -13,6 +13,8 @@ import logging
 import traceback
 import asyncio
 
+import aiohttp  # pylint: disable=import-error
+
 # ~ import json
 
 from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
@@ -85,7 +87,7 @@ class DebugPage:
         self.status_text_browser.setOpenLinks(False)
 
         self.answer_text_browser = QTextBrowser(parent=self.main_frame)
-        self.answer_text_browser.document().setMaximumBlockCount(500)
+        self.answer_text_browser.document().setMaximumBlockCount(5000)
         self.status_text_browser.setOpenLinks(False)
 
         self.buttons_frame = QFrame(parent=self.main_frame)
@@ -114,8 +116,8 @@ class DebugPage:
 
         for i, n in enumerate(
             [
-                ("", "**"),
                 # ~ ("check\njar", "check jar from barcode"),
+                ("download KCC\nSpecific\nGravity file", "download KCC file with specific gravity lot info"),
                 ("freeze\ncarousel", "stop the movements of the jars, until unfreeze."),
                 ("unfreeze\ncarousel", "restar the movements of the jars."),
                 ("stop_all", "send a stop-movement cmd to all heads"),
@@ -137,8 +139,8 @@ class DebugPage:
                 # ~ "LIFTR\nDOWN",
                 # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
+                ("", "**"),
                 ("minimize\nmain window", ""),
-                ("download KCC\nlot info file", "download KCC file with specific gravity lot info"),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
                 ("open admin\npage", "."),
                 ("move_12_00", "deliver jar"),
@@ -152,7 +154,7 @@ class DebugPage:
 
         for i, n in enumerate(
             [
-                ("complete", "start the complete cycle through the system"),
+                ("run a complete\ncycle", "start the complete cycle through the system"),
                 ("refresh", "refresh this view"),
                 ("clear\njars", "delete all the progressing jars"),
                 ("clear\nanswers", "clear answers"),
@@ -237,6 +239,11 @@ class DebugPage:
             if command == "CANCEL":
                 barcode = int(name)
                 app.delete_jar_runner(barcode)
+            elif command == "LOTINFO" and m:
+
+                _ = self._show_KCC_specific_gravity_info(m)
+                asyncio.ensure_future(_)
+
             elif command == "DIAGNOSTIC" and m:
                 t = m.send_command(
                     cmd_name="ENTER_DIAGNOSTIC",
@@ -456,7 +463,7 @@ class DebugPage:
 
             simulate_read_barcode()
 
-        elif "complete" in cmd_txt:
+        elif "run a complete\ncycle" in cmd_txt:
 
             async def coro():
                 ret_vals = []
@@ -495,8 +502,8 @@ class DebugPage:
             url_ = app.main_window.menu_line_edit.text()
             app.main_window.browser_page.open_page(url_)
 
-        elif "download KCC\nlot info file" in cmd_txt:
-            t = download_KCC_specific_gravity_lot()
+        elif "download KCC\nSpecific\nGravity file" in cmd_txt:
+            t = self._download_KCC_lot_info_file()
             asyncio.ensure_future(t)
 
         elif "minimize\nmain window" in cmd_txt:
@@ -588,7 +595,7 @@ class DebugPage:
 
         html_ += "<hr></hr>"
 
-        html_ += '<table width="100%" aligbcellpadding="80px" cellspacing="80px">'
+        html_ += '<table width="100%" cellpadding="0" cellspacing="8">'
 
         html_ += '<tr bgcolor="#FFFFFF">'
         html_ += '<th align="left" width="5%">ord.</th>'
@@ -653,8 +660,9 @@ class DebugPage:
             html_ += "  <td>{}</td>".format(l_u)
 
             html_ += f'  <td bgcolor="#F0F0F0"><a href="RESET@{n}">RESET</a></td>'
-            html_ += f'  <td bgcolor="#F0F0F0"><a href="DIAG@{n}" title="Enter diagnostic status">DIAG</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="LOTINFO@{n}" title="show KCC specific gravity info">LOTINFO</a></td>'
             html_ += f'  <td bgcolor="#F0F0F0"><a href="UPDATE@{n}" title="Update machine data cache">UPDATE</a></td>'
+            html_ += f'  <td bgcolor="#F0F0F0"><a href="DIAG@{n}" title="Enter diagnostic status">DIAG</a></td>'
             # ~ html_ += f'  <td bgcolor="#F0F0F0"><a href="DISP@{n}" title="call do_dispense()">DISP</a></td>'
 
             html_ += "</tr>"
@@ -702,3 +710,76 @@ class DebugPage:
                 logging.error(traceback.format_exc())
 
         return fileNames
+
+
+    async def _download_KCC_lot_info_file(self):  # pylint: disable=no-self-use
+
+        msg_ = tr_("downloading KCC Specific Gravity file.")
+        QApplication.instance().main_window.open_alert_dialog(msg_)
+
+        try:
+            ret = await download_KCC_specific_gravity_lot(force_download=True, force_file_xfert=True)
+
+            msg_ = tr_("KCC Specific Gravity file downloaded.")
+            if not ret:
+                msg_ = tr_("KCC Specific Gravity file NOT downloaded.")
+
+            QApplication.instance().main_window.open_alert_dialog(msg_)
+
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
+    async def _show_KCC_specific_gravity_info(self, machine_head):  # pylint: disable=no-self-use
+
+        logging.warning(f"machine_head:{machine_head}")
+
+        try:
+
+            async with aiohttp.ClientSession() as aiohttp_session:
+
+
+                params = {'data_set_name': 'kcc_lot_specific_info'}
+                async with aiohttp_session.get(f'http://{machine_head.ip_add}:{machine_head.http_port}/admin/download', params=params) as resp:
+                    resp_json = await resp.json()
+                    assert resp.ok, f"failure downloading from:{machine_head.ip_add}:{machine_head.http_port}"
+
+                    logging.warning(f"resp_json({type(resp_json)}):{resp_json}"[:500])
+
+                    html_ = "\n<body>"
+                    html_ += f'\n<h3>head {machine_head.index + 1}:{machine_head.name}</h3>'
+                    html_ += '\n  <table border="0" cellspacing="0" cellpadding="2">'
+                    for n, i in enumerate(resp_json):
+                        if n == 0:
+                            html_ += f'\n    <tr bgcolor="#FFFFAA">'
+                            for v in i.values():
+                                html_ += f'<th>{v}</th>'
+                            html_ += "</tr>"
+                        else:
+                            bgcol = "#DDDDFF" if n%2 else "#EEEEEE"
+                            html_ += f'\n    <tr bgcolor="{bgcol}">'
+                            for v in i.values():
+                                # ~ if v:
+                                    html_ += f'<td>{v}</td>'
+                            html_ += "</tr>"
+                    html_ += "\n  </table>\n"
+                    html_ += "\n</body>\n"
+
+                    # ~ html_ = ""
+                    # ~ for n, i in enumerate(resp_json):
+                        # ~ if n%2:
+                            # ~ html_ += '<p color="#AAAAEE">'
+                        # ~ else:
+                            # ~ html_ += '<p color="#AAEEAA">'
+                        # ~ for v in i.values():
+                            # ~ if v:
+                                # ~ html_ += f"{v}, "
+                        # ~ html_ += "</p>\n"
+                    # ~ html_ += ""
+
+                    logging.warning(f"html_:{html_}")
+
+                    self.answer_text_browser.setHtml(html_)
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            # ~ QApplication.instance().main_window.open_alert_dialog(f"{e}")

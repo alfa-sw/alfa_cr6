@@ -51,47 +51,49 @@ def get_dict_diff(dict1, dict2):
     diff = set1 ^ set2
     return diff
 
-async def download_KCC_specific_gravity_lot():
+async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfert=False):
 
     url_ = "https://kccrefinish.co.kr/file/filedownload/1QZUuT7Q003"
     tmp_file_path_ = "/opt/alfa_cr6/tmp/kcc_lot_specific_info.json"
+    ret = False
 
     logging.warning(f'int(time().strftime("%H")):{int(time.strftime("%H"))}')
 
-    if os.path.exists(tmp_file_path_) and (
-            int(time.strftime("%H")) > 6 or (
-                time.time() - int(os.path.getmtime(tmp_file_path_)) < 12 * 60 * 60)):
-        return
+    _skip_condition = not force_download and os.path.exists(tmp_file_path_)
+    _skip_condition = _skip_condition and (int(time.strftime("%H")) > 6 or (
+                time.time() - int(os.path.getmtime(tmp_file_path_)) < 12 * 60 * 60))
 
-    async with aiohttp.ClientSession() as aiohttp_session:
-        try:
-            async with aiohttp_session.get(url_) as resp:
-                assert resp.ok, f"failure downloading url_:{url_}"
+    if not _skip_condition:
 
-                content = await resp.text()
-                with open(tmp_file_path_, 'w', encoding='UTF-8') as f:
-                    f.write(content)
-                    f.flush()
+        async with aiohttp.ClientSession() as aiohttp_session:
+            try:
+                async with aiohttp_session.get(url_) as resp:
+                    assert resp.ok, f"failure downloading url_:{url_}"
 
-                # ~ mime = magic.Magic(mime=True)
-                # ~ mime_type = mime.from_file(tmp_file_path_)
-                app = QApplication.instance()
-                if app:
-                    for ip, _, port in app.settings.MACHINE_HEAD_IPADD_PORTS_LIST:
-                        if ip in ["localhost", "127.0.0.1"]:
-                            os.system(f"rsync {tmp_file_path_} /opt/alfa/data/KCC_lot_specific_info.json")
-                        else:
+                    content = await resp.text()
+                    with open(tmp_file_path_, 'w', encoding='UTF-8') as f:
+                        f.write(content)
+                        f.flush()
+
+                    if QApplication.instance():
+                        for ip, _, port in [i for i in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST if i]:
+
                             logging.warning(f"ip:port {ip}:{port}")
+
+                            if not force_file_xfert and ip in ["localhost", "127.0.0.1"]:
+                                os.system(f"rsync {tmp_file_path_} /opt/alfa/data/KCC_lot_specific_info.json")
+                                ret = True
+                                break
+
                             with open(tmp_file_path_, 'rb') as f:
                                 try:
                                     data = aiohttp.FormData()
                                     data.add_field('file', f, filename='kcc_lot_specific_info.json',
                                                    content_type='application/json; charset=utf-8')
-                                                   # ~ content_type=mime_type)
                                     async with aiohttp_session.post(f'http://{ip}:{port}/admin/upload', data=data) as resp:
                                         resp_json = await resp.json()
-                                        assert resp.ok and resp_json.get(
-                                            'result') == 'ok', f"failure uploading to:{ip}:{port}"
+                                        assert resp.ok and resp_json.get('result') == 'ok', f"failure uploading to:{ip}:{port}"
+                                    ret = True
                                 except Exception as e:  # pylint: disable=broad-except
                                     logging.error(traceback.format_exc())
                                     QApplication.instance().insert_db_event(
@@ -103,11 +105,21 @@ async def download_KCC_specific_gravity_lot():
                                             f"http://{ip}:{port}/admin/upload",
                                             traceback.format_exc()))
 
-        except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
-            QApplication.instance().insert_db_event(
-                name="DOWNLOAD", description=str(e), level="ERROR",
-                severity="", source="download_KCC_specific_gravity_lot")
+                                    QApplication.instance().main_window.open_alert_dialog(
+                                        (url_, str(e)), fmt="error downloading file from:{}\n {}.\n", title="ERROR")
+
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+                if QApplication.instance():
+
+                    QApplication.instance().insert_db_event(
+                        name="DOWNLOAD", description=str(e), level="ERROR",
+                        severity="", source="download_KCC_specific_gravity_lot")
+
+                    QApplication.instance().main_window.open_alert_dialog(
+                        (url_, str(e)), fmt="error downloading file from:{}\n {}.\n", title="ERROR")
+
+    return ret
 
 
 class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-public-methods
