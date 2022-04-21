@@ -13,13 +13,13 @@
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/test_WebenginePage.py
 """
 
-import os
+# ~ import os
 import sys
 import logging
 import traceback
 import asyncio
 
-from functools import partial
+# ~ from functools import partial
 
 from PyQt5.QtCore import QEventLoop, QUrl # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QStackedWidget, QMessageBox) # pylint: disable=no-name-in-module
@@ -64,7 +64,7 @@ class Application(QApplication):
 
         if "CancelledError" in traceback.format_exc():
             logging.warning(traceback.format_exc())
-            raise  # pylint:  disable=misplaced-bare-raise
+            raise e
 
         logging.error(traceback.format_exc())
 
@@ -79,7 +79,8 @@ class MainWindow(QMainWindow):
         self.browser = BrowserPage(parent=self)
         self.browser.open_page(url_)
 
-    def open_alert_dialog(self, args_, title="ALERT"):
+    @staticmethod
+    def open_alert_dialog(args_, title="ALERT"):
 
         logging.warning(f"args_:{args_}, title:{title}")
         msgBox = QMessageBox()
@@ -94,7 +95,7 @@ def main():
     logging.warning(f"g_settings:{g_settings}")
     app = Application(sys.argv)
 
-    here = os.path.dirname(os.path.abspath(__file__))
+    # ~ here = os.path.dirname(os.path.abspath(__file__))
     # ~ url_ = QUrl.fromLocalFile(os.path.join(here, "test_WebenginePage.html"))
     url_ = QUrl("http://www.autorefinishes.co.kr/")
     # ~ url_ = QUrl("https://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=KS-071-2&PaintTy=WQ")
