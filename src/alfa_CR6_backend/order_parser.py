@@ -306,7 +306,7 @@ class OrderParser:
             toks = [t.strip() for t in l.split("  ") if t.strip()]
             if section == 0:
                 if "Formula date:" in l and "Panel:" in l:
-                    meta['Panel'] = l.split("Panel:")[1].split(' ')[0]
+                    meta['Panel'] = [t.strip() for t in l.split("Panel:")[1].split(' ') if t.strip()][0]
                     section = 1
             elif section == 1:
                 if "Color Box info" in l:
@@ -338,7 +338,6 @@ class OrderParser:
             f"{meta.get('Make', '')}; {meta.get('Color code', '')}",
             f"{meta.get('Type', '')}; {meta.get('quantity', '')}; {meta.get('Panel', '')}",
         ]
-        logging.warning(f"properties:{properties}")
 
         return properties
 
