@@ -96,6 +96,8 @@ class SingleWebEnginePage(QWebEnginePage):
                         args_ = f"{self.download_msgs[self.current_download.state()]}"
                     QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
 
+                self.adjust_downloaded_file_name(self.current_download.downloadFileName())
+
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
 
@@ -560,10 +562,10 @@ class BrowserPage(BaseStackedPage):
         super().__init__(*args, **kwargs)
 
         self.webengine_view = QWebEngineView(self)
-        if hasattr(g_settings, 'POPUP_WEB_ENGINE_PAGE') and getattr(g_settings, 'POPUP_WEB_ENGINE_PAGE'):
-            self._webengine_page = PopUpWebEnginePage(self)
-        else:
+        if hasattr(g_settings, 'SINGLE_WEB_ENGINE_PAGE') and getattr(g_settings, 'SINGLE_WEB_ENGINE_PAGE'):
             self._webengine_page = SingleWebEnginePage(self)
+        else:
+            self._webengine_page = PopUpWebEnginePage(self)
         self.webengine_view.setPage(self._webengine_page)
 
         logging.warning(f"_view:{self.webengine_view}, _page:{self._webengine_page}.")

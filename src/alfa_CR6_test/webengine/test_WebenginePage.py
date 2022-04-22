@@ -97,7 +97,8 @@ def main():
 
     # ~ here = os.path.dirname(os.path.abspath(__file__))
     # ~ url_ = QUrl.fromLocalFile(os.path.join(here, "test_WebenginePage.html"))
-    url_ = QUrl("http://www.autorefinishes.co.kr/")
+    # ~ url_ = QUrl("http://www.autorefinishes.co.kr/")
+    url_ = QUrl("http://kccrefinish.co.kr/")
     # ~ url_ = QUrl("https://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=KS-071-2&PaintTy=WQ")
     # ~ url_ = QUrl("https://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=EM-4649&PaintTy=WQ")
     window = MainWindow(url_)
