@@ -73,15 +73,23 @@ class SingleWebEnginePage(QWebEnginePage):
 
         super().__init__(parent)
 
-        if not os.path.exists(g_settings.WEBENGINE_DOWNLOAD_PATH):
-            os.makedirs(g_settings.WEBENGINE_DOWNLOAD_PATH)
+        logging.warning(f"self:{self}.")
+
+        webengine_download_path = os.path.normpath(g_settings.WEBENGINE_DOWNLOAD_PATH)
+        webengine_cache_path = os.path.normpath(g_settings.WEBENGINE_CACHE_PATH)
+
+        if not os.path.exists(webengine_download_path):
+            os.makedirs(webengine_download_path)
 
         profile = self.profile()
-        profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
+        profile.setCachePath(webengine_cache_path)
+        profile.setPersistentStoragePath(webengine_cache_path)
         profile.setHttpCacheType(QWebEngineProfile.DiskHttpCache)
         profile.setPersistentCookiesPolicy(QWebEngineProfile.ForcePersistentCookies)
 
         self.current_download = None
+
+        profile.downloadRequested.connect(self.on_downloadRequested)
 
     def on_download_stateChanged(self, state):
 
@@ -96,24 +104,29 @@ class SingleWebEnginePage(QWebEnginePage):
                         args_ = f"{self.download_msgs[self.current_download.state()]}"
                     QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
 
-                self.adjust_downloaded_file_name(self.current_download.downloadFileName())
+                self.adjust_downloaded_file_name()
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
 
     def on_downloadRequested(self, download):
 
+        logging.warning(f"download:{download}.")
+
         self.current_download = download
         self.current_download.setDownloadDirectory(g_settings.WEBENGINE_DOWNLOAD_PATH)
         self.current_download.stateChanged.connect(self.on_download_stateChanged)
         self.current_download.accept()
 
-    @staticmethod
-    def adjust_downloaded_file_name(full_name):
+    def adjust_downloaded_file_name(self):
 
+        full_name = os.path.join(
+            self.current_download.downloadDirectory(), self.current_download.downloadFileName())
+
+        logging.warning(f"full_name:{full_name}")
         mime = magic.Magic(mime=True)
         mime_type = mime.from_file(full_name)
-        logging.warning(f"full_name:{full_name}, mime_type:{mime_type}")
+        logging.warning(f"mime_type:{mime_type}")
 
         if mime_type == 'application/json':
             try:
@@ -127,41 +140,57 @@ class SingleWebEnginePage(QWebEnginePage):
                         os.rename(full_name, f"{full_name}.json")
             except Exception:   # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
-        else:
-            toks = mime_type.split("/")
-            ext = toks[1:] and toks[1]
-            if ext:
-                os.rename(full_name, f"{full_name}.{ext}")
+        # ~ else:
+            # ~ toks = mime_type.split("/")
+            # ~ ext = toks[1:] and toks[1]
+            # ~ if ext:
+                # ~ os.rename(full_name, f"{full_name}.{ext}")
 
     @classmethod
     def javaScriptConsoleMessage(cls, *args):
-        logging.warning(f"args:{args}.")
+        logging.info(f"args:{args}.")
+
+    def acceptNavigationRequest(self, url, _type, isMainFrame):
+
+        logging.warning(f"url:{url}, type:{_type}, isMainFrame:{isMainFrame}.")
+
+        return super().acceptNavigationRequest(url, _type, isMainFrame)
 
 class PopUpWebEnginePage(SingleWebEnginePage):
 
     def __init__(self, parent):
 
         super().__init__(None)
+
         single_popup_win.parent = parent
+
+        logging.warning(f"self:{self}.")
 
         if single_popup_win.profile is None:
             single_popup_win.profile = self.profile()
-            single_popup_win.profile.setCachePath(g_settings.WEBENGINE_CACHE_PATH)
-            single_popup_win.profile.setHttpCacheType(QWebEngineProfile.DiskHttpCache)
-            single_popup_win.profile.setPersistentCookiesPolicy(QWebEngineProfile.ForcePersistentCookies)
 
     def createWindow(self, _type):
         """ this is called when target == 'blank_' """
 
-        if single_popup_win.child_page is None:
-            single_popup_win.child_page = PopUpWebEnginePage(single_popup_win.parent)
-            single_popup_win.child_view = QWebEngineView()
-            single_popup_win.child_page.setView(single_popup_win.child_view)
+        try:
 
-            single_popup_win.child_page.settings().setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, True)
-            single_popup_win.child_page.urlChanged.connect(self.change_url)
+            if single_popup_win.child_page is None:
+                single_popup_win.child_page = PopUpWebEnginePage(single_popup_win.parent)
+                single_popup_win.child_view = QWebEngineView()
+                single_popup_win.child_page.setView(single_popup_win.child_view)
 
-            self.profile().downloadRequested.connect(self.on_downloadRequested)
+                single_popup_win.child_page.settings().setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, True)
+                single_popup_win.child_page.urlChanged.connect(self.change_url)
+
+                try:
+                    self.profile().downloadRequested.disconnect()
+                except Exception:  # pylint: disable=broad-except
+                    logging.warning(traceback.format_exc())
+
+                self.profile().downloadRequested.connect(self.on_downloadRequested)
+
+        except Exception:  # pylint: disable=broad-except
+            logging.warning(traceback.format_exc())
 
         logging.warning(
             f"_type:{_type}, _cntr:{single_popup_win.cntr}, _view:{single_popup_win.child_view}, _page:{single_popup_win.child_page}.")
@@ -194,7 +223,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
         try:
             if state > 1 and QApplication.instance().main_window.open_alert_dialog:
 
-                if QApplication.instance().main_window.open_alert_dialog:
+                if self.current_download and QApplication.instance().main_window.open_alert_dialog:
                     try:
                         args_ = f"{self.current_download.downloadFileName()}\n{self.download_msgs[self.current_download.state()]}"
                     except Exception:  # pylint: disable=broad-except
@@ -202,6 +231,10 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                     QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
 
                 if single_popup_win.child_view:
+                    try:
+                        self.current_download.stateChanged.disconnect()
+                    except Exception:  # pylint: disable=broad-except
+                        logging.warning(traceback.format_exc())
                     self.current_download = None
                     single_popup_win.child_view.close()
 
@@ -562,13 +595,15 @@ class BrowserPage(BaseStackedPage):
         super().__init__(*args, **kwargs)
 
         self.webengine_view = QWebEngineView(self)
-        if hasattr(g_settings, 'SINGLE_WEB_ENGINE_PAGE') and getattr(g_settings, 'SINGLE_WEB_ENGINE_PAGE'):
-            self._webengine_page = SingleWebEnginePage(self)
-        else:
+
+        _popup_web_engine_page = hasattr(g_settings, 'POPUP_WEB_ENGINE_PAGE') and getattr(g_settings, 'POPUP_WEB_ENGINE_PAGE')
+        if _popup_web_engine_page:
             self._webengine_page = PopUpWebEnginePage(self)
+        else:
+            self._webengine_page = SingleWebEnginePage(self)
         self.webengine_view.setPage(self._webengine_page)
 
-        logging.warning(f"_view:{self.webengine_view}, _page:{self._webengine_page}.")
+        logging.warning(f"_popup_web_engine_page:{_popup_web_engine_page}, _view:{self.webengine_view}, _page:{self._webengine_page}.")
 
         self.url_lbl.mouseReleaseEvent = lambda event: self.__on_click_url_label()
 
