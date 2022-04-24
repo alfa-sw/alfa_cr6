@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import os
 import logging
 
@@ -5,13 +7,9 @@ import logging
 # ~ LOG_LEVEL=logging.INFO,
 LOG_LEVEL = logging.WARNING
 
-# ~ BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
-BARCODE_READER_IDENTIFICATION_STRING = "Barcode"
-
-# ~ DOWNLOAD_KCC_LOT_STEP = 10*60
-DOWNLOAD_KCC_LOT_STEP = 60 * 60
-
 LANGUAGE = "en"
+
+BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNTIME_FILES_ROOT = os.path.join(HERE, "../")
@@ -23,9 +21,9 @@ DATA_PATH = os.path.join(RUNTIME_FILES_ROOT, "data")
 
 CUSTOM_PATH =  os.path.join(HERE, "custom_cpl")
 
-
 WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "web_download")
 WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "web_cache")
+
 WEBENGINE_CUSTOMER_URL = "https://capellasolutionsgroup.com/"
 
 SQLITE_CONNECT_STRING = f"sqlite:///{DATA_PATH}/CRx_v0.sqlite"
