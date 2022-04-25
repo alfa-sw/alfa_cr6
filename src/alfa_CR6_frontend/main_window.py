@@ -12,7 +12,6 @@
 import logging
 import traceback
 import json
-import platform
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
@@ -29,11 +28,12 @@ from alfa_CR6_frontend.dialogs import (
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
-    BrowserPage,
     HomePageSixHeads,
     HomePageFourHeads,
     ActionPage,
     HelpPage)
+
+from alfa_CR6_frontend.browser_page import BrowserPage
 
 from alfa_CR6_frontend.keyboard import Keyboard
 
@@ -156,12 +156,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.settings = import_settings()
 
-        # ~ self.setStyleSheet("""
-        # ~ QWidget {font-size: 24px; font-family: Times sans-serif;}
-        # ~ QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
-        # ~ QPushButton:pressed {background-color: #AAAAAA;}
-        # ~ QScrollBar:vertical {width: 40px;}
-        # ~ """)
         self.setStyleSheet("""
                 QWidget {font-size: 24px; font-family:Dejavu;}
                 QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}

@@ -24,11 +24,10 @@ import asyncio
 from PyQt5.QtCore import QEventLoop, QUrl # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QStackedWidget, QMessageBox) # pylint: disable=no-name-in-module
 
-from alfa_CR6_frontend.pages import BrowserPage # pylint: disable=import-error
+from alfa_CR6_frontend.browser_page import BrowserPage # pylint: disable=import-error
 from alfa_CR6_backend.globals import import_settings # pylint: disable=import-error
 
 g_settings = import_settings()
-
 
 class Application(QApplication):
 
@@ -71,10 +70,11 @@ class Application(QApplication):
 class MainWindow(QMainWindow):
 
     def __init__(self, url_, *args, **kwargs):
+
         super().__init__(*args, **kwargs)
 
         self.stacked_widget = QStackedWidget(self)
-        self.setGeometry(100, 100, 1500, 800)
+        self.setGeometry(100, 20, 1800, 1200)
         self.setCentralWidget(self.stacked_widget)
         self.browser = BrowserPage(parent=self)
         self.browser.open_page(url_)
@@ -92,16 +92,25 @@ def main():
     logging.basicConfig(
         stream=sys.stdout, level='INFO',
         format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
-    logging.warning(f"g_settings:{g_settings}")
-    app = Application(sys.argv)
+
+    g_settings.POPUP_WEB_ENGINE_PAGE = 1
+
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = "http://kccrefinish.co.kr/" # kcc
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = "https://cloud.e-mixing.eu/" # ludwig / mcm
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = "https://capellasolutionsgroup.com/"
+    g_settings.WEBENGINE_CUSTOMER_URL = "http://www.autorefinishes.co.kr/" # noroo
 
     # ~ here = os.path.dirname(os.path.abspath(__file__))
-    # ~ url_ = QUrl.fromLocalFile(os.path.join(here, "test_WebenginePage.html"))
-    # ~ url_ = QUrl("http://www.autorefinishes.co.kr/")
-    url_ = QUrl("http://kccrefinish.co.kr/")
-    # ~ url_ = QUrl("https://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=KS-071-2&PaintTy=WQ")
-    # ~ url_ = QUrl("https://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=EM-4649&PaintTy=WQ")
-    window = MainWindow(url_)
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = QUrl.fromLocalFile(os.path.join(here, "test_WebenginePage.html"))
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = QUrl("http://www.autorefinishes.co.kr/")
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = QUrl("https://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=KS-071-2&PaintTy=WQ")
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = QUrl("https://www.autorefinishes.co.kr/colorinformation/colormix_view_xmlForm.asp?MixCd=EM-4649&PaintTy=WQ")
+
+    logging.warning(f"g_settings:{g_settings}")
+
+    app = Application(sys.argv)
+
+    window = MainWindow(g_settings.WEBENGINE_CUSTOMER_URL)
     app.main_window = window
     window.show()
 
