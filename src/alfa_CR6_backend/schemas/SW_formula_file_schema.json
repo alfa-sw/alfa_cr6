@@ -16,7 +16,7 @@
       "type": "string"
     },
     "jobId": {
-      "type": "number"
+      "type": "string"
     },
     "batchId": {
       "type": "number"
@@ -100,6 +100,7 @@
     }
   },
   "required": [
+    "header",
     "version",
     "system",
     "meta",
