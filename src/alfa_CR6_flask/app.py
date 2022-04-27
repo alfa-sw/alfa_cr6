@@ -388,19 +388,45 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
         return self.render(template, **ctx)
 
+
+    @flask_admin.expose('/upload_json_formula', methods=('POST',))
+    def upload_json_formula(self):     # pylint: disable=no-self-use
+
+        logging.warning(f"request.args:{request.args}")
+        response_msgs = []
+        response_status = HTTPStatus.BAD_REQUEST
+
+        try:
+            # ~ parse_sw_json(content)
+            # ~ pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), )
+            # ~ with open(pth_, 'wb') as f:
+                # ~ f.write()
+            response_status = HTTPStatus.OK
+            response_msgs.append("json formula received.")
+
+        except Exception as exc:  # pylint: disable=broad-except
+            response_msgs.append(f'Error in validating formula. {exc}')
+            logging.error(traceback.format_exc())
+
+        ret = current_app.response_class(
+            json.dumps({'data': response_msgs}, ensure_ascii=False),
+            status=response_status, content_type='application/json; charset=utf-8')
+
+        logging.warning("ret:{}".format(ret))
+        return ret
+
     @flask_admin.expose('/upload_formula_file', methods=('POST',))
     def upload_formula_file(self):     # pylint: disable=no-self-use
         _msgs = []
         _status = HTTPStatus.BAD_REQUEST
         try:
-            if request.method == 'POST':
-                for stream in request.files.getlist('file'):
-                    logging.warning(f"stream.mimetype:{stream.mimetype}, stream.filename:{stream.filename}.")
-                    pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), stream.filename)
-                    with open(pth_, 'wb') as f:
-                        f.write(stream.read())
-                    _status = HTTPStatus.OK
-                    _msgs.append("formula file uploaded. {}".format(stream.filename))
+            for stream in request.files.getlist('file'):
+                logging.warning(f"stream.mimetype:{stream.mimetype}, stream.filename:{stream.filename}.")
+                pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), stream.filename)
+                with open(pth_, 'wb') as f:
+                    f.write(stream.read())
+                _status = HTTPStatus.OK
+                _msgs.append("formula file uploaded. {}".format(stream.filename))
         except Exception as exc:  # pylint: disable=broad-except
             _msgs.append('Error trying to upload formula file: {}'.format(exc))
             logging.error(traceback.format_exc())
