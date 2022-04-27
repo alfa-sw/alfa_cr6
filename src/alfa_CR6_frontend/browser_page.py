@@ -142,6 +142,13 @@ class SingleWebEnginePage(QWebEnginePage):
 
         return super().acceptNavigationRequest(url, _type, isMainFrame)
 
+    def chooseFiles(self, mode, oldFiles, acceptedMimeTypes):
+        """
+        QStringList QWebEnginePage::chooseFiles(QWebEnginePage::FileSelectionMode mode, const QStringList &oldFiles, const QStringList &acceptedMimeTypes)
+        """
+        logging.warning(f"chooseFiles Disabled.")
+        return []
+
 class PopUpWebEnginePage(SingleWebEnginePage):
 
     def __init__(self, parent):
