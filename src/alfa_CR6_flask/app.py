@@ -31,6 +31,7 @@ from waitress import serve       # pylint: disable=import-error
 
 from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session)
 from alfa_CR6_backend.globals import (LANGUAGE_MAP, import_settings, get_alfa_serialnumber)
+from alfa_CR6_backend.order_parser import OrderParser
 
 SETTINGS = import_settings()
 
@@ -392,24 +393,43 @@ class AdminIndexView(flask_admin.AdminIndexView):
     @flask_admin.expose('/upload_json_formula', methods=('POST',))
     def upload_json_formula(self):     # pylint: disable=no-self-use
 
-        logging.warning(f"request.args:{request.args}")
-        response_msgs = []
+        # ~ logging.warning(f"request:{request}")
+        # ~ logging.warning(f"request.args:{request.args}")
+        # ~ logging.warning(f"request.data:{request.data}")
+        # ~ logging.warning(f"request.form:{request.form}")
+
+        response_data = {}
         response_status = HTTPStatus.BAD_REQUEST
 
         try:
-            # ~ parse_sw_json(content)
-            # ~ pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), )
-            # ~ with open(pth_, 'wb') as f:
-                # ~ f.write()
-            response_status = HTTPStatus.OK
-            response_msgs.append("json formula received.")
+            request_data = request.data
+            logging.info(f"request_data({type(request_data)}):{request_data}")
+            formula = json.loads(request_data)
+            logging.info(f"formula:{formula}")
+            if formula.get("header") == "SW CRx formula file":
+
+                OrderParser.parse_sw_json(formula.copy())
+
+                timestamp_ = datetime.datetime.now().isoformat(timespec='seconds')
+                fname_ = formula.get('jobId', formula.get('batchId', timestamp_))
+                pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), fname_ + '.json')
+                logging.warning(f"pth_:{pth_}")
+                with open(pth_, 'w', encoding='UTF-8') as f:
+
+                    json.dump(formula, f, indent=2, ensure_ascii=False)
+
+                    response_status = HTTPStatus.OK
+                    response_data['result'] = "json formula saved."
+                    response_data['id'] = f"{fname_}"
 
         except Exception as exc:  # pylint: disable=broad-except
-            response_msgs.append(f'Error in validating formula. {exc}')
+            response_status = HTTPStatus.UNPROCESSABLE_ENTITY
+            response_data['error'] = f'Error in validating formula. {exc}'
+            response_data['description'] = traceback.format_exc()
             logging.error(traceback.format_exc())
 
         ret = current_app.response_class(
-            json.dumps({'data': response_msgs}, ensure_ascii=False),
+            json.dumps({'data': response_data}, ensure_ascii=False),
             status=response_status, content_type='application/json; charset=utf-8')
 
         logging.warning("ret:{}".format(ret))

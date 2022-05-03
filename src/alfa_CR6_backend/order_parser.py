@@ -12,6 +12,7 @@ import json
 import codecs
 import subprocess
 import logging
+import copy
 
 import jsonschema
 
@@ -223,6 +224,8 @@ class OrderParser:
     @staticmethod
     def parse_sw_json(content):
 
+        content = copy.deepcopy(content)
+
         properties = {}
 
         fname = os.path.join(SCHEMAS_PATH, 'SW_formula_file_schema.json')
@@ -230,13 +233,14 @@ class OrderParser:
             schema_ = json.load(fd)
             jsonschema.validate(schema_, content)
             properties = content
-            for i in properties.get("ingredients"):
+            for i in properties.get("ingredients", []):
                 i["pigment_name"] = i.pop("code")
 
             # TODO: add extra_lines_to_print
             properties["extra_lines_to_print"] = [
             ]
 
+        logging.info(f"properties:{properties}")
         return properties
 
     @staticmethod
@@ -580,12 +584,13 @@ class OrderParser:
 
         mime = magic.Magic(mime=True)
         mime_type = mime.from_file(path_to_file)
-        # ~ logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}")
+        filename, file_extension = os.path.splitext(path_to_file)
+        logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}, file_extension:{file_extension}")
 
         properties = {}
 
         try:
-            if mime_type == 'application/json':
+            if mime_type == 'application/json' or 'json' in file_extension:
                 properties = self.parse_json_order(path_to_file)
 
             elif mime_type == 'application/pdf':
