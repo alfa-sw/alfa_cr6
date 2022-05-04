@@ -13,22 +13,23 @@
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/test_WebenginePage.py
 """
 
-import os
 import sys
 import logging
 import traceback
 import asyncio
 
-# ~ from functools import partial
+from PyQt5.QtCore import QEventLoop  # pylint: disable=no-name-in-module
+from PyQt5.QtWidgets import ( # pylint: disable=no-name-in-module
+    QMainWindow,
+    QApplication,
+    QStackedWidget,
+    QMessageBox)
 
-from PyQt5.QtCore import QEventLoop, QUrl # pylint: disable=no-name-in-module
-from PyQt5.QtWidgets import (QMainWindow, QApplication, QStackedWidget, QMessageBox) # pylint: disable=no-name-in-module
-
-from alfa_CR6_frontend.pages import HomePageSixHeads # pylint: disable=import-error
-from alfa_CR6_frontend.browser_page import BrowserPage # pylint: disable=import-error
-from alfa_CR6_backend.globals import import_settings # pylint: disable=import-error
+from alfa_CR6_backend.globals import import_settings  # pylint: disable=import-error
+from alfa_CR6_frontend.browser_page import BrowserPage
 
 g_settings = import_settings()
+
 
 class Application(QApplication):
 
@@ -73,6 +74,7 @@ class Application(QApplication):
 
         logging.error(traceback.format_exc())
 
+
 class MainWindow(QMainWindow):
 
     def __init__(self, url_, *args, **kwargs):
@@ -92,15 +94,22 @@ class MainWindow(QMainWindow):
         self.stacked_widget.setGeometry(100, 20, 1800, 1200)
         self.stacked_widget.show()
 
-        self.browser = BrowserPage(parent=self)
-        self.browser.setGeometry(100, 20, 1800, 1200)
-        self.stacked_widget.setCurrentWidget(self.browser)
-        self.browser.open_page(url_)
+        self.browser_page = None
+        self.start_url = url_
+
+        self.browser_page = BrowserPage(parent=self)
+        self.browser_page.setGeometry(100, 20, 1800, 1200)
+        self.stacked_widget.setCurrentWidget(self.browser_page)
+        self.browser_page.open_page(self.start_url)
 
         # ~ self.home = HomePage(parent=self)
         # ~ self.home = HomePageSixHeads(parent=self)
         # ~ self.stacked_widget.setCurrentWidget(self.home)
 
+    def reset_browser(self):
+
+        self.browser_page = BrowserPage(parent=self)
+        self.browser_page.open_page(self.start_url)
 
     @staticmethod
     def open_alert_dialog(args_, title="ALERT"):
@@ -109,6 +118,7 @@ class MainWindow(QMainWindow):
         msgBox = QMessageBox()
         msgBox.setText(f"{args_}")
         msgBox.exec()
+
 
 def main():
 
@@ -121,7 +131,8 @@ def main():
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "http://kccrefinish.co.kr/" # kcc
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "https://cloud.e-mixing.eu/" # ludwig / mcm
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "https://capellasolutionsgroup.com/"
-    g_settings.WEBENGINE_CUSTOMER_URL = "http://www.autorefinishes.co.kr/" # noroo
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = "http://www.autorefinishes.co.kr/" # noroo
+    g_settings.WEBENGINE_CUSTOMER_URL = "https://www.autorefinishes.co.kr/colorinformation/colormix_view.asp?MixCd=EM-4800-29&PaintTy=WQ"  # noroo
 
     # ~ here = os.path.dirname(os.path.abspath(__file__))
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = QUrl.fromLocalFile(os.path.join(here, "test_WebenginePage.html"))
@@ -133,15 +144,12 @@ def main():
 
     app = Application(sys.argv)
 
-    app.main_window.show()
-    # ~ app.main_window.showMaximized()
     app.main_window.showFullScreen()
-
-    # ~ sys.exit(app.exec_())
 
     t = app.create_inner_loop_task()
     asyncio.ensure_future(t)
     asyncio.get_event_loop().run_forever()
+
 
 if __name__ == "__main__":
 
