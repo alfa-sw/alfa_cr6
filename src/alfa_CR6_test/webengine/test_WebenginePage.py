@@ -25,8 +25,9 @@ from PyQt5.QtCore import QEventLoop, QUrl # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QStackedWidget, QMessageBox) # pylint: disable=no-name-in-module
 
 from alfa_CR6_frontend.pages import HomePageSixHeads # pylint: disable=import-error
-from alfa_CR6_frontend.browser_page import BrowserPage # pylint: disable=import-error
 from alfa_CR6_backend.globals import import_settings # pylint: disable=import-error
+
+import browser_page # pylint: disable=import-error
 
 g_settings = import_settings()
 
@@ -92,15 +93,22 @@ class MainWindow(QMainWindow):
         self.stacked_widget.setGeometry(100, 20, 1800, 1200)
         self.stacked_widget.show()
 
-        self.browser = BrowserPage(parent=self)
-        self.browser.setGeometry(100, 20, 1800, 1200)
-        self.stacked_widget.setCurrentWidget(self.browser)
-        self.browser.open_page(url_)
+        self.browser_page = None
+        self.start_url = url_
+        
+        self.browser_page = browser_page.BrowserPage(parent=self)
+        self.browser_page.setGeometry(100, 20, 1800, 1200)
+        self.stacked_widget.setCurrentWidget(self.browser_page)
+        self.browser_page.open_page(self.start_url)
 
         # ~ self.home = HomePage(parent=self)
         # ~ self.home = HomePageSixHeads(parent=self)
         # ~ self.stacked_widget.setCurrentWidget(self.home)
 
+    def reset_browser(self):
+
+        self.browser_page = browser_page.BrowserPage(parent=self)
+        self.browser_page.open_page(self.start_url)
 
     @staticmethod
     def open_alert_dialog(args_, title="ALERT"):
@@ -121,7 +129,8 @@ def main():
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "http://kccrefinish.co.kr/" # kcc
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "https://cloud.e-mixing.eu/" # ludwig / mcm
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "https://capellasolutionsgroup.com/"
-    g_settings.WEBENGINE_CUSTOMER_URL = "http://www.autorefinishes.co.kr/" # noroo
+    # ~ g_settings.WEBENGINE_CUSTOMER_URL = "http://www.autorefinishes.co.kr/" # noroo
+    g_settings.WEBENGINE_CUSTOMER_URL = "https://www.autorefinishes.co.kr/colorinformation/colormix_view.asp?MixCd=EM-4800-29&PaintTy=WQ" # noroo
 
     # ~ here = os.path.dirname(os.path.abspath(__file__))
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = QUrl.fromLocalFile(os.path.join(here, "test_WebenginePage.html"))

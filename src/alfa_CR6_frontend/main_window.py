@@ -512,3 +512,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         css = "color: #000000" if is_ok else "color: #990000"
         self.menu_line_edit.setStyleSheet(css)
         self.menu_line_edit.setText(f"{barcode}")
+    def reset_browser(self):
+
+        self.browser_page = BrowserPage(parent=self)
+        self.browser_page.open_page()
+
+
