@@ -13,7 +13,7 @@
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/test_WebenginePage.py
 """
 
-# ~ import os
+import os
 import sys
 import logging
 import traceback
@@ -24,6 +24,7 @@ import asyncio
 from PyQt5.QtCore import QEventLoop, QUrl # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QStackedWidget, QMessageBox) # pylint: disable=no-name-in-module
 
+from alfa_CR6_frontend.pages import HomePageSixHeads # pylint: disable=import-error
 from alfa_CR6_frontend.browser_page import BrowserPage # pylint: disable=import-error
 from alfa_CR6_backend.globals import import_settings # pylint: disable=import-error
 
@@ -32,6 +33,11 @@ g_settings = import_settings()
 class Application(QApplication):
 
     main_window = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.main_window = MainWindow(g_settings.WEBENGINE_CUSTOMER_URL)
 
     def processEvents(self, *args, **kwargs):
         if self.hasPendingEvents():
@@ -73,11 +79,28 @@ class MainWindow(QMainWindow):
 
         super().__init__(*args, **kwargs)
 
+        # ~ self.setGeometry(100, 20, 1800, 1200)
+        self.setStyleSheet("""
+                QWidget {font-size: 24px; font-family:Dejavu;}
+                QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
+                QPushButton:pressed {background-color: #AAAAAA;}
+                QScrollBar:vertical {width: 40px;}
+            """)
+
         self.stacked_widget = QStackedWidget(self)
-        self.setGeometry(100, 20, 1800, 1200)
         self.setCentralWidget(self.stacked_widget)
+        self.stacked_widget.setGeometry(100, 20, 1800, 1200)
+        self.stacked_widget.show()
+
         self.browser = BrowserPage(parent=self)
+        self.browser.setGeometry(100, 20, 1800, 1200)
+        self.stacked_widget.setCurrentWidget(self.browser)
         self.browser.open_page(url_)
+
+        # ~ self.home = HomePage(parent=self)
+        # ~ self.home = HomePageSixHeads(parent=self)
+        # ~ self.stacked_widget.setCurrentWidget(self.home)
+
 
     @staticmethod
     def open_alert_dialog(args_, title="ALERT"):
@@ -110,9 +133,11 @@ def main():
 
     app = Application(sys.argv)
 
-    window = MainWindow(g_settings.WEBENGINE_CUSTOMER_URL)
-    app.main_window = window
-    window.show()
+    app.main_window.show()
+    # ~ app.main_window.showMaximized()
+    app.main_window.showFullScreen()
+
+    # ~ sys.exit(app.exec_())
 
     t = app.create_inner_loop_task()
     asyncio.ensure_future(t)

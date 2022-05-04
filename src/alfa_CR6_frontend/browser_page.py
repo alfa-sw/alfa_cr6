@@ -14,10 +14,11 @@ import os
 import logging
 import json
 import traceback
+import time
 from types import SimpleNamespace
 
 from PyQt5.QtWidgets import QApplication
-
+from PyQt5.QtCore import Qt
 from PyQt5.Qt import QUrl
 from PyQt5.QtWebEngineWidgets import (
     QWebEngineView,
@@ -95,15 +96,29 @@ class SingleWebEnginePage(QWebEnginePage):
 
         logging.warning(f"download:{download}.")
 
-        self.current_download = download
-        self.current_download.setDownloadDirectory(g_settings.WEBENGINE_DOWNLOAD_PATH)
-        self.current_download.stateChanged.connect(self.on_download_stateChanged)
-        self.current_download.accept()
+        try:
+            self.current_download = download
+
+            if hasattr(self.current_download, 'setDownloadDirectory'): # 'QWebEngineDownloadItem' object has no attribute 'setDownloadDirectory'
+                self.current_download.setDownloadDirectory(g_settings.WEBENGINE_DOWNLOAD_PATH)
+            elif hasattr(self.current_download, 'setPath'):
+                _, file_name = os.path.split(self.current_download.path())
+                pth = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
+                self.current_download.setPath(pth)
+
+            self.current_download.stateChanged.connect(self.on_download_stateChanged)
+            self.current_download.accept()
+
+        except Exception:   # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
 
     def adjust_downloaded_file_name(self):
 
-        full_name = os.path.join(
-            self.current_download.downloadDirectory(), self.current_download.downloadFileName())
+        if hasattr(self.current_download, 'downloadDirectory') and hasattr(self.current_download, 'downloadFileName') :
+            full_name = os.path.join(
+                self.current_download.downloadDirectory(), self.current_download.downloadFileName())
+        elif hasattr(self.current_download, 'setPath'):
+            full_name = self.current_download.path()
 
         logging.warning(f"full_name:{full_name}")
         mime = magic.Magic(mime=True)
@@ -146,7 +161,8 @@ class SingleWebEnginePage(QWebEnginePage):
         """
         QStringList QWebEnginePage::chooseFiles(QWebEnginePage::FileSelectionMode mode, const QStringList &oldFiles, const QStringList &acceptedMimeTypes)
         """
-        logging.warning(f"chooseFiles Disabled.")
+        logging.debug(f"{self} {mode} {oldFiles} {acceptedMimeTypes}")
+        logging.warning("chooseFiles Disabled.")
         return []
 
 class PopUpWebEnginePage(SingleWebEnginePage):
@@ -167,9 +183,28 @@ class PopUpWebEnginePage(SingleWebEnginePage):
 
         try:
 
+            if single_popup_win.child_view is None:
+                single_popup_win.child_view = QWebEngineView(single_popup_win.parent)
+                # ~ _parent = QApplication.instance().main_window
+                # ~ single_popup_win.child_view = QWebEngineView(_parent)
+                # ~ single_popup_win.child_view = QWebEngineView(None)
+                _w = single_popup_win.child_view
+                _w.setStyleSheet("""
+                        QWidget {font-size: 24px; font-family:Dejavu;}
+                        QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
+                        QPushButton:pressed {background-color: #AAAAAA;}
+                        QScrollBar:vertical {width: 40px;}
+                    """)
+                _w.setWindowFlags(_w.windowFlags() | Qt.WindowStaysOnTopHint)
+                # ~ _w.setWindowFlags(_w.windowFlags() | Qt.Window)
+                # ~ _w.setWindowFlags(_w.windowFlags() | Qt.Popup)
+                # ~ _w.setWindowFlags(_w.windowFlags() | Qt.Tool)
+                # ~ _w.setWindowFlags(_w.windowFlags() | Qt.Dialog)
+
+                time.sleep(.001)
+
             if single_popup_win.child_page is None:
                 single_popup_win.child_page = PopUpWebEnginePage(single_popup_win.parent)
-                single_popup_win.child_view = QWebEngineView()
                 single_popup_win.child_page.setView(single_popup_win.child_view)
 
                 single_popup_win.child_page.settings().setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, True)
@@ -207,6 +242,8 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                 logging.info("")
                 single_popup_win.child_view.setUrl(url)
                 single_popup_win.child_view.show()
+            else:
+                logging.info(f"single_popup_win:{single_popup_win}")
 
         return False
 
