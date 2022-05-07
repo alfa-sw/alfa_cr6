@@ -122,7 +122,6 @@ class DebugPage:
                 ("unfreeze\ncarousel", "restar the movements of the jars."),
                 ("stop_all", "send a stop-movement cmd to all heads"),
                 ("alert", "test alert box"),
-                ("", "**"),
                 # ~ (
                 # ~ "LIFTL\nUP",
                 # ~ "send command UP to left lifter without waiting for any condition",
@@ -139,7 +138,8 @@ class DebugPage:
                 # ~ "LIFTR\nDOWN",
                 # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
-                ("", "**"),
+                ("reset\nbrowser's view", "**"),
+                ("reset\nbrowser", "**"),
                 ("minimize\nmain window", ""),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
                 ("open admin\npage", "."),
@@ -505,6 +505,14 @@ class DebugPage:
         elif "download KCC\nSpecific\nGravity file" in cmd_txt:
             t = self._download_KCC_lot_info_file()
             asyncio.ensure_future(t)
+
+        elif "reset\nbrowser's view" in cmd_txt:
+
+            app.main_window.browser_page.reset_view()
+
+        elif "reset\nbrowser" in cmd_txt:
+
+            app.main_window.reset_browser()
 
         elif "minimize\nmain window" in cmd_txt:
             app.main_window.showMinimized()

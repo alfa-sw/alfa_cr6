@@ -14,6 +14,7 @@ import os
 import logging
 import json
 import traceback
+import time
 from types import SimpleNamespace
 
 from PyQt5.QtWidgets import QApplication
@@ -42,7 +43,6 @@ SINGLE_POPUP_WIN = SimpleNamespace(
     parent=None,
 )
 
-
 class SingleWebEnginePage(QWebEnginePage):
 
     download_msgs = {
@@ -52,6 +52,9 @@ class SingleWebEnginePage(QWebEnginePage):
         3: tr_("Download has been cancelled."),
         4: tr_("Download has been interrupted (by the server or because of lost connectivity)."),
     }
+
+    def clean(self):
+        pass
 
     def __init__(self, parent):
 
@@ -153,7 +156,8 @@ class SingleWebEnginePage(QWebEnginePage):
 
     def acceptNavigationRequest(self, url, _type, isMainFrame):
 
-        logging.warning(f"url:{url}, type:{_type}, isMainFrame:{isMainFrame}.")
+        # ~ logging.warning(f"url:{url}, _type:{_type}, isMainFrame:{isMainFrame}.")
+        logging.warning(f"self:{self}.")
         # ~ if g_settings.WEBENGINE_CUSTOMER_URL not in f"{url}":
         # ~ if QApplication.instance().main_window.open_alert_dialog:
         # ~ args_ = f"BEWARE:\n{g_settings.WEBENGINE_CUSTOMER_URL}\n not in \n{url}"
@@ -189,24 +193,24 @@ class PopUpWebEnginePage(SingleWebEnginePage):
         try:
 
             SINGLE_POPUP_WIN.child_view = QWebEngineView(SINGLE_POPUP_WIN.parent)
-            _w = SINGLE_POPUP_WIN.child_view
-            _w.setStyleSheet("""
+            SINGLE_POPUP_WIN.child_view.setStyleSheet("""
                     QWidget {font-size: 24px; font-family:Dejavu;}
                     QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
                     QPushButton:pressed {background-color: #AAAAAA;}
-                    QScrollBar:vertical {width: 40px;}
+                    QScrollBar:vertical {width: 80px;}
                 """)
-            _w.setWindowFlags(_w.windowFlags() | Qt.WindowStaysOnTopHint)
+            SINGLE_POPUP_WIN.child_view.setWindowFlags(
+                SINGLE_POPUP_WIN.child_view.windowFlags() | Qt.WindowStaysOnTopHint)
+
+            time.sleep(.001)
 
             SINGLE_POPUP_WIN.child_page = PopUpWebEnginePage(SINGLE_POPUP_WIN.parent)
+            SINGLE_POPUP_WIN.child_view.setPage(SINGLE_POPUP_WIN.child_page)
             SINGLE_POPUP_WIN.child_page.setView(SINGLE_POPUP_WIN.child_view)
-
             SINGLE_POPUP_WIN.child_page.settings().setAttribute(QWebEngineSettings.JavascriptCanOpenWindows, True)
             SINGLE_POPUP_WIN.child_page.urlChanged.connect(self.change_url)
-
             if SINGLE_POPUP_WIN.profile is None:
                 SINGLE_POPUP_WIN.profile = self.profile()
-
                 try:
                     SINGLE_POPUP_WIN.profile.downloadRequested.disconnect()
                 except Exception:  # pylint: disable=broad-except
@@ -214,13 +218,11 @@ class PopUpWebEnginePage(SingleWebEnginePage):
 
                 SINGLE_POPUP_WIN.profile.downloadRequested.connect(self.on_downloadRequested)
 
+            SINGLE_POPUP_WIN.child_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
+            SINGLE_POPUP_WIN.child_view.show()
+
         except Exception:  # pylint: disable=broad-except
             logging.warning(traceback.format_exc())
-
-        if SINGLE_POPUP_WIN.child_view:
-            SINGLE_POPUP_WIN.child_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
-
-            SINGLE_POPUP_WIN.child_view.show()
 
         logging.warning(
             f"_type:{_type}, _view:{SINGLE_POPUP_WIN.child_view}, _page:{SINGLE_POPUP_WIN.child_page}.")
@@ -262,14 +264,9 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                     except Exception:  # pylint: disable=broad-except
                         logging.warning(traceback.format_exc())
                     self.current_download = None
-                    SINGLE_POPUP_WIN.child_view.close()
 
-                    SINGLE_POPUP_WIN.child_view = None
-                    SINGLE_POPUP_WIN.child_page = None
-                    SINGLE_POPUP_WIN.profile = None
-                    SINGLE_POPUP_WIN.parent = None
-
-                    QApplication.instance().main_window.reset_browser()
+                    # ~ SINGLE_POPUP_WIN.parent.reset_view()
+                    QApplication.instance().main_window.browser_page.reset_view()
 
                 else:
                     logging.error(f"SINGLE_POPUP_WIN.child_view:{SINGLE_POPUP_WIN.child_view}")
@@ -279,16 +276,33 @@ class PopUpWebEnginePage(SingleWebEnginePage):
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
 
+    def clean(self):
+        pass
 
 class BrowserPage(BaseStackedPage):
 
     ui_file_name = "browser_page.ui"
     help_file_name = 'webengine.html'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def reset_view(self):
+
+        logging.warning(f"self.q_url:{self.q_url}.")
 
         self.webengine_view = QWebEngineView(self)
+
+        self.webengine_view.setPage(self._webengine_page)
+        self._webengine_page.setView(self.webengine_view)
+
+        self.webengine_view.loadStarted.connect(self.__on_load_start)
+        self.webengine_view.loadProgress.connect(self.__on_load_progress)
+        self.webengine_view.loadFinished.connect(self.__on_load_finish)
+
+        self.webengine_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
+        self.webengine_view.show()
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
 
         _popup_web_engine_page = hasattr(
             g_settings, 'POPUP_WEB_ENGINE_PAGE') and getattr(
@@ -297,27 +311,21 @@ class BrowserPage(BaseStackedPage):
             self._webengine_page = PopUpWebEnginePage(self)
         else:
             self._webengine_page = SingleWebEnginePage(self)
-        self.webengine_view.setPage(self._webengine_page)
-
-        logging.warning(
-            f"_popup_web_engine_page:{_popup_web_engine_page}, _view:{self.webengine_view}, _page:{self._webengine_page}.")
 
         self.url_lbl.mouseReleaseEvent = lambda event: self.__on_click_url_label()
-
-        self.webengine_view.loadStarted.connect(self.__on_load_start)
-        self.webengine_view.loadProgress.connect(self.__on_load_progress)
-        self.webengine_view.loadFinished.connect(self.__on_load_finish)
-
-        self.webengine_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
-        self.start_page_url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
-        self.webengine_view.setUrl(self.start_page_url)
 
         self.__load_progress = 0
         self.start_load = tr_("start load:")
         self.loading = tr_("loading:")
         self.loaded = tr_("loaded:")
 
+        url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
+        self.q_url = QUrl(url)
+        self.webengine_view = None
+
     def __on_click_url_label(self):
+        if SINGLE_POPUP_WIN.child_view:
+            SINGLE_POPUP_WIN.child_view.show()
         logging.warning(f"self.webengine_view:{self.webengine_view}")
 
     def __on_load_start(self):
@@ -337,10 +345,22 @@ class BrowserPage(BaseStackedPage):
         self.url_lbl.setText(
             '<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
 
+    def clean(self):
+        if self._webengine_page:
+            del self._webengine_page
+
     def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL):
+
+        _popup_web_engine_page = hasattr(
+            g_settings, 'POPUP_WEB_ENGINE_PAGE') and getattr(
+            g_settings, 'POPUP_WEB_ENGINE_PAGE')
+        if _popup_web_engine_page:
+            self.reset_view()
+            time.sleep(.05)
 
         logging.warning(f"url:{url}.")
         if url:
             q_url = QUrl(url)
+            self.q_url = q_url
             self.webengine_view.setUrl(q_url)
             self.parent().setCurrentWidget(self)

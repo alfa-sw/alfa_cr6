@@ -310,7 +310,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             args, fmt = ('sample', ), "TEST ALERT MESSAGE: {}"
             self.open_alert_dialog(args, fmt=fmt, title="ALERT")
 
-    def on_menu_btn_group_clicked(self, btn):
+    def on_menu_btn_group_clicked(self, btn):  # pylint: disable=too-many-branches
 
         btn_name = btn.objectName()
 
@@ -348,7 +348,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.help_page.open_page()
 
         except Exception as e:  # pylint: disable=broad-except
-            self.handle_exception(e)
+            QApplication.instance().handle_exception(e)
 
     def toggle_keyboard(self, on_off=None):
 
@@ -361,7 +361,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self.order_page.file_table_view, ]
 
         if not hasattr(self.settings, 'CHROMIUM_WRAPPER') or not self.settings.CHROMIUM_WRAPPER:
-            ls.append(self.browser_page.webengine_view)
+            if self.browser_page.webengine_view:
+                ls.append(self.browser_page.webengine_view)
 
         if on_off and not self.keyboard.isVisible():
             self.keyboard.show()
@@ -461,7 +462,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         logging.warning(str(order_nr))
 
-    def open_input_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):  # pylint: disable=too-many-arguments
+    def open_input_dialog(  # pylint: disable=too-many-arguments
+            self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):
 
         self.input_dialog.show_dialog(
             icon_name=icon_name,
@@ -472,7 +474,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         logging.warning(str(message))
 
-    def open_alert_dialog(self, args, title="ALERT", fmt=None, callback=None, cb_args=None):  # pylint: disable=too-many-arguments
+    def open_alert_dialog(  # pylint: disable=too-many-arguments
+            self, args, title="ALERT", fmt=None, callback=None, cb_args=None):
 
         if fmt is not None:
             msg = tr_(fmt).format(*args)
@@ -512,9 +515,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         css = "color: #000000" if is_ok else "color: #990000"
         self.menu_line_edit.setStyleSheet(css)
         self.menu_line_edit.setText(f"{barcode}")
+
     def reset_browser(self):
 
         self.browser_page = BrowserPage(parent=self)
         self.browser_page.open_page()
-
-
