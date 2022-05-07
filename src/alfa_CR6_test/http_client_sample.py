@@ -1,3 +1,6 @@
+# coding: utf-8
+
+# pylint: disable=missing-docstring
 
 import http.client
 import json
@@ -23,11 +26,14 @@ SAMPLE_FORMULA = {
         "Mutation date": "16-06-2021",
         "Quantity": "1,10 Litro",
         "Cumulative": "No",
-        "extra_info": ["Octoral Information Services - COINS",
-                       "Data 19-10-2021 [11:56]",
-                       "Overview: Formula",
-                       "COV [gr/l]: 275,2",
-                       "We strongly advise you to check the colour before use, for many reasons the car colour can be slightly different than the mixed colour."]
+        "extra_info": [
+            "Octoral Information Services - COINS",
+            "Data 19-10-2021 [11:56]",
+            "Overview: Formula",
+            "COV [gr/l]: 275,2",
+            "We strongly advise you to check the colour before use, ",
+            "for many reasons the car colour can be slightly different than the mixed colour."
+        ]
     },
     "ingredients": [
         {"code": "W46",
@@ -57,12 +63,17 @@ SAMPLE_FORMULA = {
 
 def main():
 
-    conn = http.client.HTTPConnection(host='127.0.0.1', port=8090, timeout=3)
-
-    hdrs = {'Content-type': 'application/json'}
+    host = '127.0.0.1'
+    port = 8090
+    method='POST'
+    url='/upload_json_formula'
     json_data_as_string = json.dumps(SAMPLE_FORMULA)
 
-    conn.request(method='POST', url='/upload_json_formula', body=json_data_as_string, headers=hdrs)
+    hdrs = {'Content-type': 'application/json'}
+
+    conn = http.client.HTTPConnection(host=host, port=port, timeout=5)
+    print(f"conn:{conn}, host:port={host}:{port}")
+    conn.request(method=method, url=url, body=json_data_as_string, headers=hdrs)
     response = conn.getresponse()
 
     print(response.read().decode())
