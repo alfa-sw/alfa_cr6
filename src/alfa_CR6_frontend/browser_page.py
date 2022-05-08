@@ -353,7 +353,7 @@ class BrowserPage(BaseStackedPage):
         _popup_web_engine_page = hasattr(
             g_settings, 'POPUP_WEB_ENGINE_PAGE') and getattr(
             g_settings, 'POPUP_WEB_ENGINE_PAGE')
-        if _popup_web_engine_page:
+        if _popup_web_engine_page or self.webengine_view is None:
             self.reset_view()
             time.sleep(.05)
 
