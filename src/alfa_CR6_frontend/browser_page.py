@@ -122,6 +122,7 @@ class SingleWebEnginePage(QWebEnginePage):
         logging.warning(f"self:{self}")
 
         if hasattr(self.current_download, 'downloadDirectory') and hasattr(self.current_download, 'downloadFileName'):
+
             full_name = os.path.join(
                 self.current_download.downloadDirectory(), self.current_download.downloadFileName())
         elif hasattr(self.current_download, 'setPath'):
@@ -201,8 +202,6 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                 """)
             SINGLE_POPUP_WIN.child_view.setWindowFlags(
                 SINGLE_POPUP_WIN.child_view.windowFlags() | Qt.WindowStaysOnTopHint)
-
-            time.sleep(.001)
 
             SINGLE_POPUP_WIN.child_page = PopUpWebEnginePage(SINGLE_POPUP_WIN.parent)
             SINGLE_POPUP_WIN.child_view.setPage(SINGLE_POPUP_WIN.child_page)

@@ -98,6 +98,7 @@ class MainWindow(QMainWindow):
         self.start_url = url_
 
         self.browser_page = BrowserPage(parent=self)
+
         self.browser_page.setGeometry(100, 20, 1800, 1200)
         self.stacked_widget.setCurrentWidget(self.browser_page)
         self.browser_page.open_page(self.start_url)
@@ -109,6 +110,7 @@ class MainWindow(QMainWindow):
     def reset_browser(self):
 
         self.browser_page = BrowserPage(parent=self)
+
         self.browser_page.open_page(self.start_url)
 
     @staticmethod
@@ -132,7 +134,7 @@ def main():
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "https://cloud.e-mixing.eu/" # ludwig / mcm
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "https://capellasolutionsgroup.com/"
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = "http://www.autorefinishes.co.kr/" # noroo
-    g_settings.WEBENGINE_CUSTOMER_URL = "https://www.autorefinishes.co.kr/colorinformation/colormix_view.asp?MixCd=EM-4800-29&PaintTy=WQ"  # noroo
+    g_settings.WEBENGINE_CUSTOMER_URL = "https://www.autorefinishes.co.kr/colorinformation/colormix_view.asp?MixCd=EM-4800-29&PaintTy=WQ" # noroo
 
     # ~ here = os.path.dirname(os.path.abspath(__file__))
     # ~ g_settings.WEBENGINE_CUSTOMER_URL = QUrl.fromLocalFile(os.path.join(here, "test_WebenginePage.html"))
