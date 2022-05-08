@@ -139,7 +139,7 @@ class DebugPage:
                 # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
                 ("reset\nbrowser's view", "**"),
-                ("reset\nbrowser", "**"),
+                ("", "**"),
                 ("minimize\nmain window", ""),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
                 ("open admin\npage", "."),
@@ -510,10 +510,6 @@ class DebugPage:
 
             app.main_window.browser_page.reset_view()
 
-        elif "reset\nbrowser" in cmd_txt:
-
-            app.main_window.reset_browser()
-
         elif "minimize\nmain window" in cmd_txt:
             app.main_window.showMinimized()
 
@@ -758,7 +754,7 @@ class DebugPage:
                     html_ += '\n  <table border="0" cellspacing="0" cellpadding="2">'
                     for n, i in enumerate(resp_json):
                         if n == 0:
-                            html_ += f'\n    <tr bgcolor="#FFFFAA">'
+                            html_ += '\n    <tr bgcolor="#FFFFAA">'
                             for v in i.values():
                                 html_ += f'<th>{v}</th>'
                             html_ += "</tr>"
@@ -767,27 +763,15 @@ class DebugPage:
                             html_ += f'\n    <tr bgcolor="{bgcol}">'
                             for v in i.values():
                                 # ~ if v:
-                                    html_ += f'<td>{v}</td>'
+                                html_ += f'<td>{v}</td>'
                             html_ += "</tr>"
                     html_ += "\n  </table>\n"
                     html_ += "\n</body>\n"
-
-                    # ~ html_ = ""
-                    # ~ for n, i in enumerate(resp_json):
-                        # ~ if n%2:
-                            # ~ html_ += '<p color="#AAAAEE">'
-                        # ~ else:
-                            # ~ html_ += '<p color="#AAEEAA">'
-                        # ~ for v in i.values():
-                            # ~ if v:
-                                # ~ html_ += f"{v}, "
-                        # ~ html_ += "</p>\n"
-                    # ~ html_ += ""
 
                     logging.warning(f"html_:{html_}")
 
                     self.answer_text_browser.setHtml(html_)
 
-        except Exception as e:  # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             # ~ QApplication.instance().main_window.open_alert_dialog(f"{e}")
