@@ -12,6 +12,8 @@ import time
 import logging
 import traceback
 import asyncio
+import html
+import types
 
 import aiohttp  # pylint: disable=import-error
 
@@ -25,9 +27,9 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
     QButtonGroup,
     QPushButton)
 
-from alfa_CR6_backend.models import Jar, Order
+from alfa_CR6_backend.models import (Jar, Order)
 from alfa_CR6_backend.dymo_printer import dymo_print
-from alfa_CR6_backend.globals import tr_, set_language, LANGUAGE_MAP
+from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings)
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
 def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE")):
@@ -138,8 +140,9 @@ class DebugPage:
                 # ~ "LIFTR\nDOWN",
                 # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
-                ("reset\nbrowser's view", "**"),
                 ("", "**"),
+                ("reset\nbrowser's view", "**"),
+                ("show\nsettings", "**"),
                 ("minimize\nmain window", ""),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
                 ("open admin\npage", "."),
@@ -169,7 +172,6 @@ class DebugPage:
                 ),
                 ("open order\ndialog", "**"),
                 ("view\norders", ""),
-                ("close", "close this widget"),
             ]
         ):
 
@@ -451,9 +453,6 @@ class DebugPage:
         elif "clear\nanswers" in cmd_txt:
             self.answer_text_browser.setText("")
 
-        elif "close" in cmd_txt:
-            app.main_window.home_page.open_page()
-
         elif "clear\njars" in cmd_txt:
 
             for k in list(app.get_jar_runners().keys()):
@@ -512,6 +511,10 @@ class DebugPage:
 
         elif "minimize\nmain window" in cmd_txt:
             app.main_window.showMinimized()
+
+        elif "show\nsettings" in cmd_txt:
+
+            self._show_settings()
 
         else:
             app.run_a_coroutine_helper(cmd_txt)
@@ -732,6 +735,14 @@ class DebugPage:
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+
+    def _show_settings(self):  # pylint: disable=no-self-use
+
+        S = import_settings()
+        s_ = [f"{i}: {getattr(S, i)}" for i in dir(S) if not i.startswith("_") and not isinstance(getattr(S, i), types.ModuleType)]
+        html_ = html.unescape('<br/>'.join(s_))
+        logging.warning(f"html_:{html_}")
+        self.answer_text_browser.setHtml(html_)
 
     async def _show_KCC_specific_gravity_info(self, machine_head):  # pylint: disable=no-self-use
 
