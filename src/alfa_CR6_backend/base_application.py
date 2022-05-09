@@ -51,7 +51,7 @@ def get_dict_diff(dict1, dict2):
     diff = set1 ^ set2
     return diff
 
-async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfert=False):
+async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfert=False): # pylint:  disable=too-many-locals
 
     url_ = "https://kccrefinish.co.kr/file/filedownload/1QZUuT7Q003"
     tmp_file_path_ = "/opt/alfa_cr6/tmp/kcc_lot_specific_info.json"
@@ -202,6 +202,129 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                 logging.error(traceback.format_exc())
 
 
+class WsMessageHandler:
+
+    settings = None
+    parent = None
+
+    @classmethod
+    async def handle_msg(cls, msg, websocket, parent):
+
+        logging.warning(f"websocket:{websocket}, msg:{msg}.")
+
+        try:
+
+            if not cls.settings:
+                cls.settings = import_settings()
+
+            cls.parent = parent
+
+            msg_dict = json.loads(msg)
+
+            if msg_dict.get("command"):
+
+                if msg_dict["command"] == "change_language":
+                    await cls.__change_language(msg_dict)
+                elif msg_dict["command"] == "ask_settings":
+                    await cls.__ask_settings(websocket)
+                elif msg_dict["command"] == "ask_formula_files":
+                    await cls.__ask_formula_files(websocket)
+                elif msg_dict["command"] == "ask_platform_info":
+                    await cls.__ask_platform_info(msg_dict, websocket)
+                elif msg_dict["command"] == "ask_temperature_logs":
+                    await cls.__ask_temperature_logs(msg_dict, websocket)
+            elif msg_dict.get("debug_command"):
+
+                try:
+                    cmd_ = msg_dict["debug_command"]
+                    ret = eval(cmd_)     # pylint: disable=eval-used
+                except Exception as e:   # pylint: disable=broad-except
+                    ret = str(e)
+                answer = json.dumps({
+                    'type': 'debug_answer',
+                    'value': html.escape(str(ret)),
+                })
+                await websocket.send(answer)
+                logging.warning(f"answer:{answer}")
+
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
+    @classmethod
+    async def __change_language(cls, msg_dict):
+
+        params = msg_dict.get("params", {})
+        lang = params.get("lang")
+        set_language(lang)
+
+    @classmethod
+    async def __ask_settings(cls, websocket):
+        S = cls.settings
+        s_ = [f"{i}: {getattr(S, i)}" for i in dir(S) if not i.startswith("_") and not isinstance(getattr(S, i), types.ModuleType)]
+
+        answ_ = html.unescape('<br/>'.join(s_))
+        logging.warning(f"answ_:{answ_}.")
+
+        answer = json.dumps({
+            'type': 'ask_settings_answer',
+            'value': answ_,
+        })
+        await websocket.send(answer)
+
+    @classmethod
+    async def __ask_formula_files(cls, websocket):
+
+        _path = cls.settings.WEBENGINE_DOWNLOAD_PATH.strip()
+        s_ = [f for f in os.listdir(_path) if os.path.isfile(os.path.join(_path, f))]
+
+        answ_ = html.unescape('<br/>'.join(s_))
+        logging.warning(f"answ_:{answ_}.")
+
+        answer = json.dumps({
+            'type': 'ask_formula_files_answer',
+            'value': answ_,
+        })
+        await websocket.send(answer)
+
+    @classmethod
+    async def __ask_platform_info(cls, msg_dict, websocket):
+
+        params = msg_dict.get("params", {})
+        head_letter = params.get("head_letter")
+        m = cls.parent.get_machine_head_by_letter(head_letter)
+
+        path = "admin/platform?cmd=info"
+        method = "GET"
+        data = {}
+        ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='html')
+        title = f'<b> head:{head_letter} platform info:</b> <a href="#">[back to top]</a>'
+
+        answer = json.dumps({
+            'type': 'ask_platform_answer',
+            'value': title + html.unescape(ret),
+        })
+        await websocket.send(answer)
+
+    @classmethod
+    async def __ask_temperature_logs(cls, msg_dict, websocket):
+
+        params = msg_dict.get("params", {})
+        head_letter = params.get("head_letter")
+        m = cls.parent.get_machine_head_by_letter(head_letter)
+
+        path = "admin/platform?cmd=temperature_logs"
+        method = "GET"
+        data = {}
+        ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='html')
+        title = f'<b> head:{head_letter} temperature logs:</b> <a href="#">[back to top]</a>'
+
+        answer = json.dumps({
+            'type': 'ask_platform_answer',
+            'value': title + html.unescape(ret),
+        })
+        await websocket.send(answer)
+
+
 class WsServer:   # pylint: disable=too-many-instance-attributes
 
     def __init__(self, parent, ws_host, ws_port):
@@ -314,7 +437,8 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
             await self.__refresh_client_info()
 
             async for message in websocket:  # start listening for messages from ws client
-                await self.__handle_client_msg(websocket, message)
+                # ~ await self.__handle_client_msg(websocket, message)
+                await WsMessageHandler.handle_msg(message, websocket, self.parent)
 
         except websockets.exceptions.ConnectionClosedError:  # pylint: disable=broad-except
             logging.warning("")
@@ -324,85 +448,6 @@ class WsServer:   # pylint: disable=too-many-instance-attributes
             if websocket in self.ws_clients:
                 logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
                 self.ws_clients.remove(websocket)
-
-    async def __handle_client_msg(self, websocket, msg):  # pylint: disable=too-many-locals
-
-        logging.warning("websocket:{}, msg:{}.".format(websocket, msg))
-
-        try:
-            msg_dict = json.loads(msg)
-            logging.debug(f"msg_dict:{msg_dict}")
-
-            if msg_dict.get("command"):
-
-                if msg_dict["command"] == "change_language":
-                    params = msg_dict.get("params", {})
-                    lang = params.get("lang")
-                    set_language(lang)
-
-                elif msg_dict["command"] == "ask_settings":
-                    S = import_settings()
-                    s_ = [f"{i}: {getattr(S, i)}" for i in dir(S) if not i.startswith("_") and not isinstance(getattr(S, i), types.ModuleType)]
-
-                    answ_ = html.unescape('<br/>'.join(s_))
-                    logging.warning(f"answ_:{answ_}.")
-
-                    answer = json.dumps({
-                        'type': 'ask_settings_answer',
-                        'value': answ_,
-                    })
-                    await websocket.send(answer)
-
-                elif msg_dict["command"] == "ask_platform_info":
-                    params = msg_dict.get("params", {})
-                    head_letter = params.get("head_letter")
-                    m = self.parent.get_machine_head_by_letter(head_letter)
-
-                    path = "admin/platform?cmd=info"
-                    method = "GET"
-                    data = {}
-                    ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='html')
-                    title = f'<b> head:{head_letter} platform info:</b> <a href="#">[back to top]</a>'
-
-                    answer = json.dumps({
-                        'type': 'ask_platform_answer',
-                        'value': title + html.unescape(ret),
-                    })
-                    await websocket.send(answer)
-
-                elif msg_dict["command"] == "ask_temperature_logs":
-                    params = msg_dict.get("params", {})
-                    head_letter = params.get("head_letter")
-                    m = self.parent.get_machine_head_by_letter(head_letter)
-
-                    path = "admin/platform?cmd=temperature_logs"
-                    method = "GET"
-                    data = {}
-                    ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='html')
-                    title = f'<b> head:{head_letter} temperature logs:</b> <a href="#">[back to top]</a>'
-
-                    answer = json.dumps({
-                        'type': 'ask_platform_answer',
-                        'value': title + html.unescape(ret),
-                    })
-                    await websocket.send(answer)
-
-            if msg_dict.get("debug_command"):
-
-                try:
-                    cmd_ = msg_dict["debug_command"]
-                    ret = eval(cmd_)     # pylint: disable=eval-used
-                except Exception as e:   # pylint: disable=broad-except
-                    ret = str(e)
-                answer = json.dumps({
-                    'type': 'debug_answer',
-                    'value': html.escape(str(ret)),
-                })
-                await websocket.send(answer)
-                logging.warning(f"answer:{answer}")
-
-        except Exception:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
 
     def refresh_can_list(self):
 
@@ -588,7 +633,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             last_check_KCC_specific_gravity_lot_time = time.time()
                             logging.warning(
                                 f"last_check_KCC_specific_gravity_lot_time:{last_check_KCC_specific_gravity_lot_time}")
-                            # ~ await download_KCC_specific_gravity_lot()
                             asyncio.ensure_future(download_KCC_specific_gravity_lot())
 
                         except Exception as e:  # pylint: disable=broad-except

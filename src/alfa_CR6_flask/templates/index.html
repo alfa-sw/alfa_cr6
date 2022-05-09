@@ -40,8 +40,9 @@
 
 	<table class="head_table">
 		<tr>
-		<td id="server_time" width="30%"></td>
-		<td id="live_can_list" width="30%"></td>
+			<td id="server_time" width="30%"></td>
+			<td id="live_can_list" width="30%"></td>
+		</tr>
 	</table>
 
 	<table>
@@ -129,6 +130,16 @@
 		</td>
 	</tr>
 	<tr>
+		<td colspan="1">
+			<span>list formula files:</span>
+			<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get formula file list." 
+						onclick="ask_formula_files();"></span>
+		</td>
+		<td colspan="4">
+			<div id="ask_formula_files_answer"></div>
+		</td>
+	</tr>
+	<tr>
 		<td colspan="5">
 			<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
 			<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
@@ -186,6 +197,14 @@
 
 		console.log('ask_settings()'); 
 		var cmd = {"command": 'ask_settings', 'params': {}};
+		cmd = JSON.stringify(cmd);
+		g_ws_client.send(cmd);
+	};
+
+	var ask_formula_files = function() {
+
+		console.log('ask_formula_files()'); 
+		var cmd = {"command": 'ask_formula_files', 'params': {}};
 		cmd = JSON.stringify(cmd);
 		g_ws_client.send(cmd);
 	};
