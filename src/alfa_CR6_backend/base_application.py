@@ -51,7 +51,7 @@ def get_dict_diff(dict1, dict2):
     diff = set1 ^ set2
     return diff
 
-async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfert=False): # pylint:  disable=too-many-locals
+async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfert=False): # pylint: disable=too-many-locals
 
     url_ = "https://kccrefinish.co.kr/file/filedownload/1QZUuT7Q003"
     tmp_file_path_ = "/opt/alfa_cr6/tmp/kcc_lot_specific_info.json"
@@ -122,7 +122,7 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
     return ret
 
 
-class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-public-methods
+class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-public-methods
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
         "KEY_SPACE": " ",
@@ -202,7 +202,7 @@ class BarCodeReader:  # pylint:  disable=too-many-instance-attributes,too-few-pu
                 logging.error(traceback.format_exc())
 
 
-class WsMessageHandler:
+class WsMessageHandler: # pylint: disable=too-few-public-methods
 
     settings = None
     parent = None
@@ -325,7 +325,7 @@ class WsMessageHandler:
         await websocket.send(answer)
 
 
-class WsServer:   # pylint: disable=too-many-instance-attributes
+class WsServer: # pylint: disable=too-many-instance-attributes
 
     def __init__(self, parent, ws_host, ws_port):
 
