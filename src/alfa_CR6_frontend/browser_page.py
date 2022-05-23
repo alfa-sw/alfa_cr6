@@ -90,7 +90,7 @@ class SingleWebEnginePage(QWebEnginePage):
                         args_ = f"{self.download_msgs[self.current_download.state()]}"
                     QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
 
-                self.adjust_downloaded_file_name()
+                # ~ self.adjust_downloaded_file_name()
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
