@@ -3,7 +3,12 @@
 # pylint: disable=missing-docstring
 
 import http.client
+import random
 import json
+
+# ~ HOST = '127.0.0.1'
+HOST = '192.168.12.122'
+
 
 """ to be reported on label:
 
@@ -26,7 +31,7 @@ SAMPLE_FORMULA = {
   "meta": {
     "brand": "UC",
     "region": "",
-    "colorCode": "GIOVANNI_TEST",
+    "colorCode": f"GIO_TEST{random.randint(1, 10)}",
     "variantCode": "",
     "colorName": "GREY SHADE: WHITE",
     "secondName": "",
@@ -36,7 +41,7 @@ SAMPLE_FORMULA = {
     "undercoat": "",
     "pictograms": "180,180,180,180,180",
     "dateModified": "16/06/2021",
-    "quantity": 0.0,
+    "quantity": 500.0,
     "cumulative": 0.0,
     "extraInfo": [
       "UC_GS903__GREY SHADE: WHITE",
@@ -51,6 +56,18 @@ SAMPLE_FORMULA = {
       "description": None
     },
     {
+      "code": "W11",
+      "weight(g)": 116.6687740407977,
+      "tolerance": 0,
+      "description": None
+    },
+    # ~ {
+      # ~ "code": "W12",
+      # ~ "weight(g)": 116.6687740407977,
+      # ~ "tolerance": 0,
+      # ~ "description": None
+    # ~ },
+    {
       "code": "W98",
       "weight(g)": 0.4907623708028845,
       "tolerance": 0,
@@ -58,6 +75,48 @@ SAMPLE_FORMULA = {
     },
     {
       "code": "W88",
+      "weight(g)": 0.24772933071628858,
+      "tolerance": 0,
+      "description": None
+    },
+    {
+      "code": "BW88",
+      "weight(g)": 0.24772933071628858,
+      "tolerance": 0,
+      "description": None
+    },
+    {
+      "code": "BW89",
+      "weight(g)": 0.24772933071628858,
+      "tolerance": 0,
+      "description": None
+    },
+    {
+      "code": "BW90",
+      "weight(g)": 0.24772933071628858,
+      "tolerance": 0,
+      "description": None
+    },
+    {
+      "code": "BW91",
+      "weight(g)": 0.24772933071628858,
+      "tolerance": 0,
+      "description": None
+    },
+    {
+      "code": "BW92",
+      "weight(g)": 0.24772933071628858,
+      "tolerance": 0,
+      "description": None
+    },
+    {
+      "code": "BW93",
+      "weight(g)": 0.24772933071628858,
+      "tolerance": 0,
+      "description": None
+    },
+    {
+      "code": "BW94",
       "weight(g)": 0.24772933071628858,
       "tolerance": 0,
       "description": None
@@ -73,8 +132,7 @@ SAMPLE_FORMULA = {
 
 def main():
 
-    host = '127.0.0.1'
-    host = '192.168.12.122'
+    host = HOST
     port = 8090
     method='POST'
     url='/upload_json_formula'

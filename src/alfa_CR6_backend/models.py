@@ -294,8 +294,11 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     @property
     def unknown_pigments(self):
-        _json_properties = json.loads(self.json_properties)
-        return _json_properties.get("unknown_pigments", {})
+        # ~ _json_properties = json.loads(self.json_properties)
+        # ~ return _json_properties.get("unknown_pigments", {})
+        _order_json_properties = json.loads(self.order.json_properties)
+        # ~ return _order_json_properties.get("unknown_pigments", [])
+        return _order_json_properties.get("unknown_pigments", {})
 
     def get_ingredients_for_machine(self, m):
 

@@ -9,6 +9,17 @@ LANGUAGE = "en"
 
 BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
 
+PRINT_LABEL_OPTONS = {
+    'dpi': 240,
+    'module_height': 10,
+    'module_width': 0.5,
+    'font_size': 16,
+    'text_distance': 2.,
+    'line_lenght': 50,
+    'rotate': 270,
+    # ~ 'font_path': '/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf'
+}
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNTIME_FILES_ROOT = os.path.join(HERE, "../")
 

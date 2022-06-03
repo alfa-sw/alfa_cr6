@@ -32,7 +32,7 @@ from PyQt5.QtWidgets import (
     QCompleter)
 
 from alfa_CR6_backend.models import Order, Jar
-from alfa_CR6_backend.dymo_printer import dymo_print
+from alfa_CR6_backend.dymo_printer import dymo_print_jar
 
 from alfa_CR6_backend.globals import get_res, tr_
 
@@ -371,9 +371,10 @@ class EditDialog(BaseDialog):
             logging.warning(f"self.print_check_box.isChecked() :{self.print_check_box.isChecked() }")
             if self.print_check_box.isChecked():
                 for j in jars_to_print:
-                    b = str(j.barcode)
-                    logging.warning(f"b, j.extra_lines_to_print:{b, j.extra_lines_to_print}")
-                    response = dymo_print(b, *j.extra_lines_to_print)
+                    # ~ b = str(j.barcode)
+                    # ~ logging.warning(f"b, j.extra_lines_to_print:{b, j.extra_lines_to_print}")
+                    # ~ response = dymo_print(b, *j.extra_lines_to_print)
+                    response = dymo_print_jar(j)
                     logging.warning(f"response:{response}")
                     time.sleep(.05)
 

@@ -34,7 +34,7 @@ from PyQt5.QtWidgets import (
 
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
-from alfa_CR6_backend.dymo_printer import dymo_print
+from alfa_CR6_backend.dymo_printer import dymo_print_jar
 from alfa_CR6_backend.globals import (
     IMAGES_PATH, import_settings, get_res, get_encoding, tr_)
 
@@ -550,8 +550,10 @@ class OrderPage(BaseStackedPage):
                         icon_name="SP_MessageBoxInformation",
                         message=msg_,
                         content=content,
-                        ok_cb=dymo_print,
-                        ok_cb_args=[str(jar.barcode), ] + jar.extra_lines_to_print)
+                        ok_cb=dymo_print_jar,
+                        ok_cb_args=[jar.barcode, ])
+                        # ~ ok_cb=dymo_print,
+                        # ~ ok_cb_args=[str(jar.barcode), ] + jar.extra_lines_to_print)
 
             elif col == 2:  # status
                 content = "{}"
@@ -707,19 +709,27 @@ class OrderPage(BaseStackedPage):
             properties = json.loads(order.json_properties)
             logging.warning(f"properties:{properties}")
             if properties.get('meta') and not properties['meta'].get('error'):
-                args_to_print = sorted([[str(j.barcode), ] + j.extra_lines_to_print for j in order.jars])
+                # ~ args_to_print = sorted([[str(j.barcode), ] + j.extra_lines_to_print for j in order.jars])
+                # ~ logging.warning(f"file_name:{file_name}, args_to_print:{args_to_print}")
+
+                args_to_print = list(order.jars)
+                args_to_print.sort(key=lambda j: str(j.barcode))
+
                 logging.warning(f"file_name:{file_name}, args_to_print:{args_to_print}")
 
                 def cb_():
                     for a in args_to_print:
                         logging.warning(f"a:{a}")
-                        response = dymo_print(*a)
+                        # ~ response = dymo_print(*a)
+                        response = dymo_print_jar(a)
                         logging.warning(f"response:{response}")
                         time.sleep(.05)
 
                 msg_ = tr_("confirm printing {} barcodes?").format(len(args_to_print))
+                # ~ self.main_window.open_input_dialog(message=msg_, content="{}".format(
+                    # ~ [l[0] for l in args_to_print]), ok_cb=cb_)
                 self.main_window.open_input_dialog(message=msg_, content="{}".format(
-                    [l[0] for l in args_to_print]), ok_cb=cb_)
+                    [str(j.barcode) for j in args_to_print]), ok_cb=cb_)
 
                 model.remove_file(file_name)
 

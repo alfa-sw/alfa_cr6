@@ -1,4 +1,3 @@
-
 import os
 import logging
 
@@ -21,6 +20,8 @@ PRINT_LABEL_OPTONS = {
     # ~ 'font_path': '/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf'
 }
 
+
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNTIME_FILES_ROOT = os.path.join(HERE, "../")
 
@@ -29,31 +30,21 @@ LOGS_PATH = os.path.join(RUNTIME_FILES_ROOT, "log")
 TMP_PATH = os.path.join(RUNTIME_FILES_ROOT, "tmp")
 DATA_PATH = os.path.join(RUNTIME_FILES_ROOT, "data")
 
-CUSTOM_PATH =  os.path.join(HERE, "custom_sk")
+CUSTOM_PATH =  os.path.join(HERE, "custom_sw")
 
-WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "SK_web_download")
-WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "SK_web_cache")
-WEBENGINE_CUSTOMER_URL = "https://www.sikkensvr.com/"
+WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "SW_web_download")
+WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "SW_web_cache")
+WEBENGINE_CUSTOMER_URL = "https://www.sherwin-williams.com/"
 
-SQLITE_CONNECT_STRING = f"sqlite:///{DATA_PATH}/CRx_v0_SK.sqlite"
+SQLITE_CONNECT_STRING = f"sqlite:///{DATA_PATH}/CRx_v0_SW.sqlite"
 
 STORE_EXCEPTIONS_TO_DB_AS_DEFAULT = False
 
 MACHINE_HEAD_IPADD_PORTS_LIST = [
-    # ~ ("192.168.0.1", 11000, 8080),
-    # ~ ("192.168.0.2", 11000, 8080),
-    # ~ ("192.168.0.3", 11000, 8080),
-    # ~ ("192.168.0.4", 11000, 8080),
-    # ~ ("192.168.0.5", 11000, 8080),
-    # ~ ("192.168.0.6", 11000, 8080),
-
-    # ~ ("127.0.0.1", 11000, 8080),
-
-    ("127.0.0.1", 11001, 8080),
-    ("127.0.0.1", 11002, 8080),
-    ("127.0.0.1", 11003, 8080),
-    ("127.0.0.1", 11004, 8080),
-    ("127.0.0.1", 11005, 8080),
-    ("127.0.0.1", 11006, 8080),
+    ("127.0.0.1", 11001, 8081),
+    ("127.0.0.1", 11002, 8082),
+    None,
+    None,
+    ("127.0.0.1", 11005, 8085),
+    ("127.0.0.1", 11006, 8086),
 ]
-

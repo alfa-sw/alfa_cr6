@@ -13,6 +13,7 @@ import codecs
 import subprocess
 import logging
 import copy
+import time
 
 import jsonschema
 
@@ -235,10 +236,17 @@ class OrderParser:
             properties = content
             for i in properties.get("ingredients", []):
                 i["pigment_name"] = i.pop("code")
+                i["weight(g)"] = round(float(i["weight(g)"]), 4)
 
-            # TODO: add extra_lines_to_print
-            properties["extra_lines_to_print"] = [
-            ]
+            batchId = properties.get("batchId", '')
+            meta = properties.get("meta", {})
+            brand = meta.get("brand", '')
+            quality = meta.get("quality", '')
+            colorCode = meta.get("colorCode", '')
+            quantity = meta.get("quantity", '')
+            date_time = str(time.asctime())
+
+            properties["extra_lines_to_print"] = [f"{brand} - {quality}", f"{colorCode} - {quantity}", f"{batchId}", f"{date_time}"]
 
         logging.info(f"properties:{properties}")
         return properties
@@ -584,7 +592,7 @@ class OrderParser:
 
         mime = magic.Magic(mime=True)
         mime_type = mime.from_file(path_to_file)
-        filename, file_extension = os.path.splitext(path_to_file)
+        _, file_extension = os.path.splitext(path_to_file)
         logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}, file_extension:{file_extension}")
 
         properties = {}
