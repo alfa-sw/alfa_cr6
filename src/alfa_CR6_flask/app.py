@@ -411,7 +411,10 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 OrderParser.parse_sw_json(formula.copy())
 
                 timestamp_ = datetime.datetime.now().isoformat(timespec='seconds')
-                fname_ = formula.get('jobId', formula.get('batchId', timestamp_))
+                jobid_ = formula.get('jobId', '')
+                batchid_ = formula.get('batchId', '')
+                colorcode_ = formula.get('meta', {}).get('colorCode', '')
+                fname_ = f"{colorcode_}" if colorcode_ else f"{jobid_}_{batchid_}_{timestamp_}"
                 pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), fname_ + '.json')
                 logging.warning(f"pth_:{pth_}")
                 with open(pth_, 'w', encoding='UTF-8') as f:
