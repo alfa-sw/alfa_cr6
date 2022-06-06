@@ -13,11 +13,12 @@ PRINT_LABEL_OPTONS = {
     'dpi': 240,
     'module_height': 10,
     'module_width': 0.5,
-    'font_size': 16,
-    'text_distance': 2.,
+    'font_size': 22,
+    # 'text_distance': 2.,
     'line_lenght': 50,
+    'n_of_lines': 11,
     'rotate': 270,
-    # ~ 'font_path': '/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf'
+    'font_path': '/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf'
 }
 
 HERE = os.path.dirname(os.path.abspath(__file__))

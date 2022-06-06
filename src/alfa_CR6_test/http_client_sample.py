@@ -6,8 +6,8 @@ import http.client
 import random
 import json
 
-# ~ HOST = '127.0.0.1'
-HOST = '192.168.12.122'
+HOST = '127.0.0.1'
+# ~ HOST = '192.168.12.122'
 
 
 """ to be reported on label:

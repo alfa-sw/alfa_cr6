@@ -551,7 +551,7 @@ class OrderPage(BaseStackedPage):
                         message=msg_,
                         content=content,
                         ok_cb=dymo_print_jar,
-                        ok_cb_args=[jar.barcode, ])
+                        ok_cb_args=[jar, ])
                         # ~ ok_cb=dymo_print,
                         # ~ ok_cb_args=[str(jar.barcode), ] + jar.extra_lines_to_print)
 
