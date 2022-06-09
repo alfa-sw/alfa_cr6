@@ -185,6 +185,8 @@ D = {
     "all operations are paused": "모든 작업이 일시 중지됨",
 
     "{} expired produtcs:{}": "{} \n 만료된 제품:{}",
+
+    "{} product(s) missing:": "{} 누락된 제품:",
 }
 
 D.update(error_kr.D)

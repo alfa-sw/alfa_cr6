@@ -176,6 +176,8 @@ D = {
     "PURGE_ALL": "PURGE ALL",
     "please, wait while finishing all pending operations ...": "espere a que finalicen las operaciones en curso...",
     "all operations are paused": "todas las unidades están en pausa",
+
+    "{} product(s) missing:": "{} producto(s) faltante(s):",
 }
 
 

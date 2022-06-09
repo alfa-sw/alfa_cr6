@@ -183,6 +183,8 @@ D = {
     "PURGE_ALL": "PURGE ALL",
     "please, wait while finishing all pending operations ...": "prego, attendere il completamento delle operazioni in corso ...",
     "all operations are paused": "tutte le unità sono in pausa",
+
+    "{} product(s) missing:": "{} prodotto/i mancante/i:",
 }
 
 

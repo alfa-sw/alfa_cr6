@@ -40,7 +40,7 @@ def _create_printable_image_from_jar(jar):
         'text_distance': 0.75,
         'compress': False,
         'line_lenght': 24,
-        'n_of_lines': 11,
+        'n_of_lines': 3,
         'rotate': 0,
     }
 
