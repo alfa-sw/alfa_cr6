@@ -14,6 +14,7 @@ import traceback
 import asyncio
 import html
 import types
+import subprocess
 
 import aiohttp  # pylint: disable=import-error
 
@@ -31,6 +32,7 @@ from alfa_CR6_backend.models import (Jar, Order)
 from alfa_CR6_backend.dymo_printer import dymo_print
 from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings)
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
+
 
 def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE")):
 
@@ -56,17 +58,16 @@ def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE")):
 
     if jar:
         async def coro():
-            await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(True) # set JAR_INPUT_ROLLER_PHOTOCELL bit
+            await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(True)  # set JAR_INPUT_ROLLER_PHOTOCELL bit
             barcode = await app.on_barcode_read(jar.barcode)
             if barcode is None:
-                await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(False) # reset JAR_INPUT_ROLLER_PHOTOCELL bit
+                await set_JAR_INPUT_ROLLER_PHOTOCELL_bit(False)  # reset JAR_INPUT_ROLLER_PHOTOCELL bit
 
         t = coro()
         asyncio.ensure_future(t)
     else:
-        app.main_window.open_alert_dialog(f"cant find a valid can in db (not DELETED and with status in {allowed_jar_statuses})")
-
-
+        app.main_window.open_alert_dialog(
+            f"cant find a valid can in db (not DELETED and with status in {allowed_jar_statuses})")
 
 
 class DebugPage:
@@ -141,7 +142,7 @@ class DebugPage:
                 # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
                 ("", "**"),
-                ("reset\nbrowser's view", "**"),
+                ("show\nnetwork", "**"),
                 ("show\nsettings", "**"),
                 ("minimize\nmain window", ""),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
@@ -516,6 +517,10 @@ class DebugPage:
 
             self._show_settings()
 
+        elif "show\nnetwork" in cmd_txt:
+
+            self._show_network()
+
         else:
             app.run_a_coroutine_helper(cmd_txt)
 
@@ -718,7 +723,6 @@ class DebugPage:
 
         return fileNames
 
-
     async def _download_KCC_lot_info_file(self):  # pylint: disable=no-self-use
 
         msg_ = tr_("downloading KCC Specific Gravity file.")
@@ -736,10 +740,38 @@ class DebugPage:
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
+    def _show_network(self):  # pylint: disable=no-self-use
+
+        s_ = ["not found", ]
+        help_msg_ = tr_("<b>network interfaces - eth0: 1st ethernet, eth1: 2nd ethernet, wlan0: WiFi, tun0: VPN</b></br>")
+        try:
+            def filter_(l):
+                for i in ['inet ', "eth0", "eth1", "wlan0", "tun0", 'flags=']:
+                    if i in l:
+                        return True
+                return False
+
+            out_ = subprocess.run(
+                'ifconfig',
+                shell=True,
+                stdout=subprocess.PIPE,
+                check=True).stdout.decode().split("\n")
+            logging.warning(f"out_ :{out_ }")
+            s_ = [l for l in out_ if filter_(l)]
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            s_ = [f"{traceback.format_exc()}", ]
+
+        s_ = '\n'.join(s_)
+        html_ = help_msg_ + html.unescape(f"<pre>{s_}</pre>")
+        logging.warning(f"html_:{html_}")
+        self.answer_text_browser.setHtml(html_)
+
     def _show_settings(self):  # pylint: disable=no-self-use
 
         S = import_settings()
-        s_ = [f"{i}: {getattr(S, i)}" for i in dir(S) if not i.startswith("_") and not isinstance(getattr(S, i), types.ModuleType)]
+        s_ = [f"{i}: {getattr(S, i)}" for i in dir(S) if not i.startswith("_")
+              and not isinstance(getattr(S, i), types.ModuleType)]
         html_ = html.unescape('<br/>'.join(s_))
         logging.warning(f"html_:{html_}")
         self.answer_text_browser.setHtml(html_)
@@ -751,7 +783,6 @@ class DebugPage:
         try:
 
             async with aiohttp.ClientSession() as aiohttp_session:
-
 
                 params = {'data_set_name': 'kcc_lot_specific_info'}
                 async with aiohttp_session.get(f'http://{machine_head.ip_add}:{machine_head.http_port}/admin/download', params=params) as resp:
@@ -770,7 +801,7 @@ class DebugPage:
                                 html_ += f'<th>{v}</th>'
                             html_ += "</tr>"
                         else:
-                            bgcol = "#DDDDFF" if n%2 else "#EEEEEE"
+                            bgcol = "#DDDDFF" if n % 2 else "#EEEEEE"
                             html_ += f'\n    <tr bgcolor="{bgcol}">'
                             for v in i.values():
                                 # ~ if v:
