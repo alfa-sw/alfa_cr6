@@ -414,8 +414,9 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 jobid_ = formula.get('jobId', '')
                 batchid_ = formula.get('batchId', '')
                 colorcode_ = formula.get('meta', {}).get('colorCode', '')
-                fname_ = f"{colorcode_}" if colorcode_ else f"{jobid_}_{batchid_}_{timestamp_}"
-                pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), fname_ + '.json')
+                brand_ = formula.get('meta', {}).get('brand', '')
+                fname_ = f"{brand_}_{colorcode_}"
+                pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), fname_)
                 logging.warning(f"pth_:{pth_}")
                 with open(pth_, 'w', encoding='UTF-8') as f:
 

@@ -6,7 +6,8 @@ import http.client
 import random
 import json
 
-HOST = '127.0.0.1'
+# ~ HOST = '127.0.0.1'
+HOST = '192.168.0.100'
 # ~ HOST = '192.168.12.122'
 
 
@@ -31,7 +32,7 @@ SAMPLE_FORMULA = {
   "meta": {
     "brand": "UC",
     "region": "",
-    "colorCode": f"GIO_TEST{random.randint(1, 10)}",
+    "colorCode": f"alfaTest-{random.randint(1, 10)}",
     "variantCode": "",
     "colorName": "GREY SHADE: WHITE",
     "secondName": "",
