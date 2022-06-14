@@ -725,7 +725,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     def check_alarm_923(self):
 
-        flag = self.status["status_level"] in ['ALARM', ]
-        flag = flag and int(self.status["error_code"]) in [923, ]
+        # ~ 923: 'TINTING_PANEL_TABLE_ERROR'
+
+        status_level = self.status.get("status_level")
+        error_code = self.status.get("error_code")
+        flag = status_level in ['ALARM', ]
+        flag = flag and error_code in [923, '923', 'TINTING_PANEL_TABLE_ERROR']
 
         return flag

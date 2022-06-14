@@ -900,11 +900,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 logging.debug("ret:{}".format(ret))
                 self.ws_server.refresh_can_list()
 
-                if head_index == 0:
-                    if status.get('status_level') == 'ALARM' and status.get('error_code') == 10:
-                        for m in self.machine_head_dict.values():
-                            if m and m.index != 0:
-                                await m.send_command(cmd_name="ABORT", params={})
+                # ~ if head_index == 0:
+                    # ~ if status.get('status_level') == 'ALARM' and status.get('error_code') == 10:
+                        # ~ for m in self.machine_head_dict.values():
+                            # ~ if m and m.index != 0:
+                                # ~ await m.send_command(cmd_name="ABORT", params={})
 
         elif msg_dict.get("type") == "answer":
             answer = msg_dict.get("value")
