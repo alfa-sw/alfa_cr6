@@ -24,6 +24,34 @@ import magic       # pylint: disable=import-error
 
 from alfa_CR6_backend.globals import (get_encoding, tr_, SCHEMAS_PATH)
 
+TAGS_TO_FIX = {
+    "<Total Price>": "<Total_Price>",
+    "</Total Price>": "</Total_Price>",
+    "<Real Weight>": "<Real_Weight>",
+    "</Real Weight>": "</Real_Weight>",
+}
+
+
+def replace_invalid_tags(path_to_file):
+
+    # ~ logging.warning(f"path_to_file:{path_to_file}")
+
+    try:
+        e = get_encoding(path_to_file)
+        with codecs.open(path_to_file, encoding=e) as fd:
+            data = fd.read()
+            for k, v in TAGS_TO_FIX.items():
+                data = data.replace(k, v)
+
+        # ~ logging.warning(f"data:{data}")
+
+        with codecs.open(path_to_file, 'w', encoding=e) as fd:
+            fd.write(data)
+
+    except Exception as e:  # pylint:disable=broad-except
+        logging.error(traceback.format_exc())
+        logging.error(f"e:{e}")
+
 
 class OrderParser:
 
@@ -96,6 +124,30 @@ class OrderParser:
         properties["extra_lines_to_print"].append(f'{product}, {amount}')
 
         # ~ logging.warning(json.dumps(formulaitem, indent=2, ensure_ascii=False))
+
+        return properties
+
+    @classmethod
+    def parse_Besa_SINNEK_xml(cls, xml_as_dict):
+
+        properties = {
+            "meta": {},
+            "ingredients": [],
+            "extra_lines_to_print": [],
+        }
+
+        # ~ logging.warning(json.dumps(xml_as_dict, indent=2, ensure_ascii=False))
+
+        properties["meta"] = xml_as_dict["Table"].copy()
+
+        componente = xml_as_dict["Table"]["Componentes"]["Componente"].copy()
+
+        for item in componente:
+            properties["ingredients"].append({
+                "pigment_name": item["Codigo"],
+                "weight(g)": round(float(item["Gramos"]), 5),
+                "description": item.get("Descripcion", '')
+            })
 
         return properties
 
@@ -284,7 +336,8 @@ class OrderParser:
             quantity = meta.get("quantity", '')
             date_time = str(time.asctime())
 
-            properties["extra_lines_to_print"] = [f"{brand} - {quality}", f"{colorCode} - {quantity}", f"{batchId}", f"{date_time}"]
+            properties["extra_lines_to_print"] = [f"{brand} - {quality}",
+                                                  f"{colorCode} - {quantity}", f"{batchId}", f"{date_time}"]
 
         logging.info(f"properties:{properties}")
         return properties
@@ -571,6 +624,8 @@ class OrderParser:
 
         properties = {}
 
+        replace_invalid_tags(path_to_file)
+
         e = get_encoding(path_to_file)
         with codecs.open(path_to_file, encoding=e) as fd:
             xml_as_dict = xmltodict.parse(fd.read(), encoding=e)
@@ -584,6 +639,12 @@ class OrderParser:
                 properties = cls.parse_MIXIT_xml(xml_as_dict)
                 if properties.get('meta'):
                     properties['meta']['header'] = 'cti_xml'
+            elif xml_as_dict.get("Table", {}).get("Componentes"):
+                properties = cls.parse_Besa_SINNEK_xml(xml_as_dict)
+                if properties.get('meta'):
+                    properties['meta']['header'] = 'Besa_SINNEK_xml'
+            else:
+                raise Exception(f"unknown xml file:{path_to_file}")
 
         return properties
 
