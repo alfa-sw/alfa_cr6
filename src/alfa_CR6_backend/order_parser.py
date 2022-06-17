@@ -75,29 +75,67 @@ class OrderParser:
             "extra_lines_to_print": [],
         }
 
-        if xml_as_dict.get("COLORFORMULA"):
-            properties["meta"] = xml_as_dict["COLORFORMULA"]["FORMULA"].copy()
+        properties["meta"] = xml_as_dict["COLORFORMULA"]["FORMULA"].copy()
 
-            formulaitem = xml_as_dict["COLORFORMULA"]["FORMULAITEMS"]["FORMULAITEM"].copy()
+        formulaitem = xml_as_dict["COLORFORMULA"]["FORMULAITEMS"]["FORMULAITEM"].copy()
 
-            properties["ingredients"] = []
-            for item in formulaitem:
-                properties["ingredients"].append({
-                    "pigment_name": item["COLORANT"],
-                    "weight(g)": round(float(item["AMOUNT"]), 4),
-                    "description": ""
-                })
+        for item in formulaitem:
+            properties["ingredients"].append({
+                "pigment_name": item["COLORANT"],
+                "weight(g)": round(float(item["AMOUNT"]), 4),
+                "description": ""
+            })
 
-            innercolorcode = properties["meta"].get("INNERCOLORCODE", "")
-            brand = properties["meta"].get("BRAND", "")
-            product = properties["meta"].get("PRODUCT", "")
-            amount = properties["meta"].get("AMOUNT", "")
+        innercolorcode = properties["meta"].get("INNERCOLORCODE", "")
+        brand = properties["meta"].get("BRAND", "")
+        product = properties["meta"].get("PRODUCT", "")
+        amount = properties["meta"].get("AMOUNT", "")
 
-            properties["extra_lines_to_print"].append(f'{brand}')
-            properties["extra_lines_to_print"].append(f'{innercolorcode}')
-            properties["extra_lines_to_print"].append(f'{product}, {amount}')
+        properties["extra_lines_to_print"].append(f'{brand}')
+        properties["extra_lines_to_print"].append(f'{innercolorcode}')
+        properties["extra_lines_to_print"].append(f'{product}, {amount}')
 
-            # ~ logging.warning(json.dumps(formulaitem, indent=2, ensure_ascii=False))
+        # ~ logging.warning(json.dumps(formulaitem, indent=2, ensure_ascii=False))
+
+        return properties
+
+    @classmethod
+    def parse_MIXIT_xml(cls, xml_as_dict):
+
+        properties = {
+            "meta": {},
+            "ingredients": [],
+            "extra_lines_to_print": [],
+        }
+
+        properties["meta"] = xml_as_dict["ColorFormula"].copy()
+
+        information = xml_as_dict["ColorFormula"]["Information"].copy()
+        brand = information.get("Brand", '.')
+        description = information.get("Description", '.')
+        AKZOCode = information.get("AKZOCode", '.')
+
+        CurrentFormula = xml_as_dict["ColorFormula"]["CurrentFormula"].copy()
+        amount = CurrentFormula.get("Amount", '.')
+        typeOfUnit = CurrentFormula.get("TypeOfUnit", '')
+
+        # ~ productItem = xml_as_dict["ColorFormula"]["Products"]["ProductItem"].copy()
+        # ~ name = productItem.get("Name", '.')
+
+        properties["extra_lines_to_print"].append(f'{brand}')
+        properties["extra_lines_to_print"].append(f'{description}')
+        properties["extra_lines_to_print"].append(f'"{AKZOCode}" {amount}({typeOfUnit})')
+
+        formulaRecipeItem = xml_as_dict["ColorFormula"]["FormulaRecipe"]["FormulaRecipeItem"].copy()
+
+        for item in formulaRecipeItem:
+            properties["ingredients"].append({
+                "pigment_name": item["Colorant"],
+                "weight(g)": round(float(item["Absolute"]), 5),
+                "description": ""
+            })
+
+        # ~ logging.warning(json.dumps(formulaRecipeItem, indent=2, ensure_ascii=False))
 
         return properties
 
@@ -536,11 +574,16 @@ class OrderParser:
         e = get_encoding(path_to_file)
         with codecs.open(path_to_file, encoding=e) as fd:
             xml_as_dict = xmltodict.parse(fd.read(), encoding=e)
+            # ~ logging.warning(json.dumps(xml_as_dict, indent=4))
 
-            properties = cls.parse_nro_xml(xml_as_dict)
-
-        if properties.get('meta'):
-            properties['meta']['header'] = 'nro_xml'
+            if xml_as_dict.get("COLORFORMULA", {}).get("FORMULA"):
+                properties = cls.parse_nro_xml(xml_as_dict)
+                if properties.get('meta'):
+                    properties['meta']['header'] = 'nro_xml'
+            elif xml_as_dict.get("ColorFormula", {}).get("FormulaRecipe"):
+                properties = cls.parse_MIXIT_xml(xml_as_dict)
+                if properties.get('meta'):
+                    properties['meta']['header'] = 'cti_xml'
 
         return properties
 
@@ -601,7 +644,9 @@ class OrderParser:
             if mime_type == 'application/json' or 'json' in file_extension:
                 properties = self.parse_json_order(path_to_file)
 
-            elif mime_type == 'application/pdf':
+            elif mime_type == 'text/xml' or '.xml' in file_extension:
+                properties = self.parse_xml_order(path_to_file)
+            elif mime_type == 'application/pdf' or '.pdf' in file_extension:
                 for fp in (None, 0, 5):
                     try:
                         # ~ logging.warning(f"trying fp:{fp} ...")
@@ -613,8 +658,6 @@ class OrderParser:
 
             elif mime_type == 'text/plain':
                 properties = self.parse_txt_order(path_to_file)
-            elif mime_type == 'text/xml':
-                properties = self.parse_xml_order(path_to_file)
             else:
                 raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}")
 
