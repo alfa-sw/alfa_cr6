@@ -141,7 +141,7 @@ class DebugPage:
                 # ~ "LIFTR\nDOWN",
                 # ~ "send command DOWN to right lifter without waiting for any condition",
                 # ~ ),
-                ("", "**"),
+                ("remote UI", "**"),
                 ("show\nnetwork", "**"),
                 ("show\nsettings", "**"),
                 ("minimize\nmain window", ""),
@@ -520,6 +520,10 @@ class DebugPage:
         elif "show\nnetwork" in cmd_txt:
 
             self._show_network()
+
+        elif "remote UI" in cmd_txt:
+
+            app.main_window.browser_page.open_page(url="http://127.0.0.1:8090")
 
         else:
             app.run_a_coroutine_helper(cmd_txt)
