@@ -24,17 +24,15 @@ import magic       # pylint: disable=import-error
 
 from alfa_CR6_backend.globals import (get_encoding, tr_, SCHEMAS_PATH)
 
-TAGS_TO_FIX = {
-    "<Total Price>": "<Total_Price>",
-    "</Total Price>": "</Total_Price>",
-    "<Real Weight>": "<Real_Weight>",
-    "</Real Weight>": "</Real_Weight>",
-}
-
 
 def replace_invalid_tags(path_to_file):
 
-    # ~ logging.warning(f"path_to_file:{path_to_file}")
+    TAGS_TO_FIX = {
+        "<Total Price>": "<Total_Price>",
+        "</Total Price>": "</Total_Price>",
+        "<Real Weight>": "<Real_Weight>",
+        "</Real Weight>": "</Real_Weight>",
+    }
 
     try:
         e = get_encoding(path_to_file)
@@ -42,8 +40,6 @@ def replace_invalid_tags(path_to_file):
             data = fd.read()
             for k, v in TAGS_TO_FIX.items():
                 data = data.replace(k, v)
-
-        # ~ logging.warning(f"data:{data}")
 
         with codecs.open(path_to_file, 'w', encoding=e) as fd:
             fd.write(data)
@@ -624,7 +620,7 @@ class OrderParser:
 
         properties = {}
 
-        replace_invalid_tags(path_to_file)
+        # ~ replace_invalid_tags(path_to_file)
 
         e = get_encoding(path_to_file)
         with codecs.open(path_to_file, encoding=e) as fd:
