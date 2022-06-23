@@ -5,13 +5,12 @@ import logging
 # ~ LOG_LEVEL=logging.INFO,
 LOG_LEVEL = logging.WARNING
 
-LANGUAGE = "en"
+LANGUAGE = "kr"
 
 PRINT_LABEL_OPTONS = {'font_path': '/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf'}
 
-DOWNLOAD_KCC_LOT_STEP = 1800
+DOWNLOAD_KCC_LOT_STEP = 3600
 
-# BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.1"
 BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -33,12 +32,6 @@ SQLITE_CONNECT_STRING = f"sqlite:///{DATA_PATH}/cr6_Vx_test.sqlite"
 STORE_EXCEPTIONS_TO_DB_AS_DEFAULT = False
 
 MACHINE_HEAD_IPADD_PORTS_LIST = [
-#    ("192.168.0.1", 11000, 8080),
-#    ("192.168.0.2", 11000, 8080),
-#    ("192.168.0.3", 11000, 8080),
-#    ("192.168.0.4", 11000, 8080),
-#    ("192.168.0.5", 11000, 8080),
-#    ("192.168.0.6", 11000, 8080),
     ("127.0.0.1", 11001, 8081),
     ("127.0.0.1", 11002, 8082),
     ("127.0.0.1", 11003, 8083),

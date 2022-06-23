@@ -9,9 +9,9 @@ LANGUAGE = "kr"
 
 PRINT_LABEL_OPTONS = {'font_path': '/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf'}
 
-BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
+DOWNLOAD_KCC_LOT_STEP = 3600
 
-DOWNLOAD_KCC_LOT_STEP = 60 * 60
+BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNTIME_FILES_ROOT = os.path.join(HERE, "../")
