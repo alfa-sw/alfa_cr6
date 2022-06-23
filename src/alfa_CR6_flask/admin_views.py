@@ -8,7 +8,6 @@
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
-import sys
 import logging
 import json
 import datetime
@@ -20,16 +19,13 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from http import HTTPStatus
 
-from flask import (Markup, Flask, redirect, flash, request, send_file, current_app)  # pylint: disable=import-error
+from flask import (Markup, redirect, flash, request, send_file, current_app)  # pylint: disable=import-error
 
-import flask_sqlalchemy  # pylint: disable=import-error
 import flask_admin  # pylint: disable=import-error
 from flask_admin.contrib.sqla import ModelView  # pylint: disable=import-error
 from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # pylint: disable=import-error
 
-from waitress import serve       # pylint: disable=import-error
-
-from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session)
+from alfa_CR6_backend.models import Jar
 from alfa_CR6_backend.globals import (LANGUAGE_MAP, import_settings, get_alfa_serialnumber)
 from alfa_CR6_backend.order_parser import OrderParser
 
@@ -96,10 +92,6 @@ def _to_html_table(_obj, rec_lev=0):
         _html += str(_obj)
 
     return _html
-
-def _gettext(s):
-    return s
-
 
 class FilterOrderByJarStatusInList(FilterInList):  # pylint: disable=too-few-public-methods
     def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
@@ -410,8 +402,8 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
                 OrderParser.parse_sw_json(formula.copy())
 
-                timestamp_ = datetime.datetime.now().isoformat(timespec='seconds')
-                jobid_ = formula.get('jobId', '')
+                # ~ timestamp_ = datetime.datetime.now().isoformat(timespec='seconds')
+                # ~ jobid_ = formula.get('jobId', '')
                 batchid_ = formula.get('batchId', '')
                 colorcode_ = formula.get('meta', {}).get('colorCode', '')
                 brand_ = formula.get('meta', {}).get('brand', '')
@@ -424,7 +416,8 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
                     response_status = HTTPStatus.OK
                     response_data['result'] = "json formula saved."
-                    response_data['id'] = f"{fname_}"
+                    response_data['file_name'] = f"{fname_}"
+                    response_data['batchid'] = batchid_
 
         except Exception as exc:  # pylint: disable=broad-except
             response_status = HTTPStatus.UNPROCESSABLE_ENTITY
@@ -573,48 +566,3 @@ class AdminIndexView(flask_admin.AdminIndexView):
         logging.warning("flash_msgs:{}".format(flash_msgs))
         ret = redirect('/index')
         return ret
-
-
-def init_db(app):
-
-    db = flask_sqlalchemy.SQLAlchemy()
-    db.init_app(app)
-    set_global_session(db.session)
-    return db
-
-def init_admin(app):
-
-    db = init_db(app)
-
-    index_view_ = AdminIndexView(url='/')
-    admin_ = flask_admin.base.Admin(app, name=_gettext('Alfa_CRX'), template_mode='bootstrap3', index_view=index_view_)
-
-    admin_.add_view(OrderModelView(Order, db.session))
-    admin_.add_view(JarModelView(Jar, db.session, "Can"))
-    admin_.add_view(EventModelView(Event, db.session))
-    admin_.add_view(DocumentModelView(Document, db.session))
-
-    return admin_
-
-def main():
-
-    logging.basicConfig(
-        stream=sys.stdout, level=SETTINGS.LOG_LEVEL,
-        format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
-
-    app = Flask('alfa_CR6_flask')
-
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    sqlalchemy_database_uri_ = SETTINGS.SQLITE_CONNECT_STRING
-    logging.warning(f'sqlalchemy_database_uri_ :{sqlalchemy_database_uri_ }')
-    # ~ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + '/opt/alfa_cr6/data/CRx_v0_SW.sqlite'
-    app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_database_uri_
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or '123456790'
-
-    admin = init_admin(app)
-    logging.warning(f'admin:{admin}')
-
-    HOST, PORT = '0.0.0.0', 8090
-    logging.warning("start serving admin UI on http://{}:{}".format(HOST, PORT))
-    serve(app, host=HOST, port=PORT)
