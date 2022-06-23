@@ -6,8 +6,8 @@ import http.client
 import random
 import json
 
-# ~ HOST = '127.0.0.1'
-HOST = '192.168.0.100'
+HOST = '127.0.0.1'
+# ~ HOST = '192.168.0.100'
 # ~ HOST = '192.168.12.122'
 
 
@@ -27,7 +27,7 @@ SAMPLE_FORMULA = {
   "system": "Octoral Information Services",
   "operatorId": "",
   "jobId": "",
-  "batchId": 1857629189,
+  "batchId": random.randint(0, 2000000000),
   "action": None,
   "meta": {
     "brand": "UC",

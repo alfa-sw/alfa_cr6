@@ -126,15 +126,15 @@ class OrderParser:
     @classmethod
     def parse_Besa_SINNEK_xml(cls, xml_as_dict):
 
+        # ~ logging.warning(json.dumps(xml_as_dict, indent=2, ensure_ascii=False))
+
         properties = {
             "meta": {},
             "ingredients": [],
             "extra_lines_to_print": [],
         }
 
-        # ~ logging.warning(json.dumps(xml_as_dict, indent=2, ensure_ascii=False))
-
-        properties["meta"] = xml_as_dict["Table"].copy()
+        properties["meta"] = xml_as_dict["Table"]["OT"].copy()
 
         componente = xml_as_dict["Table"]["Componentes"]["Componente"].copy()
 
@@ -144,6 +144,12 @@ class OrderParser:
                 "weight(g)": round(float(item["Gramos"]), 5),
                 "description": item.get("Descripcion", '')
             })
+
+        properties["extra_lines_to_print"] = [
+            properties["meta"].get('Fabricante', ''),
+            properties["meta"].get('ColorCode', ''),
+            properties["meta"].get('Color', ''),
+        ]
 
         return properties
 
@@ -326,6 +332,7 @@ class OrderParser:
 
             batchId = properties.get("batchId", '')
             meta = properties.get("meta", {})
+            meta["batchId"] = batchId
             brand = meta.get("brand", '')
             quality = meta.get("quality", '')
             colorCode = meta.get("colorCode", '')

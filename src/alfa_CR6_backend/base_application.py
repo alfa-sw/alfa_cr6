@@ -1017,6 +1017,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 _parser = OrderParser(exception_handler=self.handle_exception)
                 properties = _parser.parse(path_to_file)
 
+                if properties.get('batchId'):
+                    description = properties['batchId']
+
                 if not properties['meta'].get('error'):
                     order = self._do_create_order(properties, description, n_of_jars)
             else:
