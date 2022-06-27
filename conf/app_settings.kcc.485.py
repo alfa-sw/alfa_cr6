@@ -7,10 +7,15 @@ LOG_LEVEL = logging.WARNING
 
 LANGUAGE = "kr"
 
-PRINT_LABEL_OPTONS = {'font_path': '/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf'}
+PRINT_LABEL_OPTONS = {
+  'font_path': '/usr/share/fonts/truetype/unfonts-core/UnDotumBold.ttf',
+  'module_width': 0.5,
+  'module_height': 10,
+}
 
 DOWNLOAD_KCC_LOT_STEP = 3600
 
+# BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.1"
 BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
 
 HERE = os.path.dirname(os.path.abspath(__file__))
