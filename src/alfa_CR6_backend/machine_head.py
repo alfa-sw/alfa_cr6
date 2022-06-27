@@ -175,6 +175,19 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             logging.error(_)
             self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True)
 
+            try:
+                QApplication.instance().insert_db_event(
+                    name="HEAD",
+                    level="ALARM",
+                    severity=status.get("error_code", ''),
+                    source=self.name,
+                    description=status.get("error_message", '')
+                )
+            except Exception:  # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+
+            logging.warning('')
+
             if self.index == 0:
                 if status.get("error_code") in (10, "USER_INTERRUPT"):  # user button interrupt
                     for m in self.app.machine_head_dict.values():

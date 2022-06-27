@@ -13,6 +13,7 @@ import json
 import datetime
 import traceback
 import subprocess
+import csv
 
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -25,7 +26,7 @@ import flask_admin  # pylint: disable=import-error
 from flask_admin.contrib.sqla import ModelView  # pylint: disable=import-error
 from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Jar
+from alfa_CR6_backend.models import Jar, Event
 from alfa_CR6_backend.globals import (LANGUAGE_MAP, import_settings, get_alfa_serialnumber)
 from alfa_CR6_backend.order_parser import OrderParser
 
@@ -92,6 +93,25 @@ def _to_html_table(_obj, rec_lev=0):
         _html += str(_obj)
 
     return _html
+
+def _reformat_head_events_to_csv(temp_pth, db_session):
+
+    logging.info(f"db_session:{db_session}")
+
+    f_name = os.path.join(temp_pth, "head_events.csv")
+    with open(f_name, 'w', newline='') as csvfile:
+        _writer = csv.writer(
+            csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+        _header = ['error_code', 'error_message', 'head name', 'date_created']
+        _keys = ['severity', 'description', 'name', 'date_created']
+
+        _writer.writerow(_header)
+        for e in db_session.query(Event).filter(Event.source == "HEAD").all():
+            item = e.object_to_dict()
+            _writer.writerow([item.get(k, '') for k in _keys])
+
+    return f_name
 
 class FilterOrderByJarStatusInList(FilterInList):  # pylint: disable=too-few-public-methods
     def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
@@ -357,6 +377,12 @@ class DocumentModelView(Base_ModelView):
 
 class AdminIndexView(flask_admin.AdminIndexView):
 
+    def __init__(self, db, *args, **kwargs):
+
+        self.db = db
+
+        super().__init__(*args, **kwargs)
+
     @flask_admin.expose("/")
     @flask_admin.expose("/home")
     @flask_admin.expose("/index")
@@ -524,10 +550,12 @@ class AdminIndexView(flask_admin.AdminIndexView):
         alfa_serialnumber = get_alfa_serialnumber()
         try:
             timestamp_ = datetime.datetime.now().isoformat(timespec='seconds')
-            if data_set_name.lower() == 'full_db':
+            data_set_name_lower = data_set_name.lower().strip()
+            logging.warning(f"data_set_name_lower({len(data_set_name_lower)}):{data_set_name_lower}.")
+            if data_set_name_lower == 'full_db':
                 file_to_send = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif data_set_name.lower() == 'data_and_conf.zip':
+            elif data_set_name_lower == 'data_and_conf.zip':
                 temp_pth = os.path.join(SETTINGS.TMP_PATH, "data_and_conf.zip")
                 cmd_ = f"sudo chown -R admin:admin {SETTINGS.CONF_PATH}"
                 subprocess.run(cmd_, check=False, shell=True)
@@ -536,17 +564,20 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 subprocess.run(cmd_, check=False, shell=True)
                 file_to_send = temp_pth
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif data_set_name.lower() == 'log_and_tmp.zip':
+            elif data_set_name_lower == 'log_and_tmp.zip':
                 temp_pth = os.path.join(SETTINGS.TMP_PATH, "log_and_tmp.zip")
                 zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.LOGS_PATH, exclude_patterns=[], mode="w")
                 zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.TMP_PATH, exclude_patterns=("cache", "log_and_tmp", ".zip", ".whl"), mode="a")
                 file_to_send = temp_pth
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif data_set_name.lower() == 'app_settings.py':
+            elif data_set_name_lower == 'app_settings.py':
                 file_to_send = os.path.join(SETTINGS.CONF_PATH, "app_settings.py")
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
+            elif 'head_events' in data_set_name_lower:
+                file_to_send = _reformat_head_events_to_csv(SETTINGS.TMP_PATH, db_session=self.db.session)
+                out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             else:
-                flash_msgs.append("unknown data_set_name: {}".format(data_set_name.lower()))
+                flash_msgs.append("unknown data_set_name: {}".format(data_set_name_lower))
         except Exception as exc:  # pylint: disable=broad-except
             flash_msgs.append('Error trying to download files: {}'.format(exc))
             logging.error(traceback.format_exc())

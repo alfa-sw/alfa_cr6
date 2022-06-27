@@ -64,6 +64,7 @@ def main():
             'xmltodict',
             'evdev',
             'redis<4.0.0',
+            'iso8601',
             # ~ 'PyQt5',
             # ~ 'PyQtWebEngine',
         ],

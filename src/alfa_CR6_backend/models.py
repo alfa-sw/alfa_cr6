@@ -14,6 +14,8 @@ import uuid
 import time
 from datetime import (date, datetime)
 
+import iso8601                       # pylint: disable=import-error
+
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 from jsonschema import validate  # pylint: disable=import-error
@@ -32,6 +34,7 @@ from sqlalchemy import (      # pylint: disable=import-error
 
 import sqlalchemy.ext.declarative  # pylint: disable=import-error
 from sqlalchemy.orm import (sessionmaker, relationship, validates)    # pylint: disable=import-error
+from sqlalchemy.inspection import inspect  # pylint: disable=import-error
 
 Base = sqlalchemy.ext.declarative.declarative_base()
 
@@ -142,6 +145,44 @@ class BaseModel:  # pylint: disable=too-few-public-methods
         except Exception as exc:  # pylint: disable=broad-except
             logging.error(f"self:{self}, exc:{exc}")
         return value
+
+
+    def object_to_json(self, indent=2):
+        data = self.object_to_dict()
+        return json.dumps(data, indent=indent)
+
+    def object_to_dict(self):
+
+        data = {
+            c.key: getattr(self, c.key)
+            for c in inspect(self).mapper.column_attrs
+            # ~ if getattr(self, c.key) is not None
+        }
+
+        for k in data.keys():
+            if isinstance(data[k], datetime):
+                data[k] = data[k].isoformat()
+
+        return data
+
+    @classmethod
+    def object_from_json(cls, json_data):
+
+        data = json.loads(json_data)
+        obj = cls.object_from_dict(data)
+        return obj
+
+    @classmethod
+    def object_from_dict(cls, data_dict):
+
+        data_dict_cpy = {k: v for k, v in data_dict.items() if v is not None}
+        for k in data_dict_cpy:
+            if 'date' in k and isinstance(data_dict_cpy[k], str):
+                data_dict_cpy[k] = iso8601.parse_date(data_dict_cpy[k])
+
+        obj = cls(**data_dict_cpy)
+
+        return obj
 
 
 class User(Base, BaseModel):  # pylint: disable=too-few-public-methods
