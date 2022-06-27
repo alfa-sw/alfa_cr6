@@ -107,7 +107,7 @@ def _reformat_head_events_to_csv(temp_pth, db_session):
         _keys = ['severity', 'description', 'name', 'date_created']
 
         _writer.writerow(_header)
-        for e in db_session.query(Event).filter(Event.source == "HEAD").all():
+        for e in db_session.query(Event).filter(Event.name == "HEAD").all():
             item = e.object_to_dict()
             _writer.writerow([item.get(k, '') for k in _keys])
 
