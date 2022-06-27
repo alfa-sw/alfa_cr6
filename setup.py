@@ -14,6 +14,27 @@ with open(os.path.join(here, '__version__'), encoding='utf-8') as f:
 
 __app_name__ = 'alfa_CR6'
 
+INSTALL_REQUIRES = [
+    'websockets',
+    'SQLAlchemy<1.4.0', # api changed in 1.4.0
+    'jsonschema',
+    'python-barcode',
+    # ~ 'Pillow',
+    'aiohttp',
+    'flask',
+    'flask_sqlalchemy',
+    'flask_admin',
+    'waitress',
+    'python-magic',
+    'xmltodict',
+    'evdev',
+    'redis<4.0.0',
+    'iso8601',
+    # ~ 'PyQt5',
+    # ~ 'PyQtWebEngine',
+    'flask-restless-swagger-2',
+]
+
 
 def main():
     setup(
@@ -49,25 +70,7 @@ def main():
             'bin/alfa_CR6_flask',
             'bin/alfa_CR6_test',
         ],
-        install_requires=[
-            'websockets',
-            'SQLAlchemy<1.4.0', # api changed in 1.4.0
-            'jsonschema',
-            'python-barcode',
-            # ~ 'Pillow',
-            'aiohttp',
-            'flask',
-            'flask_sqlalchemy',
-            'flask_admin',
-            'waitress',
-            'python-magic',
-            'xmltodict',
-            'evdev',
-            'redis<4.0.0',
-            'iso8601',
-            # ~ 'PyQt5',
-            # ~ 'PyQtWebEngine',
-        ],
+        install_requires=INSTALL_REQUIRES,
     )
 
 
