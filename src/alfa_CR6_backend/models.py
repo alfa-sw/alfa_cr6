@@ -14,8 +14,6 @@ import uuid
 import time
 from datetime import (date, datetime)
 
-import iso8601                       # pylint: disable=import-error
-
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
 from jsonschema import validate  # pylint: disable=import-error
@@ -35,6 +33,8 @@ from sqlalchemy import (      # pylint: disable=import-error
 import sqlalchemy.ext.declarative  # pylint: disable=import-error
 from sqlalchemy.orm import (sessionmaker, relationship, validates)    # pylint: disable=import-error
 from sqlalchemy.inspection import inspect  # pylint: disable=import-error
+
+import iso8601                       # pylint: disable=import-error
 
 Base = sqlalchemy.ext.declarative.declarative_base()
 
@@ -151,12 +151,15 @@ class BaseModel:  # pylint: disable=too-few-public-methods
         data = self.object_to_dict()
         return json.dumps(data, indent=indent)
 
-    def object_to_dict(self):
+    def object_to_dict(self, excluded_fields=None):
+
+        if excluded_fields is None:
+            excluded_fields = {}
 
         data = {
             c.key: getattr(self, c.key)
             for c in inspect(self).mapper.column_attrs
-            # ~ if getattr(self, c.key) is not None
+            if c.key not in excluded_fields
         }
 
         for k in data.keys():
