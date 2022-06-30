@@ -21,7 +21,7 @@ from waitress import serve       # pylint: disable=import-error
 from alfa_CR6_backend.globals import import_settings
 from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session)
 from alfa_CR6_flask.admin_views import (AdminIndexView, OrderModelView, JarModelView, EventModelView, DocumentModelView)
-from alfa_CR6_flask.api import init_restless_api
+from alfa_CR6_flask.api import init_restless_api, init_restful_api
 
 SETTINGS = import_settings()
 
@@ -70,7 +70,8 @@ def main():
     admin = init_admin(app, db)
     logging.warning(f'admin:{admin}')
 
-    api_manager = init_restless_api(app, db)
+    init_restless_api(app, db)
+    init_restful_api(app, db)
     # ~ logging.warning(f'api_manager:{api_manager}'[:200])
 
     HOST, PORT = '0.0.0.0', 8090

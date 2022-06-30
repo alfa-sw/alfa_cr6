@@ -33,6 +33,7 @@ INSTALL_REQUIRES = [
     # ~ 'PyQt5',
     # ~ 'PyQtWebEngine',
     'flask-restless-swagger-2',
+    'flask_restful',
 ]
 
 
