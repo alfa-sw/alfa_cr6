@@ -25,6 +25,8 @@ def _create_printable_image_from_jar(jar):
     settings = import_settings()
 
     tmp_barcode_image = "/opt/alfa_cr6/tmp/tmp_file.png"
+    if os.environ.get("TMP_FILE_PNG"):
+        tmp_barcode_image = os.environ["TMP_FILE_PNG"]
 
     response = None
 

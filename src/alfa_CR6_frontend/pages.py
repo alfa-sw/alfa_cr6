@@ -552,8 +552,6 @@ class OrderPage(BaseStackedPage):
                         content=content,
                         ok_cb=dymo_print_jar,
                         ok_cb_args=[jar, ])
-                        # ~ ok_cb=dymo_print,
-                        # ~ ok_cb_args=[str(jar.barcode), ] + jar.extra_lines_to_print)
 
             elif col == 2:  # status
                 content = "{}"
@@ -659,7 +657,8 @@ class OrderPage(BaseStackedPage):
     def __on_new_order_clicked(self):
 
         try:
-            new_order = QApplication.instance().create_order()
+            # ~ new_order = QApplication.instance().create_order()
+            new_order = QApplication.instance().create_new_order()
             if new_order:
                 msg = tr_("created order:{}.").format(new_order.order_nr)
                 self.main_window.open_alert_dialog(msg, title="INFO")
@@ -703,35 +702,37 @@ class OrderPage(BaseStackedPage):
         n = min(n, 20)
         logging.warning(f"n:{n}")
         path_to_file = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
-        order = app.create_order(path_to_file, n_of_jars=n)
+        # ~ order = app.create_order(path_to_file, n_of_jars=n)
+        orders = app.create_orders_from_file(path_to_file, n_of_jars=n)
 
-        if order:
+        def print_label_cb_(jars_to_print):
+            for a in jars_to_print:
+                logging.warning(f"a:{a}")
+                response = dymo_print_jar(a)
+                logging.warning(f"response:{response}")
+                time.sleep(.05)
+
+        ok_flag = False
+        jars_to_print = []
+        for order in orders:
             properties = json.loads(order.json_properties)
             logging.warning(f"properties:{properties}")
             if properties.get('meta') and not properties['meta'].get('error'):
-                # ~ args_to_print = sorted([[str(j.barcode), ] + j.extra_lines_to_print for j in order.jars])
-                # ~ logging.warning(f"file_name:{file_name}, args_to_print:{args_to_print}")
 
-                args_to_print = list(order.jars)
-                args_to_print.sort(key=lambda j: str(j.barcode))
+                ok_flag = True
 
-                logging.warning(f"file_name:{file_name}, args_to_print:{args_to_print}")
+                jars_ = list(order.jars)
+                jars_.sort(key=lambda j: str(j.barcode))
+                jars_to_print += jars_
 
-                def cb_():
-                    for a in args_to_print:
-                        logging.warning(f"a:{a}")
-                        # ~ response = dymo_print(*a)
-                        response = dymo_print_jar(a)
-                        logging.warning(f"response:{response}")
-                        time.sleep(.05)
+        if ok_flag:
+            model.remove_file(file_name)
 
-                msg_ = tr_("confirm printing {} barcodes?").format(len(args_to_print))
-                # ~ self.main_window.open_input_dialog(message=msg_, content="{}".format(
-                    # ~ [l[0] for l in args_to_print]), ok_cb=cb_)
-                self.main_window.open_input_dialog(message=msg_, content="{}".format(
-                    [str(j.barcode) for j in args_to_print]), ok_cb=cb_)
+            logging.warning(f"file_name:{file_name}, jars_to_print:{jars_to_print}")
 
-                model.remove_file(file_name)
+            msg_ = tr_("confirm printing {} barcodes?").format(len(jars_to_print))
+            self.main_window.open_input_dialog(message=msg_, content="{}".format(
+                [str(j.barcode) for j in jars_to_print]), ok_cb=print_label_cb_, ok_cb_args=[jars_to_print, ])
 
         self.populate_file_table()
         self.populate_order_table()

@@ -448,7 +448,7 @@ class OrderParser:
         return properties
 
     @staticmethod
-    def parse_kcc_pdf(lines):  # pylint: disable=too-many-locals
+    def parse_kcc_pdf(lines, second_coat=False):  # pylint: disable=too-many-locals
 
         section_separator = "__________________________"
         section = 0
@@ -457,26 +457,47 @@ class OrderParser:
         ingredients = []
         extra_info = []
         properties = {}
+        is_double_coat = False
+
+        double_coat_tag = ''
+
         for l in lines:
 
             if not l:
                 continue
 
+            logging.error(f"l:{l}")
+
+            if not second_coat and ('SECOND' in l and 'COAT' in l):
+                is_double_coat = True
+                double_coat_tag = 'FIRST COAT'
+                continue
+
+            if second_coat and ('SECOND' in l and 'COAT' in l):
+                second_coat = False
+                double_coat_tag = 'SECOND COAT'
+                extra_info.append(l)
+
             if section_separator in l:
-                section += 1
-                section_cntr = 0
+                if not second_coat:
+                    section += 1
+                    section_cntr = 0
             else:
                 if section == 0:
                     toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
                     if len(toks) == 2:
                         meta[toks[0]] = toks[1]
                 elif section == 1:
-                    if section_cntr % 2 == 0:
-                        toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
-                        description = toks[0]
-                        name = toks[1]
-                    else:
-                        value = round(float(l.split('(G)')[0]), 4)
+                    toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                    description = toks[0]
+                    sub_toks = []
+                    for t in toks[1].split("      "):
+                        if t.strip():
+                            sub_toks.append(t.strip())
+                    logging.warning(f'sub_toks:{sub_toks}')
+                    if len(sub_toks) == 2:
+                        name, val = sub_toks[0:2]
+                        value = round(float(val.split('(G)')[0]), 4)
                         new_item = {}
                         new_item["pigment_name"] = name
                         new_item["weight(g)"] = value
@@ -493,17 +514,22 @@ class OrderParser:
             "extra_lines_to_print": [],
         }
 
-        _toks = meta.get("Number", []) and meta["Number"].split(' ')
+        _toks = meta.get("Number", []) and meta["Number"].split(    )
         _line = (_toks[1] if _toks[1:] else '')
-        properties["extra_lines_to_print"].append(f'{_line}')
         properties["meta"]["color code"] = f"{_line}"
 
+        properties["extra_lines_to_print"].append(f'{_line}')
+
         _line = (extra_info[1] if extra_info[1:] else '')
+        _line = " ".join([t.strip() for t in _line.split(" ") if t.strip()])
         properties["extra_lines_to_print"].append(f"{_line}")
+
+        if double_coat_tag:
+            properties["extra_lines_to_print"].append(double_coat_tag)
 
         # ~ logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
 
-        return properties
+        return properties, is_double_coat
 
     @staticmethod
     def parse_sikkens_pdf(lines):     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
@@ -605,10 +631,16 @@ class OrderParser:
                 properties['meta']['header'] = cls.sikkens_pdf_header
 
         elif cls.kcc_pdf_header.split(' ') == [t.strip() for t in lines[0].split(' ') if t]:
-            properties = cls.parse_kcc_pdf(lines)
 
-            if properties.get('meta'):
-                properties['meta']['header'] = cls.kcc_pdf_header
+            prop, second_coat = cls.parse_kcc_pdf(lines)
+            properties = [prop, ]
+            if second_coat:
+                prop, _ = cls.parse_kcc_pdf(lines, second_coat)
+                properties.append(prop)
+
+            for p in properties:
+                if p.get('meta'):
+                    p['meta']['header'] = cls.kcc_pdf_header
 
         elif cls.cpl_pdf_header in " ".join(lines[0:1]):
             properties = cls.parse_cpl_pdf(lines)
@@ -617,10 +649,12 @@ class OrderParser:
                 properties['meta']['header'] = cls.cpl_pdf_header
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
-        # ~ logg    ing.warning(f"cmd_:{cmd_}")
+        # ~ logging.warning(f"cmd_:{cmd_}")
         os.system(cmd_)
 
-        return properties
+        ret = properties if isinstance(properties, list) else [properties, ]
+
+        return ret
 
     @classmethod
     def parse_xml_order(cls, path_to_file):  # pylint: disable=too-many-locals
@@ -702,31 +736,23 @@ class OrderParser:
         _, file_extension = os.path.splitext(path_to_file)
         logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}, file_extension:{file_extension}")
 
-        properties = {}
+        properties_list = [{}]
 
         try:
             if mime_type == 'application/json' or 'json' in file_extension:
-                properties = self.parse_json_order(path_to_file)
-
+                properties_list = [self.parse_json_order(path_to_file), ]
             elif mime_type == 'text/xml' or '.xml' in file_extension:
-                properties = self.parse_xml_order(path_to_file)
+                properties_list = [self.parse_xml_order(path_to_file), ]
             elif mime_type == 'application/pdf' or '.pdf' in file_extension:
-                for fp in (None, 0, 5):
-                    try:
-                        # ~ logging.warning(f"trying fp:{fp} ...")
-                        properties = self.parse_pdf_order(path_to_file, fp)
-                        if properties.get('ingredients'):
-                            break
-                    except Exception as e:              # pylint: disable=broad-except
-                        logging.warning(e)
-
+                properties_list = self.parse_pdf_order(path_to_file)
             elif mime_type == 'text/plain':
-                properties = self.parse_txt_order(path_to_file)
+                properties_list = [self.parse_txt_order(path_to_file), ]
             else:
                 raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}")
 
-            if properties.get('meta'):
-                properties['meta']['file name'] = os.path.split(path_to_file)[1]
+            for properties in properties_list:
+                if properties.get('meta'):
+                    properties['meta']['file name'] = os.path.split(path_to_file)[1]
 
                 properties = self._substitute_aliases(properties)
 
@@ -741,15 +767,11 @@ class OrderParser:
 
             msg = tr_("format error in file:{} \n {}").format(path_to_file, e)
 
-            properties.setdefault("meta", {})
-            properties['meta']['error'] = msg
-
-            # ~ e = get_encoding(path_to_file)
-            with codecs.open(path_to_file, 'rb') as fd:
-                file_content = fd.read()[:10000]
-                properties['meta']['file_content'] = str(file_content)
+            for properties in properties_list:
+                properties.setdefault("meta", {})
+                properties['meta']['error'] = msg
 
             if self.exception_handler:
                 self.exception_handler(msg)
 
-        return properties
+        return properties_list

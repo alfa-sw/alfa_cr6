@@ -23,12 +23,12 @@ from functools import partial
 from PyQt5.QtCore import QEventLoop      # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
 
+from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
+
 import aiohttp  # pylint: disable=import-error
 import websockets  # pylint: disable=import-error
 
 from flask import Markup  # pylint: disable=import-error
-
-from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
 from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
 from alfa_CR6_backend.globals import (
@@ -1006,31 +1006,35 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return cloned_order
 
-    def create_order(self, path_to_file=None, n_of_jars=0):
+    def create_new_order(self, n_of_jars=0):
 
-        properties = {}
-        description = ""
-        order = None
+        return self._do_create_order({}, "", n_of_jars)
+
+    def create_orders_from_file(self, path_to_file=None, n_of_jars=0):
+
+        order_list = []
         try:
 
-            if path_to_file:
-                _parser = OrderParser(exception_handler=self.handle_exception)
-                properties = _parser.parse(path_to_file)
+            _parser = OrderParser(exception_handler=self.handle_exception)
+            # ~ properties = _parser.parse(path_to_file)
+            # ~ properties_list = properties if isinstance(properties, list) else [properties, ]
+            properties_list = _parser.parse(path_to_file)
 
+            for properties in properties_list:
+                description = ""
                 if properties.get('batchId'):
                     description = properties['batchId']
 
                 if not properties['meta'].get('error'):
                     order = self._do_create_order(properties, description, n_of_jars)
-            else:
-                order = self._do_create_order(properties, description, n_of_jars)
+                    order_list.append(order)
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
         logging.warning(f"path_to_file:{path_to_file}, n_of_jars:{n_of_jars}, order:{order}.")
 
-        return order
+        return order_list
 
     def run_a_coroutine_helper(self, coroutine_name, *args, **kwargs):
         logging.warning(
