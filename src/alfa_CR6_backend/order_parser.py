@@ -476,7 +476,6 @@ class OrderParser:
             if second_coat and ('SECOND' in l and 'COAT' in l):
                 second_coat = False
                 double_coat_tag = 'SECOND COAT'
-                extra_info.append(l)
 
             if section_separator in l:
                 if not second_coat:
@@ -525,7 +524,8 @@ class OrderParser:
         properties["extra_lines_to_print"].append(f"{_line}")
 
         if double_coat_tag:
-            properties["extra_lines_to_print"].append(double_coat_tag)
+            properties["extra_lines_to_print"].append(tr_(double_coat_tag))
+            properties["meta"]["extra_info"].append(double_coat_tag)
 
         # ~ logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
 

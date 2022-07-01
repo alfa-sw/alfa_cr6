@@ -420,12 +420,15 @@ class EditDialog(BaseDialog):
         ingredients = properties.get('ingredients', {})
         size = properties.get("size(cc)", "")
         meta = properties.get("meta", {})
-        title = meta.get("basic information", {}).get("kcc code", tr_("order n.:"))
-        meta_content = json.dumps(meta, indent=2, ensure_ascii=False)
+        extra_lines_to_print = properties.get("extra_lines_to_print", {})
 
+        meta_content = json.dumps(meta, indent=2, ensure_ascii=False)
+        extra_lines_ = "\n".join(extra_lines_to_print)
+        self.meta_text_edit.setText(f"{extra_lines_}\n{meta_content}")
+
+        title = meta.get("basic information", {}).get("kcc code", tr_("order n.:"))
         self.order_nr_lbl.setText(title)
 
-        self.meta_text_edit.setText(meta_content)
         txt_ = "{}".format(order_nr)
         if size:
             txt_ += " <small>({}cc)</small>".format(size)
