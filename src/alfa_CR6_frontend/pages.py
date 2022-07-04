@@ -1166,36 +1166,39 @@ class HomePage(BaseStackedPage):
         logging.warning(f"position:{position}")
 
         app = QApplication.instance()
-        if app.carousel_frozen:
+
+        try:
 
             moving_heads = [m for m in app.machine_head_dict.values() if m and m.status.get('status_level')
                             not in ['STANDBY', 'DIAGNOSTIC']]
 
-            if not moving_heads:
+            jar = None
+            for j in app.get_jar_runners().values():
+                if j and j['jar'] and j['jar'].position and (j['jar'].position == position):
+                    logging.warning(f"j['jar']:{j['jar']}")
+                    logging.warning(f"j['jar'].machine_head:{j['jar'].machine_head}")
+                    jar = j['jar']
+                    break
 
-                try:
-                    jar = None
-                    for j in app.get_jar_runners().values():
-                        if j and j['jar'] and j['jar'].position and (j['jar'].position == position):
-                            logging.warning(f"j['jar']:{j['jar']}")
-                            logging.warning(f"j['jar'].machine_head:{j['jar'].machine_head}")
-                            jar = j['jar']
-                            break
-                    if jar:
+            if jar:
 
-                        def _remove_jar():
-                            logging.warning(f"removing:{jar.barcode}")
-                            try:
-                                app.delete_jar_runner(jar.barcode)
-                                self.update_jar_pixmaps()
-                            except Exception:   # pylint: disable=broad-except
-                                logging.error(traceback.format_exc())
+                txt_ = f"{jar.barcode} " + ' '.join(jar.extra_lines_to_print)
+                QApplication.instance().main_window.menu_line_edit.setText(txt_)
 
-                        msg_ = tr_("confirm removing {}?").format(jar.barcode)
-                        self.main_window.open_input_dialog(message=msg_, content="", ok_cb=_remove_jar)
+                if app.carousel_frozen and not moving_heads:
+                        if jar:
+                            def _remove_jar():
+                                logging.warning(f"removing:{jar.barcode}")
+                                try:
+                                    app.delete_jar_runner(jar.barcode)
+                                    self.update_jar_pixmaps()
+                                except Exception:   # pylint: disable=broad-except
+                                    logging.error(traceback.format_exc())
+                            msg_ = tr_("confirm removing {}?").format(jar.barcode)
+                            self.main_window.open_input_dialog(message=msg_, content="", ok_cb=_remove_jar)
 
-                except Exception:   # pylint: disable=broad-except
-                    logging.error(traceback.format_exc())
+        except Exception:   # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
 
     @staticmethod
     def reserve_label_clicked(head_index):
