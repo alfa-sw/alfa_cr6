@@ -70,19 +70,22 @@ class OrderParser:
         try:
             if QApplication.instance():
                 _alias_file = os.path.join(QApplication.instance().settings.DATA_PATH, "pigment_alias.json")
-                with open(_alias_file, encoding='UTF-8') as f:
-                    alias_dict = json.load(f)
+            else:
+                _alias_file = "/opt/alfa_cr6/data/pigment_alias.json"
 
-                ingredients = properties.get('ingredients', [])
-                for i in ingredients:
-                    pigment_name = i["pigment_name"]
-                    for k, v in alias_dict.items():
-                        if pigment_name in v:
-                            i["pigment_name"] = k
-                            logging.warning(f"pigment_name:{pigment_name}, k:{k}")
-                            properties['meta'].setdefault('alias', [])
-                            properties['meta']['alias'].append((pigment_name, k))
-                            break
+            with open(_alias_file, encoding='UTF-8') as f:
+                alias_dict = json.load(f)
+
+            ingredients = properties.get('ingredients', [])
+            for i in ingredients:
+                pigment_name = i["pigment_name"]
+                for k, v in alias_dict.items():
+                    if pigment_name in v:
+                        i["pigment_name"] = k
+                        logging.warning(f"pigment_name:{pigment_name}, k:{k}")
+                        properties['meta'].setdefault('alias', [])
+                        properties['meta']['alias'].append((pigment_name, k))
+                        break
 
         except Exception as e:  # pylint:disable=broad-except
             logging.error(traceback.format_exc())
@@ -466,8 +469,6 @@ class OrderParser:
             if not l:
                 continue
 
-            logging.error(f"l:{l}")
-
             if not second_coat and ('SECOND' in l and 'COAT' in l):
                 is_double_coat = True
                 double_coat_tag = 'FIRST COAT'
@@ -493,11 +494,12 @@ class OrderParser:
                     for t in toks[1].split("      "):
                         if t.strip():
                             sub_toks.append(t.strip())
-                    logging.warning(f'sub_toks:{sub_toks}')
+                    # ~ logging.warning(f'sub_toks:{sub_toks}')
                     if len(sub_toks) == 2:
                         name, val = sub_toks[0:2]
                         value = round(float(val.split('(G)')[0]), 4)
                         new_item = {}
+                        name = ' '.join(name.split())
                         new_item["pigment_name"] = name
                         new_item["weight(g)"] = value
                         new_item["description"] = description
