@@ -426,7 +426,12 @@ class EditDialog(BaseDialog):
         extra_lines_ = "\n".join(extra_lines_to_print)
         self.meta_text_edit.setText(f"{extra_lines_}\n{meta_content}")
 
-        title = meta.get("basic information", {}).get("kcc code", tr_("order n.:"))
+        # ~ title = meta.get("basic information", {}).get("kcc code", tr_("order n.:"))
+        try:
+            title = meta["basic information"]["kcc code"]
+        except Exception:  # pylint: disable=broad-except
+            title = tr_("order n.:")
+
         self.order_nr_lbl.setText(title)
 
         txt_ = "{}".format(order_nr)

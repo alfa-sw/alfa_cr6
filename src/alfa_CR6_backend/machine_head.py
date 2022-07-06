@@ -307,7 +307,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 await self.ws_msg_handler(self.index, msg_dict)
 
     async def call_api_rest(self,   # pylint: disable=too-many-arguments
-                            path: str, method: str, data: dict, timeout=10, expected_ret_type='json'):
+                            path: str, method: str, data: dict, timeout=40, expected_ret_type='json'):
 
         ret = None
         try:
@@ -617,7 +617,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
         while True:
             try:
-                async with websockets.connect(ws_url) as websocket:
+                async with websockets.connect(ws_url, timeout=40) as websocket:
                     self.websocket = websocket
                     while True:
                         await self.handle_ws_recv()
