@@ -33,6 +33,7 @@ from sqlalchemy import (      # pylint: disable=import-error
 import sqlalchemy.ext.declarative  # pylint: disable=import-error
 from sqlalchemy.orm import (sessionmaker, relationship, validates)    # pylint: disable=import-error
 from sqlalchemy.inspection import inspect  # pylint: disable=import-error
+from sqlalchemy.ext.hybrid import hybrid_property
 
 import iso8601                       # pylint: disable=import-error
 
@@ -99,7 +100,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     json_properties = Column(UnicodeText, default="{}")
-    description = Column(Unicode)
+    description = Column(Unicode, default="")
 
     json_properties_schema = {}
 
@@ -146,25 +147,51 @@ class BaseModel:  # pylint: disable=too-few-public-methods
             logging.error(f"self:{self}, exc:{exc}")
         return value
 
-
     def object_to_json(self, indent=2):
+
         data = self.object_to_dict()
+        # ~ logging.warning(f"data:{data}")
         return json.dumps(data, indent=indent)
 
-    def object_to_dict(self, excluded_fields=None):
+    def object_to_dict(self, excluded_fields=None, include_relationship=0):
 
         if excluded_fields is None:
-            excluded_fields = {}
+            excluded_fields = []
 
-        data = {
-            c.key: getattr(self, c.key)
-            for c in inspect(self).mapper.column_attrs
-            if c.key not in excluded_fields
-        }
+        # ~ data = {
+            # ~ c.key: getattr(self, c.key)
+            # ~ for c in inspect(self).mapper.column_attrs
+            # ~ if c.key not in excluded_fields and 
+        # ~ }
 
-        for k in data.keys():
-            if isinstance(data[k], datetime):
-                data[k] = data[k].isoformat()
+        data = {'type': self.__tablename__}
+        c_keys = set(inspect(self).mapper.columns.keys())
+        for c_key in c_keys:
+            if c_key not in excluded_fields:
+                value = getattr(self, c_key)
+                if isinstance(value, datetime):
+                    data[c_key] = value.isoformat()
+                elif c_key == 'json_properties':
+                    data[c_key] = json.loads(value)
+                else:
+                    data[c_key] = value
+
+        if include_relationship:
+            r_keys = set(inspect(self).mapper.relationships.keys())
+            for r_key in r_keys:
+                value = getattr(self, r_key)
+                if isinstance(value, list):
+                    data[r_key] = []
+                    for i in value:
+                        if include_relationship == 1:
+                            data[r_key].append(i.id)
+                        elif include_relationship == 2:
+                            data[r_key].append(i.object_to_dict())
+                if isinstance(value, BaseModel):
+                    if include_relationship == 1:
+                        data[r_key] = value.id
+                    elif include_relationship == 2:
+                        data[r_key] = value.object_to_dict()
 
         return data
 
@@ -178,14 +205,24 @@ class BaseModel:  # pylint: disable=too-few-public-methods
     @classmethod
     def object_from_dict(cls, data_dict):
 
-        data_dict_cpy = {k: v for k, v in data_dict.items() if v is not None}
-        for k in data_dict_cpy:
-            if 'date' in k and isinstance(data_dict_cpy[k], str):
-                data_dict_cpy[k] = iso8601.parse_date(data_dict_cpy[k])
+        logging.warning(f"inspect(cls).mapper:{inspect(cls).mapper}")
+
+        data_dict_cpy = {}
+        for k in data_dict.items():
+            if v is not None:
+                try:
+                    if 'date' in k and isinstance(v, str):
+                        val = iso8601.parse_date(v)
+                    elif k == 'json_properties' and isinstance(v, dict):
+                        val = json.dumps(v, indent=2, ensure_ascii=False)
+                    data_dict_cpy[k] = val
+                except Exception:
+                    logging.warning(traceback.format_exc())
 
         obj = cls(**data_dict_cpy)
 
         return obj
+
 
 
 class User(Base, BaseModel):  # pylint: disable=too-few-public-methods
@@ -239,6 +276,13 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     def __str__(self):
         return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
+
+    @property
+    def file_name(self):
+
+        meta = json.loads(self.json_properties).get("meta") or {}
+        file_name = meta.get("file name", '')
+        return file_name
 
     @property
     def status(self):
@@ -322,9 +366,11 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         return ret
 
-    @property
+    @hybrid_property
     def barcode(self):
-        return compile_barcode(self.order.order_nr, self.index)
+        order_ = self.order
+        order_nr_ = order_.order_nr
+        return compile_barcode(order_nr_, self.index)
 
     @property
     def extra_lines_to_print(self):
