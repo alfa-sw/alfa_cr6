@@ -32,7 +32,8 @@ INSTALL_REQUIRES = [
     'iso8601',
     # ~ 'PyQt5',
     # ~ 'PyQtWebEngine',
-    'flask-restless-swagger-2',
+    # ~ 'flask-restless-swagger-2',
+    'Flask-Restless-NG',
     'flask_restful',
 ]
 

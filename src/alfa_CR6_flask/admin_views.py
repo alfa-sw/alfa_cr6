@@ -99,7 +99,7 @@ def _reformat_head_events_to_csv(temp_pth, db_session):
     logging.info(f"db_session:{db_session}")
 
     f_name = os.path.join(temp_pth, "head_events.csv")
-    with open(f_name, 'w', newline='') as csvfile:
+    with open(f_name, 'w', newline='', encoding='UTF-8') as csvfile:
         _writer = csv.writer(
             csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
@@ -204,7 +204,8 @@ class JarModelView(Base_ModelView):
         'status',
         'date_created',
         'date_modified',
-        'order_description',)
+        'order_description',
+        'order_file_name',)
 
     column_filters = (
         'status',
@@ -245,12 +246,18 @@ class JarModelView(Base_ModelView):
     def _display_order_description(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
 
         order = getattr(obj, 'order')
-        return OrderModelView.display_description(context, order, name)
+        return order.description
+
+    def _display_order_file_name(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
+
+        order = getattr(obj, 'order')
+        return order.file_name
 
     column_formatters = Base_ModelView.column_formatters.copy()
     column_formatters.update({
         'order': _display_order,
         'order_description': _display_order_description,
+        'order_file_name': _display_order_file_name,
     })
 
 
@@ -264,6 +271,7 @@ class OrderModelView(Base_ModelView):
         'date_created',
         'date_modified',
         'description',
+        'file_name',
     )
 
     column_labels = dict(jars='Cans status')
@@ -281,25 +289,6 @@ class OrderModelView(Base_ModelView):
         'order_nr',
         'date_created',
         'description',)
-
-    @staticmethod
-    def display_description(context, obj, name): # pylint: disable=unused-argument
-        description = getattr(obj, 'description', '')
-        json_properties = getattr(obj, 'json_properties')
-
-        _html = ''
-        try:
-            meta = json.loads(json_properties).get("meta") or {}
-            file_name = meta.get("file name", '')
-            _html += f"{file_name}  {description}"
-        except Exception:
-            _html = description
-            logging.warning(traceback.format_exc())
-
-        return Markup(_html)
-
-    def _display_description(self, context, obj, name): # pylint: disable=unused-argument
-        return self.display_description(context, obj, name)
 
     def _display_status(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
         _html = ''
@@ -347,7 +336,6 @@ class OrderModelView(Base_ModelView):
 
     column_formatters = Base_ModelView.column_formatters.copy()
     column_formatters.update({
-        'description': _display_description,
         'status': _display_status,
         'can status': _display_jar_status,
         'can position': _display_jar_position,
