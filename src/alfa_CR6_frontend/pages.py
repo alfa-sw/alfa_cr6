@@ -1172,6 +1172,8 @@ class HomePage(BaseStackedPage):
             moving_heads = [m for m in app.machine_head_dict.values() if m and m.status.get('status_level')
                             not in ['STANDBY', 'DIAGNOSTIC']]
 
+            logging.warning(f"moving_heads:{moving_heads}")
+
             jar = None
             for j in app.get_jar_runners().values():
                 if j and j['jar'] and j['jar'].position and (j['jar'].position == position):
@@ -1186,16 +1188,16 @@ class HomePage(BaseStackedPage):
                 QApplication.instance().main_window.menu_line_edit.setText(txt_)
 
                 if app.carousel_frozen and not moving_heads:
-                        if jar:
-                            def _remove_jar():
-                                logging.warning(f"removing:{jar.barcode}")
-                                try:
-                                    app.delete_jar_runner(jar.barcode)
-                                    self.update_jar_pixmaps()
-                                except Exception:   # pylint: disable=broad-except
-                                    logging.error(traceback.format_exc())
-                            msg_ = tr_("confirm removing {}?").format(jar.barcode)
-                            self.main_window.open_input_dialog(message=msg_, content="", ok_cb=_remove_jar)
+                    if jar:
+                        def _remove_jar():
+                            logging.warning(f"removing:{jar.barcode}")
+                            try:
+                                app.delete_jar_runner(jar.barcode)
+                                self.update_jar_pixmaps()
+                            except Exception:   # pylint: disable=broad-except
+                                logging.error(traceback.format_exc())
+                        msg_ = tr_("confirm removing {}?").format(jar.barcode)
+                        self.main_window.open_input_dialog(message=msg_, content="", ok_cb=_remove_jar)
 
         except Exception:   # pylint: disable=broad-except
             logging.error(traceback.format_exc())

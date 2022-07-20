@@ -57,11 +57,13 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
     tmp_file_path_ = "/opt/alfa_cr6/tmp/kcc_lot_specific_info.json"
     ret = False
 
-    logging.warning(f'int(time().strftime("%H")):{int(time.strftime("%H"))}')
+    _hr = int(time.strftime("%H"))
 
     _skip_condition = not force_download and os.path.exists(tmp_file_path_)
-    _skip_condition = _skip_condition and (int(time.strftime("%H")) > 6 or (
+    _skip_condition = _skip_condition and (_hr > 6 or (
                 time.time() - int(os.path.getmtime(tmp_file_path_)) < 12 * 60 * 60))
+
+    logging.warning(f'_hr:{_hr}, _skip_condition:{_skip_condition}')
 
     if not _skip_condition:
 
@@ -315,12 +317,13 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         path = "admin/platform?cmd=temperature_logs"
         method = "GET"
         data = {}
-        ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='html')
-        title = f'<b> head:{head_letter} temperature logs:</b> <a href="#">[back to top]</a>'
+        ret = await m.call_api_rest(path, method, data, timeout=30, expected_ret_type='json')
+        html_ = f'<b> head:{head_letter} temperature logs:</b> <a href="#">[back to top]</a><br/>'
+        html_ += "<br/>".join(ret)
 
         answer = json.dumps({
             'type': 'ask_platform_answer',
-            'value': title + html.unescape(ret),
+            'value': html.unescape(html_),
         })
         await websocket.send(answer)
 
