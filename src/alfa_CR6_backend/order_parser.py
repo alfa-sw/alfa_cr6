@@ -55,6 +55,7 @@ class OrderParser:
     sikkens_pdf_header = 'Anteprima Formula'
     kcc_pdf_header = "KCC Color Navi Formulation"
     cpl_pdf_header = "MixingSys"
+    DICHEMIX_pdf_header = "Dichemix"
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -330,7 +331,8 @@ class OrderParser:
             jsonschema.validate(schema_, content)
             properties = content
             for i in properties.get("ingredients", []):
-                i["pigment_name"] = i.pop("code")
+                if i.get("code") is not Null:
+                    i["pigment_name"] = i.pop("code")
                 i["weight(g)"] = round(float(i["weight(g)"]), 4)
 
             batchId = properties.get("batchId", '')
@@ -625,6 +627,7 @@ class OrderParser:
 
         with codecs.open(path_to_txt_file, encoding=e) as fd:
             lines = [l.strip() for l in fd.readlines()]
+            lines = [l for l in lines if l]
 
         if cls.sikkens_pdf_header in lines[0]:
             properties = cls.parse_sikkens_pdf(lines)
@@ -649,6 +652,12 @@ class OrderParser:
 
             if properties.get('meta'):
                 properties['meta']['header'] = cls.cpl_pdf_header
+
+        elif cls.DICHEMIX_pdf_header in lines[0]:
+            properties = cls.parse_cpl_pdf(lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.DICHEMIX_pdf_header
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
