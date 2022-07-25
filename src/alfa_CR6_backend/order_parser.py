@@ -542,7 +542,7 @@ class OrderParser:
         section = 0
         offset_value = 0
         section_cntr = 0
-        meta = {}
+        head_section = []
         ingredients = []
         extra_info = []
         formula_type = None
@@ -560,7 +560,8 @@ class OrderParser:
                     section_cntr = 0
                 else:
                     if section_cntr > 3:
-                        meta[section_cntr - 3] = [t.strip() for t in l.split("   ") if t]
+                        # ~ meta[section_cntr - 3] = [t.strip() for t in l.split("   ") if t]
+                        head_section.append(l)
                     else:
                         extra_info.append(l)
 
@@ -589,24 +590,38 @@ class OrderParser:
                 section_cntr += 1
                 extra_info.append(l)
 
-        meta["extra_info"] = ["\t".join([t.strip() for t in l.split("   ") if t]) for l in extra_info]
+        meta = {k: l.split() for k, l in enumerate(head_section)}
+        meta["extra_info"] = ["\t".join(l.split()) for l in extra_info]
         properties = {
             "meta": meta,
             "ingredients": ingredients,
         }
 
-        total_lt = float(properties['meta'][1][1].split(' ')[0])
-        total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
-        if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
-            logging.error(f"total_lt:{total_lt}, total_gr:{total_gr}")
-            properties = {}
+        total_lt = 0.
+        for i in head_section[0].split():
+            try:
+                total_lt = float(i)
+                break
+            except Exception:
+                pass
 
-        t1 = properties.get('meta', {}).get(1, [""])[0]
-        t2 = properties.get('meta', {}).get(1, ["", ""])[1]
-        t3 = properties.get('meta', {}).get(2, [""])[0]
-        t4 = properties.get('meta', {}).get(3, [""])[0]
-        properties["extra_lines_to_print"] = [f"{t1}", f"{t2} {t3}", f"{t4}"]
-        # ~ logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
+        if total_lt > 0.00001:
+            total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
+            if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
+                err = f"total_lt:{total_lt}, total_gr:{total_gr}"
+                logging.error(err)
+                properties = {'error': err}
+
+        extra_lines_to_print = []
+        try:
+            extra_lines_to_print.append(' '.join(head_section[0].split()[:-2]))
+            extra_lines_to_print.append(' '.join(head_section[0].split()[-2:]))
+            extra_lines_to_print.append(' '.join(head_section[1].split()[:-1]))
+            extra_lines_to_print.append(' '.join(head_section[2].split()[:-3]))
+        except Exception:
+            logging.error(traceback.format_exc())
+
+        properties["extra_lines_to_print"] = extra_lines_to_print
 
         return properties
 
