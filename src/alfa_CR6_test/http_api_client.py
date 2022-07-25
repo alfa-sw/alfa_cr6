@@ -13,6 +13,7 @@ import http.client
 import requests
 
 HOST = '127.0.0.1'
+# ~ HOST = '93.147.171.2'
 # ~ HOST = '192.168.0.100'
 # ~ HOST = '192.168.12.122'
 

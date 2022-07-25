@@ -331,7 +331,7 @@ class OrderParser:
             jsonschema.validate(schema_, content)
             properties = content
             for i in properties.get("ingredients", []):
-                if i.get("code") is not Null:
+                if i.get("code") is not None:
                     i["pigment_name"] = i.pop("code")
                 i["weight(g)"] = round(float(i["weight(g)"]), 4)
 
