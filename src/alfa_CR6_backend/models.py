@@ -95,6 +95,8 @@ def generate_order_nr():
 # ~ #######################
 class BaseModel:  # pylint: disable=too-few-public-methods
 
+    __tablename__ = None # this has to assigned in inheriting class
+
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -153,7 +155,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
         # ~ logging.warning(f"data:{data}")
         return json.dumps(data, indent=indent)
 
-    def object_to_dict(self, excluded_fields=None, include_relationship=0):
+    def object_to_dict(self, excluded_fields=None, include_relationship=0): # pylint: disable=too-many-branches
 
         if excluded_fields is None:
             excluded_fields = []
@@ -161,7 +163,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
         # ~ data = {
             # ~ c.key: getattr(self, c.key)
             # ~ for c in inspect(self).mapper.column_attrs
-            # ~ if c.key not in excluded_fields and 
+            # ~ if c.key not in excluded_fields and
         # ~ }
 
         data = {'type': self.__tablename__}
@@ -208,21 +210,21 @@ class BaseModel:  # pylint: disable=too-few-public-methods
         logging.warning(f"inspect(cls).mapper:{inspect(cls).mapper}")
 
         data_dict_cpy = {}
-        for k in data_dict.items():
-            if v is not None:
-                try:
-                    if 'date' in k and isinstance(v, str):
-                        val = iso8601.parse_date(v)
-                    elif k == 'json_properties' and isinstance(v, dict):
-                        val = json.dumps(v, indent=2, ensure_ascii=False)
-                    data_dict_cpy[k] = val
-                except Exception:
-                    logging.warning(traceback.format_exc())
+        for k, v in data_dict.items():
+            try:
+                if 'date' in k and isinstance(v, str):
+                    val = iso8601.parse_date(v)
+                elif k == 'json_properties' and isinstance(v, dict):
+                    val = json.dumps(v, indent=2, ensure_ascii=False)
+                else:
+                    val = v
+                data_dict_cpy[k] = val
+            except Exception: # pylint: disable=broad-except
+                logging.warning(traceback.format_exc())
 
         obj = cls(**data_dict_cpy)
 
         return obj
-
 
 
 class User(Base, BaseModel):  # pylint: disable=too-few-public-methods
@@ -307,6 +309,11 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         return sts_
 
+    @property
+    def deleted(self):
+
+        flag = self.jars and not [j for j in self.jars if j.position != "DELETED"]
+        return flag
 
 class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 

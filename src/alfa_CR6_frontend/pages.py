@@ -44,6 +44,8 @@ g_settings = import_settings()
 
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
 
+    page_limit = 20
+
     def __init__(self, parent, *args):
 
         super().__init__(parent, *args)
@@ -140,11 +142,9 @@ class FileTableModel(BaseTableModel):
 
 class OrderTableModel(BaseTableModel):
 
-    def __init__(self, parent, *args):
-        super().__init__(parent, *args)
-        self.session = QApplication.instance().db_session
-        self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr."), tr_("file name")]
-        filter_text = parent.search_order_line.text()
+    page_limit = 50
+
+    def __original_load_data(self, filter_text):
 
         if self.session:
             query_ = self.session.query(Order)
@@ -171,6 +171,54 @@ class OrderTableModel(BaseTableModel):
 
         else:
             self.results = [[]]
+
+    def __load_data(self, filter_text):
+
+        if self.session:
+
+            query_ = self.session.query(Order)
+            query_ = query_.filter(Order.order_nr.contains(filter_text))
+            query_ = query_.order_by(Order.order_nr.desc()).limit(5 * self.page_limit)
+
+            t = time.time()
+            list_ = query_.all()
+            logging.warning(f"1 len(list_): {len(list_)}, dt:{time.time() - t}")
+
+            t = time.time()
+            self.results = []
+            cntr = 0
+            for o in list_:
+                if not o.deleted:
+                    try:
+                        file_name = o.get_json_property('meta', {}).get("file name", '')
+                    except Exception:  # pylint: disable=broad-except
+                        logging.warning(traceback.format_exc())
+                        file_name = ''
+                    item = ["", "", o.status, o.order_nr, file_name]
+                    self.results.append(item)
+                    cntr += 1
+                    if cntr >= self.page_limit:
+                        break
+
+            self.results.sort(key=lambda x: x[3], reverse=True)
+            logging.warning(f"2 len(self.results):{len(self.results)}, dt:{time.time() - t}")
+
+        else:
+            self.results = [[]]
+
+    def __init__(self, parent, *args):
+
+        super().__init__(parent, *args)
+        self.session = QApplication.instance().db_session
+        self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr."), tr_("file name")]
+        filter_text = parent.search_order_line.text()
+
+        t0 = time.time()
+        logging.warning("")
+
+        self.__load_data(filter_text)
+
+        logging.warning(f"dt tot:{time.time() - t0}")
 
     def remove_order(self, order_nr):
         logging.warning(f"order_nr:{order_nr}, self.session:{self.session}")
@@ -217,30 +265,31 @@ class OrderTableModel(BaseTableModel):
 
 class JarTableModel(BaseTableModel):
 
-    def __init__(self, parent, *args):
+    page_limit = 50
 
-        super().__init__(parent, *args)
-        self.session = QApplication.instance().db_session
-        self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("barcode")]
-        filter_text = parent.search_jar_line.text()
-        order_nr = None
+    def __load_data(self, filter_text):
+
+        _order_model = self.parent().order_model
+
         sel_model = self.parent().order_table_view.selectionModel()
         sel_orders = sel_model.selectedRows()
         if sel_orders:
             row = sel_orders[0].row()
-            model = sel_orders[0].model()
-            order_nr = model.results[row][3]
+            order_nr = _order_model.results[row][3]
+            sel_order_nrs = [order_nr, ]
+        else:
+            sel_order_nrs = [r[3] for r in _order_model.results]
+
+        logging.warning(f"sel_order_nrs:{sel_order_nrs}")
 
         if self.session:
             query_ = self.session.query(Jar)
             query_ = query_.filter(Jar.position != "DELETED")
             if filter_text:
                 query_ = query_.filter(Jar.status.contains(filter_text))
-            if order_nr is not None:
-                order = self.session.query(Order).filter(Order.order_nr == order_nr).first()
-                if order:
-                    query_ = query_.filter(Jar.order == order)
-            query_ = query_.order_by(Jar.index.desc()).limit(100)
+            if sel_order_nrs:
+                query_ = query_.join(Order).filter(Order.order_nr.in_(sel_order_nrs))
+            query_ = query_.order_by(Jar.index.desc()).limit(self.page_limit)
 
             def _fmt_status(o):
                 if o.unknown_pigments or o.insufficient_pigments:
@@ -252,6 +301,15 @@ class JarTableModel(BaseTableModel):
             self.results.sort(key=lambda x: x[3], reverse=True)
         else:
             self.results = [[]]
+
+    def __init__(self, parent, *args):
+
+        super().__init__(parent, *args)
+        self.session = QApplication.instance().db_session
+        self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("barcode")]
+        filter_text = parent.search_jar_line.text()
+
+        self.__load_data(filter_text)
 
     def get_jar(self, barcode):
 
@@ -423,6 +481,10 @@ class OrderPage(BaseStackedPage):
         self.search_file_table_last_time = 0
         self.search_jar_table_last_time = 0
 
+        self.order_model = 0
+        self.file_model = 0
+        self.jar_model = 0
+
         self.edit_aliases_btn.clicked.connect(self.main_window.open_alias_dialog)
 
     def populate_order_table(self):
@@ -431,14 +493,14 @@ class OrderPage(BaseStackedPage):
         if t - self.search_order_table_last_time > 0.1:
             self.search_order_table_last_time = t
             try:
-                order_model = OrderTableModel(self)
-                self.order_table_view.setModel(order_model)
+                self.order_model = OrderTableModel(self)
+                self.order_table_view.setModel(self.order_model)
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
             self.search_order_box.setTitle(
                 tr_("[{}] Orders: search by order nr.").format(
-                    order_model.rowCount()))
+                    self.order_model.rowCount()))
 
     def populate_jar_table(self):
 
@@ -446,11 +508,11 @@ class OrderPage(BaseStackedPage):
         if t - self.search_jar_table_last_time > 0.1:
             self.search_jar_table_last_time = t
             try:
-                jar_model = JarTableModel(self)
-                self.jar_table_view.setModel(jar_model)
+                self.jar_model = JarTableModel(self)
+                self.jar_table_view.setModel(self.jar_model)
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
-            self.search_jar_box.setTitle(tr_("[{}] Jars:   search by status").format(jar_model.rowCount()))
+            self.search_jar_box.setTitle(tr_("[{}] Jars:   search by status").format(self.jar_model.rowCount()))
 
     def populate_file_table(self):
 
@@ -458,12 +520,12 @@ class OrderPage(BaseStackedPage):
         if t - self.search_file_table_last_time > 0.1:
             self.search_file_table_last_time = t
             try:
-                file_model = FileTableModel(self, g_settings.WEBENGINE_DOWNLOAD_PATH)
-                self.file_table_view.setModel(file_model)
+                self.file_model = FileTableModel(self, g_settings.WEBENGINE_DOWNLOAD_PATH)
+                self.file_table_view.setModel(self.file_model)
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
-            self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(file_model.rowCount()))
+            self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(self.file_model.rowCount()))
 
     @staticmethod
     def __on_purge_all_clicked():
