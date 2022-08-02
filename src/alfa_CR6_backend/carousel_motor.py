@@ -169,6 +169,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_load_lifter_is_up(self, jar):
 
+        load_lifter_is_up_long_timeout = 30.3
+        try:
+            if hasattr(self.settings, "LOAD_LIFTER_IS_UP_LONG_TIMEOUT"):
+                load_lifter_is_up_long_timeout = float(self.settings.LOAD_LIFTER_IS_UP_LONG_TIMEOUT)
+        except Exception:   # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
+        logging.warning(f"load_lifter_is_up_long_timeout:{load_lifter_is_up_long_timeout}")
+
         D = self.get_machine_head_by_letter("D")
         C = self.get_machine_head_by_letter("C")
 
@@ -180,7 +189,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 D.status.get('status_level') != 'STANDBY' or
                 D.status.get('crx_outputs_status', 0x0) & 0x02 or
                 not _lifter_r_already_engaged()):
-            timeout_ = 30.3
+            timeout_ = load_lifter_is_up_long_timeout
         else:
             timeout_ = 5.5
 
