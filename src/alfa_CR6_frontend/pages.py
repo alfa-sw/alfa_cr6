@@ -144,7 +144,7 @@ class OrderTableModel(BaseTableModel):
 
     page_limit = 20
 
-    def __original_load_data(self, filter_text):
+    def __original_load_results(self, filter_text):
 
         if self.session:
             query_ = self.session.query(Order)
@@ -172,7 +172,7 @@ class OrderTableModel(BaseTableModel):
         else:
             self.results = [[]]
 
-    def __load_data(self, filter_text):
+    def __load_results(self, filter_text):
 
         if self.session:
 
@@ -215,7 +215,7 @@ class OrderTableModel(BaseTableModel):
         t0 = time.time()
         # ~ logging.warning("")
 
-        self.__load_data(filter_text)
+        self.__load_results(filter_text)
 
         logging.warning(f"len(self.results):{len(self.results)}, dt tot:{time.time() - t0}")
 
@@ -266,7 +266,7 @@ class JarTableModel(BaseTableModel):
 
     page_limit = 50
 
-    def __load_data(self, filter_text):
+    def __load_results(self, filter_text):
 
         _order_model = self.parent().order_model
 
@@ -308,7 +308,7 @@ class JarTableModel(BaseTableModel):
         self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("barcode")]
         filter_text = parent.search_jar_line.text()
 
-        self.__load_data(filter_text)
+        self.__load_results(filter_text)
 
     def get_jar(self, barcode):
 
