@@ -280,7 +280,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "jar"
 
-    row_count_limt = 9 * 1000
+    row_count_limt = 10 * 1000
 
     status_choices = ['NEW', 'PROGRESS', 'DONE', 'ERROR', 'VIRTUAL']
     position_choices = ["REMOVED", "_", "LIFTR_UP", "LIFTR_DOWN", "IN", "OUT", "WAIT", "DELETED", ] + list("ABCDEF")
@@ -385,12 +385,12 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "order"
 
+    row_count_limt = 10 * 1000
+
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
 
     order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
     jars = relationship("Jar", cascade="all, delete-orphan")
-
-    row_count_limt = 5 * 1000
 
     json_properties = Column(Unicode, default='{"meta": "", "ingrdients": []}')
 
@@ -468,9 +468,11 @@ class dbEventManager:
     def do_delete_pending_objects(self, session, flush_context, instances=None):  # pylint: disable=unused-argument
 
         if self.to_be_deleted_object_list:
-            for item in list(self.to_be_deleted_object_list)[:500]:
+            for item in list(self.to_be_deleted_object_list)[:100]:
                 cls, id_ = item
-                session.query(cls).filter(cls.id == id_).delete()
+                obj = session.query(cls).filter(cls.id == id_).first()
+                if obj:
+                    session.delete(obj)
                 self.to_be_deleted_object_list.remove(item)
 
             logging.warning(f"objects to be deleted:{len(self.to_be_deleted_object_list)}")
