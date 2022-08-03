@@ -28,12 +28,20 @@ from sqlalchemy import (      # pylint: disable=import-error
     DateTime,
     ForeignKey,
     UniqueConstraint,
-    event)
+    event,
+    # ~ select,
+    # ~ func,
+)
 
 import sqlalchemy.ext.declarative  # pylint: disable=import-error
-from sqlalchemy.orm import (sessionmaker, relationship, validates)    # pylint: disable=import-error
+from sqlalchemy.orm import (  # pylint: disable=import-error
+    sessionmaker,
+    relationship,
+    validates,
+    # ~ column_property,
+)
 from sqlalchemy.inspection import inspect  # pylint: disable=import-error
-from sqlalchemy.ext.hybrid import hybrid_property
+# ~ from sqlalchemy.ext.hybrid import hybrid_property
 
 import iso8601                       # pylint: disable=import-error
 
@@ -95,7 +103,7 @@ def generate_order_nr():
 # ~ #######################
 class BaseModel:  # pylint: disable=too-few-public-methods
 
-    __tablename__ = None # this has to assigned in inheriting class
+    __tablename__ = None  # this has to assigned in inheriting class
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
     date_created = Column(DateTime, default=datetime.utcnow)
@@ -155,7 +163,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
         # ~ logging.warning(f"data:{data}")
         return json.dumps(data, indent=indent)
 
-    def object_to_dict(self, excluded_fields=None, include_relationship=0): # pylint: disable=too-many-branches
+    def object_to_dict(self, excluded_fields=None, include_relationship=0):  # pylint: disable=too-many-branches
 
         if excluded_fields is None:
             excluded_fields = []
@@ -219,7 +227,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
                 else:
                     val = v
                 data_dict_cpy[k] = val
-            except Exception: # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logging.warning(traceback.format_exc())
 
         obj = cls(**data_dict_cpy)
@@ -268,56 +276,11 @@ class Event(Base, BaseModel):  # pylint: disable=too-few-public-methods
         return "{}_{}".format(self.name, self.date_created)
 
 
-class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
-
-    __tablename__ = "order"
-    order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
-    jars = relationship("Jar", cascade="all, delete-orphan")
-
-    json_properties = Column(Unicode, default='{"meta": "", "ingrdients": []}')
-
-    def __str__(self):
-        return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
-
-    @property
-    def file_name(self):
-
-        meta = json.loads(self.json_properties).get("meta") or {}
-        file_name = meta.get("file name", '')
-        return file_name
-
-    @property
-    def status(self):
-        sts_ = "NEW"
-        counters = {}
-
-        for j in self.jars:
-            if j.position != "DELETED":
-                counters.setdefault(j.status, 0)
-                counters[j.status] += 1
-
-        if counters.get("ERROR"):
-            sts_ = "ERROR"
-        elif counters.get("PROGRESS"):
-            sts_ = "PROGRESS"
-        elif counters.get("NEW") and counters.get("DONE"):
-            sts_ = "PARTIAL"
-        elif not counters.get("NEW") and counters.get("DONE"):
-            sts_ = "DONE"
-
-        # ~ logging.warning(f"sts_:{sts_}, counters:{counters}")
-
-        return sts_
-
-    @property
-    def deleted(self):
-
-        flag = self.jars and not [j for j in self.jars if j.position != "DELETED"]
-        return flag
-
 class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "jar"
+
+    row_count_limt = 9 * 1000
 
     status_choices = ['NEW', 'PROGRESS', 'DONE', 'ERROR', 'VIRTUAL']
     position_choices = ["REMOVED", "_", "LIFTR_UP", "LIFTR_DOWN", "IN", "OUT", "WAIT", "DELETED", ] + list("ABCDEF")
@@ -373,11 +336,11 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         return ret
 
-    @hybrid_property
+    @property
     def barcode(self):
         order_ = self.order
-        order_nr_ = order_.order_nr
-        return compile_barcode(order_nr_, self.index)
+        order_nr_ = order_ and order_.order_nr
+        return order_nr_ and compile_barcode(order_nr_, self.index)
 
     @property
     def extra_lines_to_print(self):
@@ -418,6 +381,65 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         return ingredients
 
 
+class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
+
+    __tablename__ = "order"
+
+    id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
+
+    order_nr = Column(BigInteger, unique=True, nullable=False, default=generate_order_nr)
+    jars = relationship("Jar", cascade="all, delete-orphan")
+
+    row_count_limt = 5 * 1000
+
+    json_properties = Column(Unicode, default='{"meta": "", "ingrdients": []}')
+
+    # ~ has_not_deleted = column_property(
+    # ~ select([Jar.id]).
+    # ~ where((Jar.order_id==id) & (Jar.position != "DELETED")).
+    # ~ as_scalar())
+
+    def __str__(self):
+        return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
+
+    @property
+    def file_name(self):
+
+        meta = json.loads(self.json_properties).get("meta") or {}
+        file_name = meta.get("file name", '')
+        return file_name
+
+    @property
+    def status(self):
+        sts_ = "NEW"
+        counters = {}
+
+        for j in self.jars:
+            if j.position != "DELETED":
+                counters.setdefault(j.status, 0)
+                counters[j.status] += 1
+
+        if counters.get("ERROR"):
+            sts_ = "ERROR"
+        elif counters.get("PROGRESS"):
+            sts_ = "PROGRESS"
+        elif counters.get("NEW") and counters.get("DONE"):
+            sts_ = "PARTIAL"
+        elif not counters.get("NEW") and counters.get("DONE"):
+            sts_ = "DONE"
+
+        # ~ logging.warning(f"sts_:{sts_}, counters:{counters}")
+
+        return sts_
+
+    @property
+    def deleted(self):
+
+        # ~ flag = (not self.jars) or self.has_not_deleted
+        flag = (not self.jars) or [j for j in self.jars if j.position != "DELETED"]
+        return not flag
+
+
 class Document(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     """ General purpose model (table) to let the integration of future features be smoother.
@@ -445,10 +467,13 @@ class dbEventManager:
 
     def do_delete_pending_objects(self, session, flush_context, instances=None):  # pylint: disable=unused-argument
 
-        for item in list(self.to_be_deleted_object_list)[:50]:
-            cls, id_ = item
-            session.query(cls).filter(cls.id == id_).delete()
-            self.to_be_deleted_object_list.remove(item)
+        if self.to_be_deleted_object_list:
+            for item in list(self.to_be_deleted_object_list)[:500]:
+                cls, id_ = item
+                session.query(cls).filter(cls.id == id_).delete()
+                self.to_be_deleted_object_list.remove(item)
+
+            logging.warning(f"objects to be deleted:{len(self.to_be_deleted_object_list)}")
 
     def receive_after_update(self, mapper, connection, target):  # pylint: disable=unused-argument
 
@@ -464,6 +489,7 @@ class dbEventManager:
         if exceeding_objects:
             for o in exceeding_objects:
                 self.to_be_deleted_object_list.add((target.__class__, o.id))
+            logging.warning(f"objects to be deleted:{len(self.to_be_deleted_object_list)}")
 
     def install_listeners(self):
 

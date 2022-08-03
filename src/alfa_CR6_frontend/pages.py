@@ -142,7 +142,7 @@ class FileTableModel(BaseTableModel):
 
 class OrderTableModel(BaseTableModel):
 
-    page_limit = 50
+    page_limit = 20
 
     def __original_load_data(self, filter_text):
 
@@ -177,14 +177,15 @@ class OrderTableModel(BaseTableModel):
         if self.session:
 
             query_ = self.session.query(Order)
-            query_ = query_.filter(Order.order_nr.contains(filter_text))
-            query_ = query_.order_by(Order.order_nr.desc()).limit(5 * self.page_limit)
+            if filter_text:
+                query_ = query_.filter(Order.order_nr.contains(filter_text))
+            # ~ query_ = query_.filter(Order.has_not_deleted)
+            query_ = query_.order_by(Order.order_nr.desc())
+            # ~ query_ = query_.limit(self.page_limit)
+            query_ = query_.limit(5 * self.page_limit).from_self()
 
-            t = time.time()
             list_ = query_.all()
-            logging.warning(f"1 len(list_): {len(list_)}, dt:{time.time() - t}")
 
-            t = time.time()
             self.results = []
             cntr = 0
             for o in list_:
@@ -199,9 +200,7 @@ class OrderTableModel(BaseTableModel):
                     cntr += 1
                     if cntr >= self.page_limit:
                         break
-
             self.results.sort(key=lambda x: x[3], reverse=True)
-            logging.warning(f"2 len(self.results):{len(self.results)}, dt:{time.time() - t}")
 
         else:
             self.results = [[]]
@@ -214,11 +213,11 @@ class OrderTableModel(BaseTableModel):
         filter_text = parent.search_order_line.text()
 
         t0 = time.time()
-        logging.warning("")
+        # ~ logging.warning("")
 
         self.__load_data(filter_text)
 
-        logging.warning(f"dt tot:{time.time() - t0}")
+        logging.warning(f"len(self.results):{len(self.results)}, dt tot:{time.time() - t0}")
 
     def remove_order(self, order_nr):
         logging.warning(f"order_nr:{order_nr}, self.session:{self.session}")
@@ -280,7 +279,7 @@ class JarTableModel(BaseTableModel):
         else:
             sel_order_nrs = [r[3] for r in _order_model.results]
 
-        logging.warning(f"sel_order_nrs:{sel_order_nrs}")
+        # ~ logging.warning(f"sel_order_nrs:{sel_order_nrs}")
 
         if self.session:
             query_ = self.session.query(Jar)

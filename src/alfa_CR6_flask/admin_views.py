@@ -233,10 +233,8 @@ class JarModelView(Base_ModelView):
     def _display_order(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
         order = getattr(obj, 'order')
 
-        link = f"/order/details/?id={order.id}"
-        _html = ''
         try:
-            _html += f"""<a href="{link}">{order.order_nr}</a>"""
+            _html = order and f"""<a href="/order/details/?id={order.id}">{order.order_nr}</a>"""
         except Exception:
             _html = order
             logging.warning(traceback.format_exc())
@@ -246,12 +244,12 @@ class JarModelView(Base_ModelView):
     def _display_order_description(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
 
         order = getattr(obj, 'order')
-        return order.description
+        return order and order.description
 
     def _display_order_file_name(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
 
         order = getattr(obj, 'order')
-        return order.file_name
+        return order and order.file_name
 
     column_formatters = Base_ModelView.column_formatters.copy()
     column_formatters.update({
@@ -273,6 +271,8 @@ class OrderModelView(Base_ModelView):
         'description',
         'file_name',
     )
+
+    # ~ column_exclude_list = ('has_not_deleted', )
 
     column_labels = dict(jars='Cans status')
 
