@@ -205,6 +205,7 @@ class JarModelView(Base_ModelView):
         'date_created',
         'date_modified',
         'order_description',
+        'is_deleted',
         'order_file_name',)
 
     column_filters = (
@@ -270,6 +271,7 @@ class OrderModelView(Base_ModelView):
         'date_modified',
         'description',
         'file_name',
+        'is_deleted',
     )
 
     # ~ column_exclude_list = ('has_not_deleted', )
@@ -291,11 +293,11 @@ class OrderModelView(Base_ModelView):
         'description',)
 
     def _display_status(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
+
         _html = ''
         try:
-            _html += f"""{obj.status}"""
+            _html = f"""{obj.status}"""
         except Exception:
-            _html = ''
             logging.warning(traceback.format_exc())
 
         return Markup(_html)

@@ -12,6 +12,7 @@ import traceback
 import json
 import uuid
 import time
+# ~ import sqlite3
 from datetime import (date, datetime)
 
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
@@ -263,14 +264,15 @@ class Command(Base, BaseModel):  # pylint: disable=too-few-public-methods
 class Event(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "event"
+
+    row_count_limt = 10 * 1000
+
     name = Column(Unicode(32), nullable=False, index=True)
     UniqueConstraint("name", "date_created")
 
     level = Column(Unicode(16))
     severity = Column(Unicode(16))
     source = Column(Unicode(32))
-
-    # ~ row_count_limt = 100 * 1000
 
     def __str__(self):
         return "{}_{}".format(self.name, self.date_created)
@@ -294,6 +296,9 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     order_id = Column(Unicode, ForeignKey("order.id"), nullable=False)
     order = relationship("Order", back_populates="jars")
+
+    is_deleted = Column(Unicode)
+    reserved = Column(Unicode)
 
     machine_head = None
     t0 = None
@@ -394,10 +399,8 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     json_properties = Column(Unicode, default='{"meta": "", "ingrdients": []}')
 
-    # ~ has_not_deleted = column_property(
-    # ~ select([Jar.id]).
-    # ~ where((Jar.order_id==id) & (Jar.position != "DELETED")).
-    # ~ as_scalar())
+    is_deleted = Column(Unicode)
+    reserved = Column(Unicode)
 
     def __str__(self):
         return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
@@ -435,9 +438,17 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
     @property
     def deleted(self):
 
+        return hasattr(self, 'is_deleted') and getattr(self, 'is_deleted')
+
         # ~ flag = (not self.jars) or self.has_not_deleted
-        flag = (not self.jars) or [j for j in self.jars if j.position != "DELETED"]
-        return not flag
+        # ~ flag = (not self.jars) or [j for j in self.jars if j.position != "DELETED"]
+        # ~ return not flag
+        # ~ try:
+            # ~ ret = self.is_deleted
+        # ~ except Exception:
+            # ~ ret = None
+
+        # ~ return ret
 
 
 class Document(Base, BaseModel):  # pylint: disable=too-few-public-methods
@@ -457,6 +468,32 @@ class Document(Base, BaseModel):  # pylint: disable=too-few-public-methods
         return "{}_{}_{}".format(self.name, self.type, self.date_created)
 
 # ~ #######################
+
+
+def apply_table_alterations(engine):
+
+    stmts = [
+        'ALTER TABLE "order" ADD COLUMN reserved VARCHAR;',
+        'ALTER TABLE "jar" ADD COLUMN reserved VARCHAR;',
+        'ALTER TABLE "order" ADD COLUMN is_deleted VARCHAR;',
+        'ALTER TABLE "jar" ADD COLUMN is_deleted VARCHAR;',
+        'ALTER TABLE "order" DROP COLUMN status;'
+    ]
+
+    successfully_executed = []
+    try:
+        from sqlalchemy import DDL # pylint: disable=import-outside-toplevel
+        for stmt in stmts:
+            try:
+                engine.execute(DDL(stmt))
+                successfully_executed.append(stmt)
+            except Exception as e: # pylint: disable=broad-except
+                logging.info(f"Error executing stmt:{stmt}, e:{e}")
+    except Exception: # pylint: disable=broad-except
+        logging.warning(traceback.format_exc())
+
+    logging.warning(f"successfully_executed({len(successfully_executed)}):{successfully_executed}")
+
 
 
 class dbEventManager:
@@ -534,6 +571,8 @@ def init_models(sqlite_connect_string):
 
     Session = sessionmaker(bind=engine)
     global_session = Session()
+
+    apply_table_alterations(engine)
 
     e = dbEventManager(global_session)
     e.install_listeners()

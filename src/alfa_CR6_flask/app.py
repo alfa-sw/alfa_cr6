@@ -19,7 +19,7 @@ import flask_admin  # pylint: disable=import-error
 from waitress import serve       # pylint: disable=import-error
 
 from alfa_CR6_backend.globals import import_settings
-from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session)
+from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session, apply_table_alterations)
 from alfa_CR6_flask.admin_views import (AdminIndexView, OrderModelView, JarModelView, EventModelView, DocumentModelView)
 from alfa_CR6_flask.api import init_restless_api, init_restful_api
 
@@ -35,6 +35,9 @@ def init_db(app):
     db = flask_sqlalchemy.SQLAlchemy()
     db.init_app(app)
     set_global_session(db.session)
+    engine = db.get_engine(app=app)
+    apply_table_alterations(engine)
+
     return db
 
 

@@ -1,0 +1,110 @@
+{
+  "type": "object",
+  "title": "SW CRx formula file",
+  "description": "A Sherwin-Williams formula file for CRx",
+  "properties": {
+    "header": {
+      "const": "SW CRx formula file"
+    },
+    "version": {
+      "type": "string"
+    },
+    "system": {
+      "type": "string"
+    },
+    "operatorId": {
+      "type": "string"
+    },
+    "jobId": {
+      "type": "string"
+    },
+    "batchId": {
+      "type": "number"
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "brand": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string"
+        },
+        "colorCode": {
+          "type": "string"
+        },
+        "variantCode": {
+          "type": "string"
+        },
+        "colorName": {
+          "type": "string"
+        },
+        "secondName": {
+          "type": "string"
+        },
+        "year": {
+          "type": "string"
+        },
+        "remark": {
+          "type": "string"
+        },
+        "quality": {
+          "type": "string"
+        },
+        "undercoat": {
+          "type": "string"
+        },
+        "pictograms": {
+          "type": "string"
+        },
+        "dateModified": {
+          "type": "string"
+        },
+        "quantity(l)": {
+          "type": "number",
+          "description": "The requested quantity in liters"
+        },
+        "cumulative": {
+          "type": "number"
+        },
+        "extraInfo": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": []
+    },
+    "ingredients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "weight(g)": {
+            "type": "number",
+            "description": "The ingredient's weight in grams"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "weight(g)"
+        ]
+      }
+    }
+  },
+  "required": [
+    "header",
+    "version",
+    "system",
+    "meta",
+    "ingredients"
+  ]
+}
+

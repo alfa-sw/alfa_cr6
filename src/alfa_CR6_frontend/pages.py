@@ -19,6 +19,9 @@ import codecs
 import subprocess
 # ~ import webbrowser
 from functools import partial
+# ~ from itertools import islice
+
+from sqlalchemy.sql import or_
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (Qt, QVariant, QAbstractTableModel)
@@ -40,7 +43,9 @@ from alfa_CR6_backend.globals import (
 
 from alfa_CR6_frontend.debug_page import simulate_read_barcode
 
+
 g_settings = import_settings()
+
 
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
 
@@ -142,7 +147,7 @@ class FileTableModel(BaseTableModel):
 
 class OrderTableModel(BaseTableModel):
 
-    page_limit = 20
+    page_limit = 30
 
     def __original_load_results(self, filter_text):
 
@@ -174,36 +179,34 @@ class OrderTableModel(BaseTableModel):
 
     def __load_results(self, filter_text):
 
+        t0 = time.time()
+
         if self.session:
 
             query_ = self.session.query(Order)
-            if filter_text:
-                query_ = query_.filter(Order.order_nr.contains(filter_text))
-            # ~ query_ = query_.filter(Order.has_not_deleted)
+
+            if filter_text != "ALL":
+                fltr = or_(Order.is_deleted == None, Order.is_deleted.notlike('%yes%')) # pylint: disable=singleton-comparison
+                query_ = query_.filter(fltr)
+
+                if filter_text:
+                    query_ = query_.filter(Order.order_nr.like(f'%{filter_text}%'))
+
             query_ = query_.order_by(Order.order_nr.desc())
-            # ~ query_ = query_.limit(self.page_limit)
-            query_ = query_.limit(5 * self.page_limit).from_self()
+            query_ = query_.limit(self.page_limit)
+
+            logging.warning(f"query_:{query_}")
 
             list_ = query_.all()
 
-            self.results = []
-            cntr = 0
-            for o in list_:
-                if not o.deleted:
-                    try:
-                        file_name = o.get_json_property('meta', {}).get("file name", '')
-                    except Exception:  # pylint: disable=broad-except
-                        logging.warning(traceback.format_exc())
-                        file_name = ''
-                    item = ["", "", o.status, o.order_nr, file_name]
-                    self.results.append(item)
-                    cntr += 1
-                    if cntr >= self.page_limit:
-                        break
-            self.results.sort(key=lambda x: x[3], reverse=True)
+            logging.warning(f"dt:{time.time() - t0}, len(list_):{len(list_)}")
 
+            self.results = [
+                ["", "", o.status, o.order_nr, o.file_name] for o in list_]
         else:
             self.results = [[]]
+
+        logging.warning(f"dt:{time.time() - t0}")
 
     def __init__(self, parent, *args):
 
@@ -211,15 +214,9 @@ class OrderTableModel(BaseTableModel):
         self.session = QApplication.instance().db_session
         self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr."), tr_("file name")]
         filter_text = parent.search_order_line.text()
-
-        t0 = time.time()
-        # ~ logging.warning("")
-
         self.__load_results(filter_text)
 
-        logging.warning(f"len(self.results):{len(self.results)}, dt tot:{time.time() - t0}")
-
-    def remove_order(self, order_nr):
+    def delete_order(self, order_nr):
         logging.warning(f"order_nr:{order_nr}, self.session:{self.session}")
         if self.session:
             order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
@@ -232,6 +229,9 @@ class OrderTableModel(BaseTableModel):
                 for j in order.jars:
                     QApplication.instance().delete_jar_runner(j.barcode)
                     j.position = 'DELETED'
+
+            if hasattr(order, 'is_deleted'):
+                order.is_deleted = 'yes'
 
             self.session.commit()
 
@@ -323,7 +323,7 @@ class JarTableModel(BaseTableModel):
 
         return jar
 
-    def remove_jar(self, barcode):
+    def delete_jar(self, barcode):
 
         QApplication.instance().delete_jar_runner(barcode)
 
@@ -335,10 +335,12 @@ class JarTableModel(BaseTableModel):
             query_ = query_.filter(Jar.order == order)
             query_ = query_.filter(Jar.index == index)
 
-            # ~ r = query_.delete()
-            # ~ logging.warning(f"r:{r}")
             for j in query_.all():
                 j.position = 'DELETED'
+
+            if hasattr(order, 'is_deleted'):
+                if not [j for j in order.jars if j.position != "DELETED"]:
+                    order.is_deleted = 'yes'
 
             self.session.commit()
 
@@ -545,7 +547,7 @@ class OrderPage(BaseStackedPage):
             if col == 0:  # delete
 
                 def cb():
-                    model.remove_order(order_nr)
+                    model.delete_order(order_nr)
                     self.populate_order_table()
                     self.populate_jar_table()
 
@@ -582,7 +584,7 @@ class OrderPage(BaseStackedPage):
             if col == 0:  # delete
 
                 def cb():
-                    model.remove_jar(barcode)
+                    model.delete_jar(barcode)
                     self.populate_jar_table()
 
                 self.main_window.open_input_dialog(
