@@ -147,7 +147,7 @@ class FileTableModel(BaseTableModel):
 
 class OrderTableModel(BaseTableModel):
 
-    page_limit = 30
+    page_limit = 100
 
     def __original_load_results(self, filter_text):
 
@@ -183,19 +183,24 @@ class OrderTableModel(BaseTableModel):
 
         if self.session:
 
+
+            show_deleted = "DEL;" in filter_text
+            filter_text = "".join(filter_text.split("DEL;"))
+            # ~ logging.warning(f"show_deleted:{show_deleted}, filter_text:{filter_text}")
+
             query_ = self.session.query(Order)
 
-            if filter_text != "ALL":
+            if not show_deleted:
                 fltr = or_(Order.is_deleted == None, Order.is_deleted.notlike('%yes%')) # pylint: disable=singleton-comparison
                 query_ = query_.filter(fltr)
 
-                if filter_text:
-                    query_ = query_.filter(Order.order_nr.like(f'%{filter_text}%'))
+            if filter_text:
+                query_ = query_.filter(Order.order_nr.like(f'%{filter_text}%'))
 
             query_ = query_.order_by(Order.order_nr.desc())
             query_ = query_.limit(self.page_limit)
 
-            logging.warning(f"query_:{query_}")
+            # ~ logging.debug(f"query_:{query_}")
 
             list_ = query_.all()
 
@@ -220,18 +225,12 @@ class OrderTableModel(BaseTableModel):
         logging.warning(f"order_nr:{order_nr}, self.session:{self.session}")
         if self.session:
             order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
-            if not order.jars:
-                j = Jar(order=order, index=1, size=0)
+            for j in order.jars:
+                QApplication.instance().delete_jar_runner(j.barcode)
                 j.position = 'DELETED'
-                j.status = 'VIRTUAL'
-                self.session.add(j)
-            else:
-                for j in order.jars:
-                    QApplication.instance().delete_jar_runner(j.barcode)
-                    j.position = 'DELETED'
 
-            if hasattr(order, 'is_deleted'):
-                order.is_deleted = 'yes'
+            if hasattr(order, 'update_deleted'):
+                order.update_deleted()
 
             self.session.commit()
 
@@ -282,12 +281,22 @@ class JarTableModel(BaseTableModel):
         # ~ logging.warning(f"sel_order_nrs:{sel_order_nrs}")
 
         if self.session:
+
+            show_deleted = "DEL;" in filter_text
+            filter_text = "".join(filter_text.split("DEL;"))
+            # ~ logging.warning(f"show_deleted:{show_deleted}, filter_text:{filter_text}, sel_order_nrs:{sel_order_nrs}.")
+
             query_ = self.session.query(Jar)
-            query_ = query_.filter(Jar.position != "DELETED")
+
+            if not show_deleted:
+                query_ = query_.filter(or_(Jar.position == None, Jar.position.notlike("DELETED"))) # pylint: disable=singleton-comparison
+
             if filter_text:
                 query_ = query_.filter(Jar.status.contains(filter_text))
+
             if sel_order_nrs:
                 query_ = query_.join(Order).filter(Order.order_nr.in_(sel_order_nrs))
+
             query_ = query_.order_by(Jar.index.desc()).limit(self.page_limit)
 
             def _fmt_status(o):
@@ -296,8 +305,10 @@ class JarTableModel(BaseTableModel):
                 else:
                     r = [o.status, ""]
                 return r
+
             self.results = [["", "", _fmt_status(o), o.barcode] for o in query_.all()]
             self.results.sort(key=lambda x: x[3], reverse=True)
+
         else:
             self.results = [[]]
 
@@ -338,9 +349,8 @@ class JarTableModel(BaseTableModel):
             for j in query_.all():
                 j.position = 'DELETED'
 
-            if hasattr(order, 'is_deleted'):
-                if not [j for j in order.jars if j.position != "DELETED"]:
-                    order.is_deleted = 'yes'
+            if hasattr(order, 'update_deleted'):
+                order.update_deleted()
 
             self.session.commit()
 

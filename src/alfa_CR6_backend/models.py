@@ -43,6 +43,7 @@ from sqlalchemy.orm import (  # pylint: disable=import-error
 )
 from sqlalchemy.inspection import inspect  # pylint: disable=import-error
 # ~ from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.exc import OperationalError
 
 import iso8601                       # pylint: disable=import-error
 
@@ -297,7 +298,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
     order_id = Column(Unicode, ForeignKey("order.id"), nullable=False)
     order = relationship("Order", back_populates="jars")
 
-    is_deleted = Column(Unicode)
+    # ~ is_deleted = Column(Unicode)
     reserved = Column(Unicode)
 
     machine_head = None
@@ -314,6 +315,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         if status is not None:
             self.status = status
+            self.order.update_status()
 
         if pos is not None:
             self.position = pos
@@ -401,6 +403,7 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     is_deleted = Column(Unicode)
     reserved = Column(Unicode)
+    inner_status = Column(Unicode)
 
     def __str__(self):
         return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
@@ -414,7 +417,46 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     @property
     def status(self):
+
+        ret = None
+        if hasattr(self, 'inner_status'):
+            if self.inner_status is None:
+                self.update_status(global_session)
+            ret = self.inner_status
+        else:
+            ret = self.update_status()
+        return ret
+
+    @property
+    def deleted(self):
+
+        ret = None
+        if hasattr(self, 'is_deleted'):
+            if self.is_deleted is None:
+                self.update_deleted(global_session)
+            ret = self.is_deleted
+        else:
+            ret = self.update_deleted()
+        return ret
+
+
+    def update_deleted(self, session=None):
+
+        flag = (not self.jars) or [j for j in self.jars if j.position != "DELETED"]
+        ret = '' if flag else 'yes'
+
+        if hasattr(self, 'is_deleted'):
+            self.is_deleted = ret
+
+            if session:
+                session.commit()
+
+        return ret
+
+    def update_status(self, session=None):
+
         sts_ = "NEW"
+
         counters = {}
 
         for j in self.jars:
@@ -431,24 +473,13 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
         elif not counters.get("NEW") and counters.get("DONE"):
             sts_ = "DONE"
 
-        # ~ logging.warning(f"sts_:{sts_}, counters:{counters}")
+        if hasattr(self, 'inner_status'):
+            self.inner_status = sts_
+
+            if session:
+                session.commit()
 
         return sts_
-
-    @property
-    def deleted(self):
-
-        return hasattr(self, 'is_deleted') and getattr(self, 'is_deleted')
-
-        # ~ flag = (not self.jars) or self.has_not_deleted
-        # ~ flag = (not self.jars) or [j for j in self.jars if j.position != "DELETED"]
-        # ~ return not flag
-        # ~ try:
-            # ~ ret = self.is_deleted
-        # ~ except Exception:
-            # ~ ret = None
-
-        # ~ return ret
 
 
 class Document(Base, BaseModel):  # pylint: disable=too-few-public-methods
@@ -473,11 +504,11 @@ class Document(Base, BaseModel):  # pylint: disable=too-few-public-methods
 def apply_table_alterations(engine):
 
     stmts = [
-        'ALTER TABLE "order" ADD COLUMN reserved VARCHAR;',
         'ALTER TABLE "jar" ADD COLUMN reserved VARCHAR;',
+        # ~ 'ALTER TABLE "jar" ADD COLUMN is_deleted VARCHAR;',
         'ALTER TABLE "order" ADD COLUMN is_deleted VARCHAR;',
-        'ALTER TABLE "jar" ADD COLUMN is_deleted VARCHAR;',
-        'ALTER TABLE "order" DROP COLUMN status;'
+        'ALTER TABLE "order" ADD COLUMN reserved VARCHAR;',
+        'ALTER TABLE "order" ADD COLUMN inner_status VARCHAR;',
     ]
 
     successfully_executed = []
@@ -487,10 +518,15 @@ def apply_table_alterations(engine):
             try:
                 engine.execute(DDL(stmt))
                 successfully_executed.append(stmt)
-            except Exception as e: # pylint: disable=broad-except
-                logging.info(f"Error executing stmt:{stmt}, e:{e}")
+            except OperationalError as e: # pylint: disable=broad-except
+                if "duplicate column name" in str(e):
+                    logging.info(f"Error executing stmt:{stmt}, e:{e}")
+                else:
+                    logging.warning(traceback.format_exc())
+            except Exception: # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
     except Exception: # pylint: disable=broad-except
-        logging.warning(traceback.format_exc())
+        logging.error(traceback.format_exc())
 
     logging.warning(f"successfully_executed({len(successfully_executed)}):{successfully_executed}")
 

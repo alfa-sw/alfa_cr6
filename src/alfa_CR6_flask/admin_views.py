@@ -205,7 +205,7 @@ class JarModelView(Base_ModelView):
         'date_created',
         'date_modified',
         'order_description',
-        'is_deleted',
+        # ~ 'is_deleted',
         'order_file_name',)
 
     column_filters = (
@@ -230,6 +230,7 @@ class JarModelView(Base_ModelView):
         'position': [(c, c) for c in Jar.position_choices],
         'status': [(c, c) for c in Jar.status_choices],}
 
+    form_excluded_columns = ('order', )
 
     def _display_order(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
         order = getattr(obj, 'order')
@@ -292,6 +293,8 @@ class OrderModelView(Base_ModelView):
         'date_created',
         'description',)
 
+    form_excluded_columns = ('jars', )
+
     def _display_status(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
 
         _html = ''
@@ -303,20 +306,22 @@ class OrderModelView(Base_ModelView):
         return Markup(_html)
 
     def _display_jar_status(self, context, obj, name): # pylint: disable=no-self-use, unused-argument
-        jars = getattr(obj, 'jars')
-
-        jar_status_list = [j.status for j in jars]
-        jar_statuses = [(s, jar_status_list.count(s)) for s in set(jar_status_list)]
-        jar_statuses = sorted(jar_statuses, key=lambda x: x[1])
-
-        link = f"/jar/?sort=1&flt0_order_order_order_nr_equals={getattr(obj, 'order_nr')}"
 
         _html = ''
-        try:
-            _html += f"""<a href="{link}">{'<br/>'.join([str(i) for i in jar_statuses])}</a>"""
-        except Exception:
-            _html = jars
-            logging.warning(traceback.format_exc())
+        if hasattr(obj, 'jars'):
+
+            jars = obj.jars
+
+            jar_status_list = [j.status for j in jars]
+            jar_statuses = [(s, jar_status_list.count(s)) for s in set(jar_status_list)]
+            jar_statuses = sorted(jar_statuses, key=lambda x: x[1])
+
+            link = f"/jar/?sort=1&flt0_order_order_order_nr_equals={getattr(obj, 'order_nr')}"
+            try:
+                _html += f"""<a href="{link}">{'<br/>'.join([str(i) for i in jar_statuses])}</a>"""
+            except Exception:
+                _html = jars
+                logging.warning(traceback.format_exc())
 
         return Markup(_html)
 
