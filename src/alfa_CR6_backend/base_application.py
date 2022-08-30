@@ -802,39 +802,45 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if jar:
 
-            if jar.status in ["DONE", "ERROR"]:
-                args, fmt = (barcode, tr_(jar.status)), "barcode:{} has status {}.\n"
-                self.main_window.open_alert_dialog(args, fmt=fmt, title="WARNING")
-
             A = self.get_machine_head_by_letter("A")
-            # ~ jar_size = A.jar_size_detect
             jar_size = await A.get_stabilized_jar_size()
-            package_size_list = []
-            for m in [m_ for m_ in self.machine_head_dict.values() if m_]:
-                await m.update_tintometer_data()
-                logging.warning(f"{m.name}")
 
-                for s in [p["size"] for p in m.package_list]:
-                    if s not in package_size_list:
-                        package_size_list.append(s)
-
-            package_size_list.sort()
-            logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
-            jar_volume = 0
-            if len(package_size_list) > jar_size:
-                jar_volume = package_size_list[jar_size]
-
-            self.update_jar_properties(jar)
-
-            json_properties = json.loads(jar.json_properties)
-            remaining_volume = json_properties["remaining_volume"]
-
-            if jar_volume < remaining_volume:
+            if jar_size is None:
                 jar = None
-                msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, remaining_volume)
-                self.main_window.open_alert_dialog(msg_, title="ERROR")
-                logging.error(msg_)
+                args, fmt = (barcode, ), "barcode:{} cannot read can size from microswitches.\n"
+                self.main_window.open_alert_dialog(args, fmt=fmt, title="WARNING")
+            else:
+
+                if jar.status in ["DONE", "ERROR"]:
+                    args, fmt = (barcode, tr_(jar.status)), "barcode:{} has status {}.\n"
+                    self.main_window.open_alert_dialog(args, fmt=fmt, title="WARNING")
+
+                package_size_list = []
+                for m in [m_ for m_ in self.machine_head_dict.values() if m_]:
+                    await m.update_tintometer_data()
+                    logging.warning(f"{m.name}")
+
+                    for s in [p["size"] for p in m.package_list]:
+                        if s not in package_size_list:
+                            package_size_list.append(s)
+
+                package_size_list.sort()
+                logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
+                jar_volume = 0
+                if len(package_size_list) > jar_size:
+                    jar_volume = package_size_list[jar_size]
+
+                self.update_jar_properties(jar)
+
+                json_properties = json.loads(jar.json_properties)
+                remaining_volume = json_properties["remaining_volume"]
+
+                if jar_volume < remaining_volume:
+                    jar = None
+                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
+                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, remaining_volume)
+                    self.main_window.open_alert_dialog(msg_, title="ERROR")
+                    logging.error(msg_)
         else:
             jar = None
             args, fmt = (barcode, ), "barcode:{} not found.\nPlease, remove it.\n"
