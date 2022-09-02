@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
     QPushButton)
 
 from alfa_CR6_backend.models import (Jar, Order)
-from alfa_CR6_backend.dymo_printer import dymo_print
+from alfa_CR6_backend.dymo_printer import dymo_print_jar
 from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings)
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
@@ -506,9 +506,9 @@ class DebugPage:
                         ip_add, _, http_port = item
                         cmd_ += f" http://{ip_add}:{http_port}/admin"
 
-                subprocess.Popen(cmd_.split())
+                subprocess.run(cmd_.split(), check=False)
 
-            msg_ = f"confirm opening head admin pages in firefox?\n Please, remember to close firefox window manually."
+            msg_ = "confirm opening head admin pages in firefox?\n Please, remember to close firefox window manually."
             app.main_window.open_alert_dialog(msg_, callback=cb_)
 
         elif "open URL\nin text bar" in cmd_txt:
@@ -716,24 +716,25 @@ class DebugPage:
             fileNames = dialog.selectedFiles()
         logging.warning(f"fileNames:{fileNames}")
 
-        def cb_(bc):
-            response = dymo_print(str(bc))
+        def cb_(j):
+            response = dymo_print_jar(j)
             logging.warning(f"response:{response}")
 
-        def cb(barcodes_):
-            for b in barcodes_:
-                msg_ = f"confirm printing:{b} ?"
-                app.main_window.open_alert_dialog(msg_, callback=cb_, args=[b])
+
+
+        def cb(jars_):
+            for j in jars_:
+                msg_ = f"confirm printing:{j.barcode} ?"
+                app.main_window.open_alert_dialog(msg_, callback=cb_, args=[j])
 
         for fname in fileNames:
             order = None
             try:
                 order = app.create_order(fname, n_of_jars=6)
-                barcodes = sorted([str(j.barcode) for j in order.jars])
                 barcodes_str = "\n".join([str(j.barcode) for j in order.jars])
 
                 msg_ = f"created order with {len(order.jars)} jars. barcodes:\n{barcodes_str} \nclick 'OK' to print barcodes."
-                app.main_window.open_alert_dialog(msg_, callback=cb, args=[barcodes])
+                app.main_window.open_alert_dialog(msg_, callback=cb, args=[order.jars])
 
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
