@@ -229,8 +229,7 @@ class OrderTableModel(BaseTableModel):
                 QApplication.instance().delete_jar_runner(j.barcode)
                 j.position = 'DELETED'
 
-            if hasattr(order, 'update_deleted'):
-                order.update_deleted()
+            order.is_deleted = 'yes'
 
             self.session.commit()
 
@@ -349,8 +348,8 @@ class JarTableModel(BaseTableModel):
             for j in query_.all():
                 j.position = 'DELETED'
 
-            if hasattr(order, 'update_deleted'):
-                order.update_deleted()
+            if not [j for j in order.jars if j.position != "DELETED"]:
+                order.is_deleted = 'yes'
 
             self.session.commit()
 

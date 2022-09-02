@@ -445,8 +445,11 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
         flag = (not self.jars) or [j for j in self.jars if j.position != "DELETED"]
         ret = '' if flag else 'yes'
 
+        logging.warning(f"flag:{flag}, ret:{ret}")
+
         if hasattr(self, 'is_deleted'):
             self.is_deleted = ret
+            logging.warning(f"self.is_deleted:{self.is_deleted}")
 
             if session:
                 session.commit()
