@@ -192,7 +192,7 @@
      <x>649</x>
      <y>120</y>
      <width>621</width>
-     <height>871</height>
+     <height>841</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -241,7 +241,7 @@
      <x>9</x>
      <y>120</y>
      <width>621</width>
-     <height>871</height>
+     <height>841</height>
     </rect>
    </property>
    <property name="styleSheet">
@@ -288,14 +288,8 @@
      <x>1290</x>
      <y>120</y>
      <width>621</width>
-     <height>871</height>
+     <height>841</height>
     </rect>
-   </property>
-   <property name="maximumSize">
-    <size>
-     <width>700</width>
-     <height>16777215</height>
-    </size>
    </property>
    <property name="styleSheet">
     <string notr="true">::section{background-color: #AAAAAA}</string>
@@ -327,6 +321,45 @@
    <attribute name="verticalHeaderStretchLastSection">
     <bool>false</bool>
    </attribute>
+  </widget>
+  <widget class="QPushButton" name="_view_mix_btn">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>960</y>
+     <width>624</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>View All</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="_view_jar_btn">
+   <property name="geometry">
+    <rect>
+     <x>644</x>
+     <y>960</y>
+     <width>624</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>View Cans</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="_view_file_btn">
+   <property name="geometry">
+    <rect>
+     <x>1278</x>
+     <y>960</y>
+     <width>624</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>View Files</string>
+   </property>
   </widget>
  </widget>
  <resources/>

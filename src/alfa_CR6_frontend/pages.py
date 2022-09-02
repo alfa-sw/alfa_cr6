@@ -473,6 +473,14 @@ class OrderPage(BaseStackedPage):
         self.jar_table_view.clicked.connect(self.__on_jar_table_clicked)
         self.file_table_view.clicked.connect(self.__on_file_table_clicked)
 
+        self._view_mix_btn.clicked.connect (partial(self.__on_toggle_view_clicked, 'mix'))
+        self._view_file_btn.clicked.connect(partial(self.__on_toggle_view_clicked, 'file'))
+        self._view_jar_btn.clicked.connect (partial(self.__on_toggle_view_clicked, 'jar'))
+
+        self._view_mix_btn.setText(tr_('Show All'))
+        self._view_file_btn.setText(tr_('Show Files'))
+        self._view_jar_btn.setText(tr_('Show Cans'))
+
         self.new_order_btn.clicked.connect(self.__on_new_order_clicked)
         self.clone_order_btn.clicked.connect(self.__on_clone_order_clicked)
 
@@ -496,6 +504,8 @@ class OrderPage(BaseStackedPage):
         self.jar_model = 0
 
         self.edit_aliases_btn.clicked.connect(self.main_window.open_alias_dialog)
+
+        self.view_mode = "file"
 
     def populate_order_table(self):
 
@@ -536,6 +546,62 @@ class OrderPage(BaseStackedPage):
                 logging.error(traceback.format_exc())
 
             self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(self.file_model.rowCount()))
+
+    def __on_toggle_view_clicked(self, view_mode=None):
+
+        self._view_mix_btn. setEnabled(True)
+        self._view_file_btn.setEnabled(True)
+        self._view_jar_btn. setEnabled(True)
+
+        self._view_mix_btn. setGeometry(  10,  956, 624, 34)
+        self._view_file_btn.setGeometry( 644,  956, 624, 34)
+        self._view_jar_btn. setGeometry(1278,  956, 624, 34)
+
+        if view_mode == "jar":
+
+            self._view_jar_btn.setEnabled(False)
+
+            self.search_order_box.setGeometry(  10,  10, 940, 830)
+            self.order_table_view.setGeometry(  10, 120, 940, 836)
+                                             
+            self.search_jar_box.setGeometry  ( 970,  10, 940, 830)
+            self.jar_table_view.setGeometry  ( 970, 120, 940, 830)
+
+            self.search_file_box.setGeometry (  1840,  10, 0, 830)
+            self.file_table_view.setGeometry (  1840, 120, 0, 830)
+
+            self.populate_jar_table()
+
+        elif view_mode == "file":
+
+            self._view_file_btn.setEnabled(False)
+
+            self.search_order_box.setGeometry(  10,  10, 940, 830)
+            self.order_table_view.setGeometry(  10, 120, 940, 830)
+                                                              
+            self.search_file_box.setGeometry ( 970,  10, 940, 830)
+            self.file_table_view.setGeometry ( 970, 120, 940, 830)
+                                                              
+            self.search_jar_box.setGeometry  (  1840,  10, 0, 830)
+            self.jar_table_view.setGeometry  (  1840, 120, 0, 830)
+
+            self.populate_file_table()
+
+        elif view_mode == "mix":
+
+            self._view_mix_btn.setEnabled(False)
+
+            self.search_order_box.setGeometry( 10,  10, 624, 830)
+            self.order_table_view.setGeometry( 10, 120, 624, 830)
+
+            self.search_jar_box.setGeometry  ( 644,  10, 624, 830)
+            self.jar_table_view.setGeometry  ( 644, 120, 624, 830)
+
+            self.search_file_box.setGeometry ( 1278,  10, 624, 830)
+            self.file_table_view.setGeometry ( 1278, 120, 624, 830)
+
+            self.populate_jar_table()
+            self.populate_file_table()
 
     @staticmethod
     def __on_purge_all_clicked():
@@ -817,8 +883,11 @@ class OrderPage(BaseStackedPage):
         self.search_file_line .setText("")
 
         self.populate_order_table()
-        self.populate_jar_table()
-        self.populate_file_table()
+        # ~ self.populate_jar_table()
+        # ~ self.populate_file_table()
+
+        self.__on_toggle_view_clicked(view_mode='mix')
+
         self.parent().setCurrentWidget(self)
 
         QApplication.instance().update_tintometer_data_on_all_heads()
