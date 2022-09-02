@@ -12,11 +12,6 @@ import http.client
 
 import requests
 
-HOST = '127.0.0.1'
-# ~ '93 147 171 2'
-# ~ HOST = '192.168.0.100'
-# ~ HOST = '192.168.12.122'
-
 
 """ to be reported on label:
 
@@ -34,9 +29,8 @@ URL_PREFIX = '/api/v1'
 SAMLPE_FILTER = [{"name": "description", "op": "==", "val": "1376848525"}]
 
 
-def test_restless(resource_name):
+def test_restless(resource_name, host):
 
-    host = HOST
     port = 8090
     method = 'GET'
     # ~ url = f'{URL_PREFIX}/{resource_name}?page[size]=5&page[number]=2'
@@ -62,9 +56,8 @@ def test_restless(resource_name):
     print(resp)
 
 
-def ask_orders_by_job_id(job_id):
+def ask_orders_by_job_id(job_id, host):
 
-    host = HOST
     port = 8090
     method = 'GET'
     url = f'{URL_PREFIX}/orders_by_job_id/{job_id}'
@@ -84,7 +77,7 @@ def ask_orders_by_job_id(job_id):
     print(resp)
 
 
-def upload_formula_file(file_path):
+def upload_formula_file(file_path, host):
 
     port = 8090
     url = f"http://{HOST}:{port}/upload_formula_file"
@@ -98,7 +91,7 @@ def upload_formula_file(file_path):
         # ~ print(r.prepare().body.decode('ascii'))
 
 
-def upload_json_formula():
+def upload_json_formula(host):
 
     SAMPLE_FORMULAS = [
         {
@@ -266,7 +259,6 @@ def upload_json_formula():
         }
     ]
 
-    host = HOST
     port = 8090
     method = 'POST'
     url = '/upload_json_formula'
@@ -288,17 +280,20 @@ def upload_json_formula():
 
 def main():
 
-    opt = sys.argv[1:] and sys.argv[1]
-    arg = sys.argv[2:] and sys.argv[2]
+    host = '127.0.0.1'
+ 
+    host = sys.argv[1:] and sys.argv[1]
+    opt = sys.argv[2:] and sys.argv[2]
+    arg = sys.argv[3:] and sys.argv[3]
 
     if opt == []:
-        upload_json_formula()
+        upload_json_formula(host)
     elif opt == '-r':
-        test_restless(arg)
+        test_restless(arg, host)
     elif opt == '-j':
-        ask_orders_by_job_id(arg)
+        ask_orders_by_job_id(arg, host)
     elif opt == '-f':
-        upload_formula_file(arg)
+        upload_formula_file(arg, host)
     else:
         raise Exception('unknown option')
 
