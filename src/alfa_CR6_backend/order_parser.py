@@ -150,9 +150,13 @@ class OrderParser:
             })
 
         properties["extra_lines_to_print"] = [
-            properties["meta"].get('Fabricante', ''),
-            properties["meta"].get('ColorCode', ''),
-            properties["meta"].get('Color', ''),
+            properties["meta"].get('Fabricante', '')[:16],
+            "{} {} {}".format(
+                properties["meta"].get('ColorCode', ''), 
+                properties["meta"].get('RealWeight', ''), 
+                properties["meta"].get('Calidad', ''),
+            )[:16],
+            properties["meta"].get('Color', '')[:16],
         ]
 
         return properties
