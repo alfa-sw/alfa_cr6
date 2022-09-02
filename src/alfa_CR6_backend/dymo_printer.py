@@ -8,149 +8,11 @@
 # pylint: disable=line-too-long
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
-import os
 import traceback
 import logging
 import subprocess
-from barcode import EAN13                   # pylint: disable=import-error
-from barcode.writer import ImageWriter      # pylint: disable=import-error
 
-from alfa_CR6_backend.globals import import_settings, tr_
-
-
-def _create_printable_image_from_jar(jar):
-
-    recipe_barcode = str(jar.barcode)
-
-    settings = import_settings()
-
-    tmp_barcode_image = "/opt/alfa_cr6/tmp/tmp_file.png"
-    if os.environ.get("TMP_FILE_PNG"):
-        tmp_barcode_image = os.environ["TMP_FILE_PNG"]
-
-    response = None
-
-    if not os.path.exists(tmp_barcode_image):
-        with open(tmp_barcode_image, 'w', encoding='UTF-8'):
-            pass
-        logging.warning(f'empty file created at:{tmp_barcode_image}')
-
-    options = {
-        'dpi': 250,
-        'module_height': 7,
-        'font_size': 15,
-        'text_distance': 0.75,
-        'compress': False,
-        'line_lenght': 24,
-        'n_of_lines': 3,
-        'rotate': 0,
-    }
-
-    if hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
-        options.update(settings.PRINT_LABEL_OPTONS)
-
-    logging.warning(f'options:{options}')
-
-    with open(tmp_barcode_image, 'wb') as file_:
-        recipe_barcode_text = f'{recipe_barcode}'
-
-        l_lenght = options.pop('line_lenght')
-        n_of_lines = options.pop('n_of_lines')
-
-        lines_to_print = [recipe_barcode, ]
-        lines_to_print += [f"{l}"[:l_lenght] for l in jar.extra_lines_to_print]
-        logging.warning(f'jar.unknown_pigments:{jar.unknown_pigments}')
-        if jar.unknown_pigments:
-            lines_to_print += [tr_("{} product(s) missing:").format(len(jar.unknown_pigments))]
-            lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.unknown_pigments.items()]
-
-        n_to_pad = n_of_lines + 1 - len(lines_to_print)
-        lines_to_print.extend(["." for i in range(n_to_pad)])
-        printable_text = '\n'.join(lines_to_print)
-
-        EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
-
-        response = tmp_barcode_image
-
-    rotate = options.pop('rotate')
-    if response and rotate:
-        from PIL import Image   # pylint: disable=import-outside-toplevel
-        Image.open(tmp_barcode_image).rotate(rotate, expand=1).save(tmp_barcode_image)
-
-    logging.warning('response: {}'.format(response))
-
-    return response
-
-
-def _create_printable_image(recipe_barcode, line_1, line_2, line_3):
-    """ create a printable image .png for DYMO 450 """
-
-    recipe_barcode = str(recipe_barcode)
-
-    settings = import_settings()
-
-    tmp_barcode_image = "/opt/alfa_cr6/tmp/tmp_file.png"
-
-    response = None
-
-    if not os.path.exists(tmp_barcode_image):
-        with open(tmp_barcode_image, 'w', encoding='UTF-8'):
-            pass
-        logging.warning(f'empty file created at:{tmp_barcode_image}')
-
-    options = {
-        'dpi': 250,
-        'module_height': 7,
-        'font_size': 15,
-        'text_distance': 0.75,
-        'compress': False,
-        'line_lenght': 24,
-        'rotate': 0,
-    }
-
-    if hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
-        options.update(settings.PRINT_LABEL_OPTONS)
-
-    logging.warning(f'options:{options}')
-
-    with open(tmp_barcode_image, 'wb') as file_:
-        recipe_barcode_text = f'{recipe_barcode}'
-
-        l_lenght = options.pop('line_lenght')
-
-        line_1 = _line_lenght_checker(line_1, line_lenght=l_lenght)
-        line_2 = _line_lenght_checker(line_2, line_lenght=l_lenght)
-        line_3 = _line_lenght_checker(line_3, line_lenght=l_lenght)
-
-        printable_info_list = []
-        printable_info_list.append(recipe_barcode)
-        printable_info_list.append(line_1)
-        printable_info_list.append(line_2)
-        printable_info_list.append(line_3)
-
-        printable_text = '\n'.join(printable_info_list)
-
-        EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
-
-        response = tmp_barcode_image
-
-    rotate = options.pop('rotate')
-    if response and rotate:
-        from PIL import Image   # pylint: disable=import-outside-toplevel
-        Image.open(tmp_barcode_image).rotate(rotate, expand=1).save(tmp_barcode_image)
-
-    logging.warning('response: {}'.format(response))
-
-    return response
-
-
-def _line_lenght_checker(line, line_lenght=17):
-    logging.debug(f'len: {len(line)} | line_lenght: {line_lenght}')
-    if len(line) > line_lenght:
-        line = line[:line_lenght]
-    logging.debug(f'line: {line}')
-    return line
-
+from alfa_CR6_backend.globals import create_printable_image_from_jar
 
 def _exec_cmd(command, shell=False):
 
@@ -188,29 +50,13 @@ def _dymo_print_tmp_image(_printable_image_pth, fake=False):
 
     return ret
 
-
-def dymo_print(barcode=201027001001, line_1='', line_2='', line_3='', fake=False):
-
-    logging.debug(f'barcode: {barcode}, {[line_1, line_2, line_3]} | fake: {fake}')
-
-    ret = {}
-    try:
-        _printable_image_pth = _create_printable_image(barcode, line_1, line_2, line_3)
-        ret = _dymo_print_tmp_image(_printable_image_pth, fake)
-    except Exception:   # pylint: disable=broad-except
-        logging.error(traceback.format_exc())
-        ret = {'result': 'NOK', 'msg': traceback.format_exc()}
-
-    return ret
-
-
 def dymo_print_jar(jar):
 
     logging.debug(f'jar: {jar}')
 
     ret = {}
     try:
-        _printable_image_pth = _create_printable_image_from_jar(jar)
+        _printable_image_pth = create_printable_image_from_jar(jar)
         ret = _dymo_print_tmp_image(_printable_image_pth)
     except Exception:   # pylint: disable=broad-except
         logging.error(traceback.format_exc())

@@ -17,8 +17,10 @@ import importlib
 import codecs
 import json
 
-import redis # pylint: disable=import-error
+import redis  # pylint: disable=import-error
 
+from barcode import EAN13                   # pylint: disable=import-error
+from barcode.writer import ImageWriter      # pylint: disable=import-error
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "ui")
@@ -28,6 +30,11 @@ KEYBOARD_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "keyboard")
 SCHEMAS_PATH = os.path.join(HERE, "schemas")
 
 CONF_PATH = "/opt/alfa_cr6/conf"
+
+TMP_BARCODE_IMAGE = "/opt/alfa_cr6/tmp/tmp_file.png"
+
+if os.environ.get("TMP_FILE_PNG"): # JUST FOR TEST, NOT PRODUCTION!
+    TMP_BARCODE_IMAGE = os.environ["TMP_FILE_PNG"]
 
 EPSILON = 0.0002
 IMPORTED_LANGUAGE_MODULES = {}
@@ -74,12 +81,14 @@ def get_alfa_serialnumber():
 
     return _ALFA_SN or "00000000"
 
+
 def set_language(lang):
 
     if lang in list(LANGUAGE_MAP.values()):
         cmd_ = f"""sed -i 's/LANGUAGE.=.".."/LANGUAGE = "{lang}"/g' /opt/alfa_cr6/conf/app_settings.py"""
         os.system(cmd_)
         os.system("kill -9 {}".format(os.getpid()))
+
 
 def import_settings():
 
@@ -99,6 +108,7 @@ def import_settings():
 
     return app_settings
 
+
 def tr_(lemma):
 
     lemma_ = lemma
@@ -113,6 +123,7 @@ def tr_(lemma):
         logging.error(traceback.format_exc())
 
     return lemma_
+
 
 def get_version():
 
@@ -133,6 +144,7 @@ def get_version():
 
     return _ver
 
+
 def get_res(_type, name):
 
     res = None
@@ -149,6 +161,7 @@ def get_res(_type, name):
             res = os.path.join(UI_PATH, name)
 
     return res
+
 
 def get_encoding(path_to_file, key=None):
 
@@ -190,3 +203,63 @@ def get_encoding(path_to_file, key=None):
             return e
 
     return ''
+
+
+def create_printable_image_from_jar(jar):
+
+    recipe_barcode = str(jar.barcode)
+
+    settings = import_settings()
+
+    response = None
+
+    if not os.path.exists(TMP_BARCODE_IMAGE):
+        with open(TMP_BARCODE_IMAGE, 'w', encoding='UTF-8'):
+            pass
+        logging.warning(f'empty file created at:{TMP_BARCODE_IMAGE}')
+
+    options = {
+        'dpi': 250,
+        'module_height': 7,
+        'font_size': 15,
+        'text_distance': 0.75,
+        'compress': False,
+        'line_lenght': 24,
+        'n_of_lines': 3,
+        'rotate': 0,
+    }
+
+    if hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
+        options.update(settings.PRINT_LABEL_OPTONS)
+
+    logging.warning(f'options:{options}')
+
+    with open(TMP_BARCODE_IMAGE, 'wb') as file_:
+        recipe_barcode_text = f'{recipe_barcode}'
+
+        l_lenght = options.pop('line_lenght')
+        n_of_lines = options.pop('n_of_lines')
+        rotate = options.pop('rotate')
+
+        lines_to_print = [recipe_barcode, ]
+        lines_to_print += [f"{l}"[:l_lenght] for l in jar.extra_lines_to_print]
+        logging.warning(f'jar.unknown_pigments:{jar.unknown_pigments}')
+        if jar.unknown_pigments:
+            lines_to_print += [tr_("{} product(s) missing:").format(len(jar.unknown_pigments))]
+            lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.unknown_pigments.items()]
+
+        n_to_pad = n_of_lines + 1 - len(lines_to_print)
+        lines_to_print.extend(["." for i in range(n_to_pad)])
+        printable_text = '\n'.join(lines_to_print)
+
+        EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
+
+        response = TMP_BARCODE_IMAGE
+
+    if response and rotate:
+        from PIL import Image   # pylint: disable=import-outside-toplevel
+        Image.open(TMP_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_BARCODE_IMAGE)
+
+    logging.warning('response: {}'.format(response))
+
+    return response
