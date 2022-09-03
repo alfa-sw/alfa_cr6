@@ -804,7 +804,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             A = self.get_machine_head_by_letter("A")
             jar_size = await A.get_stabilized_jar_size()
-            jar_size = None
             if jar_size is None:
                 jar = None
                 args, fmt = (barcode, ), "barcode:{} cannot read can size from microswitches.\n"
