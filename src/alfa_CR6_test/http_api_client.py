@@ -115,7 +115,7 @@ def upload_json_formula(host):
                 "undercoat": "",
                 "pictograms": "180,180,180,180,180",
                 "dateModified": "16/06/2021",
-                "quantity": 500.0,
+                "quantity(l)": 0.5,
                 "cumulative": 0.0,
                 "extraInfo": [
                     "UC_GS903__GREY SHADE: WHITE",
@@ -214,7 +214,7 @@ def upload_json_formula(host):
             "meta": {
                 "brand": "FORD",
                 "region": "",
-                "colorCode": "724",
+                "colorCode": "724x",
                 "variantCode": "",
                 "colorName": " MIDNIGHT SKY PEARL",
                 "secondName": "GRIS METEORE PEARL",
@@ -224,7 +224,7 @@ def upload_json_formula(host):
                 "undercoat": "",
                 "pictograms": "",
                 "dateModified": "",
-                "quantity": 0.0,
+                "quantity(l)": 0.1,
                 "cumulative": 0.0,
                 "extraInfo": [
                     ""

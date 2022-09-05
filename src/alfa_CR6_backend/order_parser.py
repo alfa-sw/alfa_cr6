@@ -152,8 +152,8 @@ class OrderParser:
         properties["extra_lines_to_print"] = [
             properties["meta"].get('Fabricante', '')[:16],
             "{} {} {}".format(
-                properties["meta"].get('ColorCode', ''), 
-                properties["meta"].get('RealWeight', ''), 
+                properties["meta"].get('ColorCode', ''),
+                properties["meta"].get('RealWeight', ''),
                 properties["meta"].get('Calidad', ''),
             )[:16],
             properties["meta"].get('Color', '')[:16],
@@ -345,7 +345,7 @@ class OrderParser:
             brand = meta.get("brand", '')
             quality = meta.get("quality", '')
             colorCode = meta.get("colorCode", '')
-            quantity = meta.get("quantity(l)", '')
+            quantity = round(float(meta.get("quantity(l)", 0)), 3)
             date_time = str(time.asctime())
 
             properties["extra_lines_to_print"] = [f"{brand} - {quality}",
@@ -457,7 +457,7 @@ class OrderParser:
         return properties
 
     @staticmethod
-    def parse_kcc_pdf(lines, second_coat=False):  # pylint: disable=too-many-locals
+    def parse_kcc_pdf(lines, second_coat=False):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         section_separator = "__________________________"
         section = 0
@@ -502,7 +502,7 @@ class OrderParser:
                             sub_toks.append(t.strip())
                     # ~ logging.warning(f'sub_toks:{sub_toks}')
                     if len(sub_toks) == 2:
-                        name, val = sub_toks[0:2]
+                        name, val = sub_toks[0], sub_toks[1]
                         value = round(float(val.split('(G)')[0]), 4)
                         new_item = {}
                         name = ' '.join(name.split())
@@ -606,7 +606,7 @@ class OrderParser:
             try:
                 total_lt = float(i)
                 break
-            except Exception:
+            except Exception: # pylint: disable=broad-except
                 pass
 
         if total_lt > 0.00001:
@@ -622,7 +622,7 @@ class OrderParser:
             extra_lines_to_print.append(' '.join(head_section[0].split()[-2:]))
             extra_lines_to_print.append(' '.join(head_section[1].split()[:-1]))
             extra_lines_to_print.append(' '.join(head_section[2].split()[:-3]))
-        except Exception:
+        except Exception: # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
         properties["extra_lines_to_print"] = extra_lines_to_print
