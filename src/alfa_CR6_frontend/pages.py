@@ -463,7 +463,11 @@ class OrderPage(BaseStackedPage):
 
         super().__init__(*args, **kwargs)
 
-        self.setStyleSheet("font-size: 22px;")
+        self.setStyleSheet("QWidget {font-size: 22px}")
+
+        self.jar_table_view.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 36px; }")
+        self.order_table_view.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 36px; }")
+        self.file_table_view.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 36px; }")
 
         self.jar_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.order_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -477,9 +481,9 @@ class OrderPage(BaseStackedPage):
         self._view_file_btn.clicked.connect(partial(self.__on_toggle_view_clicked, 'file'))
         self._view_jar_btn.clicked.connect (partial(self.__on_toggle_view_clicked, 'jar'))
 
-        self._view_mix_btn.setText(tr_('Show All'))
-        self._view_file_btn.setText(tr_('Show Files'))
-        self._view_jar_btn.setText(tr_('Show Cans'))
+        self._view_mix_btn.setText(tr_('all'))
+        self._view_file_btn.setText(tr_('files'))
+        self._view_jar_btn.setText(tr_('cans'))
 
         self.new_order_btn.clicked.connect(self.__on_new_order_clicked)
         self.clone_order_btn.clicked.connect(self.__on_clone_order_clicked)
@@ -547,6 +551,26 @@ class OrderPage(BaseStackedPage):
 
             self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(self.file_model.rowCount()))
 
+    def __hide_toggle_view_buttons(self):
+
+        self._view_mix_btn. setGeometry(0,  2000, 0, 0)
+        self._view_file_btn.setGeometry(0,  2000, 0, 0)
+        self._view_jar_btn. setGeometry(0,  2000, 0, 0)
+
+        self._view_mix_btn. setEnabled(False)
+        self._view_file_btn.setEnabled(False)
+        self._view_jar_btn. setEnabled(False)
+
+        self.search_jar_box.setGeometry  (  4,  10, 624-80, 860)
+        self.jar_table_view.setGeometry  (  4, 120, 624-80, 860)
+
+        self.search_order_box.setGeometry( 644-80-12,  10, 664+60, 860)
+        self.order_table_view.setGeometry( 644-80-12, 120, 664+60, 860)
+
+        self.search_file_box.setGeometry (1318-20-18,  10, 584+40, 860)
+        self.file_table_view.setGeometry (1318-20-18, 120, 584+40, 860)
+
+
     def __on_toggle_view_clicked(self, view_mode=None):
 
         self._view_mix_btn. setEnabled(True)
@@ -567,8 +591,8 @@ class OrderPage(BaseStackedPage):
             self.search_jar_box.setGeometry  ( 970,  10, 940, 830)
             self.jar_table_view.setGeometry  ( 970, 120, 940, 830)
 
-            self.search_file_box.setGeometry (  1840,  10, 0, 830)
-            self.file_table_view.setGeometry (  1840, 120, 0, 830)
+            self.search_file_box.setGeometry (1840,  10,   0, 830)
+            self.file_table_view.setGeometry (1840, 120,   0, 830)
 
             self.populate_jar_table()
 
@@ -582,8 +606,8 @@ class OrderPage(BaseStackedPage):
             self.search_file_box.setGeometry ( 970,  10, 940, 830)
             self.file_table_view.setGeometry ( 970, 120, 940, 830)
                                                               
-            self.search_jar_box.setGeometry  (  1840,  10, 0, 830)
-            self.jar_table_view.setGeometry  (  1840, 120, 0, 830)
+            self.search_jar_box.setGeometry  (1840,  10,   0, 830)
+            self.jar_table_view.setGeometry  (1840, 120,   0, 830)
 
             self.populate_file_table()
 
@@ -591,14 +615,14 @@ class OrderPage(BaseStackedPage):
 
             self._view_mix_btn.setEnabled(False)
 
-            self.search_order_box.setGeometry( 10,  10, 624, 830)
-            self.order_table_view.setGeometry( 10, 120, 624, 830)
+            self.search_jar_box.setGeometry  (  10,  10, 624, 830)
+            self.jar_table_view.setGeometry  (  10, 120, 624, 830)
 
-            self.search_jar_box.setGeometry  ( 644,  10, 624, 830)
-            self.jar_table_view.setGeometry  ( 644, 120, 624, 830)
+            self.search_order_box.setGeometry( 644,  10, 624, 830)
+            self.order_table_view.setGeometry( 644, 120, 624, 830)
 
-            self.search_file_box.setGeometry ( 1278,  10, 624, 830)
-            self.file_table_view.setGeometry ( 1278, 120, 624, 830)
+            self.search_file_box.setGeometry (1278,  10, 624, 830)
+            self.file_table_view.setGeometry (1278, 120, 624, 830)
 
             self.populate_jar_table()
             self.populate_file_table()
@@ -887,6 +911,7 @@ class OrderPage(BaseStackedPage):
         # ~ self.populate_file_table()
 
         self.__on_toggle_view_clicked(view_mode='mix')
+        self.__hide_toggle_view_buttons()
 
         self.parent().setCurrentWidget(self)
 

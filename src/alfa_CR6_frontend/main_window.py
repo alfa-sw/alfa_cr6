@@ -161,6 +161,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
                 QPushButton:pressed {background-color: #AAAAAA;}
                 QScrollBar:vertical {width: 40px;}
+                QScrollBar:horizontal {width: 36px;}
             """)
 
         self.menu_btn_group.buttonClicked.connect(self.on_menu_btn_group_clicked)
