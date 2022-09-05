@@ -345,7 +345,7 @@ class OrderParser:
             brand = meta.get("brand", '')
             quality = meta.get("quality", '')
             colorCode = meta.get("colorCode", '')
-            quantity = meta.get("quantity", '')
+            quantity = meta.get("quantity(l)", '')
             date_time = str(time.asctime())
 
             properties["extra_lines_to_print"] = [f"{brand} - {quality}",
