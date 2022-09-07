@@ -149,15 +149,18 @@ class OrderParser:
                 "description": item.get("Descripcion", '')
             })
 
-        properties["extra_lines_to_print"] = [
-            properties["meta"].get('Fabricante', '')[:16],
-            "{} {} {}".format(
-                properties["meta"].get('ColorCode', ''),
-                properties["meta"].get('RealWeight', ''),
-                properties["meta"].get('Calidad', ''),
-            )[:16],
-            properties["meta"].get('Color', '')[:16],
-        ]
+
+        info_to_print = {k: properties["meta"].get(k, '') for k in ('Fabricante', 'ColorCode', 'Color', 'RealWeight', 'Calidad')}
+
+        fmt_= """{Fabricante}
+{ColorCode} - {Color}
+{Calidad}
+weight:{RealWeight}
+"""
+
+        logging.warning(f"info_to_print:{info_to_print}")
+
+        properties["extra_lines_to_print"] = [s[:17] for s in fmt_.format(**info_to_print).split('\n')]
 
         return properties
 
