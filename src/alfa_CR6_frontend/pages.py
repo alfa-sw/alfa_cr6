@@ -509,7 +509,7 @@ class OrderPage(BaseStackedPage):
 
         self.edit_aliases_btn.clicked.connect(self.main_window.open_alias_dialog)
 
-        self.view_mode = "file"
+        self.last_view_mode = 'mix'
 
     def populate_order_table(self):
 
@@ -587,7 +587,7 @@ class OrderPage(BaseStackedPage):
 
             self.search_order_box.setGeometry(  10,  10, 940, 830)
             self.order_table_view.setGeometry(  10, 120, 940, 836)
-                                             
+
             self.search_jar_box.setGeometry  ( 970,  10, 940, 830)
             self.jar_table_view.setGeometry  ( 970, 120, 940, 830)
 
@@ -602,10 +602,10 @@ class OrderPage(BaseStackedPage):
 
             self.search_order_box.setGeometry(  10,  10, 940, 830)
             self.order_table_view.setGeometry(  10, 120, 940, 830)
-                                                              
+
             self.search_file_box.setGeometry ( 970,  10, 940, 830)
             self.file_table_view.setGeometry ( 970, 120, 940, 830)
-                                                              
+
             self.search_jar_box.setGeometry  (1840,  10,   0, 830)
             self.jar_table_view.setGeometry  (1840, 120,   0, 830)
 
@@ -626,6 +626,8 @@ class OrderPage(BaseStackedPage):
 
             self.populate_jar_table()
             self.populate_file_table()
+
+        self.last_view_mode = view_mode
 
     @staticmethod
     def __on_purge_all_clicked():
@@ -910,8 +912,9 @@ class OrderPage(BaseStackedPage):
         # ~ self.populate_jar_table()
         # ~ self.populate_file_table()
 
-        self.__on_toggle_view_clicked(view_mode='mix')
-        self.__hide_toggle_view_buttons()
+        self.__on_toggle_view_clicked(view_mode=self.last_view_mode)
+
+        # ~ self.__hide_toggle_view_buttons()
 
         self.parent().setCurrentWidget(self)
 
