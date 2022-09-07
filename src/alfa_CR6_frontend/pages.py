@@ -46,6 +46,14 @@ from alfa_CR6_frontend.debug_page import simulate_read_barcode
 
 g_settings = import_settings()
 
+ORDER_PAGE_COLUMNS_ORDERS = {
+    'file': ["delete", "view", "create order", "file name"],
+    'order': ["delete", "edit", "status", "order nr.", "file name"],
+    'can': ["delete", "view", "status", "barcode"],
+}
+if hasattr(g_settings, 'ORDER_PAGE_COLUMNS_ORDERS'):
+    ORDER_PAGE_COLUMNS_ORDERS.update(g_settings.ORDER_PAGE_COLUMNS_ORDERS)
+
 
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
 
@@ -106,19 +114,21 @@ class FileTableModel(BaseTableModel):
 
     def __init__(self, parent, path, *args):
         super().__init__(parent, *args)
-        self.header = [tr_("delete"), tr_("view"), tr_("create order"), tr_("file name")]
+        # ~ self.header = [tr_("delete"), tr_("view"), tr_("create order"), tr_("file name")]
+        self.header = [tr_(s) for s in ORDER_PAGE_COLUMNS_ORDERS['file']]
         filter_text = parent.search_file_line.text()
         name_list_ = [p for p in os.listdir(path) if filter_text in p][:101]
         if len(name_list_) >= 100:
-            # ~ self.open_alert_dialog(
-            # ~ tr_("Too many files saved and not used. Please delete unused files."),
-            # ~ title="ERROR",
-            # ~ )
             args, fmt = (), "Too many files saved and not used. Please delete unused files."
             self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
 
         name_list_.sort(reverse=True)
-        self.results = [["", "", "", p] for p in name_list_]
+        # ~ self.results = [["", "", "", p] for p in name_list_]
+        self.results = []
+        for p in name_list_:
+            item = ["", "", "", ""]
+            item[ORDER_PAGE_COLUMNS_ORDERS['file'].index("file name")] = p
+            self.results.append(item)
 
     def remove_file(self, file_name):  # pylint: disable=no-self-use
         cmd_ = f'rm -f "{os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)}"'
@@ -130,11 +140,11 @@ class FileTableModel(BaseTableModel):
         if not index.isValid():
             return None
         ret = QVariant()
-        if role == Qt.DecorationRole and index.column() == 0:
+        if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['file'].index('delete'):
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1:  # view
+        elif role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['file'].index('view'):
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
-        elif role == Qt.DecorationRole and index.column() == 2:  # create order
+        elif role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['file'].index('create order'):
             ret = (
                 self.parent()
                 .style()
@@ -206,10 +216,17 @@ class OrderTableModel(BaseTableModel):
 
             logging.warning(f"dt:{time.time() - t0}, len(list_):{len(list_)}")
 
-            self.results = [
-                ["", "", o.status, o.order_nr, o.file_name] for o in list_]
+            # ~ self.results = [
+                # ~ ["", "", o.status, o.order_nr, o.file_name] for o in list_]
+            self.results = []
+            for o in list_:
+                item = ["", "", "", "", ""]
+                item[ORDER_PAGE_COLUMNS_ORDERS['order'].index("status")] = o.status
+                item[ORDER_PAGE_COLUMNS_ORDERS['order'].index("order nr.")] = o.order_nr
+                item[ORDER_PAGE_COLUMNS_ORDERS['order'].index("file name")] = o.file_name
+                self.results.append(item)
         else:
-            self.results = [[]]
+            self.results = [["", "", "", "", ""]]
 
         logging.warning(f"dt:{time.time() - t0}")
 
@@ -217,7 +234,8 @@ class OrderTableModel(BaseTableModel):
 
         super().__init__(parent, *args)
         self.session = QApplication.instance().db_session
-        self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr."), tr_("file name")]
+        # ~ self.header = [tr_("delete"), tr_("edit"), tr_("status"), tr_("order nr."), tr_("file name")]
+        self.header = [tr_(s) for s in ORDER_PAGE_COLUMNS_ORDERS['order']]
         filter_text = parent.search_order_line.text()
         self.__load_results(filter_text)
 
@@ -237,11 +255,11 @@ class OrderTableModel(BaseTableModel):
         if not index.isValid():
             return None
         ret = QVariant()
-        if role == Qt.DecorationRole and index.column() == 0:
+        if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['order'].index("delete"):
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1:  # edit
+        elif role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['order'].index("edit"):
             ret = self.edit_icon.scaled(32, 32, Qt.KeepAspectRatio)
-        if role == Qt.DecorationRole and index.column() == 2:  # status
+        if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['order'].index("status"):
             # ~ datum = str(index.data()).upper()
             datum = self.results[index.row()][index.column()]
             if "DONE" in datum:
@@ -270,12 +288,13 @@ class JarTableModel(BaseTableModel):
 
         sel_model = self.parent().order_table_view.selectionModel()
         sel_orders = sel_model.selectedRows()
+        indx_ = ORDER_PAGE_COLUMNS_ORDERS['order'].index("order nr.")
         if sel_orders:
             row = sel_orders[0].row()
-            order_nr = _order_model.results[row][3]
+            order_nr = _order_model.results[row][indx_]
             sel_order_nrs = [order_nr, ]
         else:
-            sel_order_nrs = [r[3] for r in _order_model.results]
+            sel_order_nrs = [r[indx_] for r in _order_model.results]
 
         # ~ logging.warning(f"sel_order_nrs:{sel_order_nrs}")
 
@@ -306,6 +325,13 @@ class JarTableModel(BaseTableModel):
                 return r
 
             self.results = [["", "", _fmt_status(o), o.barcode] for o in query_.all()]
+            self.results = []
+            for o in query_.all():
+                item = ["", "", "", ""]
+                item[ORDER_PAGE_COLUMNS_ORDERS['can'].index("status")] = _fmt_status(o)
+                item[ORDER_PAGE_COLUMNS_ORDERS['can'].index("barcode")] = o.barcode
+                self.results.append(item)
+
             self.results.sort(key=lambda x: x[3], reverse=True)
 
         else:
@@ -315,7 +341,8 @@ class JarTableModel(BaseTableModel):
 
         super().__init__(parent, *args)
         self.session = QApplication.instance().db_session
-        self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("barcode")]
+        # ~ self.header = [tr_("delete"), tr_("view"), tr_("status"), tr_("barcode")]
+        self.header = [tr_(s) for s in ORDER_PAGE_COLUMNS_ORDERS['can']]
         filter_text = parent.search_jar_line.text()
 
         self.__load_results(filter_text)
@@ -357,13 +384,13 @@ class JarTableModel(BaseTableModel):
         if not index.isValid():
             return None
         ret = QVariant()
-        if role == Qt.DecorationRole and index.column() == 0:
+        if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['can'].index("delete"):
             ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
-        elif role == Qt.DecorationRole and index.column() == 1:  # view
+        elif role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['can'].index("view"):
             # ~ ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
             ret = self.barcode_C128_icon.scaled(80, 160, Qt.KeepAspectRatio)
 
-        if role == Qt.DecorationRole and index.column() == 2:  # status
+        if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['order'].index("status"):
             # ~ datum = index.data()
             datum = self.results[index.row()][index.column()]
 
@@ -381,7 +408,7 @@ class JarTableModel(BaseTableModel):
             else:
                 ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
 
-        elif role == Qt.DisplayRole and index.column() == 2:  # status
+        elif role == Qt.DisplayRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['can'].index("status"):
             datum = self.results[index.row()][index.column()]
             ret = tr_(datum[0]) + datum[1]
         elif role == Qt.DisplayRole:
@@ -585,11 +612,11 @@ class OrderPage(BaseStackedPage):
 
             self._view_jar_btn.setEnabled(False)
 
-            self.search_order_box.setGeometry(  10,  10, 940, 830)
-            self.order_table_view.setGeometry(  10, 120, 940, 836)
+            self.search_order_box.setGeometry(  10,  10, 940+200, 830)
+            self.order_table_view.setGeometry(  10, 120, 940+200, 836)
 
-            self.search_jar_box.setGeometry  ( 970,  10, 940, 830)
-            self.jar_table_view.setGeometry  ( 970, 120, 940, 830)
+            self.search_jar_box.setGeometry  ( 970+200,  10, 940-200, 830)
+            self.jar_table_view.setGeometry  ( 970+200, 120, 940-200, 830)
 
             self.search_file_box.setGeometry (1840,  10,   0, 830)
             self.file_table_view.setGeometry (1840, 120,   0, 830)
@@ -642,10 +669,11 @@ class OrderPage(BaseStackedPage):
             col = index.column()
             row = index.row()
             model = index.model()
-            order_nr = model.results[row][3]
+            indx_ = ORDER_PAGE_COLUMNS_ORDERS['order'].index("order nr.")
+            order_nr = model.results[row][indx_]
 
             logging.warning(f"datum:{datum}, row:{row}, col:{col}, order_nr:{order_nr}")
-            if col == 0:  # delete
+            if col == ORDER_PAGE_COLUMNS_ORDERS['order'].index("delete"):
 
                 def cb():
                     model.delete_order(order_nr)
@@ -656,16 +684,16 @@ class OrderPage(BaseStackedPage):
                 self.main_window.open_input_dialog(icon_name="SP_MessageBoxCritical", message=msg_, ok_cb=cb)
                 self.populate_jar_table()
 
-            elif col == 1:  # edit
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['order'].index("edit"):
 
                 self.main_window.open_edit_dialog(order_nr)
                 self.populate_jar_table()
 
-            elif col == 2:  # status
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['order'].index("status"):
 
                 self.populate_jar_table()
 
-            elif col == 3:  # order_nr
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['order'].index("order nr."):
 
                 self.populate_jar_table()
 
@@ -680,9 +708,10 @@ class OrderPage(BaseStackedPage):
             col = index.column()
             row = index.row()
             model = index.model()
-            barcode = model.results[row][3]
+            indx_ = ORDER_PAGE_COLUMNS_ORDERS['can'].index("barcode")
+            barcode = model.results[row][indx_]
             logging.warning(f"row:{row}, col:{col}, barcode:{barcode}")
-            if col == 0:  # delete
+            if col == ORDER_PAGE_COLUMNS_ORDERS['can'].index("delete"):
 
                 def cb():
                     model.delete_jar(barcode)
@@ -694,7 +723,7 @@ class OrderPage(BaseStackedPage):
                     ok_cb=cb,
                 )
 
-            elif col == 1:  # view
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['can'].index("view"):
                 content = "{}"
                 msg_ = ""
                 jar = model.get_jar(barcode)
@@ -717,7 +746,7 @@ class OrderPage(BaseStackedPage):
                         ok_cb=dymo_print_jar,
                         ok_cb_args=[jar, ])
 
-            elif col == 2:  # status
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['can'].index("status"):
                 content = "{}"
                 msg_ = ""
                 jar = model.get_jar(barcode)
@@ -742,7 +771,7 @@ class OrderPage(BaseStackedPage):
                             message=msg_,
                             content=content)
 
-            elif col == 3:  # barcode
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['can'].index("barcode"):
                 pass
 
         except Exception as e:  # pylint: disable=broad-except
@@ -756,9 +785,10 @@ class OrderPage(BaseStackedPage):
             col = index.column()
             row = index.row()
             model = index.model()
-            file_name = model.results[row][3]
+            indx_ = ORDER_PAGE_COLUMNS_ORDERS['file'].index("file name")
+            file_name = model.results[row][indx_]
             logging.warning(f"row:{row}, col:{col}, file_name:{file_name}")
-            if col == 0:  # delete
+            if col == ORDER_PAGE_COLUMNS_ORDERS['file'].index("delete"):
 
                 def cb():
                     model.remove_file(file_name)
@@ -769,7 +799,7 @@ class OrderPage(BaseStackedPage):
                     message=tr_("confirm deleting file\n '{}' ?").format(file_name),
                     ok_cb=cb)
 
-            elif col == 1:  # view
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['file'].index("view"):
 
                 content = "{}"
                 split_ext = os.path.splitext(file_name)
@@ -802,7 +832,7 @@ class OrderPage(BaseStackedPage):
                     message=tr_("file_name:{}").format(file_name),
                     content=content)
 
-            elif col == 2:  # create order
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['file'].index("create order"):
 
                 _msg = tr_("confirm creating order from file (file will be deleted):\n '{}'?\n").format(file_name)
                 _msg += tr_('Please, insert below the number of jars.')
@@ -812,7 +842,7 @@ class OrderPage(BaseStackedPage):
                     ok_cb=self.__create_order_cb,
                     ok_cb_args=[model, file_name])
 
-            elif col == 3:  # file name
+            elif col == ORDER_PAGE_COLUMNS_ORDERS['file'].index("file name"):
                 pass
 
         except Exception as e:  # pylint: disable=broad-except

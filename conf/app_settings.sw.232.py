@@ -9,6 +9,12 @@ LANGUAGE = "en"
 
 BARCODE_READER_IDENTIFICATION_STRING = "usb-0000:01:00.0-1.2.4"
 
+ORDER_PAGE_COLUMNS_ORDERS = {
+    'file': ["file name", "create order", "view", "delete"],
+    'order': ["file name", "status", "edit", "order nr.", "delete"],
+    'can': ["view", "status", "barcode", "delete"],
+}
+
 PRINT_LABEL_OPTONS = {
     'dpi': 240,
     'module_height': 10,
