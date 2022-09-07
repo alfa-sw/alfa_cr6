@@ -658,9 +658,18 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 r = await step(jar)
 
                 if not r:
-                    retry_counter += 1
-                    msg_ = tr_('barcode:{} error in {}. I will retry.').format(barcode_, f"\n{_tag}\n") + f" ({retry_counter})"
-                    await self.wait_for_carousel_not_frozen(True, msg_)
+                    if "move_01_02" in _tag:
+
+                        msg_ = tr_('barcode:{} error in {}. Can is removed.').format(barcode_, f"\n{_tag}\n")
+                        await self.wait_for_carousel_not_frozen(True, msg_)
+
+                        return
+                    else:    
+
+                        retry_counter += 1
+                        msg_ = tr_('barcode:{} error in {}. I will retry.').format(barcode_, f"\n{_tag}\n") + f" ({retry_counter})"
+                        await self.wait_for_carousel_not_frozen(True, msg_)
+
                 else:
                     break
 
