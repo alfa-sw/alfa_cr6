@@ -160,7 +160,7 @@ weight:{RealWeight}
 
         logging.warning(f"info_to_print:{info_to_print}")
 
-        properties["extra_lines_to_print"] = [s[:17] for s in fmt_.format(**info_to_print).split('\n')]
+        properties["extra_lines_to_print"] = [s[:18] for s in fmt_.format(**info_to_print).split('\n')]
 
         return properties
 
