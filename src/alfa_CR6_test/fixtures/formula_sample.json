@@ -1,0 +1,40 @@
+{
+  "header": "SW CRx formula file",
+  "version": "1.0.0",
+  "system": "system_example",
+  "operatorId": "",
+  "batchId": 1219461585,
+  "meta": {
+    "brand": "brand_example",
+    "colorCode": "alfaTest-7",
+    "variantCode": "",
+    "colorName": "EXAMPLE_COLOR_NAME",
+    "dateModified": "16/06/2021",
+    "quantity(l)": 0.500,
+    "cumulative": 0.0,
+    "extraInfo": [
+      "xxx",
+      "yyy"
+    ]
+  },
+  "ingredients": [
+    {
+      "code": "C10",
+      "weight(g)": 12.3347,
+      "tolerance": 0,
+      "description": "aaaa"
+    },
+    {
+      "code": "C11",
+      "weight(g)": 116.6687,
+      "tolerance": 0,
+      "description": ""
+    },
+    {
+      "code": "C12",
+      "weight(g)": 0.4907,
+      "tolerance": 0,
+      "description": null
+    }
+  ]
+}
