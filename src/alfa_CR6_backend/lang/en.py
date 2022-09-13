@@ -132,6 +132,8 @@ D = {
     '   OK   ': '   OK   ',
     ' Cancel ': ' Cancel ',
     'Missing material for barcode {}.\n please refill pigments:{} on head {}.': 'Not enough product to dispense barcode {}.\n Please refill pigments:{} on head {}.',
+    'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})': 'Not enough product to dispense barcode {}.\n Please refill pigments:{}. ({}/{})',
+    "\nOtherwise the can's status will be marked as ERROR.": "\nOtherwise the can's status will be marked as ERROR.",
     'Please, insert below the number of jars.': 'Please, insert the number of cans below.',
     'barcode:{} error in STEP {}. I will retry.': 'barcode:{} error in STEP {}. I will retry.',
     'modified.': 'modified.',

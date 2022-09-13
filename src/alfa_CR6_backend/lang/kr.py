@@ -136,6 +136,10 @@ D = {
     " Cancel ": " 취소 ",
     "Missing material for barcode {}.\n please refill pigments:{} on head {}.":
         "{}바코드에 들어가는 조색제가 부족합니다. 모듈 {}에 있는 {} 조색제를 리필해주세요",
+    'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})':
+        "{}바코드에 들어가는 조색제가 부족합니다. 에 있는 {} 조색제를 리필해주세요. ({}/{})",
+    "\nOtherwise the can's status will be marked as ERROR.":
+        "\n그렇지 않으면 캔의 상태가 오류로 표시됩니다.",
     "Please, insert below the number of jars.": "몇 개의 바코드를 생성하시겠습니까?",
     "barcode:{} error in STEP {}. I will retry.": "바코드 {}가 {}단계에서 오류 상태입니다. 재시도하겠습니다",
     "modified.": "변경되었습니다",

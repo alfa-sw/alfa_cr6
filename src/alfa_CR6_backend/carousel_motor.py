@@ -580,21 +580,48 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         m = self.get_machine_head_by_letter(machine_letter)
         self.main_window.update_status_data(m.index, m.status)
 
-        await m.update_tintometer_data()
-        self.update_jar_properties(jar)
-        json_properties = json.loads(jar.json_properties)
-        insufficient_pigment_names = list(json_properties.get("insufficient_pigments", {}).keys())
-        if insufficient_pigment_names:
-            msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{} on head {}.').format(
-                jar.barcode, insufficient_pigment_names, m.name)
-            logging.warning(msg_)
-            r = await self.wait_for_carousel_not_frozen(True, msg_)
+        if jar.status == "ERROR":
+            r = True
+        else:
+            nof_retry = 3
+            cntr = 0
+            while cntr < nof_retry:
+                cntr += 1
+
+                await m.update_tintometer_data()
+                self.update_jar_properties(jar)
+                json_properties = json.loads(jar.json_properties)
+                insufficient_pigments = list(json_properties.get("insufficient_pigments", {}).keys())
+
+                if insufficient_pigments:
+                    msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{}. ({}/{})').format(
+                        jar.barcode, insufficient_pigments, cntr, nof_retry)
+                    if cntr == nof_retry:
+                        msg_ += tr_("\nOtherwise the can's status will be marked as ERROR.")
+                    logging.warning(msg_)
+                    r = await self.wait_for_carousel_not_frozen(True, msg_)
+                    await m.update_tintometer_data()
+                    self.update_jar_properties(jar)
+
             await m.update_tintometer_data()
             self.update_jar_properties(jar)
+            json_properties = json.loads(jar.json_properties)
+            insufficient_pigments = json_properties.get("insufficient_pigments", {})
 
-        r = await m.do_dispense(jar)
-        logging.warning(f"{m.name}, j:{jar}.")
-        logging.debug(f"jar.json_properties:{jar.json_properties}.")
+            if insufficient_pigments:
+
+                outcome_ = f'failure for refused refill and insufficiernt pigments {insufficient_pigments}.'
+                json_properties.setdefault("dispensation_outcomes", [])
+                json_properties["dispensation_outcomes"].append((m.name, outcome_))
+
+                self.update_jar_position(jar, machine_head=None, status="ERROR", pos=None)
+                logging.warning(f"{jar.barcode} in ERROR.")
+                r = True
+            else:
+                r = await m.do_dispense(jar)
+                logging.warning(f"{m.name}, j:{jar}.")
+                logging.debug(f"jar.json_properties:{jar.json_properties}.")
+
         return r
 
     async def execute_carousel_steps(self, n_of_heads, jar):
@@ -664,11 +691,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         await self.wait_for_carousel_not_frozen(True, msg_)
 
                         return
-                    else:    
 
-                        retry_counter += 1
-                        msg_ = tr_('barcode:{} error in {}. I will retry.').format(barcode_, f"\n{_tag}\n") + f" ({retry_counter})"
-                        await self.wait_for_carousel_not_frozen(True, msg_)
+                    retry_counter += 1
+                    msg_ = tr_('barcode:{} error in {}. I will retry.').format(barcode_, f"\n{_tag}\n") + f" ({retry_counter})"
+                    await self.wait_for_carousel_not_frozen(True, msg_)
 
                 else:
                     break

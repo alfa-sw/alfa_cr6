@@ -133,6 +133,8 @@ D = {
     '   OK   ': "   OK   ",
     ' Cancel ': "Abbrechen",
     'Missing material for barcode {}.\n please refill pigments:{} on head {}.': "Pastastand nicht ausreichend für Barcode {}.\n Bitte die Pasten: {} im Kopf:{} auffüllen.",
+    'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})': 'Pastastand nicht ausreichend für Barcode {}.\n Bitte die Pasten: {} auffüllen. ({}/{})',
+    "\nOtherwise the can's status will be marked as ERROR.": "\nAndernfalls wird der Status der Dose als ERROR markiert.",
     'Please, insert below the number of jars.': "Bitte die Nummer der Dosen eingeben.",
     'barcode:{} error in STEP {}. I will retry.': "Barcode:{} Positionsfehler {}. Neuer Versuch.",
     'modified.': "geändert.",

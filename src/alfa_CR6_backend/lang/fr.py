@@ -132,6 +132,8 @@ D = {
     '   OK   ': "   OK   ",
     ' Cancel ': "Annuler",
     'Missing material for barcode {}.\n please refill pigments:{} on head {}.': "Niveau pâte insuffisante pour le code-barres {}.\n faites l’appoint des pâtes : {} dans la tête {}.",
+    'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})': 'Niveau pâte insuffisante pour le code-barres {}.\n faites l’appoint des pâtes : {}. ({}/{})',
+    "\nOtherwise the can's status will be marked as ERROR.": "\nSinon, le statut du pot sera marqué comme ERREUR.",
     'Please, insert below the number of jars.': "Insérez le nombre de pots.",
     'barcode:{} error in STEP {}. I will retry.': "code-barres : {} erreur en position {}. nouvelle tentative.",
     'modified.': "modifié.",

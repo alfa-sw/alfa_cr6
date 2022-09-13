@@ -132,6 +132,8 @@ D = {
     '   OK   ': '   OK   ',
     ' Cancel ': 'Annulla',
     'Missing material for barcode {}.\n please refill pigments:{} on head {}.': 'Livello pasta insufficente per il codice a barre {}.\n prego rabboccare le paste:{} nella testa {}.',
+    'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})': 'Livello pasta insufficente per il codice a barre {}.\n prego rabboccare le paste:{}. ({}/{})',
+    "\nOtherwise the can's status will be marked as ERROR.": "\nAltrimenti lo stato del barattolo sara impostato a 'ERROR'.",
     'Please, insert below the number of jars.': 'Prego, inserire il numero di barattoli.',
     'barcode:{} error in STEP {}. I will retry.': 'codice a barre:{} errore in posizione {}. nuovo tentativo.',
     'modified.': 'modificato.',
