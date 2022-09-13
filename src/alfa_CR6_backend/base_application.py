@@ -140,6 +140,8 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
         "KEY_0": "0",
     }
 
+    BARCODE_LEN = 12
+
     def __init__(self, barcode_handler, identification_string, exception_handler=None):
 
         self.barcode_handler = barcode_handler
@@ -175,10 +177,10 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                     # ~ logging.warning(f"type_key_event:{type_key_event} ({event.type})")
                     if event.type == type_key_event and keyEvent.keystate == 0:  # key_up = 0
                         if keyEvent.keycode == "KEY_ENTER":
-                            buffer = buffer[:12]
+                            buffer = buffer[:self.BARCODE_LEN]
                             logging.warning(f"buffer:{buffer}")
 
-                            if self.barcode_handler:
+                            if self.barcode_handler and len(buffer) == self.BARCODE_LEN:
                                 try:
                                     await self.barcode_handler(buffer)
                                 except Exception as e:  # pylint: disable=broad-except
@@ -600,13 +602,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def __create_barcode_task(self):
 
-        _bc_identification_string = "Barcode"
-        if hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
-            _bc_identification_string = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+        while 1:
 
-        b = BarCodeReader(self.on_barcode_read, _bc_identification_string, exception_handler=self.handle_exception)
-        await b.run()
-        logging.warning(f" #### terminating barcode reader: {b} #### ")
+            _bc_identification_string = "Barcode"
+            if hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
+                _bc_identification_string = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+
+            b = BarCodeReader(self.on_barcode_read, _bc_identification_string, exception_handler=self.handle_exception)
+            await b.run()
+            logging.warning(f" #### terminating barcode reader: {b} #### ")
+            await asyncio.sleep(10)
 
     async def __create_inner_loop_task(self):
 
@@ -1250,7 +1255,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def update_jar_position(self, jar, machine_head=None, status=None, pos=None):
 
-        if jar is not None:
+        if jar is not None: # pylint: disable=too-many-nested-blocks
             for m in self.machine_head_dict.values():
                 if m:
                     if m == machine_head:
@@ -1263,10 +1268,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             m_name = machine_head.name[0] if machine_head else None
             logging.warning(f"jar:{jar}, machine_head:{m_name}, status:{status}, pos:{pos}")
             try:
-                for j in self.__jar_runners.values():
-                    if j.get("jar"):
-                        if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
-                            raise Exception(tr_("duplicate {} in jar position list!").format(pos))
+                if pos is not None:
+                    for j in self.__jar_runners.values():
+                        if j.get("jar"):
+                            if pos == j["jar"].position and jar.barcode != j["jar"].barcode:
+                                raise Exception(tr_("duplicate {} in jar position list!").format(pos))
 
                 if jar.status == "ERROR":
                     status = "ERROR"
