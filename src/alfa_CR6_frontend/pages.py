@@ -375,8 +375,8 @@ class JarTableModel(BaseTableModel):
             for j in query_.all():
                 j.position = 'DELETED'
 
-            if not [j for j in order.jars if j.position != "DELETED"]:
-                order.is_deleted = 'yes'
+            # ~ if not [j for j in order.jars if j.position != "DELETED"]:
+                # ~ order.is_deleted = 'yes'
 
             self.session.commit()
 
