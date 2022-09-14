@@ -287,6 +287,7 @@ class DebugPage:
             j.status = "NEW"
             j.position = "_"
             j.json_properties = "{}"
+            j.order.update_status()
         app.db_session.commit()
 
     async def run_test(self):  # pylint: disable=no-self-use

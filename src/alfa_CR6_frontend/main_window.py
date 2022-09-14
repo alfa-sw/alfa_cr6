@@ -484,7 +484,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         else:
             msg = str(args)
             msg_ = ''
-        json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg})
+        json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}, indent=2, ensure_ascii=False)
 
         _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args)
 

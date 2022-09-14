@@ -578,7 +578,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     async def dispense_step(self, machine_letter, jar):
 
         m = self.get_machine_head_by_letter(machine_letter)
-        self.main_window.update_status_data(m.index, m.status)
 
         if jar.status == "ERROR":
             r = True
@@ -590,6 +589,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
                 await m.update_tintometer_data()
                 self.update_jar_properties(jar)
+                self.main_window.update_status_data(m.index, m.status)
+
                 json_properties = json.loads(jar.json_properties)
                 insufficient_pigments = list(json_properties.get("insufficient_pigments", {}).keys())
 
@@ -600,8 +601,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         msg_ += tr_("\nOtherwise the can's status will be marked as ERROR.")
                     logging.warning(msg_)
                     r = await self.wait_for_carousel_not_frozen(True, msg_)
-                    await m.update_tintometer_data()
-                    self.update_jar_properties(jar)
 
             await m.update_tintometer_data()
             self.update_jar_properties(jar)
@@ -613,6 +612,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 outcome_ = f'failure for refused refill and insufficiernt pigments {insufficient_pigments}.'
                 json_properties.setdefault("dispensation_outcomes", [])
                 json_properties["dispensation_outcomes"].append((m.name, outcome_))
+                jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
 
                 self.update_jar_position(jar, machine_head=None, status="ERROR", pos=None)
                 logging.warning(f"{jar.barcode} in ERROR.")
