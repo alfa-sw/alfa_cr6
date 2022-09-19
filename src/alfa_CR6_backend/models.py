@@ -404,16 +404,15 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
     is_deleted = Column(Unicode)
     reserved = Column(Unicode)
     inner_status = Column(Unicode)
+    file_name = Column(Unicode)
 
     def __str__(self):
         return f"<Order object. status:{self.status}, order_nr:{self.order_nr}>"
 
-    @property
-    def file_name(self):
+    # ~ @property
+    # ~ def file_name(self):
 
-        meta = json.loads(self.json_properties).get("meta") or {}
-        file_name = meta.get("file name", '')
-        return file_name
+        # ~ return self.inner_file_name
 
     @property
     def status(self):
@@ -439,6 +438,13 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
             ret = self.update_deleted()
         return ret
 
+    def update_file_name(self, session=None):
+
+        if self.file_name is None:
+            meta = json.loads(self.json_properties).get("meta", {})
+            self.file_name = meta.get("file name", '')
+            if session:
+                session.commit()
 
     def update_deleted(self, session=None):
 
@@ -506,33 +512,49 @@ class Document(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
 def apply_table_alterations(engine):
 
+    def update_order_file_names():
+
+        Session = sessionmaker(bind=engine)
+        _session = Session()
+
+        t0 = time.time()
+        cntr = 0
+        if _session:
+            query_ = _session.query(Order)
+            for o in query_.all():
+                o.update_file_name()
+                cntr += 1
+            _session.commit()
+            logging.warning(f"cntr:{cntr}, dt:{time.time() - t0}")
+
     stmts = [
-        'ALTER TABLE "jar" ADD COLUMN reserved VARCHAR;',
-        # ~ 'ALTER TABLE "jar" ADD COLUMN is_deleted VARCHAR;',
-        'ALTER TABLE "order" ADD COLUMN is_deleted VARCHAR;',
-        'ALTER TABLE "order" ADD COLUMN reserved VARCHAR;',
-        'ALTER TABLE "order" ADD COLUMN inner_status VARCHAR;',
+        ('ALTER TABLE "jar" ADD COLUMN reserved VARCHAR;', None),
+        ('ALTER TABLE "order" ADD COLUMN is_deleted VARCHAR;', None),
+        ('ALTER TABLE "order" ADD COLUMN reserved VARCHAR;', None),
+        ('ALTER TABLE "order" ADD COLUMN inner_status VARCHAR;', None),
+        ('ALTER TABLE "order" ADD COLUMN file_name VARCHAR;', update_order_file_names),
     ]
 
     successfully_executed = []
     try:
-        from sqlalchemy import DDL # pylint: disable=import-outside-toplevel
-        for stmt in stmts:
+        from sqlalchemy import DDL  # pylint: disable=import-outside-toplevel
+        for stmt, updater in stmts:
             try:
                 engine.execute(DDL(stmt))
                 successfully_executed.append(stmt)
-            except OperationalError as e: # pylint: disable=broad-except
+                if updater:
+                    updater()
+            except OperationalError as e:  # pylint: disable=broad-except
                 if "duplicate column name" in str(e):
                     logging.info(f"Error executing stmt:{stmt}, e:{e}")
                 else:
                     logging.warning(traceback.format_exc())
-            except Exception: # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         logging.error(traceback.format_exc())
 
     logging.warning(f"successfully_executed({len(successfully_executed)}):{successfully_executed}")
-
 
 
 class dbEventManager:

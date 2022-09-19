@@ -112,15 +112,27 @@ class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-a
 
 class FileTableModel(BaseTableModel):
 
+    page_limit = 50
+
     def __init__(self, parent, path, *args):
         super().__init__(parent, *args)
         # ~ self.header = [tr_("delete"), tr_("view"), tr_("create order"), tr_("file name")]
         self.header = [tr_(s) for s in ORDER_PAGE_COLUMNS_ORDERS['file']]
         filter_text = parent.search_file_line.text()
-        name_list_ = [p for p in os.listdir(path) if filter_text in p][:101]
-        if len(name_list_) >= 100:
-            args, fmt = (), "Too many files saved and not used. Please delete unused files."
-            self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+
+        # ~ name_list_ = [p for p in os.listdir(path) if filter_text.lower() in p.lower()][:101]
+        # ~ if len(name_list_) >= 100:
+            # ~ args, fmt = (), "Too many files saved and not used. Please delete unused files."
+            # ~ self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+
+        name_list_ = []
+        for n in os.listdir(path):
+            if filter_text.lower() in n.lower():
+                name_list_.append(n)
+            if len(name_list_) >= self.page_limit:
+                # ~ args, fmt = (), "Too many files saved and not used. Please delete unused files."
+                # ~ self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                break
 
         name_list_.sort(reverse=True)
         # ~ self.results = [["", "", "", p] for p in name_list_]
@@ -157,7 +169,7 @@ class FileTableModel(BaseTableModel):
 
 class OrderTableModel(BaseTableModel):
 
-    page_limit = 100
+    page_limit = 50
 
     def __original_load_results(self, filter_text):
 
@@ -193,7 +205,6 @@ class OrderTableModel(BaseTableModel):
 
         if self.session:
 
-
             show_deleted = "DEL;" in filter_text
             filter_text = "".join(filter_text.split("DEL;"))
             # ~ logging.warning(f"show_deleted:{show_deleted}, filter_text:{filter_text}")
@@ -205,19 +216,16 @@ class OrderTableModel(BaseTableModel):
                 query_ = query_.filter(fltr)
 
             if filter_text:
-                query_ = query_.filter(Order.order_nr.like(f'%{filter_text}%'))
+                fltr = or_(Order.order_nr.ilike(f'%{filter_text}%'), Order.file_name.ilike(f'%{filter_text}%'))
+                query_ = query_.filter(fltr)
 
             query_ = query_.order_by(Order.order_nr.desc())
             query_ = query_.limit(self.page_limit)
 
-            # ~ logging.debug(f"query_:{query_}")
-
             list_ = query_.all()
 
-            logging.warning(f"dt:{time.time() - t0}, len(list_):{len(list_)}")
+            # ~ logging.info(f"dt:{time.time() - t0}, len(list_):{len(list_)}")
 
-            # ~ self.results = [
-                # ~ ["", "", o.status, o.order_nr, o.file_name] for o in list_]
             self.results = []
             for o in list_:
                 item = ["", "", "", "", ""]
@@ -228,7 +236,7 @@ class OrderTableModel(BaseTableModel):
         else:
             self.results = [["", "", "", "", ""]]
 
-        logging.warning(f"dt:{time.time() - t0}")
+        logging.info(f"dt:{time.time() - t0}")
 
     def __init__(self, parent, *args):
 
@@ -553,6 +561,8 @@ class OrderPage(BaseStackedPage):
                 tr_("[{}] Orders: search by order nr.").format(
                     self.order_model.rowCount()))
 
+        logging.info(f"dt:{time.time() - t}")
+
     def populate_jar_table(self):
 
         t = time.time()
@@ -565,6 +575,8 @@ class OrderPage(BaseStackedPage):
                 logging.error(traceback.format_exc())
             self.search_jar_box.setTitle(tr_("[{}] Jars:   search by status").format(self.jar_model.rowCount()))
 
+        logging.info(f"dt:{time.time() - t}")
+
     def populate_file_table(self):
 
         t = time.time()
@@ -575,8 +587,9 @@ class OrderPage(BaseStackedPage):
                 self.file_table_view.setModel(self.file_model)
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
-
             self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(self.file_model.rowCount()))
+
+        logging.info(f"dt:{time.time() - t}")
 
     def __hide_toggle_view_buttons(self):
 
@@ -682,20 +695,12 @@ class OrderPage(BaseStackedPage):
 
                 msg_ = tr_("confirm deleting order '{}' and related jars?").format(order_nr)
                 self.main_window.open_input_dialog(icon_name="SP_MessageBoxCritical", message=msg_, ok_cb=cb)
-                self.populate_jar_table()
 
             elif col == ORDER_PAGE_COLUMNS_ORDERS['order'].index("edit"):
 
                 self.main_window.open_edit_dialog(order_nr)
-                self.populate_jar_table()
 
-            elif col == ORDER_PAGE_COLUMNS_ORDERS['order'].index("status"):
-
-                self.populate_jar_table()
-
-            elif col == ORDER_PAGE_COLUMNS_ORDERS['order'].index("order nr."):
-
-                self.populate_jar_table()
+            self.populate_jar_table()
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
@@ -737,6 +742,7 @@ class OrderPage(BaseStackedPage):
                     content += tr_("date_created:{}\n").format(jar.date_created)
                     content += tr_("properties:{}\n").format(
                         json.dumps(json.loads(jar.json_properties), indent=2))
+
                     msg_ = tr_("do you want to print barcode:\n {} ?").format(barcode)
 
                     self.main_window.open_input_dialog(
