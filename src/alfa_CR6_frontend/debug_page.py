@@ -34,14 +34,20 @@ from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_se
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
 
-def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE")):
+def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE"), order_nr=None):
 
     app = QApplication.instance()
 
-    # ~ q = app.db_session.query(Jar).filter(Jar.status.in_(("NEW", "DONE")))
-    q = app.db_session.query(Jar).filter(Jar.status.in_(allowed_jar_statuses))
-    q = q.filter(Jar.position != "DELETED").order_by(Jar.date_created)
+    q = app.db_session.query(Jar)
+    if order_nr:
+        order_nr = int(order_nr)
+        logging.warning(f"order_nr:{order_nr}")
+        q = q.join(Order).filter(Order.order_nr == order_nr)
+    else:
+        q = q.filter(Jar.status.in_(allowed_jar_statuses))
+        q = q.filter(Jar.position != "DELETED").order_by(Jar.date_created)
     jar = q.first()
+    logging.warning(f"jar:{jar}")
 
     async def set_JAR_INPUT_ROLLER_PHOTOCELL_bit(on_off):
         # set JAR_INPUT_ROLLER_PHOTOCELL bit
@@ -67,7 +73,7 @@ def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE")):
         asyncio.ensure_future(t)
     else:
         app.main_window.open_alert_dialog(
-            f"cant find a valid can in db (not DELETED and with status in {allowed_jar_statuses})")
+            f"cant find a valid can in db. order_nr:{order_nr}, allowed_jar_statuses:{allowed_jar_statuses})")
 
 
 class DebugPage:
@@ -462,7 +468,8 @@ class DebugPage:
 
         elif "read\nbarcode" in cmd_txt:
 
-            simulate_read_barcode()
+            order_nr = app.main_window.menu_line_edit.text()
+            simulate_read_barcode(order_nr=order_nr)
 
         elif "run a complete\ncycle" in cmd_txt:
 
