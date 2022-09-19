@@ -364,9 +364,12 @@ class EditDialog(BaseDialog):
                 db_session.add(jar)
                 jars_to_print.append(jar)
 
+            order.update_status()
+
             db_session.commit()
 
             self.parent().order_page.populate_jar_table()
+            self.parent().order_page.populate_order_table()
 
             logging.warning(f"self.print_check_box.isChecked() :{self.print_check_box.isChecked() }")
             if self.print_check_box.isChecked():
