@@ -148,29 +148,69 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
         self._identification_string = identification_string
         self.exception_handler = exception_handler
 
+        self.last_read_event_time = 0
+        self.last_read_event_buffer = '-'
+
         self._device = None
 
-    async def run(self):      # pylint: disable=too-many-branches
+    def __open_device(self, evdev):
+
+        device_list = [evdev.InputDevice(p) for p in evdev.list_devices()]
+        device_list.sort(key=str)
+        for device_ in device_list:
+            logging.warning(f"device_:{ device_ }")
+            s_ = str(device_)
+
+            if self._identification_string in s_:
+                self._device = device_
+                logging.warning(f"BARCODE DEVICE FOUND. self._device:{ self._device }")
+                break
+
+    async def __on_buffer_read(self, buffer):
+        ret = None
+        if len(buffer) != self.BARCODE_LEN:
+
+            logging.warning(f"format mismatch! buffer:{buffer}")
+
+        else:
+
+            t = time.time()
+            logging.debug(f"buffer:{buffer}")
+
+            if self.last_read_event_buffer == buffer and t - self.last_read_event_time < 5.0:
+                # filter out reading events with the same value, in the time interval of 5 sec
+                pass
+            else:
+                logging.warning(f"buffer:{buffer}")
+                if self.barcode_handler:
+                    try:
+                        ret = await self.barcode_handler(buffer)
+                        if ret:
+                            self.last_read_event_buffer = buffer[:]
+                            self.last_read_event_time = t
+
+                    except Exception as e:  # pylint: disable=broad-except
+                        if self.exception_handler:
+                            self.exception_handler(e)
+                        else:
+                            logging.error(traceback.format_exc())
+        return ret
+
+    async def run(self):
 
         try:
+
             import evdev  # pylint: disable=import-error, import-outside-toplevel
 
-            buffer = ""
-            device_list = [evdev.InputDevice(p) for p in evdev.list_devices()]
-            device_list.sort(key=str)
-            for device_ in device_list:
-                logging.warning(f"device_:{ device_ }")
-                s_ = str(device_)
-
-                if self._identification_string in s_:
-                    self._device = device_
-                    logging.warning(f"BARCODE DEVICE FOUND. self._device:{ self._device }")
-                    break
+            self.__open_device(evdev)
 
             if not self._device:
                 logging.error("****** !!!! BARCODE DEVICE NOT FOUND !!! ******")
             else:
+
                 self._device.grab()  # become the sole recipient of all incoming input events from this device
+                self.last_read_event_time = 0
+                self.last_read_event_buffer = '-'
                 async for event in self._device.async_read_loop():
                     keyEvent = evdev.categorize(event)
                     type_key_event = evdev.ecodes.EV_KEY  # pylint:  disable=no-member
@@ -178,17 +218,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                     if event.type == type_key_event and keyEvent.keystate == 0:  # key_up = 0
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:self.BARCODE_LEN]
-                            logging.warning(f"buffer:{buffer}")
-
-                            if self.barcode_handler and len(buffer) == self.BARCODE_LEN:
-                                try:
-                                    await self.barcode_handler(buffer)
-                                except Exception as e:  # pylint: disable=broad-except
-                                    if self.exception_handler:
-                                        self.exception_handler(e)
-                                    else:
-                                        logging.error(traceback.format_exc())
-
+                            await self.__on_buffer_read(buffer)
                             buffer = ""
                         else:
                             filtered_ch_ = self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode)
@@ -792,7 +822,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def get_and_check_jar_from_barcode(self, barcode):  # pylint: disable=too-many-locals,too-many-branches
 
-        logging.warning("barcode:{}".format(barcode))
+        logging.debug("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
         logging.debug("order_nr:{}, index:{}".format(order_nr, index))
 
@@ -866,7 +896,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if not barcode or not self.ready_to_read_a_barcode:
 
-            logging.warning(f"skipping barcode:{barcode}")
+            logging.debug(f"skipping barcode:{barcode}")
             self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
 
         else:
@@ -987,14 +1017,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         # ~ logging.warning(f"order.json_properties:{order.json_properties}")
 
-    def _do_create_order(self, properties, description, n_of_jars):
+    def _do_create_order(self, properties, description, n_of_jars, file_name=None):
 
         order = None
         if self.db_session:
             try:
                 order = Order(
                     json_properties=json.dumps(properties, indent=2),
-                    description=description)
+                    description=description, file_name=file_name)
 
                 self.do_fill_unknown_pigment_list(order)
 
@@ -1043,8 +1073,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if properties.get('batchId'):
                     description = properties['batchId']
 
+                file_name = properties.get("meta", {}).get("file name")
+
                 if not properties['meta'].get('error'):
-                    order = self._do_create_order(properties, description, n_of_jars)
+                    order = self._do_create_order(properties, description, n_of_jars, file_name=file_name)
                     order_list.append(order)
 
         except Exception as e:  # pylint: disable=broad-except
