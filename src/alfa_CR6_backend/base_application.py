@@ -211,6 +211,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                 self._device.grab()  # become the sole recipient of all incoming input events from this device
                 self.last_read_event_time = 0
                 self.last_read_event_buffer = '-'
+                buffer = ""
                 async for event in self._device.async_read_loop():
                     keyEvent = evdev.categorize(event)
                     type_key_event = evdev.ecodes.EV_KEY  # pylint:  disable=no-member
