@@ -11,8 +11,6 @@ import platform
 from alfa_CR6_backend.carousel_motor import CarouselMotor
 from alfa_CR6_backend.globals import import_settings
 
-from alfa_CR6_frontend.main_window import MainWindow
-
 def pre_load_libGLX_on_banana():
 
     logging.warning("platform.release():{}".format(platform.release()))
@@ -31,6 +29,7 @@ def main():
 
     pre_load_libGLX_on_banana()
 
+    from alfa_CR6_frontend.main_window import MainWindow    # pylint: disable=import-outside-toplevel
     app = CarouselMotor(MainWindow, settings, sys.argv)
     logging.warning("version: {} - Ctrl+C to close me.".format(app.get_version()))
     app.run_forever()
