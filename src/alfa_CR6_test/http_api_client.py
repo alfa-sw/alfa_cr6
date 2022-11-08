@@ -280,14 +280,14 @@ def upload_json_formula(host):
 
 def main():
 
-    host = '127.0.0.1'
- 
-    host = sys.argv[1:] and sys.argv[1]
-    opt = sys.argv[2:] and sys.argv[2]
-    arg = sys.argv[3:] and sys.argv[3]
+    host = sys.argv[1:] and sys.argv[1] or '127.0.0.1'
+    opt = sys.argv[2:] and sys.argv[2] or '-u' 
+    arg = sys.argv[3:] and sys.argv[3] or ''
+    n_of_repeat = sys.argv[4:] and int(sys.argv[4]) or 1
+    more = sys.argv[5:] and sys.argv[5] or ''
 
-    if opt == []:
-        upload_json_formula(host)
+    if opt == '-u':
+        upload_json_formula(host, arg, n_of_repeat, more)
     elif opt == '-r':
         test_restless(arg, host)
     elif opt == '-j':

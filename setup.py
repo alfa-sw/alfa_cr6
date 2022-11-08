@@ -22,7 +22,7 @@ INSTALL_REQUIRES = [
     # ~ 'Pillow',
     'aiohttp',
     'flask',
-    'flask_sqlalchemy',
+    'flask_sqlalchemy<3.0.0',
     'flask_admin',
     'waitress',
     'python-magic',
