@@ -141,6 +141,8 @@ class OrderParser:
         properties["meta"] = xml_as_dict["Table"]["OT"].copy()
 
         componente = xml_as_dict["Table"]["Componentes"]["Componente"].copy()
+        if not isinstance(componente, list):
+            componente = [componente, ]
 
         for item in componente:
             properties["ingredients"].append({
