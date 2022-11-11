@@ -181,7 +181,6 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                 # filter out reading events with the same value, in the time interval of 5 sec
                 pass
             else:
-                logging.warning(f"buffer:{buffer}")
                 if self.barcode_handler:
                     try:
                         ret = await self.barcode_handler(buffer)
@@ -893,7 +892,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         ret = None
         barcode = str(barcode)
-        logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
+        # ~ logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
 
         if not barcode or not self.ready_to_read_a_barcode:
 
