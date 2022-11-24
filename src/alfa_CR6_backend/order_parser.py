@@ -56,6 +56,7 @@ class OrderParser:
     kcc_pdf_header = "KCC Color Navi Formulation"
     cpl_pdf_header = "MixingSys"
     DICHEMIX_pdf_header = "Dichemix"
+    mixcar_pdf_header = "Rapport de formule"
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -151,10 +152,17 @@ class OrderParser:
                 "description": item.get("Descripcion", '')
             })
 
+        info_to_print = {
+            k: properties["meta"].get(
+                k,
+                '') for k in (
+                'Fabricante',
+                'ColorCode',
+                'Color',
+                'RealWeight',
+                'Calidad')}
 
-        info_to_print = {k: properties["meta"].get(k, '') for k in ('Fabricante', 'ColorCode', 'Color', 'RealWeight', 'Calidad')}
-
-        fmt_= """{Fabricante}
+        fmt_ = """{Fabricante}
 {ColorCode} - {Color}
 {Calidad}
 weight:{RealWeight}
@@ -526,7 +534,7 @@ weight:{RealWeight}
             "extra_lines_to_print": [],
         }
 
-        _toks = meta.get("Number", []) and meta["Number"].split(    )
+        _toks = meta.get("Number", []) and meta["Number"].split()
         _line = (_toks[1] if _toks[1:] else '')
         properties["meta"]["color code"] = f"{_line}"
 
@@ -543,6 +551,71 @@ weight:{RealWeight}
         # ~ logging.warning(f'properties["extra_lines_to_print"]:{properties["extra_lines_to_print"]}')
 
         return properties, is_double_coat
+
+    @staticmethod
+    def parse_mixcar_pdf(lines):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+        def parse_ingredient_line(l):
+
+            ingredient = None
+            toks = l.split()
+            if len(toks) > 2:
+
+                value = float(toks[-2])
+                name = toks[0]
+                description = " ".join(toks[1:-2])
+
+                ingredient = {
+                    "pigment_name": name,
+                    "weight(g)": round(value, 4),
+                    "description": description
+                }
+
+            return ingredient
+
+        head_section_0 = "Rapport de formule"
+        head_section_1 = "REF Description"
+        head_section_2 = "CONFIDENTIAL INFORMATION"
+        section_cntr = 0
+        properties = {}
+        ingredients = []
+        extra_info = []
+
+        for l in lines:
+
+            if not l:
+                continue
+
+            l = " ".join(l.split())
+
+            if head_section_0 in l:
+                section_cntr = 0
+                continue
+            if head_section_1 in l:
+                section_cntr = 1
+                continue
+            if head_section_2 in l:
+                section_cntr = 2
+                continue
+
+            if section_cntr == 0:
+                extra_info.append(l)
+                continue
+
+            if section_cntr == 1:
+                ingredient = parse_ingredient_line(l)
+                if ingredient:
+                    ingredients.append(ingredient)
+
+                continue
+
+            if section_cntr == 2:
+                break
+
+        properties['ingredients'] = ingredients
+        properties['meta'] = {'extra_info': extra_info}
+
+        return properties
 
     @staticmethod
     def parse_sikkens_pdf(lines):     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
@@ -611,7 +684,7 @@ weight:{RealWeight}
             try:
                 total_lt = float(i)
                 break
-            except Exception: # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 pass
 
         if total_lt > 0.00001:
@@ -627,7 +700,7 @@ weight:{RealWeight}
             extra_lines_to_print.append(' '.join(head_section[0].split()[-2:]))
             extra_lines_to_print.append(' '.join(head_section[1].split()[:-1]))
             extra_lines_to_print.append(' '.join(head_section[2].split()[:-3]))
-        except Exception: # pylint: disable=broad-except
+        except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
         properties["extra_lines_to_print"] = extra_lines_to_print
@@ -635,7 +708,7 @@ weight:{RealWeight}
         return properties
 
     @classmethod
-    def parse_pdf_order(cls, path_to_file, fixed_pitch=5):
+    def parse_pdf_order(cls, path_to_file, fixed_pitch=5): # pylint: disable=too-many-branches
 
         path_to_txt_file = "{0}.txt".format(path_to_file)
 
@@ -682,6 +755,12 @@ weight:{RealWeight}
 
             if properties.get('meta'):
                 properties['meta']['header'] = cls.DICHEMIX_pdf_header
+
+        elif cls.mixcar_pdf_header in lines[0]:
+            properties = cls.parse_mixcar_pdf(lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.mixcar_pdf_header
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
@@ -780,6 +859,12 @@ weight:{RealWeight}
                 properties_list = [self.parse_xml_order(path_to_file), ]
             elif mime_type == 'application/pdf' or '.pdf' in file_extension:
                 properties_list = self.parse_pdf_order(path_to_file)
+
+                # ~ if properties.get('meta') is None or properties['meta'].get('error'):
+                    # ~ properties = self.parse_pdf_order(path_to_file, fixed_pitch=None)
+
+                # ~ properties_list = [properties, ]
+
             elif mime_type == 'text/plain':
                 properties_list = [self.parse_txt_order(path_to_file), ]
             else:
@@ -791,9 +876,9 @@ weight:{RealWeight}
 
                 properties = self._substitute_aliases(properties)
 
-            err_msg = tr_("properties not valid:{}").format(properties)[:400]
-            assert properties.get('meta') is not None, err_msg
-            assert not properties['meta'].get('error'), err_msg
+                err_msg = tr_("properties not valid:{}").format(properties)[:400]
+                assert properties.get('meta') is not None, err_msg
+                assert not properties['meta'].get('error'), err_msg
 
         except Exception as e:              # pylint: disable=broad-except
 
