@@ -12,6 +12,8 @@ import http.client
 
 import requests
 
+LOG_LEVEL = 'INFO'
+
 
 """ to be reported on label:
 
@@ -41,19 +43,20 @@ def test_restless(resource_name, host):
 
     conn = http.client.HTTPConnection(host=host, port=port, timeout=5)
 
-    url = url + "?include=jars&filter[objects]=" + "".join(json.dumps(SAMLPE_FILTER).split())
+    # ~ url = url + "?include=jars&filter[objects]=" + "".join(json.dumps(SAMLPE_FILTER).split())
 
-    print(url)
+    logging.warning(url)
 
     conn.request(method=method, url=url, headers=hdrs)
     response = conn.getresponse()
 
     resp_str = response.read().decode()
+    logging.warning(resp_str)
     resp_dict = json.loads(resp_str)
 
     resp = json.dumps(resp_dict, indent=2, ensure_ascii=False)
 
-    print(resp)
+    logging.warning(resp)
 
 
 def ask_orders_by_job_id(job_id, host):
@@ -65,7 +68,7 @@ def ask_orders_by_job_id(job_id, host):
     hdrs = {'Content-type': 'application/json'}
 
     conn = http.client.HTTPConnection(host=host, port=port, timeout=5)
-    # ~ print(f"conn:{conn}, host:port={host}:{port}")
+    # ~ logging.warning(f"conn:{conn}, host:port={host}:{port}")
     conn.request(method=method, url=url, headers=hdrs)
     response = conn.getresponse()
 
@@ -74,21 +77,21 @@ def ask_orders_by_job_id(job_id, host):
     # ~ for d in resp_dict['data']:
     # ~ d["json_properties"] = json.loads(d["json_properties"])
     resp = json.dumps(resp_dict, indent=2, ensure_ascii=False)
-    print(resp)
+    logging.warning(resp)
 
 
 def upload_formula_file(file_path, host):
 
     port = 8090
     url = f"http://{HOST}:{port}/upload_formula_file"
-    print(f"url:{url}")
+    logging.warning(f"url:{url}")
 
     with open(file_path, 'rb') as fd:
         files = {'file': (os.path.basename(file_path), fd, 'application/json')}
         r = requests.post(url, files=files)
 
-        print(f"r:{r}")
-        # ~ print(r.prepare().body.decode('ascii'))
+        logging.warning(f"r:{r}")
+        # ~ logging.warning(r.prepare().body.decode('ascii'))
 
 
 def upload_json_formula(host):
@@ -268,7 +271,7 @@ def upload_json_formula(host):
         hdrs = {'Content-type': 'application/json'}
 
         conn = http.client.HTTPConnection(host=host, port=port, timeout=5)
-        # ~ print(f"conn:{conn}, host:port={host}:{port}")
+        # ~ logging.warning(f"conn:{conn}, host:port={host}:{port}")
         conn.request(method=method, url=url, body=json_data_as_string, headers=hdrs)
         response = conn.getresponse()
 
@@ -280,6 +283,10 @@ def upload_json_formula(host):
 
 def main():
 
+    logging.basicConfig(
+        stream=sys.stdout, level=LOG_LEVEL,
+        format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
+
     host = sys.argv[1:] and sys.argv[1] or '127.0.0.1'
     opt = sys.argv[2:] and sys.argv[2] or '-u' 
     arg = sys.argv[3:] and sys.argv[3] or ''
@@ -287,7 +294,8 @@ def main():
     more = sys.argv[5:] and sys.argv[5] or ''
 
     if opt == '-u':
-        upload_json_formula(host, arg, n_of_repeat, more)
+        # ~ upload_json_formula(host, arg, n_of_repeat, more)
+        upload_json_formula(host)
     elif opt == '-r':
         test_restless(arg, host)
     elif opt == '-j':

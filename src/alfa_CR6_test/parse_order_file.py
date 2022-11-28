@@ -30,12 +30,14 @@ def main():
                 for properties in properties_list:
                     # ~ logging.warning(f"{path_to_file} ingredients:{len(properties.get('ingredients', []))}")
 
-                    assert properties.get('ingredients')
                     # ~ logging.warning(json.dumps(properties, indent=2, ensure_ascii=False))
                     # ~ logging.warning(f"extra_lines_to_print:{properties['extra_lines_to_print']}")
                     with open(path_to_file + f'.{count}.json', 'w') as f:
                         json.dump(properties, f, indent=2, ensure_ascii=False)
                         count += 1
+
+                    assert properties.get('ingredients')
+
             except:
                 logging.error(traceback.format_exc())
 
