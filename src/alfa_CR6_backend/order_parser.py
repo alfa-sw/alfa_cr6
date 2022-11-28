@@ -707,12 +707,13 @@ weight:{RealWeight}
                 # ~ err = f"total_lt:{total_lt}, total_gr:{total_gr}"
                 # ~ logging.error(err)
                 # ~ properties = {'error': err}
-            total_vol = sum([
-                (i["weight(g)"] / _specific_weights.get(i["pigment_name"], 1.0)) for i in properties['ingredients']
+            total_vol_cc = sum([
+                (i["weight(g)"] / _specific_weights.get(i["pigment_name"], 1.5)) for i in properties['ingredients']
             ])
+            total_vol_cc = round(total_vol_cc, 3)
 
-            if total_vol > total_lt * 1.05:
-                err = f"total_lt:{total_lt}, total_vol:{total_vol}"
+            if total_vol_cc > total_lt * 1050:
+                err = f"total_lt:{total_lt}, total_vol_cc:{total_vol_cc}"
                 logging.error(err)
                 properties = {'error': err}
 
