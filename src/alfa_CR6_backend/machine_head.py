@@ -450,7 +450,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         return False
                     msg_ = tr_("{} waiting for answer to cmd:{}").format(self.name, cmd_name)
 
-                    ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_)
+                    # ~ ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_)
+                    ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_, show_alert=False)
                     logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
                 else:
                     # TODO: wait for answer from macroprocessor
@@ -623,10 +624,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         await self.handle_ws_recv()
             except (OSError, ConnectionRefusedError,
                     websockets.exceptions.ConnectionClosedError) as e:
-                logging.error(f"e:{e}")
+                logging.error(f"{self.name} e:{e}")
                 await asyncio.sleep(5)
             except Exception as e:  # pylint: disable=broad-except
-                logging.error(f"e:{e}")
+                logging.error(f"{self.name} e:{e}")
                 logging.error(traceback.format_exc())
                 await asyncio.sleep(2)
         logging.warning(" *** exiting *** ")
