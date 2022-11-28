@@ -304,7 +304,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             await FROM.crx_outputs_management(0, 1)
             await TO.crx_outputs_management(0, 2)
-            r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
+            # ~ r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
+            r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=45)
             await FROM.crx_outputs_management(0, 0)
             await TO.crx_outputs_management(0, 0)
             if r:
