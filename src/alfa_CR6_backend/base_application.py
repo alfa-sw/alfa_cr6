@@ -1082,7 +1082,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
-        logging.warning(f"path_to_file:{path_to_file}, n_of_jars:{n_of_jars}, order:{order}.")
+        logging.warning(f"path_to_file:{path_to_file}, n_of_jars:{n_of_jars}, order_list:{order_list}.")
 
         return order_list
 

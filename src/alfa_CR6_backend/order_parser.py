@@ -22,6 +22,20 @@ import magic       # pylint: disable=import-error
 
 from alfa_CR6_backend.globals import (get_encoding, tr_, SCHEMAS_PATH, get_application_instance)
 
+def get_specific_weights():
+
+    ret_dict = {}
+    _app = get_application_instance()
+    for m in _app.machine_head_dict.values():
+        for p in m.pigment_list:
+            p_name = p['name']
+            p_specific_weight = m.get_specific_weight(p_name)
+            ret_dict[p_name] = p_specific_weight if p_specific_weight > 0.001 else 1.0
+
+    logging.warning(f"ret_dict:{ret_dict}")
+
+    return ret_dict
+
 def replace_invalid_tags(path_to_file):
 
     TAGS_TO_FIX = {
@@ -618,6 +632,8 @@ weight:{RealWeight}
     @staticmethod
     def parse_sikkens_pdf(lines):     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
+        _specific_weights = get_specific_weights()
+
         properties = {}
         section = 0
         offset_value = 0
@@ -686,9 +702,17 @@ weight:{RealWeight}
                 pass
 
         if total_lt > 0.00001:
-            total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
-            if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
-                err = f"total_lt:{total_lt}, total_gr:{total_gr}"
+            # ~ total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
+            # ~ if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
+                # ~ err = f"total_lt:{total_lt}, total_gr:{total_gr}"
+                # ~ logging.error(err)
+                # ~ properties = {'error': err}
+            total_vol = sum([
+                (i["weight(g)"] / _specific_weights.get(i["pigment_name"], 1.0)) for i in properties['ingredients']
+            ])
+
+            if total_vol > total_lt * 1.05:
+                err = f"total_lt:{total_lt}, total_vol:{total_vol}"
                 logging.error(err)
                 properties = {'error': err}
 

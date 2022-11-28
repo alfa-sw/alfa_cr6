@@ -82,7 +82,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         # ~ logging.warning(f"{self.name} {pigment_name} specific_weight:{specific_weight}")
 
-        return specific_weight
+        return float(specific_weight)
 
     def get_available_weight(self, pigment_name):
 
