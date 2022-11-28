@@ -17,13 +17,10 @@ import time
 
 import jsonschema
 
-from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
-
 import xmltodict   # pylint: disable=import-error
 import magic       # pylint: disable=import-error
 
-from alfa_CR6_backend.globals import (get_encoding, tr_, SCHEMAS_PATH)
-
+from alfa_CR6_backend.globals import (get_encoding, tr_, SCHEMAS_PATH, get_application_instance)
 
 def replace_invalid_tags(path_to_file):
 
@@ -70,8 +67,9 @@ class OrderParser:
     def _substitute_aliases(properties):
 
         try:
-            if QApplication.instance():
-                _alias_file = os.path.join(QApplication.instance().settings.DATA_PATH, "pigment_alias.json")
+            _app = get_application_instance()
+            if _app:
+                _alias_file = os.path.join(_app.settings.DATA_PATH, "pigment_alias.json")
             else:
                 _alias_file = "/opt/alfa_cr6/data/pigment_alias.json"
 

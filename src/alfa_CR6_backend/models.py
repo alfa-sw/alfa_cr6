@@ -15,8 +15,6 @@ import time
 # ~ import sqlite3
 from datetime import (date, datetime)
 
-from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
-
 from jsonschema import validate  # pylint: disable=import-error
 
 from sqlalchemy import (      # pylint: disable=import-error
@@ -46,6 +44,8 @@ from sqlalchemy.inspection import inspect  # pylint: disable=import-error
 from sqlalchemy.exc import OperationalError
 
 import iso8601                       # pylint: disable=import-error
+
+from alfa_CR6_backend.globals import get_application_instance
 
 Base = sqlalchemy.ext.declarative.declarative_base()
 
@@ -327,7 +327,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         logging.warning(f"old:{old}, new:{new}.")
 
         try:
-            app = QApplication.instance()
+            app = get_application_instance()
             app.main_window.debug_page.update_status()
         except Exception as e:  # pylint: disable=broad-except
             logging.error(f"{e}")
@@ -381,7 +381,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
                     ingredients[pigment_name] = val_
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
-                QApplication.instance().handle_exception(e)
+                get_application_instance().handle_exception(e)
 
         # ~ logging.warning(f"{m.name} ingredients:{ingredients}")
 

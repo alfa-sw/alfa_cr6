@@ -15,14 +15,12 @@ import traceback
 import time
 
 
-from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
-
 import aiohttp  # pylint: disable=import-error
 import async_timeout  # pylint: disable=import-error
 
 import websockets  # pylint: disable=import-error
 
-from alfa_CR6_backend.globals import EPSILON, tr_
+from alfa_CR6_backend.globals import EPSILON, tr_, get_application_instance
 
 DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
 
@@ -33,8 +31,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self, index, ip_add, ws_port, http_port, ws_msg_handler=None, mockup_files_path=None):
 
         self.index = index
-        self.name = QApplication.instance().MACHINE_HEAD_INDEX_TO_NAME_MAP[index]
-        self.app = QApplication.instance()
+        self.app = get_application_instance()
+        self.name = self.app.MACHINE_HEAD_INDEX_TO_NAME_MAP[index]
 
         self.aiohttp_clientsession = None
 
@@ -176,7 +174,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True)
 
             try:
-                QApplication.instance().insert_db_event(
+                get_application_instance().insert_db_event(
                     name="HEAD",
                     level="ALARM",
                     severity=status.get("error_code", ''),
@@ -489,7 +487,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         jar_json_properties[self.name]["missing_ingredients"] = missing_ingredients
         jar.json_properties = json.dumps(jar_json_properties, indent=2)
 
-        QApplication.instance().db_session.commit()
+        get_application_instance().db_session.commit()
 
         return ingredients
 

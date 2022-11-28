@@ -50,6 +50,11 @@ LANGUAGE_MAP = {
 
 _ALFA_SN = None
 
+def get_application_instance():
+
+    from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module, import-outside-toplevel
+    return QApplication.instance()
+
 def get_alfa_serialnumber():
 
     global _ALFA_SN    # pylint: disable=global-statement
