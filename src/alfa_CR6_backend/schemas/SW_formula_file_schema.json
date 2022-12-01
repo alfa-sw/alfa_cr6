@@ -1,110 +1,147 @@
-{
-  "type": "object",
-  "title": "SW CRx formula file",
-  "description": "A Sherwin-Williams formula file for CRx",
-  "properties": {
-    "header": {
-      "const": "SW CRx formula file"
-    },
-    "version": {
-      "type": "string"
-    },
-    "system": {
-      "type": "string"
-    },
-    "operatorId": {
-      "type": "string"
-    },
-    "jobId": {
-      "type": "string"
-    },
-    "batchId": {
-      "type": "number"
-    },
-    "meta": {
-      "type": "object",
-      "properties": {
-        "brand": {
-          "type": "string"
+﻿{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+        "header": {
+            "const": "SW CRx formula file"
         },
-        "region": {
-          "type": "string"
-        },
-        "colorCode": {
-          "type": "string"
-        },
-        "variantCode": {
-          "type": "string"
-        },
-        "colorName": {
-          "type": "string"
-        },
-        "secondName": {
-          "type": "string"
-        },
-        "year": {
-          "type": "string"
-        },
-        "remark": {
-          "type": "string"
-        },
-        "quality": {
-          "type": "string"
-        },
-        "undercoat": {
-          "type": "string"
-        },
-        "pictograms": {
-          "type": "string"
-        },
-        "dateModified": {
-          "type": "string"
-        },
-        "quantity(l)": {
-          "type": "number",
-          "description": "The requested quantity in liters"
-        },
-        "cumulative": {
-          "type": "number"
-        },
-        "extraInfo": {
-          "type": "array",
-          "items": {
+        "version": {
             "type": "string"
-          }
+        },
+        "system": {
+            "type": "string"
+        },
+        "operatorId": {
+            "type": "string"
+        },
+        "jobId": {
+            "type": "string"
+        },
+        "batchId": {
+            "type": "integer"
+        },
+        "formulaNumber": {
+            "type": "string"
+        },
+        "meta": {
+            "type": "object",
+            "properties": {
+                "brand": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "colorCode": {
+                    "type": "string"
+                },
+                "variantCode": {
+                    "type": "string"
+                },
+                "colorName": {
+                    "type": "string"
+                },
+                "secondName": {
+                    "type": "string"
+                },
+                "year": {
+                    "type": "string"
+                },
+                "remark": {
+                    "type": "string"
+                },
+                "quality": {
+                    "type": "string"
+                },
+                "undercoat": {
+                    "type": "string"
+                },
+                "pictograms": {
+                    "type": "string"
+                },
+                "dateModified": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "number"
+                },
+                "quantityUom": {
+                    "enum": [
+                        "gal",
+                        "l",
+                        "ml",
+                        "oz",
+                        "oz/128",
+                        "oz/96",
+                        "pt",
+                        "qt",
+                        "5gal",
+                        "oz/384"
+                    ],
+                    "description": "The requested quantity's unit of measurement"
+                },
+                "cumulative": {
+                    "type": "number"
+                },
+                "extraInfo": {
+                    "type": "array",
+                    "items": {
+                        "items": {}
+                    }
+                }
+            },
+            "required": [
+                "brand",
+                "region",
+                "colorCode",
+                "variantCode",
+                "colorName",
+                "secondName",
+                "year",
+                "remark",
+                "quality",
+                "undercoat",
+                "pictograms",
+                "dateModified",
+                "quantity",
+                "quantityUom",
+                "cumulative",
+                "extraInfo"
+            ]
+        },
+        "ingredients": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "weight(g)": {
+                        "type": "number",
+                        "description": "The ingredient's weight in grams"
+                    },
+                    "description": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "code",
+                    "weight(g)",
+                    "description"
+                ]
+            }
         }
-      },
-      "required": []
     },
-    "ingredients": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "code": {
-            "type": "string"
-          },
-          "weight(g)": {
-            "type": "number",
-            "description": "The ingredient's weight in grams"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "weight(g)"
-        ]
-      }
-    }
-  },
-  "required": [
-    "header",
-    "version",
-    "system",
-    "meta",
-    "ingredients"
-  ]
+    "required": [
+        "header",
+        "version",
+        "system",
+        "operatorId",
+        "jobId",
+        "batchId",
+        "formulaNumber",
+        "meta",
+        "ingredients"
+    ]
 }
-
