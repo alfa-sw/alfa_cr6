@@ -4,6 +4,7 @@
 # pylint: disable=logging-format-interpolation
 # pylint: disable=line-too-long
 # pylint: disable=invalid-name
+# pylint: disable=too-many-lines
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
@@ -68,6 +69,8 @@ class OrderParser:
     cpl_pdf_header = "MixingSys"
     DICHEMIX_pdf_header = "Dichemix"
     mixcar_pdf_header = "Rapport de formule"
+    axalta_pdf_header = "Axalta Industrial"
+    codevid_pdf_header = "Formula Details"
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -630,6 +633,129 @@ weight:{RealWeight}
         return properties
 
     @staticmethod
+    def parse_axalta_pdf(lines):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+        def parse_ingredient_line(l):
+
+            ingredient = None
+            toks = l.split()
+            if len(toks) > 2:
+
+                value = float(toks[-2].replace(',','.'))
+                name = toks[0]
+                description = " ".join(toks[1:-2])
+
+                ingredient = {
+                    "pigment_name": name,
+                    "weight(g)": round(value, 4),
+                    "description": description
+                }
+
+            return ingredient
+
+        head_section_0 = "Axalta Industrial"
+        head_section_1 = "Productcode Omschrijving"
+        head_section_2 = "Totaal"
+        section_cntr = 0
+        properties = {}
+        ingredients = []
+        extra_info = []
+
+        for l in lines:
+
+            if not l:
+                continue
+
+            l = " ".join(l.split())
+
+            if head_section_0 in l:
+                section_cntr = 0
+                continue
+            if head_section_1 in l:
+                section_cntr = 1
+                continue
+            if head_section_2 in l:
+                section_cntr = 2
+                continue
+
+            if section_cntr == 0:
+                extra_info.append(l)
+                continue
+
+            if section_cntr == 1:
+                ingredient = parse_ingredient_line(l)
+                if ingredient:
+                    ingredients.append(ingredient)
+
+                continue
+
+            if section_cntr == 2:
+                break
+
+        properties['ingredients'] = ingredients
+        properties['meta'] = {'extra_info': extra_info}
+
+        return properties
+
+    @staticmethod
+    def parse_codevid_pdf(lines):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+        def parse_ingredient_line(l):
+
+            ingredient = None
+            toks = l.split()
+            if len(toks) > 2:
+
+                value = float(toks[-2].replace(',','.'))
+                name = toks[0]
+                description = " ".join(toks[1:-2])
+
+                ingredient = {
+                    "pigment_name": name,
+                    "weight(g)": round(value, 4),
+                    "description": description
+                }
+
+            return ingredient
+
+        head_section_0 = "Formula Details"
+        head_section_1 = "Formula"
+        section_cntr = 0
+        properties = {}
+        ingredients = []
+        extra_info = []
+
+        for l in lines:
+
+            if not l:
+                continue
+
+            l = " ".join(l.split())
+
+            if head_section_0 in l:
+                section_cntr = 0
+                continue
+            if head_section_1 in l:
+                section_cntr = 1
+                continue
+
+            if section_cntr == 0:
+                extra_info.append(l)
+                continue
+
+            if section_cntr == 1:
+                ingredient = parse_ingredient_line(l)
+                if ingredient:
+                    ingredients.append(ingredient)
+
+                continue
+
+        properties['ingredients'] = ingredients
+        properties['meta'] = {'extra_info': extra_info}
+
+        return properties
+
+    @staticmethod
     def parse_sikkens_pdf(lines):     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         _specific_weights = get_specific_weights()
@@ -784,6 +910,18 @@ weight:{RealWeight}
 
             if properties.get('meta'):
                 properties['meta']['header'] = cls.mixcar_pdf_header
+
+        elif cls.axalta_pdf_header in " ".join(lines[0:4]):
+            properties = cls.parse_axalta_pdf(lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.axalta_pdf_header
+
+        elif cls.codevid_pdf_header in " ".join(lines[0:1]):
+            properties = cls.parse_codevid_pdf(lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.codevid_pdf_header
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
