@@ -278,7 +278,8 @@ def upload_json_formula(host):
         _resp = response.read().decode()
         _resp = json.loads(_resp)
 
-        logging.warning(f"_resp:{_resp}")
+        # ~ logging.warning(f"_resp:{json.dump(json.loads(_resp), indent=2)}")
+        logging.warning(f"_resp:{json.dumps(_resp, indent=2)}")
 
 
 def main():
