@@ -28,20 +28,21 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
     QButtonGroup,
     QPushButton)
 
-from alfa_CR6_backend.models import (Jar, Order)
+from alfa_CR6_backend.models import (Jar, Order, decompile_barcode)
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
 from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings)
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
 
-def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE"), order_nr=None):
+def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE"), barcode=None):
 
     app = QApplication.instance()
 
     q = app.db_session.query(Jar)
-    if order_nr:
-        order_nr = int(order_nr)
-        logging.warning(f"order_nr:{order_nr}")
+    if barcode:
+        order_nr, index = decompile_barcode(barcode)
+        logging.warning(f"order_nr:{order_nr}, index:{index}")
+        q = q.filter(Jar.index == index)
         q = q.join(Order).filter(Order.order_nr == order_nr)
     else:
         q = q.filter(Jar.status.in_(allowed_jar_statuses))
@@ -73,7 +74,7 @@ def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE"), order_nr=None):
         asyncio.ensure_future(t)
     else:
         app.main_window.open_alert_dialog(
-            f"cant find a valid can in db. order_nr:{order_nr}, allowed_jar_statuses:{allowed_jar_statuses})")
+            f"cant find a valid can in db. barcode:{barcode}, allowed_jar_statuses:{allowed_jar_statuses})")
 
 
 class DebugPage:
@@ -468,8 +469,9 @@ class DebugPage:
 
         elif "read\nbarcode" in cmd_txt:
 
-            order_nr = app.main_window.menu_line_edit.text()
-            simulate_read_barcode(order_nr=order_nr)
+            barcode = app.main_window.menu_line_edit.text()
+            logging.warning(f"barcode:{barcode}")
+            simulate_read_barcode(barcode=barcode)
 
         elif "run a complete\ncycle" in cmd_txt:
 
