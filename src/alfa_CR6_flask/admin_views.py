@@ -428,7 +428,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 batchid_ = formula.get('batchId', '')
                 colorcode_ = formula.get('meta', {}).get('colorCode', '')
                 brand_ = formula.get('meta', {}).get('brand', '')
-                fname_ = f"{brand_}_{colorcode_}"
+                fname_ = f"{brand_}_{colorcode_}.json"
                 pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), fname_)
                 logging.warning(f"pth_:{pth_}")
                 with open(pth_, 'w', encoding='UTF-8') as f:
