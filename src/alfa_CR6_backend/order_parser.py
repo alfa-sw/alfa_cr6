@@ -1014,22 +1014,18 @@ weight:{RealWeight}
         properties_list = [{}]
 
         try:
-            if mime_type == 'application/json' or 'json' in file_extension:
-                properties_list = [self.parse_json_order(path_to_file), ]
-            elif mime_type == 'text/xml' or '.xml' in file_extension:
-                properties_list = [self.parse_xml_order(path_to_file), ]
-            elif mime_type == 'application/pdf' or '.pdf' in file_extension:
-                properties_list = self.parse_pdf_order(path_to_file)
-
-                # ~ if properties.get('meta') is None or properties['meta'].get('error'):
-                    # ~ properties = self.parse_pdf_order(path_to_file, fixed_pitch=None)
-
-                # ~ properties_list = [properties, ]
-
-            elif mime_type == 'text/plain':
-                properties_list = [self.parse_txt_order(path_to_file), ]
+            properties = self.parse_json_order(path_to_file)
+            if properties.get('meta') is not None and not properties['meta'].get('error'):
+                properties_list = [properties, ]
             else:
-                raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}")
+                if mime_type == 'text/xml' or '.xml' in file_extension:
+                    properties_list = [self.parse_xml_order(path_to_file), ]
+                elif mime_type == 'application/pdf' or '.pdf' in file_extension:
+                    properties_list = self.parse_pdf_order(path_to_file)
+                elif mime_type == 'text/plain':
+                    properties_list = [self.parse_txt_order(path_to_file), ]
+                else:
+                    raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}")
 
             for properties in properties_list:
                 if properties.get('meta'):
