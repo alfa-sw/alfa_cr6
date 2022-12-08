@@ -458,6 +458,9 @@ class AdminIndexView(flask_admin.AdminIndexView):
         _msgs = []
         _status = HTTPStatus.BAD_REQUEST
         try:
+            answer_type = request.form.get('answer_type')
+            logging.warning(f":{answer_type}")
+
             for stream in request.files.getlist('file'):
                 logging.warning(f"stream.mimetype:{stream.mimetype}, stream.filename:{stream.filename}.")
                 pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), stream.filename)
@@ -469,9 +472,17 @@ class AdminIndexView(flask_admin.AdminIndexView):
             _msgs.append('Error trying to upload formula file: {}'.format(exc))
             logging.error(traceback.format_exc())
 
-        ret = current_app.response_class(
-            json.dumps({'msg': _msgs}, ensure_ascii=False),
-            status=_status, content_type='application/json; charset=utf-8')
+        if answer_type == 'html':
+            ret = redirect('/index')
+            if _msgs:
+                flash(Markup("<br/>".join(_msgs)))
+            logging.warning("_msgs:{}".format(_msgs))
+
+        else:
+            ret = current_app.response_class(
+                json.dumps({'msg': _msgs}, ensure_ascii=False),
+                status=_status, content_type='application/json; charset=utf-8')
+
         logging.warning("ret:{}".format(ret))
         return ret
 

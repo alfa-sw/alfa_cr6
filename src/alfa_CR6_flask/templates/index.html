@@ -83,6 +83,68 @@
 	</table>
 </div>
 <div>
+	<div class="table-responsive">
+		<table class="table-striped table-bordered table-hover model-list">
+			<tr>
+				<td title="upload formula files">
+					<label>upload formula files</label>
+					<form method="POST" action="/upload_formula_file" enctype="multipart/form-data" id="upload_formula_file_form">
+						<input type="hidden" name="answer_type" value="html"></input>
+						<input style="float:left;margin:4px;" class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
+						<input style="float:left;margin:4px;" class="btn btn-primary" type="submit" value="upload">
+						<img   style="float:left;margin:4px;" width="32px" src="static/images/upload.png"></img></input>
+					</form>
+				</td>
+				<td title="upload files: full db (.sqlite) or application settings (app_settings.py)">
+					<label for="input_file">upload settings or full db</label>
+					<form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
+						<input style="float:left;margin:4px;" class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
+						<input style="float:left;margin:4px;" class="btn btn-primary" type="submit" value="upload">
+						<img   style="float:left;margin:4px;" width="32px" src="static/images/upload.png"></img></input>
+					</form>
+				</td>
+				<td>
+					<label>download </label>
+					<a class="btn btn-primary" href="/download?data_set_name=data_and_conf.zip">supervisor data_and_conf.zip</a>
+					<a class="btn btn-primary" href="/download?data_set_name=log_and_tmp.zip">log_and_tmp.zip</a>
+					<a class="btn btn-primary" href="/download?data_set_name=app_settings.py">app_settings.py</a>
+					<a class="btn btn-primary" href="/download?data_set_name=head_events">head events</a>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="1">
+					<span>show settings:</span>
+					<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get settings" 
+								onclick="ask_settings();"></span>
+				</td>
+				<td colspan="4">
+					<div id="ask_settings_answer"></div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="1">
+					<span>list formula files:</span>
+					<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get formula file list." 
+								onclick="ask_formula_files();"></span>
+				</td>
+				<td colspan="4">
+					<div id="ask_formula_files_answer"></div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="5">
+					<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
+					<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
+						<span>Manhole commander (expert usage only):</span>
+						<input type="text" size="40" id="debug_command" onkeydown="if(event.keyCode === 13) {send_debug_cmd()};"></input>
+						<input type="submit" onclick="send_debug_cmd();"></input>
+						<span id="debug_answer"></span>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div><hr></hr></div>
 	<div id="ask_platform_answer"></div>
 	<div><hr></hr></div>
 	<div>
@@ -95,63 +157,6 @@
 		{% endfor %}
 		<label>(WARN application will be restarted)</label>
 	</div>
-	<div><hr></hr></div>
-	<table class="table-striped table-bordered">
-	<tr>
-		<th width="10%"></th><th width="40%">download </th><th width="40%" colspan="2">upload </th><th></th>
-	</tr>
-	<tr><form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
-		<td>
-			<a href="{{ alfa40_admin_url }}" target="_blank">open alfa40_admin_url</a>
-		</td>
-		<td>
-			<a class="btn btn-primary" href="/download?data_set_name=data_and_conf.zip">supervisor data_and_conf.zip</a>
-			<a class="btn btn-primary" href="/download?data_set_name=log_and_tmp.zip">log_and_tmp.zip</a>
-			<a class="btn btn-primary" href="/download?data_set_name=app_settings.py">app_settings.py</a>
-			<a class="btn btn-primary" href="/download?data_set_name=head_events">head events</a>
-		</td>
-		<td title="upload files: full db (.sqlite) or application settings (app_settings.py)">
-			<label for="input_file">upload settings or full db</label>
-			<input class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
-		</td>
-		<td>
-			<input class="btn btn-primary" type="submit" value="upload"><img width="32px" src="static/images/upload.png"></img></input>
-		</td>
-		<td>
-		</td>
-	</form></tr>
-	<tr>
-		<td colspan="1">
-			<span>show settings:</span>
-			<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get settings" 
-						onclick="ask_settings();"></span>
-		</td>
-		<td colspan="4">
-			<div id="ask_settings_answer"></div>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="1">
-			<span>list formula files:</span>
-			<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get formula file list." 
-						onclick="ask_formula_files();"></span>
-		</td>
-		<td colspan="4">
-			<div id="ask_formula_files_answer"></div>
-		</td>
-	</tr>
-	<tr>
-		<td colspan="5">
-			<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
-			<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
-				<span>Manhole commander (expert usage only):</span>
-				<input type="text" size="40" id="debug_command" onkeydown="if(event.keyCode === 13) {send_debug_cmd()};"></input>
-				<input type="submit" onclick="send_debug_cmd();"></input>
-				<span id="debug_answer"></span>
-			</div>
-		</td>
-	</tr>
-	</table>
 	<div><hr></hr></div>
 </div>
 
