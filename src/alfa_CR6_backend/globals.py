@@ -171,43 +171,49 @@ def get_res(_type, name):
 def get_encoding(path_to_file, key=None):
 
     cmd_ = ["file", "-b", "--mime-encoding", path_to_file]
+
+    encoding_ = ''
     try:
+
         p = subprocess.run(cmd_, stdout=subprocess.PIPE, check=False)
         mime_encoding = p.stdout.decode().strip()
-        # ~ logging.warning(f"cmd_:{cmd_}, mime_encoding:{mime_encoding}")
         assert mime_encoding
-        return mime_encoding
+        encoding_ = mime_encoding
+
     except Exception:   # pylint: disable=broad-except
         logging.warning(traceback.format_exc())
 
-    encodings = [
-        'ascii',
-        'utf_32',
-        'utf_32_be',
-        'utf_32_le',
-        'utf_16',
-        'utf_16_be',
-        'utf_16_le',
-        'utf_7',
-        'utf_8',
-        'utf_8_sig']
+        encodings = [
+            'ascii',
+            'utf_32',
+            'utf_32_be',
+            'utf_32_le',
+            'utf_16',
+            'utf_16_be',
+            'utf_16_le',
+            'utf_7',
+            'utf_8',
+            'utf_8_sig']
 
-    for e in encodings:
-        try:
-            codecs.lookup(e)
-            with codecs.open(path_to_file, 'br', encoding=e) as fd:
-                fd.readlines()
-                assert key is None or key in fd.read()
-                fd.seek(0)
-        except (UnicodeDecodeError, UnicodeError):
-            logging.info(f"skip e:{e}")
-        except Exception:   # pylint: disable=broad-except
-            logging.warning(traceback.format_exc())
-        else:
-            logging.warning(f"path_to_file:{path_to_file}, e:{e}")
-            return e
+        for e in encodings:
+            try:
+                codecs.lookup(e)
+                with codecs.open(path_to_file, 'br', encoding=e) as fd:
+                    fd.readlines()
+                    assert key is None or key in fd.read()
+                    fd.seek(0)
+            except (UnicodeDecodeError, UnicodeError):
+                logging.info(f"skip e:{e}")
+            except Exception:   # pylint: disable=broad-except
+                logging.warning(traceback.format_exc())
+            else:
+                logging.warning(f"path_to_file:{path_to_file}, e:{e}")
+                encoding_ = e
+                break
 
-    return ''
+    logging.warning(f"encoding_:{encoding_}, path_to_file:{path_to_file}")
+
+    return encoding_
 
 
 def create_printable_image_from_jar(jar):

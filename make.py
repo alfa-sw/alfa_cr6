@@ -24,6 +24,8 @@ SCRIPTS_PATH = f"{DEPLOY_PATH}/scripts"
 
 OUT_ERR_PTH = f"{PROJECT_ROOT}/make.err.out"
 
+RSA_ID = "-i ~/.ssh/alfa_rsa"
+
 args = {}
 
 def parse_arguments():
@@ -84,16 +86,16 @@ def makedirs_on_target(args):
     tgt_cred = args.target_credentials
 
     for pth in (DEPLOY_PATH, VENV_PATH, CONF_PATH, LOG_PATH, DATA_PATH, TMP_PATH, SCRIPTS_PATH):
-        cmd_ = f'ssh {tgt_cred} "if [ ! -e {pth} ]; then sudo mkdir -p {pth} ;fi"'
+        cmd_ = f'ssh {RSA_ID} {tgt_cred} "if [ ! -e {pth} ]; then sudo mkdir -p {pth} ;fi"'
         exec_(cmd_)
-    cmd_ = f'ssh {tgt_cred} "sudo chown -R admin:admin {DEPLOY_PATH}"'
+    cmd_ = f'ssh {RSA_ID} {tgt_cred} "sudo chown -R admin:admin {DEPLOY_PATH}"'
     exec_(cmd_)
 
 def deploy_db_to_target(args):
 
     tgt_cred = args.target_credentials
 
-    cmd_ = f"scp {DATA_PATH}/cr6_Vx_test.sqlite {tgt_cred}:{DATA_PATH}/"
+    cmd_ = f"scp {RSA_ID} {DATA_PATH}/cr6_Vx_test.sqlite {tgt_cred}:{DATA_PATH}/"
     exec_(cmd_)
 
 def deploy_conf_to_target(args):
@@ -102,11 +104,11 @@ def deploy_conf_to_target(args):
     settings = args.app_settings
 
     cmds = [
-        f"scp {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
-        # ~ f"scp {PROJECT_ROOT}/conf/supervisor.target.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
-        # ~ f"scp {PROJECT_ROOT}/conf/xhost.desktop {tgt_cred}:/opt/alfa/tmp/",
-        # ~ f'ssh {tgt_cred} "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"',
-        # ~ f'ssh {tgt_cred} "sudo chown pi:pi /home/pi/.config/autostart/xhost.desktop"',
+        f"scp {RSA_ID} {PROJECT_ROOT}/conf/{settings}.py {tgt_cred}:{CONF_PATH}/app_settings.py",
+        # ~ f"scp {RSA_ID} {PROJECT_ROOT}/conf/supervisor.target.conf {tgt_cred}:/opt/alfa/conf/supervisor/cr6.conf",
+        # ~ f"scp {RSA_ID} {PROJECT_ROOT}/conf/xhost.desktop {tgt_cred}:/opt/alfa/tmp/",
+        # ~ f'ssh {RSA_ID} {tgt_cred} "sudo cp /opt/alfa/tmp/xhost.desktop /home/pi/.config/autostart/"',
+        # ~ f'ssh {RSA_ID} {tgt_cred} "sudo chown pi:pi /home/pi/.config/autostart/xhost.desktop"',
     ]
 
     for cmd_ in cmds:
@@ -121,11 +123,11 @@ def install_target(args, silent=False):
     ignore_requires = '--ignore-requires --no-dependencies ' if args.ignore_requires else ''
 
     cmds = [
-        f"scp {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl {tgt_cred}:{TMP_PATH}/",
-        f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip uninstall -y alfa_CR6"',
-        f'ssh {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip install {ignore_requires} {TMP_PATH}/alfa_CR6-{__version__}-py3-none-any.whl"',
+        f"scp {RSA_ID} {PROJECT_ROOT}/dist/alfa_CR6-{__version__}-py3-none-any.whl {tgt_cred}:{TMP_PATH}/",
+        f'ssh {RSA_ID} {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip uninstall -y alfa_CR6"',
+        f'ssh {RSA_ID} {tgt_cred} ". /opt/alfa_cr6/venv/bin/activate; pip install {ignore_requires} {TMP_PATH}/alfa_CR6-{__version__}-py3-none-any.whl"',
         f"rm -f {tgt_cred}:{TMP_PATH}/alfa_CR6-{__version__}-py3-none-any.whl",
-        f'ssh {tgt_cred} "sudo supervisorctl reload"',
+        f'ssh {RSA_ID} {tgt_cred} "sudo supervisorctl reload"',
     ]
 
     for cmd_ in cmds:
@@ -147,9 +149,9 @@ def deploy_and_execute_target_scripts(args):
     settings = args.app_settings
 
     cmds = [
-        f"scp {PROJECT_ROOT}/target_scripts/target_scripts.sh {tgt_cred}:{SCRIPTS_PATH}/target_scripts.sh",
-        f'ssh {tgt_cred} "sudo chmod +x {SCRIPTS_PATH}/target_scripts.sh"',
-        f'ssh {tgt_cred} "sudo bash {SCRIPTS_PATH}/target_scripts.sh"',
+        f"scp {RSA_ID} {PROJECT_ROOT}/target_scripts/target_scripts.sh {tgt_cred}:{SCRIPTS_PATH}/target_scripts.sh",
+        f'ssh {RSA_ID} {tgt_cred} "sudo chmod +x {SCRIPTS_PATH}/target_scripts.sh"',
+        f'ssh {RSA_ID} {tgt_cred} "sudo bash {SCRIPTS_PATH}/target_scripts.sh"',
     ]
 
     for cmd_ in cmds:
@@ -161,14 +163,14 @@ def enable_desktop_autologin_on_target(args):
 
     tgt_cred = args.target_credentials
 
-    cmd_ = f'ssh {tgt_cred} "sudo raspi-config nonint do_boot_behaviour B4"'
+    cmd_ = f'ssh {RSA_ID} {tgt_cred} "sudo raspi-config nonint do_boot_behaviour B4"'
     exec_(cmd_)
 
 def virtenv_on_target(args):
 
     tgt_cred = args.target_credentials
 
-    cmd_ = f'ssh {tgt_cred} "virtualenv --system-site-packages --clear -p /usr/bin/python3 /opt/alfa_cr6/venv"'
+    cmd_ = f'ssh {RSA_ID} {tgt_cred} "virtualenv --system-site-packages --clear -p /usr/bin/python3 /opt/alfa_cr6/venv"'
     exec_(cmd_)
 
 def main():

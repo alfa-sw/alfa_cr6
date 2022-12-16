@@ -466,7 +466,7 @@ class EditDialog(BaseDialog):
         self.print_check_box.setChecked(False)
 
         for row, item_ in enumerate(ingredients):
-            self.__set_row(row, item_['pigment_name'], item_['weight(g)'], item_['description'])
+            self.__set_row(row, item_['pigment_name'], item_['weight(g)'], item_.get('description', ''))
 
         self.show()
 

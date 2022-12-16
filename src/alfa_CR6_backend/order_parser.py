@@ -991,8 +991,8 @@ weight:{RealWeight}
 
         properties = {}
 
-        e = get_encoding(path_to_file)
-        with codecs.open(path_to_file, encoding=e) as fd:
+        encoding_ = get_encoding(path_to_file)
+        with codecs.open(path_to_file, encoding=encoding_) as fd:
             content = json.load(fd)
             if content.get("header") == "SW CRx formula file":
                 properties = cls.parse_sw_json(content)
@@ -1014,10 +1014,17 @@ weight:{RealWeight}
         properties_list = [{}]
 
         try:
-            properties = self.parse_json_order(path_to_file)
-            if properties.get('meta') is not None and not properties['meta'].get('error'):
-                properties_list = [properties, ]
-            else:
+
+            try:
+
+                properties = self.parse_json_order(path_to_file)
+                if properties.get('meta') is not None and not properties['meta'].get('error'):
+                    properties_list = [properties, ]
+                else:
+                    raise Exception("")
+
+            except Exception as e:           # pylint: disable=broad-except
+
                 if mime_type == 'text/xml' or '.xml' in file_extension:
                     properties_list = [self.parse_xml_order(path_to_file), ]
                 elif mime_type == 'application/pdf' or '.pdf' in file_extension:
@@ -1025,7 +1032,7 @@ weight:{RealWeight}
                 elif mime_type == 'text/plain':
                     properties_list = [self.parse_txt_order(path_to_file), ]
                 else:
-                    raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}")
+                    raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}") from e
 
             for properties in properties_list:
                 if properties.get('meta'):

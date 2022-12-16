@@ -894,7 +894,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         barcode = str(barcode)
         # ~ logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
 
-        if not barcode or not self.ready_to_read_a_barcode or self.positions_already_engaged(["IN_A", ]):
+        if not barcode or not self.ready_to_read_a_barcode:
 
             logging.debug(f"skipping barcode:{barcode}")
             self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
