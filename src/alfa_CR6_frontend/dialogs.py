@@ -475,6 +475,9 @@ class InputDialog(BaseDialog):
 
     ui_file_name = "input_dialog.ui"
 
+    on_ok_button_clicked = None
+    ok_on_enter = None
+
     def get_content_text(self):
 
         return self.content_container.toPlainText()
@@ -484,8 +487,9 @@ class InputDialog(BaseDialog):
         if self.ok_on_enter:
             cnt_ = self.content_container.toPlainText()
             if "\n" in cnt_:
-                self.on_ok_button_clicked()
-                self.hide()
+                if self.on_ok_button_clicked:
+                    self.on_ok_button_clicked()
+                # ~ self.hide()
 
     def show_dialog(self,    # pylint: disable=too-many-arguments
         icon_name=None,
@@ -527,6 +531,7 @@ class InputDialog(BaseDialog):
 
         self.ok_button.clicked.disconnect()
         self.ok_button.clicked.connect(self.hide)
+        self.on_ok_button_clicked = None
         if ok_cb is not None:
             def on_ok_button_clicked():
                 try:
@@ -537,6 +542,8 @@ class InputDialog(BaseDialog):
                     self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
             self.ok_button.clicked.connect(on_ok_button_clicked)
+
+            self.on_ok_button_clicked = on_ok_button_clicked
 
         self.show()
 

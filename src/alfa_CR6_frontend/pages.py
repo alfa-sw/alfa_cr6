@@ -1509,8 +1509,8 @@ class HomePage(BaseStackedPage):
             barcode_check = barcode_check.strip()
             logging.warning(f"{m.name} barcode_check:{barcode_check}.")
 
-            msg_ = """please, input quantity of product: {}<br> for refilling pipe: {}<br> leave as is for total refill."""
-            msg_ = tr_(msg_).format(pigment_['name'], pipe_['name'])
+            msg_ = """please, input quantity of product: {}<br> for refilling pipe: {}<br> current level:{}, leave as is for total refill."""
+            msg_ = tr_(msg_).format(pigment_['name'], pipe_['name'], pipe_['current_level'])
 
             if barcode_check == barcode_:
                 self.main_window.toggle_keyboard(on_off=True)
@@ -1532,7 +1532,8 @@ class HomePage(BaseStackedPage):
             pipe_index = __get_pipe_index_from_name(pipe_['name'])
             m = QApplication.instance().machine_head_dict[head_index]
             pars_ = {'Id_color_circuit': pipe_index, 'Refilling_angle': 0, 'Direction': 0}
-            m.send_command(cmd_name='DIAG_ROTATING_TABLE_POSITIONING', params=pars_, type_='command', channel='machine')
+
+            await m.send_command(cmd_name='DIAG_ROTATING_TABLE_POSITIONING', params=pars_, type_='command', channel='machine')
 
             # ~ await asyncio.sleep(3)
 
