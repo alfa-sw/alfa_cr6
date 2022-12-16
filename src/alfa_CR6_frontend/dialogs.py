@@ -475,12 +475,33 @@ class InputDialog(BaseDialog):
 
     ui_file_name = "input_dialog.ui"
 
-    def show_dialog(self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None):   # pylint: disable=too-many-arguments
+    def get_content_text(self):
+
+        return self.content_container.toPlainText()
+
+    def on_text_cahnged(self):
+
+        if self.ok_on_enter:
+            cnt_ = self.content_container.toPlainText()
+            if "\n" in cnt_:
+                self.on_ok_button_clicked()
+                self.hide()
+
+    def show_dialog(self,    # pylint: disable=too-many-arguments
+        icon_name=None,
+        message=None,
+        content=None,
+        ok_cb=None,
+        ok_cb_args=None,
+        ok_on_enter=False):
 
         # ~ 'SP_MessageBoxCritical',
         # ~ 'SP_MessageBoxInformation',
         # ~ 'SP_MessageBoxQuestion',
         # ~ 'SP_MessageBoxWarning',
+
+        self.ok_on_enter = ok_on_enter
+        self.content_container.textChanged.connect(self.on_text_cahnged)
 
         if icon_name is None:
             icon_ = self.style().standardIcon(getattr(QStyle, "SP_MessageBoxWarning"))
@@ -499,6 +520,10 @@ class InputDialog(BaseDialog):
         else:
             self.content_container.setText(str(content))
             self.content_container.resize(self.content_container.width(), 400)
+            self.content_container.setFocus()
+            cursor = self.content_container.textCursor()
+            # ~ cursor.setPosition(cursor.End)
+            cursor.setPosition(cursor.position() + len(str(content)))
 
         self.ok_button.clicked.disconnect()
         self.ok_button.clicked.connect(self.hide)

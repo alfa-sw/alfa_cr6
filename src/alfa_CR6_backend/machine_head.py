@@ -316,13 +316,18 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     self.aiohttp_clientsession = aiohttp.ClientSession()
                 with async_timeout.timeout(timeout):
                     if method.upper() == "GET":
-                        context_mngr = self.aiohttp_clientsession.get
-                        args = [url]
+                        callable_ = self.aiohttp_clientsession.get
+                        args = [url, ]
+                        kwargs = {}
                     elif method.upper() == "POST":
-                        context_mngr = self.aiohttp_clientsession.post
-                        args = [url, data]
+                        callable_ = self.aiohttp_clientsession.post
+                        args = [url, ]
+                        kwargs = {
+                            "headers": {'content-type': 'application/json'}, 
+                            "data": json.dumps(data),
+                        }
 
-                    async with context_mngr(*args) as response:
+                    async with callable_(*args, **kwargs) as response:
                         r = response
                         if expected_ret_type == 'json':
                             ret = {}

@@ -17,6 +17,7 @@ import time
 import traceback
 import codecs
 import subprocess
+import asyncio
 # ~ import webbrowser
 from functools import partial
 # ~ from itertools import islice
@@ -898,7 +899,7 @@ class OrderPage(BaseStackedPage):
 
         app = QApplication.instance()
 
-        n = int(self.main_window.input_dialog.content_container.toPlainText())
+        n = int(self.main_window.input_dialog.get_content_text())
         n = min(n, 20)
         logging.warning(f"n:{n}")
         path_to_file = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
@@ -1092,6 +1093,13 @@ class HomePage(BaseStackedPage):
             self.expiry_5_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(4)
         if self.expiry_6_label:
             self.expiry_6_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(5)
+
+        if self.refill_1_lbl: self.refill_1_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(0)
+        if self.refill_2_lbl: self.refill_2_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(1)
+        if self.refill_3_lbl: self.refill_3_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(2)
+        if self.refill_4_lbl: self.refill_4_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(3)
+        if self.refill_5_lbl: self.refill_5_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(4)
+        if self.refill_6_lbl: self.refill_6_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(5)
 
     def open_page(self):
 
@@ -1449,6 +1457,134 @@ class HomePage(BaseStackedPage):
             except Exception as e:  # pylint: disable=broad-except
                 QApplication.instance().handle_exception(e)
 
+    def refill_lbl_clicked(self, head_index):
+
+        m = QApplication.instance().machine_head_dict[head_index]
+
+        t = m.update_tintometer_data()
+        asyncio.ensure_future(t)
+
+        async def __update_level_task(pipe_, qtity_):
+
+            m = QApplication.instance().machine_head_dict[head_index]
+            data = {'action': 'adjust_pipe_levels', 'params': {pipe_['name']: qtity_}}
+            ret = await m.call_api_rest("apiV1/ad_hoc", "POST", data, timeout=8)
+            logging.warning(f"ret:{ret}.")
+
+            self.main_window.open_input_dialog(
+                icon_name="SP_MessageBoxInformation",
+                message=f"{ret}.")
+
+            await m.update_tintometer_data()
+
+        def __get_pipe_index_from_name(p_name):
+
+            pipe_addresses = { "B%02d"%(i + 1): i for i in range(0, 8)}
+            pipe_addresses.update( { "C%02d"%(i - 7): i for i in range(8, 32)} )
+            return pipe_addresses[p_name]
+
+        def _cb_confirm_quantity(pigment_, pipe_, qtity_):
+
+            t = __update_level_task(pipe_, qtity_)
+            asyncio.ensure_future(t)
+
+        def _cb_input_quantity(pigment_, pipe_):
+
+            self.main_window.toggle_keyboard(on_off=False)
+
+            qtity_ = self.main_window.input_dialog.get_content_text()
+            msg_ = """please, confirm refilling pipe: {} <br>with {} of product: {}?."""
+            msg_ = tr_(msg_).format(pipe_['name'], qtity_, pigment_['name'])
+
+            self.main_window.open_input_dialog(
+                icon_name="SP_MessageBoxQuestion",
+                message=msg_,
+                content=None,
+                ok_cb=_cb_confirm_quantity,
+                ok_cb_args=(pigment_, pipe_, qtity_))
+
+        def _cb_verify_barcode(pigment_, pipe_, _default_qtity, barcode_):
+
+            barcode_check = self.main_window.input_dialog.get_content_text()
+            barcode_check = barcode_check.strip()
+            logging.warning(f"{m.name} barcode_check:{barcode_check}.")
+
+            msg_ = """please, input quantity of product: {}<br> for refilling pipe: {}<br> leave as is for total refill."""
+            msg_ = tr_(msg_).format(pigment_['name'], pipe_['name'])
+
+            if barcode_check == barcode_:
+                self.main_window.toggle_keyboard(on_off=True)
+                self.main_window.open_input_dialog(
+                    icon_name="SP_MessageBoxQuestion",
+                    message=msg_,
+                    content=_default_qtity,
+                    ok_cb=_cb_input_quantity,
+                    ok_cb_args=(pigment_, pipe_))
+            else:
+
+                self.main_window.open_input_dialog(
+                    icon_name="SP_MessageBoxCritical",
+                    message=tr_("barcode mismatch"),
+                    content=None)
+
+        async def _roate_circuit_task(pigment_, pipe_, _default_qtity, barcode_):
+
+            pipe_index = __get_pipe_index_from_name(pipe_['name'])
+            m = QApplication.instance().machine_head_dict[head_index]
+            pars_ = {'Id_color_circuit': pipe_index, 'Refilling_angle': 0, 'Direction': 0}
+            m.send_command(cmd_name='DIAG_ROTATING_TABLE_POSITIONING', params=pars_, type_='command', channel='machine')
+
+            # ~ await asyncio.sleep(3)
+
+            self.main_window.open_input_dialog(
+                icon_name="SP_MessageBoxQuestion",
+                message=tr_("please, verify barcode on canister."),
+                content="",
+                ok_cb=_cb_verify_barcode,
+                ok_cb_args=(pigment_, pipe_, _default_qtity, barcode_),
+                ok_on_enter=True)
+
+        def _cb_input_barcode():
+
+            barcode_ = self.main_window.input_dialog.get_content_text()
+            barcode_ = barcode_.strip()
+            logging.warning(f"{m.name} barcode_:{barcode_}.")
+
+            try:
+                # ~ logging.warning(f"{m.name}.pigment_list:\n\t{json.dumps(m.pigment_list, indent=2)}")
+                found_pigments = []
+                for p in m.pigment_list:
+                    pigment_customer_id = p.get('customer_id')
+                    if pigment_customer_id and barcode_ in pigment_customer_id:
+                        found_pigments.append(p)
+
+                if found_pigments:
+
+                    def _pipe_current_level(pigment):
+                        return pigment['pipes'] and pigment['pipes'][0].get('current_level', 0)
+
+                    found_pigments.sort(key=_pipe_current_level)
+
+                    pigment_ = found_pigments[0]
+                    pipe_ = pigment_['pipes'][0]
+                    _default_qtity = pipe_['maximum_level'] - pipe_['current_level']
+
+                    t = _roate_circuit_task(pigment_, pipe_, _default_qtity, barcode_)
+                    asyncio.ensure_future(t)
+
+                else:
+                    QApplication.instance().main_window.open_alert_dialog(
+                        tr_("barcode not known:{}").format(barcode_))
+
+            except Exception as e:  # pylint: disable=broad-except
+                QApplication.instance().handle_exception(e)
+
+        self.main_window.open_input_dialog(
+            icon_name="SP_MessageBoxQuestion",
+            message=tr_("please, input barcode"),
+            content="",
+            ok_cb=_cb_input_barcode,
+            ok_on_enter=True)
 
 class HomePageSixHeads(HomePage):
 
