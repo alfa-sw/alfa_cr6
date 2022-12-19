@@ -1458,7 +1458,7 @@ class HomePage(BaseStackedPage):
             except Exception as e:  # pylint: disable=broad-except
                 QApplication.instance().handle_exception(e)
 
-    def refill_lbl_clicked(self, head_index):
+    def refill_lbl_clicked(self, head_index):# pylint: disable=too-many-statements
 
         m = QApplication.instance().machine_head_dict[head_index]
 
@@ -1549,15 +1549,16 @@ class HomePage(BaseStackedPage):
         def _cb_input_barcode():
 
             barcode_ = self.main_window.input_dialog.get_content_text()
+            selected_pipe_name_ = self.main_window.input_dialog.combo_box.currentText()
             barcode_ = barcode_.strip()
-            logging.warning(f"{m.name} barcode_:{barcode_}.")
+            logging.warning(f"{m.name} barcode_:{barcode_}, selected_pipe_name_:{selected_pipe_name_}.")
 
             try:
                 # ~ logging.warning(f"{m.name}.pigment_list:\n\t{json.dumps(m.pigment_list, indent=2)}")
                 found_pigments = []
                 for p in m.pigment_list:
                     pigment_customer_id = p.get('customer_id')
-                    if pigment_customer_id and barcode_ in pigment_customer_id:
+                    if pigment_customer_id and barcode_ == pigment_customer_id:
                         found_pigments.append(p)
 
                 if found_pigments:
@@ -1581,12 +1582,29 @@ class HomePage(BaseStackedPage):
             except Exception as e:  # pylint: disable=broad-except
                 QApplication.instance().handle_exception(e)
 
+        def _item_from_pigment(p):
+            
+            pipe_name_ = p['pipes'][0]['name']    
+            pipe_level_ = round(p['pipes'][0].get('current_level', 0), 3)
+            pipe_reserve_level_ = round(p['pipes'][0].get('reserve_level', 0), 3)
+            ret = tr_("{}     (pipe:{}, level:{}, reserve level:{})").format(p['name'], pipe_name_, pipe_level_, pipe_reserve_level_)
+            return ret
+
+        def _pipe_current_level(pigment):
+            return pigment['pipes'] and pigment['pipes'][0].get('current_level', 0)
+
+        pigment_list_ = m.pigment_list[:]
+
+        pigment_list_.sort(key=_pipe_current_level)
+
+        combo_list = [_item_from_pigment(p) for p in pigment_list_]
         self.main_window.open_input_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("please, input barcode"),
             content="",
             ok_cb=_cb_input_barcode,
-            ok_on_enter=True)
+            ok_on_enter=True,
+            combo_list=combo_list)
 
 class HomePageSixHeads(HomePage):
 
