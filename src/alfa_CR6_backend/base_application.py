@@ -1022,6 +1022,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         order = None
         if self.db_session:
             try:
+
+                name_list = [i["pigment_name"] for i in properties.get('ingredients', [])]
+                assert len(name_list) == len(set(name_list)), tr_("duplicated name in ingredient list")
+
                 order = Order(
                     json_properties=json.dumps(properties, indent=2),
                     description=description, file_name=file_name)

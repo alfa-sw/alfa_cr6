@@ -916,15 +916,16 @@ class OrderPage(BaseStackedPage):
         ok_flag = False
         jars_to_print = []
         for order in orders:
-            properties = json.loads(order.json_properties)
-            logging.warning(f"properties:{properties}")
-            if properties.get('meta') and not properties['meta'].get('error'):
+            if order:
+                properties = json.loads(order.json_properties)
+                logging.warning(f"properties:{properties}")
+                if properties and properties.get('meta') and not properties['meta'].get('error'):
 
-                ok_flag = True
+                    ok_flag = True
 
-                jars_ = list(order.jars)
-                jars_.sort(key=lambda j: str(j.barcode))
-                jars_to_print += jars_
+                    jars_ = list(order.jars)
+                    jars_.sort(key=lambda j: str(j.barcode))
+                    jars_to_print += jars_
 
         if ok_flag:
             model.remove_file(file_name)

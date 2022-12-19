@@ -15,7 +15,8 @@ def pre_load_libGLX_on_banana():
 
     logging.warning("platform.release():{}".format(platform.release()))
 
-    if 'BPI-M5' in platform.release() and 'bananapi' in platform.node():
+    sys_releases = ["4.9", "5.10"]
+    if any(x in platform.release() for x in sys_releases) and 'bananapi' in platform.node():
         import ctypes # pylint:  disable=import-outside-toplevel
         ctypes.CDLL('libGLX_mesa.so.0', ctypes.RTLD_GLOBAL)
 
