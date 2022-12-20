@@ -342,20 +342,21 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
             elif "debug_page" in btn_name:
 
-                self.toggle_keyboard(on_off=True)
+                if self.stacked_widget.currentWidget() != self.debug_page.main_frame:
+                    self.toggle_keyboard(on_off=True)
 
-                def ok_cb_():
-                    debug_page_pwd = 'alfa'
-                    if hasattr(self.settings, 'DEBUG_PAGE_PWD') and self.settings.DEBUG_PAGE_PWD:
-                        debug_page_pwd = self.settings.DEBUG_PAGE_PWD
+                    def ok_cb_():
+                        debug_page_pwd = 'alfa'
+                        if hasattr(self.settings, 'DEBUG_PAGE_PWD') and self.settings.DEBUG_PAGE_PWD:
+                            debug_page_pwd = self.settings.DEBUG_PAGE_PWD
 
-                    pwd_ = self.input_dialog.content_container.toPlainText()
-                    if pwd_ == debug_page_pwd:
-                        self.stacked_widget.setCurrentWidget(self.debug_page.main_frame)
-                        self.toggle_keyboard(on_off=False)
+                        pwd_ = self.input_dialog.content_container.toPlainText()
+                        if pwd_ == debug_page_pwd:
+                            self.stacked_widget.setCurrentWidget(self.debug_page.main_frame)
+                            self.toggle_keyboard(on_off=False)
 
-                msg_ = tr_("please, enter service password.")
-                self.open_input_dialog(message=msg_,  content="", ok_cb=ok_cb_)
+                    msg_ = tr_("please, enter service password.")
+                    self.open_input_dialog(message=msg_,  content="", ok_cb=ok_cb_)
 
 
             elif "help" in btn_name:
