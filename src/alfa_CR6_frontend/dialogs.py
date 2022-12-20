@@ -497,8 +497,7 @@ class InputDialog(BaseDialog):
         content=None,
         ok_cb=None,
         ok_cb_args=None,
-        ok_on_enter=False,
-        combo_list=None):
+        ok_on_enter=False):
 
         # ~ 'SP_MessageBoxCritical',
         # ~ 'SP_MessageBoxInformation',
@@ -529,15 +528,6 @@ class InputDialog(BaseDialog):
             cursor = self.content_container.textCursor()
             # ~ cursor.setPosition(cursor.End)
             cursor.setPosition(cursor.position() + len(str(content)))
-
-
-        if combo_list is None:
-            self.combo_box.resize(self.combo_box.width(), 0)
-        else:
-            self.content_container.resize(self.content_container.width(), 360)
-            self.combo_box.resize(self.combo_box.width(), 40)
-            self.combo_box.clear()
-            self.combo_box.addItems(set(combo_list))
 
         self.ok_button.clicked.disconnect()
         self.ok_button.clicked.connect(self.hide)
