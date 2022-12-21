@@ -66,6 +66,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             {'value': 0, 'locked': 0, 'timeout': 0, 't0': 0},
         ]
 
+        self.machine_config = None
+
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
@@ -104,10 +106,30 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return available_gr
 
+    async def get_machine_config(self):
+
+        if self.machine_config is None:
+            machine_config = {}
+            ret = await self.call_api_rest("apiV1/config", "GET", {}, timeout=15)
+            if ret:
+                for obj in ret.get("objects", []):
+                    try:
+                        machine_config[obj['name']] = json.loads(obj['json_info'])
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(traceback.format_exc())
+
+            self.machine_config = machine_config
+
+            pth_ = os.path.join(self.app.settings.TMP_PATH, f"{self.name}_machine_config.json")
+            with open(pth_, "w", encoding='UTF-8') as f:
+                json.dump(machine_config, f, indent=2)
+
+
     async def update_tintometer_data(self, invalidate_cache=True, silent=1):
 
         # ~ logging.warning(
         # ~ f"{self.name} invalidate_cache:{invalidate_cache} {[p['name'] for p in self.pigment_list]}")
+        await self.get_machine_config()
 
         if invalidate_cache:
             pigment_list = []

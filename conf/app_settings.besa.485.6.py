@@ -5,6 +5,8 @@ import logging
 # ~ LOG_LEVEL=logging.INFO,
 LOG_LEVEL = logging.WARNING
 
+USE_PIGMENT_ID_AS_BARCODE = True
+
 LANGUAGE = "it"
 
 LOAD_LIFTER_IS_UP_LONG_TIMEOUT = 90.0

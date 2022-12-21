@@ -283,6 +283,13 @@ class BrowserPage(BaseStackedPage):
     ui_file_name = "browser_page.ui"
     help_file_name = 'webengine.html'
 
+    def reload_page(self):
+
+        logging.warning(f"QWebEnginePage.Reload:{QWebEnginePage.Reload}.")
+
+        if self._webengine_page:
+            self._webengine_page.triggerAction(QWebEnginePage.Reload)
+
     def reset_view(self):
 
         logging.warning(f"self.q_url:{self.q_url}.")
@@ -322,6 +329,10 @@ class BrowserPage(BaseStackedPage):
         self.q_url = QUrl(url)
         self.webengine_view = None
 
+        self.current_head_index = None
+        if self.refill_label: 
+            self.refill_label.mouseReleaseEvent = lambda event: self.main_window.home_page.refill_lbl_clicked(self.current_head_index)
+
     def __on_click_url_label(self):
         if SINGLE_POPUP_WIN.child_view:
             SINGLE_POPUP_WIN.child_view.show()
@@ -348,7 +359,7 @@ class BrowserPage(BaseStackedPage):
         if self._webengine_page:
             del self._webengine_page
 
-    def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL):
+    def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL, head_index=None):
 
         _popup_web_engine_page = hasattr(
             g_settings, 'POPUP_WEB_ENGINE_PAGE') and getattr(
@@ -363,3 +374,12 @@ class BrowserPage(BaseStackedPage):
             self.q_url = q_url
             self.webengine_view.setUrl(q_url)
             self.parent().setCurrentWidget(self)
+
+        if head_index is not None and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE') and (
+                g_settings.USE_PIGMENT_ID_AS_BARCODE and QApplication.instance().carousel_frozen):
+
+            self.current_head_index = head_index
+            self.refill_label.show()
+            self.refill_label.raise_()
+        else:
+            self.refill_label.hide()

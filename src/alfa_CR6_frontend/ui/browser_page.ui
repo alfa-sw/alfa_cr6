@@ -34,6 +34,35 @@
     <string>url lbl</string>
    </property>
   </widget>
+  <widget class="QLabel" name="refill_label">
+   <property name="geometry">
+    <rect>
+     <x>1720</x>
+     <y>50</y>
+     <width>141</width>
+     <height>141</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color:#000000;
+</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/tank_green.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="iconSize" stdset="0">
+    <size>
+     <width>68</width>
+     <height>68</height>
+    </size>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
