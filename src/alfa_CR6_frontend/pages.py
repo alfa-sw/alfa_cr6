@@ -1562,7 +1562,7 @@ class HomePage(BaseStackedPage):
 
                     self.main_window.open_input_dialog(
                         icon_name="SP_MessageBoxCritical",
-                        message=tr_("barcode mismatch"),
+                        message=tr_("barcode mismatch <br/>{} != {}").format(barcode_, barcode_check),
                         content=None)
 
             async def _roate_circuit_task(pigment_, pipe_, _default_qtity, barcode_):
@@ -1577,7 +1577,7 @@ class HomePage(BaseStackedPage):
 
                 self.main_window.open_input_dialog(
                     icon_name="SP_MessageBoxQuestion",
-                    message=tr_("please, verify barcode on canister."),
+                    message=tr_("please, verify barcode {} on canister.").format(barcode_),
                     content="",
                     ok_cb=_cb_verify_barcode,
                     ok_cb_args=(pigment_, pipe_, _default_qtity, barcode_),
