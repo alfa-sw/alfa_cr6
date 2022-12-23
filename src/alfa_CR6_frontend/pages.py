@@ -1543,7 +1543,7 @@ class HomePage(BaseStackedPage):
                 barcode_check = self.main_window.input_dialog.get_content_text()
                 barcode_check = barcode_check.strip()
                 logging.warning(f"{m.name} barcode_check:{barcode_check}.")
-                
+
                 current_level_ = pipe_['current_level']
                 current_level_ = __qtity_from_ml(current_level_, pigment_['name'])
                 current_level_ = round(current_level_, 2)
@@ -1571,9 +1571,8 @@ class HomePage(BaseStackedPage):
                 m = QApplication.instance().machine_head_dict[head_index]
                 pars_ = {'Id_color_circuit': pipe_index, 'Refilling_angle': 0, 'Direction': 0}
 
-                await m.send_command(cmd_name='DIAG_ROTATING_TABLE_POSITIONING', params=pars_, type_='command', channel='machine')
-
-                # ~ await asyncio.sleep(3)
+                t = m.send_command(cmd_name='DIAG_ROTATING_TABLE_POSITIONING', params=pars_, type_='command', channel='machine')
+                asyncio.ensure_future(t)
 
                 self.main_window.open_input_dialog(
                     icon_name="SP_MessageBoxQuestion",
