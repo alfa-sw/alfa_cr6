@@ -1581,7 +1581,7 @@ class HomePage(BaseStackedPage):
                     content="",
                     ok_cb=_cb_verify_barcode,
                     ok_cb_args=(pigment_, pipe_, _default_qtity, barcode_),
-                    ok_on_enter=True)
+                    ok_on_enter=False)
 
             def _cb_input_barcode():
 
@@ -1625,7 +1625,7 @@ class HomePage(BaseStackedPage):
                 message=tr_("please, input barcode"),
                 content="",
                 ok_cb=_cb_input_barcode,
-                ok_on_enter=True)
+                ok_on_enter=False)
 
 class HomePageSixHeads(HomePage):
 
