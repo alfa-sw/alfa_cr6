@@ -475,21 +475,40 @@ class InputDialog(BaseDialog):
 
     ui_file_name = "input_dialog.ui"
 
-    on_ok_button_clicked = None
-    ok_on_enter = None
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.content_container.textChanged.connect(self.on_text_cahnged)
+
+        self.__ok_cb = None
+        self.__ok_cb_args = None
+        self.ok_on_enter = None
+
+        # ~ self.ok_button.clicked.connect(self.hide)
 
     def get_content_text(self):
 
         return self.content_container.toPlainText()
 
+    def on_ok_button_clicked(self):
+
+        try:
+            if self.__ok_cb:
+                tmp__args_ = self.__ok_cb_args if self.__ok_cb_args is not None else []
+                tmp__ok_cb = self.__ok_cb
+                self.__ok_cb = None
+                tmp__ok_cb(*tmp__args_)
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+
     def on_text_cahnged(self):
 
-        if self.ok_on_enter:
+        if self.ok_on_enter and self.on_ok_button_clicked:
             cnt_ = self.content_container.toPlainText()
             if "\n" in cnt_:
-                if self.on_ok_button_clicked:
-                    self.on_ok_button_clicked()
-                # ~ self.hide()
+                self.on_ok_button_clicked()
 
     def show_dialog(self,    # pylint: disable=too-many-arguments
         icon_name=None,
@@ -499,13 +518,9 @@ class InputDialog(BaseDialog):
         ok_cb_args=None,
         ok_on_enter=False):
 
-        # ~ 'SP_MessageBoxCritical',
-        # ~ 'SP_MessageBoxInformation',
-        # ~ 'SP_MessageBoxQuestion',
-        # ~ 'SP_MessageBoxWarning',
+        """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
         self.ok_on_enter = ok_on_enter
-        self.content_container.textChanged.connect(self.on_text_cahnged)
 
         if icon_name is None:
             icon_ = self.style().standardIcon(getattr(QStyle, "SP_MessageBoxWarning"))
@@ -529,21 +544,11 @@ class InputDialog(BaseDialog):
             # ~ cursor.setPosition(cursor.End)
             cursor.setPosition(cursor.position() + len(str(content)))
 
-        self.ok_button.clicked.disconnect()
-        self.ok_button.clicked.connect(self.hide)
-        self.on_ok_button_clicked = None
+        self.__ok_cb = None
+        self.__ok_cb_args = None
         if ok_cb is not None:
-            def on_ok_button_clicked():
-                try:
-                    args_ = ok_cb_args if ok_cb_args is not None else []
-                    ok_cb(*args_)
-                except Exception as e:  # pylint: disable=broad-except
-                    logging.error(traceback.format_exc())
-                    self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
-
-            self.ok_button.clicked.connect(on_ok_button_clicked)
-
-            self.on_ok_button_clicked = on_ok_button_clicked
+            self.__ok_cb = ok_cb
+            self.__ok_cb_args = ok_cb_args
 
         self.show()
 
