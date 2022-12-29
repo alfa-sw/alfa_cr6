@@ -1460,6 +1460,8 @@ class HomePage(BaseStackedPage):
 
     def refill_lbl_clicked(self, head_index):  # pylint:disable=too-many-statements
 
+        refill_choices = ['100', '250', '500', '750', '1000', '1500', '2000', '2500', '3000']
+
         if head_index is not None and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE') and g_settings.USE_PIGMENT_ID_AS_BARCODE:
 
             m = QApplication.instance().machine_head_dict[head_index]
@@ -1486,8 +1488,17 @@ class HomePage(BaseStackedPage):
                     "CC": 1.,
                     "GR": 1. / m.get_specific_weight(pigment_name),
                 }.get(units_, 1)
-                logging.warning(f"_convert_factor({type(_convert_factor)}):{_convert_factor}.")
+                # ~ logging.warning(f"_convert_factor({type(_convert_factor)}):{_convert_factor}.")
                 return _convert_factor * float(val)
+
+            def _cb_confirm_reset():
+
+                t = m.send_command(
+                    cmd_name="RESET",
+                    params={"mode": 0},
+                    type_="command",
+                    channel="machine")
+                asyncio.ensure_future(t)
 
             async def __update_level_task(pigment_, pipe_, qtity_):
 
@@ -1499,9 +1510,12 @@ class HomePage(BaseStackedPage):
                     for k, v in ret.items():
                         _ = " ".join([f"{_k}, {__qtity_from_ml(_v, pigment_['name'])} ({units_.lower()})" for _k, _v in v.items()])
                         msg_ += f"{tr_(k)}: {_}"
+                        msg_ += tr_(". RESET head: {} ?").format(m.name)
                         logging.warning(f"msg_:{msg_}.")
                         self.main_window.open_input_dialog(
-                            icon_name="SP_MessageBoxInformation", message=msg_)
+                            icon_name="SP_MessageBoxInformation",
+                            message=msg_,
+                            ok_cb=_cb_confirm_reset)
                 except Exception:  # pylint: disable=broad-except
                     logging.error(traceback.format_exc())
 
@@ -1515,30 +1529,39 @@ class HomePage(BaseStackedPage):
                 pipe_addresses.update( { "C%02d"%(i - 7): i for i in range(8, 32)} )
                 return pipe_addresses[p_name]
 
-            def _cb_confirm_quantity(pigment_, pipe_, qtity_):
+            def _cb_confirm_quantity(pigment_, pipe_, qtity_ml_):
 
-                t = __update_level_task(pigment_, pipe_, qtity_)
+                t = __update_level_task(pigment_, pipe_, qtity_ml_)
                 asyncio.ensure_future(t)
 
             def _cb_input_quantity(pigment_, pipe_):
 
                 self.main_window.toggle_keyboard(on_off=False)
 
-                qtity_ = self.main_window.input_dialog.get_content_text()
-                qtity_ = round(float(qtity_), 2)
-                msg_ = """please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?."""
-                msg_ = tr_(msg_).format(pipe_['name'], qtity_, units_.lower(), pigment_['name'])
+                qtity_units_ = self.main_window.input_dialog.get_content_text()
+                qtity_units_ = round(float(qtity_units_), 2)
+                qtity_ml_ = __qtity_to_ml(qtity_units_, pigment_['name'])
 
-                qtity_ = __qtity_to_ml(qtity_, pigment_['name'])
+                logging.warning("maximum_level:{}, current_level:{}, qtity_ml_:{}, qtity_units_:{}".format(pipe_['maximum_level'], pipe_['current_level'], qtity_ml_, qtity_units_))
 
-                self.main_window.open_input_dialog(
-                    icon_name="SP_MessageBoxQuestion",
-                    message=msg_,
-                    content=None,
-                    ok_cb=_cb_confirm_quantity,
-                    ok_cb_args=(pigment_, pipe_, qtity_))
+                if pipe_['maximum_level'] >= pipe_['current_level'] + qtity_ml_:
+                    msg_ = """please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?."""
+                    msg_ = tr_(msg_).format(pipe_['name'], qtity_units_, units_.lower(), pigment_['name'])
 
-            def _cb_verify_barcode(pigment_, pipe_, _default_qtity, barcode_):
+                    self.main_window.open_input_dialog(
+                        icon_name="SP_MessageBoxQuestion",
+                        message=msg_,
+                        content=None,
+                        ok_cb=_cb_confirm_quantity,
+                        ok_cb_args=(pigment_, pipe_, qtity_ml_))
+                else:
+                    msg_ = """refilling with {} ({}) would exceede maximum level! Aborting."""
+                    msg_ = tr_(msg_).format(qtity_units_, units_.lower())
+                    self.main_window.open_input_dialog(
+                        icon_name="SP_MessageBoxCritical",
+                        message=msg_)
+
+            def _cb_verify_barcode(pigment_, pipe_, _default_qtity_units, barcode_):
 
                 barcode_check = self.main_window.input_dialog.get_content_text()
                 barcode_check = barcode_check.strip()
@@ -1547,17 +1570,23 @@ class HomePage(BaseStackedPage):
                 current_level_ = pipe_['current_level']
                 current_level_ = __qtity_from_ml(current_level_, pigment_['name'])
                 current_level_ = round(current_level_, 2)
-                msg_ = """please, input quantity (in {}) of product: {}<br> for refilling pipe: {}<br> current level:{}, leave as is for total refill."""
+                _default_qtity_units = str(_default_qtity_units).strip()
+                msg_ = """please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list."""
                 msg_ = tr_(msg_).format(units_.lower(), pigment_['name'], pipe_['name'], current_level_)
+                margin_ml_ = pipe_['maximum_level'] - pipe_['current_level']
+                margin_units_ = __qtity_from_ml(margin_ml_, pigment_['name'])
+
+                choices = [c for c in [_default_qtity_units, ] + refill_choices if float(c) <= margin_units_]
 
                 if barcode_check == barcode_:
                     self.main_window.toggle_keyboard(on_off=True)
                     self.main_window.open_input_dialog(
                         icon_name="SP_MessageBoxQuestion",
                         message=msg_,
-                        content=_default_qtity,
+                        content=_default_qtity_units,
                         ok_cb=_cb_input_quantity,
-                        ok_cb_args=(pigment_, pipe_))
+                        ok_cb_args=(pigment_, pipe_),
+                        choices=choices)
                 else:
 
                     self.main_window.open_input_dialog(
@@ -1565,7 +1594,7 @@ class HomePage(BaseStackedPage):
                         message=tr_("barcode mismatch <br/>{} != {}").format(barcode_, barcode_check),
                         content=None)
 
-            async def _roate_circuit_task(pigment_, pipe_, _default_qtity, barcode_):
+            async def _roate_circuit_task(pigment_, pipe_, _default_qtity_units, barcode_):
 
                 pipe_index = __get_pipe_index_from_name(pipe_['name'])
                 m = QApplication.instance().machine_head_dict[head_index]
@@ -1579,7 +1608,7 @@ class HomePage(BaseStackedPage):
                     message=tr_("please, verify barcode {} on canister.").format(barcode_),
                     content="",
                     ok_cb=_cb_verify_barcode,
-                    ok_cb_args=(pigment_, pipe_, _default_qtity, barcode_),
+                    ok_cb_args=(pigment_, pipe_, _default_qtity_units, barcode_),
                     ok_on_enter=1)
 
             def _cb_input_barcode():
@@ -1605,11 +1634,11 @@ class HomePage(BaseStackedPage):
 
                         pigment_ = found_pigments[0]
                         pipe_ = pigment_['pipes'][0]
-                        _default_qtity = pipe_['maximum_level'] - pipe_['current_level']
-                        _default_qtity = __qtity_from_ml(_default_qtity, pigment_['name'])
-                        _default_qtity = round(_default_qtity , 2)
+                        _default_qtity_ml = pipe_['maximum_level'] - pipe_['current_level']
+                        _default_qtity_units = __qtity_from_ml(_default_qtity_ml, pigment_['name'])
+                        _default_qtity_units = round(_default_qtity_units, 2)
 
-                        t = _roate_circuit_task(pigment_, pipe_, _default_qtity, barcode_)
+                        t = _roate_circuit_task(pigment_, pipe_, _default_qtity_units, barcode_)
                         asyncio.ensure_future(t)
 
                     else:

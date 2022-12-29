@@ -16,7 +16,9 @@ import time
 import traceback
 import copy
 import random
+import asyncio
 from datetime import datetime
+from functools import partial
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
@@ -29,7 +31,8 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QFrame,
     QTableWidgetItem,
-    QCompleter)
+    QCompleter,
+    QAbstractItemView)
 
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
@@ -135,7 +138,7 @@ class BaseDialog(QFrame):
             QWidget {background:#CCBBBBBB; border: 1px solid #999999; border-radius: 4px;}
             QLabel {border: 0px;}
             QLineEdit {background:#FFFFAA; }
-            QComboBox {background:#FFFFAA; }
+            QComboBox {background:#CCCCCC; }
             QPushButton { background-color: #F3F3F3F3;}
             QPushButton:pressed {background-color: #AAAAAA;}
             QSpinBox::up-button { height: 40px; width: 50px; }
@@ -480,6 +483,7 @@ class InputDialog(BaseDialog):
         super().__init__(*args, **kwargs)
 
         self.content_container.textChanged.connect(self.on_text_cahnged)
+        self.combo_box.currentIndexChanged.connect(self.on_combo_box_index_changed)
 
         self.__ok_cb = None
         self.__ok_cb_args = None
@@ -491,6 +495,11 @@ class InputDialog(BaseDialog):
 
         return self.content_container.toPlainText()
 
+    def on_combo_box_index_changed(self, index):
+
+        txt_ = self.combo_box.currentText()
+        self.content_container.setText(txt_)
+
     def on_ok_button_clicked(self):
 
         try:
@@ -498,7 +507,8 @@ class InputDialog(BaseDialog):
                 tmp__args_ = self.__ok_cb_args if self.__ok_cb_args is not None else []
                 tmp__ok_cb = self.__ok_cb
                 self.__ok_cb = None
-                tmp__ok_cb(*tmp__args_)
+                # ~ tmp__ok_cb(*tmp__args_)
+                asyncio.get_event_loop().call_later(.05, partial(tmp__ok_cb, *tmp__args_))
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
@@ -516,7 +526,8 @@ class InputDialog(BaseDialog):
         content=None,
         ok_cb=None,
         ok_cb_args=None,
-        ok_on_enter=False):
+        ok_on_enter=False,
+        choices=None):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
@@ -532,6 +543,16 @@ class InputDialog(BaseDialog):
             self.message_label.setText("")
         else:
             self.message_label.setText(str(message))
+
+        if choices is None:
+            self.combo_box.hide()
+            self.combo_box.clear()
+            self.combo_box.resize(self.combo_box.width(), 0)
+        else:
+            for choice in choices:
+                self.combo_box.addItem(choice)
+            self.combo_box.show()
+            self.combo_box.resize(self.combo_box.width(), 40)
 
         if content is None:
             self.content_container.setText("")
