@@ -28,12 +28,12 @@ from alfa_CR6_frontend.dialogs import (
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
-    HomePageSixHeads,
-    HomePageFourHeads,
     ActionPage,
     HelpPage)
 
 from alfa_CR6_frontend.browser_page import BrowserPage
+from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads)
+
 
 from alfa_CR6_frontend.keyboard import Keyboard
 

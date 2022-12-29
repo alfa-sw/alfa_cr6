@@ -53,6 +53,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         self.websocket = None
         self.last_answer = None
+        self.callback_on_macro_answer = None
         self.cntr = 0
         self.time_stamp = 0
         self.expired_products = None
@@ -291,8 +292,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         if msg:
             msg_dict = dict(json.loads(msg))
+            msg_type = msg_dict.get("type")
 
-            if msg_dict.get("type") == "device:machine:status":
+            if msg_type == "device:machine:status":
                 status = msg_dict.get("value")
                 status = dict(status)
                 if status:
@@ -300,22 +302,31 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     if diff:
                         logging.info(f"{self.name} diff:{ diff }")
 
-            elif msg_dict.get("type") == "answer":
+            elif msg_type == "answer":
                 answer = msg_dict.get("value")
                 answer = dict(answer)
+                logging.warning(f"{self.name} answer:{answer}")
+
+                if self.callback_on_macro_answer and callable(self.callback_on_macro_answer):
+                    try:
+                        if answer.get('answer'):
+                            self.callback_on_macro_answer(answer['answer'])
+                            self.callback_on_macro_answer = None
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(traceback.format_exc())
+
                 if (answer and answer.get("status_code") is not None
                         and answer.get("command") is not None):
 
                     self.last_answer = answer
-                    # ~ logging.warning(f"{self.name} answer:{answer}")
 
-            elif msg_dict.get("type") == "time":
+            elif msg_type == "time":
                 propagate_to_ws_msg_handler = False
                 time_stamp = msg_dict.get("value")
                 if time_stamp:
                     self.time_stamp = time_stamp
 
-            elif msg_dict.get("type") == "expired_products":
+            elif msg_type == "expired_products":
                 expired_products = msg_dict.get("value")
                 if self.expired_products != expired_products:
                     self.expired_products = expired_products
@@ -446,7 +457,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return r
 
-    async def send_command(self, cmd_name: str, params: dict, type_="command", channel="machine"):
+    async def send_command(self, cmd_name: str, params: dict, type_="command", channel="machine", callback_on_macro_answer=None):
         """ param 'type_' can be 'command' or 'macro'
 
             examples:
@@ -481,7 +492,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_, show_alert=False)
                     logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
                 else:
-                    # TODO: wait for answer from macroprocessor
+                    self.callback_on_macro_answer = callback_on_macro_answer
                     ret = True
 
         except Exception as e:  # pylint: disable=broad-except
