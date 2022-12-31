@@ -70,9 +70,7 @@ class RefillProcedureHelper:
             channel="machine")
         asyncio.ensure_future(t)
 
-
     async def __update_level_task(self, pigment_, pipe_, qtity_ml_):
-
 
         def _cb_on_refill(answer):
             logging.warning(f"answer:{answer}.")
@@ -230,7 +228,7 @@ class RefillProcedureHelper:
 
         self.parent.main_window.open_input_dialog(
             icon_name="SP_MessageBoxQuestion",
-            message=tr_("please, input barcode"),
+            message=tr_("please, input barcode for refill"),
             content="",
             ok_cb=self._cb_input_barcode,
             ok_on_enter=1)
@@ -473,7 +471,7 @@ class HomePage(BaseStackedPage):
                 status = m.status
                 crx_outputs_status = m.status.get('crx_outputs_status', 0x1)
                 if (not crx_outputs_status and
-                        status.get('status_level', '') in ("STANDBY", ) and
+                        status.get('status_level', '') in ("STANDBY", "DIAGNOSTIC", ) and
                         QApplication.instance().carousel_frozen):
 
                     map_[head_index].setPixmap(self.main_window.tank_icon_map['green'])
@@ -675,10 +673,21 @@ class HomePage(BaseStackedPage):
             except Exception as e:  # pylint: disable=broad-except
                 QApplication.instance().handle_exception(e)
 
-    def refill_lbl_clicked(self, head_index):  # pylint:disable=too-many-statements
+    @staticmethod
+    def refill_lbl_is_active(head_index):
 
-        if head_index is not None and hasattr(g_settings,
-                                              'USE_PIGMENT_ID_AS_BARCODE') and g_settings.USE_PIGMENT_ID_AS_BARCODE:
+        # ~ if head_index is not None and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE') and (
+        # ~ g_settings.USE_PIGMENT_ID_AS_BARCODE and QApplication.instance().carousel_frozen):
+
+        flag = head_index is not None
+        flag = flag and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE')
+        flag = flag and g_settings.USE_PIGMENT_ID_AS_BARCODE
+        flag = flag and QApplication.instance().carousel_frozen
+        return flag
+
+    def refill_lbl_clicked(self, head_index):
+
+        if self.refill_lbl_is_active(head_index):
             rph = RefillProcedureHelper(parent=self, head_index=head_index)
             rph.run()
 

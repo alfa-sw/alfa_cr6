@@ -90,8 +90,6 @@ class SingleWebEnginePage(QWebEnginePage):
                         args_ = f"{self.download_msgs[self.current_download.state()]}"
                     QApplication.instance().main_window.open_alert_dialog(args_, title="ALERT")
 
-                # ~ self.adjust_downloaded_file_name()
-
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
 
@@ -278,7 +276,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
     def clean(self):
         pass
 
-class BrowserPage(BaseStackedPage):
+class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attributes
 
     ui_file_name = "browser_page.ui"
     help_file_name = 'webengine.html'
@@ -330,7 +328,7 @@ class BrowserPage(BaseStackedPage):
         self.webengine_view = None
 
         self.current_head_index = None
-        if self.refill_label: 
+        if self.refill_label:
             self.refill_label.mouseReleaseEvent = lambda event: self.main_window.home_page.refill_lbl_clicked(self.current_head_index)
 
     def __on_click_url_label(self):
@@ -375,9 +373,7 @@ class BrowserPage(BaseStackedPage):
             self.webengine_view.setUrl(q_url)
             self.parent().setCurrentWidget(self)
 
-        if head_index is not None and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE') and (
-                g_settings.USE_PIGMENT_ID_AS_BARCODE and QApplication.instance().carousel_frozen):
-
+        if self.main_window.home_page.refill_lbl_is_active(head_index):
             self.current_head_index = head_index
             self.refill_label.show()
             self.refill_label.raise_()
