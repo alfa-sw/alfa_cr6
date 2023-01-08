@@ -69,8 +69,8 @@ class OrderParser:
     cpl_pdf_header = "MixingSys"
     DICHEMIX_pdf_header = "Dichemix"
     mixcar_pdf_header = "Rapport de formule"
-    axalta_pdf_header = "Axalta Industrial"
-    codevid_pdf_header = "Formula Details"
+    axalta_pdf_header = "Axalta Industrial"    # duthoo
+    codevid_pdf_header = "Formula Details"     # duthoo
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -642,7 +642,7 @@ weight:{RealWeight}
             if len(toks) > 2:
 
                 value = float(toks[-2].replace(',','.'))
-                name = toks[0]
+                name = toks[1]
                 description = " ".join(toks[1:-2])
 
                 ingredient = {
