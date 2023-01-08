@@ -553,7 +553,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if (p_type == 'colorant' and step == 0) or (p_type != 'colorant' and step != 0):
                 pars_copy_["ingredients"].pop(pig_name)
 
-        logging.warning(f"step:{step}, pars:{json.dumps(pars_copy_, indent=2, ensure_ascii=False)}")
+        logging.info(f"step:{step}, ingredients:{json.dumps(pars_copy_['ingredients'])}")
 
         return pars_copy_
 
