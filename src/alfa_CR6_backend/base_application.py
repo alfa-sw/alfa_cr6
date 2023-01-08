@@ -38,6 +38,7 @@ from alfa_CR6_backend.globals import (
     get_version,
     set_language,
     import_settings,
+    get_application_instance,
     tr_)
 
 from alfa_CR6_backend.machine_head import MachineHead
@@ -267,6 +268,8 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
                     await cls.__ask_platform_info(msg_dict, websocket)
                 elif msg_dict["command"] == "ask_temperature_logs":
                     await cls.__ask_temperature_logs(msg_dict, websocket)
+                elif msg_dict["command"] == "create_order_from_file":
+                    await cls.__create_order_from_file(msg_dict, websocket)
             elif msg_dict.get("debug_command"):
 
                 try:
@@ -306,12 +309,42 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         await websocket.send(answer)
 
     @classmethod
+    async def __create_order_from_file(cls, msg_dict, websocket):
+        params = msg_dict.get("params", {})
+        file_name = params.get("file_name")
+        logging.warning(f"file_name:{file_name}.")
+        try:
+            _path = cls.settings.WEBENGINE_DOWNLOAD_PATH.strip()
+            path_to_file = os.path.join(_path, file_name)
+
+            get_application_instance().main_window.order_page.populate_order_table()
+            order_list = get_application_instance().create_orders_from_file(path_to_file=path_to_file, n_of_jars=1, silent=True)
+            get_application_instance().main_window.order_page.populate_order_table()
+
+            order_nr_ = order_list and order_list[0] and order_list[0].order_nr
+            if order_nr_:
+                msg_ = tr_("<h4>created order {} from file:{}</h4>").format(order_nr_, file_name)
+            else:
+                msg_ = tr_("<h4>can't create order from file:{}</h4>").format(order_nr_, file_name)
+        except Exception as e:  # pylint: disable=broad-except
+            msg_ = tr_('<h4>ERROR:{}</h4>').format(e)
+
+        answer = json.dumps({
+            'type': 'message_display',
+            'value': html.unescape(msg_),
+            'make_visible': True,
+        })
+        await websocket.send(answer)
+
+    @classmethod
     async def __ask_formula_files(cls, websocket):
 
         _path = cls.settings.WEBENGINE_DOWNLOAD_PATH.strip()
         s_ = [f for f in os.listdir(_path) if os.path.isfile(os.path.join(_path, f))]
 
-        answ_ = html.unescape('<br/>'.join(s_))
+        val_ = tr_("create order")
+        answ_ = [f"""<input type="button" onclick="create_order_from_file('{s}');" value="{val_}"></input> {s} """ for s in s_]
+        answ_ = html.unescape('<br/>'.join(answ_))
         logging.warning(f"answ_:{answ_}.")
 
         answer = json.dumps({
@@ -514,6 +547,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     n_of_active_heads = 0
 
+    db_session = None
+
     def __init__(self, main_window_class, settings, *args, **kwargs):
 
         logging.debug("settings:{}".format(settings))
@@ -525,7 +560,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.run_flag = True
         self.ui_path = UI_PATH
         self.keyboard_path = KEYBOARD_PATH
-        self.db_session = None
         self.ready_to_read_a_barcode = True
 
         # ~ self.__inner_loop_task_step = 0.02  # secs
@@ -1017,7 +1051,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         # ~ logging.warning(f"order.json_properties:{order.json_properties}")
 
-    def _do_create_order(self, properties, description, n_of_jars, file_name=None):
+    def _do_create_order( # pylint: disable=too-many-arguments
+        self, properties, description, n_of_jars, file_name=None, silent=False):
 
         order = None
         if self.db_session:
@@ -1026,22 +1061,35 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 name_list = [i["pigment_name"] for i in properties.get('ingredients', [])]
                 assert len(name_list) == len(set(name_list)), tr_("duplicated name in ingredient list")
 
-                order = Order(
-                    json_properties=json.dumps(properties, indent=2),
-                    description=description, file_name=file_name)
+                try:
+                    order = Order(
+                        json_properties=json.dumps(properties, indent=2),
+                        description=description, file_name=file_name)
 
-                self.do_fill_unknown_pigment_list(order)
+                    if order:
+                        self.do_fill_unknown_pigment_list(order)
 
-                self.db_session.add(order)
-                for j in range(1, n_of_jars + 1):
-                    jar = Jar(order=order, index=j, size=0)
-                    self.db_session.add(jar)
-                self.db_session.commit()
+                        self.db_session.add(order)
+                        for j in range(1, n_of_jars + 1):
+                            jar = Jar(order=order, index=j, size=0)
+                            self.db_session.add(jar)
+                        self.db_session.commit()
+
+                except Exception as e:  # pylint: disable=broad-except
+                    order = None
+                    self.db_session.rollback()
+                    if silent:
+                        logging.error(traceback.format_exc())
+                    else:
+                        self.handle_exception(e)
 
             except Exception as e:  # pylint: disable=broad-except
                 order = None
                 self.db_session.rollback()
-                self.handle_exception(e)
+                if silent:
+                    logging.error(traceback.format_exc())
+                else:
+                    self.handle_exception(e)
 
         return order
 
@@ -1062,7 +1110,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return self._do_create_order({}, "", n_of_jars)
 
-    def create_orders_from_file(self, path_to_file=None, n_of_jars=0):
+    def create_orders_from_file(self, path_to_file=None, n_of_jars=0, silent=False):
 
         order_list = []
         try:
@@ -1080,11 +1128,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 file_name = properties.get("meta", {}).get("file name")
 
                 if not properties['meta'].get('error'):
-                    order = self._do_create_order(properties, description, n_of_jars, file_name=file_name)
+                    order = self._do_create_order(properties, description, n_of_jars, file_name=file_name, silent=silent)
                     order_list.append(order)
 
         except Exception as e:  # pylint: disable=broad-except
-            self.handle_exception(e)
+            if silent:
+                logging.error(traceback.format_exc())
+            else:
+                self.handle_exception(e)
 
         logging.warning(f"path_to_file:{path_to_file}, n_of_jars:{n_of_jars}, order_list:{order_list}.")
 

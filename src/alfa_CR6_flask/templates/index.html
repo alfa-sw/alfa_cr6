@@ -82,6 +82,9 @@
 
 	</table>
 </div>
+
+<div id="message_display" style="visibility: hidden;"></div>
+
 <div>
 	<div class="table-responsive">
 		<table class="table-striped table-bordered table-hover model-list">
@@ -174,6 +177,7 @@
 			}
 		}
 	}
+
 	var send_debug_cmd = function() {
 		var el = document.getElementById("debug_command"); 
 		if((el) && (g_ws_client)){
@@ -215,6 +219,14 @@
 		g_ws_client.send(cmd);
 	};
 
+	var create_order_from_file = function(file_name) {
+
+		console.log('create_order_from_file()'); 
+		var cmd = {"command": 'create_order_from_file', 'params': {'file_name': file_name}};
+		cmd = JSON.stringify(cmd);
+		g_ws_client.send(cmd);
+	};
+
 	var change_language = function(lang_) {
 
 		var msg_ = "Confirm changing language to " + lang_ + "? WARN: Application will be restarted.";
@@ -237,10 +249,10 @@
 	};
 	var on_wsocket_message = function(event) {
 		var data = JSON.parse(event.data);
-		var data_container_id = null;
 		var el = document.getElementById(data.type); 
 		if(el){
 			el.innerHTML = data.value;
+			if (data.make_visible) { el.style.visibility = "visible"; }
 		}
 		if (data.server_time) {
 			var el1 = document.getElementById('server_time'); 
