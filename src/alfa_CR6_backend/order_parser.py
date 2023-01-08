@@ -643,7 +643,7 @@ weight:{RealWeight}
 
                 value = float(toks[-2].replace(',','.'))
                 name = toks[1]
-                description = " ".join(toks[1:-2])
+                description = " ".join(toks[2:-2])
 
                 ingredient = {
                     "pigment_name": name,
@@ -660,6 +660,7 @@ weight:{RealWeight}
         properties = {}
         ingredients = []
         extra_info = []
+        extra_lines_to_print = []
 
         for l in lines:
 
@@ -679,6 +680,16 @@ weight:{RealWeight}
                 continue
 
             if section_cntr == 0:
+
+                if extra_info and "register" in extra_info[-1].lower():
+                    toks = l.split()
+                    if toks:
+                        extra_lines_to_print.append(" ".join(toks[:-1]))
+                if extra_info and "laag" in extra_info[-1].lower():
+                    toks = l.split()
+                    if toks:
+                        extra_lines_to_print.append(toks[-1])
+
                 extra_info.append(l)
                 continue
 
@@ -690,8 +701,13 @@ weight:{RealWeight}
                 continue
 
             if section_cntr == 2:
-                break
+                extra_info.append(l)
+                if "hoeveelheid" in l.lower():
+                    toks = l.split()
+                    if toks:
+                        extra_lines_to_print.append(" ".join(toks[1:]))
 
+        properties['extra_lines_to_print'] = extra_lines_to_print
         properties['ingredients'] = ingredients
         properties['meta'] = {'extra_info': extra_info}
 
@@ -724,6 +740,7 @@ weight:{RealWeight}
         properties = {}
         ingredients = []
         extra_info = []
+        extra_lines_to_print = []
 
         for l in lines:
 
@@ -740,16 +757,26 @@ weight:{RealWeight}
                 continue
 
             if section_cntr == 0:
+
+                if extra_info and "colour number" in extra_info[-1].lower():
+                    extra_lines_to_print.append(l)
+
                 extra_info.append(l)
                 continue
 
             if section_cntr == 1:
+
                 ingredient = parse_ingredient_line(l)
                 if ingredient:
                     ingredients.append(ingredient)
+                else:
+                    if extra_info and "quantity" in extra_info[-1].lower():
+                        extra_lines_to_print.append(l)
+                    extra_info.append(l)
 
                 continue
 
+        properties['extra_lines_to_print'] = extra_lines_to_print
         properties['ingredients'] = ingredients
         properties['meta'] = {'extra_info': extra_info}
 
