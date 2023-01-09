@@ -790,6 +790,7 @@ weight:{RealWeight}
 
             if section_cntr == 3:
 
+                l = " ".join(l.split())
                 ingredient = parse_ingredient_line(l)
                 if ingredient:
                     ingredients.append(ingredient)
