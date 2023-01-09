@@ -684,11 +684,15 @@ weight:{RealWeight}
                 if extra_info and "register" in extra_info[-1].lower():
                     toks = l.split()
                     if toks:
-                        extra_lines_to_print.append(" ".join(toks[:-1]))
-                if extra_info and "laag" in extra_info[-1].lower():
+                        extra_lines_to_print.append(toks[-2])
+                if extra_info and extra_info[-1].lower().startswith("kleurcode fabrikant"):
                     toks = l.split()
                     if toks:
-                        extra_lines_to_print.append(toks[-1])
+                        extra_lines_to_print.append(" ".join(toks[:-2]))
+                # ~ if extra_info and "laag" in extra_info[-1].lower():
+                    # ~ toks = l.split()
+                    # ~ if toks:
+                        # ~ extra_lines_to_print.append(toks[-1])
 
                 extra_info.append(l)
                 continue
@@ -735,19 +739,20 @@ weight:{RealWeight}
             return ingredient
 
         head_section_0 = "Formula Details"
-        head_section_1 = "Formula"
+        head_section_1 = "Colour Name"
+        head_section_2 = "Customer"
+        head_section_3 = "Formula"
         section_cntr = 0
         properties = {}
         ingredients = []
         extra_info = []
         extra_lines_to_print = []
+        section_2_extra_lines_to_print = [[], []]
 
         for l in lines:
 
             if not l:
                 continue
-
-            l = " ".join(l.split())
 
             if head_section_0 in l:
                 section_cntr = 0
@@ -755,16 +760,35 @@ weight:{RealWeight}
             if head_section_1 in l:
                 section_cntr = 1
                 continue
+            if head_section_2 in l:
+                section_cntr = 2
+                continue
+            if head_section_3 in l:
+                section_cntr = 3
+                continue
 
             if section_cntr == 0:
 
-                if extra_info and "colour number" in extra_info[-1].lower():
-                    extra_lines_to_print.append(l)
-
+                l = " ".join(l.split())
                 extra_info.append(l)
                 continue
 
             if section_cntr == 1:
+
+                val_ = " ".join(l.split())
+                logging.warning(f"val_:{val_}, l:{l}")
+                if l.startswith("                                 "):
+                    section_2_extra_lines_to_print[1].append(val_)
+                else:
+                    section_2_extra_lines_to_print[0].append(val_)
+
+            if section_cntr == 2:
+
+                l = " ".join(l.split())
+                extra_info.append(l)
+                continue
+
+            if section_cntr == 3:
 
                 ingredient = parse_ingredient_line(l)
                 if ingredient:
@@ -776,7 +800,7 @@ weight:{RealWeight}
 
                 continue
 
-        properties['extra_lines_to_print'] = extra_lines_to_print
+        properties['extra_lines_to_print'] = [" ".join(l) for l in section_2_extra_lines_to_print] + extra_lines_to_print
         properties['ingredients'] = ingredients
         properties['meta'] = {'extra_info': extra_info}
 
@@ -899,7 +923,8 @@ weight:{RealWeight}
         properties = {}
 
         with codecs.open(path_to_txt_file, encoding=e) as fd:
-            lines = [l.strip() for l in fd.readlines()]
+            original_lines = list(fd.readlines())
+            lines = [l.strip() for l in original_lines]
             lines = [l for l in lines if l]
 
         if cls.sikkens_pdf_header in lines[0]:
@@ -945,7 +970,7 @@ weight:{RealWeight}
                 properties['meta']['header'] = cls.axalta_pdf_header
 
         elif cls.codevid_pdf_header in " ".join(lines[0:1]):
-            properties = cls.parse_codevid_pdf(lines)
+            properties = cls.parse_codevid_pdf(original_lines)
 
             if properties.get('meta'):
                 properties['meta']['header'] = cls.codevid_pdf_header

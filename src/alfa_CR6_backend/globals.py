@@ -226,8 +226,7 @@ def create_printable_image_from_jar(jar):
 
     if not os.path.exists(TMP_BARCODE_IMAGE):
         with open(TMP_BARCODE_IMAGE, 'w', encoding='UTF-8'):
-            pass
-        logging.warning(f'empty file created at:{TMP_BARCODE_IMAGE}')
+            logging.warning(f'empty file created at:{TMP_BARCODE_IMAGE}')
 
     options = {
         'dpi': 250,
@@ -238,6 +237,7 @@ def create_printable_image_from_jar(jar):
         'line_lenght': 24,
         'n_of_lines': 3,
         'rotate': 0,
+        'print_missing_products': True,
     }
 
     if hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
@@ -254,10 +254,11 @@ def create_printable_image_from_jar(jar):
 
         lines_to_print = [recipe_barcode, ]
         lines_to_print += [f"{l}"[:l_lenght] for l in jar.extra_lines_to_print]
-        logging.warning(f'jar.unknown_pigments:{jar.unknown_pigments}')
-        if jar.unknown_pigments:
-            lines_to_print += [tr_("{} product(s) missing:").format(len(jar.unknown_pigments))]
-            lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.unknown_pigments.items()]
+        if options.get('print_missing_products'):
+            logging.warning(f'jar.unknown_pigments:{jar.unknown_pigments}')
+            if jar.unknown_pigments:
+                lines_to_print += [tr_("{} product(s) missing:").format(len(jar.unknown_pigments))]
+                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.unknown_pigments.items()]
 
         n_to_pad = n_of_lines + 1 - len(lines_to_print)
         lines_to_print.extend(["." for i in range(n_to_pad)])
