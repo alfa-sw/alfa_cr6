@@ -185,6 +185,19 @@ D = {
     "all operations are paused": "all operations are paused",
 
     "{} product(s) missing:": "{} product(s) missing:",
+
+    "adjusted_levels": "adjusted_levels",
+    "please, input barcode for refill": "please, input barcode for refill",
+    ". RESET head: {} ?": ". RESET head: {} ?",
+    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.",
+    "refilling with {} ({}) would exceed maximum level! Aborting.": "refilling with {} ({}) would exceed maximum level! Aborting.",
+    "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.": 
+        "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.",
+
+    "barcode mismatch <br/>{} != {}": "barcode mismatch <br/>{} != {}",
+    "please, verify barcode {} on canister.": "please, verify barcode {} on canister.",
+    "barcode not known:{}": "barcode not known:{}",
+    "please, enter service password": "please, enter service password",
 }
 
 
