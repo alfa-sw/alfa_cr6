@@ -29,7 +29,7 @@ CUSTOM_PATH =  os.path.join(HERE, "custom_dtoo")
 
 WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "SW_web_download")
 WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "SW_web_cache")
-WEBENGINE_CUSTOMER_URL = ""
+WEBENGINE_CUSTOMER_URL = "https://duthoo.codevid.be"
 
 SQLITE_CONNECT_STRING = f"sqlite:///{DATA_PATH}/CRx_v0_SW.sqlite"
 

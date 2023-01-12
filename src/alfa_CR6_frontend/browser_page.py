@@ -100,11 +100,18 @@ class SingleWebEnginePage(QWebEnginePage):
         try:
             self.current_download = download
 
+            try:
+                logging.warning(f"self.current_download.downloadFileName():{self.current_download.downloadFileName()}.")
+            except Exception as e:  # pylint: disable=broad-except
+                logging.warning(f"e:{e}.")
+
             # API changed in version 5.11 ?
             # 'QWebEngineDownloadItem' object has no attribute 'setDownloadDirectory'
             if hasattr(self.current_download, 'setDownloadDirectory'):
                 self.current_download.setDownloadDirectory(g_settings.WEBENGINE_DOWNLOAD_PATH)
+                logging.warning(f"self.current_download:{self.current_download}.")
             elif hasattr(self.current_download, 'setPath'):
+                logging.warning(f"self.current_download.path():{self.current_download.path()}.")
                 _, file_name = os.path.split(self.current_download.path())
                 pth = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
                 self.current_download.setPath(pth)

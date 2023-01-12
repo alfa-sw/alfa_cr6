@@ -717,6 +717,30 @@ weight:{RealWeight}
 
         return properties
 
+    @classmethod
+    def parse_codevid_txt(cls, lines):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        new_lines = []
+        start = 0
+        for l in lines:
+
+            # ~ logging.warning(f"l:{l}")
+
+            if cls.codevid_pdf_header in l:
+                start = 1
+
+            if start:
+                toks = [t.strip() for t in l.split(",")]
+                toks = [t.lstrip('"') for t in toks]
+                toks = [t.rstrip('"') for t in toks]
+                toks = [t.ljust(30) for t in toks]
+                new_l = " ".join(toks)
+                # ~ logging.warning(f"new_l:{new_l}")
+                new_lines.append(new_l)
+
+        # ~ logging.warning(f"new_lines:{new_lines}")
+
+        return cls.parse_codevid_pdf(new_lines)
+
     @staticmethod
     def parse_codevid_pdf(lines):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
@@ -739,8 +763,11 @@ weight:{RealWeight}
             return ingredient
 
         head_section_0 = "Formula Details"
-        head_section_1 = "Colour Name"
-        head_section_2 = "Customer"
+        head_section_1 = "Colour Number"
+        colour_number_index = -1
+        colour_name_index = -1
+        # ~ head_section_2 = "Customer"
+        head_section_2 = "Manufacturer"
         head_section_3 = "Formula"
         section_cntr = 0
         properties = {}
@@ -759,6 +786,8 @@ weight:{RealWeight}
                 continue
             if head_section_1 in l:
                 section_cntr = 1
+                colour_number_index = l.find(head_section_1)
+                colour_name_index = l.find("Colour Name")
                 continue
             if head_section_2 in l:
                 section_cntr = 2
@@ -776,11 +805,18 @@ weight:{RealWeight}
             if section_cntr == 1:
 
                 val_ = " ".join(l.split())
-                logging.warning(f"val_:{val_}, l:{l}")
-                if l.startswith("                                 "):
-                    section_2_extra_lines_to_print[1].append(val_)
-                else:
-                    section_2_extra_lines_to_print[0].append(val_)
+                
+                # ~ if l.startswith("                                 "):
+                    # ~ section_2_extra_lines_to_print[1].append(val_)
+                # ~ else:
+                    # ~ section_2_extra_lines_to_print[0].append(val_)
+                    # ~ section_2_extra_lines_to_print[0].append(val_)
+                col_number = l[colour_number_index:].strip()
+                if col_number:
+                    section_2_extra_lines_to_print[0].append(col_number)
+                col_name = l[colour_name_index:colour_name_index + 10].strip()
+                if col_name:
+                    section_2_extra_lines_to_print[1].append(col_name)
 
             if section_cntr == 2:
 
@@ -1036,6 +1072,13 @@ weight:{RealWeight}
 
             if properties.get('meta') is not None:
                 properties['meta']['header'] = cls.mcm_csv_header
+
+        elif cls.codevid_pdf_header in "".join(lines[:4]):
+            properties = cls.parse_codevid_txt(lines)
+
+            if properties.get('meta') is not None:
+                properties['meta']['header'] = cls.codevid_pdf_header
+
 
         return properties
 
