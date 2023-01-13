@@ -355,7 +355,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                             self.stacked_widget.setCurrentWidget(self.debug_page.main_frame)
                             self.toggle_keyboard(on_off=False)
 
-                    msg_ = tr_("please, enter service password.")
+                    msg_ = tr_("please, enter service password")
                     self.open_input_dialog(message=msg_,  content="", ok_cb=ok_cb_)
 
 
