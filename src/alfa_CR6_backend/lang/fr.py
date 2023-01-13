@@ -182,18 +182,18 @@ D = {
 
     "{} product(s) missing:": "{} produit(s) manquant(s):",
 
-    "adjusted_levels": "adjusted_levels",
-    "please, input barcode for refill": "please, input barcode for refill",
-    ". RESET head: {} ?": ". RESET head: {} ?",
-    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.",
-    "refilling with {} ({}) would exceed maximum level! Aborting.": "refilling with {} ({}) would exceed maximum level! Aborting.",
+    "adjusted_levels": "niveaux ajustés",
+    "please, input barcode for refill": "s'il vous plaît, entrez le code-barres pour la recharge",
+    ". RESET head: {} ?": ".<br/>RÉINITIALISATION de la Tête: {} ?",
+    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "s'il vous plaît, confirmez le remplissage du tuyau: {} <br>avec {} ({}) de produit: {}.",
+    "refilling with {} ({}) would exceed maximum level! Aborting.": "remplissage avec {} ({}) dépasserait le niveau maximum ! Abandon.",
     "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.": 
-        "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.",
+        "s'il vous plaît, entrez la quantité (en {}) de produit: {}<br> pour remplir le tuyau: {} (niveau actuel:{}).<br>Laisser tel quel pour une recharge totale ou sélectionner dans la liste.",
 
-    "barcode mismatch <br/>{} != {}": "barcode mismatch <br/>{} != {}",
-    "please, verify barcode {} on canister.": "please, verify barcode {} on canister.",
-    "barcode not known:{}": "barcode not known:{}",
-    "please, enter service password": "please, enter service password",
+    "barcode mismatch <br/>{} != {}": "incompatibilité de code-barres<br/>{} != {}",
+    "please, verify barcode {} on canister.": "s'il vous plaît, vérifiez le code-barres {} sur bidon.",
+    "barcode not known:{}": "code barre inconnu:{}",
+    "please, enter service password": "s'il vous plaît, entrez le mot de passe du service",
 }
 
 

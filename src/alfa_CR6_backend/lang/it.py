@@ -188,18 +188,18 @@ D = {
 
     "{} product(s) missing:": "{} prodotto/i mancante/i:",
 
-    "adjusted_levels": "adjusted_levels",
-    "please, input barcode for refill": "please, input barcode for refill",
-    ". RESET head: {} ?": ". RESET head: {} ?",
-    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.",
-    "refilling with {} ({}) would exceed maximum level! Aborting.": "refilling with {} ({}) would exceed maximum level! Aborting.",
+    "adjusted_levels": "livelli aggiornati",
+    "please, input barcode for refill": "prego, scannerizza il codice a barre per il rabocco",
+    ". RESET head: {} ?": ".<br/>RESET testa: {} ?",
+    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "prego, conferma il rabbocco del circuito: {} <br>con {} ({}) del prodotto: {}.",
+    "refilling with {} ({}) would exceed maximum level! Aborting.": "raboccando con {} ({}) andrai oltre il livello massimo! Annulare.",
     "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.": 
-        "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.",
+        "prego, iserisci la quntità (in {}) del prodotto: {}<br> per rabbocare il circuito: {} (livello corrente:{}).<br>Seleziona dalla lista o lascia la quantità impostata per il completo riempimento.",
 
-    "barcode mismatch <br/>{} != {}": "barcode mismatch <br/>{} != {}",
-    "please, verify barcode {} on canister.": "please, verify barcode {} on canister.",
-    "barcode not known:{}": "barcode not known:{}",
-    "please, enter service password": "please, enter service password",
+    "barcode mismatch <br/>{} != {}": "il barcode non corrisponde <br/>{} != {}",
+    "please, verify barcode {} on canister.": "prego, scannerizza il barcode {} sul canestro.",
+    "barcode not known:{}": "barcode non corretto:{}",
+    "please, enter service password": "prego, inserisci la password per il service",
 }
 
 
