@@ -216,6 +216,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         # ~ self.refill_5_lbl.mouseReleaseEvent = lambda event: self.show_reserve(4)
         # ~ self.refill_6_lbl.mouseReleaseEvent = lambda event: self.show_reserve(5)
 
+        self._open_alert_dialog_list = []
+
     def __init_icons(self):
 
         self.gray_icon = QPixmap(get_res("IMAGE", "gray.png"))
@@ -492,8 +494,26 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         logging.warning(str(message))
 
+    def check_alert_dialogs(self, close_all=False):
+
+        if close_all:
+            for i in self._open_alert_dialog_list:
+                i.close()
+
+        logging.warning(f"self._open_alert_dialog_list:{self._open_alert_dialog_list}")
+
+        to_be_deleted = [i for i in self._open_alert_dialog_list if not i.isVisible()]
+        for i in to_be_deleted:
+            self._open_alert_dialog_list.remove(i)
+
+        logging.warning(f"self._open_alert_dialog_list:{self._open_alert_dialog_list}")
+
+        return len(self._open_alert_dialog_list)
+
     def open_alert_dialog(  # pylint: disable=too-many-arguments
             self, args, title="ALERT", fmt=None, callback=None, cb_args=None):
+
+        self.check_alert_dialogs(close_all=False)
 
         if fmt is not None:
             msg = tr_(fmt).format(*args)
@@ -504,6 +524,13 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}, indent=2, ensure_ascii=False)
 
         _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args)
+
+        while len(self._open_alert_dialog_list) >= 5:
+            logging.warning(f"len(self._open_alert_dialog_list):{len(self._open_alert_dialog_list)}")
+            self._open_alert_dialog_list[0].close()
+            self._open_alert_dialog_list.pop(0)
+
+        self._open_alert_dialog_list.append(_msgbox)
 
         logging.warning(msg)
 

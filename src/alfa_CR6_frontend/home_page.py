@@ -351,6 +351,9 @@ class HomePage(BaseStackedPage):
 
             head_index = service_btns.index(btn) - 1
             logging.debug(f"btn_name:{btn_name}, map_[btn]:{map_[btn]}, map_:{map_}, head_index:{head_index}")
+
+            self.main_window.check_alert_dialogs(close_all=True)
+
             self.main_window.browser_page.open_page(map_[btn], head_index=head_index)
 
         except Exception as e:  # pylint: disable=broad-except
