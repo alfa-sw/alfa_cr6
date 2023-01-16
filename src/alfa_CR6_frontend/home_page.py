@@ -114,7 +114,7 @@ class RefillProcedureHelper:
         logging.warning("maximum_level:{}, current_level:{}, qtity_ml_:{}, qtity_units_:{}".format(
             pipe_['maximum_level'], pipe_['current_level'], qtity_ml_, qtity_units_))
 
-        if pipe_['maximum_level'] >= pipe_['current_level'] + qtity_ml_:
+        if pipe_['maximum_level'] >= (pipe_['current_level'] + qtity_ml_) * 0.98:
             msg_ = """please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?."""
             msg_ = tr_(msg_).format(pipe_['name'], qtity_units_, self.units_.lower(), pigment_['name'])
 
@@ -207,9 +207,12 @@ class RefillProcedureHelper:
                     return pigment['pipes'] and pigment['pipes'][0].get('current_level', 0)
 
                 found_pigments.sort(key=_pipe_current_level)
-
                 pigment_ = found_pigments[0]
-                pipe_ = pigment_['pipes'][0]
+
+                pipes_ = pigment_['pipes'][:]
+                pipes_.sort(key=lambda p: p['current_level'] - p['maximum_level'])
+                pipe_ = pipes_[0]
+
                 _default_qtity_ml = pipe_['maximum_level'] - pipe_['current_level']
                 _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, pigment_['name'])
                 _default_qtity_units = round(_default_qtity_units, 2)
