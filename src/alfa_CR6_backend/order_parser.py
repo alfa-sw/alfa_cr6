@@ -69,8 +69,9 @@ class OrderParser:
     cpl_pdf_header = "MixingSys"
     DICHEMIX_pdf_header = "Dichemix"
     mixcar_pdf_header = "Rapport de formule"
-    axalta_pdf_header = "Axalta Industrial"    # duthoo
-    codevid_pdf_header = "Formula Details"     # duthoo
+    axalta_pdf_header = "Axalta Industrial"         # duthoo
+    codevid_pdf_header = "Formula Details"          # duthoo
+    basf_pdf_header = "Base Target Amt. CumAmt." # duthoo
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -804,13 +805,6 @@ weight:{RealWeight}
 
             if section_cntr == 1:
 
-                val_ = " ".join(l.split())
-                
-                # ~ if l.startswith("                                 "):
-                    # ~ section_2_extra_lines_to_print[1].append(val_)
-                # ~ else:
-                    # ~ section_2_extra_lines_to_print[0].append(val_)
-                    # ~ section_2_extra_lines_to_print[0].append(val_)
                 col_number = l[colour_number_index:].strip()
                 if col_number:
                     section_2_extra_lines_to_print[0].append(col_number)
@@ -944,8 +938,74 @@ weight:{RealWeight}
 
         return properties
 
+    @staticmethod
+    def parse_basf_pdf(original_lines):
+
+        def parse_ingredient_line(l):
+
+            ingredient = None
+            toks = l.split()
+            if len(toks) > 2:
+
+                value = float(toks[1].replace(',','.'))
+                name = toks[0]
+                description = "."
+
+                ingredient = {
+                    "pigment_name": name,
+                    "weight(g)": round(value, 4),
+                    "description": description
+                }
+
+            return ingredient
+
+        head_section_1 = "Base Target Amt. CumAmt."
+        head_section_2 = "Optional Greyshade"
+
+        section_cntr = 0
+        properties = {}
+        ingredients = []
+        extra_info = []
+        extra_lines_to_print = []
+
+        for l in original_lines:
+
+            if not l:
+                continue
+
+            if head_section_1 in ' '.join(l.split()):
+                section_cntr = 1
+            elif head_section_2 in l:
+                section_cntr = 2
+            else:
+
+                if section_cntr == 0:
+
+                    l = " ".join(l.split())
+                    extra_info.append(l)
+
+                elif section_cntr == 1:
+
+                    l = " ".join(l.split())
+                    ingredient = parse_ingredient_line(l)
+                    if ingredient:
+                        ingredients.append(ingredient)
+                    else:
+                        extra_info.append(l)
+
+                elif section_cntr == 2:
+
+                    l = " ".join(l.split())
+                    extra_info.append(l)
+
+        properties['extra_lines_to_print'] = extra_lines_to_print
+        properties['ingredients'] = ingredients
+        properties['meta'] = {'extra_info': extra_info}
+
+        return properties
+
     @classmethod
-    def parse_pdf_order(cls, path_to_file, fixed_pitch=5): # pylint: disable=too-many-branches
+    def parse_pdf_order(cls, path_to_file, fixed_pitch=5): # pylint: disable=too-many-branches, too-many-statements
 
         path_to_txt_file = "{0}.txt".format(path_to_file)
 
@@ -1011,6 +1071,14 @@ weight:{RealWeight}
 
             if properties.get('meta'):
                 properties['meta']['header'] = cls.codevid_pdf_header
+
+        elif [l for l in lines if cls.basf_pdf_header in ' '.join(l.split())]:
+
+            properties = cls.parse_basf_pdf(original_lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.basf_pdf_header
+
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
