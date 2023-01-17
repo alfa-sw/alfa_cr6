@@ -497,8 +497,11 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def check_alert_dialogs(self, close_all=False):
 
         if close_all:
+
             for i in self._open_alert_dialog_list:
                 i.close()
+
+            QApplication.instance().close_modal_freeze_msgbox()
 
         logging.warning(f"self._open_alert_dialog_list:{self._open_alert_dialog_list}")
 

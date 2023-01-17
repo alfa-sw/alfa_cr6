@@ -1178,6 +1178,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.freeze_carousel(not self.carousel_frozen)
 
+    def close_modal_freeze_msgbox(self):
+
+        if self.__modal_freeze_msgbox:
+            self.__modal_freeze_msgbox.close()
+
     def freeze_carousel(self, flag):
 
         if self.carousel_frozen != flag:
