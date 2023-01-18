@@ -61,7 +61,7 @@ def replace_invalid_tags(path_to_file):
         logging.error(f"e:{e}")
 
 
-class OrderParser:
+class OrderParser:       # pylint: disable=too-many-public-methods
 
     mcm_csv_header = 'BASE'
     sikkens_pdf_header = 'Anteprima Formula'
@@ -71,7 +71,8 @@ class OrderParser:
     mixcar_pdf_header = "Rapport de formule"
     axalta_pdf_header = "Axalta Industrial"         # duthoo
     codevid_pdf_header = "Formula Details"          # duthoo
-    basf_pdf_header = "Base Target Amt. CumAmt." # duthoo
+    basf_1_pdf_header = "Base Target Amt. CumAmt."
+    basf_2_pdf_header = "Base Amount"
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -939,7 +940,7 @@ weight:{RealWeight}
         return properties
 
     @staticmethod
-    def parse_basf_pdf(original_lines):
+    def parse_basf_1_pdf(original_lines):
 
         def parse_ingredient_line(l):
 
@@ -977,6 +978,75 @@ weight:{RealWeight}
                 section_cntr = 1
             elif head_section_2 in l:
                 section_cntr = 2
+            else:
+
+                if section_cntr == 0:
+
+                    l = " ".join(l.split())
+                    extra_info.append(l)
+
+                elif section_cntr == 1:
+
+                    l = " ".join(l.split())
+                    ingredient = parse_ingredient_line(l)
+                    if ingredient:
+                        ingredients.append(ingredient)
+                    else:
+                        extra_info.append(l)
+
+                elif section_cntr == 2:
+
+                    l = " ".join(l.split())
+                    extra_info.append(l)
+
+        properties['extra_lines_to_print'] = extra_lines_to_print
+        properties['ingredients'] = ingredients
+        properties['meta'] = {'extra_info': extra_info}
+
+        return properties
+
+    @staticmethod
+    def parse_basf_2_pdf(original_lines):
+
+        def parse_ingredient_line(l):
+
+            # ~ logging.warning(f"l:{l}")
+
+            ingredient = None
+            toks = l.split()
+            if len(toks) >= 2:
+
+                value = float(toks[1].replace(',','.'))
+                name = toks[0]
+                description = "."
+
+                ingredient = {
+                    "pigment_name": name,
+                    "weight(g)": round(value, 4),
+                    "description": description
+                }
+
+            return ingredient
+
+        head_section_1 = "Base Amount"
+        head_section_2 = "total Amount"
+
+        section_cntr = 0
+        properties = {}
+        ingredients = []
+        extra_info = []
+        extra_lines_to_print = []
+
+        for l in original_lines:
+
+            if not l:
+                continue
+
+            if head_section_1 in ' '.join(l.split()):
+                section_cntr = 1
+            elif head_section_2 in ' '.join(l.split()):
+                section_cntr = 2
+                extra_info.append(" ".join(l.split()))
             else:
 
                 if section_cntr == 0:
@@ -1072,13 +1142,19 @@ weight:{RealWeight}
             if properties.get('meta'):
                 properties['meta']['header'] = cls.codevid_pdf_header
 
-        elif [l for l in lines if cls.basf_pdf_header in ' '.join(l.split())]:
+        elif [l for l in lines if cls.basf_1_pdf_header in ' '.join(l.split())]:
 
-            properties = cls.parse_basf_pdf(original_lines)
+            properties = cls.parse_basf_1_pdf(original_lines)
 
             if properties.get('meta'):
-                properties['meta']['header'] = cls.basf_pdf_header
+                properties['meta']['header'] = cls.basf_1_pdf_header
 
+        elif [l for l in lines if cls.basf_2_pdf_header in ' '.join(l.split())]:
+
+            properties = cls.parse_basf_2_pdf(original_lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.basf_1_pdf_header
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
