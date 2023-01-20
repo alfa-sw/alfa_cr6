@@ -809,9 +809,10 @@ weight:{RealWeight}
                 col_number = l[colour_number_index:].strip()
                 if col_number:
                     section_2_extra_lines_to_print[0].append(col_number)
-                col_name = l[colour_name_index:colour_name_index + 10].strip()
+                col_name = l[colour_name_index:colour_name_index + 25].strip()
                 if col_name:
                     section_2_extra_lines_to_print[1].append(col_name)
+                    # ~ logging.warning(f"col_name:{col_name}, l:{l}")
 
             if section_cntr == 2:
 
