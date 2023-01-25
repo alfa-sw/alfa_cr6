@@ -199,6 +199,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         browser_btn_pixmap = QPixmap(get_res("IMAGE", "browser_btn.png"))
         self.browser_btn.setIcon(QIcon(browser_btn_pixmap))
         self.browser_btn.setIconSize(QSize(140, 60))
+        self.browser_btn.setStyleSheet("""QPushButton {background-color: #FFFFFF; border: 1px solid #999999; border-radius: 4px;}""")
 
         self.stacked_widget.setCurrentWidget(self.home_page)
 

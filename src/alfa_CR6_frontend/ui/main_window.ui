@@ -27,9 +27,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>1000</y>
+      <y>982</y>
       <width>1920</width>
-      <height>72</height>
+      <height>91</height>
      </rect>
     </property>
     <property name="font">
@@ -48,9 +48,9 @@
      <property name="geometry">
       <rect>
        <x>1690</x>
-       <y>1</y>
+       <y>12</y>
        <width>160</width>
-       <height>62</height>
+       <height>78</height>
       </rect>
      </property>
      <property name="text">
@@ -77,9 +77,9 @@
      <property name="geometry">
       <rect>
        <x>1500</x>
-       <y>1</y>
+       <y>12</y>
        <width>160</width>
-       <height>62</height>
+       <height>78</height>
       </rect>
      </property>
      <property name="text">
@@ -106,9 +106,9 @@
      <property name="geometry">
       <rect>
        <x>280</x>
-       <y>1</y>
+       <y>12</y>
        <width>160</width>
-       <height>62</height>
+       <height>78</height>
       </rect>
      </property>
      <property name="text">
@@ -135,9 +135,9 @@
      <property name="geometry">
       <rect>
        <x>1310</x>
-       <y>1</y>
+       <y>12</y>
        <width>160</width>
-       <height>62</height>
+       <height>78</height>
       </rect>
      </property>
      <property name="autoFillBackground">
@@ -155,8 +155,8 @@
      </property>
      <property name="iconSize">
       <size>
-       <width>200</width>
-       <height>60</height>
+       <width>160</width>
+       <height>78</height>
       </size>
      </property>
      <property name="flat">
@@ -170,9 +170,9 @@
      <property name="geometry">
       <rect>
        <x>150</x>
-       <y>0</y>
+       <y>12</y>
        <width>91</width>
-       <height>62</height>
+       <height>78</height>
       </rect>
      </property>
      <property name="text">
@@ -209,9 +209,9 @@
      <property name="geometry">
       <rect>
        <x>20</x>
-       <y>0</y>
+       <y>12</y>
        <width>91</width>
-       <height>62</height>
+       <height>78</height>
       </rect>
      </property>
      <property name="text">

@@ -512,6 +512,11 @@ class AdminIndexView(flask_admin.AdminIndexView):
                         subprocess.run(cmd_, check=False, shell=True)
                         flash_msgs.append(f'unzipped settings from:{stream.filename} to :{dest_pth}.')
 
+                    elif split_ext[1:] and split_ext[1] == '.png':
+                        dest_pth = os.path.join(SETTINGS.CUSTOM_PATH, "browser_btn.png")
+                        with open(dest_pth, 'wb') as f:
+                            f.write(stream.read())
+
                     elif split_ext[1:] and split_ext[1] == '.sqlite':
                         orig_pth = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
                         logging.warning("orig_pth:{}".format(orig_pth))
@@ -528,6 +533,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
                             msg = 'ERROR invlaid file name {}. Check db version'.format(stream.filename)
                             flash_msgs.append(msg)
                             logging.error(msg)
+
                     else:
                         msg = 'unknown file {}.'.format(stream.filename)
                         flash_msgs.append(msg)
@@ -579,6 +585,12 @@ class AdminIndexView(flask_admin.AdminIndexView):
             elif data_set_name_lower == 'app_settings.py':
                 file_to_send = os.path.join(SETTINGS.CONF_PATH, "app_settings.py")
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
+            elif 'logo_image' in data_set_name_lower:
+                file_to_send = os.path.join(SETTINGS.CUSTOM_PATH, "browser_btn.png")
+                out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
+            elif 'last_label' in data_set_name_lower:
+                file_to_send = os.path.join(SETTINGS.TMP_PATH, "tmp_file.png")
+                out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             elif 'head_events' in data_set_name_lower:
                 file_to_send = _reformat_head_events_to_csv(SETTINGS.TMP_PATH, db_session=self.db.session)
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
@@ -593,12 +605,23 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
         if file_to_send and out_fname:
             logging.warning("file_to_send:{}, out_fname:{}".format(file_to_send, out_fname))
-            return send_file(
-                file_to_send,
-                mimetype='application/octet-stream',
-                as_attachment=True,
-                attachment_filename=out_fname
-            )
+
+            try:  # API Changed in version 2.0
+                ret = send_file(
+                    file_to_send,
+                    mimetype='application/octet-stream',
+                    as_attachment=True,
+                    attachment_filename=out_fname
+                )
+            except Exception:  # pylint: disable=broad-except
+                ret = send_file(
+                    file_to_send,
+                    mimetype='application/octet-stream',
+                    as_attachment=True,
+                    download_name=out_fname
+                )
+
+            return ret
 
         logging.warning("flash_msgs:{}".format(flash_msgs))
         ret = redirect('/index')

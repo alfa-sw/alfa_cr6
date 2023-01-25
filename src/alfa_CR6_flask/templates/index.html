@@ -99,7 +99,13 @@
 					</form>
 				</td>
 				<td title="upload files: full db (.sqlite) or application settings (app_settings.py)">
-					<label for="input_file">upload settings or full db</label>
+					<label for="input_file">upload:</label>
+					<ul>
+						<li>app settings (.py) or </li>
+						<li>data and conf (.zip) or </li>
+						<li>logo image (.png) or </li>
+						<li>full db (.sqlite)</li>
+					</ul>
 					<form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
 						<input style="float:left;margin:4px;" class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
 						<input style="float:left;margin:4px;" class="btn btn-primary" type="submit" value="upload">
@@ -107,11 +113,13 @@
 					</form>
 				</td>
 				<td>
-					<label>download </label>
-					<a class="btn btn-primary" href="/download?data_set_name=data_and_conf.zip">supervisor data_and_conf.zip</a>
-					<a class="btn btn-primary" href="/download?data_set_name=log_and_tmp.zip">log_and_tmp.zip</a>
-					<a class="btn btn-primary" href="/download?data_set_name=app_settings.py">app_settings.py</a>
-					<a class="btn btn-primary" href="/download?data_set_name=head_events">head events</a>
+					<label>download:</label> <br/>
+					<a class="glyphicon glyphicon-download button-tool" href="/download?data_set_name=data_and_conf.zip"></a><span> data and conf (.zip)</span>	<br/> 
+					<a class="glyphicon glyphicon-download button-tool" href="/download?data_set_name=log_and_tmp.zip"></a>  <span> log and tmp (.zip)</span>	<br/>
+					<a class="glyphicon glyphicon-download button-tool" href="/download?data_set_name=app_settings.py"></a>  <span> app settings (.py)</span>	<br/>
+					<a class="glyphicon glyphicon-download button-tool" href="/download?data_set_name=logo_image"></a> 		 <span> logo image</span> 			<br/>
+					<a class="glyphicon glyphicon-download button-tool" href="/download?data_set_name=last_label"></a> 		 <span> last label</span> 			<br/>
+					<a class="glyphicon glyphicon-download button-tool" href="/download?data_set_name=head_events"></a>		 <span> head events</span>			<br/>
 				</td>
 			</tr>
 			<tr>
