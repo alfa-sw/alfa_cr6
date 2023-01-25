@@ -1,0 +1,32 @@
+body{
+	text-align: center; 
+	background-color: #FFFFFF; 
+	font-size: 18px;
+}
+
+header{
+	/* height: 40px; */
+	border: 1px solid #CCCCCC;
+	/* display: inline-block; */
+	text-align: left;
+	background-color: #FFFFBB; 
+}
+
+article{
+	height: 760px;
+	background-color: #FFFFFF; 
+}
+
+footer{
+	height: 40px;
+	background-color: #DDDDDD; 
+	text-align: center;
+}
+
+.hidden{
+	display: none;
+}
+
+.ui_page{
+	height: 820px;
+}

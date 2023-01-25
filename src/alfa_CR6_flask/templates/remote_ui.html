@@ -1,0 +1,106 @@
+<!DOCTYPE HTML>
+<html lang="{{ lang }}">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1"/>
+		<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+		<meta http-equiv="Pragma" content="no-cache" />
+		<meta http-equiv="Expires" content="0" />
+		<title>alfa CRx UI</title>
+		<link rel="shortcut icon" href="{{ url_for('static', filename='remote_ui/images/favicon.png') }}">
+		<link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/ui.css') }}"/>
+		<link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/bootstrap.min.css') }}"/>
+
+	</head>
+
+	<body onclick="{window.scrollTo(0, 0);}">
+		<header>
+			<div class="container-fluid">
+				<div class="row">
+					<div class="col-sm-6">
+						<div id="server_time"></div>
+					</div>
+					<div class="col-sm-2">
+						<div id="current_language_label"></div>
+					</div>
+					<div class="col-sm-2">
+						{{ ws_ip_port }}
+					</div>
+					<div class="col-sm-2">
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-sm-3">
+						AAAAAAAA
+					</div>
+				</div>
+			</div>
+		</header>
+		<article>
+			<div class="container-fluid">
+				<div id="home_page" class="ui_page">
+					HOME PAGE
+				</div>
+				<div id="orders_page" class="ui_page">
+					ORDER PAGE
+				</div>
+				<div id="browser_page" class="ui_page">
+					BROWSER PAGE 
+				</div>
+				<div id="tools_page" class="ui_page">
+					TOOLS PAGE
+				</div>
+			</div>
+		</article>
+		<footer>
+			<div class="bg-alfa container-fluid ">
+				<div class="row ui_page" id="menu_page">
+					<div class="col-sm-2">
+						<span class="glyphicon glyphicon-info-sign" 
+							onclick="show_page('help_page');"
+							id="help_btn">HELP
+						</span>
+					</div>
+					<div class="col-sm-2">
+						<span class="glyphicon glyphicon-info-sign" 
+							onclick="show_page('tools_page');"
+							id="tools_btn">TOOLS
+						</span>
+					</div>
+					<div class="col-sm-2">
+						<span class="glyphicon glyphicon-info-sign" 
+							onclick="show_page('home_page');"
+							id="home_btn">HOME
+						</span>
+					</div>
+					<div class="col-sm-2">
+						<span class="glyphicon glyphicon-info-sign" 
+							onclick="show_page('browser_page');"
+							id="browser_btn">BROWSER
+						</span>
+					</div>
+					<div class="col-sm-2">
+						<span class="glyphicon glyphicon-info-sign" 
+							onclick="show_page('orders_page');"
+							id="orders_btn">ORDERS
+						</span>
+					</div>
+				</div>
+			</div>
+		</footer>
+	</body>
+
+<script type="text/javascript" src="{{ url_for('static', filename='remote_ui/ui.js') }}"></script>
+<script>
+
+	var init = function(page_id) {
+//~ 		wsocket_connect(ws_server_url="ws://{{ ws_ip_port }}/remote_ui", on_open={show_page('home');});
+		wsocket_connect("ws://{{ ws_ip_port }}/remote_ui", function () {show_page('home_page');});
+		document.body.onclick = click_event_handler;
+	}
+
+	init();
+
+</script>
+
+</html>
