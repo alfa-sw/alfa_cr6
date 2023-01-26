@@ -487,7 +487,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
         return ret
 
     @flask_admin.expose('/upload', methods=('POST',))
-    def upload(self):     # pylint: disable=no-self-use
+    def upload(self):     # pylint: disable=no-self-use, too-many-statements
 
         flash_msgs = []
         try:
@@ -496,7 +496,13 @@ class AdminIndexView(flask_admin.AdminIndexView):
                     split_ext = os.path.splitext(stream.filename)
                     logging.warning(f"stream.mimetype:{stream.mimetype}, stream.filename:{stream.filename}, split_ext:{split_ext}.")
 
-                    if "app_settings.py" in stream.filename.lower():
+                    if "pigment_alias.json" in stream.filename.lower():
+
+                        with open(os.path.join(SETTINGS.DATA_PATH, 'pigment_alias.json'), 'wb') as f:
+                            f.write(stream.read())
+                        flash_msgs.append("pigment alias overwritten. {}".format(stream.filename))
+
+                    elif "app_settings.py" in stream.filename.lower():
                         with open(os.path.join(SETTINGS.CONF_PATH, 'app_settings.py'), 'wb') as f:
                             f.write(stream.read())
                         flash_msgs.append("app settings overwritten. {}".format(stream.filename))
@@ -550,7 +556,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
         return ret
 
     @flask_admin.expose('/download', methods=('GET',))
-    def download(self):     # pylint: disable=no-self-use
+    def download(self):     # pylint: disable=no-self-use, too-many-statements
 
         data_set_name = request.args.get('data_set_name', 'full_db')
 
