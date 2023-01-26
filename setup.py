@@ -18,7 +18,7 @@ INSTALL_REQUIRES = [
     'websockets',
     'SQLAlchemy<1.4.0', # api changed in 1.4.0
     'jsonschema',
-    'python-barcode',
+    'python-barcode<0.14.0',
     # ~ 'Pillow',
     'aiohttp',
     'flask',
