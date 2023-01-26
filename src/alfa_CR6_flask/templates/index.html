@@ -144,6 +144,16 @@
 				</td>
 			</tr>
 			<tr>
+				<td colspan="1">
+					<span>show aliases:</span>
+					<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get aliases" 
+								onclick="ask_aliases();"></span>
+				</td>
+				<td colspan="4">
+					<div id="ask_aliases_answer"></div>
+				</td>
+			</tr>
+			<tr>
 				<td colspan="5">
 					<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
 					<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
@@ -224,6 +234,14 @@
 
 		console.log('ask_formula_files()'); 
 		var cmd = {"command": 'ask_formula_files', 'params': {}};
+		cmd = JSON.stringify(cmd);
+		g_ws_client.send(cmd);
+	};
+
+	var ask_aliases = function() {
+
+		console.log('ask_aliases()'); 
+		var cmd = {"command": 'ask_aliases', 'params': {}};
 		cmd = JSON.stringify(cmd);
 		g_ws_client.send(cmd);
 	};

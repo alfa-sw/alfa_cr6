@@ -109,18 +109,12 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
 
             if msg_dict.get("command"):
 
-                if msg_dict["command"] == "change_language":
-                    await cls.__change_language(msg_dict)
-                elif msg_dict["command"] == "ask_settings":
-                    await cls.__ask_settings(websocket)
-                elif msg_dict["command"] == "ask_formula_files":
-                    await cls.__ask_formula_files(websocket)
-                elif msg_dict["command"] == "ask_platform_info":
-                    await cls.__ask_platform_info(msg_dict, websocket)
-                elif msg_dict["command"] == "ask_temperature_logs":
-                    await cls.__ask_temperature_logs(msg_dict, websocket)
-                elif msg_dict["command"] == "create_order_from_file":
-                    await cls.__create_order_from_file(msg_dict, websocket)
+                if hasattr(cls, msg_dict["command"]):
+                    _callable = getattr(cls, msg_dict["command"])
+                    answer = await _callable(msg_dict, websocket)
+
+                logging.warning(f"answer:{answer}")
+
             elif msg_dict.get("debug_command"):
 
                 try:
@@ -139,14 +133,30 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
             logging.error(traceback.format_exc())
 
     @classmethod
-    async def __change_language(cls, msg_dict):
+    async def change_language(cls, msg_dict, websocket): # pylint: disable=unused-argument
 
         params = msg_dict.get("params", {})
         lang = params.get("lang")
         set_language(lang)
 
     @classmethod
-    async def __ask_settings(cls, websocket):
+    async def ask_aliases(cls, msg_dict, websocket): # pylint: disable=unused-argument
+
+        _alias_file = os.path.join(cls.settings.DATA_PATH, "pigment_alias.json")
+        with open(_alias_file, encoding='UTF-8') as f:
+            alias_dict = json.load(f)
+        answ_ = [f"{k}: {v}" for k, v in alias_dict.items()]
+        answ_.sort()
+        answ_ = html.unescape('<br/>'.join(answ_))
+        logging.warning(f"answ_:{answ_}.")
+        answer = json.dumps({
+            'type': 'ask_aliases_answer',
+            'value': answ_,
+        })
+        await websocket.send(answer)
+
+    @classmethod
+    async def ask_settings(cls, msg_dict, websocket): # pylint: disable=unused-argument
         S = cls.settings
         s_ = [f"{i}: {getattr(S, i)}" for i in dir(S) if not i.startswith("_") and not isinstance(getattr(S, i), types.ModuleType)]
 
@@ -160,7 +170,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         await websocket.send(answer)
 
     @classmethod
-    async def __create_order_from_file(cls, msg_dict, websocket):
+    async def create_order_from_file(cls, msg_dict, websocket):
         params = msg_dict.get("params", {})
         file_name = params.get("file_name")
         logging.warning(f"file_name:{file_name}.")
@@ -188,7 +198,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         await websocket.send(answer)
 
     @classmethod
-    async def __ask_formula_files(cls, websocket):
+    async def ask_formula_files(cls, websocket):
 
         _path = cls.settings.WEBENGINE_DOWNLOAD_PATH.strip()
         s_ = [f for f in os.listdir(_path) if os.path.isfile(os.path.join(_path, f))]
@@ -208,7 +218,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         await websocket.send(answer)
 
     @classmethod
-    async def __ask_platform_info(cls, msg_dict, websocket):
+    async def ask_platform_info(cls, msg_dict, websocket):
 
         params = msg_dict.get("params", {})
         head_letter = params.get("head_letter")
@@ -227,7 +237,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         await websocket.send(answer)
 
     @classmethod
-    async def __ask_temperature_logs(cls, msg_dict, websocket):
+    async def ask_temperature_logs(cls, msg_dict, websocket):
 
         params = msg_dict.get("params", {})
         head_letter = params.get("head_letter")
