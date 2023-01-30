@@ -139,11 +139,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return r
 
-    async def wait_for_dispense_position_available(self, head_letter, extra_check=None):
+    async def wait_for_dispense_position_available(self, jar, head_letter, extra_check=None):
 
         m = self.get_machine_head_by_letter(head_letter)
 
-        logging.warning(f"{m.name} ")
+        logging.warning(f"{m.name} jar:{jar}")
 
         status_levels = ['JAR_POSITIONING', 'DIAGNOSTIC', 'STANDBY', 'ALARM', 'DISPENSING']
 
@@ -160,11 +160,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             r = await self.wait_for_condition(condition, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=False)
 
             if not r:
+                logging.warning(f"{m.name} jar:{jar}")
                 await self.wait_for_carousel_not_frozen(True, tr_('{} waiting for dispense position to get available.'.format(m.name)))
             else:
                 break
 
-        logging.warning(f"{m.name} r:{r}")
+        logging.warning(f"{m.name} jar:{jar} r:{r}")
         return r
 
     async def wait_for_load_lifter_is_up(self, jar):
@@ -298,7 +299,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             flag = flag and not TO.check_alarm_923()
             return flag
 
-        r = await self.wait_for_dispense_position_available(letter_to, extra_check=condition)
+        r = await self.wait_for_dispense_position_available(jar, letter_to, extra_check=condition)
         if r:
             # ~ self.update_jar_position(jar=jar, pos=f"{letter_from}_{letter_to}")
 
@@ -355,7 +356,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             flag = flag and not A.status.get('crx_outputs_status', 0x0) & 0x02
             return flag
 
-        r = await self.wait_for_dispense_position_available("A", extra_check=condition)
+        r = await self.wait_for_dispense_position_available(jar, "A", extra_check=condition)
 
         if r:
             if not self.positions_already_engaged(["IN_A", ]):
@@ -446,7 +447,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
             flag = flag and not D.check_alarm_923()
             return flag
-        r = await self.wait_for_dispense_position_available("D", extra_check=condition)
+        r = await self.wait_for_dispense_position_available(jar, "D", extra_check=condition)
 
         logging.warning(f"j:{jar}, r:{r}")
         if r:
