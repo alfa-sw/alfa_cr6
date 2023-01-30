@@ -1,0 +1,138 @@
+{% extends 'admin/master.html' %}
+
+{% block title %}
+System Management - Alfa CRX
+{% endblock %}
+
+{% block brand %}
+<a class="navbar-brand" href="/system_management">System Management</a>
+{% endblock %}
+
+{% block body %}
+  <p></p>
+  
+<link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}"/>
+
+<div class="block_container">
+
+	<table class="head_table">
+		<tr>
+			<td id="server_time" width="30%"></td>
+			<td id="live_can_list" width="30%"></td>
+		</tr>
+	</table>
+</div>
+
+<div id="message_display" style="visibility: hidden;"></div>
+
+<div>
+	<div class="table-responsive">
+		<table class="table-striped table-bordered table-hover model-list">
+			<tr>
+				<td title="upload formula files">
+					<label>upload formula files</label>
+					<form method="POST" action="/upload_formula_file" enctype="multipart/form-data" id="upload_formula_file_form">
+						<input type="hidden" name="answer_type" value="html"></input>
+						<input type="hidden" name="redirect_to" value="/system_management"></input>
+						<input style="float:left;margin:4px;" class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
+						<input style="float:left;margin:4px;" class="btn btn-primary" type="submit" value="upload">
+						<img   style="float:left;margin:4px;" width="32px" src="static/images/upload.png"></img></input>
+					</form>
+				</td>
+				<td title="upload files: full db (.sqlite) or application settings (app_settings.py)">
+					<label for="input_file">upload:</label>
+					<ul>
+						<li>app settings (.py) or </li>
+						<li>data and conf (.zip) or </li>
+						<li>logo image (.png) or </li>
+						<li>pigment alias (.json) or </li>
+						<li>full db (.sqlite)</li>
+					</ul>
+					<form method="POST" action="/upload" enctype="multipart/form-data" id="upload_data_form">
+						<input type="hidden" name="answer_type" value="html"></input>
+						<input type="hidden" name="redirect_to" value="/system_management"></input>
+						<input style="float:left;margin:4px;" class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
+						<input style="float:left;margin:4px;" class="btn btn-primary" type="submit" value="upload">
+						<img alt="upload.png" style="float:left;margin:4px;" width="32px" src="static/images/upload.png"></img></input>
+					</form>
+				</td>
+				<td>
+					<label>download:</label> <br/>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=data_and_conf.zip"></a>
+					<span> data and conf (.zip)</span></p>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=log_and_tmp.zip"></a>
+					<span> log and tmp (.zip)</span></p>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=app_settings.py"></a>
+					<span> app settings (.py)</span></p>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=logo_image"></a>
+					<span> logo image</span></p>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=last_label"></a>
+					<span> last label</span></p>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=head_events"></a>
+					<span> head events</span></p>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="1">
+					<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get formula file list." 
+								onclick="ask_formula_files();"></span>
+					<span>list formula files:</span>
+					<span class="glyphicon glyphicon glyphicon-remove" onclick="document.getElementById('ask_formula_files_answer').innerHTML='';"></span>
+				</td>
+				<td colspan="4">
+					<div id="ask_formula_files_answer"></div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="1">
+					<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get settings" 
+								onclick="ask_settings();"></span>
+					<span>show settings:</span>
+					<span class="glyphicon glyphicon glyphicon-remove" onclick="document.getElementById('ask_settings_answer').innerHTML='';"></span>
+				</td>
+				<td colspan="4">
+					<div id="ask_settings_answer"></div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="1">
+					<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get aliases" 
+								onclick="ask_aliases();"></span>
+					<span>show aliases:</span>
+					<span class="glyphicon glyphicon glyphicon-remove" onclick="document.getElementById('ask_aliases_answer').innerHTML='';"></span>
+				</td>
+				<td colspan="4">
+					<div id="ask_aliases_answer"></div>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="5">
+					<span class="glyphicon glyphicon-wrench button-tool" onclick="toggle_element_visibility('manhole_commander');"></span>
+					<div title="Beware: use it only if you know what you are doing." id="manhole_commander" style="visibility: hidden;">
+						<span>Manhole commander (expert usage only):</span>
+						<input type="text" size="40" id="debug_command" onkeydown="if(event.keyCode === 13) {send_debug_cmd()};"></input>
+						<input type="submit" onclick="send_debug_cmd();"></input>
+						<span id="debug_answer"></span>
+					</div>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div><hr></hr></div>
+	<div>
+		<label>Current Language:</label> 
+		<label id="current_language_label">{{ current_language }}</label>
+		-
+		<b> Change Language to: </b> 
+		{% for k, v in language_map.items() %}
+			<input class="btn btn-primary" type="submit" value="{{ k.upper() }}" onclick="change_language('{{ v }}');"></input>
+		{% endfor %}
+		<label>(WARN application will be restarted)</label>
+	</div>
+	<div><hr></hr></div>
+</div>
+
+<script type="text/javascript" src="{{ url_for('static', filename='admin.js') }}"></script>
+<script> connect_wsocket("ws://{{ ws_ip_addr_and_port }}/device:machine:status"); </script>
+
+{% endblock %}

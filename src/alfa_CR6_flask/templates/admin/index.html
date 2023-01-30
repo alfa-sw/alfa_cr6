@@ -1,0 +1,62 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+  <p></p>
+
+<link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}"/>
+
+<div class="block_container">
+	<table class="head_table">
+		<tr>
+			<td id="server_time" width="30%"></td>
+			<td id="live_can_list" width="30%"></td>
+		</tr>
+	</table>
+
+	<table>
+		<tr>
+			{% for i in ('A', 'B', 'C') %}
+			<th>
+				<span class="label label-info" style="padding:6px;">{{ i }}</span>
+				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info" 
+							onclick="ask_platform_info('{{ i }}');"></span>
+				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs" 
+							onclick="ask_temperature_logs('{{ i }}');"></span>
+			</th>
+			{% endfor %}
+		</tr>
+		<tr>
+			{% for i in (0, 2, 4) %}
+			<td><div class="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
+			{% endfor %}
+		</tr>
+
+		<tr>
+			{% for i in ('F', 'E', 'D') %}
+			<th>
+				<span class="label label-info" style="padding:6px;">{{ i }}</span>
+				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info" 
+							onclick="ask_platform_info('{{ i }}');"></span>
+				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs" 
+							onclick="ask_temperature_logs('{{ i }}');"></span>
+			</th>
+			{% endfor %}
+		</tr>
+		<tr>
+			{% for i in (1, 3, 5) %}
+			<td><div class ="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
+			{% endfor %}
+		</tr>
+	</table>
+</div>
+
+<div id="message_display" style="visibility: hidden;"></div>
+
+<div id="ask_platform_answer"></div>
+
+<div><hr></hr></div>
+
+<script type="text/javascript" src="{{ url_for('static', filename='admin.js') }}"></script>
+<script> connect_wsocket("ws://{{ ws_ip_addr_and_port }}/device:machine:status"); </script>
+
+{% endblock %}

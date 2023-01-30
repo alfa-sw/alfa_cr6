@@ -639,3 +639,15 @@ def init_models(sqlite_connect_string):
     e.install_listeners()
 
     return global_session
+
+def init_db(flaskApp):
+
+    import flask_sqlalchemy  # pylint: disable=import-error, import-outside-toplevel
+
+    db = flask_sqlalchemy.SQLAlchemy()
+    db.init_app(flaskApp)
+    set_global_session(db.session)
+    engine = db.get_engine(app=flaskApp)
+    apply_table_alterations(engine)
+
+    return db

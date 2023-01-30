@@ -186,7 +186,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
             if order_nr_:
                 msg_ = tr_("<h4>created order {} from file:{}</h4>").format(order_nr_, file_name)
             else:
-                msg_ = tr_("<h4>can't create order from file:{}</h4>").format(order_nr_, file_name)
+                msg_ = tr_("<h4>can't create order from file:{}</h4>").format(file_name)
         except Exception as e:  # pylint: disable=broad-except
             msg_ = tr_('<h4>ERROR:{}</h4>').format(e)
 
@@ -198,7 +198,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         await websocket.send(answer)
 
     @classmethod
-    async def ask_formula_files(cls, websocket):
+    async def ask_formula_files(cls, msg_dict, websocket):
 
         _path = cls.settings.WEBENGINE_DOWNLOAD_PATH.strip()
         s_ = [f for f in os.listdir(_path) if os.path.isfile(os.path.join(_path, f))]

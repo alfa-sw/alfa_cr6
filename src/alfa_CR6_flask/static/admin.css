@@ -1,0 +1,42 @@
+.container {width: 90%;}
+
+th, td {
+padding: 4px;
+}
+
+table{
+border: 1px solid light-grey;
+border-collapse: collapse;
+width: 100%;
+}
+
+th{
+background-color: #EFEFFF;
+}
+
+.scrollable {
+background-color: #FFFFCC;
+height: 300px;
+overflow: auto;
+}
+
+.button-tool {
+border: 1px solid light-grey;
+border-radius: 4px;
+width:80px;
+height: 24px;
+background-color:#AAAACC;
+padding: 6px;
+text-align: center;
+}
+
+.block_container {
+background-color: #CCF7F7;
+}
+
+#message_display {
+background-color: #CCEEFF;
+padding: 4px;
+margin: 4px;
+text-align: center;
+}
