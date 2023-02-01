@@ -337,6 +337,8 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         self.current_head_index = None
         if self.refill_label:
             self.refill_label.mouseReleaseEvent = lambda event: self.main_window.home_page.refill_lbl_clicked(self.current_head_index)
+        if self.print_label:
+            self.print_label.mouseReleaseEvent = lambda event: self.main_window.home_page.print_label_clicked(self.current_head_index)
 
     def __on_click_url_label(self):
         if SINGLE_POPUP_WIN.child_view:
@@ -380,9 +382,14 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             self.webengine_view.setUrl(q_url)
             self.parent().setCurrentWidget(self)
 
+        self.current_head_index = head_index
+
         if self.main_window.home_page.refill_lbl_is_active(head_index):
-            self.current_head_index = head_index
             self.refill_label.show()
             self.refill_label.raise_()
         else:
             self.refill_label.hide()
+
+        self.print_label.show()
+        self.print_label.raise_()
+

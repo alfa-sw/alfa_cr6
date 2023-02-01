@@ -32,6 +32,7 @@ SCHEMAS_PATH = os.path.join(HERE, "schemas")
 CONF_PATH = "/opt/alfa_cr6/conf"
 
 TMP_BARCODE_IMAGE = "/opt/alfa_cr6/tmp/tmp_file.png"
+TMP_PIGMENT_IMAGE = "/opt/alfa_cr6/tmp/tmp_pigment_label.png"
 
 if os.environ.get("TMP_FILE_PNG"): # JUST FOR TEST, NOT PRODUCTION!
     TMP_BARCODE_IMAGE = os.environ["TMP_FILE_PNG"]
@@ -216,17 +217,9 @@ def get_encoding(path_to_file, key=None):
     return encoding_
 
 
-def create_printable_image_from_jar(jar):
-
-    recipe_barcode = str(jar.barcode)
+def _get_print_label_options():
 
     settings = import_settings()
-
-    response = None
-
-    if not os.path.exists(TMP_BARCODE_IMAGE):
-        with open(TMP_BARCODE_IMAGE, 'w', encoding='UTF-8'):
-            logging.warning(f'empty file created at:{TMP_BARCODE_IMAGE}')
 
     options = {
         'dpi': 250,
@@ -244,6 +237,45 @@ def create_printable_image_from_jar(jar):
         options.update(settings.PRINT_LABEL_OPTONS)
 
     logging.warning(f'options:{options}')
+
+    return options
+
+def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
+
+    options = _get_print_label_options()
+
+    response = None
+
+    if not os.path.exists(TMP_PIGMENT_IMAGE):
+        with open(TMP_PIGMENT_IMAGE, 'w', encoding='UTF-8'):
+            logging.warning(f'empty file created at:{TMP_PIGMENT_IMAGE}')
+
+    printable_text = '\n'.join((barcode_txt, pigment_name, pipe_name))
+    with open(TMP_PIGMENT_IMAGE, 'wb') as file_:
+        rotate = options.pop('rotate')
+        EAN13(barcode_txt, writer=ImageWriter()).write(file_, options, printable_text)
+
+        response = TMP_PIGMENT_IMAGE
+
+    if response and rotate:
+        from PIL import Image   # pylint: disable=import-outside-toplevel
+        Image.open(TMP_PIGMENT_IMAGE).rotate(rotate, expand=1).save(TMP_PIGMENT_IMAGE)
+
+    logging.warning('response: {}'.format(response))
+
+    return response
+
+def create_printable_image_from_jar(jar):
+
+    recipe_barcode = str(jar.barcode)
+
+    options = _get_print_label_options()
+
+    response = None
+
+    if not os.path.exists(TMP_BARCODE_IMAGE):
+        with open(TMP_BARCODE_IMAGE, 'w', encoding='UTF-8'):
+            logging.warning(f'empty file created at:{TMP_BARCODE_IMAGE}')
 
     with open(TMP_BARCODE_IMAGE, 'wb') as file_:
         recipe_barcode_text = f'{recipe_barcode}'

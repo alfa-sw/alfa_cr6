@@ -18,7 +18,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
-from alfa_CR6_backend.globals import (import_settings, get_res, tr_)
+from alfa_CR6_backend.globals import (import_settings, get_res, tr_, TMP_PIGMENT_IMAGE)
+from alfa_CR6_backend.dymo_printer import dymo_print_pigment_label
 
 from alfa_CR6_frontend.pages import BaseStackedPage
 from alfa_CR6_frontend.debug_page import simulate_read_barcode
@@ -146,7 +147,7 @@ class RefillProcedureHelper:
         margin_ml_ = pipe_['maximum_level'] - pipe_['current_level']
         margin_units_ = self.__qtity_from_ml(margin_ml_, pigment_['name'])
 
-        choices = [c for c in [_default_qtity_units, ] + self.refill_choices if float(c) <= margin_units_]
+        choices = {c: None for c in [_default_qtity_units, ] + self.refill_choices if float(c) <= margin_units_}
 
         if barcode_check == barcode_:
             self.parent.main_window.toggle_keyboard(on_off=True)
@@ -696,6 +697,59 @@ class HomePage(BaseStackedPage):
         if self.refill_lbl_is_active(head_index):
             rph = RefillProcedureHelper(parent=self, head_index=head_index)
             rph.run()
+
+    def print_label_clicked(self, head_index):
+
+        machine_ = QApplication.instance().machine_head_dict[head_index]
+        pipes_ = {}
+        for p in machine_.pigment_list:
+            for pipe_ in p.get('pipes'):
+                k = f"{pipe_['name']} {p['name']}"
+                v = {
+                    'pigment_name': p['name'],
+                    'pipe_name': pipe_['name'],
+                    'barcode_txt': p.get('customer_id'),
+                    'rgb': p['rgb']
+                }
+                pipes_[k] = v
+
+        def _cb_pipe_confirmed(selected_):
+            barcode_txt = selected_['barcode_txt']
+            pigment_name = selected_['pigment_name']
+            pipe_name = selected_['pipe_name']
+            res = dymo_print_pigment_label(barcode_txt, pigment_name, pipe_name)
+            logging.warning(f"res:{res}")
+            QApplication.instance().main_window.open_input_dialog(
+                icon_name="SP_MessageBoxQuestion",
+                message=f"{res}",
+                content=None,
+                bg_image=TMP_PIGMENT_IMAGE)
+
+        def _cb_pipe_selected():
+            selected_ = QApplication.instance().main_window.input_dialog.get_selected_choice()
+            logging.warning(f"selected_:{selected_}")
+            barcode_txt = selected_['barcode_txt']
+            pigment_name = selected_['pigment_name']
+            pipe_name = selected_['pipe_name']
+
+            msg_ = """please, confirm printing label<br>{} {} {}."""
+            msg_ = tr_(msg_).format(pipe_name, pigment_name, barcode_txt)
+
+            QApplication.instance().main_window.open_input_dialog(
+                icon_name="SP_MessageBoxQuestion",
+                message=msg_,
+                content=None,
+                ok_cb=_cb_pipe_confirmed,
+                ok_cb_args=(selected_,))
+
+        logging.warning(f"self:{self}, pipes_:{pipes_}")
+
+        QApplication.instance().main_window.open_input_dialog(
+            icon_name="SP_MessageBoxQuestion",
+            message=tr_("please, choose a circuit to print the corresponding label."),
+            content="",
+            ok_cb=_cb_pipe_selected,
+            choices=pipes_)
 
 
 class HomePageSixHeads(HomePage):

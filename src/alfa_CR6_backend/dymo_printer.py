@@ -12,7 +12,7 @@ import traceback
 import logging
 import subprocess
 
-from alfa_CR6_backend.globals import create_printable_image_from_jar
+from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment)
 
 def _exec_cmd(command, shell=False):
 
@@ -57,6 +57,18 @@ def dymo_print_jar(jar):
     ret = {}
     try:
         _printable_image_pth = create_printable_image_from_jar(jar)
+        ret = _dymo_print_tmp_image(_printable_image_pth)
+    except Exception:   # pylint: disable=broad-except
+        logging.error(traceback.format_exc())
+        ret = {'result': 'NOK', 'msg': traceback.format_exc()}
+
+    return ret
+
+def dymo_print_pigment_label(barcode_txt, pigment_name, pipe_name):
+
+    ret = {}
+    try:
+        _printable_image_pth = create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name)
         ret = _dymo_print_tmp_image(_printable_image_pth)
     except Exception:   # pylint: disable=broad-except
         logging.error(traceback.format_exc())
