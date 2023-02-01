@@ -11,31 +11,29 @@
 		<link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/ui.css') }}"/>
 		<link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/bootstrap.min.css') }}"/>
 
+<style> 
+.page_frame {
+  position:fixed;
+  top:10px;
+  left:10px;
+  width: 1860px;
+  height: 860px;
+  border:2px solid #0000AA;
+}
+
+#foot_frame {
+  position:fixed;
+  top:880px;
+  left:10px;
+  width:1860px;
+  height:80px;
+  border:2px solid #00FFFF;
+}
+</style>
+
 	</head>
 
 	<body onclick="{window.scrollTo(0, 0);}">
-		<header>
-			<div class="container-fluid">
-				<div class="row">
-					<div class="col-sm-6">
-						<div id="server_time"></div>
-					</div>
-					<div class="col-sm-2">
-						<div id="current_language_label"></div>
-					</div>
-					<div class="col-sm-2">
-						{{ ws_ip_port }}
-					</div>
-					<div class="col-sm-2">
-					</div>
-				</div>
-				<div class="row">
-					<div class="col-sm-3">
-						AAAAAAAA
-					</div>
-				</div>
-			</div>
-		</header>
 		<article>
 			<div class="container-fluid">
 				<div id="home_page" class="ui_page">
@@ -52,7 +50,7 @@
 				</div>
 			</div>
 		</article>
-		<footer>
+		<div id="foot_frame">
 			<div class="bg-alfa container-fluid ">
 				<div class="row ui_page" id="menu_page">
 					<div class="col-sm-2">
@@ -87,7 +85,7 @@
 					</div>
 				</div>
 			</div>
-		</footer>
+		</div>
 	</body>
 
 <script type="text/javascript" src="{{ url_for('static', filename='remote_ui/ui.js') }}"></script>

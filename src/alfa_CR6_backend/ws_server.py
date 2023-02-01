@@ -36,10 +36,13 @@ class HomePage:
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
 
-        template = JINJA_ENVIRONMENT.get_template("home_page.html")
-        html_ = template.render()
-        logging.warning(f"html_:{html_}.")
+        ctx = {
+            'machine_head_dict': parent.machine_head_dict,
+            'background_image': '/static/remote_ui/images/alfa_logo.png',
+        }
 
+        html_ = JINJA_ENVIRONMENT.get_template("home_page.html").render(**ctx)
+        logging.warning(f"html_:{html_}.")
         msg = json.dumps({
             'type': 'html',
             'target': 'home_page',

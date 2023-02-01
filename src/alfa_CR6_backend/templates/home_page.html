@@ -1,6 +1,17 @@
-<h2>HOME PAGE</h2>
-<div class="row">
-	<div class="col-sm-4"><div id="device:machine:status_0">A</div></div>
-	<div class="col-sm-4"><div id="device:machine:status_2">B</div></div>
-	<div class="col-sm-4"><div id="device:machine:status_4">C</div></div>
-</div>                                                      
+<style> 
+#main_frame {
+  background-image:url('{{ background_image }}');
+  background-position: left top;
+  background-repeat: no-repeat;
+  padding: 1px;
+  background-size: contain;   /* contain, auto, cover */
+}
+</style>
+
+<div class="page_frame" id="main_frame">
+{% for k, v in machine_head_dict.items() %}
+	<div id="device:machine:status_{{ k }}" style="position:absolute;top:{{(k%2)*420}}px;left:{{(k//2)*620}}px;width:620px;height:420px;border:2px solid #73AD21;">
+		{{ k }} {{ v }} 
+	</div>
+{% endfor %}
+</div>
