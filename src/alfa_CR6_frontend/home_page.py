@@ -701,20 +701,10 @@ class HomePage(BaseStackedPage):
     def print_label_clicked(self, head_index):
 
         machine_ = QApplication.instance().machine_head_dict[head_index]
-        pipes_ = {}
-        for p in machine_.pigment_list:
-            for pipe_ in p.get('pipes'):
-                k = f"{pipe_['name']} {p['name']}"
-                v = {
-                    'pigment_name': p['name'],
-                    'pipe_name': pipe_['name'],
-                    'barcode_txt': p.get('customer_id'),
-                    'rgb': p['rgb']
-                }
-                pipes_[k] = v
 
         def _cb_pipe_confirmed(selected_):
-            barcode_txt = selected_['barcode_txt']
+            logging.warning(f"selected_:{selected_}")
+            barcode_txt = selected_.get('barcode_txt', '')
             pigment_name = selected_['pigment_name']
             pipe_name = selected_['pipe_name']
             res = dymo_print_pigment_label(barcode_txt, pigment_name, pipe_name)
@@ -728,7 +718,7 @@ class HomePage(BaseStackedPage):
         def _cb_pipe_selected():
             selected_ = QApplication.instance().main_window.input_dialog.get_selected_choice()
             logging.warning(f"selected_:{selected_}")
-            barcode_txt = selected_['barcode_txt']
+            barcode_txt = selected_.get('barcode_txt', '')
             pigment_name = selected_['pigment_name']
             pipe_name = selected_['pipe_name']
 
@@ -742,14 +732,31 @@ class HomePage(BaseStackedPage):
                 ok_cb=_cb_pipe_confirmed,
                 ok_cb_args=(selected_,))
 
+        pipes_ = {}
+        for p in machine_.pigment_list:
+            for pipe_ in p.get('pipes'):
+                k = f"{pipe_['name']} {p['name']}"
+                v = {
+                    'pigment_name': p['name'],
+                    'pipe_name': pipe_['name'],
+                    'barcode_txt': p.get('customer_id') or '',
+                    'rgb': p['rgb']
+                }
+                pipes_[k] = v
+
         logging.warning(f"self:{self}, pipes_:{pipes_}")
 
-        QApplication.instance().main_window.open_input_dialog(
-            icon_name="SP_MessageBoxQuestion",
-            message=tr_("please, choose a circuit to print the corresponding label."),
-            content="",
-            ok_cb=_cb_pipe_selected,
-            choices=pipes_)
+        if pipes_:
+            keys_ = list(pipes_.keys())
+            keys_.sort()
+            selected_ = keys_[0]
+
+            QApplication.instance().main_window.open_input_dialog(
+                icon_name="SP_MessageBoxQuestion",
+                message=tr_("please, choose a circuit to print the corresponding label."),
+                content=selected_,
+                ok_cb=_cb_pipe_selected,
+                choices=pipes_)
 
 
 class HomePageSixHeads(HomePage):

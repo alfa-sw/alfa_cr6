@@ -250,7 +250,18 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
         with open(TMP_PIGMENT_IMAGE, 'w', encoding='UTF-8'):
             logging.warning(f'empty file created at:{TMP_PIGMENT_IMAGE}')
 
-    printable_text = '\n'.join((barcode_txt, pigment_name, pipe_name))
+    options['module_height'] = 5
+    if not barcode_txt:
+        barcode_txt = 12*'0'
+        options['module_height'] = 0
+
+    lines_to_print = [pigment_name, pipe_name]
+    n_of_lines = options.pop('n_of_lines')
+    n_to_pad = n_of_lines - len(lines_to_print)
+    lines_to_print.extend(["." for i in range(n_to_pad)])
+
+    printable_text = '\n'.join(lines_to_print)
+
     with open(TMP_PIGMENT_IMAGE, 'wb') as file_:
         rotate = options.pop('rotate')
         EAN13(barcode_txt, writer=ImageWriter()).write(file_, options, printable_text)
