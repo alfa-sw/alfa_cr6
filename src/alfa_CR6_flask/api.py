@@ -271,13 +271,13 @@ def init_ad_hoc_api(app, db):  # pylint: disable=too-many-statements
         logging.warning("ret:{}".format(ret))
         return ret
 
-    @app.route('/download', methods=('GET',))
-    def download():     # pylint: disable=too-many-statements, too-many-branches
+    @app.route('/download/<data_set_name>', methods=('GET',))
+    def download(data_set_name):     # pylint: disable=too-many-statements, too-many-branches
 
         flash_msgs = []
         response_status = HTTPStatus.BAD_REQUEST
         try:
-            data_set_name = request.args.get('data_set_name', 'full_db')
+            # ~ data_set_name = request.args.get('data_set_name', 'full_db')
             answer_type = request.form.get('answer_type', 'html')
             redirect_to = request.form.get('redirect_to', '/index')
 
@@ -292,7 +292,7 @@ def init_ad_hoc_api(app, db):  # pylint: disable=too-many-statements
             if data_set_name_lower == 'full_db':
                 file_to_send = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif data_set_name_lower == 'data_and_conf.zip':
+            elif data_set_name_lower == 'data_and_conf':
                 temp_pth = os.path.join(SETTINGS.TMP_PATH, "data_and_conf.zip")
                 cmd_ = f"sudo chown -R admin:admin {SETTINGS.CONF_PATH}"
                 subprocess.run(cmd_, check=False, shell=True)
@@ -301,22 +301,22 @@ def init_ad_hoc_api(app, db):  # pylint: disable=too-many-statements
                 subprocess.run(cmd_, check=False, shell=True)
                 file_to_send = temp_pth
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif data_set_name_lower == 'log_and_tmp.zip':
+            elif data_set_name_lower == 'log_and_tmp':
                 temp_pth = os.path.join(SETTINGS.TMP_PATH, "log_and_tmp.zip")
                 _zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.LOGS_PATH, exclude_patterns=[], mode="w")
                 _zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.TMP_PATH, exclude_patterns=("cache", "log_and_tmp", ".zip", ".whl"), mode="a")
                 file_to_send = temp_pth
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif data_set_name_lower == 'app_settings.py':
+            elif data_set_name_lower == 'app_settings':
                 file_to_send = os.path.join(SETTINGS.CONF_PATH, "app_settings.py")
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif 'logo_image' in data_set_name_lower:
+            elif data_set_name_lower == 'logo_image':
                 file_to_send = os.path.join(SETTINGS.CUSTOM_PATH, "browser_btn.png")
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif 'last_label' in data_set_name_lower:
+            elif data_set_name_lower == 'last_label':
                 file_to_send = os.path.join(SETTINGS.TMP_PATH, "tmp_file.png")
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
-            elif 'head_events' in data_set_name_lower:
+            elif data_set_name_lower == 'head_events':
                 file_to_send = _reformat_head_events_to_csv(SETTINGS.TMP_PATH, db_session=db.session)
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             else:
@@ -362,8 +362,6 @@ def init_ad_hoc_api(app, db):  # pylint: disable=too-many-statements
             logging.warning("ret:{}".format(ret))
 
         return ret
-
-
 
 
 def init_restful_api(app, db):
@@ -452,19 +450,6 @@ def init_restless_api(app, db):
 
         def __init__(self, *args, **kwargs):
 
-            # ~ super().__init__(
-            # ~ preprocessors=dict(
-            # ~ GET_SINGLE=[self._universal_GET_preprocessor],
-            # ~ GET_MANY=[self._universal_GET_preprocessor],
-            # ~ POST_SINGLE=[self._universal_POST_preprocessor],
-            # ~ POST_MANY=[self._universal_POST_preprocessor]),
-            # ~ postprocessors=dict(
-            # ~ GET_SINGLE=[self._universal_GET_postprocessor],
-            # ~ GET_MANY=[self._universal_GET_postprocessor],
-            # ~ POST_SINGLE=[self._universal_POST_postprocessor],
-            # ~ POST_MANY=[self._universal_POST_postprocessor]),
-            # ~ *args,
-            # ~ **kwargs)
             super().__init__(
                 preprocessors=dict(
                     GET_RESOURCE=[self._universal_GET_preprocessor],
@@ -480,7 +465,6 @@ def init_restless_api(app, db):
             # ~ logging.warning(f"self.preprocessors:{self.preprocessors}, self.postprocessors:{self.postprocessors}")
 
             for model_class, model_name, primary_key in (
-                # ~ (Order, 'order', 'order_nr'),
                 (Order, 'order', 'id'),
                 (Jar, 'can', 'id'),
                 (Event, 'event', 'id'),
@@ -494,7 +478,6 @@ def init_restless_api(app, db):
 
                 self.create_api(model_class,
                                 url_prefix=URL_PREFIX,
-                                # ~ collection_name=model_class.__tablename__,
                                 collection_name=model_name,
                                 primary_key=primary_key,
                                 serializer=ser_,

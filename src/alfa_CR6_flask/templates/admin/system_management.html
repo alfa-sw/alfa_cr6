@@ -29,7 +29,7 @@ System Management - Alfa CRX
 	<div class="table-responsive">
 		<table class="table-striped table-bordered table-hover model-list">
 			<tr>
-				<td title="upload formula files">
+				<td>
 					<label>upload formula files</label>
 					<form method="POST" action="/upload_formula_file" enctype="multipart/form-data" id="upload_formula_file_form">
 						<input type="hidden" name="answer_type" value="html"></input>
@@ -39,7 +39,7 @@ System Management - Alfa CRX
 						<img   style="float:left;margin:4px;" width="32px" src="static/images/upload.png"></img></input>
 					</form>
 				</td>
-				<td title="upload files: full db (.sqlite) or application settings (app_settings.py)">
+				<td>
 					<label for="input_file">upload:</label>
 					<ul>
 						<li>app settings (.py) or </li>
@@ -53,22 +53,22 @@ System Management - Alfa CRX
 						<input type="hidden" name="redirect_to" value="/system_management"></input>
 						<input style="float:left;margin:4px;" class="btn btn-primary" type="file" name="file" multiple="true" autocomplete="on" required id="input_file"></input>
 						<input style="float:left;margin:4px;" class="btn btn-primary" type="submit" value="upload">
-						<img alt="upload.png" style="float:left;margin:4px;" width="32px" src="static/images/upload.png"></img></input>
+						<img style="float:left;margin:4px;" width="32px" src="static/images/upload.png"></img></input>
 					</form>
 				</td>
 				<td>
 					<label>download:</label> <br/>
-					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=data_and_conf.zip"></a>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download/data_and_conf?answer_type=html&redirect_to=/system_management"></a>
 					<span> data and conf (.zip)</span></p>
-					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=log_and_tmp.zip"></a>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download/log_and_tmp?answer_type=html&redirect_to=/system_management"></a>
 					<span> log and tmp (.zip)</span></p>
-					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=app_settings.py"></a>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download/app_settings?answer_type=html&redirect_to=/system_management"></a>
 					<span> app settings (.py)</span></p>
-					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=logo_image"></a>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download/logo_image?answer_type=html&redirect_to=/system_management"></a>
 					<span> logo image</span></p>
-					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=last_label"></a>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download/last_label?answer_type=html&redirect_to=/system_management"></a>
 					<span> last label</span></p>
-					<p><a class="glyphicon glyphicon-download button-tool" href="/download?answer_type=html&redirect_to=/system_management&data_set_name=head_events"></a>
+					<p><a class="glyphicon glyphicon-download button-tool" href="/download/head_events?answer_type=html&redirect_to=/system_management"></a>
 					<span> head events</span></p>
 				</td>
 			</tr>
