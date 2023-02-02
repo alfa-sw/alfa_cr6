@@ -390,6 +390,9 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         else:
             self.refill_label.hide()
 
-        self.print_label.show()
-        self.print_label.raise_()
+        if 'service_page' in f"{url}":
+            self.print_label.show()
+            self.print_label.raise_()
+        else:
+            self.print_label.hide()
 
