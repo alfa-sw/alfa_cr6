@@ -491,6 +491,11 @@ class InputDialog(BaseDialog):
 
         # ~ self.ok_button.clicked.connect(self.hide)
 
+    def get_selected_choice(self):
+
+        key = self.content_container.toPlainText()
+        return self.choices.get(key)
+
     def get_content_text(self):
 
         return self.content_container.toPlainText()
@@ -527,7 +532,8 @@ class InputDialog(BaseDialog):
         ok_cb=None,
         ok_cb_args=None,
         ok_on_enter=False,
-        choices=None):
+        choices=None,
+        bg_image=None):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
@@ -549,7 +555,12 @@ class InputDialog(BaseDialog):
             self.combo_box.clear()
             self.combo_box.resize(self.combo_box.width(), 0)
         else:
-            for choice in choices:
+            self.choices = choices
+            # ~ logging.warning(f"choices:{choices}")
+            keys_ = list(choices.keys())
+            keys_.sort()
+            self.combo_box.clear()
+            for choice in keys_:
                 self.combo_box.addItem(choice)
             self.combo_box.show()
             self.combo_box.resize(self.combo_box.width(), 40)
@@ -570,6 +581,14 @@ class InputDialog(BaseDialog):
         if ok_cb is not None:
             self.__ok_cb = ok_cb
             self.__ok_cb_args = ok_cb_args
+
+        if bg_image is None:
+            css_ = f'background-image:;'
+        else:
+            css_ = f"background-image:url({bg_image});background-repeat:no-repeat;background-position:center;"
+            self.content_container.resize(self.content_container.width(), 400)
+        self.content_container.setStyleSheet(css_)
+        logging.warning(f"css_:{css_}")
 
         self.show()
 

@@ -482,7 +482,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         logging.warning(str(order_nr))
 
     def open_input_dialog(  # pylint: disable=too-many-arguments
-            self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None, ok_on_enter=False, choices=None):
+            self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None, ok_on_enter=False, choices=None, bg_image=None):
 
         self.input_dialog.show_dialog(
             icon_name=icon_name,
@@ -491,7 +491,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             ok_cb=ok_cb,
             ok_cb_args=ok_cb_args,
             ok_on_enter=ok_on_enter,
-            choices=choices)
+            choices=choices,
+            bg_image=bg_image)
 
         logging.warning(str(message))
 
