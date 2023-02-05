@@ -28,10 +28,11 @@ def get_specific_weights():
     ret_dict = {}
     _app = get_application_instance()
     for m in _app.machine_head_dict.values():
-        for p in m.pigment_list:
-            p_name = p['name']
-            p_specific_weight = m.get_specific_weight(p_name)
-            ret_dict[p_name] = p_specific_weight if p_specific_weight > 0.001 else 1.0
+        if m:
+            for p in m.pigment_list:
+                p_name = p['name']
+                p_specific_weight = m.get_specific_weight(p_name)
+                ret_dict[p_name] = p_specific_weight if p_specific_weight > 0.001 else 1.0
 
     logging.warning(f"ret_dict:{ret_dict}")
 
