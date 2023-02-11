@@ -30,3 +30,55 @@ footer{
 .ui_page{
 	height: 820px;
 }
+
+.page_frame {
+	position:fixed;
+	top:10px;
+	left:10px;
+	width: 99%;
+	height: 90%;
+	/* border:2px solid #0000AA; */
+}
+
+.foot_frame {
+	position:fixed;
+	bottom:10px;
+	left:10px;
+	width:99%;
+	height:8%;
+	/* border:2px solid #00FFFF; */
+}
+
+.home_page_btn {
+	background-repeat: no-repeat;
+	background-size: contain;   /* contain, auto, cover */
+	position:absolute;width:160px;height:80px;top:0px;
+	border: 1px solid #999999;
+	border-radius: 4px;
+}
+
+#help_btn {
+	background-image:url("/static/remote_ui/images/help.png");
+	left:10px;
+}
+
+#tools_btn {
+	background-image:url("/static/remote_ui/images/edit.png");
+	left:200px;
+}
+
+#browser_btn {
+	background-image:url("/static/remote_ui/images/alfa_logo.png");
+	right:400px;
+}
+
+#orders_btn {
+	background-image:url("/static/remote_ui/images/barcode_C128.png");
+	right:200px;
+}
+
+#home_btn {
+	background-image:url("/static/remote_ui/images/sinottico_6_small.png");
+	right:10px;
+}
+

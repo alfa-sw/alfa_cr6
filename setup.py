@@ -57,8 +57,10 @@ def main():
         package_dir={'': 'src'},
         data_files=[
             ('alfa_CR6_backend/schemas', list(glob.glob('src/alfa_CR6_backend/schemas/*'))),
+            ('alfa_CR6_backend/templates', list(glob.glob('src/alfa_CR6_backend/templates/*'))),
             ('alfa_CR6_flask/static/images', list(glob.glob('src/alfa_CR6_flask/static/images/*'))),
             # ~ ('alfa_CR6_flask/static/admin', list(glob.glob('src/alfa_CR6_flask/static/admin/*.*'))),
+            ('alfa_CR6_flask/static', list(glob.glob('src/alfa_CR6_flask/static/*.*'))),
             ('alfa_CR6_flask/static/remote_ui', list(glob.glob('src/alfa_CR6_flask/static/remote_ui/*.*'))),
             ('alfa_CR6_flask/static/remote_ui/images', list(glob.glob('src/alfa_CR6_flask/static/remote_ui/images/*'))),
             ('alfa_CR6_flask/templates', list(glob.glob('src/alfa_CR6_flask/templates/*.html'))),

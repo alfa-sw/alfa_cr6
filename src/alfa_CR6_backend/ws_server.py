@@ -14,8 +14,8 @@ import asyncio
 import json
 import html
 import types
+import random
 import logging
-
 import logging.handlers
 
 from jinja2 import Environment, FileSystemLoader
@@ -29,20 +29,109 @@ from alfa_CR6_backend.globals import (get_version, set_language, import_settings
 here_ = os.path.dirname(os.path.abspath(__file__))
 pth_ = os.path.join(here_, "templates/")
 JINJA_ENVIRONMENT = Environment(loader=FileSystemLoader(pth_ ))
+SETTINGS = import_settings()
+
+OPEN_ALERT_DIALOG_CNTR = 0
+
+def close_child_windows(websocket):
+
+    msg = json.dumps({
+        'type': 'js',
+        'value': f"""close_child_windows();""",
+    })
+
+    t = websocket.send(msg)
+    asyncio.ensure_future(t)
+
+def open_child_window(websocket, _url, target, win_options):
+
+    msg = json.dumps({
+        'type': 'js',
+        'value': f"""open_child_window("{_url}","{target}","{win_options}");""",
+    })
+
+    t = websocket.send(msg)
+    asyncio.ensure_future(t)
+    # ~ logging.warning("")
+
+def open_alert_dialog(msg, websocket):
+
+    global OPEN_ALERT_DIALOG_CNTR  # pylint: disable=global-statement
+
+    OPEN_ALERT_DIALOG_CNTR = (OPEN_ALERT_DIALOG_CNTR + 1) % 8
+    target = f"alert_win_{OPEN_ALERT_DIALOG_CNTR}"
+    x = int(350 + OPEN_ALERT_DIALOG_CNTR * 20)
+    y = int(150 + OPEN_ALERT_DIALOG_CNTR * 10)
+
+    ctx = {
+        'msg': msg,
+        'time': time.asctime(),
+        'target': target,
+    }
+
+    html_ = JINJA_ENVIRONMENT.get_template("alert_dialog.html").render(**ctx)
+    logging.warning(f"html_:{html_}.")
+    html_ = html_.replace('\n', '')
+
+    win_options = f"left={x},top={y},height=320,width=520"
+    msg = json.dumps({
+        'type': 'js',
+        'value': f"""{{open_alert_dialog("","{target}","{win_options}","{html_}");}}""",
+    })
+
+    # ~ await websocket.send(msg)
+    t = websocket.send(msg)
+    asyncio.ensure_future(t)
+    logging.warning("")
 
 class HomePage:
+
+    async def refresh_head(self, parent, websocket, head_index):
+
+        m = parent.machine_head_dict[head_index]
+        status_level = m.status.get('status_level')
+        msg = json.dumps({
+            'type': 'html',
+            'target': f"machine_status_label__{head_index}",
+            'value': status_level,
+        })
+        await websocket.send(msg)
+
+        open_alert_dialog(f"refresh_head() head_index:{head_index}", websocket)
 
     async def refresh_page(self, msg_dict, websocket, parent):
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
 
+        _machine_head_list = [(k, v) for k, v in parent.machine_head_dict.items() if v]
+        n_of_heads = len(_machine_head_list)
+
+        logging.warning(f"parent.machine_head_dict:{parent.machine_head_dict}, n_of_heads:{n_of_heads}.")
+
+        if n_of_heads == 6:
+            background_image = '/static/remote_ui/images/sinottico_6.png'
+            x, w, y, h = [ int(100*i/1840) for i in (504, 378)] + [ int(100*i/960) for i in (86, 378)]
+            u = '%'
+        elif n_of_heads == 4:
+            background_image = '/static/remote_ui/images/sinottico_4.png'
+            x, w, y, h = 312, 386, 86, 382
+            u = 'px'
+
+        def style(n):
+            return f"position:absolute;top:{y+(n%2)*h}{u};height:{h}{u};left:{x+(n//2)*w}{u};width:{w}{u};border:2px solid #73AD21;"
+
+        logo_image = '/static/remote_ui/images/alfa_logo.png'
+
+        machine_head_list = [(n, i, style(n)) for n, i in enumerate(_machine_head_list)]
+
         ctx = {
-            'machine_head_dict': parent.machine_head_dict,
-            'background_image': '/static/remote_ui/images/alfa_logo.png',
+            'machine_head_list': machine_head_list,
+            'background_image': background_image,
+            'logo_image': logo_image,
         }
 
         html_ = JINJA_ENVIRONMENT.get_template("home_page.html").render(**ctx)
-        logging.warning(f"html_:{html_}.")
+        # ~ logging.warning(f"html_:{html_}.")
         msg = json.dumps({
             'type': 'html',
             'target': 'home_page',
@@ -53,25 +142,143 @@ class HomePage:
     async def click(self, msg_dict, websocket, parent):
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+        element_id = msg_dict.get('element_id') # 'machine_tank_label__2'
+
+        if 'machine_status_label' in element_id:
+            # ~ msg_dict:{'event': 'click', 'page_id': 'home_page', 'element_id': 'machine_status_label__1'}
+            toks = element_id.split("__")
+            if toks[1:]:
+                head_index = int(toks[1])
+                m = parent.machine_head_dict[head_index]
+                _url = f"http://{m.ip_add}:{m.http_port}/admin"
+                target = "childHeadWindow"
+                win_options = "popup=1,left=0,top=0,height=126,width=1980,status=yes,toolbar=no,menubar=no,location=no"
+                open_child_window(websocket, _url, target, win_options)
+
+        elif 'machine_reserve_label' in element_id:
+
+            i = random.randint(1, 100000)
+            html_ = f""" <span style='color:red;'><h2>ALERT MESSAGE {i}</h2></span>"""
+            open_alert_dialog(msg=html_, websocket=websocket)
+
+        elif 'machine_tank_label' in element_id:
+
+            if random.random() > 0.5:
+                bg_img = 'url("/static/remote_ui/images/tank_gray.png")'
+            else:
+                bg_img = 'url("/static/remote_ui/images/tank_green.png")'
+
+            msg = json.dumps({
+                'type': 'css',
+                'target': element_id,
+                'value': {"background-image": bg_img},
+            })
+            await websocket.send(msg)
+
+        # ~ _url = "http://127.0.0.1:8080/admin"
+        # ~ target = "childBrowserWin"
+        # ~ win_options = "popup=1,left=4,top=-10,height=900,width=1900,status=yes,toolbar=no,menubar=no,location=no"
+        # ~ msg = json.dumps({
+            # ~ 'type': 'js',
+            # ~ 'value': f"""open_child_window("{_url}","{target}","{win_options}");""",
+        # ~ })
+        # ~ await websocket.send(msg)
 
 
-class MenuPage:
+class OrdersPage:
 
     async def refresh_page(self, msg_dict, websocket, parent):
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
 
+        msg = json.dumps({
+            'type': 'html',
+            'target': 'orders_page',
+            'value': "<h2>ORDERS</h2>",
+        })
+        await websocket.send(msg)
+
     async def click(self, msg_dict, websocket, parent):
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
 
+class BrowserPage:
+
+    async def refresh_page(self, msg_dict, websocket, parent):
+
+        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+
+        msg = json.dumps({
+            'type': 'html',
+            'target': 'browser_page',
+            'value': "<h2>BROWSER</h2>",
+        })
+        await websocket.send(msg)
+
+        _url = SETTINGS.WEBENGINE_CUSTOMER_URL
+        target = "childBrowserWin"
+        win_options = "popup=1,left=0,top=0,height=926,width=1980,status=yes,toolbar=no,menubar=no,location=no"
+        open_child_window(websocket, _url, target, win_options)
+
+    async def click(self, msg_dict, websocket, parent):
+
+        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+
+class ToolsPage:
+
+    async def refresh_page(self, msg_dict, websocket, parent):
+
+        open_alert_dialog("refresh_page", websocket)
+
+        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+
+        msg = json.dumps({
+            'type': 'html',
+            'target': 'tools_page',
+            'value': "<h2>* TOOLS *</h2>",
+        })
+        await websocket.send(msg)
+
+    async def click(self, msg_dict, websocket, parent):
+
+        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+
+class HelpPage:
+
+    async def refresh_page(self, msg_dict, websocket, parent):
+
+        close_child_windows(websocket)
+
+        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+
+        msg = json.dumps({
+            'type': 'html',
+            'target': 'help_page',
+            'value': "<h2>HELP</h2>",
+        })
+        await websocket.send(msg)
+
+    async def click(self, msg_dict, websocket, parent):
+
+        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
 
 class RemoteUiMessageHandler: # pylint: disable=too-few-public-methods
 
     pages = {
         'home_page': HomePage(),
-        'menu_page': MenuPage(),
+        'orders_page': OrdersPage(),
+        'browser_page': BrowserPage(),
+        'tools_page': ToolsPage(),
+        'help_page': HelpPage(),
     }
+
+    @classmethod
+    async def notify_msg(cls, parent, websocket, type_, msg):
+        if 'device:machine:status_' in type_:
+            head_index = int(type_.split('_')[1])
+            await cls.pages['home_page'].refresh_head(parent, websocket, head_index)
+        elif 'live_can_list' in type_:
+            logging.warning(f"msg:{msg}.")
 
     @classmethod
     async def handle_msg(cls, msg, websocket, parent):
@@ -82,18 +289,19 @@ class RemoteUiMessageHandler: # pylint: disable=too-few-public-methods
             logging.warning(f"msg_dict:{msg_dict}.")
             event = msg_dict.get('event')
             page_id = msg_dict.get('page_id')
+            page = cls.pages.get(page_id)
 
-            handler = getattr(cls.pages.get(page_id), event)
-            if handler:
-                ret = await handler(msg_dict, websocket, parent)
-                logging.warning(f"ret:{ret}.")
+            if page:
+                handler = getattr(page, event)
+                if handler:
+                    ret = await handler(msg_dict, websocket, parent)
+                    logging.warning(f"ret:{ret}.")
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
 class WsMessageHandler: # pylint: disable=too-few-public-methods
 
-    settings = None
     parent = None
 
     @classmethod
@@ -102,9 +310,6 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         logging.warning(f"websocket:{websocket}, msg:{msg}.")
 
         try:
-
-            if not cls.settings:
-                cls.settings = import_settings()
 
             cls.parent = parent
 
@@ -145,7 +350,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
     @classmethod
     async def ask_aliases(cls, msg_dict, websocket): # pylint: disable=unused-argument
 
-        _alias_file = os.path.join(cls.settings.DATA_PATH, "pigment_alias.json")
+        _alias_file = os.path.join(SETTINGS.DATA_PATH, "pigment_alias.json")
         with open(_alias_file, encoding='UTF-8') as f:
             alias_dict = json.load(f)
         answ_ = [f"{k}: {v}" for k, v in alias_dict.items()]
@@ -160,7 +365,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
 
     @classmethod
     async def ask_settings(cls, msg_dict, websocket): # pylint: disable=unused-argument
-        S = cls.settings
+        S = SETTINGS
         s_ = [f"{i}: {getattr(S, i)}" for i in dir(S) if not i.startswith("_") and not isinstance(getattr(S, i), types.ModuleType)]
 
         answ_ = html.unescape('<br/>'.join(s_))
@@ -178,7 +383,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         file_name = params.get("file_name")
         logging.warning(f"file_name:{file_name}.")
         try:
-            _path = cls.settings.WEBENGINE_DOWNLOAD_PATH.strip()
+            _path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
             path_to_file = os.path.join(_path, file_name)
 
             get_application_instance().main_window.order_page.populate_order_table()
@@ -201,9 +406,9 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         await websocket.send(answer)
 
     @classmethod
-    async def ask_formula_files(cls, msg_dict, websocket):
+    async def ask_formula_files(cls, msg_dict, websocket): # pylint: disable=unused-argument
 
-        _path = cls.settings.WEBENGINE_DOWNLOAD_PATH.strip()
+        _path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
         s_ = [f for f in os.listdir(_path) if os.path.isfile(os.path.join(_path, f))]
 
         if s_:
@@ -330,6 +535,10 @@ class WsServer: # pylint: disable=too-many-instance-attributes
 
     async def broadcast_msg(self, type_, msg):
 
+        if self.remote_ui_clients:
+            for client in self.remote_ui_clients:
+                await RemoteUiMessageHandler.notify_msg(self.parent, client, type_, msg)
+
         if self.ws_clients:
             message = json.dumps({
                 'type': type_,
@@ -357,7 +566,7 @@ class WsServer: # pylint: disable=too-many-instance-attributes
 
             msg_ = json.dumps({
                 'type': 'current_language_label',
-                'value': self.parent.settings.LANGUAGE,
+                'value': SETTINGS.LANGUAGE,
             })
             for client in self.ws_clients:
                 await client.send(msg_)

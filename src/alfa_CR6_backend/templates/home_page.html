@@ -1,17 +1,120 @@
 <style> 
-#main_frame {
-  background-image:url('{{ background_image }}');
-  background-position: left top;
-  background-repeat: no-repeat;
-  padding: 1px;
-  background-size: contain;   /* contain, auto, cover */
+
+a:link { text-decoration: none; color: black; }
+a:visited { text-decoration: none; color: black; }
+a:hover { text-decoration: none; color: black; }
+a:active { text-decoration: none; color: black; }
+
+.machine_label {font-size: 22px;text-align: center;padding: 6px;position:absolute;color:#222222;}
+
+._jar_label {
+	background-image:url("/static/remote_ui/images/jar-green.png") ;
+	background-size: contain;   /* contain, auto, cover */
+	width:25.6%;height:25.6%;top:274px;left:40%;
 }
+
+._presence_label {
+	background-image:url("/static/remote_ui/images/green.png") ;
+	background-size: contain;   /* contain, auto, cover */
+	width:32px;height:32px;top:250px;left:48%;
+}
+
+._settings_label {
+	background-image:url("/static/remote_ui/images/settings.png") ;
+	background-size: contain;   /* contain, auto, cover */
+	width:54px;height:54px;top:300px;left:14%;
+}
+
+._reserve_label {
+	background: white url("/static/remote_ui/images/riserva.gif") no-repeat ;
+	background-size: contain;   /* contain, auto, cover */
+	width:60px;height:120px;top:140px;left:230px;
+}
+
+._expiry_label {
+	background: white url("/static/remote_ui/images/expiry.gif") no-repeat center;
+	background-size: contain;   /* contain, auto, cover */
+	width:60px;height:120px;top:140px;left:290px;
+}
+
+._tank_label {
+	background-image:url("/static/remote_ui/images/tank_green.png");
+	background-repeat: no-repeat;
+	background-size: contain;   /* contain, auto, cover */
+	width:80px;height:80px;top:140px;left:40px;
+}
+
+._id_label {
+	font-weight: bolder;
+	font-size:30px;
+	top:4px;left:12px;
+	background-color:#EEEEEE;
+	border: 1px solid #999999;
+	border-radius: 8px;
+}
+
+.status_label {
+	font-size: 26px;top:78px;left:10%;width:80%;height:54px;
+	background-color:#EEEEEE;
+	border: 1px solid #999999;
+	border-radius: 8px;
+}
+
+#machine_arrow_label__IN {
+	background-image:url("/static/remote_ui/images/arrow-green.png");
+	background-repeat: no-repeat;
+	background-size: contain;   /* contain, auto, cover */
+	width:92px;height:96px;top:380px;left:120px;;
+}
+
+#machine_arrow_label__OUT {
+	background-image:url("/static/remote_ui/images/arrow-red.png");
+	background-repeat: no-repeat;
+	background-size: contain;   /* contain, auto, cover */
+	width:92px;height:96px;top:480px;left:20px;;
+}
+
+#logo_image {
+	background-image:url('{{ logo_image }}');
+	background-repeat: no-repeat;
+	background-size: contain;   /* contain, auto, cover */
+	position:absolute;top:164px;left:288px;width:180px;height:80px;
+}
+
+#main_frame {
+	background-image:url('{{ background_image }}');
+	background-position: right 50% top 0%;
+	background-repeat: no-repeat;
+	padding: 1px;
+	background-size: 100% 100%;   /* contain, auto, cover */
+	background-color:#AAAAAA;
+}
+
 </style>
 
 <div class="page_frame" id="main_frame">
-{% for k, v in machine_head_dict.items() %}
-	<div id="device:machine:status_{{ k }}" style="position:absolute;top:{{(k%2)*420}}px;left:{{(k//2)*620}}px;width:620px;height:420px;border:2px solid #73AD21;">
-		{{ k }} {{ v }} 
+{% for n, i, style in machine_head_list %}
+	<div id="logo_image"></div>
+	<div id="device:machine:status_{{ i[0] }}" style="{{ style }}">
+		<div class="machine_label _jar_label" 	id="machine_presence_label__{{n}}"></div>
+		<div class="machine_label _presence_label" 	id="machine_presence_label__{{n}}"></div>
+		<div class="machine_label _settings_label" 	id="machine_settings_label__{{n}}"></div>
+		<div class="machine_label _tank_label" 		id="machine_tank_label__{{n}}"></div>
+		<div class="machine_label _reserve_label" 	id="machine_reserve_label__{{n}}"></div>
+		<div class="machine_label _expiry_label" 	id="machine_expiry_label__{{n}}"></div>
+		<div class="machine_label _id_label" 		id="machine_id_label__{{n}}">{{ i[0] + 1 }} {{ i[1].name }}</div>
+		<div class="machine_label status_label" 	id="machine_status_label__{{n}}">{{ i[1].status.get("status_level") }}</div>
 	</div>
 {% endfor %}
+
+	<div class="machine_label" 	id="machine_arrow_label__IN"></div>
+	<div class="machine_label" 	id="machine_arrow_label__OUT"></div>
+	<div class="machine_label _settings_label" 	id="machine_settings_label__IN" 	style="top:390px;left:280px;"></div>
+	<div class="machine_label _settings_label" 	id="machine_settings_label__OUT" 	style="top:490px;left:180px;"></div>
+	<div class="machine_label _settings_label" 	id="machine_settings_label__LEFT" style="top:600px;left:420px;"></div>
+	<div class="machine_label _settings_label" 	id="machine_settings_label__RIGHT" style="top:600px;left:1700px;"></div>
+
 </div>
+<script>
+document.getElementById('main_frame').onclick = click_event_handler;
+</script>

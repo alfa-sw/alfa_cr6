@@ -1,5 +1,6 @@
 
 var __g_ws_client = null;
+var __g_child_win_proxy_queue = {};
 
 var get_page_id_by_element = function(element) {
     let parent = element.parentElement;
@@ -12,8 +13,43 @@ var get_page_id_by_element = function(element) {
 var click_event_handler = function(event) {
     let element = event.target;
     let page_id = get_page_id_by_element(element);
+    //~ alert('event.target.id:' + event.target.id + ", page_id:" + page_id)
     if (element.id) {
         wsocket_send({'event': 'click', 'page_id': page_id, 'element_id': element.id});
+    }
+}
+
+var open_alert_dialog = function(url, target, win_options, html_) {
+
+    if (__g_child_win_proxy_queue[target]) {
+        __g_child_win_proxy_queue[target].close();
+    }
+
+    __g_child_win_proxy_queue[target] = window.open(url, target, win_options);
+
+    try {
+        __g_child_win_proxy_queue[target].document.innerHTML = '';
+        __g_child_win_proxy_queue[target].document.write(html_);
+        __g_child_win_proxy_queue[target].focus();
+    } catch(error) {
+        alert(error);
+        console.error(error);
+    }
+}
+
+var open_child_window = function(url, target, win_options) {
+
+    if (__g_child_win_proxy_queue[target]) {
+        __g_child_win_proxy_queue[target].close();
+    }
+
+    __g_child_win_proxy_queue[target] = window.open(url, target, win_options);
+}
+
+var close_child_windows = function() {
+
+    for (i in __g_child_win_proxy_queue) {
+        __g_child_win_proxy_queue[i].close();
     }
 }
 
@@ -37,14 +73,21 @@ var ws_message_handler = function(event) {
     try {
         let data = JSON.parse(event.data);
         console.log("ws_message_handler(), data.type:" + JSON.stringify(data.type));
+
         if (data.type == 'html') {
             let el = document.getElementById(data.target); 
             el.innerHTML = data.value;
+        } else if (data.type == 'css') {
+            let el = document.getElementById(data.target); 
+            //~ let _style = JSON.parse(data.value);
+            let _style = data.value;
+            for (const property in _style) {
+                el.style[property] = _style[property];
+            }
         } else if (data.type == 'js') {
             eval(data.value);
         }
-    }
-    catch(error) {
+    } catch(error) {
       alert(error);
       console.error(error);
     }
@@ -84,3 +127,7 @@ var wsocket_connect = function(ws_server_url, on_open_cb) {
     console.log('wsocket_connect() __g_ws_client:', __g_ws_client)
 };
 
+var init_ui = function(ws_server_url) {
+    wsocket_connect(ws_server_url, function () {show_page('home_page');});
+    document.body.onclick = click_event_handler;
+}
