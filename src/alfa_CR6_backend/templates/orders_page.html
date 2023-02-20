@@ -1,0 +1,127 @@
+<style> 
+
+#orders_main_frame {
+	/* height:500px; */
+	width:100%;
+	font-size:28px;
+}
+
+thead {
+	height:6px;
+	color:#333333;
+	background: #EEEEEE;
+	/* font-size:12px; */
+}
+
+.outer {
+	width:33%;margin:0.1%;
+}
+
+.inner {height:810px;overflow-x:auto; overflow-y:auto;}
+.inner::-webkit-scrollbar {width:36px;height: 36px; background-color: #DDDDDD;}
+.inner::-webkit-scrollbar-thumb {background: #777777;}
+
+
+.edit {
+	background-image:url("/static/remote_ui/images/edit.png") ;
+	background-size: cover;
+	width:42px;height:42px;
+}
+
+.info {
+	background-image:url("/static/remote_ui/images/help.png") ;
+	background-size: cover;
+	width:42px;height:42px;
+}
+
+.remove {
+	background-image:url("/static/remote_ui/images/remove.png") ;
+	background-size: cover;
+	width:42px;height:42px;
+}
+
+.orders_page_btn {
+	position:relative;
+	width:100%;
+	/* height:42px; */
+	top:0px;
+	margin:4px;
+	border: 1px solid #999999;
+	border-radius: 4px;
+	/* font-size: 22px; */
+	text-align: center;
+	color:#222222;
+	background-color:#AABBFF;
+	vertical-align: middle;
+}
+
+</style>
+
+<div id="orders_main_frame">
+
+	<div class="row">
+		<div class="col-sm-4">
+			<input type="search" size="32" id="orders_search_can" 
+				onkeyup="onkeyup_event_handler('orders_search_can');" 
+				autocomplete="chrome-off"
+				placeholder="{{ tr_( 'search') }}"></input>
+		</div>
+		<div class="col-sm-4">
+			<input type="search" size="32" id="orders_search_order" 
+				onkeyup="onkeyup_event_handler('orders_search_order');" 
+				autocomplete="chrome-off"
+				placeholder="{{ tr_( 'search') }}"></input>
+		</div>
+		<div class="col-sm-4">
+			<input type="search" size="32" id="orders_search_file" 
+				onkeyup="onkeyup_event_handler('orders_search_file');" 
+				autocomplete="chrome-off"
+				placeholder="{{ tr_( 'search') }}"></input>
+		</div>
+	</div>
+
+	<div class="row">
+	{% for name, object_list in data.items() %}
+		<div class="col-sm-4">
+		  <div class="inner">
+			<table class="table table-striped table-bordered table-hover">
+				<thead>
+					<tr> <th>{{tr_(name)}}</th> <th>{{tr_('edit')}}</th> <th>{{tr_('info')}}</th> <th>{{tr_('remove')}}</th> </tr>
+				</thead>
+				<tbody id="{{name}}_tbody">
+					{% for i, o in enumerate(object_list) %}
+					{% if 16 >= i %}
+						<tr> 
+							<td>{{ o }}</td> 
+							<td><div class="edit" id="{{name}}_edit_{{i}}"></div></td> 
+							<td><div class="info" id="{{name}}_info_{{i}}"></div></td> 
+							<td><div class="remove" id="{{name}}_remove_{{i}}"></div></td> 
+						</tr>
+					{% endif %}
+					{% endfor %}
+				</tbody>
+			</table>
+		  </div>
+		</div>
+	{% endfor %}
+	</div>
+
+	<div class="row">
+		<div class="col-sm-1"></div>
+		<div class="col-sm-1">
+			<label>{{tr_('view')}}:</label>
+		</div>
+		<div class="col-sm-3">
+			<button class="orders_page_btn" id="orders_btn_view_all">{{tr_('all')}}</button>
+		</div>
+		<div class="col-sm-3">
+			<button class="orders_page_btn" id="orders_btn_view_file">{{tr_('file')}}</button>
+		</div>
+		<div class="col-sm-3">
+			<button class="orders_page_btn" id="orders_btn_view_can">{{tr_('can')}}</button>
+		</div>
+	</div>
+
+</div>
+
+

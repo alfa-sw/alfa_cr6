@@ -81,7 +81,7 @@ a:active { text-decoration: none; color: black; }
 	position:absolute;top:164px;left:288px;width:180px;height:80px;
 }
 
-#main_frame {
+#home_main_frame {
 	background-image:url('{{ background_image }}');
 	background-position: right 50% top 0%;
 	background-repeat: no-repeat;
@@ -92,11 +92,11 @@ a:active { text-decoration: none; color: black; }
 
 </style>
 
-<div class="page_frame" id="main_frame">
+<div class="page_frame" id="home_main_frame">
 {% for n, i, style in machine_head_list %}
 	<div id="logo_image"></div>
 	<div id="device:machine:status_{{ i[0] }}" style="{{ style }}">
-		<div class="machine_label _jar_label" 	id="machine_presence_label__{{n}}"></div>
+		<div class="machine_label _jar_label" 		id="machine_jar_label__{{n}}"></div>
 		<div class="machine_label _presence_label" 	id="machine_presence_label__{{n}}"></div>
 		<div class="machine_label _settings_label" 	id="machine_settings_label__{{n}}"></div>
 		<div class="machine_label _tank_label" 		id="machine_tank_label__{{n}}"></div>
@@ -115,6 +115,3 @@ a:active { text-decoration: none; color: black; }
 	<div class="machine_label _settings_label" 	id="machine_settings_label__RIGHT" style="top:600px;left:1700px;"></div>
 
 </div>
-<script>
-document.getElementById('main_frame').onclick = click_event_handler;
-</script>

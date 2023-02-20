@@ -28,16 +28,28 @@ from alfa_CR6_backend.globals import (get_version, set_language, import_settings
 
 here_ = os.path.dirname(os.path.abspath(__file__))
 pth_ = os.path.join(here_, "templates/")
+
 JINJA_ENVIRONMENT = Environment(loader=FileSystemLoader(pth_ ))
+JINJA_ENVIRONMENT.globals['tr_'] = tr_
+JINJA_ENVIRONMENT.globals['enumerate'] = enumerate
+
 SETTINGS = import_settings()
 
 OPEN_ALERT_DIALOG_CNTR = 0
 
-def close_child_windows(websocket):
+ORDER_PAGE_COLUMNS_ORDERS = {
+    'file': ["delete", "view", "create order", "file name"],
+    'order': ["delete", "edit", "status", "order nr.", "file name"],
+    'can': ["delete", "view", "status", "barcode"],
+}
+if hasattr(SETTINGS, 'ORDER_PAGE_COLUMNS_ORDERS'):
+    ORDER_PAGE_COLUMNS_ORDERS.update(SETTINGS.ORDER_PAGE_COLUMNS_ORDERS)
+
+def close_child_windows(websocket, needle_=''):
 
     msg = json.dumps({
         'type': 'js',
-        'value': f"""close_child_windows();""",
+        'value': f"""close_child_windows("{needle_}");""",
     })
 
     t = websocket.send(msg)
@@ -70,7 +82,7 @@ def open_alert_dialog(msg, websocket):
     }
 
     html_ = JINJA_ENVIRONMENT.get_template("alert_dialog.html").render(**ctx)
-    logging.warning(f"html_:{html_}.")
+    # ~ logging.warning(f"html_:{html_}.")
     html_ = html_.replace('\n', '')
 
     win_options = f"left={x},top={y},height=320,width=520"
@@ -82,7 +94,7 @@ def open_alert_dialog(msg, websocket):
     # ~ await websocket.send(msg)
     t = websocket.send(msg)
     asyncio.ensure_future(t)
-    logging.warning("")
+    # ~ logging.warning("")
 
 class HomePage:
 
@@ -142,26 +154,26 @@ class HomePage:
     async def click(self, msg_dict, websocket, parent):
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-        element_id = msg_dict.get('element_id') # 'machine_tank_label__2'
+        el_id = msg_dict.get('el_id') # 'machine_tank_label__2'
 
-        if 'machine_status_label' in element_id:
-            # ~ msg_dict:{'event': 'click', 'page_id': 'home_page', 'element_id': 'machine_status_label__1'}
-            toks = element_id.split("__")
+        if 'machine_status_label' in el_id:
+            # ~ msg_dict:{'event': 'click', 'page_id': 'home_page', 'el_id': 'machine_status_label__1'}
+            toks = el_id.split("__")
             if toks[1:]:
                 head_index = int(toks[1])
                 m = parent.machine_head_dict[head_index]
                 _url = f"http://{m.ip_add}:{m.http_port}/admin"
                 target = "childHeadWindow"
-                win_options = "popup=1,left=0,top=0,height=126,width=1980,status=yes,toolbar=no,menubar=no,location=no"
+                win_options = "popup=1,left=0,top=0,height=916,width=1980,status=yes,toolbar=no,menubar=no,location=no"
                 open_child_window(websocket, _url, target, win_options)
 
-        elif 'machine_reserve_label' in element_id:
+        elif 'machine_reserve_label' in el_id:
 
             i = random.randint(1, 100000)
             html_ = f""" <span style='color:red;'><h2>ALERT MESSAGE {i}</h2></span>"""
             open_alert_dialog(msg=html_, websocket=websocket)
 
-        elif 'machine_tank_label' in element_id:
+        elif 'machine_tank_label' in el_id:
 
             if random.random() > 0.5:
                 bg_img = 'url("/static/remote_ui/images/tank_gray.png")'
@@ -170,7 +182,7 @@ class HomePage:
 
             msg = json.dumps({
                 'type': 'css',
-                'target': element_id,
+                'target': el_id,
                 'value': {"background-image": bg_img},
             })
             await websocket.send(msg)
@@ -187,20 +199,72 @@ class HomePage:
 
 class OrdersPage:
 
+    def __init__(self):
+
+        self.page_limit = 50
+
+    def populate_file_table(self, websocket, filter_text=''):
+
+        name_list_ = []
+        for n in os.listdir(SETTINGS.WEBENGINE_DOWNLOAD_PATH):
+            if filter_text.lower() in n.lower():
+                name_list_.append(n)
+            if len(name_list_) >= self.page_limit:
+                break
+
+        name_list_.sort(reverse=True)
+
+        html_ = ""
+        for i, o in enumerate(name_list_):
+            html_ += f"""<tr> 
+                <td>{o}</td> 
+                <td><div class="edit" id="file_edit_{i}"></div></td> 
+                <td><div class="info" id="file_info_{i}"></div></td> 
+                <td><div class="remove" id="file_remove_{i}"></div></td> 
+            </tr>"""
+
+        msg = json.dumps({
+            'type': 'html',
+            'target': 'file_tbody',
+            'value': html_,
+        })
+        t = websocket.send(msg)
+        asyncio.ensure_future(t)
+
     async def refresh_page(self, msg_dict, websocket, parent):
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
 
+        data = {
+            'jar': [22*'a', 22*'b', 22*'c']*6,
+            'order': [22*'a', 22*'b', 22*'c']*6,
+            'file': [22*'a', 22*'b', 22*'c']*6,
+        }
+
+        ctx = {
+            'data': data,
+        }
+
+        html_ = JINJA_ENVIRONMENT.get_template("orders_page.html").render(**ctx)
+
         msg = json.dumps({
             'type': 'html',
             'target': 'orders_page',
-            'value': "<h2>ORDERS</h2>",
+            'value': html_,
         })
         await websocket.send(msg)
 
     async def click(self, msg_dict, websocket, parent):
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+        open_alert_dialog(f"msg_dict:{msg_dict}", websocket)
+
+    async def keyup(self, msg_dict, websocket, parent):
+
+        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+        # ~ open_alert_dialog(f"msg_dict:{msg_dict}", websocket)
+        filter_text = msg_dict.get('el_value', '')
+        self.populate_file_table(websocket, filter_text)
 
 class BrowserPage:
 
@@ -217,7 +281,7 @@ class BrowserPage:
 
         _url = SETTINGS.WEBENGINE_CUSTOMER_URL
         target = "childBrowserWin"
-        win_options = "popup=1,left=0,top=0,height=926,width=1980,status=yes,toolbar=no,menubar=no,location=no"
+        win_options = "popup=1,left=0,top=0,height=916,width=1980,status=yes,toolbar=no,menubar=no,location=no"
         open_child_window(websocket, _url, target, win_options)
 
     async def click(self, msg_dict, websocket, parent):
@@ -228,20 +292,56 @@ class ToolsPage:
 
     async def refresh_page(self, msg_dict, websocket, parent):
 
-        open_alert_dialog("refresh_page", websocket)
+        # ~ open_alert_dialog("refresh_page", websocket)
 
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+        ctx = {
+            'data': {},
+        }
+
+        html_ = JINJA_ENVIRONMENT.get_template("tools_page.html").render(**ctx)
 
         msg = json.dumps({
             'type': 'html',
             'target': 'tools_page',
-            'value': "<h2>* TOOLS *</h2>",
+            'value': html_,
         })
         await websocket.send(msg)
+
+    def show_msg_on_ui(self, msg, websocket):
+
+        msg_ = json.dumps({
+            'type': 'html',
+            'target': 'tools_msg_from_server',
+            'value': msg + "<br/>",
+            'mode': 'append',
+        })
+        t = websocket.send(msg_)
+        asyncio.ensure_future(t)
+
+    async def change(self, msg_dict, websocket, parent):
+
+        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+        s_ = json.dumps(msg_dict, indent=2)
+        self.show_msg_on_ui(f'msg_dict:{s_}', websocket)
 
     async def click(self, msg_dict, websocket, parent):
 
         logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
+        if msg_dict.get('el_id') == 'tools_close_child_windows':
+            close_child_windows(websocket, "alert_win_")
+            self.show_msg_on_ui('closed all children', websocket)
+        elif msg_dict.get('el_id') == 'tools_open_alert_dialog':
+            open_alert_dialog("tools_open_alert_dialog", websocket)
+            self.show_msg_on_ui('a dialog has been opened', websocket)
+        elif 'openurl' == msg_dict.get('el_id').split('_')[0]:
+            _url = msg_dict.get('el_value')
+            target = "childBrowserWin"
+            win_options = "popup=1,left=0,top=0,height=916,width=1980,status=yes,toolbar=no,menubar=no,location=no"
+            open_child_window(websocket, _url, target, win_options)
+            self.show_msg_on_ui(f"opened '{_url}' in child window '{target}'", websocket)
+        else:
+            s_ = json.dumps(msg_dict, indent=2)
+            self.show_msg_on_ui(f'msg_dict:{s_}', websocket)
 
 class HelpPage:
 

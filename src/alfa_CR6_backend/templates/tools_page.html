@@ -1,0 +1,85 @@
+<style> 
+
+#tools_main_frame {
+	position:relative;
+	top:10px;
+	height:960px;
+	width:100%;
+	overflow-x:auto; 
+	overflow-y:auto;
+	border: 1px solid #AA6633;
+	vertical-align: middle;
+}
+
+.tools_page_btn {
+	position:relative;
+	width:320px;
+	height:36px;
+	top:0px;
+	margin:4px;
+	border: 1px solid #999999;
+	border-radius: 4px;
+	font-size: 22px;
+	text-align: center;
+	color:#222222;
+	background-color:#AABBFF;
+}
+
+#tools_msg_from_server {
+	margin:4px;
+	border: 1px solid #999999;
+	border-radius: 4px;
+	background-color:#FFFE66;
+}
+
+
+</style>
+
+<div id="tools_main_frame">
+	<table class="table">
+		<tr>
+			<td>
+				<label for="op2">input a number:</label> <br/>
+				<input class="tools_page_btn" type="number" placeholder="42" onchange="change_event_handler('tools_op2');" id="tools_op2" ></input>
+			</td>
+			<td>
+				<label for="tools_close_child_windows">close all child windows:</label> <br/>
+				<input type="text" onchange="change_event_handler('tools_close_child_windows');" class="tools_page_btn" placeholder="filter" id="tools_close_child_windows" style="background-color:#EEEEEE;"></input>
+			</td>
+			<td>
+				<label for="tools_open_alert_dialog">open a child window:</label> <br/>
+				<div class="tools_page_btn" value="open" id="tools_open_alert_dialog">open</div>
+			</td>
+			<td>
+				<label for="sample button">click a sample button:</label> <br/>
+				<button class="tools_page_btn" 
+						id="sample button"
+						name="sample button name"
+						value="Sample Button Value">Sample Button</button>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="2">
+				<details>
+				<summary>URLs to open:</summary>
+				<button class="tools_page_btn" id="openurl_button_0" value="http://127.0.0.1:8090/">		 admin 							</button> <br/>
+				<button class="tools_page_btn" id="openurl_button_0" value="http://127.0.0.1:8090/system_management">system management			</button> <br/>
+				<button class="tools_page_btn" id="openurl_button_1" value="http://kccrefinish.co.kr/">		 kccrefinish.co.kr				</button> <br/>
+				<button class="tools_page_btn" id="openurl_button_2" value="https://cloud.e-mixing.eu/">        cloud.e-mixing.eu     			</button> <br/>
+				<button class="tools_page_btn" id="openurl_button_3" value="http://www.autorefinishes.co.kr/">  www.autorefinishes.co.kr		</button> <br/>
+				<button class="tools_page_btn" id="openurl_button_4" value="https://duthoo.codevid.be">         duthoo.codevid.be				</button> <br/>
+				<button class="tools_page_btn" id="openurl_button_5" value="https://www.sherwin-williams.com/"> www.sherwin-williams.com		</button> <br/>
+				<button class="tools_page_btn" id="openurl_button_6" value="https://capellasolutionsgroup.com/">capellasolutionsgroup.com	  	</button> <br/>
+				</details>
+			</td>
+		</tr>
+		<tr>
+			<td colspan="4">
+				<details>
+				<summary>Messages from the backend:</summary><span onclick="document.getElementById('tools_msg_from_server').innerHTML='';">{{tr_('clean')}}</span>
+				<div id="tools_msg_from_server"></div>
+				</details>
+			</td>
+		</tr>
+	</table>
+</div>
