@@ -26,11 +26,10 @@ LOG_LEVEL = 'INFO'
 if sys.argv[1:]:
     LOG_LEVEL = sys.argv[1]
 
-RES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'alfa_CR6_flask', 'static', 'ui', 'images')
+RES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'sdl2_ui', 'images')
+
 if sys.argv[2:]:
     RES_PATH = sys.argv[2]
-
-
 
 
 class Sdl2LocalUi:

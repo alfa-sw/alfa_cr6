@@ -26,11 +26,16 @@ CUSTOM_PATH =  os.path.join(HERE, "custom_kcc")     # "custom_sk" "custom_sw" "c
 
 # ~ WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "mcm")
 # ~ WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "webengine")
-# ~ WEBENGINE_CUSTOMER_URL = "https://cloud.e-mixing.eu/"
+
 
 WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "kcc")
 WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "webengine")
 WEBENGINE_CUSTOMER_URL = "http://kccrefinish.co.kr/"
+# ~ WEBENGINE_CUSTOMER_URL = "https://cloud.e-mixing.eu/"
+# ~ WEBENGINE_CUSTOMER_URL = "http://www.autorefinishes.co.kr/"
+# ~ WEBENGINE_CUSTOMER_URL = "https://duthoo.codevid.be"
+# ~ WEBENGINE_CUSTOMER_URL = "https://www.sherwin-williams.com/"
+# ~ WEBENGINE_CUSTOMER_URL = "https://capellasolutionsgroup.com/"
 
 
 SQLITE_CONNECT_STRING = f"sqlite:///{DATA_PATH}/cr6_Vx_test.sqlite"
