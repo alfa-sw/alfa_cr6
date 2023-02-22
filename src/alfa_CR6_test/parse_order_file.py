@@ -37,7 +37,8 @@ def main():
                         count += 1
 
                     logging.error(f"input file:{f}")
-                    logging.error(json.dumps(properties['meta']["extra_info"], indent=2))
+                    # ~ logging.error(json.dumps(properties['meta']["extra_info"], indent=2))
+                    logging.error(json.dumps(properties["extra_lines_to_print"], indent=2))
 
                     assert properties.get('ingredients')
 

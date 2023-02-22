@@ -73,7 +73,7 @@ class OrderParser:       # pylint: disable=too-many-public-methods
     axalta_pdf_headers = ["Axalta Industrial", "Cromax", "Standox"] # duthoo, Gteam, Serwind/Autocolor
     codevid_pdf_header = "Formula Details"          # duthoo
     basf_1_pdf_header = "Base Target Amt. CumAmt."  # BASF Refinty
-    basf_2_pdf_header = "Base Amount"               # BASF Cosima
+    basf_2_pdf_headers = ["Base Amount", "Ingredients Kontrolle"]# BASF Cosima
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -636,14 +636,15 @@ weight:{RealWeight}
         return properties
 
     @staticmethod
-    def parse_axalta_pdf(lines):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def parse_axalta_pdf(original_lines):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         def parse_ingredient_line(l):
 
             ingredient = None
             l = l.replace(',', '.')
-            toks = l.split()
-            logging.error(f"toks:{toks}")
+            toks = [t.strip() for t in l.split('  ')]
+            toks = [t for t in toks if t]
+            # ~ logging.error(f"l:{l}, toks:{toks}")
             if len(toks) >= 5 and toks[0].isdigit() and toks[-1].replace('.','',1).isdigit()  and toks[-2].replace('.','',1).isdigit():
 
                 value = float(toks[-2])
@@ -656,7 +657,7 @@ weight:{RealWeight}
                     "description": description
                 }
 
-            logging.error(f"toks:{toks}, ingredient:{ingredient}")
+            # ~ logging.error(f"toks:{toks}, ingredient:{ingredient}")
 
             return ingredient
 
@@ -665,29 +666,37 @@ weight:{RealWeight}
         extra_info = []
         extra_lines_to_print = []
 
-        for l in lines:
+        for l in original_lines:
+
+            if "Page 1" in l:
+                break
 
             if not l:
                 continue
 
-            l = " ".join(l.split())
-
             ingredient = parse_ingredient_line(l)
+            # ~ logging.error(f"l:{l}")
             if ingredient:
                 ingredients.append(ingredient)
             else:
 
-                if extra_info and [k for k in ["register", "codice colore produttore"] if k in extra_info[-1].lower()]:
-                    toks = l.split()
-                    if toks:
-                        extra_lines_to_print.append(" ".join(toks[:-1]))
+                l = " ".join(l.split())
 
-                elif extra_info and [k for k in ["kleurcode fabrikant", "nome colore produttore" ] if k in extra_info[-1].lower()]:
-                    toks = l.split()
-                    if toks:
-                        extra_lines_to_print.append(" ".join(toks[:-2]))
+                if l.strip():
 
-                extra_info.append(l)
+                    if extra_info and [k for k in ["register", "codice colore produttore"] if k in extra_info[-1].lower()]:
+                        toks = l.split()
+                        # ~ logging.error(f"l:{l}, toks:{toks}")
+                        if toks:
+                            extra_lines_to_print.append(" ".join(toks[:-1]))
+
+                    elif extra_info and [k for k in ["kleurcode fabrikant", "nome colore produttore" ] if k in extra_info[-1].lower()]:
+                        toks = l.split()
+                        # ~ logging.error(f"l:{l}, toks:{toks}")
+                        if toks:
+                            extra_lines_to_print.append(" ".join(toks[:-2]))
+
+                    extra_info.append(l)
 
         properties['extra_lines_to_print'] = extra_lines_to_print
         properties['ingredients'] = ingredients
@@ -1072,8 +1081,6 @@ weight:{RealWeight}
 
         def parse_ingredient_line(l):
 
-            # ~ logging.warning(f"l:{l}")
-
             ingredient = None
             toks = l.split()
             if len(toks) >= 2:
@@ -1087,6 +1094,8 @@ weight:{RealWeight}
                     "weight(g)": round(value, 4),
                     "description": description
                 }
+
+            logging.error(f"l:{l}, ingredient:{ingredient}")
 
             return ingredient
 
@@ -1194,7 +1203,7 @@ weight:{RealWeight}
 
         elif [h for h in cls.axalta_pdf_headers if h in " ".join(lines[0:10])]:
 
-            properties = cls.parse_axalta_pdf(lines)
+            properties = cls.parse_axalta_pdf(original_lines)
 
             if properties.get('meta'):
                 properties['meta']['header'] = [h for h in cls.axalta_pdf_headers if h in " ".join(lines[0:10])][0]
@@ -1212,12 +1221,13 @@ weight:{RealWeight}
             if properties.get('meta'):
                 properties['meta']['header'] = cls.basf_1_pdf_header
 
-        elif [l for l in lines if cls.basf_2_pdf_header in ' '.join(l.split())]:
+        # ~ elif [l for l in lines if cls.basf_2_pdf_header in ' '.join(l.split())]:
+        elif [h for h in cls.basf_2_pdf_headers if h in ' '.join([' '.join(l.split()) for l in lines]) ]:
 
             properties = cls.parse_basf_2_pdf(original_lines)
 
             if properties.get('meta'):
-                properties['meta']['header'] = cls.basf_1_pdf_header
+                properties['meta']['header'] = [h for h in cls.basf_2_pdf_headers if h in ' '.join([' '.join(l.split()) for l in lines]) ]
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
