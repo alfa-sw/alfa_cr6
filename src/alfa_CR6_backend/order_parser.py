@@ -72,8 +72,8 @@ class OrderParser:       # pylint: disable=too-many-public-methods
     mixcar_pdf_header = "Rapport de formule"
     axalta_pdf_header = "Axalta Industrial"         # duthoo
     codevid_pdf_header = "Formula Details"          # duthoo
-    basf_1_pdf_header = "Base Target Amt. CumAmt."
-    basf_2_pdf_header = "Base Amount"
+    basf_1_pdf_header = "Base Target Amt. CumAmt."  # BASF Refinty
+    basf_2_pdf_header = "Base Amount"               # BASF Cosima
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -1001,7 +1001,8 @@ weight:{RealWeight}
                     l = " ".join(l.split())
                     extra_info.append(l)
 
-        properties['extra_lines_to_print'] = extra_lines_to_print
+        # ~ properties['extra_lines_to_print'] = extra_lines_to_print
+        properties['extra_lines_to_print'] = [l for l in extra_info if l and len(l) < 30 and "Suffix" not in l]
         properties['ingredients'] = ingredients
         properties['meta'] = {'extra_info': extra_info}
 
@@ -1070,7 +1071,8 @@ weight:{RealWeight}
                     l = " ".join(l.split())
                     extra_info.append(l)
 
-        properties['extra_lines_to_print'] = extra_lines_to_print
+        # ~ properties['extra_lines_to_print'] = extra_lines_to_print
+        properties['extra_lines_to_print'] = [l for l in extra_info if l and len(l) < 30]
         properties['ingredients'] = ingredients
         properties['meta'] = {'extra_info': extra_info}
 

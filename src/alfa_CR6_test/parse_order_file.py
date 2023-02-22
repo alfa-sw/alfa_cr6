@@ -8,8 +8,8 @@ import traceback
 
 from alfa_CR6_backend.order_parser import OrderParser
 
-# ~ LOG_LEVEL = 'ERROR'
-LOG_LEVEL = 'WARNING'
+LOG_LEVEL = 'ERROR'
+# ~ LOG_LEVEL = 'WARNING'
 # ~ LOG_LEVEL = 'INFO'
 
 def main():
@@ -36,6 +36,9 @@ def main():
                         json.dump(properties, f, indent=2, ensure_ascii=False)
                         count += 1
 
+                    logging.error(f"input file:{f}")
+                    logging.error(json.dumps(properties['meta']["extra_info"], indent=2))
+
                     assert properties.get('ingredients')
 
             except:
@@ -45,7 +48,7 @@ def main():
         logging.error(traceback.format_exc())
 
     for f in sys.argv[1:]:
-        print(f"input file:{f}")
+        logging.warning(f"input file:{f}")
 
 
 main()
