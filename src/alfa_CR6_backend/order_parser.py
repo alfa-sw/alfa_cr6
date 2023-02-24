@@ -1095,12 +1095,14 @@ weight:{RealWeight}
                     "description": description
                 }
 
-            logging.error(f"l:{l}, ingredient:{ingredient}")
+            logging.debug(f"l:{l}, ingredient:{ingredient}")
 
             return ingredient
 
-        head_section_1 = "Base Amount"
-        head_section_2 = "total Amount"
+        # ~ head_section_1 = "Base Amount"
+        # ~ head_section_2 = "total Amount"
+        heads_section_1 = ["Base Amount", "Ingredients Kontrolle"]
+        heads_section_2 = ["total Amount", "Summe"]
 
         section_cntr = 0
         properties = {}
@@ -1112,9 +1114,11 @@ weight:{RealWeight}
             if not l:
                 continue
 
-            if head_section_1 in ' '.join(l.split()):
+            # ~ if head_section_1 in ' '.join(l.split()):
+            if [h for h in heads_section_1 if h in ' '.join(l.split())]:
                 section_cntr = 1
-            elif head_section_2 in ' '.join(l.split()):
+            # ~ elif head_section_2 in ' '.join(l.split()):
+            elif [h for h in heads_section_2 if h in ' '.join(l.split())]:
                 section_cntr = 2
                 extra_info.append(" ".join(l.split()))
             else:
@@ -1222,7 +1226,7 @@ weight:{RealWeight}
                 properties['meta']['header'] = cls.basf_1_pdf_header
 
         # ~ elif [l for l in lines if cls.basf_2_pdf_header in ' '.join(l.split())]:
-        elif [h for h in cls.basf_2_pdf_headers if h in ' '.join([' '.join(l.split()) for l in lines]) ]:
+        elif [h for h in cls.basf_2_pdf_headers if h in [' '.join(l.split()) for l in lines]]:
 
             properties = cls.parse_basf_2_pdf(original_lines)
 
@@ -1317,7 +1321,7 @@ weight:{RealWeight}
 
         return properties
 
-    def parse(self, path_to_file):
+    def parse(self, path_to_file):   # pylint: disable=too-many-branches
 
         mime = magic.Magic(mime=True)
         mime_type = mime.from_file(path_to_file)
@@ -1342,6 +1346,12 @@ weight:{RealWeight}
                     properties_list = [self.parse_xml_order(path_to_file), ]
                 elif mime_type == 'application/pdf' or '.pdf' in file_extension:
                     properties_list = self.parse_pdf_order(path_to_file)
+                    for properties in properties_list:
+                        if properties.get('meta'):
+                            break
+                    else:
+                        properties_list = self.parse_pdf_order(path_to_file, fixed_pitch=None)
+
                 elif mime_type == 'text/plain':
                     properties_list = [self.parse_txt_order(path_to_file), ]
                 else:
