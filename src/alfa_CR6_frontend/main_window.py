@@ -364,7 +364,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
             elif "help" in btn_name:
                 self.toggle_keyboard(on_off=False)
-                self.help_page.open_page()
+                # ~ self.help_page.open_page()
+                self.browser_page.open_page(url="http://127.0.0.1:8090/manual_index")
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)

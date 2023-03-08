@@ -27,7 +27,7 @@ from flask_admin.contrib.sqla import ModelView  # pylint: disable=import-error
 from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # pylint: disable=import-error
 
 from alfa_CR6_backend.models import Jar, Event
-from alfa_CR6_backend.globals import (LANGUAGE_MAP, import_settings, get_alfa_serialnumber)
+from alfa_CR6_backend.globals import (LANGUAGE_MAP, import_settings, get_alfa_serialnumber, tr_)
 from alfa_CR6_backend.order_parser import OrderParser
 
 SETTINGS = import_settings()
@@ -632,3 +632,43 @@ class AdminIndexView(flask_admin.AdminIndexView):
         logging.warning("flash_msgs:{}".format(flash_msgs))
         ret = redirect('/index')
         return ret
+    @flask_admin.expose("/manual/<manual_id>")
+    def manual(self, manual_id):
+
+        template = "/manual.html"
+
+        ctx = {'manual_id': manual_id}
+
+        html_ = self.render(template, **ctx)
+        # ~ logging.warning(f"html_:{html_}")
+
+        return html_
+
+    @flask_admin.expose("/manual_index")
+    def manual_index(self):
+
+        template = "/manual_index.html"
+
+        manual_id_list = [
+            (None, Markup(f"{tr_('User manuals')}")),
+            ("HMI_ENG", tr_('User manual, english version')),
+            ("HMI_ESP", tr_('User manual, spanish version')),
+            (None, Markup(f"{tr_('Operator manuals')}")),
+            ("Operator__IT", tr_('Operator manual, italian version')),
+            ("Operator__EN", tr_('Operator manual, english version')),
+            ("Operator__ES", tr_('Operator manual, spanish version')),
+            ("Operator__FR", tr_('Operator manual, french version')),
+            ("Operator__DE", tr_('Operator manual, german version')),
+            (None, Markup(f"{tr_('Technical manuals')}")),
+            ("Technical__EN", tr_('Technical manual, english version')),
+            ("Technical__IT", tr_('Technical manual, italian version')),
+        ]
+        ctx = {
+            'manual_id_list': manual_id_list,
+            'tr_': tr_,
+        }
+
+        html_ = self.render(template, **ctx)
+        # ~ logging.warning(f"html_:{html_}")
+
+        return html_
