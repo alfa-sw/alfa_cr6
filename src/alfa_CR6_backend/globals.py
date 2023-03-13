@@ -171,11 +171,10 @@ def get_res(_type, name):
 
 def get_encoding(path_to_file, key=None):
 
-    cmd_ = ["file", "-b", "--mime-encoding", path_to_file]
-
     encoding_ = ''
     try:
 
+        cmd_ = ["file", "-b", "--mime-encoding", path_to_file]
         p = subprocess.run(cmd_, stdout=subprocess.PIPE, check=False)
         mime_encoding = p.stdout.decode().strip()
         assert mime_encoding
@@ -211,6 +210,9 @@ def get_encoding(path_to_file, key=None):
                 logging.warning(f"path_to_file:{path_to_file}, e:{e}")
                 encoding_ = e
                 break
+
+    if encoding_ == 'utf-8':
+        encoding_ = 'utf-8-sig'
 
     logging.warning(f"encoding_:{encoding_}, path_to_file:{path_to_file}")
 
