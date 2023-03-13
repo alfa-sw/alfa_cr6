@@ -198,7 +198,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         await websocket.send(answer)
 
     @classmethod
-    async def ask_formula_files(cls, websocket):
+    async def ask_formula_files(cls, msg_dict, websocket): # pylint: disable=unused-argument
 
         _path = cls.settings.WEBENGINE_DOWNLOAD_PATH.strip()
         s_ = [f for f in os.listdir(_path) if os.path.isfile(os.path.join(_path, f))]
