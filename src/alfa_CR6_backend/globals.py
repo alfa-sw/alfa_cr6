@@ -218,6 +218,22 @@ def get_encoding(path_to_file, key=None):
 
     return encoding_
 
+def _get_label_options_from_redis_cache():
+
+    cached_label_options = None
+
+    try:
+        r = redis.Redis()
+        alfa_conf = r.get('ALFA_CONFIG')
+        if not alfa_conf:
+            alfa_conf = r.get('ALFA_CONFIG:1')
+        if alfa_conf:
+            cached_label_options = json.loads(alfa_conf).get('PRINT_LABEL_OPTIONS')
+    except Exception:
+        logging.error(traceback.format_exc())
+        cached_label_options = None
+
+    return cached_label_options
 
 def _get_print_label_options():
 
@@ -235,7 +251,11 @@ def _get_print_label_options():
         'print_missing_products': True,
     }
 
-    if hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
+    cached_options = _get_label_options_from_redis_cache()
+    if cached_options is not None:
+        options.update(cached_options)
+
+    if cached_options is None and hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
         options.update(settings.PRINT_LABEL_OPTONS)
 
     logging.warning(f'options:{options}')
