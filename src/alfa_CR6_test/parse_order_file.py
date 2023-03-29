@@ -8,9 +8,11 @@ import traceback
 
 from alfa_CR6_backend.order_parser import OrderParser
 
-LOG_LEVEL = 'ERROR'
-# ~ LOG_LEVEL = 'WARNING'
+# ~ LOG_LEVEL = 'ERROR'
+LOG_LEVEL = 'WARNING'
 # ~ LOG_LEVEL = 'INFO'
+
+STORE_OUTPUT_TO_JSON_FILE = False
 
 def main():
 
@@ -32,13 +34,13 @@ def main():
 
                     # ~ logging.warning(json.dumps(properties, indent=2, ensure_ascii=False))
                     # ~ logging.warning(f"extra_lines_to_print:{properties['extra_lines_to_print']}")
-                    with open(path_to_file + f'.{count}.json', 'w') as f:
-                        json.dump(properties, f, indent=2, ensure_ascii=False)
-                        count += 1
+                    if STORE_OUTPUT_TO_JSON_FILE:
+                        with open(path_to_file + f'.{count}.json', 'w') as f:
+                            json.dump(properties, f, indent=2, ensure_ascii=False)
+                            count += 1
 
-                    logging.error(f"input file:{f}")
-                    # ~ logging.error(json.dumps(properties['meta']["extra_info"], indent=2))
-                    logging.error(json.dumps(properties["extra_lines_to_print"], indent=2))
+                    logging.error(f"input file:{path_to_file}")
+                    logging.warning(json.dumps(properties["extra_lines_to_print"], indent=2))
 
                     assert properties.get('ingredients')
 
@@ -56,10 +58,21 @@ main()
 
 """
 . /opt/alfa_cr6/venv/bin/activate
-python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/KCC/kcc_formula_examples/*.json
+
+
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/SK/nuova_aurora/ialtroesempio/*.pdf
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/KCC/kcc_formula_examples/kcc_formula_examples/*
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/KCC/kcc_formula_examples/pdf_spectro/*.pdf
-python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/Sikkens_AkzoNobel_formulas/*.pdf
-python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/SW_formula_examples/*dat*
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/axalta-gteam-serwind/cromax/*.pdf
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/axalta-gteam-serwind/standox/*.pdf
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/BASF/pdf_formulas_Cosima/*.PDF
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/BASF/pdf_formulas_Refinity/MB9*.pdf
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/SK/formulas/pdf/*.pdf
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/SK/nuova_aurora/nuovaauroa/*.pdf
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/mutlichem/*.csv
-python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/Noroo/*.xml
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/Palini/Esempi_formule/*.TXT
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/DICHEMIX/*.pdf
+
+
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/sur_quimica/FormulasKlassRefinish/*.json
 """

@@ -15,6 +15,7 @@ import subprocess
 import logging
 import copy
 import time
+import configparser
 
 import jsonschema
 
@@ -23,20 +24,25 @@ import magic       # pylint: disable=import-error
 
 from alfa_CR6_backend.globals import (get_encoding, tr_, SCHEMAS_PATH, get_application_instance)
 
+
 def get_specific_weights():
 
     ret_dict = {}
-    _app = get_application_instance()
-    for m in _app.machine_head_dict.values():
-        if m:
-            for p in m.pigment_list:
-                p_name = p['name']
-                p_specific_weight = m.get_specific_weight(p_name)
-                ret_dict[p_name] = p_specific_weight if p_specific_weight > 0.001 else 1.0
+    try:
+        _app = get_application_instance()
+        for m in _app.machine_head_dict.values():
+            if m:
+                for p in m.pigment_list:
+                    p_name = p['name']
+                    p_specific_weight = m.get_specific_weight(p_name)
+                    ret_dict[p_name] = p_specific_weight if p_specific_weight > 0.001 else 1.0
 
-    logging.warning(f"ret_dict:{ret_dict}")
+        logging.warning(f"ret_dict:{ret_dict}")
+    except Exception as e:  # pylint: disable=broad-except
+        logging.warning(f"e:{e}")
 
     return ret_dict
+
 
 def replace_invalid_tags(path_to_file):
 
@@ -70,10 +76,10 @@ class OrderParser:       # pylint: disable=too-many-public-methods
     cpl_pdf_header = "MixingSys"
     DICHEMIX_pdf_header = "Dichemix"
     mixcar_pdf_header = "Rapport de formule"
-    axalta_pdf_headers = ["Axalta Industrial", "Cromax", "Standox"] # duthoo, Gteam, Serwind/Autocolor
+    axalta_pdf_headers = ["Axalta Industrial", "Cromax", "Standox"]  # duthoo, Gteam, Serwind/Autocolor
     codevid_pdf_header = "Formula Details"          # duthoo
     basf_1_pdf_header = "Base Target Amt. CumAmt."  # BASF Refinty
-    basf_2_pdf_headers = ["Base Amount", "Ingredients Kontrolle"]# BASF Cosima
+    basf_2_pdf_headers = ["Base Amount", "Ingredients Kontrolle"]  # BASF Cosima
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -645,7 +651,8 @@ weight:{RealWeight}
             toks = [t.strip() for t in l.split('  ')]
             toks = [t for t in toks if t]
             # ~ logging.error(f"l:{l}, toks:{toks}")
-            if len(toks) >= 5 and toks[0].isdigit() and toks[-1].replace('.','',1).isdigit()  and toks[-2].replace('.','',1).isdigit():
+            if len(toks) >= 5 and toks[0].isdigit() and toks[-1].replace('.',
+                                                                         '', 1).isdigit() and toks[-2].replace('.', '', 1).isdigit():
 
                 value = float(toks[-2])
                 name = toks[1]
@@ -684,13 +691,14 @@ weight:{RealWeight}
 
                 if l.strip():
 
-                    if extra_info and [k for k in ["register", "codice colore produttore"] if k in extra_info[-1].lower()]:
+                    if extra_info and [k for k in ["register",
+                                                   "codice colore produttore"] if k in extra_info[-1].lower()]:
                         toks = l.split()
                         # ~ logging.error(f"l:{l}, toks:{toks}")
                         if toks:
                             extra_lines_to_print.append(" ".join(toks[:-1]))
 
-                    elif extra_info and [k for k in ["kleurcode fabrikant", "nome colore produttore" ] if k in extra_info[-1].lower()]:
+                    elif extra_info and [k for k in ["kleurcode fabrikant", "nome colore produttore"] if k in extra_info[-1].lower()]:
                         toks = l.split()
                         # ~ logging.error(f"l:{l}, toks:{toks}")
                         if toks:
@@ -713,7 +721,7 @@ weight:{RealWeight}
             toks = l.split()
             if len(toks) > 2:
 
-                value = float(toks[-2].replace(',','.'))
+                value = float(toks[-2].replace(',', '.'))
                 name = toks[1]
                 description = " ".join(toks[2:-2])
 
@@ -822,7 +830,7 @@ weight:{RealWeight}
             toks = l.split()
             if len(toks) > 2:
 
-                value = float(toks[-2].replace(',','.'))
+                value = float(toks[-2].replace(',', '.'))
                 name = toks[0]
                 description = " ".join(toks[1:-2])
 
@@ -903,7 +911,8 @@ weight:{RealWeight}
 
                 continue
 
-        properties['extra_lines_to_print'] = [" ".join(l) for l in section_2_extra_lines_to_print] + extra_lines_to_print
+        properties['extra_lines_to_print'] = [" ".join(l)
+                                              for l in section_2_extra_lines_to_print] + extra_lines_to_print
         properties['ingredients'] = ingredients
         properties['meta'] = {'extra_info': extra_info}
 
@@ -984,9 +993,9 @@ weight:{RealWeight}
         if total_lt > 0.00001:
             # ~ total_gr = sum([i["weight(g)"] for i in properties['ingredients']])
             # ~ if total_gr < total_lt * 800 or total_gr > total_lt * 1200:
-                # ~ err = f"total_lt:{total_lt}, total_gr:{total_gr}"
-                # ~ logging.error(err)
-                # ~ properties = {'error': err}
+            # ~ err = f"total_lt:{total_lt}, total_gr:{total_gr}"
+            # ~ logging.error(err)
+            # ~ properties = {'error': err}
             total_vol_cc = sum([
                 (i["weight(g)"] / _specific_weights.get(i["pigment_name"], 1.5)) for i in properties['ingredients']
             ])
@@ -1019,7 +1028,7 @@ weight:{RealWeight}
             toks = l.split()
             if len(toks) > 2:
 
-                value = float(toks[1].replace(',','.'))
+                value = float(toks[1].replace(',', '.'))
                 name = toks[0]
                 description = "."
 
@@ -1085,7 +1094,7 @@ weight:{RealWeight}
             toks = l.split()
             if len(toks) >= 2:
 
-                value = float(toks[1].replace(',','.'))
+                value = float(toks[1].replace(',', '.'))
                 name = toks[0]
                 description = "."
 
@@ -1150,7 +1159,7 @@ weight:{RealWeight}
         return properties
 
     @classmethod
-    def parse_pdf_order(cls, path_to_file, fixed_pitch=5): # pylint: disable=too-many-branches, too-many-statements
+    def parse_pdf_order(cls, path_to_file, fixed_pitch=5):  # pylint: disable=too-many-branches, too-many-statements
 
         path_to_txt_file = "{0}.txt".format(path_to_file)
 
@@ -1231,7 +1240,8 @@ weight:{RealWeight}
             properties = cls.parse_basf_2_pdf(original_lines)
 
             if properties.get('meta'):
-                properties['meta']['header'] = [h for h in cls.basf_2_pdf_headers if h in ' '.join([' '.join(l.split()) for l in lines]) ]
+                properties['meta']['header'] = [
+                    h for h in cls.basf_2_pdf_headers if h in ' '.join([' '.join(l.split()) for l in lines])]
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
@@ -1240,6 +1250,39 @@ weight:{RealWeight}
         ret = properties if isinstance(properties, list) else [properties, ]
 
         return ret
+
+    @staticmethod
+    def parse_palini_ini_order(config):
+
+        logging.warning(f"config:{config}")
+
+        filtered_headers = ["tintacliente", "codtinta", "destinta"]
+
+        properties = {}
+        ingredients = []
+        extra_info = []
+        extra_lines_to_print = []
+
+        for k, v in config.items():
+
+            toks = k.split("COMP")
+
+            if k == 'TESTATA':
+                for k_, v_ in v.items():
+                    logging.warning(f"k_:{k_}, v_:{v_}")
+                    if k_.lower() in filtered_headers:
+                        extra_lines_to_print.append(v_)
+            elif toks[1:]:
+                new_item = {}
+                new_item["pigment_name"] = v['codice'].split('.')[1]
+                new_item["weight(g)"] = round(float(v['peso']) / 10., 4)
+                ingredients.append(new_item)
+
+        properties['extra_lines_to_print'] = extra_lines_to_print
+        properties['ingredients'] = ingredients
+        properties['meta'] = {'extra_info': extra_info}
+
+        return properties
 
     @classmethod
     def parse_xml_order(cls, path_to_file):  # pylint: disable=too-many-locals
@@ -1300,7 +1343,6 @@ weight:{RealWeight}
             if properties.get('meta') is not None:
                 properties['meta']['header'] = cls.codevid_pdf_header
 
-
         return properties
 
     @classmethod
@@ -1321,24 +1363,38 @@ weight:{RealWeight}
 
         return properties
 
-    def parse(self, path_to_file):   # pylint: disable=too-many-branches
+    @classmethod
+    def parse_ini_order(cls, path_to_file):
 
-        mime = magic.Magic(mime=True)
-        mime_type = mime.from_file(path_to_file)
-        _, file_extension = os.path.splitext(path_to_file)
-        logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}, file_extension:{file_extension}")
+        properties = {}
+
+        config = configparser.ConfigParser()
+        config.read(path_to_file)
+
+        if config.has_section("TESTATA"):
+            properties = cls.parse_palini_ini_order(config)
+            f_name = os.path.split(path_to_file)[1]
+            properties['extra_lines_to_print'].append(f_name)
+
+        return properties
+
+    def _do_parse(self, path_to_file, mime_type, file_extension):
 
         properties_list = [{}]
 
         try:
 
+            properties = self.parse_ini_order(path_to_file)
+            assert properties.get('meta') is not None and not properties['meta'].get('error')
+            properties_list = [properties, ]
+
+        except Exception as e:           # pylint: disable=broad-except
+            logging.info(traceback.format_exc())
             try:
 
                 properties = self.parse_json_order(path_to_file)
-                if properties.get('meta') is not None and not properties['meta'].get('error'):
-                    properties_list = [properties, ]
-                else:
-                    raise Exception("")
+                assert properties.get('meta') is not None and not properties['meta'].get('error')
+                properties_list = [properties, ]
 
             except Exception as e:           # pylint: disable=broad-except
 
@@ -1357,17 +1413,32 @@ weight:{RealWeight}
                 else:
                     raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}") from e
 
-            for properties in properties_list:
-                if properties.get('meta'):
-                    properties['meta']['file name'] = os.path.split(path_to_file)[1]
+        for properties in properties_list:
+            if properties.get('meta'):
+                properties['meta']['file name'] = os.path.split(path_to_file)[1]
 
-                properties = self._substitute_aliases(properties)
+            properties = self._substitute_aliases(properties)
 
-                err_msg = tr_("properties not valid:{}").format(properties)[:400]
-                assert properties.get('meta') is not None, err_msg
-                assert not properties['meta'].get('error'), err_msg
+            err_msg = tr_("properties not valid:{}").format(properties)[:400]
+            assert properties.get('meta') is not None, err_msg
+            assert not properties['meta'].get('error'), err_msg
 
-        except Exception as e:              # pylint: disable=broad-except
+        return properties_list
+
+    def parse(self, path_to_file):
+
+        mime = magic.Magic(mime=True)
+        mime_type = mime.from_file(path_to_file)
+        _, file_extension = os.path.splitext(path_to_file)
+        logging.warning(f"path_to_file:{path_to_file}, mime_type:{mime_type}, file_extension:{file_extension}")
+
+        properties_list = [{}]
+
+        try:
+
+            properties_list = self._do_parse(path_to_file, mime_type, file_extension)
+
+        except Exception as e:  # pylint: disable=broad-except
 
             logging.error(f"format error in file:{path_to_file}")
             logging.error(traceback.format_exc())
