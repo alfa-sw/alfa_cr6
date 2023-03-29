@@ -15,14 +15,13 @@ import traceback
 from flask import (Markup, request)  # pylint: disable=import-error
 
 import flask_admin  # pylint: disable=import-error
-from flask_admin.menu import MenuLink
+from flask_admin.menu import MenuLink  # pylint: disable=import-error
 
 from flask_admin.contrib.sqla import ModelView  # pylint: disable=import-error
 from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Jar
 from alfa_CR6_backend.globals import (LANGUAGE_MAP, import_settings)
-from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session, apply_table_alterations)
+from alfa_CR6_backend.models import (Order, Jar, Event, Document)
 
 SETTINGS = import_settings()
 
@@ -358,6 +357,46 @@ class MainAdminView(flask_admin.AdminIndexView):
         }
 
         return self.render(template, **ctx)
+    @flask_admin.expose("/manual/<manual_id>")
+    def manual(self, manual_id):
+
+        template = "/manual.html"
+
+        ctx = {'manual_id': manual_id}
+
+        html_ = self.render(template, **ctx)
+        # ~ logging.warning(f"html_:{html_}")
+
+        return html_
+
+    @flask_admin.expose("/manual_index")
+    def manual_index(self):
+
+        template = "/manual_index.html"
+
+        manual_id_list = [
+            (None, Markup(f"{tr_('User manuals')}")),
+            ("HMI_ENG", tr_('User manual, english version')),
+            ("HMI_ESP", tr_('User manual, spanish version')),
+            (None, Markup(f"{tr_('Operator manuals')}")),
+            ("Operator__IT", tr_('Operator manual, italian version')),
+            ("Operator__EN", tr_('Operator manual, english version')),
+            ("Operator__ES", tr_('Operator manual, spanish version')),
+            ("Operator__FR", tr_('Operator manual, french version')),
+            ("Operator__DE", tr_('Operator manual, german version')),
+            (None, Markup(f"{tr_('Technical manuals')}")),
+            ("Technical__EN", tr_('Technical manual, english version')),
+            ("Technical__IT", tr_('Technical manual, italian version')),
+        ]
+        ctx = {
+            'manual_id_list': manual_id_list,
+            'tr_': tr_,
+        }
+
+        html_ = self.render(template, **ctx)
+        # ~ logging.warning(f"html_:{html_}")
+
+        return html_
 
 def init_admin(app, db):
 
@@ -373,4 +412,3 @@ def init_admin(app, db):
     admin_.add_link(MenuLink(name='System Management', category='', url='/system_management'))
 
     return admin_
-
