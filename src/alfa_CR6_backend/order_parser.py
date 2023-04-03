@@ -176,21 +176,21 @@ class OrderParser:       # pylint: disable=too-many-public-methods
                 "description": item.get("Descripcion", '')
             })
 
-        info_to_print = {
-            k: properties["meta"].get(
-                k,
-                '') for k in (
+        info_to_print = {}
+        for k in (
                 'Fabricante',
                 'ColorCode',
                 'Color',
                 'RealWeight',
-                'Calidad')}
+                'Calidad',
+                'Work'):
+            info_to_print[k] = properties["meta"].get(k, None) or ''
 
         fmt_ = """{Fabricante}
 {ColorCode} - {Color}
 {Calidad}
 weight:{RealWeight}
-"""
+{Work}"""
 
         logging.warning(f"info_to_print:{info_to_print}")
 
@@ -1288,14 +1288,21 @@ weight:{RealWeight}
     def parse_xml_order(cls, path_to_file):  # pylint: disable=too-many-locals
 
         properties = {}
+        xml_as_dict = None
 
         # ~ replace_invalid_tags(path_to_file)
 
-        e = get_encoding(path_to_file)
-        with codecs.open(path_to_file, encoding=e) as fd:
-            xml_as_dict = xmltodict.parse(fd.read(), encoding=e)
+        try:
+            e = get_encoding(path_to_file)
+            with codecs.open(path_to_file, encoding=e) as fd:
+                xml_as_dict = xmltodict.parse(fd.read(), encoding=e)
+        except Exception:           # pylint: disable=broad-except
+            with open(path_to_file) as fd: # pylint: disable=unspecified-encoding
+                xml_as_dict = xmltodict.parse(fd.read())
+
             # ~ logging.warning(json.dumps(xml_as_dict, indent=4))
 
+        if xml_as_dict:
             if xml_as_dict.get("COLORFORMULA", {}).get("FORMULA"):
                 properties = cls.parse_nro_xml(xml_as_dict)
                 if properties.get('meta'):

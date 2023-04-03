@@ -73,6 +73,7 @@ python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECT
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/Palini/Esempi_formule/*.TXT
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/DICHEMIX/*.pdf
 
+python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/Besa-SINNEK/downloaded_xml_formula/*.xml
 
 python /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/parse_order_file.py /opt/PROJECTS/alfa_cr6/doc/__hidden__/sur_quimica/FormulasKlassRefinish/*.json
 """
