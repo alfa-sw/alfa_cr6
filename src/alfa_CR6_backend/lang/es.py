@@ -182,17 +182,17 @@ D = {
     "{} product(s) missing:": "{} producto(s) faltante(s):",
 
     "adjusted_levels": "adjusted_levels",
-    "please, input barcode for refill": "please, input barcode for refill",
-    ". RESET head: {} ?": ". RESET head: {} ?",
-    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.",
-    "refilling with {} ({}) would exceed maximum level! Aborting.": "refilling with {} ({}) would exceed maximum level! Aborting.",
+    "please, input barcode for refill": "por favor, inserire el codigo de barras para el rellenado",
+    ". RESET head: {} ?": ". RESET el cabezal : {} ?",
+    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "por favor confirmar el circuito a rellenar: {} <br> con {} ({}) el producto: {}?.",
+    "refilling with {} ({}) would exceed maximum level! Aborting.": "el producto {} ({}) excederà el nivel maximo! Anulare.",
     "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.": 
-        "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.",
+        "por favor inseria la cantidad (en {}) del producto: {}<br> para rellenar el circuito: {} (nivel actual:{}),<br> deja asi la cantidad para rellenar totalmente o seleccinar de la lista.",
 
-    "barcode mismatch <br/>{} != {}": "barcode mismatch <br/>{} != {}",
-    "please, verify barcode {} on canister.": "please, verify barcode {} on canister.",
-    "barcode not known:{}": "barcode not known:{}",
-    "please, enter service password": "please, enter service password",
+    "barcode mismatch <br/>{} != {}": "codigo de barras incorrecto <br/>{} != {}",
+    "please, verify barcode {} on canister.": "por favor leer el codigo de barras {} en el bote.",
+    "barcode not known:{}": "codigo de barras desconocido:{}",
+    "please, enter service password": "por favor inserir la password",
 }
 
 
