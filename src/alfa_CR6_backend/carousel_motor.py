@@ -157,7 +157,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     flag = flag and extra_check()
                 return flag
 
-            r = await self.wait_for_condition(condition, timeout=DEFAULT_WAIT_FOR_TIMEOUT, show_alert=False)
+            r = await self.wait_for_condition(condition, timeout=2 * DEFAULT_WAIT_FOR_TIMEOUT, show_alert=False)
 
             if not r:
                 logging.warning(f"{m.name} jar:{jar}")

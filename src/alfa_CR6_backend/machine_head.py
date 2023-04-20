@@ -617,7 +617,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             if _splitted_pars.get("ingredients"):
                                 r = await self.send_command(
                                     cmd_name="DISPENSE_FORMULA", type_="macro", params=_splitted_pars)
-                                timeout_ = 60 * 6
+                                timeout_ = 60 * 12
                             else:
                                 continue
 
