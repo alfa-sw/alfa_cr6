@@ -70,6 +70,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         self.machine_config = None
 
+        self._running_engaged_circuits = None
+        self._current_circuit_engaged = None
+
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
@@ -183,7 +186,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             args, fmt = (self.name, self.low_level_pipes), "{} Please, Check Pipe Levels: low_level_pipes:{}"
             self.app.main_window.open_alert_dialog(args, fmt=fmt)
 
-    async def update_status(self, status):
+    async def update_status(self, status):   # pylint: disable=too-many-branches
 
         logging.debug("status:{}".format(status))
 
@@ -278,6 +281,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.status = status
 
         # ~ logging.warning("self.jar_photocells_status:{}".format(self.jar_photocells_status))
+
+        if (status.get("status_level") == "DISPENSING" and self._running_engaged_circuits is not None):
+            new_circuit_engaged = status.get("circuit_engaged")
+            if new_circuit_engaged != self._current_circuit_engaged:
+                if self._current_circuit_engaged is not None:
+                    self._running_engaged_circuits.append(self._current_circuit_engaged)
+                self._current_circuit_engaged = new_circuit_engaged
+
         return diff
 
     async def handle_ws_recv(self):     # pylint: disable=too-many-branches
@@ -593,6 +604,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 step = 0
                 outcome_ = ''
                 result_ = ''
+                engaged_circuits_ = []
                 while step < 2:
                     msg_ = tr_(" before dispensing. Please check jar.")
                     r = await self.app.wait_for_condition(before_dispense_condition, timeout=31, extra_info=msg_)
@@ -624,6 +636,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         if r:
                             r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
                             if r:
+
+                                self._running_engaged_circuits = []
+
                                 # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
                                 def break_condition():
                                     return self.status["status_level"] in ['ALARM', 'RESET']
@@ -635,8 +650,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                     result_ = 'OK'
                                 else:
                                     outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
+                                    outcome_ += "{}, {} ".format(self.status.get("error_code"), tr_(self.status.get("error_message")))
                                     result_ = 'NOK'
                                     break
+
+                                engaged_circuits_ += self._running_engaged_circuits[:]
+                                self._running_engaged_circuits = None
+                                self._current_circuit_engaged = None
+
                             else:
                                 outcome_ += tr_('failure waiting for dispensation to start (step:{}) ').format(step)
                                 result_ = 'NOK'
@@ -671,6 +692,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 json_properties.setdefault("dispensation_outcomes", [])
                 json_properties["dispensation_outcomes"].append((self.name, outcome_))
+                json_properties.setdefault("engaged_circuits", [])
+                json_properties["engaged_circuits"].append((self.name, engaged_circuits_))
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
                 self.app.update_jar_properties(jar)
