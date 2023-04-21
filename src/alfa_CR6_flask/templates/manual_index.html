@@ -19,9 +19,9 @@
 		</style>
 	</head>
 	<body>
-		{% for id, name in manual_id_list %}
-		{% if id %}
-		<p><a href="/manual/{{ id }}">{{ name }}</a></p>
+		{% for manual_id, name in manual_id_list %}
+		{% if manual_id %}
+		<p><a href="/manual/{{ manual_id }}">{{ name }}</a></p>
 		{% else %}
 		<h1>{{ name }}</h1>
 		{% endif %}

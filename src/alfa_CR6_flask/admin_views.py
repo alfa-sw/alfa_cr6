@@ -640,7 +640,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
         ctx = {'manual_id': manual_id}
 
         html_ = self.render(template, **ctx)
-        # ~ logging.warning(f"html_:{html_}")
+        logging.warning(f"html_:{html_}")
 
         return html_
 
@@ -654,14 +654,14 @@ class AdminIndexView(flask_admin.AdminIndexView):
             ("HMI_ENG", tr_('User manual, english version')),
             ("HMI_ESP", tr_('User manual, spanish version')),
             (None, Markup(f"{tr_('Operator manuals')}")),
-            ("Operator__IT", tr_('Operator manual, italian version')),
-            ("Operator__EN", tr_('Operator manual, english version')),
-            ("Operator__ES", tr_('Operator manual, spanish version')),
-            ("Operator__FR", tr_('Operator manual, french version')),
-            ("Operator__DE", tr_('Operator manual, german version')),
+            ("Operator_IT", tr_('Operator manual, italian version')),
+            ("Operator_EN", tr_('Operator manual, english version')),
+            ("Operator_ES", tr_('Operator manual, spanish version')),
+            ("Operator_FR", tr_('Operator manual, french version')),
+            ("Operator_DE", tr_('Operator manual, german version')),
             (None, Markup(f"{tr_('Technical manuals')}")),
-            ("Technical__EN", tr_('Technical manual, english version')),
-            ("Technical__IT", tr_('Technical manual, italian version')),
+            ("Technical_EN", tr_('Technical manual, english version')),
+            ("Technical_IT", tr_('Technical manual, italian version')),
         ]
         ctx = {
             'manual_id_list': manual_id_list,
