@@ -19,7 +19,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from alfa_CR6_backend.globals import (
-    get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP)
+    get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP, DEFAULT_DEBUG_PAGE_PWD)
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
@@ -349,7 +349,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     self.toggle_keyboard(on_off=True)
 
                     def ok_cb_():
-                        debug_page_pwd = 'alfa'
+                        debug_page_pwd = DEFAULT_DEBUG_PAGE_PWD
                         if hasattr(self.settings, 'DEBUG_PAGE_PWD') and self.settings.DEBUG_PAGE_PWD:
                             debug_page_pwd = self.settings.DEBUG_PAGE_PWD
 

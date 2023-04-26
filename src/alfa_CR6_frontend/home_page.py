@@ -18,7 +18,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
-from alfa_CR6_backend.globals import (import_settings, get_res, tr_, TMP_PIGMENT_IMAGE)
+from alfa_CR6_backend.globals import (import_settings, get_res, tr_, TMP_PIGMENT_IMAGE, DEFAULT_DEBUG_PAGE_PWD)
 from alfa_CR6_backend.dymo_printer import dymo_print_pigment_label
 
 from alfa_CR6_frontend.pages import BaseStackedPage
@@ -386,7 +386,22 @@ class HomePage(BaseStackedPage):
                     ok_cb=QApplication.instance().toggle_freeze_carousel,
                 )
             elif "action_" in btn_name:
-                self.parent().setCurrentWidget(self.main_window.action_frame_map[btn])
+                # ~ Mettere l'accesso a tutti i comandi manuali presenti nel sinottico sotto password.
+
+                self.main_window.toggle_keyboard(on_off=True)
+
+                def ok_cb_():
+                    debug_page_pwd = DEFAULT_DEBUG_PAGE_PWD
+                    if hasattr(g_settings, 'DEBUG_PAGE_PWD') and g_settings.DEBUG_PAGE_PWD:
+                        debug_page_pwd = g_settings.DEBUG_PAGE_PWD
+
+                    pwd_ = self.main_window.input_dialog.content_container.toPlainText()
+                    if pwd_ == debug_page_pwd:
+                        self.parent().setCurrentWidget(self.main_window.action_frame_map[btn])
+                        self.main_window.toggle_keyboard(on_off=False)
+
+                msg_ = tr_("please, enter service password")
+                self.main_window.open_input_dialog(message=msg_,  content="", ok_cb=ok_cb_)
 
             for i, m in QApplication.instance().machine_head_dict.items():
                 if m:

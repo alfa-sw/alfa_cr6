@@ -930,13 +930,48 @@ class ActionPage(BaseStackedPage):
 
     ui_file_name = "action_frame.ui"
 
-    def __do_action(self, args):
-        logging.warning(f"args:{args}")
+    def __check_conditions(self, args):
+
+        # ~ Testa 5 vincolare il comando start rulliera dispensazione al fatto che il sollevatore sia in posizione alta ed abbia la fotocellula della rulliera sollevatore libera.
+        # ~ Testa 5 vincolare il comando start rulliera sollevatore senso orario al al fatto che il sollevatore sia alto.
+        # ~ Testa 5 vincolare il comando start rulliera sollevatore senso anti orario al al fatto che il sollevatore sia basso.
+
+        # ~ Testa 2 vincolare il comando start rulliera dispensazione al fatto che il sollevatore sia in posizione bassa ed abbia la fotocellula della rulliera sollevatore libera.
+
+        ret = True
+
+        if args in (('single_move', 'C', [0, 1]), ('single_move', 'C', [0, 2])): # "Start dispensing roller" "Start dispensing roller to photocell"
+            D = QApplication.instance().get_machine_head_by_letter("D")
+            C = QApplication.instance().get_machine_head_by_letter("C")
+            ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+            ret = ret and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
+
+        elif args == ("single_move", "C", [1, 1]): # "Start lifter roller CW"
+            D = QApplication.instance().get_machine_head_by_letter("D")
+            ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+
+        elif args == ("single_move", "C", [1, 4]): # "Start lifter roller CCW"
+            D = QApplication.instance().get_machine_head_by_letter("D")
+            ret = D.jar_photocells_status.get('LOAD_LIFTER_DOWN_PHOTOCELL')
+
+        elif args in (('single_move', 'F', [0, 1]), ('single_move', 'F', [0, 2])): # "Start dispensing roller" "Start dispensing roller to photocell"
+            F = QApplication.instance().get_machine_head_by_letter("F")
+            ret = F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
+            ret = ret and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', True)
+
+        return ret
+
+    def __do_action(self, condition, args):
+        logging.warning(f"condition:{condition}, args:{args}")
         if args[0] == 'open_home_page':
             self.parent().setCurrentWidget(self.main_window.home_page)
         else:
             try:
-                QApplication.instance().run_a_coroutine_helper(args[0], *args[1:])
+                if not self.__check_conditions(args):
+                    _msg = tr_("action not allowed.") + f"\n\n{args}"
+                    self.main_window.open_alert_dialog(_msg, title="ALERT")
+                else:
+                    QApplication.instance().run_a_coroutine_helper(args[0], *args[1:])
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
@@ -980,7 +1015,8 @@ class ActionPage(BaseStackedPage):
             i.setFixedHeight(50)
             if b.get("action_args"):
                 args_ = b.get("action_args")
-                i.clicked.connect(partial(self.__do_action, args_))
+                condition_ = b.get("condition")
+                i.clicked.connect(partial(self.__do_action, condition_, args_))
             self.action_buttons_layout.addWidget(i)
 
         for l in action_item["labels_args"]:
