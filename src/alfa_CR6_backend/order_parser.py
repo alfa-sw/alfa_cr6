@@ -385,8 +385,9 @@ weight:{RealWeight}
             quantity = round(float(meta.get("quantity(l)", 0)), 3)
             date_time = str(time.asctime())
 
-            properties["extra_lines_to_print"] = [f"{brand} - {quality}",
-                                                  f"{colorCode} - {quantity}", f"{batchId}", f"{date_time}"]
+            if properties.get("extra_lines_to_print") is None:
+                properties["extra_lines_to_print"] = [f"{brand} - {quality}",
+                                                      f"{colorCode} - {quantity}", f"{batchId}", f"{date_time}"]
 
         logging.info(f"properties:{properties}")
         return properties
