@@ -1,4 +1,4 @@
-from alfa_CR6_backend.lang import error_it
+from alfa_CR6_backend.lang import error_es
 D = {
     " ?": " ?",
     "alias": "alias",
@@ -135,7 +135,7 @@ D = {
     'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})': 'Nivel de pasta insuficiente para el código de barras {}.\n rellene las pastas:{}. ({}/{})',
     "\nOtherwise the can's status will be marked as ERROR.": "\nDe lo contrario, el estado del bote se marcará como ERROR.",
     'Please, insert below the number of jars.': "Introduzca el número de botes.",
-    'barcode:{} error in STEP {}. I will retry.': "código de barras:{} error en posición {}. nuevo intento.",
+    'barcode:{} error in {}. I will retry.': "código de barras:{} error en posición {}. nuevo intento.",
     'modified.': "modificado.",
     'output roller is busy.': "transportador de rodillos de salida ocupado.",
     "order nr.": "n.º de pedido",
@@ -182,7 +182,7 @@ D = {
     "{} product(s) missing:": "{} producto(s) faltante(s):",
 
     "adjusted_levels": "adjusted_levels",
-    "please, input barcode for refill": "por favor, inserire el codigo de barras para el rellenado",
+    "please, input barcode for refill": "por favor, inserire el codigo de barras del envase para el rellenado",
     ". RESET head: {} ?": ". RESET el cabezal : {} ?",
     "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "por favor confirmar el circuito a rellenar: {} <br> con {} ({}) el producto: {}?.",
     "refilling with {} ({}) would exceed maximum level! Aborting.": "el producto {} ({}) excederà el nivel maximo! Anulare.",
@@ -190,10 +190,11 @@ D = {
         "por favor inseria la cantidad (en {}) del producto: {}<br> para rellenar el circuito: {} (nivel actual:{}),<br> deja asi la cantidad para rellenar totalmente o seleccinar de la lista.",
 
     "barcode mismatch <br/>{} != {}": "codigo de barras incorrecto <br/>{} != {}",
-    "please, verify barcode {} on canister.": "por favor leer el codigo de barras {} en el bote.",
+    "please, verify barcode {} on canister.": "por favor leer el codigo de barras {} en el canister de la maquina.",
     "barcode not known:{}": "codigo de barras desconocido:{}",
     "please, enter service password": "por favor inserir la password",
+    "barcode:{} error in {}. Can is removed." : "código de barras:{} error en {}. Quitar el envase.",
 }
 
 
-D.update(error_it.D)
+D.update(error_es.D)

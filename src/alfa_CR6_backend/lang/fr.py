@@ -1,4 +1,4 @@
-from alfa_CR6_backend.lang import error_it
+from alfa_CR6_backend.lang import error_fr
 D = {
     " ?": " ?",
     "alias": "alias",
@@ -135,7 +135,7 @@ D = {
     'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})': 'Niveau pâte insuffisante pour le code-barres {}.\n faites l’appoint des pâtes : {}. ({}/{})',
     "\nOtherwise the can's status will be marked as ERROR.": "\nSinon, le statut du pot sera marqué comme ERREUR.",
     'Please, insert below the number of jars.': "Insérez le nombre de pots.",
-    'barcode:{} error in STEP {}. I will retry.': "code-barres : {} erreur en position {}. nouvelle tentative.",
+    'barcode:{} error in {}. I will retry.': "code-barres : {} erreur en position {}. nouvelle tentative.",
     'modified.': "modifié.",
     'output roller is busy.': "convoyeur de sortie engagée.",
     "order nr.": "num. commande",
@@ -194,7 +194,8 @@ D = {
     "please, verify barcode {} on canister.": "s'il vous plaît, vérifiez le code-barres {} sur bidon.",
     "barcode not known:{}": "code barre inconnu:{}",
     "please, enter service password": "s'il vous plaît, entrez le mot de passe du service",
+    "barcode:{} error in {}. Can is removed." : "code-barres:{} erreur dans {}. La pot est supprimee.",
 }
 
 
-D.update(error_it.D)
+D.update(error_fr.D)
