@@ -43,9 +43,9 @@ def main():
         name=__app_name__,
         version=__version__,
         description='UI for alfa CR6',
-        url='https://gitlab.com/alfa-sw/alfa_cr6',
-        author='giovanni angeli per alfadispenser srl',
-        author_email='giovanniangeli@alfadispenser.com',
+        url='https://github.com/alfa-sw/alfa_cr6',
+        author='alfadispenser srl',
+        author_email='info@alfadispenser.com',
         python_requires='>=3.7.0',
         classifiers=[
             'Development Status :: 3 - Alpha',
