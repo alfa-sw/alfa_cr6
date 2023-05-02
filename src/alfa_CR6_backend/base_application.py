@@ -1029,6 +1029,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if not ingredient_volume_map[k]:
                 ingredient_volume_map.pop(k)
 
+        if jar_json_properties.get("start_ingredient_volume_map") is None:
+            jar_json_properties["start_ingredient_volume_map"] = ingredient_volume_map
+
         jar_json_properties["ingredient_volume_map"] = ingredient_volume_map
         jar_json_properties["insufficient_pigments"] = insufficient_pigments
         jar_json_properties["unknown_pigments"] = unknown_pigments
