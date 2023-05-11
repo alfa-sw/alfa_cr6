@@ -397,41 +397,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         for action_frame in self.action_frame_map.values():
             if action_frame.isVisible():
-                for i in range(action_frame.action_labels_layout.count()):
-                    lbl = action_frame.action_labels_layout.itemAt(i).widget()
-                    if hasattr(lbl, "show_val"):
-                        getattr(lbl, "show_val")()
-
-        def _set_label_text(lbl, head_letter):
-
-            m = QApplication.instance().get_machine_head_by_letter(head_letter)
-            if m and m.status.get("status_level") is not None:
-                status_level = m.status.get("status_level")
-                crx_outputs = m.status.get('crx_outputs_status', -1)
-                jar_ph_ = m.status.get("jar_photocells_status", -1)
-
-                txt_ = "{}".format(tr_(f"{status_level}"))
-                txt_ += "<br/><small>{:04b} {:04b}</small>\n".format(
-                    0xF & (crx_outputs >> 4), 0xF & (crx_outputs >> 0))
-                txt_ += '<br/><small>{:04b} {:04b} {:04b} </small>'.format(
-                    0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0))
-                lbl.setText(txt_)
-                lbl.show()
-            else:
-                lbl.hide()
-
-        for action_frame in self.action_frame_map.values():
-            if action_frame.isVisible():
-                for w, l in[(action_frame.status_A_label, 'A'),
-                            (action_frame.status_B_label, 'B'),
-                            (action_frame.status_C_label, 'C'),
-                            (action_frame.status_D_label, 'D'),
-                            (action_frame.status_E_label, 'E'),
-                            (action_frame.status_F_label, 'F')]:
-
-                    # ~ logging.warning(f"w:{w}, l:{l}")
-                    if w:
-                        _set_label_text(w, l)
+                action_frame.show_values_in_labels()
 
     def update_status_data(self, head_index, _=None):
 

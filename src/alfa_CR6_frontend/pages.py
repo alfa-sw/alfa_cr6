@@ -930,7 +930,8 @@ class ActionPage(BaseStackedPage):
 
     ui_file_name = "action_frame.ui"
 
-    def __check_conditions(self, args):
+    @staticmethod
+    def __check_conditions(args):
 
         # ~ Testa 5 vincolare il comando start rulliera dispensazione al fatto che il sollevatore sia in posizione alta ed abbia la fotocellula della rulliera sollevatore libera.
         # ~ Testa 5 vincolare il comando start rulliera sollevatore senso orario al al fatto che il sollevatore sia alto.
@@ -1026,3 +1027,42 @@ class ActionPage(BaseStackedPage):
                 args_ = [i, ] + list(l)
                 setattr(i, "show_val", partial(self.__do_show_val, *args_))
                 self.action_labels_layout.addWidget(i)
+
+    def show_values_in_labels(self):
+
+        logging.warning("+++++++++++++++++")
+        for i in range(self.action_labels_layout.count()):
+            lbl = self.action_labels_layout.itemAt(i).widget()
+            if hasattr(lbl, "show_val"):
+                getattr(lbl, "show_val")()
+                logging.warning(f"lbl:{lbl}")
+
+
+        for w, l in[(self.status_A_label, 'A'),
+                    (self.status_B_label, 'B'),
+                    (self.status_C_label, 'C'),
+                    (self.status_D_label, 'D'),
+                    (self.status_E_label, 'E'),
+                    (self.status_F_label, 'F')]:
+
+            if w:
+                self.__show_head_status(w, l)
+
+    @staticmethod
+    def __show_head_status(lbl, head_letter):
+
+        m = QApplication.instance().get_machine_head_by_letter(head_letter)
+        if m and m.status.get("status_level") is not None:
+            status_level = m.status.get("status_level")
+            crx_outputs = m.status.get('crx_outputs_status', -1)
+            jar_ph_ = m.status.get("jar_photocells_status", -1)
+
+            txt_ = "{}".format(tr_(f"{status_level}"))
+            txt_ += "<br/><small>{:04b} {:04b}</small>\n".format(
+                0xF & (crx_outputs >> 4), 0xF & (crx_outputs >> 0))
+            txt_ += '<br/><small>{:04b} {:04b} {:04b} </small>'.format(
+                0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0))
+            lbl.setText(txt_)
+            lbl.show()
+        else:
+            lbl.hide()

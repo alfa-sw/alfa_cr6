@@ -397,6 +397,8 @@ class HomePage(BaseStackedPage):
 
                     pwd_ = self.main_window.input_dialog.content_container.toPlainText()
                     if pwd_ == debug_page_pwd:
+
+                        self.main_window.action_frame_map[btn].show_values_in_labels()
                         self.parent().setCurrentWidget(self.main_window.action_frame_map[btn])
                         self.main_window.toggle_keyboard(on_off=False)
 
