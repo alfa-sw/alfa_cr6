@@ -284,10 +284,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         if (status.get("status_level") == "DISPENSING" and self._running_engaged_circuits is not None):
             new_circuit_engaged = status.get("circuit_engaged")
+            logging.warning(f"new_circuit_engaged:{new_circuit_engaged}, self._current_circuit_engaged:{self._current_circuit_engaged}")
             if new_circuit_engaged != self._current_circuit_engaged:
                 if self._current_circuit_engaged is not None:
                     self._running_engaged_circuits.append(self._current_circuit_engaged)
                 self._current_circuit_engaged = new_circuit_engaged
+            logging.warning(f"self._running_engaged_circuits:{self._running_engaged_circuits}")
 
         return diff
 
@@ -645,6 +647,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                                 r = await self.wait_for_status_level(
                                     ["STANDBY"], timeout=timeout_, show_alert=False, break_condition=break_condition)
+
+                                engaged_circuits_ += self._running_engaged_circuits[:]
+                                self._running_engaged_circuits = None
+                                self._current_circuit_engaged = None
+
                                 if r:
                                     outcome_ += tr_('success (step:{}) ').format(step)
                                     result_ = 'OK'
@@ -653,10 +660,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                     outcome_ += "{}, {} ".format(self.status.get("error_code"), tr_(self.status.get("error_message")))
                                     result_ = 'NOK'
                                     break
-
-                                engaged_circuits_ += self._running_engaged_circuits[:]
-                                self._running_engaged_circuits = None
-                                self._current_circuit_engaged = None
 
                             else:
                                 outcome_ += tr_('failure waiting for dispensation to start (step:{}) ').format(step)
