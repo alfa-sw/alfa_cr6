@@ -104,7 +104,7 @@ def _reformat_head_events_to_csv(temp_pth, db_session):
             csvfile, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
 
         _header = ['error_code', 'error_message', 'head name', 'date_created']
-        _keys = ['severity', 'description', 'name', 'date_created']
+        _keys = ['severity', 'description', 'source', 'date_created']
 
         _writer.writerow(_header)
         for e in db_session.query(Event).filter(Event.name == "HEAD").all():
