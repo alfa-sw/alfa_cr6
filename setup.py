@@ -60,6 +60,7 @@ def main():
             ('alfa_CR6_flask/static/images', list(glob.glob('src/alfa_CR6_flask/static/images/*'))),
             ('alfa_CR6_flask/static/remote_ui', list(glob.glob('src/alfa_CR6_flask/static/remote_ui/*.*'))),
             ('alfa_CR6_flask/static/remote_ui/images', list(glob.glob('src/alfa_CR6_flask/static/remote_ui/images/*'))),
+            ('alfa_CR6_flask/static/troubleshooting/Errore.*', list(glob.glob('src/alfa_CR6_flask/static/troubleshooting/Errore.*/*'))),
             ('alfa_CR6_flask/templates', list(glob.glob('src/alfa_CR6_flask/templates/*.html'))),
             ('alfa_CR6_flask/templates/admin', list(glob.glob('src/alfa_CR6_flask/templates/admin/*.html'))),
             ('alfa_CR6_frontend/help', list(glob.glob('src/alfa_CR6_frontend/help/*'))),

@@ -196,8 +196,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.freeze_carousel(True)
             _ = "{} ALARM. {}: {}, {}: {}".format(self.name, tr_('error_code'), status.get(
                 "error_code"), tr_('error_message'), tr_(status.get("error_message")))
+
             logging.error(_)
-            self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True)
+
+            def _ok_cb():
+                url = "http://127.0.0.1:8090/troubleshooting/{}".format(status.get("error_code"))
+                self.app.main_window.browser_page.open_page(url=url)
+
+            self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True, ok_callback=_ok_cb)
 
             try:
                 get_application_instance().insert_db_event(

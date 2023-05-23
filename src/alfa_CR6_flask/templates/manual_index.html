@@ -23,8 +23,20 @@
 		{% if manual_id %}
 		<p><a href="/manual/{{ manual_id }}">{{ name }}</a></p>
 		{% else %}
-		<h1>{{ name }}</h1>
+		<h3>{{ name }}</h3>
 		{% endif %}
 		{% endfor %}
+		<hr></hr>
+		<label>view troubleshooting info: </label>
+		<input value="" placeholder="error code" id="troubleshooting_code" onchange="load_troubleshooting_page();"></input>
+		<input type="button" onclick="load_troubleshooting_page();" value="ok"></input>
 	<body>
+	<script>
+		var load_troubleshooting_page = function()
+		{
+			var code = document.getElementById("troubleshooting_code").value;
+			var url = '/troubleshooting/' + code;
+			window.location.href = url;
+		}
+	</script>
 <html>

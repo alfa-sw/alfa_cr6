@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{ header }}</title>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link href="/static/admin/bootstrap/bootstrap3/swatch/default/bootstrap.min.css?v=3.3.5" rel="stylesheet">
+		<link href="/static/admin/bootstrap/bootstrap3/css/bootstrap-theme.min.css?v=3.3.5" rel="stylesheet">
+		<link href="/static/admin/admin/css/bootstrap3/admin.css?v=1.1.1" rel="stylesheet">
+
+		<style>
+		body {
+			padding-top: 4px;
+			text-align: center;
+			font-size: 22px;
+		}
+		#image_container {
+			width:1600px;
+			height:900px;
+			margin:0px auto;
+			background:#EEFFFF;
+			overflow:auto;
+		}
+		#image_container ul {
+			float:left;
+			margin-left:0px;
+			white-space:nowrap;
+			list-style:none;
+		}
+		#image_container li {
+			margin:0px;
+			float:left;
+			display:inline;           
+		}
+		#image_container img {
+			border:0;
+			display:block;
+		}
+		</style>
+	</head>
+	<body>
+	{% if error_directory_not_found %}
+		<h3> {{ error_directory_not_found }} </h3>
+	{% else %}
+		<div id="image_container">
+			<ul>
+			{% for f_path in image_file_list %}
+				<li><img src="{{ f_path }}" alt=""  width="1400px" height="900px"></img></li>
+			{% endfor %}
+			</ul>
+		</div>
+
+		<input type='button' value="&lt; &lt;" onclick="document.getElementById('image_container').scrollTop -= 9000;" style="width:80px;"></input>
+		<input type='button' value="&lt;" onclick="document.getElementById('image_container').scrollTop -= 900;" style="width:80px;"></input>
+		<b>{{ header }}</b>
+		<input type='button' value="&gt;" onclick="document.getElementById('image_container').scrollTop += 900;" style="width:80px;"></input>
+		<input type='button' value="&gt; &gt;" onclick="document.getElementById('image_container').scrollTop += 9000;" style="width:80px;"></input>
+
+	{% endif %}
+	<body>
+<html>

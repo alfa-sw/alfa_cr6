@@ -672,3 +672,35 @@ class AdminIndexView(flask_admin.AdminIndexView):
         # ~ logging.warning(f"html_:{html_}")
 
         return html_
+
+    @flask_admin.expose("/troubleshooting/<error_code>")
+    def troubleshooting(self, error_code):
+
+        template = "/troubleshooting.html"
+
+        here = os.path.dirname(os.path.abspath(__file__))
+        dir_path = os.path.join(here, "static", "troubleshooting", f"Errore.{error_code}")
+
+        if os.path.exists(dir_path):
+            dir_list = sorted(os.listdir(dir_path))
+            logging.warning(f"dir_list:{dir_list}")
+
+            image_file_list = [f"/static/troubleshooting/Errore.{error_code}/{f}" for f in dir_list]
+
+            logging.warning(f"image_file_list:{image_file_list}")
+
+            ctx = {
+                'error_code': error_code,
+                'image_file_list': image_file_list,
+                'header': tr_('Error:{}').format(error_code),
+            }
+
+        else:
+
+            ctx = {
+                'error_directory_not_found': tr_('troubleshooting instructions are missing for error:{}').format(error_code),
+            }
+
+        html_ = self.render(template, **ctx)
+
+        return html_
