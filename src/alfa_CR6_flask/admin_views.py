@@ -398,6 +398,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
             'alfa40_admin_url': "http://{}:{}/admin".format(request.host.split(':')[0], 8080),
             'current_language': SETTINGS.LANGUAGE,
             'language_map': LANGUAGE_MAP,
+            'in_docker': os.getenv("IN_DOCKER", False) in ['1', 'true'],
         }
 
         return self.render(template, **ctx)
@@ -496,6 +497,9 @@ class AdminIndexView(flask_admin.AdminIndexView):
                     split_ext = os.path.splitext(stream.filename)
                     logging.warning(f"stream.mimetype:{stream.mimetype}, stream.filename:{stream.filename}, split_ext:{split_ext}.")
 
+                    _in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+                    _snowball_err_str = "ERROR: UNABLE TO UPLOAD this type of file with current environment."
+
                     if "pigment_alias.json" in stream.filename.lower():
 
                         with open(os.path.join(SETTINGS.DATA_PATH, 'pigment_alias.json'), 'wb') as f:
@@ -503,20 +507,37 @@ class AdminIndexView(flask_admin.AdminIndexView):
                         flash_msgs.append("pigment alias overwritten. {}".format(stream.filename))
 
                     elif "app_settings.py" in stream.filename.lower():
-                        with open(os.path.join(SETTINGS.CONF_PATH, 'app_settings.py'), 'wb') as f:
-                            f.write(stream.read())
-                        flash_msgs.append("app settings overwritten. {}".format(stream.filename))
+                        if _in_docker:
+                            flash_msgs.append(_snowball_err_str)
+                        else:
+                            with open(os.path.join(SETTINGS.CONF_PATH, 'app_settings.py'), 'wb') as f:
+                                f.write(stream.read())
+                            flash_msgs.append("app settings overwritten. {}".format(stream.filename))
 
                     elif "data_and_conf.zip" in stream.filename.lower():
-                        temp_pth = os.path.join(SETTINGS.TMP_PATH, "data_and_conf.zip")
-                        dest_pth = os.path.join(SETTINGS.CONF_PATH, "..")
-                        with open(temp_pth, 'wb') as f:
-                            f.write(stream.read())
-                        cmd_ = f"sudo chown -R admin:admin {SETTINGS.CONF_PATH}"
-                        subprocess.run(cmd_, check=False, shell=True)
-                        unzip_to_dir(dest_dir=dest_pth, source_path=temp_pth)
-                        subprocess.run(cmd_, check=False, shell=True)
-                        flash_msgs.append(f'unzipped settings from:{stream.filename} to :{dest_pth}.')
+                        if _in_docker:
+                            flash_msgs.append(_snowball_err_str)
+                        else:
+                            temp_pth = os.path.join(SETTINGS.TMP_PATH, "data_and_conf.zip")
+                            dest_pth = os.path.join(SETTINGS.CONF_PATH, "..")
+                            with open(temp_pth, 'wb') as f:
+                                f.write(stream.read())
+                            cmd_ = f"sudo chown -R admin:admin {SETTINGS.CONF_PATH}"
+                            subprocess.run(cmd_, check=False, shell=True)
+                            unzip_to_dir(dest_dir=dest_pth, source_path=temp_pth)
+                            subprocess.run(cmd_, check=False, shell=True)
+                            flash_msgs.append(f'unzipped settings from:{stream.filename} to :{dest_pth}.')
+
+                    elif "data.zip" in stream.filename.lower():
+                        if not _in_docker:
+                            flash_msgs.append(_snowball_err_str)
+                        else:
+                            temp_pth = os.path.join(SETTINGS.TMP_PATH, "data.zip")
+                            dest_pth = os.path.join(SETTINGS.CONF_PATH, "..")
+                            with open(temp_pth, 'wb') as f:
+                                f.write(stream.read())
+                            unzip_to_dir(dest_dir=dest_pth, source_path=temp_pth)
+                            flash_msgs.append(f'unzipped settings from:{stream.filename} to :{dest_pth}.')
 
                     elif split_ext[1:] and split_ext[1] == '.png':
                         dest_pth = os.path.join(SETTINGS.CUSTOM_PATH, "browser_btn.png")
@@ -572,6 +593,11 @@ class AdminIndexView(flask_admin.AdminIndexView):
             logging.warning(f"data_set_name_lower({len(data_set_name_lower)}):{data_set_name_lower}.")
             if data_set_name_lower == 'full_db':
                 file_to_send = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
+                out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
+            elif data_set_name_lower == 'data.zip':
+                temp_pth = os.path.join(SETTINGS.TMP_PATH, "data.zip")
+                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.DATA_PATH, exclude_patterns=("webengine", "cache", "back", "temp"), mode="a")
+                file_to_send = temp_pth
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             elif data_set_name_lower == 'data_and_conf.zip':
                 temp_pth = os.path.join(SETTINGS.TMP_PATH, "data_and_conf.zip")
