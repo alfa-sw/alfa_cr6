@@ -181,6 +181,7 @@ class Base_ModelView(ModelView):
         'json_properties',)
 
 class EventModelView(Base_ModelView):
+
     column_filters = (
         'name',
         'level',
@@ -683,11 +684,8 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
         if os.path.exists(dir_path):
             dir_list = sorted(os.listdir(dir_path))
-            logging.warning(f"dir_list:{dir_list}")
 
             image_file_list = [f"/static/troubleshooting/Errore.{error_code}/{f}" for f in dir_list]
-
-            logging.warning(f"image_file_list:{image_file_list}")
 
             ctx = {
                 'error_code': error_code,

@@ -31,8 +31,7 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QFrame,
     QTableWidgetItem,
-    QCompleter,
-    QAbstractItemView)
+    QCompleter)
 
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
@@ -42,18 +41,23 @@ from alfa_CR6_backend.globals import get_res, tr_
 
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
 
-    def enable_buttons(self, flag_ok, flag_esc):
+    def enable_buttons(self, flag_ok, flag_esc, flag_hp=True):
         for i, b in enumerate(self.buttons()):
             if i == 0:
                 b.setEnabled(flag_esc)
-            elif i == 1:
+            elif i == 1 and len(self.buttons()) == 3:
+                b.setEnabled(flag_hp)
+            else:
                 b.setEnabled(flag_ok)
 
-    def __init__(self, msg="", title="", parent=None, ok_callback=None, ok_callback_args=None):   # pylint: disable=too-many-arguments
+    def __init__(self, msg="", title="", parent=None, ok_callback=None, ok_callback_args=None, hp_callback=None):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
 
         self.ok_callback = ok_callback
         self.ok_callback_args = ok_callback_args
+        self.hp_callback = hp_callback
+
+        self.help_icon = QPixmap(get_res("IMAGE", "help.png"))
 
         self.setStyleSheet(
             """
@@ -72,7 +76,10 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         # ~ Qt::WindowModal	1	The window is modal to a single window hierarchy and blocks input to its parent window, all grandparent windows, and all siblings of its parent and grandparent windows.
         # ~ Qt::ApplicationModal	2	The window is modal to the application and blocks input to all windows.
 
-        self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+        if self.hp_callback:
+            self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Help | QMessageBox.Ok)
+        else:
+            self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
         # ~ self.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
 
         self.resize(800, 400)
@@ -81,17 +88,18 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             if i == 0:
                 b.setObjectName('esc')
                 b.setText(tr_(' Cancel '))
-                style_ = getattr(QStyle, "SP_MessageBoxCritical")
-            elif i == 1:
+                icon_ = self.parent().style().standardIcon(getattr(QStyle, "SP_MessageBoxCritical"))
+            elif i == 1 and len(self.buttons()) == 3:
+                b.setObjectName('help')
+                b.setText(tr_(' Info '))
+                icon_ = QIcon(self.help_icon)
+            else:
                 b.setObjectName('ok')
                 b.setText(tr_('   OK   '))
-                style_ = getattr(QStyle, "SP_DialogYesButton")
+                icon_ = self.parent().style().standardIcon(getattr(QStyle, "SP_DialogYesButton"))
 
             b.setStyleSheet("""QWidget {font-size: 48px; font-family:Monospace;}""")
-            b.setIcon(
-                self.parent()
-                .style()
-                .standardIcon(style_))
+            b.setIcon(icon_)
             b.resize(300, 80)
 
         self.setWindowModality(0)
@@ -102,15 +110,20 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             | Qt.X11BypassWindowManagerHint
         )
 
-        if self.ok_callback:
+        if self.ok_callback or self.hp_callback:
             def on_button_clicked(btn):
-                logging.warning(f"btn:{btn}, btn.text():{btn.text()}")
+
+                btn_name = btn.objectName().lower()
+                logging.warning(f"btn_name:{btn_name}, btn:{btn}, btn.text():{btn.text()}")
                 # ~ logging.warning(f"self.buttons().index(btn):{self.buttons().index(btn)}")
 
                 # ~ if "ok" in btn.text().lower():
-                if "ok" in btn.objectName().lower():
+                if self.ok_callback and "ok" in btn_name:
                     args_ = self.ok_callback_args if self.ok_callback_args is not None else []
                     self.ok_callback(*args_)
+
+                if self.hp_callback and "help" in btn_name:
+                    self.hp_callback()
 
             self.buttonClicked.connect(on_button_clicked)
 
@@ -489,6 +502,8 @@ class InputDialog(BaseDialog):
         self.__ok_cb_args = None
         self.ok_on_enter = None
 
+        self.choices = []
+
         # ~ self.ok_button.clicked.connect(self.hide)
 
     def get_selected_choice(self):
@@ -500,7 +515,7 @@ class InputDialog(BaseDialog):
 
         return self.content_container.toPlainText()
 
-    def on_combo_box_index_changed(self, index):
+    def on_combo_box_index_changed(self, index): # pylint: disable=unused-argument
 
         txt_ = self.combo_box.currentText()
         self.content_container.setText(txt_)
@@ -583,7 +598,7 @@ class InputDialog(BaseDialog):
             self.__ok_cb_args = ok_cb_args
 
         if bg_image is None:
-            css_ = f'background-image:;'
+            css_ = 'background-image:;'
         else:
             css_ = f"background-image:url({bg_image});background-repeat:no-repeat;background-position:center;"
             self.content_container.resize(self.content_container.width(), 400)
