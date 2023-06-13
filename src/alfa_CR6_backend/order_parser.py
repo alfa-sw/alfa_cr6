@@ -382,7 +382,10 @@ weight:{RealWeight}
             brand = meta.get("brand", '')
             quality = meta.get("quality", '')
             colorCode = meta.get("colorCode", '')
-            quantity = round(float(meta.get("quantity(l)", 0)), 3)
+            qtty = meta.get("quantity(l)")
+            if qtty is None:
+                qtty = meta.get("quantity", 0)
+            quantity = round(float(qtty), 3)
             date_time = str(time.asctime())
 
             if properties.get("extra_lines_to_print") is None:
