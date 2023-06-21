@@ -18,7 +18,7 @@ import time
 from types import SimpleNamespace
 
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QEvent
 from PyQt5.Qt import QUrl
 from PyQt5.QtWebEngineWidgets import (
     QWebEngineView,
@@ -300,6 +300,7 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         logging.warning(f"self.q_url:{self.q_url}.")
 
         self.webengine_view = QWebEngineView(self)
+        self.webengine_view.installEventFilter(self)
 
         self.webengine_view.setPage(self._webengine_page)
         self._webengine_page.setView(self.webengine_view)
@@ -310,6 +311,27 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
 
         self.webengine_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
         self.webengine_view.show()
+
+    def eventFilter(self, source, event):
+
+        if (event.type() == QEvent.ChildAdded and source is self.webengine_view and event.child().isWidgetType()):
+            self._glwidget = event.child()
+            self._glwidget.installEventFilter(self)
+
+        if time.time() - self.block_mouse_events_start_time > 3:
+            self.block_mouse_events_flag = False
+            self.block_mouse_events_start_time = float("inf")
+            logging.warning(f'BrowserPage unblocking events.')
+
+        if (event.type() == QEvent.MouseButtonPress and source is self._glwidget) and self.block_mouse_events_flag:
+            logging.warning(f'event blocked. event.pos():{event.pos()}, event:{event}')
+            ret = True
+        else:
+            ret = super().eventFilter(source, event)
+
+        # ~ logging.warning(f'ret:{ret}')
+        return ret
+
 
     def __init__(self, *args, **kwargs):
 
@@ -333,6 +355,9 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
         self.q_url = QUrl(url)
         self.webengine_view = None
+        self._glwidget = None
+        self.block_mouse_events_flag = False
+        self.block_mouse_events_start_time = float("inf")
 
         self.current_head_index = None
         if self.refill_label:
@@ -350,6 +375,10 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         url_ = self.webengine_view.url().toString()
         self.url_lbl.setText('<div style="font-size: 10pt; background-color: #EEEEFF;">{} {} ({})</div>'.format(
             self.start_load, url_, self.__load_progress))
+
+        self.block_mouse_events_flag = True
+        self.block_mouse_events_start_time = time.time()
+        logging.warning(f'BrowserPage blocking events.')
 
     def __on_load_progress(self):
         self.__load_progress += 1
@@ -395,4 +424,3 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             self.print_label.raise_()
         else:
             self.print_label.hide()
-
