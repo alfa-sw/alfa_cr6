@@ -28,9 +28,9 @@ from alfa_CR6_frontend.dialogs import (
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
-    ActionPage,
     HelpPage)
 
+from alfa_CR6_frontend.action_page import ActionPage
 from alfa_CR6_frontend.browser_page import BrowserPage
 from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads)
 
