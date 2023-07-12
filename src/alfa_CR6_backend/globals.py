@@ -51,12 +51,18 @@ LANGUAGE_MAP = {
 
 _ALFA_SN = None
 
+DEFAULT_DEBUG_PAGE_PWD = 'alfa'
+
+
 def get_application_instance():
 
     from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module, import-outside-toplevel
     return QApplication.instance()
 
 def get_alfa_serialnumber():
+
+    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+        return os.getenv("MACHINE_SN", "00000000")
 
     global _ALFA_SN    # pylint: disable=global-statement
 
@@ -89,18 +95,52 @@ def get_alfa_serialnumber():
 
 
 def set_language(lang):
+    if lang not in list(LANGUAGE_MAP.values()):
+        logging.error("unsupported language")
+        return
 
-    if lang in list(LANGUAGE_MAP.values()):
+    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+        s = import_settings()
+        fn = s.USER_SETTINGS_JSON_FILE
+        us = s.USER_SETTINGS
+        us['LANGUAGE'] = lang
+        save_user_settings(fn, us)
+    else:
         cmd_ = f"""sed -i 's/LANGUAGE.=.".."/LANGUAGE = "{lang}"/g' /opt/alfa_cr6/conf/app_settings.py"""
         os.system(cmd_)
-        os.system("kill -9 {}".format(os.getpid()))
 
+    os.system("kill -9 {}".format(os.getpid()))
+
+def save_user_settings(filename, user_settings_dict):
+    try:
+       with open(filename, "w") as f:
+           f.write(json.dumps(user_settings_dict))
+    except:
+        logging.error("unable to save user settings")
+        traceback.print_exc(file=sys.stderr)
 
 def import_settings():
 
     sys.path.append(CONF_PATH)
     import app_settings  # pylint: disable=import-error,import-outside-toplevel
     sys.path.remove(CONF_PATH)
+    
+    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+        fn = app_settings.USER_SETTINGS_JSON_FILE
+        logging.info(f"importing user settings from {fn}")
+        try:
+            user_config_dict = {}
+            with open(fn, "r") as f:
+                user_settings_dict = json.load(f)
+        except:
+            logging.error(f"user setting file {fn} loading failed, use defaults")
+            user_settings_dict = app_settings.DEFAULT_USER_SETTINGS
+            save_user_settings(fn, user_settings_dict)
+
+        for el_name, value in user_settings_dict.items():
+            app_settings.__dict__[el_name] = value
+        
+        app_settings.__dict__['USER_SETTINGS']  = user_settings_dict
 
     for pth in (app_settings.LOGS_PATH,
                 app_settings.TMP_PATH,

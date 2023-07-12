@@ -186,7 +186,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             args, fmt = (self.name, self.low_level_pipes), "{} Please, Check Pipe Levels: low_level_pipes:{}"
             self.app.main_window.open_alert_dialog(args, fmt=fmt)
 
-    async def update_status(self, status):   # pylint: disable=too-many-branches
+    async def update_status(self, status): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         logging.debug("status:{}".format(status))
 
@@ -199,8 +199,20 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.freeze_carousel(True)
             _ = "{} ALARM. {}: {}, {}: {}".format(self.name, tr_('error_code'), status.get(
                 "error_code"), tr_('error_message'), tr_(status.get("error_message")))
+
             logging.error(_)
-            self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True)
+
+            here = os.path.dirname(os.path.abspath(__file__))
+            dir_path = os.path.join(here, "..", "alfa_CR6_flask", "static", "troubleshooting", f"Errore.{status.get('error_code')}")
+
+            if os.path.exists(dir_path) and self.app.settings.TROUBLESHOOTING:
+                def _cb():
+                    url = "http://127.0.0.1:8090/troubleshooting/{}".format(status.get("error_code"))
+                    self.app.main_window.browser_page.open_page(url=url)
+            else:
+                _cb = None
+
+            self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True, hp_callback=_cb)
 
             try:
                 get_application_instance().insert_db_event(

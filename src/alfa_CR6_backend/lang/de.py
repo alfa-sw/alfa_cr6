@@ -136,7 +136,7 @@ D = {
     'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})': 'Pastastand nicht ausreichend für Barcode {}.\n Bitte die Pasten: {} auffüllen. ({}/{})',
     "\nOtherwise the can's status will be marked as ERROR.": "\nAndernfalls wird der Status der Dose als ERROR markiert.",
     'Please, insert below the number of jars.': "Bitte die Nummer der Dosen eingeben.",
-    'barcode:{} error in STEP {}. I will retry.': "Barcode:{} Positionsfehler {}. Neuer Versuch.",
+    'barcode:{} error in {}. I will retry.': "Barcode:{} Positionsfehler {}. Neuer Versuch.",
     'modified.': "geändert.",
     'output roller is busy.': "Ausgangsrollenbahn eingesetzt.",
     "order nr.": "Auftragsnr.",
@@ -182,18 +182,19 @@ D = {
 
     "{} product(s) missing:": "{} fehlende(s) Produkt:",
 
-    "adjusted_levels": "adjusted_levels",
-    "please, input barcode for refill": "please, input barcode for refill",
-    ". RESET head: {} ?": ". RESET head: {} ?",
-    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.",
-    "refilling with {} ({}) would exceed maximum level! Aborting.": "refilling with {} ({}) would exceed maximum level! Aborting.",
+    "adjusted_levels": "bereinigte_Levels",
+    "please, input barcode for refill": "bitte Barcode zum Nachfüllen eingeben",
+    ". RESET head: {} ?": ". RESET Kopf: {} ?",
+    "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "bitte bestätigen Sie das Nachfüllen von Rohr: {} <br>mit {} ({}) des Produkts: {}?.",
+    "refilling with {} ({}) would exceed maximum level! Aborting.": "Nachfüllen mit {} ({}) würde den Höchstwert überschreiten! Abbruch.",
     "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.": 
-        "please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list.",
+        "Bitte, Menge eingeben (in {}) des Produkts: {}<br> zum Nachfüllen von Rohr: {} (derzeitige Höhe:{}),<br> Belassen Sie es bei einer vollständigen Auffüllung oder wählen Sie aus der Liste.",
 
-    "barcode mismatch <br/>{} != {}": "barcode mismatch <br/>{} != {}",
-    "please, verify barcode {} on canister.": "please, verify barcode {} on canister.",
-    "barcode not known:{}": "barcode not known:{}",
-    "please, enter service password": "please, enter service password",
+    "barcode mismatch <br/>{} != {}": "Barcode-Unstimmigkeit <br/>{} != {}",
+    "please, verify barcode {} on canister.": "Bitte überprüfen Sie den Barcode {} auf dem Kanister.",
+    "barcode not known:{}": "Barcode nicht bekannt:{}",
+    "please, enter service password": "bitte Service-Passwort eingeben",
+    "barcode:{} error in {}. Can is removed." : "barcode:{} fehler in {}. Dose wurde entfernt.",
 }
 
 

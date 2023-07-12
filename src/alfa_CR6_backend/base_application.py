@@ -526,6 +526,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                     if not self.__modal_freeze_msgbox:
                         self.__modal_freeze_msgbox = ModalMessageBox(parent=self.main_window, msg=msg, title="ALERT")
+                        self.__modal_freeze_msgbox.move(self.__modal_freeze_msgbox.geometry().x(), 20)
                     else:
                         self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
                         self.__modal_freeze_msgbox.show()
@@ -1028,6 +1029,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         for k in list(ingredient_volume_map.keys()):
             if not ingredient_volume_map[k]:
                 ingredient_volume_map.pop(k)
+
+        if jar_json_properties.get("start_ingredient_volume_map") is None:
+            jar_json_properties["start_ingredient_volume_map"] = ingredient_volume_map
 
         jar_json_properties["ingredient_volume_map"] = ingredient_volume_map
         jar_json_properties["insufficient_pigments"] = insufficient_pigments

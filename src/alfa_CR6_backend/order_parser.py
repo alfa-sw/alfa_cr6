@@ -382,11 +382,15 @@ weight:{RealWeight}
             brand = meta.get("brand", '')
             quality = meta.get("quality", '')
             colorCode = meta.get("colorCode", '')
-            quantity = round(float(meta.get("quantity(l)", 0)), 3)
+            qtty = meta.get("quantity(l)")
+            if qtty is None:
+                qtty = meta.get("quantity", 0)
+            quantity = round(float(qtty), 3)
             date_time = str(time.asctime())
 
-            properties["extra_lines_to_print"] = [f"{brand} - {quality}",
-                                                  f"{colorCode} - {quantity}", f"{batchId}", f"{date_time}"]
+            if properties.get("extra_lines_to_print") is None:
+                properties["extra_lines_to_print"] = [f"{brand} - {quality}",
+                                                      f"{colorCode} - {quantity}", f"{batchId}", f"{date_time}"]
 
         logging.info(f"properties:{properties}")
         return properties
@@ -1275,7 +1279,10 @@ weight:{RealWeight}
             elif toks[1:]:
                 new_item = {}
                 new_item["pigment_name"] = v['codice'].split('.')[1]
-                new_item["weight(g)"] = round(float(v['peso']) / 10., 4)
+                if v.get('peso') is not None:
+                    new_item["weight(g)"] = round(float(v['peso']) / 10., 4)
+                else:
+                    new_item["weight(g)"] = round(float(v['pesoc']) / 100., 4)
                 ingredients.append(new_item)
 
         properties['extra_lines_to_print'] = extra_lines_to_print

@@ -141,7 +141,7 @@ D = {
     "\nOtherwise the can's status will be marked as ERROR.":
         "\n그렇지 않으면 캔의 상태가 오류로 표시됩니다.",
     "Please, insert below the number of jars.": "몇 개의 바코드를 생성하시겠습니까?",
-    "barcode:{} error in STEP {}. I will retry.": "바코드 {}가 {}단계에서 오류 상태입니다. 재시도하겠습니다",
+    "barcode:{} error in {}. I will retry.": "바코드 {}가 {}단계에서 오류 상태입니다. 재시도하겠습니다",
     "modified.": "변경되었습니다",
     "output roller is busy.": "배출구 롤러에 이미 어댑터가 있습니다",
     "order nr.": "주문번호",
@@ -204,6 +204,7 @@ D = {
     "please, verify barcode {} on canister.": "please, verify barcode {} on canister.",
     "barcode not known:{}": "barcode not known:{}",
     "please, enter service password": "please, enter service password",
+    "barcode:{} error in {}. Can is removed." : "barcode:{} error in {}. Can is removed.",
 }
 
 D.update(error_kr.D)

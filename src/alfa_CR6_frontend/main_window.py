@@ -19,7 +19,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from alfa_CR6_backend.globals import (
-    get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP)
+    get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP, DEFAULT_DEBUG_PAGE_PWD)
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
@@ -349,7 +349,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     self.toggle_keyboard(on_off=True)
 
                     def ok_cb_():
-                        debug_page_pwd = 'alfa'
+                        debug_page_pwd = DEFAULT_DEBUG_PAGE_PWD
                         if hasattr(self.settings, 'DEBUG_PAGE_PWD') and self.settings.DEBUG_PAGE_PWD:
                             debug_page_pwd = self.settings.DEBUG_PAGE_PWD
 
@@ -397,41 +397,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         for action_frame in self.action_frame_map.values():
             if action_frame.isVisible():
-                for i in range(action_frame.action_labels_layout.count()):
-                    lbl = action_frame.action_labels_layout.itemAt(i).widget()
-                    if hasattr(lbl, "show_val"):
-                        getattr(lbl, "show_val")()
-
-        def _set_label_text(lbl, head_letter):
-
-            m = QApplication.instance().get_machine_head_by_letter(head_letter)
-            if m and m.status.get("status_level") is not None:
-                status_level = m.status.get("status_level")
-                crx_outputs = m.status.get('crx_outputs_status', -1)
-                jar_ph_ = m.status.get("jar_photocells_status", -1)
-
-                txt_ = "{}".format(tr_(f"{status_level}"))
-                txt_ += "<br/><small>{:04b} {:04b}</small>\n".format(
-                    0xF & (crx_outputs >> 4), 0xF & (crx_outputs >> 0))
-                txt_ += '<br/><small>{:04b} {:04b} {:04b} </small>'.format(
-                    0xF & (jar_ph_ >> 8), 0xF & (jar_ph_ >> 4), 0xF & (jar_ph_ >> 0))
-                lbl.setText(txt_)
-                lbl.show()
-            else:
-                lbl.hide()
-
-        for action_frame in self.action_frame_map.values():
-            if action_frame.isVisible():
-                for w, l in[(action_frame.status_A_label, 'A'),
-                            (action_frame.status_B_label, 'B'),
-                            (action_frame.status_C_label, 'C'),
-                            (action_frame.status_D_label, 'D'),
-                            (action_frame.status_E_label, 'E'),
-                            (action_frame.status_F_label, 'F')]:
-
-                    # ~ logging.warning(f"w:{w}, l:{l}")
-                    if w:
-                        _set_label_text(w, l)
+                action_frame.show_values_in_labels()
 
     def update_status_data(self, head_index, _=None):
 
@@ -517,7 +483,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         return len(self._open_alert_dialog_list)
 
     def open_alert_dialog(  # pylint: disable=too-many-arguments
-            self, args, title="ALERT", fmt=None, callback=None, cb_args=None):
+            self, args, title="ALERT", fmt=None, callback=None, cb_args=None, hp_callback=None):
 
         self.check_alert_dialogs(close_all=False)
 
@@ -529,7 +495,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             msg_ = ''
         json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}, indent=2, ensure_ascii=False)
 
-        _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args)
+        _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args, hp_callback=hp_callback)
 
         while len(self._open_alert_dialog_list) >= 5:
             logging.warning(f"len(self._open_alert_dialog_list):{len(self._open_alert_dialog_list)}")
@@ -548,18 +514,22 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             json_properties=json_properties_,
             description=f"{msg_ or msg}")
 
-    def open_frozen_dialog(self, msg, title="ALERT", force_explicit_restart=False):
+    def open_frozen_dialog( # pylint: disable=too-many-arguments
+            self, msg, title="ALERT", force_explicit_restart=False, ok_callback=None, hp_callback=None):
 
         logging.info(msg)
         msg_ = tr_("carousel is paused.")
         msg_ += f'\n------------------------------\n"{msg}"\n------------------------------\n'
         if force_explicit_restart:
-            self.open_alert_dialog(msg_, title=title)
+            # ~ self.open_alert_dialog(msg_, title=title)
+            callback = ok_callback
+            cb_args = []
+            self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args, hp_callback=hp_callback)
         else:
             msg_ += tr_("hit 'OK' to unfreeze it")
             callback = QApplication.instance().freeze_carousel
             cb_args = [False, ]
-            self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args)
+            self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args, hp_callback=hp_callback)
 
     def show_barcode(self, barcode, is_ok=False):
 

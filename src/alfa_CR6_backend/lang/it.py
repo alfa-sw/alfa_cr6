@@ -135,7 +135,7 @@ D = {
     'Missing material for barcode {}.\n please refill pigments:{}. ({}/{})': 'Livello pasta insufficente per il codice a barre {}.\n prego rabboccare le paste:{}. ({}/{})',
     "\nOtherwise the can's status will be marked as ERROR.": "\nAltrimenti lo stato del barattolo sara impostato a 'ERROR'.",
     'Please, insert below the number of jars.': 'Prego, inserire il numero di barattoli.',
-    'barcode:{} error in STEP {}. I will retry.': 'codice a barre:{} errore in posizione {}. nuovo tentativo.',
+    'barcode:{} error in {}. I will retry.': 'codice a barre:{} errore in posizione {}. nuovo tentativo.',
     'modified.': 'modificato.',
     'output roller is busy.': "rulliera d'uscita impegnata.",
     "order nr.": "num. ordine",
@@ -200,6 +200,7 @@ D = {
     "please, verify barcode {} on canister.": "prego, scannerizza il barcode {} sul canestro.",
     "barcode not known:{}": "barcode non corretto:{}",
     "please, enter service password": "prego, inserisci la password per il service",
+    "barcode:{} error in {}. Can is removed." : "barcode:{} errore in {}. Rimuovere il barattolo.",
 }
 
 

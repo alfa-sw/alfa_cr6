@@ -131,6 +131,12 @@
                     "description"
                 ]
             }
+        },
+        "extra_lines_to_print": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
         }
     },
     "required": [

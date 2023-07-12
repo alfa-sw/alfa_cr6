@@ -16,6 +16,8 @@ from flask import Flask  # pylint: disable=import-error
 import flask_sqlalchemy  # pylint: disable=import-error
 import flask_admin  # pylint: disable=import-error
 
+from flask_admin.base import MenuLink, Admin # pylint: disable=import-error
+
 from waitress import serve       # pylint: disable=import-error
 
 from alfa_CR6_backend.globals import import_settings
@@ -52,6 +54,8 @@ def init_admin(app, db):
     admin_.add_view(JarModelView(Jar, db.session, "Can"))
     admin_.add_view(EventModelView(Event, db.session))
     admin_.add_view(DocumentModelView(Document, db.session))
+
+    admin_.add_link(MenuLink(name=_gettext('Manuals'), url='/manual_index'))
 
     return admin_
 
