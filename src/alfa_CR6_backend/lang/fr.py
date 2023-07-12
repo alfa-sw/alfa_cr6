@@ -195,6 +195,9 @@ D = {
     "barcode not known:{}": "code barre inconnu:{}",
     "please, enter service password": "s'il vous plaît, entrez le mot de passe du service",
     "barcode:{} error in {}. Can is removed." : "code-barres:{} erreur dans {}. La pot est supprimee.",
+
+    "please, confirm printing label<br>{} {} {}.": "Veuillez confirmer l'impression de l'étiquette<br>{} {} {}.",
+    "please, choose a circuit to print the corresponding label.": "choisir un circuit pour imprimer l'étiquette correspondante.",
 }
 
 

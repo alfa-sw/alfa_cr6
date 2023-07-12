@@ -724,11 +724,15 @@ class HomePage(BaseStackedPage):
             barcode_txt = selected_.get('barcode_txt', '')
             pigment_name = selected_['pigment_name']
             pipe_name = selected_['pipe_name']
-            res = dymo_print_pigment_label(barcode_txt, pigment_name, pipe_name)
-            logging.warning(f"res:{res}")
+            ret = dymo_print_pigment_label(barcode_txt, pigment_name, pipe_name)
+            logging.warning(f"ret:{ret}")
+            if ret['result'] != 'OK':
+                msg_ = f"{ret}"
+            else:
+                msg_ = tr_("OK")
             QApplication.instance().main_window.open_input_dialog(
                 icon_name="SP_MessageBoxQuestion",
-                message=f"{res}",
+                message=msg_,
                 content=None,
                 bg_image=TMP_PIGMENT_IMAGE)
 
