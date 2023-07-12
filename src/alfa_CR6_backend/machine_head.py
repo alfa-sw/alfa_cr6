@@ -76,6 +76,26 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
+    def get_pigment_name_by_circuit_id(self, circuit_id):
+
+        base_pipe_id_name_map = { i: "B%02d"%(i + 1) for i in range(0, 8)}
+        colorant_pipe_id_name_map = { i: "C%02d"%(i - 7) for i in range(8, 32)}
+
+        pipe_id_name_map = base_pipe_id_name_map
+        pipe_id_name_map.update(colorant_pipe_id_name_map)
+
+        ret = None
+        pipe_name = pipe_id_name_map.get(circuit_id)
+        for pig in self.pigment_list:
+            for pipe in pig["pipes"]:
+                if pipe["name"] == pipe_name:
+                    ret = pig["name"]
+                    break
+            if ret is not None:
+                break
+
+        return ret
+
     def get_specific_weight(self, pigment_name):
 
         specific_weight = -1
@@ -294,12 +314,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         # ~ logging.warning("self.jar_photocells_status:{}".format(self.jar_photocells_status))
 
-        if (status.get("status_level") == "DISPENSING" and self._running_engaged_circuits is not None):
+        # ~ if (status.get("status_level") == "DISPENSING" and self._running_engaged_circuits is not None):
+        if status.get("status_level") == "DISPENSING":
             new_circuit_engaged = status.get("circuit_engaged")
             logging.warning(f"new_circuit_engaged:{new_circuit_engaged}, self._current_circuit_engaged:{self._current_circuit_engaged}")
-            if new_circuit_engaged != self._current_circuit_engaged:
-                if self._current_circuit_engaged is not None:
-                    self._running_engaged_circuits.append(self._current_circuit_engaged)
+            # ~ check only for transitions (x --> 0) where (x != 0), <==> x was engaged successfully
+            if new_circuit_engaged != self._current_circuit_engaged: 
+                if new_circuit_engaged == 0:
+                    if self._current_circuit_engaged:
+                        self._running_engaged_circuits.append(self._current_circuit_engaged)
                 self._current_circuit_engaged = new_circuit_engaged
             logging.warning(f"self._running_engaged_circuits:{self._running_engaged_circuits}")
 
@@ -708,7 +731,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 json_properties.setdefault("dispensation_outcomes", [])
                 json_properties["dispensation_outcomes"].append((self.name, outcome_))
                 json_properties.setdefault("engaged_circuits", [])
+                json_properties.setdefault("dispensed_pigments", [])
                 json_properties["engaged_circuits"].append((self.name, engaged_circuits_))
+                dispensed_pigments = [self.get_pigment_name_by_circuit_id(ec) for ec in engaged_circuits_]
+                json_properties["dispensed_pigments"].append((self.name, dispensed_pigments))
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
                 self.app.update_jar_properties(jar)

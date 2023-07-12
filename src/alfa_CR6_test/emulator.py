@@ -285,13 +285,30 @@ class MachineHeadMockup:
                 logging.error(traceback.format_exc())
             logging.warning(f"pipes_:{pipes_}")
 
+            async def simulate_circuit_engagement():
+                for p in pipes_:
+                    
+                    pars = {"circuit_engaged": p[0]}
+                    logging.warning(f"pars:{pars}")
+                    await self.update_status(params=pars)
+                    await asyncio.sleep(2)
+
+                    pars = {"circuit_engaged": 0}
+                    logging.warning(f"pars:{pars}")
+                    await self.update_status(params=pars)
+                    await asyncio.sleep(2)
+
+            asyncio.ensure_future(simulate_circuit_engagement())
+
             await self.do_move(duration=0.5, tgt_level="DISPENSING")
+
             if 'failure' in sys.argv:
                 await asyncio.sleep(3)
                 await self.update_status(
                     params={"status_level": "ALARM", "error_code": 0xFF, "error_message": "******",})
             else:
-                await self.do_move(duration=5, tgt_level="STANDBY")
+                await self.do_move(duration=1.0 + 4 * len(pipes_), tgt_level="STANDBY")
+
         elif msg_out_dict["command"] == "RESET":
 
             if self.index == 5:
