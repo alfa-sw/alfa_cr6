@@ -76,10 +76,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     def __str__(self):
         return f"[{self.index}:{self.name}]"
 
-    def get_pigment_name_by_circuit_id(self, circuit_id):
+    def get_names_by_circuit_id(self, circuit_id):
 
-        base_pipe_id_name_map = { i: "B%02d"%(i + 1) for i in range(0, 8)}
-        colorant_pipe_id_name_map = { i: "C%02d"%(i - 7) for i in range(8, 32)}
+        base_pipe_id_name_map = {i: "B%02d" % (i + 1) for i in range(0, 8)}
+        colorant_pipe_id_name_map = {i: "C%02d" % (i - 7) for i in range(8, 32)}
 
         pipe_id_name_map = base_pipe_id_name_map
         pipe_id_name_map.update(colorant_pipe_id_name_map)
@@ -89,7 +89,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         for pig in self.pigment_list:
             for pipe in pig["pipes"]:
                 if pipe["name"] == pipe_name:
-                    ret = pig["name"]
+                    ret = (pipe["name"], pig["name"])
                     break
             if ret is not None:
                 break
@@ -149,7 +149,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             with open(pth_, "w", encoding='UTF-8') as f:
                 json.dump(machine_config, f, indent=2)
 
-
     async def update_tintometer_data(self, invalidate_cache=True, silent=1):
 
         # ~ logging.warning(
@@ -165,19 +164,19 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 for pig in ret.get("objects", []):
 
                     enabled_and_synced_pipes = [pipe
-                        for pipe in pig["pipes"]
-                        if pipe["enabled"] and pipe["sync"]]
+                                                for pipe in pig["pipes"]
+                                                if pipe["enabled"] and pipe["sync"]]
 
                     if enabled_and_synced_pipes:
                         pigment_list.append(pig)
 
                         not_low_level_pipes = [pipe
-                            for pipe in enabled_and_synced_pipes
-                            if pipe["current_level"] > pipe["reserve_level"]]
+                                               for pipe in enabled_and_synced_pipes
+                                               if pipe["current_level"] > pipe["reserve_level"]]
 
                         if not not_low_level_pipes:
                             low_level_pipes += [(pipe["name"], pig["name"])
-                                for pipe in enabled_and_synced_pipes]
+                                                for pipe in enabled_and_synced_pipes]
 
             ret = await self.call_api_rest("apiV1/package", "GET", {})
             if ret:
@@ -206,7 +205,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             args, fmt = (self.name, self.low_level_pipes), "{} Please, Check Pipe Levels: low_level_pipes:{}"
             self.app.main_window.open_alert_dialog(args, fmt=fmt)
 
-    async def update_status(self, status): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    async def update_status(self, status):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         logging.debug("status:{}".format(status))
 
@@ -223,7 +222,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             logging.error(_)
 
             here = os.path.dirname(os.path.abspath(__file__))
-            dir_path = os.path.join(here, "..", "alfa_CR6_flask", "static", "troubleshooting", f"Errore.{status.get('error_code')}")
+            dir_path = os.path.join(
+                here,
+                "..",
+                "alfa_CR6_flask",
+                "static",
+                "troubleshooting",
+                f"Errore.{status.get('error_code')}")
 
             if os.path.exists(dir_path) and self.app.settings.TROUBLESHOOTING:
                 def _cb():
@@ -317,14 +322,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ if (status.get("status_level") == "DISPENSING" and self._running_engaged_circuits is not None):
         if status.get("status_level") == "DISPENSING":
             new_circuit_engaged = status.get("circuit_engaged")
-            logging.warning(f"new_circuit_engaged:{new_circuit_engaged}, self._current_circuit_engaged:{self._current_circuit_engaged}")
-            # ~ check only for transitions (x --> 0) where (x != 0), <==> x was engaged successfully
-            if new_circuit_engaged != self._current_circuit_engaged: 
+
+            if new_circuit_engaged != self._current_circuit_engaged:
                 if new_circuit_engaged == 0:
                     if self._current_circuit_engaged:
                         self._running_engaged_circuits.append(self._current_circuit_engaged)
                 self._current_circuit_engaged = new_circuit_engaged
-            logging.warning(f"self._running_engaged_circuits:{self._running_engaged_circuits}")
+            logging.warning(
+                f"new_circuit_engaged:{new_circuit_engaged}, self._running_engaged_circuits:{self._running_engaged_circuits}")
 
         return diff
 
@@ -506,8 +511,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return r
 
-    async def send_command( # pylint: disable=too-many-arguments
-        self, cmd_name: str, params: dict, type_="command", channel="machine", callback_on_macro_answer=None):
+    async def send_command(  # pylint: disable=too-many-arguments
+            self, cmd_name: str, params: dict, type_="command", channel="machine", callback_on_macro_answer=None):
         """ param 'type_' can be 'command' or 'macro'
 
             examples:
@@ -582,7 +587,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         return ingredients
 
     def get_splitted_dispense_params(self, pars, step):
-
         """
         {
             "package_name": "******* not valid name ****",
@@ -617,6 +621,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             "ingredients": ingredients,
         }
         # ~ logging.warning(f"{self.name} pars:{pars}")
+
+        params_ = pars.copy()
+        params_['ref_size'] = 100
+        data = {'action': 'get_pipe_formula_from_pigment_formula', 'params': params_}
+        ret = await self.call_api_rest("apiV1/ad_hoc", "POST", data, timeout=5)
+        logging.warning(f"ret:{ret}")
+        # ret:{'result': 'OK', 'pipe_formula': {'B05': {'index': 4, 'qtity': 5.1724, 'component_code': 'Slurry TiO2'}}, 'size': 100}
+        pipe_formula_ml = ret.get('result') == 'OK' and ret.get('pipe_formula')
 
         r = True
         if ingredients:
@@ -664,6 +676,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             _splitted_pars = self.get_splitted_dispense_params(pars, step)
                             step += 1
                             if _splitted_pars.get("ingredients"):
+
                                 r = await self.send_command(
                                     cmd_name="DISPENSE_FORMULA", type_="macro", params=_splitted_pars)
                                 timeout_ = 60 * 12
@@ -692,7 +705,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                     result_ = 'OK'
                                 else:
                                     outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
-                                    outcome_ += "{}, {} ".format(self.status.get("error_code"), tr_(self.status.get("error_message")))
+                                    outcome_ += "{}, {} ".format(self.status.get("error_code"),
+                                                                 tr_(self.status.get("error_message")))
                                     result_ = 'NOK'
                                     break
 
@@ -718,10 +732,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 # ~ if outcome_ == 'success':
                 if result_ == 'OK':
                     if "PURGE ALL" not in jar.order.description.upper():
+                        json_properties.setdefault("specific_weights", {})
+                        json_properties["specific_weights"][self.name] = {}
                         for k, v in ingredients.items():
                             specific_weight = self.get_specific_weight(k)
                             dispensed_quantities_gr[k] = dispensed_quantities_gr.get(
                                 k, 0) + round(v * specific_weight, 4)
+                            json_properties["specific_weights"][self.name][k] = specific_weight
+
                         json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
                         jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
                 else:
@@ -730,11 +748,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 json_properties.setdefault("dispensation_outcomes", [])
                 json_properties["dispensation_outcomes"].append((self.name, outcome_))
-                json_properties.setdefault("engaged_circuits", [])
-                json_properties.setdefault("dispensed_pigments", [])
-                json_properties["engaged_circuits"].append((self.name, engaged_circuits_))
-                dispensed_pigments = [self.get_pigment_name_by_circuit_id(ec) for ec in engaged_circuits_]
-                json_properties["dispensed_pigments"].append((self.name, dispensed_pigments))
+
+                json_properties.setdefault("effective_engaged_circuits", {})
+                l_ = {ec: self.get_names_by_circuit_id(ec) for ec in engaged_circuits_}
+                json_properties["effective_engaged_circuits"][self.name] = l_
+
+                json_properties.setdefault("pipe_formula_ml", {})
+                json_properties["pipe_formula_ml"][self.name] = pipe_formula_ml
+
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
                 self.app.update_jar_properties(jar)
@@ -841,7 +862,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         _jar_size_detect = None
         cntr = 0
         ret = None
-        while 1:
+        while True:
 
             if _jar_size_detect != self.jar_size_detect:
                 _jar_size_detect = self.jar_size_detect
