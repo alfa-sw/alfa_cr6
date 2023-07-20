@@ -38,7 +38,7 @@ from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
 from alfa_CR6_backend.globals import (
     IMAGES_PATH, import_settings, get_res, get_encoding, tr_)
-
+from alfa_CR6_flask.admin_views import _to_html_table
 
 g_settings = import_settings()
 
@@ -708,8 +708,9 @@ class OrderPage(BaseStackedPage):
                         content += tr_("machine_head:{}\n").format(jar.machine_head)
                     content += tr_("description:{}\n").format(jar.description)
                     content += tr_("date_created:{}\n").format(jar.date_created)
-                    content += tr_("properties:{}\n").format(
-                        json.dumps(json.loads(jar.json_properties), indent=2))
+                    # ~ content += tr_("properties:{}\n").format(
+                        # ~ json.dumps(json.loads(jar.json_properties), indent=2))
+                    content += tr_("properties:\n") + _to_html_table(json.loads(jar.json_properties))
 
                     msg_ = tr_("do you want to print barcode:\n {} ?").format(barcode)
 
@@ -718,7 +719,9 @@ class OrderPage(BaseStackedPage):
                         message=msg_,
                         content=content,
                         ok_cb=dymo_print_jar,
-                        ok_cb_args=[jar, ])
+                        ok_cb_args=[jar, ], 
+                        to_html=True,
+                        wide=True)
 
             elif col == ORDER_PAGE_COLUMNS_ORDERS['can'].index("status"):
                 content = "{}"
