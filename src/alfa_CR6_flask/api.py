@@ -81,7 +81,13 @@ class FilteredOrders(Resource):  # pylint: disable=too-few-public-methods
                 query_ = query_.filter(getattr(Order, arg) == value)
 
         res_ = query_.all()
-        res = [r.object_to_dict() for r in res_]
+        res = {
+            'data': [r.object_to_dict() for r in res_],
+            'meta': {
+                'total': len(res_)
+            }
+        }
+
         return res
 
 
