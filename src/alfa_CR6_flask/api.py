@@ -11,6 +11,8 @@ import logging
 import traceback
 import json
 
+from datetime import datetime, timedelta
+
 from sqlalchemy.inspection import inspect  # pylint: disable=import-error
 
 from flask_restful import Resource, Api  # pylint: disable=import-error
@@ -20,6 +22,7 @@ from alfa_CR6_backend.models import (Order, Jar, Event, Document)
 # ~ from flask_restless_swagger import SwagAPIManager as APIManager  # pylint: disable=import-error, import-outside-toplevel
 from flask_restless import APIManager  # pylint: disable=import-error, import-outside-toplevel
 from flask_restless.serialization import DefaultSerializer, DefaultDeserializer  # pylint: disable=import-error, import-outside-toplevel
+from flask import request
 
 
 URL_PREFIX = '/api/v1'
@@ -48,11 +51,46 @@ class OrderByJobId(Resource):  # pylint: disable=too-few-public-methods
         return ret
 
 
+class FilteredOrders(Resource):  # pylint: disable=too-few-public-methods
+
+    def __init__(self, db, *args, **kwargs):
+
+        self.db = db
+        super().__init__(*args, **kwargs)
+
+    def get(self):
+
+        args = request.args.to_dict()
+
+        if not args:
+            return {"error": "Bad Request, filter parameters are required"}, 400
+
+        query_ = None
+        if 'last_hours_interval' in args:
+            last_hours_interval = args.pop('last_hours_interval')
+            try:
+                last_hours_interval = int(last_hours_interval)
+            except ValueError:
+                return {"error": "Bad Request, 'last_hours_interval' parameter must be an integer"}, 400
+            now = datetime.utcnow()
+            required_dt = now - timedelta(hours=last_hours_interval)
+            query_ = self.db.session.query(Order).filter(Order.date_modified >= required_dt)
+
+        for arg, value in args.items():
+            if hasattr(Order, arg):
+                query_ = query_.filter(getattr(Order, arg) == value)
+
+        res_ = query_.all()
+        res = [r.object_to_dict() for r in res_]
+        return res
+
+
 def init_restful_api(app, db):
 
     _api = Api(app)
 
     _api.add_resource(OrderByJobId, f'{URL_PREFIX}/order_by_job_id/<job_id>', resource_class_kwargs={'db': db})
+    _api.add_resource(FilteredOrders, f'{URL_PREFIX}/filtered_orders', resource_class_kwargs={'db': db})
 
     return _api
 
@@ -64,7 +102,7 @@ def init_restless_api(app, db):
         def serialize_attributes(self, instance, only=None):
 
             ret = super().serialize_attributes(instance, only)
-    
+
             if ret.get('json_properties') is not None:
                 try:
                     ret['json_properties'] = json.loads(ret['json_properties'])
