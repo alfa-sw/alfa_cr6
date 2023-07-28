@@ -44,33 +44,44 @@ class ActionPage(BaseStackedPage):
 
         ret = True
 
-        if args in (('single_move', 'C', [0, 1]), ('single_move', 'C', [0, 2])
-                    ):  # "Start dispensing roller" "Start dispensing roller to photocell"
+        # Testa 5 "Start dispensing roller" "Start dispensing roller to photocell"
+        if args in (('single_move', 'C', [0, 1]), ('single_move', 'C', [0, 2])):
+
             D = QApplication.instance().get_machine_head_by_letter("D")
             C = QApplication.instance().get_machine_head_by_letter("C")
             ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
             ret = ret and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
 
-        elif args == ("single_move", "C", [1, 1]):  # "Start lifter roller CW"
+        # Testa 5 "Start lifter roller CW"
+        elif args == ("single_move", "C", [1, 1]):
+
             D = QApplication.instance().get_machine_head_by_letter("D")
             ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
 
-        elif args == ("single_move", "C", [1, 4]):  # "Start lifter roller CCW"
+        # Testa 5 "Start lifter roller CCW"
+        elif args == ("single_move", "C", [1, 4]):
+
             D = QApplication.instance().get_machine_head_by_letter("D")
             ret = D.jar_photocells_status.get('LOAD_LIFTER_DOWN_PHOTOCELL')
 
-        # "Start lifter roller CCW", "Start lifter roller CW"
-        elif args in (("single_move", "F", [1, 4]), ("single_move", "F", [1, 1])):
+        # Testa 2  "Start dispensing roller" "Start dispensing roller to photocell"
+        elif args in (('single_move', 'F', [0, 1]), ('single_move', 'F', [0, 2])):
+
+            F = QApplication.instance().get_machine_head_by_letter("F")
+            ret = F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
+            ret = ret and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', True)
+
+        # Testa 2  "Start lifter roller CW"
+        elif args == ("single_move", "F", [1, 1]):
+
+            ret = False
+
+        # Testa 2  "Start lifter roller CCW"
+        elif args == ("single_move", "F", [1, 4]):
 
             F = QApplication.instance().get_machine_head_by_letter("F")
             ret = F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
             ret = ret or F.jar_photocells_status.get('UNLOAD_LIFTER_UP_PHOTOCELL')
-
-        # "Start dispensing roller" "Start dispensing roller to photocell"
-        elif args in (('single_move', 'F', [0, 1]), ('single_move', 'F', [0, 2])):
-            F = QApplication.instance().get_machine_head_by_letter("F")
-            ret = F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
-            ret = ret and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', True)
 
         logging.info(f"ret:{ret}, args:{args}")
 
