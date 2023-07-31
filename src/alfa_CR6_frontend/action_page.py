@@ -80,7 +80,9 @@ class ActionPage(BaseStackedPage):
         elif args == ("single_move", "F", [1, 4]):
 
             F = QApplication.instance().get_machine_head_by_letter("F")
+
             ret = F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
+            ret = ret and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL')
             ret = ret or F.jar_photocells_status.get('UNLOAD_LIFTER_UP_PHOTOCELL')
 
         logging.info(f"ret:{ret}, args:{args}")
