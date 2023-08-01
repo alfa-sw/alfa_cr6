@@ -65,7 +65,7 @@ class FilteredOrders(Resource):  # pylint: disable=too-few-public-methods
         if not args:
             return {"error": "Bad Request, filter parameters are required"}, 400
 
-        query_ = None
+        query_ = self.db.session.query(Order)
         if 'last_hours_interval' in args:
             last_hours_interval = args.pop('last_hours_interval')
             try:
@@ -74,7 +74,7 @@ class FilteredOrders(Resource):  # pylint: disable=too-few-public-methods
                 return {"error": "Bad Request, 'last_hours_interval' parameter must be an integer"}, 400
             now = datetime.utcnow()
             required_dt = now - timedelta(hours=last_hours_interval)
-            query_ = self.db.session.query(Order).filter(Order.date_modified >= required_dt)
+            query_ = query_.filter(Order.date_modified >= required_dt)
 
         for arg, value in args.items():
             if hasattr(Order, arg):
