@@ -76,7 +76,7 @@ def zip_from_dir(dest_path: str, source_dir: str, exclude_patterns: list, mode: 
 
 def _to_html_table(_obj, rec_lev=0):
 
-    max_rec_lev = 3
+    max_rec_lev = 4
     _html = ""
     _class = "table-striped table-bordered"
     if isinstance(_obj, dict) and rec_lev < max_rec_lev:
