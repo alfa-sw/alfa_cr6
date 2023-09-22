@@ -363,11 +363,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         while 1:
 
-            _bc_identification_string = "Barcode"
-            if hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
-                _bc_identification_string = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+            _bc_identification_string = os.getenv("BARCODE_READER_IDENTIFICATION_STRING", False)
+            if not _bc_identification_string:
 
-            if _bc_identification_string == "DISABLED":
+                if hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
+                    _bc_identification_string = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+
+            if not _bc_identification_string or _bc_identification_string == "DISABLED":
                 break
 
             b = BarCodeReader(self.on_barcode_read, _bc_identification_string, exception_handler=self.handle_exception)
