@@ -198,6 +198,9 @@ D = {
     "please, verify barcode {} on canister.": "please, verify barcode {} on canister.",
     "barcode not known:{}": "barcode not known:{}",
     "please, enter service password": "please, enter service password",
+
+    "please, confirm printing label<br>{} {} {}.": "Please, confirm printing label<br>{} {} {}.",
+    "please, choose a circuit to print the corresponding label.": "please, choose a circuit to print the corresponding label.",
 }
 
 

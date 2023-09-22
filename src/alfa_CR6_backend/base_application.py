@@ -528,6 +528,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                     if not self.__modal_freeze_msgbox:
                         self.__modal_freeze_msgbox = ModalMessageBox(parent=self.main_window, msg=msg, title="ALERT")
+                        self.__modal_freeze_msgbox.move(self.__modal_freeze_msgbox.geometry().x(), 20)
                     else:
                         self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
                         self.__modal_freeze_msgbox.show()

@@ -151,6 +151,14 @@ class MachineHeadMockup:
             "last_update": "2020-10-19 23:16:58 CEST",
         }
 
+        self.pigment_list = []
+
+        pth = os.path.join(DATA_ROOT, f"{self.letter}_pigment_list.json")
+        with open(pth) as f:
+            self.pigment_list = json.load(f)
+
+        # ~ logging.info("{} {}, {}".format(self.index, self.letter, self.pigment_list))
+
         if self.letter == "D":
             def _start_load_liftr_up():
                 msg_out_dict = {
@@ -237,7 +245,22 @@ class MachineHeadMockup:
 
         await self.update_status(params=pars)
 
+    def get_pipes_from_pig_name(self, pig_name, weight):
+
+        SLAVES_ADDRESSES = {}
+        base_pipe_addresses = { "B%02d"%(i + 1): i for i in range(0, 8)}
+        colorant_pipe_addresses = { "C%02d"%(i - 7): i for i in range(8, 32)}
+        SLAVES_ADDRESSES.update(base_pipe_addresses)
+        SLAVES_ADDRESSES.update(colorant_pipe_addresses)
+
+        pipes_ = []
+        for pig in self.pigment_list:
+            if pig["name"] == pig_name:
+                pipes_ += [SLAVES_ADDRESSES[p["name"]] for p in pig["pipes"]]
+        return [(p, weight / len(pipes_)) for p in pipes_]
+
     async def handle_command(self, msg_out_dict):  # pylint: disable=too-many-branches,too-many-statements
+
         logging.info("{} {}, {}".format(self.index, self.letter, msg_out_dict))
 
         if msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
@@ -251,13 +274,41 @@ class MachineHeadMockup:
             raise KeyboardInterrupt
 
         elif msg_out_dict["command"] in ("DISPENSATION", "DISPENSE_FORMULA", "PURGE"):
+
+            logging.warning("{} {}, {}".format(self.index, self.letter, msg_out_dict))
+            try:
+                pipes_ = []
+                for pig_name, weight in msg_out_dict.get('params', {}).get('ingredients', {}).items():
+                    pipes__ = self.get_pipes_from_pig_name(pig_name, weight)
+                    pipes_ += pipes__
+            except Exception:
+                logging.error(traceback.format_exc())
+            logging.warning(f"pipes_:{pipes_}")
+
+            async def simulate_circuit_engagement():
+                for p in pipes_:
+                    
+                    pars = {"circuit_engaged": p[0]}
+                    logging.warning(f"pars:{pars}")
+                    await self.update_status(params=pars)
+                    await asyncio.sleep(2)
+
+                    pars = {"circuit_engaged": 0}
+                    logging.warning(f"pars:{pars}")
+                    await self.update_status(params=pars)
+                    await asyncio.sleep(2)
+
+            asyncio.ensure_future(simulate_circuit_engagement())
+
             await self.do_move(duration=0.5, tgt_level="DISPENSING")
+
             if 'failure' in sys.argv:
                 await asyncio.sleep(3)
                 await self.update_status(
                     params={"status_level": "ALARM", "error_code": 0xFF, "error_message": "******",})
             else:
-                await self.do_move(duration=5, tgt_level="STANDBY")
+                await self.do_move(duration=1.0 + 4 * len(pipes_), tgt_level="STANDBY")
+
         elif msg_out_dict["command"] == "RESET":
 
             if self.index == 5:
@@ -662,12 +713,12 @@ def create_and_run_tasks():
     return tasks
 
 
-def main():
+def main(log_level):
 
     fmt_ = (
         "[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s"
     )
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=fmt_)
+    logging.basicConfig(stream=sys.stdout, level=log_level, format=fmt_)
 
     loop = asyncio.get_event_loop()
     tasks = []
@@ -685,4 +736,4 @@ def main():
         loop.run_until_complete(loop.shutdown_asyncgens())
 
 
-main()
+main(log_level=logging.WARNING)

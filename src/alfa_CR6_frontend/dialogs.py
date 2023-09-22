@@ -548,7 +548,9 @@ class InputDialog(BaseDialog):
         ok_cb_args=None,
         ok_on_enter=False,
         choices=None,
-        bg_image=None):
+        bg_image=None,
+        to_html=None,
+        wide=None):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
@@ -583,13 +585,23 @@ class InputDialog(BaseDialog):
         if content is None:
             self.content_container.setText("")
             self.content_container.resize(self.content_container.width(), 0)
+            self.resize(self.width(), 275)    
         else:
-            self.content_container.setText(str(content))
+            if to_html:
+                self.content_container.setHtml(str(content).replace("\n", "<br/>"))
+            else:
+                self.content_container.setText(str(content))
             self.content_container.resize(self.content_container.width(), 400)
             self.content_container.setFocus()
             cursor = self.content_container.textCursor()
             # ~ cursor.setPosition(cursor.End)
             cursor.setPosition(cursor.position() + len(str(content)))
+            if wide:
+                self.content_container.resize(self.content_container.width(), 700)    
+                self.resize(self.width(), 875)    
+            else:
+                self.content_container.resize(self.content_container.width(), 400)    
+                self.resize(self.width(), 575)    
 
         self.__ok_cb = None
         self.__ok_cb_args = None

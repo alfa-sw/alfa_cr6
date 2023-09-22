@@ -28,9 +28,9 @@ from alfa_CR6_frontend.dialogs import (
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
-    ActionPage,
     HelpPage)
 
+from alfa_CR6_frontend.action_page import ActionPage
 from alfa_CR6_frontend.browser_page import BrowserPage
 from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads)
 
@@ -449,7 +449,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         logging.warning(str(order_nr))
 
     def open_input_dialog(  # pylint: disable=too-many-arguments
-            self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None, ok_on_enter=False, choices=None, bg_image=None):
+            self, icon_name=None, message=None, content=None, ok_cb=None, ok_cb_args=None, ok_on_enter=False, choices=None, bg_image=None, to_html=None, wide=None):
 
         self.input_dialog.show_dialog(
             icon_name=icon_name,
@@ -459,7 +459,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             ok_cb_args=ok_cb_args,
             ok_on_enter=ok_on_enter,
             choices=choices,
-            bg_image=bg_image)
+            bg_image=bg_image,
+            to_html=to_html,
+            wide=wide)
 
         logging.warning(str(message))
 
