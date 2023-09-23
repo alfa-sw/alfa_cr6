@@ -9,8 +9,14 @@ import glob
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, '__version__'), encoding='utf-8') as f:
-    __version__ = f.read().strip()
+
+_version = {}
+
+with open(os.path.join(here, 'version.py')) as fp:
+    exec(fp.read(), _version)
+    
+__version__ = _version['__version__']
+
 
 __app_name__ = 'alfa_CR6'
 

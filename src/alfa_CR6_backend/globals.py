@@ -22,6 +22,8 @@ import redis  # pylint: disable=import-error
 from barcode import EAN13                   # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
 
+from alfa_CR6_backend import version
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "ui")
 IMAGES_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "images")
@@ -170,26 +172,8 @@ def tr_(lemma):
 
     return lemma_
 
-
 def get_version():
-
-    _ver = None
-
-    try:
-        pth = os.path.abspath(os.path.dirname(sys.executable))
-        cmd = "{}/pip show alfa_CR6".format(pth)
-        for line in (
-                subprocess.run(cmd.split(), stdout=subprocess.PIPE, check=True)
-                .stdout.decode()
-                .split("\n")):
-            if "Version" in line:
-                _ver = line.split(":")[1]
-                _ver = _ver.strip()
-    except Exception as exc:  # pylint: disable=broad-except
-        logging.error(exc)
-
-    return _ver
-
+    return version.__version_
 
 def get_res(_type, name):
 
