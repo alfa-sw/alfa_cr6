@@ -14,7 +14,7 @@ _version = {}
 
 with open(os.path.join(here, 'version.py')) as fp:
     exec(fp.read(), _version)
-    
+
 __version__ = _version['__version__']
 
 

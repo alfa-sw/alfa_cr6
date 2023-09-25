@@ -173,7 +173,7 @@ def tr_(lemma):
     return lemma_
 
 def get_version():
-    return version.__version_
+    return version.__version__
 
 def get_res(_type, name):
 
