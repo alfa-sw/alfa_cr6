@@ -398,36 +398,53 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         ret = None
         try:
-            if self.ip_add:
+
+            if self.aiohttp_clientsession is None:
+                self.aiohttp_clientsession = aiohttp.ClientSession()
+
+            with async_timeout.timeout(timeout) as cm:
                 url = "http://{}:{}/{}".format(self.ip_add, self.http_port, path)
                 logging.warning(f" url:{url}")
-                if self.aiohttp_clientsession is None:
-                    self.aiohttp_clientsession = aiohttp.ClientSession()
-                with async_timeout.timeout(timeout):
-                    if method.upper() == "GET":
-                        callable_ = self.aiohttp_clientsession.get
-                        args = [url, ]
-                        kwargs = {}
-                    elif method.upper() == "POST":
-                        callable_ = self.aiohttp_clientsession.post
-                        args = [url, ]
-                        kwargs = {
-                            "headers": {'content-type': 'application/json'},
-                            "data": json.dumps(data),
-                        }
 
-                    async with callable_(*args, **kwargs) as response:
-                        r = response
-                        if expected_ret_type == 'json':
-                            ret = {}
-                            ret = await r.json()
-                        else:
-                            ret = await r.text()
-                    assert (
-                        r.reason == "OK"), f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
+                if method.upper() == "GET":
+                    callable_ = self.aiohttp_clientsession.get
+                    args = [url, ]
+                    kwargs = {}
+                elif method.upper() == "POST":
+                    callable_ = self.aiohttp_clientsession.post
+                    args = [url, ]
+                    kwargs = {
+                        "headers": {'content-type': 'application/json'},
+                        "data": json.dumps(data),
+                    }
+
+                while ret is None:
+                    try:
+                        async with callable_(*args, **kwargs) as response:
+                            r = response
+                            if expected_ret_type == 'json':
+                                ret = {}
+                                ret = await r.json()
+                            else:
+                                ret = await r.text()
+                            assert r.reason == "OK", \
+                                f"method:{method}, url:{url}, data:{data}, status:{r.status}, reason:{r.reason}"
+                    except aiohttp.client_exceptions.ClientError as e:
+                        logging.warning(f"exception while retrieving response from {url} {e}; retrying")
+                        await asyncio.sleep(1)
+
+        except asyncio.TimeoutError as e:
+            logging.error(f"{url}, timeout!")
+
+            # due to misconfigured exception handling we cannot
+            # trigger default handler or raise exception here
+            # ~ self.app.handle_exception(f"{url}, timeout")
 
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(f"{url}, {e}")
+
+        if cm.expired or ret is None:
+            self.app.handle_exception(f"{url}, timeout")
 
         return ret
 
