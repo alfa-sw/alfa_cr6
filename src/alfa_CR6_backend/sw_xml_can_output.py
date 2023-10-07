@@ -369,6 +369,7 @@ class SwXmlCanOutput:
             i = {
                 '@number': i + 1,
                 'code': k,
+                # TODO: get the 'description' of the pigment to be used as 'name' 
                 # ~ 'name': 'MM 940 WaterBase',
                 'weights': {'@unit': 'gr', 'calculated': round(v, 3), 'recalculated': round(v, 3), 'poured': round(v, 3)},
                 'density': round(density, 3),
