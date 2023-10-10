@@ -25,10 +25,12 @@ from flask import (Markup, redirect, flash, request, send_file, current_app)  # 
 import flask_admin  # pylint: disable=import-error
 from flask_admin.contrib.sqla import ModelView  # pylint: disable=import-error
 from flask_admin.contrib.sqla.filters import FilterInList, FilterNotInList  # pylint: disable=import-error
+from flask_admin.actions import action  # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Jar, Event
+from alfa_CR6_backend.models import Jar, Order, Event, compile_barcode
 from alfa_CR6_backend.globals import (LANGUAGE_MAP, import_settings, get_alfa_serialnumber, tr_)
 from alfa_CR6_backend.order_parser import OrderParser
+from alfa_CR6_backend.sw_xml_can_output import SwXmlCanOutput
 
 SETTINGS = import_settings()
 
@@ -145,6 +147,14 @@ class Base_ModelView(ModelView):
     can_view_details = True
     export_limit = 10 * 1000
 
+    def __init__(self, *args, **kwargs):
+
+        logging.warning(f"args:{args} kwargs:{kwargs}")
+
+        super().__init__(*args, **kwargs)
+
+        logging.warning(f"self.session:{self.session}")
+
     def display_time_to_local_tz(self, context, obj, name):   # pylint: disable=unused-argument,no-self-use
 
         value = getattr(obj, name)
@@ -260,6 +270,71 @@ class JarModelView(Base_ModelView):
         'order_description': _display_order_description,
         'order_file_name': _display_order_file_name,
     })
+
+    @action('download_xml', tr_('Download XML'), tr_('Download XML data for selected cans?'))
+    def action_download_xml(self, ids):  # pylint: disable=(too-many-locals
+
+        ret = None
+        pth_ = os.path.join(SETTINGS.TMP_PATH, "xml")
+
+        try:
+            if not os.path.exists(pth_):
+                os.makedirs(pth_)
+
+            subprocess.run(f"rm -f {pth_}/*", check=False, shell=True)
+
+            query = self.session.query(Jar).filter(Jar.id.in_(ids))
+
+            count = 0
+            for j in query.all():
+                q_ = self.session.query(Order).filter(Order.id == j.order_id)
+                o = q_.first()
+                c = SwXmlCanOutput(j, o)
+                c.parse()
+                c.to_xml()
+                out_file_name = str(compile_barcode(o.order_nr, j.index)) + ".xml"
+                out_file_pth = os.path.join(pth_, out_file_name)
+                with open(out_file_pth, 'w', encoding='UTF-16') as fd:
+                    fd.write(c.to_xml())
+
+                    count += 1
+
+            flash(tr_('{} cans were successfully converted.').format(count))
+
+            if count > 1:
+                alfa_serialnumber = get_alfa_serialnumber()
+                timestamp_ = datetime.datetime.now().isoformat(timespec='seconds')
+                xml_xfer_zip_pth = os.path.join(SETTINGS.TMP_PATH, "xml_xfer.zip")
+                subprocess.run(f"rm -f {xml_xfer_zip_pth}", check=False, shell=True)
+                zip_from_dir(dest_path=xml_xfer_zip_pth, source_dir=pth_, exclude_patterns=(""), mode="a")
+                out_file_pth = xml_xfer_zip_pth
+                out_file_name = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(out_file_pth)}'
+
+            logging.warning(f"out_file_name:{out_file_name}, out_file_pth:{out_file_pth}")
+
+            if out_file_name and out_file_pth:
+
+                try:  # API Changed in version 2.0
+                    ret = send_file(
+                        out_file_pth,
+                        mimetype='application/octet-stream',
+                        as_attachment=True,
+                        attachment_filename=out_file_name
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    ret = send_file(
+                        out_file_pth,
+                        mimetype='application/octet-stream',
+                        as_attachment=True,
+                        download_name=out_file_name
+                    )
+
+        except Exception as ex:
+            logging.error(traceback.format_exc())
+            flash(tr_('Failed to download XML. {}').format(str(ex)), 'error')
+
+        return ret
+
 
 
 class OrderModelView(Base_ModelView):
