@@ -356,7 +356,7 @@ class SwXmlCanOutput:
         }
 
         for i, o in enumerate(j_properties.get("dispensed_quantities_gr", {}).items()):
-            k, v = o
+            k, w = o
 
             density = 1
             for item in j_properties.get("specific_weights", {}).values():
@@ -365,13 +365,15 @@ class SwXmlCanOutput:
                         density = sw
                         break
 
-            vol_l = 0.001 * density * v
+            vol_l = 0.001 * w / density
+
+            descriptions = [i.get("description") for i in j_properties.get("order_ingredients", []) if i.get("pigment_name") == k]
+
             i = {
                 '@number': i + 1,
                 'code': k,
-                # TODO: get the 'description' of the pigment to be used as 'name' 
-                # ~ 'name': 'MM 940 WaterBase',
-                'weights': {'@unit': 'gr', 'calculated': round(v, 3), 'recalculated': round(v, 3), 'poured': round(v, 3)},
+                'description': descriptions[0] if descriptions else '',
+                'weights': {'@unit': 'gr', 'calculated': round(w, 3), 'recalculated': round(w, 3), 'poured': round(w, 3)},
                 'density': round(density, 3),
                 'volumes': {'@unit': 'l', 'calculated': round(vol_l, 6), 'recalculated': round(vol_l, 6), 'poured': round(vol_l, 6)},
                 'cost': '0'
