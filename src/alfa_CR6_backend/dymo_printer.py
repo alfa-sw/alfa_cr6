@@ -11,6 +11,7 @@
 import traceback
 import logging
 import subprocess
+import os
 
 from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment)
 
@@ -34,7 +35,7 @@ def _dymo_print_tmp_image(_printable_image_pth, fake=False):
     _dymo_printer_presence = _check_dymo_printer_presence()
     logging.warning(f'_printable_image_pth:{_printable_image_pth}, _dymo_printer_presence:{_dymo_printer_presence}')
     if _printable_image_pth:
-        if _dymo_printer_presence:
+        if _dymo_printer_presence or os.getenv("IN_DOCKER", False) in ['1', 'true']:
             _print_cups_cmd = f'lp -o fit-to-page {_printable_image_pth}'
             logging.debug(f'_print_cups_cmd: {_print_cups_cmd}')
 

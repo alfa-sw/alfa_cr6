@@ -27,7 +27,7 @@ INSTALL_REQUIRES = [
     'python-barcode<0.14.0',
     # ~ 'Pillow',
     'aiohttp',
-    'flask',
+    'flask<3.0.0',
     'flask_sqlalchemy<3.0.0',
     'flask_admin',
     'waitress',
