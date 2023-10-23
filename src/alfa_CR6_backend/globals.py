@@ -16,6 +16,7 @@ import traceback
 import importlib
 import codecs
 import json
+import shlex
 
 import redis  # pylint: disable=import-error
 
@@ -242,6 +243,39 @@ def get_encoding(path_to_file, key=None):
 
     return encoding_
 
+def _get_page_label():
+    """ required when using this app with docker/snowball
+        obtain page size from lpoptions' field _PageLabel """
+
+    cmd_ = f"lpoptions"
+    logging.info(f'cmd_ : {cmd_}')
+    ret = subprocess.run(
+        cmd_.split(),
+        check=False,
+        stdout=subprocess.PIPE)
+
+    if ret.returncode != 0:
+        logging.warning(f"failed to get options (command: {cmd_})")
+        return None
+
+    response = ret.stdout.decode("UTF-8")
+
+    label = None
+
+    try:
+        opts = {}
+        for o in shlex.split(response):
+            splt = o.split('=', maxsplit=1)
+            opts[splt[0]] = '' if len(splt) < 2 else splt[1]
+
+        label = opts['_MediaLabel']
+
+    except BaseException as e:
+        logging.warning(f"failed to retrieve printer page label ({str(e)})")
+
+    logging.warning(f"media label is {label}")
+    return label
+
 def _get_label_options_from_redis_cache():
 
     cached_label_options = None
@@ -252,7 +286,16 @@ def _get_label_options_from_redis_cache():
         if not alfa_conf:
             alfa_conf = r.get('ALFA_CONFIG:1')
         if alfa_conf:
-            cached_label_options = json.loads(alfa_conf).get('PRINT_LABEL_OPTIONS')
+            field = 'PRINT_LABEL_OPTIONS'
+
+            if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+                if "small" in _get_page_label():
+                    field = 'PRINT_LABEL_OPTIONS_SMALL'
+                else:
+                    field = 'PRINT_LABEL_OPTIONS_BIG'
+
+            cached_label_options = json.loads(alfa_conf).get(field)
+
     except Exception:
         logging.error(traceback.format_exc())
         cached_label_options = None
@@ -278,9 +321,10 @@ def _get_print_label_options():
     cached_options = _get_label_options_from_redis_cache()
     if cached_options is not None:
         options.update(cached_options)
-
-    if cached_options is None and hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
-        options.update(settings.PRINT_LABEL_OPTONS)
+    else:
+        logging.error("could not retrieve label settings from redis cache, using default values")
+        if hasattr(settings, 'PRINT_LABEL_OPTONS') and settings.PRINT_LABEL_OPTONS:
+            options.update(settings.PRINT_LABEL_OPTONS)
 
     logging.warning(f'options:{options}')
 
