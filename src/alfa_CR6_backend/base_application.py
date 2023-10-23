@@ -963,11 +963,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return {k: j for k, j in self.__jar_runners.items() if j and j.get('jar')}
 
-    async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):  # pylint: disable=too-many-statements
+    async def wait_for_carousel_not_frozen(self, freeze=False, msg="", visibility=1):  # pylint: disable=too-many-statements
 
         if freeze and not self.carousel_frozen:
             self.freeze_carousel(True)
-            self.main_window.open_frozen_dialog(msg)
+            self.main_window.open_frozen_dialog(msg, visibility=visibility)
 
         _runner = None
         if self.carousel_frozen:

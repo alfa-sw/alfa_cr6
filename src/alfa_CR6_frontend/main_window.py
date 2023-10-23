@@ -485,7 +485,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         return len(self._open_alert_dialog_list)
 
     def open_alert_dialog(  # pylint: disable=too-many-arguments
-            self, args, title="ALERT", fmt=None, callback=None, cb_args=None, hp_callback=None):
+            self, args, title="ALERT", fmt=None, callback=None, cb_args=None, hp_callback=None, visibility=1):
 
         self.check_alert_dialogs(close_all=False)
 
@@ -498,6 +498,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}, indent=2, ensure_ascii=False)
 
         _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args, hp_callback=hp_callback)
+
+        logging.warning(f"visibility:{visibility}")
+        if visibility > 1:
+            _msgbox.setStyleSheet("""QMessageBox {border: 10px solid #FF3333; background-color: #FFFF33;}""")
+            txt_ = _msgbox.text() + "\n___________________________________________\n"
+            _msgbox.setText(txt_)
 
         while len(self._open_alert_dialog_list) >= 5:
             logging.warning(f"len(self._open_alert_dialog_list):{len(self._open_alert_dialog_list)}")
@@ -517,7 +523,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             description=f"{msg_ or msg}")
 
     def open_frozen_dialog( # pylint: disable=too-many-arguments
-            self, msg, title="ALERT", force_explicit_restart=False, ok_callback=None, hp_callback=None):
+            self, msg, title="ALERT", force_explicit_restart=False, ok_callback=None, hp_callback=None, visibility=1):
 
         logging.info(msg)
         msg_ = tr_("carousel is paused.")
@@ -526,12 +532,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             # ~ self.open_alert_dialog(msg_, title=title)
             callback = ok_callback
             cb_args = []
-            self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args, hp_callback=hp_callback)
         else:
             msg_ += tr_("hit 'OK' to unfreeze it")
             callback = QApplication.instance().freeze_carousel
             cb_args = [False, ]
-            self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args, hp_callback=hp_callback)
+
+        self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args, hp_callback=hp_callback, visibility=visibility)
 
     def show_barcode(self, barcode, is_ok=False):
 

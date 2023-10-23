@@ -351,14 +351,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         A = self.get_machine_head_by_letter("A")
 
-        def condition():
-            flag = not self.positions_already_engaged(["IN_A", "A"], jar)
-            flag = flag and not A.status.get('crx_outputs_status', 0x0) & 0x02
-            return flag
+        async def _move_can_to_A():
 
-        r = await self.wait_for_dispense_position_available(jar, "A", extra_check=condition)
-
-        if r:
             if not self.positions_already_engaged(["IN_A", ]):
                 self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
                 await A.crx_outputs_management(1, 2)
@@ -373,6 +367,26 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             if r:
                 self.update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
+
+            return r
+
+
+        def condition():
+            flag = not self.positions_already_engaged(["IN_A", "A"], jar)
+            flag = flag and not A.status.get('crx_outputs_status', 0x0) & 0x02
+            return flag
+
+        r = await self.wait_for_dispense_position_available(jar, "A", extra_check=condition)
+
+        if r:
+            t0 = time.time()
+            r = await _move_can_to_A()
+            if time.time() - t0 < 6.0:
+                msg_ = tr_('Can in position A must be removed.')
+                while True:
+                    await self.wait_for_carousel_not_frozen(True, msg_)
+                    if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
+                        break
 
         return r
 
@@ -690,7 +704,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     if "move_01_02" in _tag:
 
                         msg_ = tr_('barcode:{} error in {}. Can is removed.').format(barcode_, f"\n{_tag}\n")
-                        await self.wait_for_carousel_not_frozen(True, msg_)
+                        await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
 
                         return
 
