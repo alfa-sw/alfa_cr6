@@ -12,6 +12,7 @@
 import logging
 import traceback
 import json
+import os
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
@@ -152,7 +153,11 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.action_frame_map = {}
 
         super().__init__(parent)
-        loadUi(get_res("UI", "main_window.ui"), self)
+
+        if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+            loadUi(get_res("UI", "main_window_snowball.ui"), self)
+        else:
+            loadUi(get_res("UI", "main_window.ui"), self)
 
         self.settings = import_settings()
 
@@ -366,6 +371,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.toggle_keyboard(on_off=False)
                 # ~ self.help_page.open_page()
                 self.browser_page.open_page(url="http://127.0.0.1:8090/manual_index")
+
+            elif "change_workspace" in btn_name:
+                if os.system("/opt/snowball_client.py change_workspace_wm") != 0:
+                    raise RuntimeError("command execution failure")
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
