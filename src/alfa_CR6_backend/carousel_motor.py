@@ -382,9 +382,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             t0 = time.time()
             r = await _move_can_to_A()
             if time.time() - t0 < 6.0:
-                msg_ = tr_('Can in position A must be removed.')
+                msg_ = tr_('Can in position A must be removed!')
                 while True:
-                    await self.wait_for_carousel_not_frozen(True, msg_)
+                    await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
                     if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
                         break
 

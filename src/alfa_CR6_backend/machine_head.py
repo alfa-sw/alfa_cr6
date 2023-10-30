@@ -54,6 +54,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         self.websocket = None
         self.last_answer = None
+        self.cmd_answers = []
         self.callback_on_macro_answer = None
         self.cntr = 0
         self.time_stamp = 0
@@ -230,7 +231,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 "troubleshooting",
                 f"Errore.{status.get('error_code')}")
 
-            if os.path.exists(dir_path) and self.app.settings.TROUBLESHOOTING:
+            # ~ if os.path.exists(dir_path) and self.app.settings.TROUBLESHOOTING:
+            if os.path.exists(dir_path) and hasattr(self.app.settings, "TROUBLESHOOTING") and self.app.settings.TROUBLESHOOTING:
                 def _cb():
                     url = "http://127.0.0.1:8090/troubleshooting/{}".format(status.get("error_code"))
                     self.app.main_window.browser_page.open_page(url=url)
@@ -373,6 +375,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         and answer.get("command") is not None):
 
                     self.last_answer = answer
+                    # ~ self.cmd_answers.append(answer)
 
             elif msg_type == "time":
                 propagate_to_ws_msg_handler = False

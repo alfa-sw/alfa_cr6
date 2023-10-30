@@ -208,7 +208,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.__init_dialogs()
         self.__init_icons()
 
-        self.showFullScreen()
+        # ~ self.showFullScreen()
 
         # ~ self.refill_1_lbl.mouseReleaseEvent = lambda event: self.show_reserve(0)
         # ~ self.refill_2_lbl.mouseReleaseEvent = lambda event: self.show_reserve(1)
@@ -497,22 +497,24 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             msg_ = ''
         json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}, indent=2, ensure_ascii=False)
 
-        _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args, hp_callback=hp_callback)
+        if visibility > 0:
 
-        logging.warning(f"visibility:{visibility}")
-        if visibility > 1:
-            _msgbox.setStyleSheet("""QMessageBox {border: 10px solid #FF3333; background-color: #FFFF33;}""")
-            txt_ = _msgbox.text() + "\n___________________________________________\n"
-            _msgbox.setText(txt_)
+            _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args, hp_callback=hp_callback)
 
-        while len(self._open_alert_dialog_list) >= 5:
-            logging.warning(f"len(self._open_alert_dialog_list):{len(self._open_alert_dialog_list)}")
-            self._open_alert_dialog_list[0].close()
-            self._open_alert_dialog_list.pop(0)
+            logging.warning(f"visibility:{visibility}")
+            if visibility > 1:
+                _msgbox.setStyleSheet("""QMessageBox {border: 10px solid #FF3333; background-color: #FFFF33;}""")
+                txt_ = _msgbox.text() + "\n___________________________________________\n"
+                _msgbox.setText(txt_)
 
-        self._open_alert_dialog_list.append(_msgbox)
+            while len(self._open_alert_dialog_list) >= 5:
+                logging.warning(f"len(self._open_alert_dialog_list):{len(self._open_alert_dialog_list)}")
+                self._open_alert_dialog_list[0].close()
+                self._open_alert_dialog_list.pop(0)
 
-        logging.warning(msg)
+            self._open_alert_dialog_list.append(_msgbox)
+
+            logging.warning(msg)
 
         QApplication.instance().insert_db_event(
             name='UI_DIALOG',

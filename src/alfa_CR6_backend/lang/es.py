@@ -197,6 +197,8 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "por favor confirme la impresión de la etiqueta<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "seleccione un circuito para imprimir la etiqueta correspondiente.",
+
+    "Can in position A must be removed!": "Can in position A must be removed!",
 }
 
 

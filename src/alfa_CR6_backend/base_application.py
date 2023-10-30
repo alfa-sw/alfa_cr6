@@ -869,7 +869,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(traceback.format_exc())
             raise  # pylint:  disable=misplaced-bare-raise
 
-        self.main_window.open_alert_dialog(f"{e}", title="ERROR")
+        self.main_window.open_alert_dialog(f"{e}", title="ERROR", visibility=0)
         logging.error(traceback.format_exc())
 
     def toggle_freeze_carousel(self):
