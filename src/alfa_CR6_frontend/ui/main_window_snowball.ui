@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1920</width>
+    <height>1080</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="font">
+    <font>
+     <family>FreeSans</family>
+     <pointsize>18</pointsize>
+    </font>
+   </property>
+   <widget class="QFrame" name="menu_frame">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>990</y>
+      <width>1920</width>
+      <height>91</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>FreeSans</family>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::NoFrame</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Plain</enum>
+    </property>
+    <widget class="QPushButton" name="home_btn">
+     <property name="geometry">
+      <rect>
+       <x>1720</x>
+       <y>3</y>
+       <width>160</width>
+       <height>65</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../images/sinottico_small.png</normaloff>../images/sinottico_small.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>280</width>
+       <height>72</height>
+      </size>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
+    </widget>
+    <widget class="QPushButton" name="order_btn">
+     <property name="geometry">
+      <rect>
+       <x>1540</x>
+       <y>3</y>
+       <width>160</width>
+       <height>65</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../images/barcode_C128.png</normaloff>../images/barcode_C128.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>200</width>
+       <height>56</height>
+      </size>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
+    </widget>
+    <widget class="QPushButton" name="keyboard_btn">
+     <property name="geometry">
+      <rect>
+       <x>340</x>
+       <y>3</y>
+       <width>160</width>
+       <height>65</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../images/keybd.png</normaloff>../images/keybd.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>200</width>
+       <height>60</height>
+      </size>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
+    </widget>
+    <widget class="QPushButton" name="browser_btn">
+     <property name="geometry">
+      <rect>
+       <x>1360</x>
+       <y>3</y>
+       <width>160</width>
+       <height>65</height>
+      </rect>
+     </property>
+     <property name="autoFillBackground">
+      <bool>false</bool>
+     </property>
+     <property name="styleSheet">
+      <string notr="true">background-color:#666666	</string>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../images/chrome.png</normaloff>../images/chrome.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>160</width>
+       <height>78</height>
+      </size>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
+    </widget>
+    <widget class="QPushButton" name="debug_page_btn">
+     <property name="geometry">
+      <rect>
+       <x>120</x>
+       <y>3</y>
+       <width>91</width>
+       <height>65</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../images/edit.png</normaloff>../images/edit.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>54</width>
+       <height>54</height>
+      </size>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
+    </widget>
+    <widget class="QLineEdit" name="menu_line_edit">
+     <property name="geometry">
+      <rect>
+       <x>520</x>
+       <y>15</y>
+       <width>801</width>
+       <height>41</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="help_btn">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>3</y>
+       <width>91</width>
+       <height>65</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../images/help.png</normaloff>../images/help.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>200</width>
+       <height>60</height>
+      </size>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
+    </widget>
+    <widget class="QPushButton" name="change_workspace_btn">
+     <property name="geometry">
+      <rect>
+       <x>230</x>
+       <y>3</y>
+       <width>91</width>
+       <height>65</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string/>
+     </property>
+     <property name="icon">
+      <iconset>
+       <normaloff>../images/edit_2.png</normaloff>../images/edit_2.png</iconset>
+     </property>
+     <property name="iconSize">
+      <size>
+       <width>54</width>
+       <height>54</height>
+      </size>
+     </property>
+     <property name="flat">
+      <bool>true</bool>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
+    </widget>
+   </widget>
+   <widget class="QStackedWidget" name="stacked_widget">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>1931</width>
+      <height>991</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>FreeSans</family>
+      <pointsize>18</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-image:&quot;./../images/machine_r.png&quot;;</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::NoFrame</enum>
+    </property>
+    <property name="currentIndex">
+     <number>-1</number>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+ <buttongroups>
+  <buttongroup name="menu_btn_group"/>
+ </buttongroups>
+</ui>

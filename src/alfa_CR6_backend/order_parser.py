@@ -696,13 +696,16 @@ weight:{RealWeight}
                 if l.strip():
 
                     if extra_info and [k for k in ["register",
-                                                   "codice colore produttore"] if k in extra_info[-1].lower()]:
+                                                   "codice colore produttore",
+                                                   "kód farby výrobcu"] if k in extra_info[-1].lower()]:
                         toks = l.split()
                         # ~ logging.error(f"l:{l}, toks:{toks}")
                         if toks:
                             extra_lines_to_print.append(" ".join(toks[:-1]))
 
-                    elif extra_info and [k for k in ["kleurcode fabrikant", "nome colore produttore"] if k in extra_info[-1].lower()]:
+                    elif extra_info and [k for k in ["kleurcode fabrikant",
+                                                     "nome colore produttore",
+                                                     "názov farby výrobcu"] if k in extra_info[-1].lower()]:
                         toks = l.split()
                         # ~ logging.error(f"l:{l}, toks:{toks}")
                         if toks:
