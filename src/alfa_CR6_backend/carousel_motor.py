@@ -22,6 +22,8 @@ from alfa_CR6_backend.base_application import BaseApplication
 
 class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
+    timer_01_02 = 0
+
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
         'documentable': False,
@@ -381,7 +383,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if r:
             t0 = time.time()
             r = await _move_can_to_A()
-            if time.time() - t0 < 6.0:
+
+            if time.time() - self.timer_01_02 < 6.0:
+
                 msg_ = tr_('Can in position A must be removed!')
                 while True:
                     await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
@@ -705,6 +709,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
                         msg_ = tr_('barcode:{} error in {}. Can is removed.').format(barcode_, f"\n{_tag}\n")
                         await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
+
+                        self.timer_01_02 = time.time()
 
                         return
 
