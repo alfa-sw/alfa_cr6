@@ -389,8 +389,18 @@ weight:{RealWeight}
             date_time = str(time.asctime())
 
             if properties.get("extra_lines_to_print") is None:
-                properties["extra_lines_to_print"] = [f"{brand} - {quality}",
-                                                      f"{colorCode} - {quantity}", f"{batchId}", f"{date_time}"]
+                printable_extra_lines = [
+                    f"{brand} - {quality}",
+                    f"{colorCode} - {quantity}",
+                    f"{batchId}",
+                    f"{date_time}"
+                ]
+
+                batch_id_value = properties.get("batchId", "")
+                if batch_id_value:
+                    printable_extra_lines.insert(0, batch_id_value)
+
+                properties["extra_lines_to_print"] = printable_extra_lines
 
         logging.info(f"properties:{properties}")
         return properties
