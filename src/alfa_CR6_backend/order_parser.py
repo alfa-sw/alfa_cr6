@@ -396,9 +396,9 @@ weight:{RealWeight}
                     f"{date_time}"
                 ]
 
-                batch_id_value = properties.get("batchId", "")
-                if batch_id_value:
-                    printable_extra_lines.insert(0, batch_id_value)
+                job_id_value = properties.get("jobId", "")
+                if job_id_value:
+                    printable_extra_lines.insert(0, job_id_value)
 
                 properties["extra_lines_to_print"] = printable_extra_lines
 
