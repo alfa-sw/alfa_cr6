@@ -23,6 +23,7 @@ from alfa_CR6_backend.base_application import BaseApplication
 class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     timer_01_02 = 0
+    double_can_alert = False
 
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
@@ -383,14 +384,22 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if r:
             t0 = time.time()
             r = await _move_can_to_A()
+            dt = time.time() - t0
 
-            if time.time() - self.timer_01_02 < 6.0:
+            logging.warning(f"j:{jar}, dt:{dt}, self.double_can_alert:{self.double_can_alert}, self.timer_01_02:{self.timer_01_02}")
 
-                msg_ = tr_('Can in position A must be removed!')
-                while True:
-                    await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
-                    if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
-                        break
+            if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL"):
+                timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
+
+                if dt < timeout_ or self.double_can_alert:
+                    msg_ = tr_('Can in position A must be removed!')
+                    while True:
+                        await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
+                        if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
+                            break
+                    self.double_can_alert = False
+                    # ~ r = await _move_can_to_A()
+                    asyncio.get_event_loop().call_later(.1, self.delete_entering_jar)
 
         return r
 
@@ -708,9 +717,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     if "move_01_02" in _tag:
 
                         msg_ = tr_('barcode:{} error in {}. Can is removed.').format(barcode_, f"\n{_tag}\n")
+
+                        self.delete_entering_jar()
+
                         await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
 
                         self.timer_01_02 = time.time()
+                        logging.warning(f"self.timer_01_02:{self.timer_01_02}")
 
                         return
 

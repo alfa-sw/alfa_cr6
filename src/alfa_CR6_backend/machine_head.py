@@ -132,6 +132,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return available_gr
 
+    def handle_dispensing_photocell_transition(self, new_flag):
+
+        dt = time.time() - self.app.timer_01_02
+        logging.warning(f"new_flag:{new_flag}, dt:{dt}, self.app.timer_01_02:{self.app.timer_01_02}.")
+        if new_flag and self.index == 0:
+            if hasattr(self.app.settings, "MOVE_01_02_TIME_INTERVAL"):
+                timeout_ = float(self.app.settings.MOVE_01_02_TIME_INTERVAL)
+                if dt < timeout_:
+                    self.app.double_can_alert = True
+
     async def get_machine_config(self):
 
         if self.machine_config is None:
@@ -273,6 +283,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
 
+        old_flag_1 = self.status.get("jar_photocells_status", 0) & 0x100
+        new_flag_1 = status.get("jar_photocells_status", 0) & 0x100
+        if old_flag_1 != new_flag_1:
+            logging.warning(f"JAR_DISPENSING_POSITION_PHOTOCELL transition {old_flag} -> {new_flag}")
+            self.handle_dispensing_photocell_transition(new_flag)
+
         try:
             crx_outputs_status = self.status.get('crx_outputs_status')
             for output_number in range(4):
@@ -327,6 +343,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if new_circuit_engaged != self._current_circuit_engaged:
                 if new_circuit_engaged == 0:
                     if self._current_circuit_engaged:
+                        self.runners[-1].setdefault('running_engaged_circuits', [])
                         self.runners[-1]['running_engaged_circuits'].append(self._current_circuit_engaged)
                 self._current_circuit_engaged = new_circuit_engaged
             if self.runners:
