@@ -373,7 +373,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 self.browser_page.open_page(url="http://127.0.0.1:8090/manual_index")
 
             elif "change_workspace" in btn_name:
-                if os.system("/opt/snowball_client.py change_workspace_wm") != 0:
+                if os.system("/opt/snowball_client.py display change_workspace_wm") != 0:
                     raise RuntimeError("command execution failure")
 
         except Exception as e:  # pylint: disable=broad-except
