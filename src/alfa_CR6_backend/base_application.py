@@ -943,7 +943,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 logging.warning(f'iscurrent:{j["task"] is asyncio.current_task()}, k:{k}, status:{j["jar"].status}, position:{j["jar"].position}.')
 
                 if not j["task"] is asyncio.current_task():
-                    # ~ if j["jar"].status in ["ENTERING", ] or j["jar"].position in ["IN_A", ] :
+
                     if j["jar"].position in ["IN_A", "A"] :
 
                         logging.warning(f'cancelling:{j["task"]}')
