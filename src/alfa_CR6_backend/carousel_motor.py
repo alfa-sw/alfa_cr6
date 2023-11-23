@@ -284,7 +284,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             else:
                 break
 
-    async def move_from_to(self, jar, letter_from, letter_to):
+    async def move_from_to(self, jar, letter_from, letter_to, check_lower_heads_panel_table_status=False):
 
         logging.warning(f"j:{jar} {letter_from} -> {letter_to}")
 
@@ -297,6 +297,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             flag = flag and not self.positions_already_engaged([letter_from, letter_to], jar)
             flag = flag and not FROM.check_alarm_923()
             flag = flag and not TO.check_alarm_923()
+
+            if check_lower_heads_panel_table_status:
+                # panel_table_status 0: table panel inside, 1: table panel open (NOT OK)
+                flag = flag and not TO.status.get('panel_table_status', False)
+
             return flag
 
         r = await self.wait_for_dispense_position_available(jar, letter_to, extra_check=condition)
@@ -446,6 +451,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             flag = not self.positions_already_engaged(["D", "LIFTR_DOWN"], jar)
             flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
             flag = flag and not D.check_alarm_923()
+            flag = flag and not D.status.get('panel_table_status', False)
             return flag
         r = await self.wait_for_dispense_position_available(jar, "D", extra_check=condition)
 
@@ -471,15 +477,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def move_07_08(self, jar=None):  # 'D -> E'
 
-        return await self.move_from_to(jar, "D", "E")
+        return await self.move_from_to(jar, "D", "E", True)
 
     async def move_08_09(self, jar=None):  # 'E -> F'
 
-        return await self.move_from_to(jar, "E", "F")
+        return await self.move_from_to(jar, "E", "F", True)
 
     async def move_07_09(self, jar=None):  # 'D -> F'
 
-        return await self.move_from_to(jar, "D", "F")
+        return await self.move_from_to(jar, "D", "F", True)
 
     async def move_09_10(self, jar=None):  # 'F -> DOWN'  pylint: disable=unused-argument
 
