@@ -54,6 +54,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         self.websocket = None
         self.last_answer = None
+        self.cmd_answers = []
         self.callback_on_macro_answer = None
         self.cntr = 0
         self.time_stamp = 0
@@ -130,6 +131,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ logging.warning(f"{self.name} {pigment_name} available_gr:{available_gr}")
 
         return available_gr
+
+    def handle_dispensing_photocell_transition(self, new_flag):
+
+        dt = time.time() - self.app.timer_01_02
+        logging.warning(f"new_flag:{new_flag}, dt:{dt}, self.app.timer_01_02:{self.app.timer_01_02}.")
+        if new_flag and self.index == 0:
+            if hasattr(self.app.settings, "MOVE_01_02_TIME_INTERVAL"):
+                timeout_ = float(self.app.settings.MOVE_01_02_TIME_INTERVAL)
+                if dt < timeout_:
+                    self.app.double_can_alert = True
 
     async def get_machine_config(self):
 
@@ -230,7 +241,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 "troubleshooting",
                 f"Errore.{status.get('error_code')}")
 
-            if os.path.exists(dir_path) and self.app.settings.TROUBLESHOOTING:
+            # ~ if os.path.exists(dir_path) and self.app.settings.TROUBLESHOOTING:
+            if os.path.exists(dir_path) and hasattr(self.app.settings, "TROUBLESHOOTING") and self.app.settings.TROUBLESHOOTING:
                 def _cb():
                     url = "http://127.0.0.1:8090/troubleshooting/{}".format(status.get("error_code"))
                     self.app.main_window.browser_page.open_page(url=url)
@@ -270,6 +282,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if old_flag and not new_flag:
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
+
+        old_flag_1 = self.status.get("jar_photocells_status", 0) & 0x100
+        new_flag_1 = status.get("jar_photocells_status", 0) & 0x100
+        if old_flag_1 != new_flag_1:
+            logging.warning(f"JAR_DISPENSING_POSITION_PHOTOCELL transition {old_flag} -> {new_flag}")
+            self.handle_dispensing_photocell_transition(new_flag)
 
         try:
             crx_outputs_status = self.status.get('crx_outputs_status')
@@ -325,6 +343,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if new_circuit_engaged != self._current_circuit_engaged:
                 if new_circuit_engaged == 0:
                     if self._current_circuit_engaged:
+                        self.runners[-1].setdefault('running_engaged_circuits', [])
                         self.runners[-1]['running_engaged_circuits'].append(self._current_circuit_engaged)
                 self._current_circuit_engaged = new_circuit_engaged
             if self.runners:
@@ -373,6 +392,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         and answer.get("command") is not None):
 
                     self.last_answer = answer
+                    # ~ self.cmd_answers.append(answer)
 
             elif msg_type == "time":
                 propagate_to_ws_msg_handler = False
