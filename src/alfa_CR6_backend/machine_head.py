@@ -793,6 +793,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 json_properties.setdefault("pipe_formula_ml", {})
                 json_properties["pipe_formula_ml"][self.name] = pipe_formula_ml
 
+                json_properties.setdefault("not_dispensed_ingredients", {})
+                json_properties["not_dispensed_ingredients"] = jar.not_dispensed_ingredients
+
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
                 self.app.update_jar_properties(jar)
