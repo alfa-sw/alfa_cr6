@@ -76,6 +76,8 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         # ~ Qt::WindowModal	1	The window is modal to a single window hierarchy and blocks input to its parent window, all grandparent windows, and all siblings of its parent and grandparent windows.
         # ~ Qt::ApplicationModal	2	The window is modal to the application and blocks input to all windows.
 
+        self.setWindowModality(2)
+
         if self.hp_callback:
             self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Help | QMessageBox.Ok)
         else:
@@ -101,14 +103,6 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             b.setStyleSheet("""QWidget {font-size: 48px; font-family:Monospace;}""")
             b.setIcon(icon_)
             b.resize(300, 80)
-
-        self.setWindowModality(0)
-        self.setWindowFlags(
-            self.windowFlags()
-            | Qt.FramelessWindowHint
-            | Qt.WindowStaysOnTopHint
-            | Qt.X11BypassWindowManagerHint
-        )
 
         if self.ok_callback or self.hp_callback:
             def on_button_clicked(btn):
