@@ -213,7 +213,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.__init_dialogs()
         self.__init_icons()
 
-        # ~ self.showFullScreen()
+        self.showFullScreen()
 
         # ~ self.refill_1_lbl.mouseReleaseEvent = lambda event: self.show_reserve(0)
         # ~ self.refill_2_lbl.mouseReleaseEvent = lambda event: self.show_reserve(1)
