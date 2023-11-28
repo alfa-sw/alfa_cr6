@@ -896,7 +896,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def get_stabilized_jar_size(self, time_out_sec=2., max_cntr=3):
+    async def get_stabilized_jar_size(self, time_out_sec=3., max_cntr=5):
 
         t0 = time.time()
         _jar_size_detect = None
