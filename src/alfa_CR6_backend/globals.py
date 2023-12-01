@@ -393,6 +393,10 @@ def create_printable_image_from_jar(jar):
                 lines_to_print += [tr_("{} product(s) missing:").format(len(jar.unknown_pigments))]
                 lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.unknown_pigments.items()]
 
+            if jar.not_dispensed_ingredients:
+                lines_to_print += [tr_("{} product(s) not dispensed:").format(len(jar.not_dispensed_ingredients))]
+                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.not_dispensed_ingredients.items()]
+
         n_to_pad = n_of_lines + 1 - len(lines_to_print)
         lines_to_print.extend(["." for i in range(n_to_pad)])
         printable_text = '\n'.join(lines_to_print)

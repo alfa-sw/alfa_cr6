@@ -206,6 +206,7 @@ D = {
     "please, choose a circuit to print the corresponding label.": "prego, scegliere un circuito per stampare l'etichetta corrispondente.",
 
     "Can in position A must be removed!": "Can in position A must be removed!",
+    "{} product(s) not dispensed:": "{} prodotto/i non dispensato/i:",
 }
 
 

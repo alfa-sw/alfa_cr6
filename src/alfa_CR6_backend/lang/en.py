@@ -203,6 +203,8 @@ D = {
     "please, choose a circuit to print the corresponding label.": "please, choose a circuit to print the corresponding label.",
 
     "Can in position A must be removed!": "Can in position A must be removed!",
+
+    "{} product(s) not dispensed:": "{} product(s) not dispensed:",
 }
 
 
