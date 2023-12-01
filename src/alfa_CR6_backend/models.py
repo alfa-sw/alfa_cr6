@@ -370,23 +370,24 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
     @property
     def not_dispensed_ingredients(self):
         _json_properties = json.loads(self.json_properties)
-        order_ingredients = _json_properties.get("order_ingredients", {})
-        effective_engaged_circuits = _json_properties.get("effective_engaged_circuits", {})
+        return _json_properties.get("not_dispensed_ingredients", {})
 
-        undispensed_pigments = {}
+    def get_not_dispensed_ingredients(self, effective_engaged_circuits={}):
+        _json_properties = json.loads(self.json_properties)
+        order_ingredients = _json_properties.get("order_ingredients", [])
+        unknown_pigments = set(self.unknown_pigments.keys())
+        dispensed_ingredients = set(_json_properties.get("dispensed_quantities_gr", {}).keys())
 
-        engaged_pigments = set()
-        for circuit in effective_engaged_circuits.values():
-            for components in circuit.values():
-                engaged_pigments.add(components[1])
+        if not order_ingredients:
+            return {}
 
-        for ingredient in order_ingredients:
-            pig_name = ingredient.get('pigment_name', '')
-            start_ingredient_volume_map = _json_properties.get("start_ingredient_volume_map", {})
-            if pig_name not in start_ingredient_volume_map.keys():
-                continue
-            if pig_name not in engaged_pigments:
-                undispensed_pigments[ingredient.get('pigment_name', '')] = ingredient.get('weight', 1)
+        order_ingredient_set = {ingredient['pigment_name'] for ingredient in order_ingredients}
+
+        engaged_pigments = {pigment_name for _, pigment_name in effective_engaged_circuits.values()}
+
+        undispensed_pigments_set = (order_ingredient_set - engaged_pigments) - dispensed_ingredients - unknown_pigments
+
+        undispensed_pigments = {ingredient['pigment_name']: ingredient['weight(g)'] for ingredient in order_ingredients if ingredient['pigment_name'] in undispensed_pigments_set}
 
         return undispensed_pigments
 

@@ -794,7 +794,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 json_properties["pipe_formula_ml"][self.name] = pipe_formula_ml
 
                 json_properties.setdefault("not_dispensed_ingredients", {})
-                json_properties["not_dispensed_ingredients"] = jar.not_dispensed_ingredients
+                json_properties["not_dispensed_ingredients"] = jar.get_not_dispensed_ingredients(l_)
 
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
@@ -896,7 +896,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
 
-    async def get_stabilized_jar_size(self, time_out_sec=2., max_cntr=3):
+    async def get_stabilized_jar_size(self, time_out_sec=3., max_cntr=5):
 
         t0 = time.time()
         _jar_size_detect = None
