@@ -22,6 +22,9 @@ from alfa_CR6_backend.base_application import BaseApplication
 
 class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
+    timer_01_02 = 0
+    double_can_alert = False
+
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
         'documentable': False,
@@ -284,7 +287,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             else:
                 break
 
-    async def move_from_to(self, jar, letter_from, letter_to):
+    async def move_from_to(self, jar, letter_from, letter_to, check_lower_heads_panel_table_status=False):
 
         logging.warning(f"j:{jar} {letter_from} -> {letter_to}")
 
@@ -297,6 +300,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             flag = flag and not self.positions_already_engaged([letter_from, letter_to], jar)
             flag = flag and not FROM.check_alarm_923()
             flag = flag and not TO.check_alarm_923()
+
+            if check_lower_heads_panel_table_status:
+                # panel_table_status 0: table panel inside, 1: table panel open (NOT OK)
+                flag = flag and not TO.status.get('panel_table_status', False)
+
             return flag
 
         r = await self.wait_for_dispense_position_available(jar, letter_to, extra_check=condition)
@@ -351,14 +359,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         A = self.get_machine_head_by_letter("A")
 
-        def condition():
-            flag = not self.positions_already_engaged(["IN_A", "A"], jar)
-            flag = flag and not A.status.get('crx_outputs_status', 0x0) & 0x02
-            return flag
+        async def _move_can_to_A():
 
-        r = await self.wait_for_dispense_position_available(jar, "A", extra_check=condition)
-
-        if r:
             if not self.positions_already_engaged(["IN_A", ]):
                 self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
                 await A.crx_outputs_management(1, 2)
@@ -373,6 +375,36 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             if r:
                 self.update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
+
+            return r
+
+
+        def condition():
+            flag = not self.positions_already_engaged(["IN_A", "A"], jar)
+            flag = flag and not A.status.get('crx_outputs_status', 0x0) & 0x02
+            return flag
+
+        r = await self.wait_for_dispense_position_available(jar, "A", extra_check=condition)
+
+        if r:
+            t0 = time.time()
+            r = await _move_can_to_A()
+            dt = time.time() - t0
+
+            logging.warning(f"j:{jar}, dt:{dt}, self.double_can_alert:{self.double_can_alert}, self.timer_01_02:{self.timer_01_02}")
+
+            if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL"):
+                timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
+
+                if dt < timeout_ or self.double_can_alert:
+                    msg_ = tr_('Can in position A must be removed!')
+                    while True:
+                        await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
+                        if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
+                            break
+                    self.double_can_alert = False
+                    # ~ r = await _move_can_to_A()
+                    asyncio.get_event_loop().call_later(.1, self.delete_entering_jar)
 
         return r
 
@@ -446,6 +478,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             flag = not self.positions_already_engaged(["D", "LIFTR_DOWN"], jar)
             flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
             flag = flag and not D.check_alarm_923()
+            flag = flag and not D.status.get('panel_table_status', False)
             return flag
         r = await self.wait_for_dispense_position_available(jar, "D", extra_check=condition)
 
@@ -471,15 +504,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def move_07_08(self, jar=None):  # 'D -> E'
 
-        return await self.move_from_to(jar, "D", "E")
+        return await self.move_from_to(jar, "D", "E", True)
 
     async def move_08_09(self, jar=None):  # 'E -> F'
 
-        return await self.move_from_to(jar, "E", "F")
+        return await self.move_from_to(jar, "E", "F", True)
 
     async def move_07_09(self, jar=None):  # 'D -> F'
 
-        return await self.move_from_to(jar, "D", "F")
+        return await self.move_from_to(jar, "D", "F", True)
 
     async def move_09_10(self, jar=None):  # 'F -> DOWN'  pylint: disable=unused-argument
 
@@ -690,7 +723,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     if "move_01_02" in _tag:
 
                         msg_ = tr_('barcode:{} error in {}. Can is removed.').format(barcode_, f"\n{_tag}\n")
-                        await self.wait_for_carousel_not_frozen(True, msg_)
+
+                        self.delete_entering_jar()
+
+                        await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
+
+                        self.timer_01_02 = time.time()
+                        logging.warning(f"self.timer_01_02:{self.timer_01_02}")
 
                         return
 
