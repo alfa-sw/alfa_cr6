@@ -367,6 +367,30 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         # ~ return _order_json_properties.get("unknown_pigments", [])
         return _order_json_properties.get("unknown_pigments", {})
 
+    @property
+    def not_dispensed_ingredients(self):
+        _json_properties = json.loads(self.json_properties)
+        return _json_properties.get("not_dispensed_ingredients", {})
+
+    def get_not_dispensed_ingredients(self, effective_engaged_circuits={}):
+        _json_properties = json.loads(self.json_properties)
+        order_ingredients = _json_properties.get("order_ingredients", [])
+        unknown_pigments = set(self.unknown_pigments.keys())
+        dispensed_ingredients = set(_json_properties.get("dispensed_quantities_gr", {}).keys())
+
+        if not order_ingredients:
+            return {}
+
+        order_ingredient_set = {ingredient['pigment_name'] for ingredient in order_ingredients}
+
+        engaged_pigments = {pigment_name for _, pigment_name in effective_engaged_circuits.values()}
+
+        undispensed_pigments_set = (order_ingredient_set - engaged_pigments) - dispensed_ingredients - unknown_pigments
+
+        undispensed_pigments = {ingredient['pigment_name']: ingredient['weight(g)'] for ingredient in order_ingredients if ingredient['pigment_name'] in undispensed_pigments_set}
+
+        return undispensed_pigments
+
     def get_ingredients_for_machine(self, m):
 
         ingredients = {}

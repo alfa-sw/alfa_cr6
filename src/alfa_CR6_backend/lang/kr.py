@@ -208,6 +208,9 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "라벨 인쇄 확인<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "레이블을 인쇄할 회로를 선택합니다.",
+
+    "Can in position A must be removed!": "Can in position A must be removed!",
+    "{} product(s) not dispensed:": "{} product(s) not dispensed:",
 }
 
 D.update(error_kr.D)

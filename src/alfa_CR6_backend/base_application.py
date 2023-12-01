@@ -869,7 +869,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(traceback.format_exc())
             raise  # pylint:  disable=misplaced-bare-raise
 
-        self.main_window.open_alert_dialog(f"{e}", title="ERROR")
+        self.main_window.open_alert_dialog(f"{e}", title="ERROR", visibility=0)
         logging.error(traceback.format_exc())
 
     def toggle_freeze_carousel(self):
@@ -930,6 +930,38 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def show_reserve(self, head_index, flag):
         self.main_window.show_reserve(head_index, flag)
 
+    def delete_entering_jar(self):
+
+        logging.warning(' *** ')
+
+        try:
+
+            for k in list(self.__jar_runners.keys()):
+
+                j = self.__jar_runners[k]
+
+                logging.warning(f'iscurrent:{j["task"] is asyncio.current_task()}, k:{k}, status:{j["jar"].status}, position:{j["jar"].position}.')
+
+                if not j["task"] is asyncio.current_task():
+
+                    if j["jar"].position in ["IN_A", "A"] :
+
+                        logging.warning(f'cancelling:{j["task"]}')
+                        r = j["task"].cancel()
+                        logging.warning(f"cancelled. r:{r}")
+
+                        logging.warning(f"deleting:{j}")
+                        del j
+                        logging.warning(f"deleted:{k}")
+
+                        self.ws_server.refresh_can_list()
+
+                        break
+
+        except Exception as e:  # pylint: disable=broad-except
+
+            self.handle_exception(e)
+
     def delete_jar_runner(self, barcode):
 
         try:
@@ -963,11 +995,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return {k: j for k, j in self.__jar_runners.items() if j and j.get('jar')}
 
-    async def wait_for_carousel_not_frozen(self, freeze=False, msg=""):  # pylint: disable=too-many-statements
+    async def wait_for_carousel_not_frozen(self, freeze=False, msg="", visibility=1):  # pylint: disable=too-many-statements
 
         if freeze and not self.carousel_frozen:
             self.freeze_carousel(True)
-            self.main_window.open_frozen_dialog(msg)
+            self.main_window.open_frozen_dialog(msg, visibility=visibility)
 
         _runner = None
         if self.carousel_frozen:
