@@ -397,8 +397,13 @@ def create_printable_image_from_jar(jar):
                 lines_to_print += [tr_("{} product(s) not dispensed:").format(len(jar.not_dispensed_ingredients))]
                 lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.not_dispensed_ingredients.items()]
 
-        n_to_pad = n_of_lines + 1 - len(lines_to_print)
-        lines_to_print.extend(["." for i in range(n_to_pad)])
+        if len(lines_to_print) > n_of_lines + 1:
+            logging.warning(f"not enough space to print all lines")
+            lines_to_print = lines_to_print[:n_of_lines + 1]
+        else:
+            n_to_pad = n_of_lines + 1 - len(lines_to_print)
+            lines_to_print.extend(["." for i in range(n_to_pad)])
+
         printable_text = '\n'.join(lines_to_print)
 
         EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
