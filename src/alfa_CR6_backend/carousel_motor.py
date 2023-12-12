@@ -407,7 +407,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
 
                 if dt < timeout_ or self.double_can_alert:
-                    msg_ = tr_('Can in position A must be removed!')
+                    msg_ = tr_('Remove all Cans from input roller and from HEAD A!')
                     while True:
                         await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
                         if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
@@ -585,7 +585,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if not r:  # the output position is busy
             def condition_120():
                 return not F.status.get('crx_outputs_status', 0x0) & 0x04
-            r = await self.wait_for_condition(condition_120, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+            r = await self.wait_for_condition(condition_120, show_alert=False, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
             if r:
                 await F.crx_outputs_management(2, 4)
                 r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=5.5, show_alert=False)
@@ -596,11 +596,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 flag = not F.status.get('crx_outputs_status', 0x0) & 0x02
                 flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x04
                 return flag
-            r = await self.wait_for_condition(condition_121, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+            r = await self.wait_for_condition(condition_121, show_alert=False, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
             if r:
                 await F.crx_outputs_management(1, 4)
                 await F.crx_outputs_management(2, 4)
-                r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=22)
+                r = await F.wait_for_jar_photocells_status(
+                    "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True,
+                    timeout=22, show_alert=False)
                 await F.crx_outputs_management(1, 0)
                 await F.crx_outputs_management(2, 0)
 
@@ -752,7 +754,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 if not r:
                     if "move_01_02" in _tag:
 
-                        msg_ = tr_('barcode:{} error in {}. Can is removed.').format(barcode_, f"\n{_tag}\n")
+                        msg_ = tr_('barcode:{} error in {}. Remove all Cans from input roller and from HEAD A.').format(barcode_, f"\n{_tag}\n")
 
                         self.delete_entering_jar()
 
