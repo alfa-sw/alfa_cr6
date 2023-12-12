@@ -365,12 +365,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
                 await A.crx_outputs_management(1, 2)
                 await A.crx_outputs_management(0, 2)
-                r = await A.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=13.1)
+                r = await A.wait_for_jar_photocells_status(
+                    "JAR_DISPENSING_POSITION_PHOTOCELL",
+                    on=True, timeout=13.1, show_alert=False)
                 await A.crx_outputs_management(1, 0)
                 await A.crx_outputs_management(0, 0)
             else:
                 await A.crx_outputs_management(0, 2)
-                r = await A.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=13.2)
+                r = await A.wait_for_jar_photocells_status(
+                    "JAR_DISPENSING_POSITION_PHOTOCELL",
+                    on=True, timeout=13.2, show_alert=False)
                 await A.crx_outputs_management(0, 0)
 
             if r:

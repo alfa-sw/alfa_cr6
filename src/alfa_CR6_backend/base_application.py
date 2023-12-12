@@ -655,6 +655,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                         self.main_window.show_barcode(barcode, is_ok=False)
                     else:
+
+                        if self.carousel_frozen:
+                            logging.warning(f'carousel is frozen({carousel_frozen}) - returning from on_barcode_read ..')
+                            return
                         # let's run a task that will manage the jar through the entire path inside the system
                         t = self.__jar_task(barcode)
                         self.__jar_runners[barcode] = {
