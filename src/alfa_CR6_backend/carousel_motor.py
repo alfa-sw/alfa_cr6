@@ -287,7 +287,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             else:
                 break
 
-    async def move_from_to(self, jar, letter_from, letter_to, check_lower_heads_panel_table_status=False):
+    async def move_from_to(
+            self, jar, letter_from, letter_to,
+            check_lower_heads_panel_table_status=False,
+            show_alert=True
+    ):
 
         logging.warning(f"j:{jar} {letter_from} -> {letter_to}")
 
@@ -314,7 +318,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             await FROM.crx_outputs_management(0, 1)
             await TO.crx_outputs_management(0, 2)
             # ~ r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
-            r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=45)
+            r = await TO.wait_for_jar_photocells_status(
+                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True,
+                timeout=45, show_alert=show_alert)
             await FROM.crx_outputs_management(0, 0)
             await TO.crx_outputs_management(0, 0)
             if r:
@@ -414,15 +420,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def move_02_03(self, jar=None):  # 'A -> B'
 
-        return await self.move_from_to(jar, "A", "B")
+        return await self.move_from_to(jar, "A", "B", show_alert=False)
 
     async def move_03_04(self, jar=None):  # 'B -> C'
 
-        return await self.move_from_to(jar, "B", "C")
+        return await self.move_from_to(jar, "B", "C", show_alert=False)
 
     async def move_02_04(self, jar=None):  # 'A -> C'
 
-        return await self.move_from_to(jar, "A", "C")
+        return await self.move_from_to(jar, "A", "C", show_alert=False)
 
     async def move_04_05(self, jar=None):  # 'C -> UP'
 
@@ -440,13 +446,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 flag = flag and D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
                 return flag
 
-            r = await self.wait_for_condition(condition,
-                                              show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-                                              extra_info=tr_('waiting for load_lifter roller available and stopped.'))
+            r = await self.wait_for_condition(
+                condition,
+                show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
+                extra_info=tr_('waiting for load_lifter roller available and stopped.'))
             if r:
                 await C.crx_outputs_management(0, 1)
                 await C.crx_outputs_management(1, 2)
-                r = await C.wait_for_jar_photocells_status("JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True, timeout=17)
+                r = await C.wait_for_jar_photocells_status(
+                    "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True,
+                    timeout=17, show_alert=False)
                 await C.crx_outputs_management(0, 0)
                 await C.crx_outputs_management(1, 0)
 
@@ -466,7 +475,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
         if r:
             await D.crx_outputs_management(1, 5)
-            r = await D.wait_for_jar_photocells_status("LOAD_LIFTER_DOWN_PHOTOCELL", on=True, timeout=40)
+            r = await D.wait_for_jar_photocells_status(
+                "LOAD_LIFTER_DOWN_PHOTOCELL", on=True,
+                timeout=40, show_alert=False)
             await D.crx_outputs_management(1, 0)
             if r:
                 self.update_jar_position(jar=jar, pos="LIFTR_DOWN")
@@ -491,7 +502,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             await C.crx_outputs_management(1, 4)
             await D.crx_outputs_management(0, 5)
-            r = await D.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=20)
+            r = await D.wait_for_jar_photocells_status(
+                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True,
+                timeout=20, show_alert=False)
             await C.crx_outputs_management(1, 0)
             await D.crx_outputs_management(0, 0)
 
@@ -508,15 +521,24 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def move_07_08(self, jar=None):  # 'D -> E'
 
-        return await self.move_from_to(jar, "D", "E", True)
+        return await self.move_from_to(
+            jar, "D", "E",
+            check_lower_heads_panel_table_status=True,
+            show_alert=False)
 
     async def move_08_09(self, jar=None):  # 'E -> F'
 
-        return await self.move_from_to(jar, "E", "F", True)
+        return await self.move_from_to(
+            jar, "E", "F",
+            check_lower_heads_panel_table_status=True,
+            show_alert=False)
 
     async def move_07_09(self, jar=None):  # 'D -> F'
 
-        return await self.move_from_to(jar, "D", "F", True)
+        return await self.move_from_to(
+            jar, "D", "F",
+            check_lower_heads_panel_table_status=True,
+            show_alert=False)
 
     async def move_09_10(self, jar=None):  # 'F -> DOWN'  pylint: disable=unused-argument
 
@@ -526,7 +548,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         await F.crx_outputs_management(0, 4)
         await F.crx_outputs_management(1, 5)
-        r = await F.wait_for_jar_photocells_status("JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=True, timeout=20)
+        r = await F.wait_for_jar_photocells_status(
+            "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", on=True,
+            timeout=20, show_alert=False)
         await F.crx_outputs_management(0, 0)
         await F.crx_outputs_management(1, 0)
 
@@ -544,7 +568,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
         if r:
             await F.crx_outputs_management(3, 2)
-            r = await F.wait_for_jar_photocells_status("UNLOAD_LIFTER_UP_PHOTOCELL", on=True, timeout=40)
+            r = await F.wait_for_jar_photocells_status(
+                "UNLOAD_LIFTER_UP_PHOTOCELL", on=True,
+                timeout=40, show_alert=False)
             await F.crx_outputs_management(3, 0)
             if r:
                 self.update_jar_position(jar=jar, pos="LIFTL_UP")
