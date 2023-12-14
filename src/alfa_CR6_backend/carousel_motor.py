@@ -754,7 +754,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 if not r:
                     if "move_01_02" in _tag:
 
-                        msg_ = tr_('barcode:{} error in {}. Remove all Cans from input roller and from HEAD A.').format(barcode_, f"\n{_tag}\n")
+                        msg_ = tr_('barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!').format(barcode_, f"\n{_tag}\n")
 
                         self.delete_entering_jar()
 
