@@ -19,6 +19,7 @@ from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 from http import HTTPStatus
+from shutil import make_archive
 
 from flask import (Markup, redirect, flash, request, send_file, current_app)  # pylint: disable=import-error
 
@@ -609,7 +610,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
                             flash_msgs.append(_snowball_err_str)
                         else:
                             temp_pth = os.path.join(SETTINGS.TMP_PATH, "data.zip")
-                            dest_pth = os.path.join(SETTINGS.CONF_PATH, "..")
+                            dest_pth = os.path.join(SETTINGS.DATA_PATH)
                             with open(temp_pth, 'wb') as f:
                                 f.write(stream.read())
                             unzip_to_dir(dest_dir=dest_pth, source_path=temp_pth)
@@ -671,9 +672,9 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 file_to_send = SETTINGS.SQLITE_CONNECT_STRING.split('///')[1]
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             elif data_set_name_lower == 'data.zip':
-                temp_pth = os.path.join(SETTINGS.TMP_PATH, "data.zip")
-                zip_from_dir(dest_path=temp_pth, source_dir=SETTINGS.DATA_PATH, exclude_patterns=("webengine", "cache", "back", "temp"), mode="a")
-                file_to_send = temp_pth
+                temp_pth = os.path.join(SETTINGS.TMP_PATH, "data")
+                make_archive(temp_pth, 'zip', SETTINGS.DATA_PATH)
+                file_to_send = f'{temp_pth}.zip'
                 out_fname = f'{alfa_serialnumber}_{timestamp_}_{os.path.basename(file_to_send)}'
             elif data_set_name_lower == 'data_and_conf.zip':
                 temp_pth = os.path.join(SETTINGS.TMP_PATH, "data_and_conf.zip")
