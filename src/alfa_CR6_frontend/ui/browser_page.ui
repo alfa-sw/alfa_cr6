@@ -37,7 +37,7 @@
   <widget class="QLabel" name="refill_label">
    <property name="geometry">
     <rect>
-     <x>1570</x>
+     <x>1375</x>
      <y>22</y>
      <width>96</width>
      <height>82</height>
@@ -66,7 +66,7 @@
   <widget class="QLabel" name="print_label">
    <property name="geometry">
     <rect>
-     <x>1700</x>
+     <x>1505</x>
      <y>22</y>
      <width>140</width>
      <height>82</height>

@@ -202,8 +202,7 @@ D = {
     "please, confirm printing label<br>{} {} {}.": "Please, confirm printing label<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "please, choose a circuit to print the corresponding label.",
 
-    "Can in position A must be removed!": "Can in position A must be removed!",
-
+    "Remove all Cans from input roller and from HEAD A!": "Remove all Cans from input roller and from HEAD A!",
     "{} product(s) not dispensed:": "{} product(s) not dispensed:",
 }
 

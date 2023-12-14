@@ -204,12 +204,12 @@ D = {
     "please, verify barcode {} on canister.": "please, verify barcode {} on canister.",
     "barcode not known:{}": "barcode not known:{}",
     "please, enter service password": "please, enter service password",
-    "barcode:{} error in {}. Can is removed." : "barcode:{} error in {}. Can is removed.",
+    "barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!" : "barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!",
 
     "please, confirm printing label<br>{} {} {}.": "라벨 인쇄 확인<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "레이블을 인쇄할 회로를 선택합니다.",
 
-    "Can in position A must be removed!": "Can in position A must be removed!",
+    "Remove all Cans from input roller and from HEAD A!": "Remove all Cans from input roller and from HEAD A!",
     "{} product(s) not dispensed:": "{} product(s) not dispensed:",
 }
 

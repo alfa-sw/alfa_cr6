@@ -499,7 +499,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 _task = _runner["task"]
                 if _task.done():
                     _task.cancel()
-                    logging.warning("deleting:{}".format(_runner))
+                    logging.warning("TASK DONE >> deleting:{}".format(_runner))
                     self.__jar_runners.pop(k)
                     _runner = None
 
@@ -655,6 +655,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                         self.main_window.show_barcode(barcode, is_ok=False)
                     else:
+
+                        if self.carousel_frozen:
+                            logging.warning(f'carousel is frozen({carousel_frozen}) - returning from on_barcode_read ..')
+                            return
                         # let's run a task that will manage the jar through the entire path inside the system
                         t = self.__jar_task(barcode)
                         self.__jar_runners[barcode] = {
@@ -930,6 +934,17 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def show_reserve(self, head_index, flag):
         self.main_window.show_reserve(head_index, flag)
 
+    def _del_entering_jar(self, entering_jar, kode):
+        logging.warning(f'cancelling:{entering_jar["task"]}')
+        r = entering_jar["task"].cancel()
+        logging.warning(f"cancelled. r:{r}")
+
+        logging.warning(f"deleting:{entering_jar}")
+        del entering_jar
+        logging.warning(f"deleted:{kode}")
+
+        self.ws_server.refresh_can_list()
+
     def delete_entering_jar(self):
 
         logging.warning(' *** ')
@@ -942,21 +957,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 logging.warning(f'iscurrent:{j["task"] is asyncio.current_task()}, k:{k}, status:{j["jar"].status}, position:{j["jar"].position}.')
 
-                if not j["task"] is asyncio.current_task():
+                if j["task"] is not asyncio.current_task() and j["jar"].position in ["IN_A", "A"]:
+                    self._del_entering_jar(j, k)
+                    continue
 
-                    if j["jar"].position in ["IN_A", "A"] :
-
-                        logging.warning(f'cancelling:{j["task"]}')
-                        r = j["task"].cancel()
-                        logging.warning(f"cancelled. r:{r}")
-
-                        logging.warning(f"deleting:{j}")
-                        del j
-                        logging.warning(f"deleted:{k}")
-
-                        self.ws_server.refresh_can_list()
-
-                        break
+                if j["jar"].status in ["ENTERING"]:
+                    self._del_entering_jar(j, k)
+                    continue
 
         except Exception as e:  # pylint: disable=broad-except
 

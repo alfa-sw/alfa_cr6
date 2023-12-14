@@ -382,16 +382,19 @@ weight:{RealWeight}
             brand = meta.get("brand", '')
             quality = meta.get("quality", '')
             colorCode = meta.get("colorCode", '')
+            variantCode = meta.get("variantCode", '')
             qtty = meta.get("quantity(l)")
             if qtty is None:
                 qtty = meta.get("quantity", 0)
             quantity = round(float(qtty), 3)
+            qty_uom = meta.get("quantityUom", '').upper()
             date_time = str(time.asctime())
 
             if properties.get("extra_lines_to_print") is None:
                 printable_extra_lines = [
                     f"{brand} - {quality}",
-                    f"{colorCode} - {quantity}",
+                    f"{colorCode} - {variantCode}",
+                    f"{quantity} {qty_uom}",
                     f"{batchId}",
                     f"{date_time}"
                 ]

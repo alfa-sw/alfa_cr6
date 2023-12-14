@@ -194,13 +194,13 @@ D = {
     "please, verify barcode {} on canister.": "s'il vous plaît, vérifiez le code-barres {} sur bidon.",
     "barcode not known:{}": "code barre inconnu:{}",
     "please, enter service password": "s'il vous plaît, entrez le mot de passe du service",
-    "barcode:{} error in {}. Can is removed." : "code-barres:{} erreur dans {}. La pot est supprimee.",
+    "barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!" : "code-barres:{} erreur dans {}. Retirer tous les bocaux du CONVOYEUR D'ENTRÉE et de la TÊTE A!",
 
     "please, confirm printing label<br>{} {} {}.": "Veuillez confirmer l'impression de l'étiquette<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "choisir un circuit pour imprimer l'étiquette correspondante.",
 
-    "Can in position A must be removed!": "Can in position A must be removed!",
-    "{} product(s) not dispensed:": "{} product(s) not dispensed:",
+    "Remove all Cans from input roller and from HEAD A!": "Retirer tous les bocaux du CONVOYEUR D'ENTRÉE et de la TÊTE A!",
+    "{} product(s) not dispensed:": "{} produit(s) non distribué(s):",
 }
 
 
