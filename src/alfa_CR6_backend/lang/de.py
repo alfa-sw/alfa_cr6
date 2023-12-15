@@ -200,7 +200,7 @@ D = {
     "please, choose a circuit to print the corresponding label.": "Wählen Sie eine Schaltung aus, um das entsprechende Etikett zu drucken.",
 
     "Remove all Cans from input roller and from HEAD A!": "Entfernen Sie alle Dosen von eingangsrollenbahn und von KOPF A!",
-    "{} product(s) not dispensed:": "{} product(s) not dispensed:",
+    "{} product(s) not dispensed:": "{} produkt(e) nicht dosiert:",
 }
 
 
