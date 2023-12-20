@@ -657,8 +657,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     else:
 
                         if self.carousel_frozen:
-                            logging.warning(f'carousel is frozen({carousel_frozen}) - returning from on_barcode_read ..')
+                            logging.warning(f'carousel is frozen({self.carousel_frozen}) - returning from on_barcode_read ..')
                             return
+
                         # let's run a task that will manage the jar through the entire path inside the system
                         t = self.__jar_task(barcode)
                         self.__jar_runners[barcode] = {
@@ -935,6 +936,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.main_window.show_reserve(head_index, flag)
 
     def _del_entering_jar(self, entering_jar, kode):
+
+        logging.warning(f'kode --> {kode}')
+        if entering_jar.get('jar'):
+            if entering_jar["jar"].status not in ["ERROR", "DONE"]:
+                logging.warning(f'CHANGING STATUS OF JAF {kode}')
+                entering_jar["jar"].status = "NEW"
+                entering_jar["jar"].position = "_"
+                entering_jar["jar"].machine_head = None
+                self.db_session.commit()
+
         logging.warning(f'cancelling:{entering_jar["task"]}')
         r = entering_jar["task"].cancel()
         logging.warning(f"cancelled. r:{r}")
@@ -961,7 +972,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self._del_entering_jar(j, k)
                     continue
 
-                if j["jar"].status in ["ENTERING"]:
+                if j["jar"].status in ["ENTERING"] or j["jar"].position in ["IN"]:
                     self._del_entering_jar(j, k)
                     continue
 

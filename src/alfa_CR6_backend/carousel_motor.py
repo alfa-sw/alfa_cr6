@@ -24,6 +24,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     timer_01_02 = 0
     double_can_alert = False
+    busy_head_A = False
 
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
@@ -367,6 +368,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         async def _move_can_to_A():
 
+            self.busy_head_A = True
+
             if not self.positions_already_engaged(["IN_A", ]):
                 self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
                 await A.crx_outputs_management(1, 2)
@@ -415,6 +418,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     self.double_can_alert = False
                     # ~ r = await _move_can_to_A()
                     asyncio.get_event_loop().call_later(.1, self.delete_entering_jar)
+
+            self.busy_head_A = False
 
         return r
 
@@ -742,12 +747,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             _tag = str(step).split("bound method CarouselMotor.")
             _tag = _tag[1:] and _tag[1].split(" ")[0]
             _tag = "{} ({})".format(tr_(_tag), jar.position)
-            logging.warning(f"_tag:{_tag}")
+            logging.warning(f"_tag:{_tag} for jar {jar}")
 
             retry_counter = 0
             while True:
 
                 await self.wait_for_carousel_not_frozen(freeze=False, msg="")
+
+                if "move_01_02" in _tag and self.busy_head_A:
+                    await asyncio.sleep(.1)
+                    continue
 
                 r = await step(jar)
 
