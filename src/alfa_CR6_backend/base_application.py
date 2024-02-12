@@ -663,7 +663,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         # let's run a task that will manage the jar through the entire path inside the system
                         t = self.__jar_task(barcode)
                         self.__jar_runners[barcode] = {
-                            "task": asyncio.ensure_future(t), "frozen": True}
+                            "task": asyncio.ensure_future(t),
+                            "frozen": True
+                        }
 
                         self.main_window.show_barcode(barcode, is_ok=True)
                         logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
@@ -976,6 +978,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self._del_entering_jar(j, k)
                     continue
 
+                # TODO: check if keeping the following code
+                if j["jar"].status in ["ERROR"] and j["jar"].position in ["IN_A", "A"]:
+                    logging.warning('JAR STATUS ERROR ∧ JAR POSITION [IN_A, A]')
+                    self._del_entering_jar(j, k)
+                    continue
+
         except Exception as e:  # pylint: disable=broad-except
 
             self.handle_exception(e)
@@ -1013,11 +1021,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return {k: j for k, j in self.__jar_runners.items() if j and j.get('jar')}
 
-    async def wait_for_carousel_not_frozen(self, freeze=False, msg="", visibility=1):  # pylint: disable=too-many-statements
+    async def wait_for_carousel_not_frozen(
+            self, freeze=False, msg="", visibility=1,
+            show_cancel_btn=True
+    ):  # pylint: disable=too-many-statements
 
         if freeze and not self.carousel_frozen:
             self.freeze_carousel(True)
-            self.main_window.open_frozen_dialog(msg, visibility=visibility)
+            self.main_window.open_frozen_dialog(
+                msg, visibility=visibility, show_cancel_btn=show_cancel_btn
+            )
 
         _runner = None
         if self.carousel_frozen:

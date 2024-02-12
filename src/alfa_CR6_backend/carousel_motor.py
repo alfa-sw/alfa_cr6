@@ -410,14 +410,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
 
                 if dt < timeout_ or self.double_can_alert:
-                    msg_ = tr_('Remove all Cans from input roller and from HEAD A!')
+                    msg_ = tr_('The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!')
                     while True:
-                        await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
+                        await self.wait_for_carousel_not_frozen(
+                            True, msg_, visibility=2, show_cancel_btn=False)
                         if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
                             break
                     self.double_can_alert = False
                     # ~ r = await _move_can_to_A()
-                    asyncio.get_event_loop().call_later(.1, self.delete_entering_jar)
+                    asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
 
             self.busy_head_A = False
 
@@ -755,9 +756,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await self.wait_for_carousel_not_frozen(freeze=False, msg="")
 
                 if "move_01_02" in _tag and self.busy_head_A:
-                    await asyncio.sleep(.1)
+                    await asyncio.sleep(0.05)
                     continue
-
+                logging.warning(f'BUSY HEAD FALSE TO {jar.position} - {_tag}')
                 r = await step(jar)
 
                 if not r:

@@ -473,7 +473,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         logging.warning(str(message))
 
     def open_alert_dialog(  # pylint: disable=too-many-arguments
-            self, args, title="ALERT", fmt=None, callback=None, cb_args=None, hp_callback=None, visibility=1):
+            self, args, title="ALERT", fmt=None,
+            callback=None, cb_args=None, hp_callback=None,
+            visibility=1, show_cancel_btn=True
+    ):
 
         if fmt is not None:
             msg = tr_(fmt).format(*args)
@@ -487,7 +490,13 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         if visibility > 0:
 
-            _msgbox = ModalMessageBox(parent=self, msg=msg, title=title, ok_callback=callback, ok_callback_args=cb_args, hp_callback=hp_callback)
+            _msgbox = ModalMessageBox(
+                parent=self, msg=msg, title=title,
+                ok_callback=callback, ok_callback_args=cb_args,
+                hp_callback=hp_callback
+            )
+            if not show_cancel_btn:
+                _msgbox.enable_buttons(True, False, False)
 
             if visibility > 1:
                 _msgbox.setStyleSheet("""QMessageBox {border: 10px solid #FF3333; background-color: #FFFF33;}""")
@@ -503,7 +512,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             description=f"{msg_ or msg}")
 
     def open_frozen_dialog( # pylint: disable=too-many-arguments
-            self, msg, title="ALERT", force_explicit_restart=False, ok_callback=None, hp_callback=None, visibility=1):
+            self, msg, title="ALERT", force_explicit_restart=False,
+            ok_callback=None, hp_callback=None, visibility=1,
+            show_cancel_btn=True
+    ):
 
         logging.info(msg)
         msg_ = tr_("carousel is paused.")
@@ -517,7 +529,11 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             callback = QApplication.instance().freeze_carousel
             cb_args = [False, ]
 
-        self.open_alert_dialog(msg_, title=title, callback=callback, cb_args=cb_args, hp_callback=hp_callback, visibility=visibility)
+        self.open_alert_dialog(
+            msg_, title=title, callback=callback, cb_args=cb_args,
+            hp_callback=hp_callback, visibility=visibility,
+            show_cancel_btn=show_cancel_btn
+        )
 
     def show_barcode(self, barcode, is_ok=False):
 

@@ -50,7 +50,10 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             else:
                 b.setEnabled(flag_ok)
 
-    def __init__(self, msg="", title="", parent=None, ok_callback=None, ok_callback_args=None, hp_callback=None):   # pylint: disable=too-many-arguments
+    def __init__(
+            self, msg="", title="", parent=None, ok_callback=None,
+            ok_callback_args=None, hp_callback=None
+    ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
 
         self.ok_callback = ok_callback
