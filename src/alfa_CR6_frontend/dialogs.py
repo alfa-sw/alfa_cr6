@@ -427,8 +427,7 @@ class EditDialog(BaseDialog):
 
     def __customer_personalization_on_show_dialog(self):
         _app_settings = import_settings()
-        logging.warning(f'{type(_app_settings)}')
-        logging.warning(_app_settings)
+
         if getattr(_app_settings, 'FORCE_ORDER_JAR_TO_ONE', False):
             self.n_of_jars_spinbox.setValue(1)
             self.n_of_jars_spinbox.setReadOnly(True)

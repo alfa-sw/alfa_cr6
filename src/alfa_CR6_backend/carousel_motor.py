@@ -758,7 +758,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 if "move_01_02" in _tag and self.busy_head_A:
                     await asyncio.sleep(0.05)
                     continue
-                logging.warning(f'BUSY HEAD FALSE TO {jar.position} - {_tag}')
+
                 r = await step(jar)
 
                 if not r:
