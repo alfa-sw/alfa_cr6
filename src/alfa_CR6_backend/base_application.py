@@ -612,6 +612,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, remaining_volume)
                     self.main_window.open_alert_dialog(msg_, title="ERROR")
                     logging.error(msg_)
+
+                start_ingredient_volume_map = json_properties["start_ingredient_volume_map"]
+                ingredients_total_vol = self.retrive_formula_total_vol(start_ingredient_volume_map)
+                if jar_volume < ingredients_total_vol:
+                    jar = None
+                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
+                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, ingredients_total_vol)
+                    self.main_window.open_alert_dialog(msg_, title="ERROR")
+                    logging.error(msg_)
         else:
             jar = None
             args, fmt = (barcode, ), "barcode:{} not found.\nPlease, remove it.\n"
@@ -1213,3 +1222,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if not m.pigment_list:
                     t = m.update_tintometer_data()
                     asyncio.ensure_future(t)
+
+    @staticmethod
+    def retrive_formula_total_vol(start_ingredient_volume_map):
+
+        total_volume = 0
+
+        for key in start_ingredient_volume_map:
+            for position in start_ingredient_volume_map[key]:
+                total_volume += start_ingredient_volume_map[key][position]
+
+        return total_volume
