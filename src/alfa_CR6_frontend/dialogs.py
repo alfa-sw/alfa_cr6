@@ -36,7 +36,7 @@ from PyQt5.QtWidgets import (
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
 
-from alfa_CR6_backend.globals import get_res, tr_
+from alfa_CR6_backend.globals import get_res, tr_, import_settings
 
 
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
@@ -425,6 +425,14 @@ class EditDialog(BaseDialog):
         else:
             self.hide()
 
+    def __customer_personalization_on_show_dialog(self):
+        _app_settings = import_settings()
+        logging.warning(f'{type(_app_settings)}')
+        logging.warning(_app_settings)
+        if getattr(_app_settings, 'FORCE_ORDER_JAR_TO_ONE', False):
+            self.n_of_jars_spinbox.setValue(1)
+            self.n_of_jars_spinbox.setReadOnly(True)
+
     def show_dialog(self, order_nr):
 
         self.order_nr = order_nr
@@ -480,6 +488,8 @@ class EditDialog(BaseDialog):
 
         for row, item_ in enumerate(ingredients):
             self.__set_row(row, item_['pigment_name'], item_['weight(g)'], item_.get('description', ''))
+
+        self.__customer_personalization_on_show_dialog()
 
         self.show()
 
