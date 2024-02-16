@@ -949,13 +949,18 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def _del_entering_jar(self, entering_jar, kode):
 
         logging.warning(f'kode --> {kode}')
-        if entering_jar.get('jar'):
-            if entering_jar["jar"].status not in ["ERROR", "DONE"]:
-                logging.warning(f'CHANGING STATUS OF JAF {kode}')
-                entering_jar["jar"].status = "NEW"
-                entering_jar["jar"].position = "_"
-                entering_jar["jar"].machine_head = None
-                self.db_session.commit()
+        if entering_jar.get('jar') and entering_jar["jar"].status not in ["ERROR", "DONE"]:
+            logging.warning(f'CHANGING STATUS OF JAF {kode}')
+            entering_jar["jar"].status = "NEW"
+            entering_jar["jar"].position = "_"
+            entering_jar["jar"].machine_head = None
+            self.db_session.commit()
+
+        entering_jar_order = entering_jar["jar"].order
+        if entering_jar_order:
+            logging.warning(f'entering_jar_order status: {entering_jar_order.status}')
+            order_updated_status = entering_jar_order.update_status(self.db_session)
+            logging.warning(f'updated entering_jar_order status: {order_updated_status}')
 
         logging.warning(f'cancelling:{entering_jar["task"]}')
         r = entering_jar["task"].cancel()
@@ -979,17 +984,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 logging.warning(f'iscurrent:{j["task"] is asyncio.current_task()}, k:{k}, status:{j["jar"].status}, position:{j["jar"].position}.')
 
-                if j["task"] is not asyncio.current_task() and j["jar"].position in ["IN_A", "A"]:
-                    self._del_entering_jar(j, k)
-                    continue
-
-                if j["jar"].status in ["ENTERING"] or j["jar"].position in ["IN"]:
-                    self._del_entering_jar(j, k)
-                    continue
-
-                # TODO: check if keeping the following code
-                if j["jar"].status in ["ERROR"] and j["jar"].position in ["IN_A", "A"]:
-                    logging.warning('JAR STATUS ERROR ∧ JAR POSITION [IN_A, A]')
+                if j["jar"].position in ["IN", "IN_A", "A"]:
                     self._del_entering_jar(j, k)
                     continue
 
