@@ -605,6 +605,17 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 json_properties = json.loads(jar.json_properties)
                 remaining_volume = json_properties["remaining_volume"]
+                start_ingredient_volume_map = json_properties["start_ingredient_volume_map"]
+                insufficient_pigments_map = json_properties["insufficient_pigments"]
+                ingredients_total_vol = self.retrive_formula_total_vol(
+                    start_ingredient_volume_map, insufficient_pigments_map)
+
+                if jar_volume < ingredients_total_vol:
+                    jar = None
+                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
+                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, ingredients_total_vol)
+                    self.main_window.open_alert_dialog(msg_, title="ERROR")
+                    logging.error(msg_)
 
                 if jar_volume < remaining_volume:
                     jar = None
@@ -613,14 +624,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.main_window.open_alert_dialog(msg_, title="ERROR")
                     logging.error(msg_)
 
-                start_ingredient_volume_map = json_properties["start_ingredient_volume_map"]
-                ingredients_total_vol = self.retrive_formula_total_vol(start_ingredient_volume_map)
-                if jar_volume < ingredients_total_vol:
-                    jar = None
-                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, ingredients_total_vol)
-                    self.main_window.open_alert_dialog(msg_, title="ERROR")
-                    logging.error(msg_)
         else:
             jar = None
             args, fmt = (barcode, ), "barcode:{} not found.\nPlease, remove it.\n"
@@ -1219,7 +1222,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     asyncio.ensure_future(t)
 
     @staticmethod
-    def retrive_formula_total_vol(start_ingredient_volume_map):
+    def retrive_formula_total_vol(start_ingredient_volume_map, insufficient_pigments_map):
 
         total_volume = 0
 
@@ -1227,4 +1230,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             for position in start_ingredient_volume_map[key]:
                 total_volume += start_ingredient_volume_map[key][position]
 
+        for key in insufficient_pigments_map:
+            total_volume += insufficient_pigments_map[key]
+
+        logging.warning(f'formula total_volume: {total_volume}')
         return total_volume
