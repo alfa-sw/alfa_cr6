@@ -458,8 +458,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     msg_ = f"barcode: {barcode}\n"
 
                     if insufficient_pigments and cntr <= 3:
+                        fmt_insuff_pigmts = self.build_insufficient_pigments_infos(insufficient_pigments)
                         msg_ += tr_("\npigments to be refilled before dispensing:{}. ({}/3)\n").format(
-                            list(insufficient_pigments.keys()), cntr)
+                            fmt_insuff_pigmts, cntr)
                     else:
                         cntr = 4
 
@@ -1179,7 +1180,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.main_window.order_page.populate_order_table()
 
     def _build_ingredient_volume_map_helper(  # pylint: disable=too-many-arguments
-            self, ingredient_volume_map, visited_head_names, pigment_name, requested_quantity_gr, remaining_volume):
+            self, ingredient_volume_map,
+            visited_head_names, pigment_name,
+            requested_quantity_gr, remaining_volume
+    ):
 
         for m in self.machine_head_dict.values():
             if m and m.name not in visited_head_names:
@@ -1235,3 +1239,19 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         logging.warning(f'formula total_volume: {total_volume}')
         return total_volume
+
+    def build_insufficient_pigments_infos(self, insufficient_pigments):
+        insuff_pigmts = list(insufficient_pigments.keys())
+        info_insuff_pigmts = []
+
+        for m in filter(None, self.machine_head_dict.values()):
+            # m.low_level_pipes = [('colore', 'C01'), ...]
+            if not m.low_level_pipes:
+                continue
+
+            for _, ll_pipe in m.low_level_pipes:
+                if ll_pipe in insuff_pigmts:
+                    info_insuff_pigmts.append((ll_pipe, m.name))
+
+        logging.debug(f'>>>> info_insuff_pigmts: {info_insuff_pigmts}')
+        return info_insuff_pigmts
