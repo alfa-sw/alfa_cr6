@@ -385,7 +385,8 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         engaged_pigments = {pigment_name for _, pigment_name in effective_engaged_circuits.values()}
 
-        undispensed_pigments_set = order_ingredient_set - dispensed_ingredients_set - unknown_pigments_set
+        # undispensed_pigments_set = order_ingredient_set - dispensed_ingredients_set - unknown_pigments_set
+        undispensed_pigments_set = (order_ingredient_set - engaged_pigments) - dispensed_ingredients_set - unknown_pigments_set
 
         undispensed_pigments = {ingredient['pigment_name']: ingredient['weight(g)'] for ingredient in order_ingredients if ingredient['pigment_name'] in undispensed_pigments_set}
 
