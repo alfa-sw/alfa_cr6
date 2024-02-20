@@ -1055,7 +1055,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if _runner:
             _runner['frozen'] = False
 
-    def update_jar_properties(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def update_jar_properties(self, jar, dispense_not_successful=False):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         jar_json_properties = json.loads(jar.json_properties)
         order_json_properties = json.loads(jar.order.json_properties)
@@ -1084,7 +1084,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             ingredient_volume_map[pigment_name] = {}
 
             requested_quantity_gr, remaining_volume = self._build_ingredient_volume_map_helper(
-                ingredient_volume_map, visited_head_names, pigment_name, requested_quantity_gr, remaining_volume)
+                ingredient_volume_map, visited_head_names, pigment_name,
+                requested_quantity_gr, remaining_volume, dispense_not_successful)
 
             if ingredient_volume_map[pigment_name] and requested_quantity_gr > EPSILON:
                 # ~ the ingredient is known but not sufficiently available
@@ -1182,11 +1183,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def _build_ingredient_volume_map_helper(  # pylint: disable=too-many-arguments
             self, ingredient_volume_map,
             visited_head_names, pigment_name,
-            requested_quantity_gr, remaining_volume
+            requested_quantity_gr, remaining_volume,
+            dispense_not_successful
     ):
 
         for m in self.machine_head_dict.values():
-            if m and m.name not in visited_head_names:
+            # if m and m.name not in visited_head_names:
+            if m and (dispense_not_successful or m.name not in visited_head_names):
                 specific_weight = m.get_specific_weight(pigment_name)
                 if specific_weight > 0:
                     ingredient_volume_map[pigment_name][m.name] = 0

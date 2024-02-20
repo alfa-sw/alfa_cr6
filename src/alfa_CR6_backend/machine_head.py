@@ -798,7 +798,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
-                self.app.update_jar_properties(jar)
+                dispense_not_successful = True if result_ == 'NOK' else False
+                self.app.update_jar_properties(jar, dispense_not_successful=dispense_not_successful)
 
                 if error_msg:
                     await self.app.wait_for_carousel_not_frozen(True, msg=msg_)
