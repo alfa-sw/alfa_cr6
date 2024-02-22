@@ -556,7 +556,8 @@ class InputDialog(BaseDialog):
         choices=None,
         bg_image=None,
         to_html=None,
-        wide=None):
+        wide=None,
+        content_editable=True):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
@@ -608,6 +609,11 @@ class InputDialog(BaseDialog):
             else:
                 self.content_container.resize(self.content_container.width(), 400)    
                 self.resize(self.width(), 575)    
+
+        if hasattr(self.content_container, 'setReadOnly'):
+            self.content_container.setReadOnly(not content_editable)
+        elif hasattr(self.content_container, 'setEditable'):
+            self.content_container.setEditable(content_editable)
 
         self.__ok_cb = None
         self.__ok_cb_args = None
