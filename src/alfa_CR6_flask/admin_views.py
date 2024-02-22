@@ -505,11 +505,31 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 # ~ jobid_ = formula.get('jobId', '')
                 batchid_ = formula.get('batchId', '')
                 colorcode_ = formula.get('meta', {}).get('colorCode', '')
-                brand_ = formula.get('meta', {}).get('brand', '')
                 colorcode_ = colorcode_.replace("/", "-")
-                brand_ = brand_.replace("/", "-") 
-                fname_ = f"{brand_}_{colorcode_}.json"
-                pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), fname_)
+                brand_ = formula.get('meta', {}).get('brand', '')
+                brand_ = brand_.replace("/", "-")
+
+                fname_ = f"{brand_}_{colorcode_}"
+                fstep = formula.get('meta', {}).get('step', '')
+                if fstep:
+                    if not fstep.isdigit():
+                        raise ValueError(f'Step {fstep} must be a digit!')
+                    fname_ = f"{brand_}_{colorcode_}_step{fstep}"
+                fextension = 'json'
+                base_path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
+                filename_ = f'{fname_}.{fextension}'
+
+                if os.path.exists(os.path.join(base_path, filename_)):
+                    i = 1
+                    while True:
+                        new_filename = f"{fname_} ({i}).{fextension}"
+
+                        if not os.path.exists(os.path.join(base_path, new_filename)):
+                            filename_ = new_filename
+                            break
+                        i += 1
+
+                pth_ = os.path.join(base_path, filename_)
                 logging.warning(f"pth_:{pth_}")
                 with open(pth_, 'w', encoding='UTF-8') as f:
 
