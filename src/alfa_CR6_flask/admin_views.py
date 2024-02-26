@@ -508,13 +508,17 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 colorcode_ = colorcode_.replace("/", "-")
                 brand_ = formula.get('meta', {}).get('brand', '')
                 brand_ = brand_.replace("/", "-")
+                colorname_ = formula.get('meta', {}).get('colorName', '')
 
                 fname_ = f"{brand_}_{colorcode_}"
+                if (not brand_ and not colorcode_) and colorname_:
+                    fname_ = f"{colorname_}"
+
                 fstep = formula.get('meta', {}).get('step', '')
                 if fstep:
                     if not fstep.isdigit():
                         raise ValueError(f'Step {fstep} must be a digit!')
-                    fname_ = f"{brand_}_{colorcode_}_step{fstep}"
+                    fname_ = f"{fname_}_step{fstep}"
                 fextension = 'json'
                 base_path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
                 filename_ = f'{fname_}.{fextension}'
