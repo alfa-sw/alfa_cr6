@@ -958,3 +958,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         flag = flag and error_code in [923, '923', 'TINTING_PANEL_TABLE_ERROR']
 
         return flag
+
+    def get_pigment_list(self):
+        result = []
+        for _pigment in self.pigment_list:
+            colorant_name = _pigment.get('name', '')
+            pipe_names = [pipe.get('name', '') for pipe in _pigment.get('pipes', {})]
+            for pipe_name in pipe_names:
+                result.append((colorant_name, pipe_name))
+        return result

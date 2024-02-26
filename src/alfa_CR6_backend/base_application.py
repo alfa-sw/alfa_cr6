@@ -1248,13 +1248,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         info_insuff_pigmts = []
 
         for m in filter(None, self.machine_head_dict.values()):
-            # m.low_level_pipes = [('colore', 'C01'), ...]
-            if not m.low_level_pipes:
-                continue
-
-            for _, ll_pipe in m.low_level_pipes:
-                if ll_pipe in insuff_pigmts:
-                    info_insuff_pigmts.append((ll_pipe, m.name))
+            # m.get_pigment_list() = [('pigment', 'C01'), ...]
+            m_pig_list = m.get_pigment_list()
+            for ll_pigmnt, _ in m_pig_list:
+                if ll_pigmnt in insuff_pigmts:
+                    info_insuff_pigmts.append((ll_pigmnt, m.name))
 
         logging.debug(f'>>>> info_insuff_pigmts: {info_insuff_pigmts}')
         return info_insuff_pigmts
