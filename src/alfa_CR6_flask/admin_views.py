@@ -516,9 +516,10 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
                 fstep = formula.get('meta', {}).get('step', '')
                 if fstep:
-                    if not fstep.isdigit():
+                    fstep_str = str(fstep)
+                    if not fstep_str.isdigit():
                         raise ValueError(f'Step {fstep} must be a digit!')
-                    fname_ = f"{fname_}_step{fstep}"
+                    fname_ = f"{fname_}_step{fstep_str}"
                 fextension = 'json'
                 base_path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
                 filename_ = f'{fname_}.{fextension}'
@@ -526,7 +527,9 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 if os.path.exists(os.path.join(base_path, filename_)):
                     i = 1
                     while True:
-                        new_filename = f"{fname_} ({i}).{fextension}"
+                        # new_filename = f"{fname_} ({i}).{fextension}"
+                        fname_ = f"{fname_} ({i})"
+                        new_filename = f"{fname_}.{fextension}"
 
                         if not os.path.exists(os.path.join(base_path, new_filename)):
                             filename_ = new_filename
@@ -541,7 +544,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
                     response_status = HTTPStatus.OK
                     response_data['result'] = "json formula saved."
-                    response_data['file_name'] = f"{fname_}"
+                    response_data['file_name'] = f"{filename_}"
                     response_data['batchid'] = batchid_
 
         except Exception as exc:  # pylint: disable=broad-except
