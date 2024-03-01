@@ -527,9 +527,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 if os.path.exists(os.path.join(base_path, filename_)):
                     i = 1
                     while True:
-                        # new_filename = f"{fname_} ({i}).{fextension}"
-                        fname_ = f"{fname_} ({i})"
-                        new_filename = f"{fname_}.{fextension}"
+                        new_filename = f"{fname_} ({i}).{fextension}"
 
                         if not os.path.exists(os.path.join(base_path, new_filename)):
                             filename_ = new_filename
