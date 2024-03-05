@@ -72,7 +72,7 @@ class RefillProcedureHelper:
         if self.units_ == "FL OZ":
             return self.refill_choices_fl_oz
 
-        return refill_choices
+        return self.refill_choices
 
     def _cb_confirm_reset(self):
 
