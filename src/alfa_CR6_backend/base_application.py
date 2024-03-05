@@ -458,8 +458,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     msg_ = f"barcode: {barcode}\n"
 
                     if insufficient_pigments and cntr <= 3:
+                        fmt_insuff_pigmts = self.build_insufficient_pigments_infos(insufficient_pigments)
                         msg_ += tr_("\npigments to be refilled before dispensing:{}. ({}/3)\n").format(
-                            list(insufficient_pigments.keys()), cntr)
+                            fmt_insuff_pigmts, cntr)
                     else:
                         cntr = 4
 
@@ -605,6 +606,17 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 json_properties = json.loads(jar.json_properties)
                 remaining_volume = json_properties["remaining_volume"]
+                start_ingredient_volume_map = json_properties["start_ingredient_volume_map"]
+                insufficient_pigments_map = json_properties["insufficient_pigments"]
+                ingredients_total_vol = self.retrive_formula_total_vol(
+                    start_ingredient_volume_map, insufficient_pigments_map)
+
+                if jar_volume < ingredients_total_vol:
+                    jar = None
+                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
+                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, ingredients_total_vol)
+                    self.main_window.open_alert_dialog(msg_, title="ERROR")
+                    logging.error(msg_)
 
                 if jar_volume < remaining_volume:
                     jar = None
@@ -613,14 +625,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.main_window.open_alert_dialog(msg_, title="ERROR")
                     logging.error(msg_)
 
-                start_ingredient_volume_map = json_properties["start_ingredient_volume_map"]
-                ingredients_total_vol = self.retrive_formula_total_vol(start_ingredient_volume_map)
-                if jar_volume < ingredients_total_vol:
-                    jar = None
-                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, ingredients_total_vol)
-                    self.main_window.open_alert_dialog(msg_, title="ERROR")
-                    logging.error(msg_)
         else:
             jar = None
             args, fmt = (barcode, ), "barcode:{} not found.\nPlease, remove it.\n"
@@ -1051,7 +1055,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if _runner:
             _runner['frozen'] = False
 
-    def update_jar_properties(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def update_jar_properties(self, jar, dispense_not_successful=False):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         jar_json_properties = json.loads(jar.json_properties)
         order_json_properties = json.loads(jar.order.json_properties)
@@ -1080,7 +1084,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             ingredient_volume_map[pigment_name] = {}
 
             requested_quantity_gr, remaining_volume = self._build_ingredient_volume_map_helper(
-                ingredient_volume_map, visited_head_names, pigment_name, requested_quantity_gr, remaining_volume)
+                ingredient_volume_map, visited_head_names, pigment_name,
+                requested_quantity_gr, remaining_volume, dispense_not_successful)
 
             if ingredient_volume_map[pigment_name] and requested_quantity_gr > EPSILON:
                 # ~ the ingredient is known but not sufficiently available
@@ -1176,10 +1181,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.main_window.order_page.populate_order_table()
 
     def _build_ingredient_volume_map_helper(  # pylint: disable=too-many-arguments
-            self, ingredient_volume_map, visited_head_names, pigment_name, requested_quantity_gr, remaining_volume):
+            self, ingredient_volume_map,
+            visited_head_names, pigment_name,
+            requested_quantity_gr, remaining_volume,
+            dispense_not_successful
+    ):
 
         for m in self.machine_head_dict.values():
-            if m and m.name not in visited_head_names:
+            # if m and m.name not in visited_head_names:
+            if m and (dispense_not_successful or m.name not in visited_head_names):
                 specific_weight = m.get_specific_weight(pigment_name)
                 if specific_weight > 0:
                     ingredient_volume_map[pigment_name][m.name] = 0
@@ -1219,7 +1229,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     asyncio.ensure_future(t)
 
     @staticmethod
-    def retrive_formula_total_vol(start_ingredient_volume_map):
+    def retrive_formula_total_vol(start_ingredient_volume_map, insufficient_pigments_map):
 
         total_volume = 0
 
@@ -1227,4 +1237,22 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             for position in start_ingredient_volume_map[key]:
                 total_volume += start_ingredient_volume_map[key][position]
 
+        for key in insufficient_pigments_map:
+            total_volume += insufficient_pigments_map[key]
+
+        logging.warning(f'formula total_volume: {total_volume}')
         return total_volume
+
+    def build_insufficient_pigments_infos(self, insufficient_pigments):
+        insuff_pigmts = list(insufficient_pigments.keys())
+        info_insuff_pigmts = []
+
+        for m in filter(None, self.machine_head_dict.values()):
+            # m.get_pigment_list() = [('pigment', 'C01'), ...]
+            m_pig_list = m.get_pigment_list()
+            for ll_pigmnt, _ in m_pig_list:
+                if ll_pigmnt in insuff_pigmts:
+                    info_insuff_pigmts.append((ll_pigmnt, m.name))
+
+        logging.debug(f'>>>> info_insuff_pigmts: {info_insuff_pigmts}')
+        return info_insuff_pigmts

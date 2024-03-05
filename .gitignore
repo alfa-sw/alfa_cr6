@@ -28,3 +28,4 @@ __*__
 *.out
 
 venv/
+dev.sh

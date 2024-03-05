@@ -505,11 +505,36 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 # ~ jobid_ = formula.get('jobId', '')
                 batchid_ = formula.get('batchId', '')
                 colorcode_ = formula.get('meta', {}).get('colorCode', '')
-                brand_ = formula.get('meta', {}).get('brand', '')
                 colorcode_ = colorcode_.replace("/", "-")
-                brand_ = brand_.replace("/", "-") 
-                fname_ = f"{brand_}_{colorcode_}.json"
-                pth_ = os.path.join(SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip(), fname_)
+                brand_ = formula.get('meta', {}).get('brand', '')
+                brand_ = brand_.replace("/", "-")
+                colorname_ = formula.get('meta', {}).get('colorName', '')
+
+                fname_ = f"{brand_}_{colorcode_}"
+                if (not brand_ and not colorcode_) and colorname_:
+                    fname_ = f"{colorname_}"
+
+                fstep = formula.get('meta', {}).get('step', '')
+                if fstep:
+                    fstep_str = str(fstep)
+                    if not fstep_str.isdigit():
+                        raise ValueError(f'Step {fstep} must be a digit!')
+                    fname_ = f"{fname_}_step{fstep_str}"
+                fextension = 'json'
+                base_path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
+                filename_ = f'{fname_}.{fextension}'
+
+                if os.path.exists(os.path.join(base_path, filename_)):
+                    i = 1
+                    while True:
+                        new_filename = f"{fname_} ({i}).{fextension}"
+
+                        if not os.path.exists(os.path.join(base_path, new_filename)):
+                            filename_ = new_filename
+                            break
+                        i += 1
+
+                pth_ = os.path.join(base_path, filename_)
                 logging.warning(f"pth_:{pth_}")
                 with open(pth_, 'w', encoding='UTF-8') as f:
 
@@ -517,7 +542,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
                     response_status = HTTPStatus.OK
                     response_data['result'] = "json formula saved."
-                    response_data['file_name'] = f"{fname_}"
+                    response_data['file_name'] = f"{filename_}"
                     response_data['batchid'] = batchid_
 
         except Exception as exc:  # pylint: disable=broad-except

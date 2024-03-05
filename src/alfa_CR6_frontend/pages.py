@@ -811,13 +811,19 @@ class OrderPage(BaseStackedPage):
 
             elif col == ORDER_PAGE_COLUMNS_ORDERS['file'].index("create order"):
 
+                dialog_content_editable = False
                 _msg = tr_("confirm creating order from file (file will be deleted):\n '{}'?\n").format(file_name)
-                _msg += tr_('Please, insert below the number of jars.')
+
+                if not getattr(g_settings, 'FORCE_ORDER_JAR_TO_ONE', False):
+                    _msg += tr_('Please, insert below the number of jars.')
+                    dialog_content_editable = True
+
                 self.main_window.open_input_dialog(
                     message=_msg,
                     content="<span align='center'>1</span>",
                     ok_cb=self.__create_order_cb,
-                    ok_cb_args=[model, file_name])
+                    ok_cb_args=[model, file_name],
+                    content_editable=dialog_content_editable)
 
             elif col == ORDER_PAGE_COLUMNS_ORDERS['file'].index("file name"):
                 pass
