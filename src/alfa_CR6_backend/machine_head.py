@@ -798,7 +798,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
-                self.app.update_jar_properties(jar)
+                dispense_not_successful = True if result_ == 'NOK' else False
+                self.app.update_jar_properties(jar, dispense_not_successful=dispense_not_successful)
 
                 if error_msg:
                     await self.app.wait_for_carousel_not_frozen(True, msg=msg_)
@@ -957,3 +958,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         flag = flag and error_code in [923, '923', 'TINTING_PANEL_TABLE_ERROR']
 
         return flag
+
+    def get_pigment_list(self):
+        result = []
+        for _pigment in self.pigment_list:
+            colorant_name = _pigment.get('name', '')
+            pipe_names = [pipe.get('name', '') for pipe in _pigment.get('pipes', {})]
+            for pipe_name in pipe_names:
+                result.append((colorant_name, pipe_name))
+        return result

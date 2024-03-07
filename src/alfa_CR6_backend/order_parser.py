@@ -383,6 +383,7 @@ weight:{RealWeight}
             quality = meta.get("quality", '')
             colorCode = meta.get("colorCode", '')
             variantCode = meta.get("variantCode", '')
+            colorName = meta.get("colorName", '')
             qtty = meta.get("quantity(l)")
             if qtty is None:
                 qtty = meta.get("quantity", 0)
@@ -394,7 +395,7 @@ weight:{RealWeight}
                 printable_extra_lines = [
                     f"{brand} - {quality}",
                     f"{colorCode} - {variantCode}",
-                    f"{quantity} {qty_uom}",
+                    f"{quantity} {qty_uom} {colorName}",
                     f"{batchId}",
                     f"{date_time}"
                 ]

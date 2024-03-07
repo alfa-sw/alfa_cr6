@@ -343,10 +343,13 @@ class EditDialog(BaseDialog):
         db_session = QApplication.instance().db_session
 
         try:
+            _app_settings = import_settings()
+            force_order_jar_to_one = getattr(_app_settings, 'FORCE_ORDER_JAR_TO_ONE', False)
+
             order = db_session.query(Order).filter(Order.order_nr == self.order_nr).one()
             jar = db_session.query(Jar).filter(Jar.order == order).order_by(Jar.index.desc()).first()
-            base_index = jar.index + 1 if jar else 1
 
+            base_index = jar.index if force_order_jar_to_one and jar else (jar.index + 1 if jar else 1)
             _ingredients = []
             cols = self.formula_table.columnCount()
             rows = self.formula_table.rowCount()
@@ -372,9 +375,17 @@ class EditDialog(BaseDialog):
 
             n_of_jars = self.n_of_jars_spinbox.value()
             jars_to_print = []
-            for _indx in range(base_index, base_index + n_of_jars):
-                jar = Jar(order=order, size=0, index=_indx)
-                db_session.add(jar)
+
+            if not force_order_jar_to_one:
+                for _indx in range(base_index, base_index + n_of_jars):
+                    jar = Jar(order=order, size=0, index=_indx)
+                    db_session.add(jar)
+                    jars_to_print.append(jar)
+
+            else:
+                if not jar:
+                    jar = Jar(order=order, size=0, index=base_index)
+                    db_session.add(jar)
                 jars_to_print.append(jar)
 
             order.update_status()
@@ -556,7 +567,8 @@ class InputDialog(BaseDialog):
         choices=None,
         bg_image=None,
         to_html=None,
-        wide=None):
+        wide=None,
+        content_editable=True):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
@@ -608,6 +620,11 @@ class InputDialog(BaseDialog):
             else:
                 self.content_container.resize(self.content_container.width(), 400)    
                 self.resize(self.width(), 575)    
+
+        if hasattr(self.content_container, 'setReadOnly'):
+            self.content_container.setReadOnly(not content_editable)
+        elif hasattr(self.content_container, 'setEditable'):
+            self.content_container.setEditable(content_editable)
 
         self.__ok_cb = None
         self.__ok_cb_args = None

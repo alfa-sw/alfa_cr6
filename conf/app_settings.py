@@ -66,3 +66,5 @@ MACHINE_HEAD_IPADD_PORTS_LIST = [
     # ~ ("10.31.0.6", 11000, 8080),
     # ~ ("10.31.0.7", 11000, 8080),
 ]
+
+FORCE_ORDER_JAR_TO_ONE = True

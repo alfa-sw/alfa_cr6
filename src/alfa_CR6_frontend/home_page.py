@@ -31,6 +31,7 @@ g_settings = import_settings()
 class RefillProcedureHelper:
 
     refill_choices = ['100', '250', '500', '750', '1000', '1500', '2000', '2500', '3000']
+    refill_choices_fl_oz = ['16', '32']
 
     def __init__(self, parent, head_index):
 
@@ -41,6 +42,8 @@ class RefillProcedureHelper:
         if self.machine_.machine_config:
             self.units_ = self.machine_.machine_config.get('UNITS', {}).get('service_page_unit')
 
+        self.fl_oz_unit = self.machine_.machine_config.get('UNITS', {}).get('fl_oz_unit', 1)
+
         t = self.machine_.update_tintometer_data()
         asyncio.ensure_future(t)
 
@@ -49,6 +52,7 @@ class RefillProcedureHelper:
         _convert_factor = {
             "CC": 1.,
             "GR": self.machine_.get_specific_weight(pigment_name),
+            "FL OZ": 1. / self.fl_oz_unit,
         }.get(self.units_, 1)
         logging.warning(f"_convert_factor({type(_convert_factor)}):{_convert_factor}.")
         return round(_convert_factor * float(val), 2)
@@ -58,9 +62,17 @@ class RefillProcedureHelper:
         _convert_factor = {
             "CC": 1.,
             "GR": 1. / self.machine_.get_specific_weight(pigment_name),
+            "FL OZ": 1. * self.fl_oz_unit,
         }.get(self.units_, 1)
         # ~ logging.warning(f"_convert_factor({type(_convert_factor)}):{_convert_factor}.")
         return _convert_factor * float(val)
+
+    def __get_refill_choices(self):
+
+        if self.units_ == "FL OZ":
+            return self.refill_choices_fl_oz
+
+        return self.refill_choices
 
     def _cb_confirm_reset(self):
 
@@ -147,7 +159,7 @@ class RefillProcedureHelper:
         margin_ml_ = pipe_['maximum_level'] - pipe_['current_level']
         margin_units_ = self.__qtity_from_ml(margin_ml_, pigment_['name'])
 
-        choices = {c: None for c in [_default_qtity_units, ] + self.refill_choices if float(c) <= margin_units_}
+        choices = {c: None for c in [_default_qtity_units, ] + self.__get_refill_choices() if float(c) <= margin_units_}
 
         if barcode_check == barcode_:
             self.parent.main_window.toggle_keyboard(on_off=True)
@@ -165,7 +177,7 @@ class RefillProcedureHelper:
                 message=tr_("barcode mismatch <br/>{} != {}").format(barcode_, barcode_check),
                 content=None)
 
-    async def _roate_circuit_task(self, pigment_, pipe_, _default_qtity_units, barcode_):
+    async def _rotate_circuit_task(self, pigment_, pipe_, _default_qtity_units, barcode_):
 
         def __get_pipe_index_from_name(p_name):
 
@@ -218,7 +230,7 @@ class RefillProcedureHelper:
                 _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, pigment_['name'])
                 _default_qtity_units = round(_default_qtity_units, 2)
 
-                t = self._roate_circuit_task(pigment_, pipe_, _default_qtity_units, barcode_)
+                t = self._rotate_circuit_task(pigment_, pipe_, _default_qtity_units, barcode_)
                 asyncio.ensure_future(t)
 
             else:
