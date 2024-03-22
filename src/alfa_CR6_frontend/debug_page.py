@@ -127,11 +127,9 @@ class DebugPage:
         for i, n in enumerate(
             [
                 # ~ ("check\njar", "check jar from barcode"),
-                ("download KCC\nSpecific\nGravity file", "download KCC file with specific gravity lot info"),
+                ("move_12_00", "deliver jar"),
                 ("freeze\ncarousel", "stop the movements of the jars, until unfreeze."),
                 ("unfreeze\ncarousel", "restar the movements of the jars."),
-                ("stop_all", "send a stop-movement cmd to all heads"),
-                ("alert", "test alert box"),
                 # ~ (
                 # ~ "LIFTL\nUP",
                 # ~ "send command UP to left lifter without waiting for any condition",
@@ -153,8 +151,6 @@ class DebugPage:
                 ("show\nsettings", "**"),
                 ("minimize\nmain window", ""),
                 ("open URL\nin text bar", "open the URL in text bar at bottom."),
-                ("open admin\npage in\nfirefox", ".::::"),
-                ("move_12_00", "deliver jar"),
             ]
         ):
 
@@ -165,7 +161,6 @@ class DebugPage:
 
         for i, n in enumerate(
             [
-                ("run a complete\ncycle", "start the complete cycle through the system"),
                 ("refresh", "refresh this view"),
                 ("clear\njars", "delete all the progressing jars"),
                 ("clear\nanswers", "clear answers"),
@@ -297,20 +292,6 @@ class DebugPage:
             j.order.update_status()
         app.db_session.commit()
 
-    async def run_test(self):  # pylint: disable=no-self-use
-
-        app = QApplication.instance()
-
-        F = app.get_machine_head_by_letter("F")
-
-        for i in range(100):
-            r = await F.wait_for_status_level(["STANDBY"], on=True, timeout=10)
-            if r:
-                r = await F.can_movement({"Output_Roller": 2})
-            else:
-                logging.error("timeout !")
-            logging.warning(f"i:{i}, r:{r}")
-
     def view_jar_deatils(self, jar_id):  # pylint: disable=no-self-use, too-many-branches
 
         app = QApplication.instance()
@@ -407,17 +388,6 @@ class DebugPage:
 
             self.view_orders()
 
-        elif cmd_txt == "alert":
-
-            def cb():
-                msg_ = "실차색상 배합입니다. (희석10%, 2회도장) 서페이서 V-1 적용색상입니다. 리피니쉬 벨류쉐이드 가이드 주소안내"
-                app.main_window.open_alert_dialog(msg_, callback=None)
-                logging.warning(f"msg_:{msg_}")
-
-            msg_ = tr_("test alert message")
-            r = app.main_window.open_alert_dialog(msg_, callback=cb)
-            logging.warning(f"r:{r}")
-
         elif cmd_txt == "unfreeze\ncarousel":
 
             app.freeze_carousel(False)
@@ -429,11 +399,6 @@ class DebugPage:
         elif "reset jar\ndb status" in cmd_txt:
 
             self.reset_jar_status_to_new()
-
-        elif "run\ntest" in cmd_txt:
-
-            t = self.run_test()
-            asyncio.ensure_future(t)
 
         # ~ elif "LIFTR\nUP" in cmd_txt:
 
@@ -473,61 +438,9 @@ class DebugPage:
             logging.warning(f"barcode:{barcode}")
             simulate_read_barcode(barcode=barcode)
 
-        elif "run a complete\ncycle" in cmd_txt:
-
-            async def coro():
-                ret_vals = []
-                for i in [
-                    "move_01_02",
-                    "move_02_03",
-                    "move_03_04",
-                    "move_04_05",
-                    "move_05_06",
-                    "move_06_07",
-                    "move_07_08",
-                    "move_08_09",
-                    "move_09_10",
-                    "move_10_11",
-                    "move_11_12",
-                ]:
-                    if hasattr(app, i):
-                        t = getattr(app, i)
-                        ret = await t()
-                        ret_vals.append(ret)
-                        await asyncio.sleep(1)
-
-                return ret_vals
-
-            try:
-                t = coro()
-                asyncio.ensure_future(t)
-            except BaseException:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
-
-        elif "open admin\npage in\nfirefox" in cmd_txt:
-
-            # ~ url_ = 'http://127.0.0.1:8090/'
-            # ~ app.main_window.browser_page.open_page(url_)
-
-            def cb_():
-                cmd_ = "firefox --display :0 http://127.0.0.1:8090/"
-                for item in app.settings.MACHINE_HEAD_IPADD_PORTS_LIST:
-                    if item:
-                        ip_add, _, http_port = item
-                        cmd_ += f" http://{ip_add}:{http_port}/admin"
-
-                subprocess.run(cmd_.split(), check=False)
-
-            msg_ = "confirm opening head admin pages in firefox?\n Please, remember to close firefox window manually."
-            app.main_window.open_alert_dialog(msg_, callback=cb_)
-
         elif "open URL\nin text bar" in cmd_txt:
             url_ = app.main_window.menu_line_edit.text()
             app.main_window.browser_page.open_page(url_)
-
-        elif "download KCC\nSpecific\nGravity file" in cmd_txt:
-            t = self._download_KCC_lot_info_file()
-            asyncio.ensure_future(t)
 
         elif "reset\nbrowser's view" in cmd_txt:
 
