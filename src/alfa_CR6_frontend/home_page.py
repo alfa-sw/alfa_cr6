@@ -258,6 +258,8 @@ class HomePage(BaseStackedPage):
 
         self.running_jars_lbl.setStyleSheet("font-size: 15px")
 
+        self.update_lbl_recovery()
+
         for b in self.action_btn_group.buttons():
             b.setStyleSheet(
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
@@ -789,6 +791,15 @@ class HomePage(BaseStackedPage):
                 ok_cb=_cb_pipe_selected,
                 choices=pipes_)
 
+    def update_lbl_recovery(self, toggle_lbl_recovery=False):
+        
+        if toggle_lbl_recovery:
+            self.lbl_recovery.setStyleSheet(
+                "QLabel { font-weight: bold; background-color: yellow; font-size: 40px; }")
+            self.lbl_recovery.setAlignment(Qt.AlignCenter)
+            self.lbl_recovery.show()
+        else:
+            self.lbl_recovery.hide()
 
 class HomePageSixHeads(HomePage):
 
