@@ -1192,6 +1192,8 @@ weight:{RealWeight}
                     value = match.group(1).strip()
                     if meta_key == 'date':  # Gestione specifica per la data
                         value = re.sub(r'\s{2,}', ' ', value)  # Rimuove spazi multipli
+                    if meta_key == 'oem_code':
+                        value = value.split(',')[0].strip()
                     meta[meta_key] = value
 
         properties = {'meta': {}, 'ingredients': [], 'extra_lines_to_print': {}}
@@ -1236,6 +1238,7 @@ weight:{RealWeight}
 
         properties['extra_lines_to_print'] = [
             f"{properties.get('meta').get('date', '')} - {properties.get('meta').get('makes', '')}",
+            f"OEM Code: {properties.get('meta').get('oem_code', '')}",
             f"{properties.get('meta').get('brand_code', '')} - {properties.get('meta').get('manufacturer', '')}",
             f"{properties.get('meta').get('description', '')}",
             f"{properties.get('meta').get('mixing_scheme', '')}",
