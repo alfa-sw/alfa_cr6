@@ -16,6 +16,7 @@ import logging
 import copy
 import time
 import configparser
+import re
 
 import jsonschema
 
@@ -80,6 +81,7 @@ class OrderParser:       # pylint: disable=too-many-public-methods
     codevid_pdf_header = "Formula Details"          # duthoo
     basf_1_pdf_header = "Base Target Amt. CumAmt."  # BASF Refinty
     basf_2_pdf_headers = ["Base Amount", "Ingredients Kontrolle"]  # BASF Cosima
+    carcolour_pdf_footer = 'PPG Industries, Inc. PPG CONFIDENTIAL INFORMATION'
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -1179,6 +1181,73 @@ weight:{RealWeight}
 
         return properties
 
+    @staticmethod
+    def parse_carcolour_pdf(lines):
+
+        def extract_metadata(line, patterns, meta):
+            for key, pattern in patterns.items():
+                match = re.search(pattern, line)
+                if match:
+                    meta_key = key.lower().replace(" ", "_")
+                    value = match.group(1).strip()
+                    if meta_key == 'date':  # Gestione specifica per la data
+                        value = re.sub(r'\s{2,}', ' ', value)  # Rimuove spazi multipli
+                    if meta_key == 'oem_code':
+                        value = value.split(',')[0].strip()
+                    meta[meta_key] = value
+
+        properties = {'meta': {}, 'ingredients': [], 'extra_lines_to_print': {}}
+        meta_patterns = {
+            'Date': r'Date: (.*) Job No.:',
+            'Manufacturer': r'Manufacturer : (.*)',
+            'OEM Code': r'OEM Code : (.*?)(?:\s{2,}|$|Brand Code :)',
+            'Brand Code': r'Brand Code : (.*)',
+            'Description': r'Description : (.*)',
+            'Variant': r'Variant : (.*?)(?:\s{2,}|$|Finish Effect :)',
+            'Finish Effect': r'Finish Effect : (.*)',
+            'Mixing Scheme': r'Mixing Scheme : (.*)',
+            'Makes': r'Makes : (.*)'
+        }
+
+        ingredient_pattern = re.compile(r'(\S+)\s+([\w\s]+?)\s+(\d+\.?\d*)\s+(\d+\.?\d*)')
+
+        for line in lines:
+            extract_metadata(line, meta_patterns, properties['meta'])
+
+        def extract_ingredient_lines(lines):
+            start = False
+            for line in lines:
+                if line.startswith("SKU"):
+                    start = True
+                    continue
+                if line.startswith("Comments"):
+                    break
+                if start:
+                    yield line
+
+        for line in extract_ingredient_lines(lines):
+            match = ingredient_pattern.match(line)
+            if match:
+                code, description, incremental, cumulative = match.groups()
+                ingredient = {
+                    "pigment_name": code,
+                    "weight(g)": round(float(incremental), 4),
+                    "description": description.strip()
+                }
+                properties['ingredients'].append(ingredient)
+
+        properties['extra_lines_to_print'] = [
+            f"{properties.get('meta').get('date', '')} - {properties.get('meta').get('makes', '')}",
+            f"OEM Code: {properties.get('meta').get('oem_code', '')}",
+            f"{properties.get('meta').get('brand_code', '')} - {properties.get('meta').get('manufacturer', '')}",
+            f"{properties.get('meta').get('description', '')}",
+            f"{properties.get('meta').get('mixing_scheme', '')}",
+            f"{properties.get('meta').get('variant', '')} - {properties.get('meta').get('finish_effect', '')}",
+        ]
+
+        logging.warning(properties)
+        return properties
+
     @classmethod
     def parse_pdf_order(cls, path_to_file, fixed_pitch=5):  # pylint: disable=too-many-branches, too-many-statements
 
@@ -1263,6 +1332,9 @@ weight:{RealWeight}
             if properties.get('meta'):
                 properties['meta']['header'] = [
                     h for h in cls.basf_2_pdf_headers if h in ' '.join([' '.join(l.split()) for l in lines])]
+
+        elif cls.carcolour_pdf_footer in lines[-1]:
+            properties = cls.parse_carcolour_pdf(lines)
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
