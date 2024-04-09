@@ -926,6 +926,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         from sqlalchemy.orm.exc import NoResultFound
         from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 
+        dispense_map = {
+            "dispense_A": "A",
+            "dispense_B": "B",
+            "dispense_C": "C",
+            "dispense_D": "D",
+            "dispense_E": "E",
+            "dispense_F": "F",
+        }
+
         try:
             await self.__restore_lifters_for_recovery_mode()
         except (RuntimeError, AssertionError) as e:
@@ -961,8 +970,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if self.n_of_active_heads == 4:
 
             full_steps = [
-                "move_01_02", "move_02_04", "move_04_05",
-                "move_05_06", "move_06_07", "move_07_09",
+                "move_01_02", "dispense_A", "move_02_04", "dispense_C", "move_04_05",
+                "move_05_06", "move_06_07", "dispense_D", "move_07_09", "dispense_F",
                 "move_09_10", "move_10_11", "move_11_12",
             ]
 

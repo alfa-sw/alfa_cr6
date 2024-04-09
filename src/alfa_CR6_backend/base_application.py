@@ -173,7 +173,6 @@ class RestoreMachineHelper:
 
         self.write_data(jdata)
 
-
     def store_jar_data(self, jar, pos):
 
         logging.warning(f'storing data jar {jar} with pos {pos}')
@@ -434,8 +433,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             else:
                 self.machine_head_dict[head_index] = None
 
-        t = self.__create_restore_machine_helper_task()
-        self.__tasks.append(t)
+        # t = self.__create_restore_machine_helper_task()
+        # self.__tasks.append(t)
 
     def __close_tasks(self,):
 
