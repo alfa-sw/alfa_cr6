@@ -2,7 +2,13 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
- 
+
+## [1.2.0] - 2024-04-09
+
+### Added
+ - Implemented logic to analyze CarColourService PDF orders.
+
+
 ## [1.1.1] - 2024-03-22
   
  
