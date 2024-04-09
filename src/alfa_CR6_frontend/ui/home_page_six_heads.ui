@@ -1526,6 +1526,27 @@
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QLabel" name="lbl_recovery">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>820</x>
+     <y>900</y>
+     <width>551</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>40</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>RECOVERY MODE ON</string>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_3_btn</zorder>
@@ -1594,6 +1615,7 @@
   <zorder>expiry_4_label</zorder>
   <zorder>expiry_5_label</zorder>
   <zorder>expiry_6_label</zorder>
+  <zorder>lbl_recovery</zorder>
  </widget>
  <resources/>
  <connections/>
