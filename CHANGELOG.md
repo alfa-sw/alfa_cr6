@@ -3,6 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 
+## [1.2.1] - 2024-04-18
+
+### Fixed
+ - Revised handling of restore_machine_helper when it is disabled; the poor management was generating a huge amount of event records.
+
+
 ## [1.2.0] - 2024-04-09
 
 ### Added
