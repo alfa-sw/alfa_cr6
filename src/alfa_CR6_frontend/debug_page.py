@@ -101,6 +101,30 @@ class DebugPage:
         self.status_text_browser.setOpenLinks(False)
 
         self.buttons_frame = QFrame(parent=self.main_frame)
+        self.generate_debug_buttons()
+        width = 1880
+        self.status_text_browser.setGeometry(20, 2, width, 592)
+        self.buttons_frame.setGeometry(20, 598, width, 200)
+        self.answer_text_browser.setGeometry(20, 794, width, 200)
+
+        self.status_text_browser.anchorClicked.connect(
+            self.status_text_browser_anchor_clicked
+        )
+        self.answer_text_browser.anchorClicked.connect(
+            self.answer_text_browser_anchor_clicked
+        )
+
+        async def periodic_refresh():
+            while True:
+                self.update_status()
+                await asyncio.sleep(1)
+            return True
+
+        t = periodic_refresh()
+        asyncio.ensure_future(t)
+
+    def generate_debug_buttons(self):
+
         self.button_group = QButtonGroup(parent=self.buttons_frame)
         for i, n in enumerate(
             [
@@ -159,51 +183,36 @@ class DebugPage:
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
-        for i, n in enumerate(
-            [
+        third_row_btns = [
                 ("refresh", "refresh this view"),
-                ("clear\njars", "delete all the progressing jars"),
-                ("clear\nanswers", "clear answers"),
-                ("reset jar\ndb status", "reset all jar_status to NEW in db sqlite"),
                 ("reset all\n heads", "reset all heads"),
                 ("EXIT", "Beware! terminate the application"),
                 ("ALARM", "simulate ALARM"),
                 ("read\nbarcode", "simulate a bar code read"),
+                ("open order\ndialog", "**"),
+                ("view\norders", ""),
+            ]
+
+        if os.getenv("DEV_DEBUG_PAGE", False) in ["1", "true"]:
+            dev_btns = [
+                ("clear\nanswers", "clear answers"),
+                ("clear\njars", "delete all the progressing jars"),
+                ("reset jar\ndb status", "reset all jar_status to NEW in db sqlite"),
                 (
                     "delete\norders in db",
                     "delelete all jars and all orders in db sqlite",
                 ),
-                ("open order\ndialog", "**"),
-                ("view\norders", ""),
             ]
-        ):
+            third_row_btns.extend(dev_btns)
+
+        for i, n in enumerate(third_row_btns):
 
             b = QPushButton(n[0], parent=self.buttons_frame)
             b.setGeometry(20 + i * 152, 130, 150, 60)
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
-        width = 1880
-        self.status_text_browser.setGeometry(20, 2, width, 592)
-        self.buttons_frame.setGeometry(20, 598, width, 200)
-        self.answer_text_browser.setGeometry(20, 794, width, 200)
-
-        self.status_text_browser.anchorClicked.connect(
-            self.status_text_browser_anchor_clicked
-        )
-        self.answer_text_browser.anchorClicked.connect(
-            self.answer_text_browser_anchor_clicked
-        )
         self.button_group.buttonClicked.connect(self.on_button_group_clicked)
-
-        async def periodic_refresh():
-            while True:
-                self.update_status()
-                await asyncio.sleep(1)
-            return True
-
-        t = periodic_refresh()
-        asyncio.ensure_future(t)
 
     def add_answer(self, head_index, answer):
 
