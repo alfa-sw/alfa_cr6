@@ -57,7 +57,14 @@ ACTION_PAGE_LIST = [
          {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "A", [0, 2])}, ],
      "labels_args": [
          ("A", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("A", "container_presence", tr_("CAN PRESENCE")), ], },
+         ("A", "container_presence", tr_("CAN PRESENCE")),
+         ("A", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
+         ("A", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
+         ("A", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
+         ("A", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
+         ("A", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL 1")),
+         ("A", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL 2")),
+         ("A", "panel_table_status", tr_("PANEL TABLE STATUS")),], },
     {"title": tr_("action 03 (head 3 or B)"),
      "buttons": [
          {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "B", [0, 1])},
