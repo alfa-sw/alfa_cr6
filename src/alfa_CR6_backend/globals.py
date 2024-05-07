@@ -289,7 +289,9 @@ def _get_label_options_from_redis_cache():
             field = 'PRINT_LABEL_OPTIONS'
 
             if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-                if "small" in _get_page_label():
+                if "very small" in _get_page_label():
+                    field = 'PRINT_LABEL_OPTIONS_VERY_SMALL'
+                elif "small" in _get_page_label():
                     field = 'PRINT_LABEL_OPTIONS_SMALL'
                 else:
                     field = 'PRINT_LABEL_OPTIONS_BIG'

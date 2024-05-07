@@ -159,7 +159,7 @@ ACTION_PAGE_LIST = [
          ("F", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
          ("F", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
          ("F", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
-         ("F", "panel_table_status", tr_("PANEL TABLE STATUS")),]
+         ("F", "panel_table_status", tr_("PANEL TABLE STATUS")),], },
     {"title": tr_("action 09 (head 2 or F)"),
      "buttons": [
          {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "F", [1, 1])},
