@@ -111,7 +111,6 @@ class ActionPage(BaseStackedPage):
                 val_ = m.status.get("container_presence")
             elif bit_name.lower() == "panel_table_status":
                 val_ = m.status.get("panel_table_status")
-                pth_ = get_res("IMAGE", "green.png")
             elif "thor" in bit_name.lower():
                 val_ = m.photocells_status.get(bit_name)
                 # logging.warning(f">>>> {bit_name}: {val_}")
@@ -123,6 +122,11 @@ class ActionPage(BaseStackedPage):
                 pth_ = (
                     get_res("IMAGE", "green.png")
                     if val_ else get_res("IMAGE", "gray.png")
+                )
+            else:
+                pth_ = (
+                    get_res("IMAGE", "gray.png")
+                    if val_ else get_res("IMAGE", "green.png")
                 )
             w.setText(
                 f'<img widt="50" height="50" src="{pth_}" style="vertical-align:middle;">{tr_(text)}</img>'
