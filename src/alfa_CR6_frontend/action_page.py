@@ -109,13 +109,25 @@ class ActionPage(BaseStackedPage):
             m = QApplication.instance().get_machine_head_by_letter(head_letter)
             if bit_name.lower() == "container_presence":
                 val_ = m.status.get("container_presence")
+            elif bit_name.lower() == "panel_table_status":
+                val_ = m.status.get("panel_table_status")
+            elif "thor" in bit_name.lower():
+                val_ = m.photocells_status.get(bit_name)
+                # logging.warning(f">>>> {bit_name}: {val_}")
             else:
                 val_ = m.jar_photocells_status.get(bit_name)
+                # logging.warning(f"#### {bit_name}: {val_}")
 
-            pth_ = (
-                get_res("IMAGE", "green.png")
-                if val_ else get_res("IMAGE", "gray.png")
-            )
+            if bit_name.lower() != "panel_table_status":
+                pth_ = (
+                    get_res("IMAGE", "green.png")
+                    if val_ else get_res("IMAGE", "gray.png")
+                )
+            else:
+                pth_ = (
+                    get_res("IMAGE", "gray.png")
+                    if val_ else get_res("IMAGE", "green.png")
+                )
             w.setText(
                 f'<img widt="50" height="50" src="{pth_}" style="vertical-align:middle;">{tr_(text)}</img>'
             )
@@ -137,6 +149,9 @@ class ActionPage(BaseStackedPage):
         )
 
         self.action_title_label.setText(tr_(action_item["title"]))
+        self.action_labels_layout.setSpacing(5)  # Riduce la spaziatura
+        self.action_labels_layout.setContentsMargins(0, 0, 0, 0)  # Riduce i margini
+
 
         for b in action_item["buttons"]:
             i = QPushButton(tr_(b["text"]), self)

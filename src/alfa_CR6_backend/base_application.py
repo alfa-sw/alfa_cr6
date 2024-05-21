@@ -748,14 +748,17 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 ingredients_total_vol = self.retrive_formula_total_vol(
                     start_ingredient_volume_map, insufficient_pigments_map)
 
+                verified = False
+
                 if jar_volume < ingredients_total_vol:
                     jar = None
                     msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
                     msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, ingredients_total_vol)
                     self.main_window.open_alert_dialog(msg_, title="ERROR")
                     logging.error(msg_)
+                    verified = True
 
-                if jar_volume < remaining_volume:
+                if not verified and jar_volume < remaining_volume:
                     jar = None
                     msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
                     msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, remaining_volume)
@@ -1368,8 +1371,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     t = m.update_tintometer_data()
                     asyncio.ensure_future(t)
 
-    @staticmethod
-    def retrive_formula_total_vol(start_ingredient_volume_map, insufficient_pigments_map):
+    def retrive_formula_total_vol(self, start_ingredient_volume_map, insufficient_pigments_map):
 
         total_volume = 0
 
@@ -1377,8 +1379,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             for position in start_ingredient_volume_map[key]:
                 total_volume += start_ingredient_volume_map[key][position]
 
-        for key in insufficient_pigments_map:
-            total_volume += insufficient_pigments_map[key]
+        for key, insuff_pigmnt_gr in insufficient_pigments_map.items():
+            for m in self.machine_head_dict.values():
+                if not m:
+                    continue
+                if key not in m.get_machine_pigments():
+                    continue
+                specific_weight = m.get_specific_weight(key)
+                if specific_weight > 0:
+                    insuff_pigmnt_vol = insuff_pigmnt_gr / specific_weight
+                    total_volume += insuff_pigmnt_vol
 
         logging.warning(f'formula total_volume: {total_volume}')
         return total_volume

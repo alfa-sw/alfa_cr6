@@ -283,7 +283,7 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "jar"
 
-    row_count_limt = 10 * 1000
+    row_count_limt = 25 * 1000
 
     status_choices = ['NEW', 'PROGRESS', 'DONE', 'ERROR', 'VIRTUAL']
     position_choices = ["REMOVED", "_", "LIFTR_UP", "LIFTR_DOWN", "IN", "OUT", "WAIT", "DELETED", ] + list("ABCDEF")
@@ -416,7 +416,7 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "order"
 
-    row_count_limt = 10 * 1000
+    row_count_limt = 25 * 1000
 
     id = Column(Unicode, primary_key=True, nullable=False, default=generate_id)
 

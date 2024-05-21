@@ -992,3 +992,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         # Restituisce True se la photocell è attiva, altrimenti False
         return bool(status_code & mask)
+
+    def get_machine_pigments(self):
+        machine_pigments = [p['name'] for p in self.pigment_list if 'name' in p]
+        return machine_pigments
