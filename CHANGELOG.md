@@ -3,6 +3,23 @@
 All notable changes to this project will be documented in this file.
 
 
+## [1.3.0] - 2024-05-21
+
+### Added
+ - Manage TINY Dymo label (19mm x 51mm)
+ - Improved photocells visualization page for each HEAD
+ - Added function to print all label for pigment labels
+
+### Fixed
+ - Removed develop purpose buttons from the debug page that caused unintended effects (eg delete all orders)
+ - Fixed wrong total volum calculation during barcode jar checks
+
+## [1.2.1] - 2024-04-18
+
+### Fixed
+ - Revised handling of restore_machine_helper when it is disabled; the poor management was generating a huge amount of event records.
+
+
 ## [1.2.0] - 2024-04-09
 
 ### Added

@@ -1291,7 +1291,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 self.db_session.commit()
 
-                self.restore_machine_helper.store_jar_data(jar, pos)
+                if hasattr(self.restore_machine_helper, 'store_jar_data'):
+                    self.restore_machine_helper.store_jar_data(jar, pos)
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
