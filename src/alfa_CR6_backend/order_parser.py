@@ -455,6 +455,32 @@ weight:{RealWeight}
         return properties
 
     @staticmethod
+    def parse_akzo_azure_json(content):
+
+        properties = {}
+        properties['extra_lines_to_print'] = []
+        properties['meta'] = {
+            'canVolume': content['canVolume'],
+            'status': content['status'],
+            'shotUnit': content['mix']['shotUnit'],
+            'mixName': content['mix']['name'],
+            'productName': content['mix']['productName']
+        }
+
+        ingredients = []
+        for i in content['mix']['components']:
+            ingr = {}
+            if i.get("code") is not None:
+                ingr["pigment_name"] = i.get("code")
+                ingr["description"] = i.get("description")
+                ingr["weight(g)"] = round(float(i.get("desiredAmount")), 4)
+                ingredients.append(ingr)
+        properties["ingredients"]=ingredients
+
+        # logging.warning(f"properties: {properties}")
+        return properties
+
+    @staticmethod
     def parse_cpl_pdf(lines):  # pylint: disable=too-many-locals
 
         properties = {}
@@ -1458,6 +1484,9 @@ weight:{RealWeight}
             content = json.load(fd)
             if content.get("header") == "SW CRx formula file":
                 properties = cls.parse_sw_json(content)
+                properties['meta']['header'] = content['header']
+            if content.get("header") == "AkzoNobel Azure InstrumentCloud":
+                properties = cls.parse_akzo_azure_json(content)
                 properties['meta']['header'] = content['header']
             else:
                 properties = cls.parse_kcc_json(content)
