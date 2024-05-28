@@ -79,8 +79,12 @@ class FilteredOrders(Resource):  # pylint: disable=too-few-public-methods
         for arg, value in args.items():
             if hasattr(Order, arg):
                 query_ = query_.filter(getattr(Order, arg) == value)
+                # logging.warning(f"Query after filtering by {arg}: {query_}")
+            else:
+                return {"error": f"Bad Request, '{arg}' is not a valid filter parameter"}, 400
 
         res_ = query_.all()
+        # logging.warning(f"query len: {query_.count()}")
         res = {
             'data': [r.object_to_dict() for r in res_],
             'meta': {
