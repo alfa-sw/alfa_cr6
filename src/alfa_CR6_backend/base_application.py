@@ -239,6 +239,31 @@ class RestoreMachineHelper:
         return (jar_pos_r_lift_down, jar_pos_l_lift_up)
 
 
+class RedisOrderPublisher:
+    def __init__(self, redis_url='redis://localhost',ch_name='cr_orders'):
+        self.redis_url = redis_url
+        self.ch_name=ch_name
+        self.redis = None
+        asyncio.ensure_future(self._setup_comm())
+
+    async def _setup_comm(self):
+        self.redis = aioredis.from_url(  # pylint: disable=no-member
+            "redis://localhost")
+        cmd_channel = self.redis.pubsub(ignore_subscribe_messages=True)
+        await cmd_channel.subscribe(self.ch_name)
+        logging.info(f"Subscribed to channel: {self.ch_name}")
+
+    async def _publish_messages_async(self, data_message):
+        message = json.dumps(data_message)
+        await self.redis.publish(self.ch_name, message)
+        logging.warning(f"Channel {self.ch_name} - Published message: {message}")
+
+    def publish_messages(self, data_message):
+        if not self.redis:
+            raise RuntimeError("Redis client is not initialized. Ensure the RedisOrderPublisher is properly set up.")
+        asyncio.ensure_future(self._publish_messages_async(data_message))
+
+
 class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-public-methods
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
@@ -409,6 +434,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.carousel_frozen = False
         self.main_window.show_carousel_frozen(self.carousel_frozen)
+        self.redis_publisher = RedisOrderPublisher()
 
     def __init_tasks(self):
 
@@ -1293,6 +1319,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if hasattr(self.restore_machine_helper, 'store_jar_data'):
                     self.restore_machine_helper.store_jar_data(jar, pos)
+
+                if jar.status in {"ERROR", "DONE"}:
+                    self.redis_publisher.publish_messages(jar.order.object_to_json())
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
