@@ -13,6 +13,7 @@ import traceback
 import asyncio
 import json
 import logging
+import redis
 
 import logging.handlers
 
@@ -247,21 +248,18 @@ class RedisOrderPublisher:
         asyncio.ensure_future(self._setup_comm())
 
     async def _setup_comm(self):
-        self.redis = aioredis.from_url(  # pylint: disable=no-member
+        self.redis = redis.from_url(  # pylint: disable=no-member
             "redis://localhost")
         cmd_channel = self.redis.pubsub(ignore_subscribe_messages=True)
         await cmd_channel.subscribe(self.ch_name)
         logging.info(f"Subscribed to channel: {self.ch_name}")
 
-    async def _publish_messages_async(self, data_message):
-        message = json.dumps(data_message)
-        await self.redis.publish(self.ch_name, message)
-        logging.warning(f"Channel {self.ch_name} - Published message: {message}")
-
     def publish_messages(self, data_message):
         if not self.redis:
             raise RuntimeError("Redis client is not initialized. Ensure the RedisOrderPublisher is properly set up.")
-        asyncio.ensure_future(self._publish_messages_async(data_message))
+        message = json.dumps(data_message)
+        self.redis.publish(self.ch_name, message)
+        logging.warning(f"Channel {self.ch_name} - Published message: {message}")
 
 
 class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-public-methods
