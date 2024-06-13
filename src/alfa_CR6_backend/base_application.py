@@ -1319,7 +1319,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.restore_machine_helper.store_jar_data(jar, pos)
 
                 if jar.status in {"ERROR", "DONE"}:
-                    self.redis_publisher.publish_messages(jar.order.object_to_json())
+                    jar_data = jar.object_to_dict(include_relationship=2)
+                    self.redis_publisher.publish_messages(json.dumps(jar_data))
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
