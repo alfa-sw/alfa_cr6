@@ -63,7 +63,8 @@ def init_admin(app, db):
 def main():
 
     logging.basicConfig(
-        stream=sys.stdout, level=SETTINGS.LOG_LEVEL,
+        force=True,
+        level=SETTINGS.LOG_LEVEL,
         format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
 
     app = Flask('alfa_CR6_flask')
