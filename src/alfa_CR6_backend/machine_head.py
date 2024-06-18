@@ -968,31 +968,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 result.append((colorant_name, pipe_name))
         return result
 
-    @staticmethod
-    def check_jar_photocells_status(status_code, photocell_name):
-
-        photocells_map = {
-            "JAR_INPUT_ROLLER_PHOTOCELL": 0x001,
-            "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL": 0x002,
-            "JAR_OUTPUT_ROLLER_PHOTOCELL": 0x004,
-            "LOAD_LIFTER_DOWN_PHOTOCELL": 0x008,
-            "LOAD_LIFTER_UP_PHOTOCELL": 0x010,
-            "UNLOAD_LIFTER_DOWN_PHOTOCELL": 0x020,
-            "UNLOAD_LIFTER_UP_PHOTOCELL": 0x040,
-            "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL": 0x080,
-            "JAR_DISPENSING_POSITION_PHOTOCELL": 0x100,
-            "JAR_DETECTION_MICROSWITCH_1": 0x200,
-            "JAR_DETECTION_MICROSWITCH_2": 0x400,
-        }
-
-        if photocell_name not in photocells_map:
-            raise ValueError(f"Invalid photocell name: {photocell_name}")
-
-        mask = photocells_map[photocell_name]
-
-        # Restituisce True se la photocell è attiva, altrimenti False
-        return bool(status_code & mask)
-
     def get_machine_pigments(self):
         machine_pigments = [p['name'] for p in self.pigment_list if 'name' in p]
         return machine_pigments
