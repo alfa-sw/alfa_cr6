@@ -13,6 +13,8 @@ import time
 import asyncio
 import traceback
 from functools import partial
+from typing import Optional
+
 
 from alfa_CR6_backend.globals import tr_
 from alfa_CR6_backend.machine_head import DEFAULT_WAIT_FOR_TIMEOUT
@@ -78,7 +80,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_condition(      # pylint: disable=too-many-arguments
             self, condition, timeout, show_alert=True,
-            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None):
+            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None
+    ) -> Optional[bool]:
 
         ret = None
         t0 = time.time()
@@ -144,6 +147,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_dispense_position_available(self, jar, head_letter, extra_check=None):
 
+        logging.warning(f'#### head_letter: {head_letter}')
+        logging.warning(f'#### self.machine_head_dict: {self.machine_head_dict}')
         m = self.get_machine_head_by_letter(head_letter)
 
         logging.warning(f"{m.name} jar:{jar}")
@@ -359,11 +364,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return r
 
-    async def move_01_02(self, jar=None):  # 'IN -> A'
+    async def move_01_02(self, jar=None, time_interval_check=True):  # 'IN -> A'
 
         logging.warning(f"j:{jar}")
 
         A = self.get_machine_head_by_letter("A")
+        logging.warning(f'>>> A: {A}')
 
         async def _move_can_to_A():
 
@@ -405,7 +411,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             logging.warning(f"j:{jar}, dt:{dt}, self.double_can_alert:{self.double_can_alert}, self.timer_01_02:{self.timer_01_02}")
 
-            if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL"):
+            if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL") and time_interval_check:
                 timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
 
                 if dt < timeout_ or self.double_can_alert:
@@ -786,3 +792,267 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         await self.wait_for_jar_delivery(jar)
 
         return r
+
+    async def __restore_lifters_for_recovery_mode(self):
+
+        C = self.get_machine_head_by_letter("C")
+        D = self.get_machine_head_by_letter("D")
+        F = self.get_machine_head_by_letter("F")
+
+        missing_heads = [head for head, value in [("C", C), ("D", D), ("F", F)] if not value]
+        if missing_heads:
+            raise RuntimeError(f'Aborting recovery mode: Machine head(s) {", ".join(missing_heads)} not found or unavailable.')
+
+        counter = 0
+        while True:
+            if D.status and C.status and F.status:
+                break
+            counter += 1
+            if counter >= 30:
+                raise RuntimeError(f"Aborting recovery mode: Status is missing")
+            await asyncio.sleep(1)
+
+
+        assert C.status, "Aborting recovery mode: Empty status from HEAD C ..."
+        assert D.status, "Aborting recovery mode: Empty status from HEAD D ..."
+        assert F.status, "Aborting recovery mode: Empty status from HEAD F ..."
+
+        tasks = []
+
+        jar_pos_r_lift_down, jar_pos_l_lift_up = self.restore_machine_helper.check_jar_lift_positions()
+        logging.warning(f'jar_pos_r_lift_down -> {jar_pos_r_lift_down}')
+        logging.warning(f'jar_pos_l_lift_up -> {jar_pos_l_lift_up}')
+
+        d_jar_sts = D.status.get("jar_photocells_status", {})
+        f_jar_sts = F.status.get("jar_photocells_status", {})
+        c_jar_sts = C.status.get("jar_photocells_status", {})
+        
+        load_lifter_dx_down = D.check_jar_photocells_status(d_jar_sts, 'LOAD_LIFTER_DOWN_PHOTOCELL')
+        load_lifter_dx_up = D.check_jar_photocells_status(d_jar_sts, 'LOAD_LIFTER_UP_PHOTOCELL')
+        unload_lifter_sx_down = F.check_jar_photocells_status(f_jar_sts, 'UNLOAD_LIFTER_DOWN_PHOTOCELL')
+        unload_lifter_sx_up = F.check_jar_photocells_status(f_jar_sts, 'UNLOAD_LIFTER_UP_PHOTOCELL')
+        lifter_dx_jar_loaded = C.check_jar_photocells_status(c_jar_sts, 'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL')
+        lifter_sx_jar_loaded = F.check_jar_photocells_status(f_jar_sts, 'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL')
+        logging.debug(f'load_lifter_dx_down: {load_lifter_dx_down} - unknow pos: {not load_lifter_dx_down and not load_lifter_dx_up}')
+        logging.debug(f'unload_lifter_sx_up: {unload_lifter_sx_up} - unknow pos: {not unload_lifter_sx_down and not unload_lifter_sx_up}')
+
+        lifter_dx_check_unknown_pos = not load_lifter_dx_down and not load_lifter_dx_up
+        lifter_sx_check_unknown_pos = not unload_lifter_sx_down and not unload_lifter_sx_up        
+
+        if lifter_dx_check_unknown_pos:
+            await C.crx_outputs_management(1, 1)
+            await asyncio.sleep(2)
+            await C.crx_outputs_management(1, 0)
+
+            t = D.crx_outputs_management(1, 2) # move r_lifter to up position
+            tasks.append(t)
+
+        if lifter_sx_check_unknown_pos:
+            await F.crx_outputs_management(1, 4)
+            await asyncio.sleep(2)
+            await F.crx_outputs_management(1, 0)
+
+            t = F.crx_outputs_management(3, 5) # move l_lifter to down position
+            tasks.append(t)
+
+        if unload_lifter_sx_up and not lifter_sx_jar_loaded:
+            t = F.crx_outputs_management(3, 5) # move l_lifter to down position
+
+            if jar_pos_l_lift_up:
+
+                while True:
+                    await F.crx_outputs_management(1, 4)
+                    await F.crx_outputs_management(2, 4)
+                    r = await F.wait_for_jar_photocells_status(
+                        "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True,
+                        timeout=22, show_alert=False)
+                    await F.crx_outputs_management(1, 0)
+                    await F.crx_outputs_management(2, 0)
+
+                    if r:
+                        self.restore_machine_helper.update_data(
+                            jar_pos_l_lift_up, "OUT")
+                        break
+
+                    msg_ = 'Timeout ricezione barattolo RULLIERA USCITA: Sbloccare manualmente il barattolo e premere OK per continuare!'
+                    await self.wait_for_carousel_not_frozen(
+                        True, msg_, visibility=2,
+                        show_cancel_btn=False)
+
+                    await asyncio.sleep(0.1)
+
+            tasks.append(t)
+
+        if load_lifter_dx_down and not lifter_dx_jar_loaded:
+            t = D.crx_outputs_management(1, 2) # move r_lifter to up position
+
+            if jar_pos_r_lift_down:
+
+                while True:
+                    await C.crx_outputs_management(1, 4)
+                    await D.crx_outputs_management(0, 5)
+                    r = await D.wait_for_jar_photocells_status(
+                        "JAR_DISPENSING_POSITION_PHOTOCELL", on=True,
+                        timeout=20, show_alert=False)
+                    await C.crx_outputs_management(1, 0)
+                    await D.crx_outputs_management(0, 0)
+
+                    if r:
+                        self.restore_machine_helper.update_data(
+                            load_lifter_dx_down, "D")
+                        break
+
+                    msg_ = 'Timeout ricezione barattolo HEAD D: Sbloccare manualmente il barattolo e premere OK per continuare!'
+                    await self.wait_for_carousel_not_frozen(
+                        True, msg_, visibility=2,
+                        show_cancel_btn=False)
+
+                    await asyncio.sleep(0.1)
+                
+            tasks.append(t)
+        
+        if tasks:
+            await asyncio.gather(*tasks)
+
+            while True:
+                if D.check_jar_photocells_status(D.status.get("jar_photocells_status"), 'LOAD_LIFTER_UP_PHOTOCELL') and \
+                   F.check_jar_photocells_status(F.status.get("jar_photocells_status"), 'UNLOAD_LIFTER_DOWN_PHOTOCELL'):
+                    logging.warning('Both D and F lifters are in their default positions.')
+                    break
+                await asyncio.sleep(1)
+
+    async def machine_recovery(self):
+
+        from sqlalchemy.orm.exc import NoResultFound
+        from alfa_CR6_backend.models import Order, Jar, decompile_barcode
+
+        dispense_map = {
+            "dispense_A": "A",
+            "dispense_B": "B",
+            "dispense_C": "C",
+            "dispense_D": "D",
+            "dispense_E": "E",
+            "dispense_F": "F",
+        }
+
+        try:
+            await self.__restore_lifters_for_recovery_mode()
+        except (RuntimeError, AssertionError) as e:
+            # TODO: save to db
+            logging.error(f'Got Exception: {e}')
+            logging.error(traceback.format_exc())
+            self.main_window.show_carousel_recovery_mode(False)
+            return
+
+        recovery_action = {}
+        if self.n_of_active_heads == 6:
+
+            full_steps = [
+                "move_01_02", "move_02_03", "move_03_04", "move_04_05",
+                "move_05_06", "move_06_07", "move_07_08", "move_08_09",
+                "move_09_10", "move_10_11", "move_11_12",
+            ]
+
+            recovery_action = {}
+
+            recovery_action['IN_A'] = full_steps[:]  # Copia completa
+            recovery_action['A'] = full_steps[1:]  # Da 'move_02_03' in poi
+            recovery_action['B'] = full_steps[2:]  # Da 'move_03_04' in poi
+            recovery_action['C'] = full_steps[3:]  # Da 'move_04_05' in poi
+            recovery_action['LIFTR_UP'] = full_steps[4:]  # Da 'move_05_06' in poi
+            recovery_action['LIFTR_DOWN'] = full_steps[5:]  # Da 'move_06_07' in poi
+            recovery_action['D'] = full_steps[6:]  # Da 'move_07_08' in poi
+            recovery_action['E'] = full_steps[7:]  # Da 'move_08_09' in poi
+            recovery_action['F'] = full_steps[8:]  # Da 'move_09_10' in poi
+            recovery_action['LIFTL_DOWN'] = full_steps[8:]  # Da 'move_10_11' in poi
+            recovery_action['LIFTL_UP'] = full_steps[8:]  # Solo 'move_11_12'
+
+        if self.n_of_active_heads == 4:
+
+            full_steps = [
+                "move_01_02", "dispense_A", "move_02_04", "dispense_C", "move_04_05",
+                "move_05_06", "move_06_07", "dispense_D", "move_07_09", "dispense_F",
+                "move_09_10", "move_10_11", "move_11_12",
+            ]
+
+            recovery_action = {}
+
+            recovery_action['IN_A'] = full_steps[:]  # Copia completa
+            recovery_action['A'] = full_steps[1:]  # Da 'move_02_04' in poi
+            recovery_action['C'] = full_steps[2:]  # Da 'move_04_05' in poi
+            recovery_action['LIFTR_UP'] = full_steps[3:]  # Da 'move_05_06' in poi
+            recovery_action['LIFTR_DOWN'] = full_steps[4:]  # Da 'move_06_07' in poi
+            recovery_action['D'] = full_steps[5:]  # Da 'move_07_09' in poi
+            recovery_action['E'] = full_steps[6:]  # Da 'move_09_10' in poi
+            recovery_action['LIFTL_DOWN'] = full_steps[7:]  # Da 'move_10_11' in poi
+            recovery_action['LIFTL_UP'] = full_steps[8:]  # Solo 'move_11_12'
+
+        parametri_movimenti = {
+            "move_01_02": {'time_interval_check': False},
+        }
+
+        jars_to_restore = self.restore_machine_helper.read_data()
+        logging.warning(f'jars_to_restore --> {dict(jars_to_restore)}')
+
+        tasks = []
+        previous_task = None
+        for j_code, jv in jars_to_restore.items():
+            logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
+
+            try:
+                order_nr, index = decompile_barcode(j_code)
+                q = self.db_session.query(Jar).filter(Jar.index == index)
+                q = q.join(Order).filter((Order.order_nr == order_nr))
+                _jar = q.one()
+
+                _jar.status = "ERROR"
+                _jar.description = "restore machine from previous shutdown"
+                self.db_session.commit()
+
+                if previous_task is not None:
+                    await previous_task
+
+                _task = asyncio.ensure_future(
+                    self.run_recovery_actions(j_code, jv, _jar, recovery_action, parametri_movimenti)
+                )
+                # __jar_runners attributo 'name mangled'
+                self._BaseApplication__jar_runners[j_code] = {
+                    "jar": _jar,
+                    "freeze": False,
+                    "task": _task}
+
+                previous_task = _task
+
+            except NoResultFound:
+                _jar = None
+
+            await asyncio.sleep(0.1)
+
+            logging.warning(f'_jar: {_jar}')
+
+        while True:
+            if not self._BaseApplication__jar_runners:
+                self.main_window.show_carousel_recovery_mode(False)
+                break
+            await asyncio.sleep(1)
+
+    async def run_recovery_actions(self, j_code, jv, _jar, recovery_action, parametri_movimenti, sleeptime=1):
+            logging.warning(f'Inizio recupero per {j_code}')
+
+            last_pos = jv['pos']
+            for i in recovery_action[last_pos]:
+                if hasattr(self, i):
+                    logging.debug(f'Esecuzione azione: {i}')
+                    t = getattr(self, i)
+                    parametri = {'jar': _jar}
+                    if i == 'single_move':
+                        parametri = {}
+                    if i in parametri_movimenti:
+                        parametri_specifici = parametri_movimenti[i]
+                        parametri.update(parametri_specifici)
+
+                    await self.wait_for_carousel_not_frozen(freeze=False, msg="")
+                    await t(**parametri)
+                    await asyncio.sleep(sleeptime)
+
+            logging.warning(f'Fine recupero per {j_code}')
