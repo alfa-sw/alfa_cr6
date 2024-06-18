@@ -32,8 +32,7 @@ from alfa_CR6_backend.globals import (
     KEYBOARD_PATH,
     EPSILON,
     get_version,
-    tr_, 
-    import_settings)
+    tr_)
 
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.order_parser import OrderParser
