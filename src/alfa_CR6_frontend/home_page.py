@@ -764,17 +764,19 @@ class HomePage(BaseStackedPage):
                 keys_ = ('pipe_name', 'pigment_name')
                 info_ = []
                 for p in m.expired_products:
-                    if p.get('QR_code_info'):
-                        QR_code_info = p['QR_code_info']
-                        item = []
-                        for k in keys_:
-                            try:
-                                if QR_code_info and QR_code_info.get(k):
-                                    # ~ item[tr_(k)] = QR_code_info[k]
-                                    item.append(QR_code_info[k])
-                            except Exception:   # pylint: disable=broad-except
-                                logging.error(traceback.format_exc())
-                        info_.append(item)
+                    for expired_info in ["QR_code_info", "production_date_expired"]:
+                        if p.get(expired_info):
+                            curr_info = p[expired_info]
+                            item = []
+                            for k in keys_:
+                                try:
+                                    if curr_info and curr_info.get(k):
+                                        # ~ item[tr_(k)] = QR_code_info[k]
+                                        item.append(curr_info[k])
+                                except Exception:   # pylint: disable=broad-except
+                                    logging.error(traceback.format_exc())
+                            info_.append(item)
+                            # break
 
                 QApplication.instance().main_window.open_alert_dialog((m.name, info_), fmt="{} expired produtcs:{}")
 
@@ -860,15 +862,6 @@ class HomePage(BaseStackedPage):
                 ok_cb=_cb_pipe_selected,
                 choices=pipes_)
 
-    def update_lbl_recovery(self, toggle_lbl_recovery=False):
-        
-        if toggle_lbl_recovery:
-            self.lbl_recovery.setStyleSheet(
-                "QLabel { font-weight: bold; background-color: yellow; font-size: 40px; }")
-            self.lbl_recovery.setAlignment(Qt.AlignCenter)
-            self.lbl_recovery.show()
-        else:
-            self.lbl_recovery.hide()
 
 class HomePageSixHeads(HomePage):
 
