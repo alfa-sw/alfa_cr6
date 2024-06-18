@@ -62,10 +62,14 @@ def init_admin(app, db):
 
 def main():
 
-    logging.basicConfig(
-        force=True,
-        level=SETTINGS.LOG_LEVEL,
-        format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
+    try:
+        logging.basicConfig(
+            force=True, level=SETTINGS.LOG_LEVEL,
+            format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
+    except ValueError:
+        logging.basicConfig(
+            stream=sys.stdout, level=SETTINGS.LOG_LEVEL,
+            format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
 
     app = Flask('alfa_CR6_flask')
     sqlalchemy_database_uri_ = SETTINGS.SQLITE_CONNECT_STRING
