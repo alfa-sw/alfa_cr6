@@ -78,7 +78,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_condition(      # pylint: disable=too-many-arguments
             self, condition, timeout, show_alert=True,
-            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None)
+            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None):
 
         ret = None
         t0 = time.time()
