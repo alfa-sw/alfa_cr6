@@ -13,6 +13,7 @@ import traceback
 import asyncio
 import json
 import logging
+import redis
 
 import logging.handlers
 
@@ -116,6 +117,28 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
                         (url_, str(e)), fmt="error downloading file from:{}\n {}.\n", title="ERROR")
 
     return ret
+
+
+class RedisOrderPublisher:
+    def __init__(self, redis_url='redis://localhost',ch_name='cr_orders'):
+        self.redis_url = redis_url
+        self.ch_name=ch_name
+        self.redis = None
+        asyncio.ensure_future(self._setup_comm())
+
+    async def _setup_comm(self):
+        self.redis = redis.from_url(  # pylint: disable=no-member
+            "redis://localhost")
+        cmd_channel = self.redis.pubsub(ignore_subscribe_messages=True)
+        await cmd_channel.subscribe(self.ch_name)
+        logging.info(f"Subscribed to channel: {self.ch_name}")
+
+    def publish_messages(self, data_message):
+        if not self.redis:
+            raise RuntimeError("Redis client is not initialized. Ensure the RedisOrderPublisher is properly set up.")
+        message = json.dumps(data_message)
+        self.redis.publish(self.ch_name, message)
+        logging.warning(f"Channel {self.ch_name} - Published message: {message}")
 
 
 class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-public-methods
@@ -287,6 +310,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.carousel_frozen = False
         self.main_window.show_carousel_frozen(self.carousel_frozen)
+        self.redis_publisher = RedisOrderPublisher()
 
     def __init_tasks(self):
 
@@ -1156,6 +1180,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if hasattr(self.restore_machine_helper, 'store_jar_data'):
                     self.restore_machine_helper.store_jar_data(jar, pos)
+
+                if jar.status in {"ERROR", "DONE"}:
+                    jar_data = jar.object_to_dict(include_relationship=2)
+                    self.redis_publisher.publish_messages(jar_data)
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)

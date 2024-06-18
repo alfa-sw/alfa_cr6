@@ -464,7 +464,8 @@ weight:{RealWeight}
             'status': content['status'],
             'shotUnit': content['mix']['shotUnit'],
             'mixName': content['mix']['name'],
-            'productName': content['mix']['productName']
+            'productName': content['mix']['productName'],
+            'id': content['id']
         }
 
         ingredients = []
