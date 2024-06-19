@@ -2,6 +2,15 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.4.0
+
+*Development release - do not use on field*
+
+### 1.4.0dev2 - 2024-06-19
+
+ - PR#142 - task RM#11 - send order result on redis
+ - removed code related to empty cans on machines, since not codified using feature branch method
+ - PR#___ - task RM#8 - added parser for akzo azure orders
 
 ## [1.3.0] - 2024-05-21
 
