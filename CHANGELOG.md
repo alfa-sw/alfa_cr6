@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
  - removed code related to empty cans on machines, since not codified using feature branch method
  - PR#___ - task RM#8 - added parser for akzo azure orders
 
+### 1.4.0dev2 - 2024-06-20
+ - PR#___ - task RM#75 - Fixed check for JSON file orders
+
 ## [1.3.0] - 2024-05-21
 
 ### Added
