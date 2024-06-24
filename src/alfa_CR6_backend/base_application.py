@@ -1178,9 +1178,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 self.db_session.commit()
 
-                if hasattr(self.restore_machine_helper, 'store_jar_data'):
-                    self.restore_machine_helper.store_jar_data(jar, pos)
-
                 if jar.status in {"ERROR", "DONE"}:
                     jar_data = jar.object_to_dict(include_relationship=2)
                     self.redis_publisher.publish_messages(jar_data)
