@@ -121,11 +121,7 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
 
 
 class RestoreMachineHelper:
-    # def __new__(cls, file_path):
-    #     if cls._instance is None:
-    #         cls._instance = super(RestoreMachine, cls).__new__(cls)
-    #         cls._instance.file_path = file_path
-    #     return cls._instance
+
     def __init__(self):
         self.json_file_path = self.__json_file_path()
         self.__ensure_file_exists()
@@ -144,8 +140,6 @@ class RestoreMachineHelper:
 
     def write_data(self, new_data):
         existing_data = self.read_data()
-        # logging.warning(f'>>>>> existing_data: {existing_data}')
-        # logging.warning(f'>>>>> new_data: {new_data}')
         existing_data.update(new_data)
 
         with open(self.json_file_path, 'w') as file:
@@ -211,11 +205,6 @@ class RestoreMachineHelper:
     def start_restore_mode(self):
         logging.warning('Check conditions to start restore mode ..')
         return self.read_data()
-
-    def test(self):
-        logging.warning(f'#### C')
-        logging.warning(f'#### A')
-        logging.warning(f'#### T')
 
     def check_jar_lift_positions(self, jdata=None):
         """
