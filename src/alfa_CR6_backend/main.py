@@ -24,9 +24,15 @@ def main():
 
     settings = import_settings()
 
-    logging.basicConfig(
-        stream=sys.stdout, level=settings.LOG_LEVEL,
-        format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
+    try:
+        logging.basicConfig(
+            force=True, level=settings.LOG_LEVEL,
+            format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
+    except ValueError:
+        # in case of old Python version
+        logging.basicConfig(
+            stream=sys.stdout, level=settings.LOG_LEVEL,
+            format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
 
     pre_load_libGLX_on_banana()
 
