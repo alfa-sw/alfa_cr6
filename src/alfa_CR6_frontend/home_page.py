@@ -326,8 +326,6 @@ class HomePage(BaseStackedPage):
 
         self.running_jars_lbl.setStyleSheet("font-size: 15px")
 
-        self.update_lbl_recovery()
-
         for b in self.action_btn_group.buttons():
             b.setStyleSheet(
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
