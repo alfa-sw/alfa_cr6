@@ -2,6 +2,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.5.0
+
+*Development release - do not use on field*
+
 ## 1.4.0 - 2024-06-27
 
  - PR#142 - task RM#11 - send order result on redis
