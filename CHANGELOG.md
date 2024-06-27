@@ -2,6 +2,14 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.4.0 - 2024-06-27
+
+ - PR#142 - task RM#11 - send order result on redis
+ - removed code related to empty cans on machines, since not codified using feature branch method
+ - PR#___ - task RM#8 - added parser for akzo azure orders
+ - PR#___ - task RM#75 - Fixed check for JSON file orders
+ - PR#144 - task RM#82 - improved SERVIND pdf template parsing to handle EN and CZ languages
+ - minor improvements for application
 
 ## [1.3.0] - 2024-05-21
 

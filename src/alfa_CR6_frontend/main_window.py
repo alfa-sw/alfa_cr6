@@ -462,14 +462,6 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
-    def show_carousel_recovery_mode(self, toggle):
-        self.home_page.update_lbl_recovery(toggle)
-
-        if toggle:
-            self.home_page.feed_jar_btn.setEnabled(False)
-        else:
-            self.home_page.feed_jar_btn.setEnabled(True)
-
     def show_reserve(self, head_index, flag=None):
 
         self.home_page.show_reserve(head_index, flag=flag)

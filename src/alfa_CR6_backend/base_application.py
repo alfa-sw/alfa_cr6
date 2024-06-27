@@ -13,11 +13,11 @@ import traceback
 import asyncio
 import json
 import logging
+import redis
 
 import logging.handlers
 
 from functools import partial
-from collections import OrderedDict
 
 from PyQt5.QtCore import QEventLoop      # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
@@ -32,8 +32,7 @@ from alfa_CR6_backend.globals import (
     KEYBOARD_PATH,
     EPSILON,
     get_version,
-    tr_,
-    import_settings)
+    tr_)
 
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.order_parser import OrderParser
@@ -120,123 +119,26 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
     return ret
 
 
-class RestoreMachineHelper:
-    # def __new__(cls, file_path):
-    #     if cls._instance is None:
-    #         cls._instance = super(RestoreMachine, cls).__new__(cls)
-    #         cls._instance.file_path = file_path
-    #     return cls._instance
-    def __init__(self):
-        self.json_file_path = self.__json_file_path()
-        self.__ensure_file_exists()
+class RedisOrderPublisher:
+    def __init__(self, redis_url='redis://localhost',ch_name='cr_orders'):
+        self.redis_url = redis_url
+        self.ch_name=ch_name
+        self.redis = None
+        asyncio.ensure_future(self._setup_comm())
 
-    @staticmethod
-    def __json_file_path():
-        _settings = import_settings()
-        _path = os.path.join(_settings.DATA_PATH, "running_jars.json")
+    async def _setup_comm(self):
+        self.redis = redis.from_url(  # pylint: disable=no-member
+            "redis://localhost")
+        cmd_channel = self.redis.pubsub(ignore_subscribe_messages=True)
+        await cmd_channel.subscribe(self.ch_name)
+        logging.info(f"Subscribed to channel: {self.ch_name}")
 
-        return _path
-
-    def __ensure_file_exists(self):
-        if not os.path.exists(self.json_file_path):
-            with open(self.json_file_path, 'w') as file:
-                json.dump({}, file)
-
-    def write_data(self, new_data):
-        existing_data = self.read_data()
-        # logging.warning(f'>>>>> existing_data: {existing_data}')
-        # logging.warning(f'>>>>> new_data: {new_data}')
-        existing_data.update(new_data)
-
-        with open(self.json_file_path, 'w') as file:
-            json.dump(existing_data, file)
-
-    def read_data(self):
-        try:
-            with open(self.json_file_path, 'r') as file:
-                data = json.load(file)
-                logging.warning(f'>>> data: {dict(data)}')
-
-                ordine_pos = ["OUT", "LIFTL_UP", "LIFTL_DOWN", "F", "E", "D", "LIFTR_DOWN", "LIFTR_UP", "C", "B", "A", "IN_A"]
-                
-                sorted_data = OrderedDict(sorted(data.items(), key=lambda x: ordine_pos.index(x[1]["pos"])))
-                
-                return sorted_data
-        except FileNotFoundError:
-            return {}
-
-    def update_data(self, jcode, updated_pos):
-        jdata = dict(self.read_data())
-
-        if jcode in jdata:
-            jdata[jcode]["pos"] = updated_pos
-
-        self.write_data(jdata)
-
-    def store_jar_data(self, jar, pos):
-
-        logging.warning(f'storing data jar {jar} with pos {pos}')
-        if jar:
-            self.write_data({ f"{jar.barcode}": {"pos": pos, "jar_status": jar.status}})
-
-    async def run(self):
-
-        # loop = asyncio.get_running_loop()
-        # _data = await loop.run_in_executor(None, self.read_data)
-
-        logging.warning('calling self.read_data()')
-        logging.warning(self.read_data())
-
-        if self.read_data():
-            msg = tr_("The emptying procedure has been activated to restore the machine's functionality by moving the jars towards the exit.")
-            
-            logging.warning(f'>>> msg: {msg}')
-
-            try:
-                msgbox = ModalMessageBox(msg=msg, title="ALERT")
-                msgbox.move(msgbox.geometry().x(), 20)
-                msgbox.setText(f"\n\n{msg}\n\n")
-                # msgbox.show()
-                msgbox.enable_buttons(False, True)
-
-                # asyncio.get_event_loop().call_later(10, partial(msgbox.enable_buttons, False, True))
-
-                logging.warning(f'>>>> msgbox: {msgbox}')
-                asyncio.get_event_loop().call_later(10, msgbox.show())
-                # msgbox.exec_()
-                # asyncio.get_event_loop
-            except Exception:
-                logging.error(traceback.format_exc())
-
-    def start_restore_mode(self):
-        logging.warning('Check conditions to start restore mode ..')
-        return self.read_data()
-
-    def test(self):
-        logging.warning(f'#### C')
-        logging.warning(f'#### A')
-        logging.warning(f'#### T')
-
-    def check_jar_lift_positions(self, jdata=None):
-        """
-            Checks the positions of jars by identifying the barcodes of those located
-            in the 'LIFTR_DOWN' and 'LIFTL_UP' positions.
-
-            :param jdata: A dictionary containing the jar data. If not provided, the data will be read.
-            :return: A tuple containing the barcode of the jar in the 'LIFTR_DOWN' position and the one in the 'LIFTL_UP' position.
-        """
-        jar_pos_r_lift_down = None
-        jar_pos_l_lift_up = None
-        if not jdata or jdata is None:
-            jdata = self.read_data()
-
-        for jbarcode, jv in jdata.items():
-            if jv["pos"] == "LIFTR_DOWN":
-                jar_pos_r_lift_down = jbarcode
-            if jv["pos"] == "LIFTL_UP":
-                jar_pos_l_lift_up = jbarcode
-
-        return (jar_pos_r_lift_down, jar_pos_l_lift_up)
+    def publish_messages(self, data_message):
+        if not self.redis:
+            raise RuntimeError("Redis client is not initialized. Ensure the RedisOrderPublisher is properly set up.")
+        message = json.dumps(data_message)
+        self.redis.publish(self.ch_name, message)
+        logging.warning(f"Channel {self.ch_name} - Published message: {message}")
 
 
 class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-public-methods
@@ -393,7 +295,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__modal_freeze_msgbox = None
 
         self.chromium_wrapper = None
-        self.restore_machine_helper = None
 
         if self.settings.SQLITE_CONNECT_STRING:
 
@@ -409,6 +310,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.carousel_frozen = False
         self.main_window.show_carousel_frozen(self.carousel_frozen)
+        self.redis_publisher = RedisOrderPublisher()
 
     def __init_tasks(self):
 
@@ -433,9 +335,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             else:
                 self.machine_head_dict[head_index] = None
 
-        # t = self.__create_restore_machine_helper_task()
-        # self.__tasks.append(t)
-
     def __close_tasks(self,):
 
         for m in self.machine_head_dict.values():
@@ -459,18 +358,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.__runners = []
         self.__jar_runners = {}
-
-    async def __create_restore_machine_helper_task(self):
-        try:
-            self.restore_machine_helper = RestoreMachineHelper()
-            if self.restore_machine_helper.start_restore_mode():
-                # self..open_alert_dialog('RESTOR MODE TBA', show_cancel_btn=False, callback=self.restore_machine_helper.test)
-                self.main_window.show_carousel_recovery_mode(True)
-                await self.machine_recovery()
-                logging.warning('restore_machine_helper_task COMPLETED.')
-        # await self.restore_machine_helper.run()
-        except Exception:
-            logging.error(traceback.print_exc())
 
     async def __create_chromium_wrapper_task(self):
 
@@ -1291,8 +1178,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 self.db_session.commit()
 
-                if hasattr(self.restore_machine_helper, 'store_jar_data'):
-                    self.restore_machine_helper.store_jar_data(jar, pos)
+                if jar.status in {"ERROR", "DONE"}:
+                    jar_data = jar.object_to_dict(include_relationship=2)
+                    self.redis_publisher.publish_messages(jar_data)
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)

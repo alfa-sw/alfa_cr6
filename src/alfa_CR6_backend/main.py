@@ -7,6 +7,7 @@
 import sys
 import logging
 import platform
+import os
 
 from alfa_CR6_backend.carousel_motor import CarouselMotor
 from alfa_CR6_backend.globals import import_settings
@@ -24,11 +25,18 @@ def main():
 
     settings = import_settings()
 
-    logging.basicConfig(
-        stream=sys.stdout, level=settings.LOG_LEVEL,
-        format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
+    try:
+        logging.basicConfig(
+            force=True, level=settings.LOG_LEVEL,
+            format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
+    except ValueError:
+        # in case of old Python version
+        logging.basicConfig(
+            stream=sys.stdout, level=settings.LOG_LEVEL,
+            format="[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s")
 
-    pre_load_libGLX_on_banana()
+    if not os.getenv("IN_DOCKER", False) in ['1', 'true']:
+        pre_load_libGLX_on_banana()
 
     from alfa_CR6_frontend.main_window import MainWindow    # pylint: disable=import-outside-toplevel
     app = CarouselMotor(MainWindow, settings, sys.argv)

@@ -116,6 +116,31 @@ def _reformat_head_events_to_csv(temp_pth, db_session):
 
     return f_name
 
+def _generate_json_complete_filename(formula_name, extension, formula_step=None):
+    if extension != "json":
+        raise ValueError(f'Found wrong Json extension: "{extension}"')
+
+    if formula_step:
+        fstep_str = str(formula_step)
+        if not fstep_str.isdigit():
+            raise ValueError(f'Step {formula_step} must be a digit!')
+        formula_name = f"{formula_name}_step{fstep_str}"
+
+    base_path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
+    complete_name = f'{formula_name}.{extension}'
+
+    if os.path.exists(os.path.join(base_path, complete_name)):
+        i = 1
+        while True:
+            new_filename = f"{formula_name} ({i}).{extension}"
+
+            if not os.path.exists(os.path.join(base_path, new_filename)):
+                complete_name = new_filename
+                break
+            i += 1
+
+    return complete_name
+
 class FilterOrderByJarStatusInList(FilterInList):  # pylint: disable=too-few-public-methods
     def apply(self, query, value, alias=None): # pylint: disable=unused-argument, no-self-use
         return query.join(Jar).filter(Jar.status.in_(value))
@@ -515,26 +540,10 @@ class AdminIndexView(flask_admin.AdminIndexView):
                     fname_ = f"{colorname_}"
 
                 fstep = formula.get('meta', {}).get('step', '')
-                if fstep:
-                    fstep_str = str(fstep)
-                    if not fstep_str.isdigit():
-                        raise ValueError(f'Step {fstep} must be a digit!')
-                    fname_ = f"{fname_}_step{fstep_str}"
                 fextension = 'json'
                 base_path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
-                filename_ = f'{fname_}.{fextension}'
-
-                if os.path.exists(os.path.join(base_path, filename_)):
-                    i = 1
-                    while True:
-                        new_filename = f"{fname_} ({i}).{fextension}"
-
-                        if not os.path.exists(os.path.join(base_path, new_filename)):
-                            filename_ = new_filename
-                            break
-                        i += 1
-
-                pth_ = os.path.join(base_path, filename_)
+                complete_name = _generate_json_complete_filename(fname_, fextension, fstep)
+                pth_ = os.path.join(base_path, complete_name)
                 logging.warning(f"pth_:{pth_}")
                 with open(pth_, 'w', encoding='UTF-8') as f:
 
@@ -542,8 +551,32 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
                     response_status = HTTPStatus.OK
                     response_data['result'] = "json formula saved."
-                    response_data['file_name'] = f"{filename_}"
+                    response_data['file_name'] = f"{complete_name}"
                     response_data['batchid'] = batchid_
+
+            elif formula.get("header") == "AkzoNobel Azure InstrumentCloud":
+                OrderParser.parse_akzo_azure_json(formula.copy())
+
+                name = formula.get('mix', {}).get('name', '')
+                product_name = formula.get('mix', {}).get('productName', '')
+
+                fname_ = f"{product_name}_{name}"
+                fextension = 'json'
+                base_path = SETTINGS.WEBENGINE_DOWNLOAD_PATH.strip()
+                complete_name = _generate_json_complete_filename(fname_, fextension)
+                pth_ = os.path.join(base_path, complete_name)
+                logging.warning(f"pth_:{pth_}")
+                with open(pth_, 'w', encoding='UTF-8') as f:
+
+                    json.dump(formula, f, indent=2, ensure_ascii=False)
+
+                    response_status = HTTPStatus.OK
+                    response_data['result'] = "json formula saved."
+                    response_data['file_name'] = f"{complete_name}"
+                    response_data['id'] = formula.get('id')
+
+            else:
+                logging.error(f"invalid header {formula.get('header')} for received formula")
 
         except Exception as exc:  # pylint: disable=broad-except
             response_status = HTTPStatus.UNPROCESSABLE_ENTITY

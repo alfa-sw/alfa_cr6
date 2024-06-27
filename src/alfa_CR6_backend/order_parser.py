@@ -455,6 +455,33 @@ weight:{RealWeight}
         return properties
 
     @staticmethod
+    def parse_akzo_azure_json(content):
+
+        properties = {}
+        properties['extra_lines_to_print'] = []
+        properties['meta'] = {
+            'canVolume': content['canVolume'],
+            'status': content['status'],
+            'shotUnit': content['mix']['shotUnit'],
+            'mixName': content['mix']['name'],
+            'productName': content['mix']['productName'],
+            'id': content['id']
+        }
+
+        ingredients = []
+        for i in content['mix']['components']:
+            ingr = {}
+            if i.get("code") is not None:
+                ingr["pigment_name"] = i.get("code")
+                ingr["description"] = i.get("description")
+                ingr["weight(g)"] = round(float(i.get("desiredAmount")), 4)
+                ingredients.append(ingr)
+        properties["ingredients"]=ingredients
+
+        # logging.warning(f"properties: {properties}")
+        return properties
+
+    @staticmethod
     def parse_cpl_pdf(lines):  # pylint: disable=too-many-locals
 
         properties = {}
@@ -713,7 +740,9 @@ weight:{RealWeight}
 
                     if extra_info and [k for k in ["register",
                                                    "codice colore produttore",
-                                                   "kód farby výrobcu"] if k in extra_info[-1].lower()]:
+                                                   "kód farby výrobcu",
+                                                   "manufacturer colour code",
+                                                   "výrobní kód barvy"] if k in extra_info[-1].lower()]:
                         toks = l.split()
                         # ~ logging.error(f"l:{l}, toks:{toks}")
                         if toks:
@@ -721,7 +750,9 @@ weight:{RealWeight}
 
                     elif extra_info and [k for k in ["kleurcode fabrikant",
                                                      "nome colore produttore",
-                                                     "názov farby výrobcu"] if k in extra_info[-1].lower()]:
+                                                     "názov farby výrobcu",
+                                                     "manufacturer colour name",
+                                                     "výrobní jméno barvy"] if k in extra_info[-1].lower()]:
                         toks = l.split()
                         # ~ logging.error(f"l:{l}, toks:{toks}")
                         if toks:
@@ -1458,6 +1489,9 @@ weight:{RealWeight}
             content = json.load(fd)
             if content.get("header") == "SW CRx formula file":
                 properties = cls.parse_sw_json(content)
+                properties['meta']['header'] = content['header']
+            elif content.get("header") == "AkzoNobel Azure InstrumentCloud":
+                properties = cls.parse_akzo_azure_json(content)
                 properties['meta']['header'] = content['header']
             else:
                 properties = cls.parse_kcc_json(content)

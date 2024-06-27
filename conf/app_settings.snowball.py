@@ -13,10 +13,11 @@ LOGS_PATH = os.path.join(RUNTIME_FILES_ROOT, "log")
 TMP_PATH = os.path.join(RUNTIME_FILES_ROOT, "tmp")
 DATA_PATH = os.path.join(RUNTIME_FILES_ROOT, "data")
 
-CUSTOM_PATH =  os.path.join(DATA_PATH, "custom")
+CUSTOM_PATH = os.path.join(DATA_PATH, "custom")
 
-WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "SW_web_download")
-WEBENGINE_CACHE_PATH = os.path.join(DATA_PATH, "SW_web_cache")
+WEBENGINE_DOWNLOAD_PATH = os.path.join(DATA_PATH, "orders")
+WEBENGINE_CACHE_PATH = os.path.join(TMP_PATH, "SW_web_cache")
+
 
 SQLITE_CONNECT_STRING = f"sqlite:///{DATA_PATH}/cr6_Vx_test.sqlite"
 
