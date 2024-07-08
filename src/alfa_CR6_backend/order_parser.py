@@ -1240,7 +1240,7 @@ weight:{RealWeight}
             'Makes': r'Makes : (.*)'
         }
 
-        ingredient_pattern = re.compile(r'(\S+)\s+([\w\s]+?)\s+(\d+\.?\d*)\s+(\d+\.?\d*)')
+        ingredient_pattern = re.compile(r'(\S+)\s+(.+?)\s+(\d+\.\d*)\s+(\d+\.\d*)')
 
         for line in lines:
             extract_metadata(line, meta_patterns, properties['meta'])
