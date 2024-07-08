@@ -1258,14 +1258,17 @@ weight:{RealWeight}
 
         for line in extract_ingredient_lines(lines):
             match = ingredient_pattern.match(line)
-            if match:
-                code, description, incremental, cumulative = match.groups()
-                ingredient = {
-                    "pigment_name": code,
-                    "weight(g)": round(float(incremental), 4),
-                    "description": description.strip()
-                }
-                properties['ingredients'].append(ingredient)
+            if not match:
+                logging.error(f"line: {line} not match ({match}) the ingredient_pattern")
+                continue
+
+            code, description, incremental, cumulative = match.groups()
+            ingredient = {
+                "pigment_name": code,
+                "weight(g)": round(float(incremental), 4),
+                "description": description.strip()
+            }
+            properties['ingredients'].append(ingredient)
 
         properties['extra_lines_to_print'] = [
             f"{properties.get('meta').get('date', '')} - {properties.get('meta').get('makes', '')}",
