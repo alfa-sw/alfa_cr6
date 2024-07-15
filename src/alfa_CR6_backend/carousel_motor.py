@@ -1037,22 +1037,22 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             await asyncio.sleep(1)
 
     async def run_recovery_actions(self, j_code, jv, _jar, recovery_action, parametri_movimenti, sleeptime=1):
-            logging.warning(f'Inizio recupero per {j_code}')
+        logging.warning(f'Inizio recupero per {j_code}')
 
-            last_pos = jv['pos']
-            for i in recovery_action[last_pos]:
-                if hasattr(self, i):
-                    logging.debug(f'Esecuzione azione: {i}')
-                    t = getattr(self, i)
-                    parametri = {'jar': _jar}
-                    if i == 'single_move':
-                        parametri = {}
-                    if i in parametri_movimenti:
-                        parametri_specifici = parametri_movimenti[i]
-                        parametri.update(parametri_specifici)
+        last_pos = jv['pos']
+        for i in recovery_action[last_pos]:
+            if hasattr(self, i):
+                logging.debug(f'Esecuzione azione: {i}')
+                t = getattr(self, i)
+                parametri = {'jar': _jar}
+                if i == 'single_move':
+                    parametri = {}
+                if i in parametri_movimenti:
+                    parametri_specifici = parametri_movimenti[i]
+                    parametri.update(parametri_specifici)
 
-                    await self.wait_for_carousel_not_frozen(freeze=False, msg="")
-                    await t(**parametri)
-                    await asyncio.sleep(sleeptime)
+                await self.wait_for_carousel_not_frozen(freeze=False, msg="")
+                await t(**parametri)
+                await asyncio.sleep(sleeptime)
 
-            logging.warning(f'Fine recupero per {j_code}')
+        logging.warning(f'Fine recupero per {j_code}')
