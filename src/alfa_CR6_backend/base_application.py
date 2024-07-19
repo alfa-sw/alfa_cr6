@@ -167,7 +167,11 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
                     "C", "B", "A", "IN_A", "IN"
                 ]
                 
-                sorted_data = OrderedDict(sorted(data.items(), key=lambda x: ordine_pos.index(x[1]["pos"])))
+                def get_position_index(item):
+                    return ordine_pos.index(item[1]["pos"])
+
+                sorted_items = sorted(data.items(), key=get_position_index)
+                sorted_data = OrderedDict(sorted_items) 
                 
                 return sorted_data
         except FileNotFoundError:
