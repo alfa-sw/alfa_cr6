@@ -646,7 +646,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return pars_copy_
 
-    async def do_dispense(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    async def do_dispense(self, jar, restore_machine_helper=None):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+        def store_data_on_restore_machine_helper(_jar, _pos, _disp):
+            if restore_machine_helper and hasattr(restore_machine_helper, 'store_jar_data'):
+                logging.debug(f">>> storing {_pos} - {_disp} for {_jar.barcode}")
+                restore_machine_helper.store_jar_data(
+                    jar=_jar,
+                    pos=_pos,
+                    dispensation=_disp,
+                )
 
         if jar.order and jar.order.description and "PURGE ALL" in jar.order.description.upper():
             ingredients = await self.get_ingredients_for_purge_all(jar)
@@ -724,6 +733,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
                             if r:
 
+                                store_data_on_restore_machine_helper(jar, self.name, "ongoing")
+
                                 self.runners[-1]['running_engaged_circuits'] = []
 
                                 # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
@@ -740,24 +751,29 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 if r:
                                     outcome_ += tr_('success (step:{}) ').format(step)
                                     result_ = 'OK'
+                                    store_data_on_restore_machine_helper(jar, self.name, "done")
                                 else:
                                     outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
                                     outcome_ += "{}, {} ".format(self.status.get("error_code"),
                                                                  tr_(self.status.get("error_message")))
                                     result_ = 'NOK'
+                                    store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure")
                                     break
 
                             else:
                                 outcome_ += tr_('failure waiting for dispensation to start (step:{}) ').format(step)
                                 result_ = 'NOK'
+                                store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure")
                                 break
                         else:
                             outcome_ += tr_('failure in sending "DISPENSE_FORMULA" command (step:{}) ').format(step)
                             result_ = 'NOK'
+                            store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure")
                             break
                     else:
                         outcome_ += tr_('failure in waiting for dispensing condition (step:{}) ').format(step)
                         result_ = 'NOK'
+                        store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure")
                         break
 
                 ingredients = jar.get_ingredients_for_machine(self)

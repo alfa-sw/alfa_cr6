@@ -489,6 +489,9 @@ class HomePage(BaseStackedPage):
                 msg_ = tr_("please, enter service password")
                 self.main_window.open_input_dialog(message=msg_,  content="", ok_cb=ok_cb_)
 
+            elif "recovery" in btn_name:
+                QApplication.instance().run_a_coroutine_helper("machine_recovery")
+
             for i, m in QApplication.instance().machine_head_dict.items():
                 if m:
                     self.main_window.update_status_data(i)

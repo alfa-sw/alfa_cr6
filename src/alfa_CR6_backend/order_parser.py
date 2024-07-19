@@ -1485,7 +1485,7 @@ weight:{RealWeight}
             if content.get("header") == "SW CRx formula file":
                 properties = cls.parse_sw_json(content)
                 properties['meta']['header'] = content['header']
-            if content.get("header") == "AkzoNobel Azure InstrumentCloud":
+            elif content.get("header") == "AkzoNobel Azure InstrumentCloud":
                 properties = cls.parse_akzo_azure_json(content)
                 properties['meta']['header'] = content['header']
             else:

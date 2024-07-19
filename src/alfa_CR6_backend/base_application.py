@@ -120,7 +120,17 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
     return ret
 
 
-class RestoreMachineHelper:
+class SingletonMeta(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class RestoreMachineHelper(metaclass=SingletonMeta):
 
     def __init__(self):
         self.json_file_path = self.__json_file_path()
@@ -151,7 +161,11 @@ class RestoreMachineHelper:
                 data = json.load(file)
                 logging.warning(f'>>> data: {dict(data)}')
 
-                ordine_pos = ["OUT", "LIFTL_UP", "LIFTL_DOWN", "F", "E", "D", "LIFTR_DOWN", "LIFTR_UP", "C", "B", "A", "IN_A"]
+                ordine_pos = [
+                    "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
+                    "E", "D", "LIFTR_DOWN", "LIFTR_UP",
+                    "C", "B", "A", "IN_A", "IN"
+                ]
                 
                 sorted_data = OrderedDict(sorted(data.items(), key=lambda x: ordine_pos.index(x[1]["pos"])))
                 
@@ -167,11 +181,17 @@ class RestoreMachineHelper:
 
         self.write_data(jdata)
 
-    def store_jar_data(self, jar, pos):
+    def store_jar_data(self, jar, pos, dispensation=None):
 
         logging.warning(f'storing data jar {jar} with pos {pos}')
         if jar:
-            self.write_data({ f"{jar.barcode}": {"pos": pos, "jar_status": jar.status}})
+            self.write_data({
+                f"{jar.barcode}": {
+                    "pos": pos,
+                    "jar_status": jar.status,
+                    "dispensation": dispensation
+                }
+            })
 
     async def run(self):
 
@@ -422,8 +442,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             else:
                 self.machine_head_dict[head_index] = None
 
-        # t = self.__create_restore_machine_helper_task()
-        # self.__tasks.append(t)
+        t = self.__create_restore_machine_helper_task()
+        self.__tasks.append(t)
 
     def __close_tasks(self,):
 
@@ -453,11 +473,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         try:
             self.restore_machine_helper = RestoreMachineHelper()
             if self.restore_machine_helper.start_restore_mode():
-                # self..open_alert_dialog('RESTOR MODE TBA', show_cancel_btn=False, callback=self.restore_machine_helper.test)
                 self.main_window.show_carousel_recovery_mode(True)
-                await self.machine_recovery()
-                logging.warning('restore_machine_helper_task COMPLETED.')
-        # await self.restore_machine_helper.run()
         except Exception:
             logging.error(traceback.print_exc())
 

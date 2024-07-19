@@ -696,7 +696,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 logging.warning(f"{jar.barcode} in ERROR.")
                 r = True
             else:
-                r = await m.do_dispense(jar)
+                r = await m.do_dispense(jar, self.restore_machine_helper)
                 logging.warning(f"{m.name}, j:{jar}.")
                 logging.debug(f"jar.json_properties:{jar.json_properties}.")
 
@@ -923,6 +923,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def machine_recovery(self):
 
+        # TODO - verifica condizione in cui jar è in posizione dispensazione ma status no in DISPENSING
+
         from sqlalchemy.orm.exc import NoResultFound
         from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 
@@ -955,6 +957,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             recovery_action = {}
 
+            recovery_action['IN'] = full_steps[:]  # Copia completa
             recovery_action['IN_A'] = full_steps[:]  # Copia completa
             recovery_action['A'] = full_steps[1:]  # Da 'move_02_03' in poi
             recovery_action['B'] = full_steps[2:]  # Da 'move_03_04' in poi
@@ -977,6 +980,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             recovery_action = {}
 
+            recovery_action['IN'] = full_steps[:]  # Copia completa
             recovery_action['IN_A'] = full_steps[:]  # Copia completa
             recovery_action['A'] = full_steps[1:]  # Da 'move_02_04' in poi
             recovery_action['C'] = full_steps[2:]  # Da 'move_04_05' in poi
@@ -1005,9 +1009,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 q = q.join(Order).filter((Order.order_nr == order_nr))
                 _jar = q.one()
 
-                _jar.status = "ERROR"
-                _jar.description = "restore machine from previous shutdown"
-                self.db_session.commit()
+                if jv.get("dispensation", None) == "ongoing":
+                    _jar.status = "ERROR"
+                    _jar.description = "restore machine from previous shutdown"
+                    self.db_session.commit()
 
                 if previous_task is not None:
                     await previous_task
@@ -1042,7 +1047,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         last_pos = jv['pos']
         for i in recovery_action[last_pos]:
             if hasattr(self, i):
-                logging.debug(f'Esecuzione azione: {i}')
+                logging.warning(f'Esecuzione azione: {i}')
                 t = getattr(self, i)
                 parametri = {'jar': _jar}
                 if i == 'single_move':
