@@ -955,23 +955,26 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if self.n_of_active_heads == 6:
 
             full_steps = [
-                "move_01_02", "move_02_03", "move_03_04", "move_04_05",
-                "move_05_06", "move_06_07", "move_07_08", "move_08_09",
-                "move_09_10", "move_10_11", "move_11_12",
+                "move_01_02", "dispense_step", "move_02_03",
+                "dispense_step", "move_03_04", "dispense_step",
+                "move_04_05", "move_05_06", "move_06_07",
+                "dispense_step", "move_07_08", "dispense_step",
+                "move_08_09", "dispense_step", "move_09_10",
+                "move_10_11", "move_11_12",
             ]
 
             recovery_actions['IN'] = full_steps[:]  # Copia completa
             recovery_actions['IN_A'] = full_steps[:]  # Copia completa
-            recovery_actions['A'] = full_steps[1:]  # Da 'move_02_03' in poi
-            recovery_actions['B'] = full_steps[2:]  # Da 'move_03_04' in poi
-            recovery_actions['C'] = full_steps[3:]  # Da 'move_04_05' in poi
-            recovery_actions['LIFTR_UP'] = full_steps[4:]  # Da 'move_05_06' in poi
-            recovery_actions['LIFTR_DOWN'] = full_steps[5:]  # Da 'move_06_07' in poi
-            recovery_actions['D'] = full_steps[6:]  # Da 'move_07_08' in poi
-            recovery_actions['E'] = full_steps[7:]  # Da 'move_08_09' in poi
-            recovery_actions['F'] = full_steps[8:]  # Da 'move_09_10' in poi
-            recovery_actions['LIFTL_DOWN'] = full_steps[8:]  # Da 'move_10_11' in poi
-            recovery_actions['LIFTL_UP'] = full_steps[8:]  # Solo 'move_11_12'
+            recovery_actions['A'] = full_steps[2:]  # Da 'move_02_03' in poi
+            recovery_actions['B'] = full_steps[4:]  # Da 'move_03_04' in poi
+            recovery_actions['C'] = full_steps[6:]  # Da 'move_04_05' in poi
+            recovery_actions['LIFTR_UP'] = full_steps[7:]  # Da 'move_05_06' in poi
+            recovery_actions['LIFTR_DOWN'] = full_steps[8:]  # Da 'move_06_07' in poi
+            recovery_actions['D'] = full_steps[10:]  # Da 'move_07_08' in poi
+            recovery_actions['E'] = full_steps[12:]  # Da 'move_08_09' in poi
+            recovery_actions['F'] = full_steps[14:]  # Da 'move_09_10' in poi
+            recovery_actions['LIFTL_DOWN'] = full_steps[15:]  # Da 'move_10_11' in poi
+            recovery_actions['LIFTL_UP'] = full_steps[16:]  # Solo 'move_11_12'
 
         if self.n_of_active_heads == 4:
 
