@@ -239,7 +239,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
             logging.error(f'Jar code {jcode} not found in data.')
             return
 
-        logging.warning(f'Removing data for jar {jcode}')
+        logging.warning(f'Removing Recovery data for jar {jcode}')
         del data[jcode]
 
         await self.async_write_data(data)

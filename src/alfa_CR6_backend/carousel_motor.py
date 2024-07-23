@@ -951,7 +951,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 description=f'Lifter(s) recovery mode exception: {e}')
             return
 
-        recovery_action = {}
+        recovery_actions = {}
         if self.n_of_active_heads == 6:
 
             full_steps = [
@@ -960,20 +960,18 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 "move_09_10", "move_10_11", "move_11_12",
             ]
 
-            recovery_action = {}
-
-            recovery_action['IN'] = full_steps[:]  # Copia completa
-            recovery_action['IN_A'] = full_steps[:]  # Copia completa
-            recovery_action['A'] = full_steps[1:]  # Da 'move_02_03' in poi
-            recovery_action['B'] = full_steps[2:]  # Da 'move_03_04' in poi
-            recovery_action['C'] = full_steps[3:]  # Da 'move_04_05' in poi
-            recovery_action['LIFTR_UP'] = full_steps[4:]  # Da 'move_05_06' in poi
-            recovery_action['LIFTR_DOWN'] = full_steps[5:]  # Da 'move_06_07' in poi
-            recovery_action['D'] = full_steps[6:]  # Da 'move_07_08' in poi
-            recovery_action['E'] = full_steps[7:]  # Da 'move_08_09' in poi
-            recovery_action['F'] = full_steps[8:]  # Da 'move_09_10' in poi
-            recovery_action['LIFTL_DOWN'] = full_steps[8:]  # Da 'move_10_11' in poi
-            recovery_action['LIFTL_UP'] = full_steps[8:]  # Solo 'move_11_12'
+            recovery_actions['IN'] = full_steps[:]  # Copia completa
+            recovery_actions['IN_A'] = full_steps[:]  # Copia completa
+            recovery_actions['A'] = full_steps[1:]  # Da 'move_02_03' in poi
+            recovery_actions['B'] = full_steps[2:]  # Da 'move_03_04' in poi
+            recovery_actions['C'] = full_steps[3:]  # Da 'move_04_05' in poi
+            recovery_actions['LIFTR_UP'] = full_steps[4:]  # Da 'move_05_06' in poi
+            recovery_actions['LIFTR_DOWN'] = full_steps[5:]  # Da 'move_06_07' in poi
+            recovery_actions['D'] = full_steps[6:]  # Da 'move_07_08' in poi
+            recovery_actions['E'] = full_steps[7:]  # Da 'move_08_09' in poi
+            recovery_actions['F'] = full_steps[8:]  # Da 'move_09_10' in poi
+            recovery_actions['LIFTL_DOWN'] = full_steps[8:]  # Da 'move_10_11' in poi
+            recovery_actions['LIFTL_UP'] = full_steps[8:]  # Solo 'move_11_12'
 
         if self.n_of_active_heads == 4:
 
@@ -982,8 +980,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 "move_05_06", "move_06_07", "dispense_step", "move_07_09", "dispense_step",
                 "move_09_10", "move_10_11", "move_11_12",
             ]
-
-            recovery_actions = {}
 
             recovery_actions['IN'] = full_steps[:]  # Copia completa
             recovery_actions['IN_A'] = full_steps[:]  # Copia completa
@@ -1052,12 +1048,14 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         logging.warning(f'Inizio recupero per {j_code}')
 
         for i in jar_recovery_actions:
-            if not hasattr(self, i):
+
+            logging.warning(f'Current Recovery action: "{i}"')
+            carousel_action = getattr(self, i, None)
+
+            if not carousel_action:
                 logging.warning(f'CarouselMotor has not attribute "{i}" ... Skipping current iteration')
                 continue
 
-            logging.warning(f'Esecuzione azione: {i}')
-            t = getattr(self, i)
             parametri = {'jar': _jar}
             if i in parametri_movimenti:
                 parametri_specifici = parametri_movimenti[i]
@@ -1067,21 +1065,29 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 data = await self.restore_machine_helper.async_read_data()
                 jar_dispensation_info = data.get(j_code, {}).get("dispensation", None)
                 jar_last_pos = data.get(j_code, {}).get('pos')
-                logging.warning(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {jar_last_pos}")
+                logging.debug(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {jar_last_pos}")
                 if jar_dispensation_info == "done":
                     continue
                 elif jar_dispensation_info == None:
                     if jar_last_pos == "IN_A" or jar_last_pos == "IN":
                         jar_last_pos = "A"
-                    t = partial(self.dispense_step, jar_last_pos)
+                    carousel_action = partial(self.dispense_step, jar_last_pos)
             try:
-                logging.warning(f"curr function: {t}")
                 await self.wait_for_carousel_not_frozen(freeze=False, msg="")
-                await t(**parametri)
+                await carousel_action(**parametri)
                 await asyncio.sleep(sleeptime)
                 if "move_11_12" in i:
                     await self.restore_machine_helper.async_remove_completed_jar_data(j_code)
             except Exception as excp:
                 logging.error(excp)
+                loop = asyncio.get_running_loop()
+                event_args = {
+                    "name": "MACHINE RECOVERY",
+                    "level": "ERROR",
+                    "severity": "",
+                    "source": "run_recovery_actions",
+                    "description": f'Recovery action "{i}" exception: {excp}'
+                }
+                self.insert_db_event(**event_args)
 
-        logging.warning(f'Fine recupero per {j_code}')
+        logging.warning(f'Recovery completed for JAR {j_code}')
