@@ -928,15 +928,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         from sqlalchemy.orm.exc import NoResultFound
         from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 
-        dispense_map = {
-            "dispense_A": "A",
-            "dispense_B": "B",
-            "dispense_C": "C",
-            "dispense_D": "D",
-            "dispense_E": "E",
-            "dispense_F": "F",
-        }
-
         try:
             await self.__restore_lifters_for_recovery_mode()
         except (RuntimeError, AssertionError) as e:
@@ -1081,6 +1072,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await asyncio.sleep(sleeptime)
                 if "move_11_12" in i:
                     await self.restore_machine_helper.async_remove_completed_jar_data(j_code)
+                    event_args = {
+                        "name": "MACHINE RECOVERY",
+                        "level": "INFO",
+                        "severity": "",
+                        "source": "run_recovery_actions",
+                        "description": f'Recovery completed for JAR {j_code} ({_jar.status})'
+                    }
+                    self.insert_db_event(**event_args)
+                    logging.warning(f'Recovery completed for JAR {j_code}')
+
             except Exception as excp:
                 logging.error(excp)
                 loop = asyncio.get_running_loop()
@@ -1092,5 +1093,3 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     "description": f'Recovery action "{i}" exception: {excp}'
                 }
                 self.insert_db_event(**event_args)
-
-        logging.warning(f'Recovery completed for JAR {j_code}')
