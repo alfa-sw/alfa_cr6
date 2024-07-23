@@ -837,7 +837,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         logging.debug(f'unload_lifter_sx_up: {unload_lifter_sx_up} - unknow pos: {not unload_lifter_sx_down and not unload_lifter_sx_up}')
 
         lifter_dx_check_unknown_pos = not load_lifter_dx_down and not load_lifter_dx_up
-        lifter_sx_check_unknown_pos = not unload_lifter_sx_down and not unload_lifter_sx_up        
+        lifter_sx_check_unknown_pos = not unload_lifter_sx_down and not unload_lifter_sx_up
 
         if lifter_dx_check_unknown_pos:
             await C.crx_outputs_management(1, 1)
@@ -870,7 +870,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     await F.crx_outputs_management(2, 0)
 
                     if r:
-                        self.restore_machine_helper.update_data(
+                        self.restore_machine_helper.update_jar_data_position(
                             jar_pos_l_lift_up, "OUT")
                         break
 
@@ -898,7 +898,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     await D.crx_outputs_management(0, 0)
 
                     if r:
-                        self.restore_machine_helper.update_data(
+                        self.restore_machine_helper.update_jar_data_position(
                             load_lifter_dx_down, "D")
                         break
 
@@ -940,10 +940,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         try:
             await self.__restore_lifters_for_recovery_mode()
         except (RuntimeError, AssertionError) as e:
-            # TODO: save to db
             logging.error(f'Got Exception: {e}')
             logging.error(traceback.format_exc())
             self.main_window.show_carousel_recovery_mode(False)
+            self.insert_db_event(
+                name="MACHINE RECOVERY",
+                level="ERROR",
+                severity="",
+                source="restore_lifters_for_recovery_mode",
+                description=f'Lifter(s) recovery mode exception: {e}')
             return
 
         recovery_action = {}
@@ -973,29 +978,29 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if self.n_of_active_heads == 4:
 
             full_steps = [
-                "move_01_02", "dispense_A", "move_02_04", "dispense_C", "move_04_05",
-                "move_05_06", "move_06_07", "dispense_D", "move_07_09", "dispense_F",
+                "move_01_02", "dispense_step", "move_02_04", "dispense_step", "move_04_05",
+                "move_05_06", "move_06_07", "dispense_step", "move_07_09", "dispense_step",
                 "move_09_10", "move_10_11", "move_11_12",
             ]
 
-            recovery_action = {}
+            recovery_actions = {}
 
-            recovery_action['IN'] = full_steps[:]  # Copia completa
-            recovery_action['IN_A'] = full_steps[:]  # Copia completa
-            recovery_action['A'] = full_steps[1:]  # Da 'move_02_04' in poi
-            recovery_action['C'] = full_steps[2:]  # Da 'move_04_05' in poi
-            recovery_action['LIFTR_UP'] = full_steps[3:]  # Da 'move_05_06' in poi
-            recovery_action['LIFTR_DOWN'] = full_steps[4:]  # Da 'move_06_07' in poi
-            recovery_action['D'] = full_steps[5:]  # Da 'move_07_09' in poi
-            recovery_action['E'] = full_steps[6:]  # Da 'move_09_10' in poi
-            recovery_action['LIFTL_DOWN'] = full_steps[7:]  # Da 'move_10_11' in poi
-            recovery_action['LIFTL_UP'] = full_steps[8:]  # Solo 'move_11_12'
+            recovery_actions['IN'] = full_steps[:]  # Copia completa
+            recovery_actions['IN_A'] = full_steps[:]  # Copia completa
+            recovery_actions['A'] = full_steps[2:]  # Da 'move_02_04' in poi
+            recovery_actions['C'] = full_steps[4:]  # Da 'move_04_05' in poi
+            recovery_actions['LIFTR_UP'] = full_steps[5:]  # Da 'move_05_06' in poi
+            recovery_actions['LIFTR_DOWN'] = full_steps[6:]  # Da 'move_06_07' in poi
+            recovery_actions['D'] = full_steps[8:]  # Da 'move_07_09' in poi
+            recovery_actions['E'] = full_steps[10:]  # Da 'move_09_10' in poi
+            recovery_actions['LIFTL_DOWN'] = full_steps[11:]  # Da 'move_10_11' in poi
+            recovery_actions['LIFTL_UP'] = full_steps[12:]  # Solo 'move_11_12'
 
         parametri_movimenti = {
             "move_01_02": {'time_interval_check': False},
         }
 
-        jars_to_restore = self.restore_machine_helper.read_data()
+        jars_to_restore = await self.restore_machine_helper.async_read_data()
         logging.warning(f'jars_to_restore --> {dict(jars_to_restore)}')
 
         tasks = []
@@ -1011,14 +1016,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
                 if jv.get("dispensation", None) == "ongoing":
                     _jar.status = "ERROR"
-                    _jar.description = "restore machine from previous shutdown"
+                    _jar.description = "Uncompleted Jar Order from previous machine shutdown"
                     self.db_session.commit()
 
                 if previous_task is not None:
                     await previous_task
 
+                last_jar_known_pos = jv.get("pos")
+                jar_recovery_actions = recovery_actions[last_jar_known_pos]
                 _task = asyncio.ensure_future(
-                    self.run_recovery_actions(j_code, jv, _jar, recovery_action, parametri_movimenti)
+                    self.run_recovery_actions(j_code, _jar, jar_recovery_actions, parametri_movimenti)
                 )
                 # __jar_runners attributo 'name mangled'
                 self._BaseApplication__jar_runners[j_code] = {
@@ -1041,23 +1048,40 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 break
             await asyncio.sleep(1)
 
-    async def run_recovery_actions(self, j_code, jv, _jar, recovery_action, parametri_movimenti, sleeptime=1):
+    async def run_recovery_actions(self, j_code, _jar, jar_recovery_actions, parametri_movimenti, sleeptime=1):
         logging.warning(f'Inizio recupero per {j_code}')
 
-        last_pos = jv['pos']
-        for i in recovery_action[last_pos]:
-            if hasattr(self, i):
-                logging.warning(f'Esecuzione azione: {i}')
-                t = getattr(self, i)
-                parametri = {'jar': _jar}
-                if i == 'single_move':
-                    parametri = {}
-                if i in parametri_movimenti:
-                    parametri_specifici = parametri_movimenti[i]
-                    parametri.update(parametri_specifici)
+        for i in jar_recovery_actions:
+            if not hasattr(self, i):
+                logging.warning(f'CarouselMotor has not attribute "{i}" ... Skipping current iteration')
+                continue
 
+            logging.warning(f'Esecuzione azione: {i}')
+            t = getattr(self, i)
+            parametri = {'jar': _jar}
+            if i in parametri_movimenti:
+                parametri_specifici = parametri_movimenti[i]
+                parametri.update(parametri_specifici)
+
+            if "dispense" in i:
+                data = await self.restore_machine_helper.async_read_data()
+                jar_dispensation_info = data.get(j_code, {}).get("dispensation", None)
+                jar_last_pos = data.get(j_code, {}).get('pos')
+                logging.warning(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {jar_last_pos}")
+                if jar_dispensation_info == "done":
+                    continue
+                elif jar_dispensation_info == None:
+                    if jar_last_pos == "IN_A" or jar_last_pos == "IN":
+                        jar_last_pos = "A"
+                    t = partial(self.dispense_step, jar_last_pos)
+            try:
+                logging.warning(f"curr function: {t}")
                 await self.wait_for_carousel_not_frozen(freeze=False, msg="")
                 await t(**parametri)
                 await asyncio.sleep(sleeptime)
+                if "move_11_12" in i:
+                    await self.restore_machine_helper.async_remove_completed_jar_data(j_code)
+            except Exception as excp:
+                logging.error(excp)
 
         logging.warning(f'Fine recupero per {j_code}')

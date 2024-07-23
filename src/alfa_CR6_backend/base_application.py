@@ -148,18 +148,15 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
             with open(self.json_file_path, 'w') as file:
                 json.dump({}, file)
 
-    def write_data(self, new_data):
-        existing_data = self.read_data()
-        existing_data.update(new_data)
-
+    def write_data(self, data):
         with open(self.json_file_path, 'w') as file:
-            json.dump(existing_data, file)
+            json.dump(data, file)
 
     def read_data(self):
         try:
             with open(self.json_file_path, 'r') as file:
                 data = json.load(file)
-                logging.warning(f'>>> data: {dict(data)}')
+                logging.debug(f'>>> data: {dict(data)}')
 
                 ordine_pos = [
                     "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
@@ -177,7 +174,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         except FileNotFoundError:
             return {}
 
-    def update_data(self, jcode, updated_pos):
+    def update_jar_data_position(self, jcode, updated_pos):
         jdata = dict(self.read_data())
 
         if jcode in jdata:
@@ -189,42 +186,16 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
 
         logging.warning(f'storing data jar {jar} with pos {pos}')
         if jar:
-            self.write_data({
+            new_data = {
                 f"{jar.barcode}": {
                     "pos": pos,
                     "jar_status": jar.status,
                     "dispensation": dispensation
                 }
-            })
-
-    async def run(self):
-
-        # loop = asyncio.get_running_loop()
-        # _data = await loop.run_in_executor(None, self.read_data)
-
-        logging.warning('calling self.read_data()')
-        logging.warning(self.read_data())
-
-        if self.read_data():
-            msg = tr_("The emptying procedure has been activated to restore the machine's functionality by moving the jars towards the exit.")
-            
-            logging.warning(f'>>> msg: {msg}')
-
-            try:
-                msgbox = ModalMessageBox(msg=msg, title="ALERT")
-                msgbox.move(msgbox.geometry().x(), 20)
-                msgbox.setText(f"\n\n{msg}\n\n")
-                # msgbox.show()
-                msgbox.enable_buttons(False, True)
-
-                # asyncio.get_event_loop().call_later(10, partial(msgbox.enable_buttons, False, True))
-
-                logging.warning(f'>>>> msgbox: {msgbox}')
-                asyncio.get_event_loop().call_later(10, msgbox.show())
-                # msgbox.exec_()
-                # asyncio.get_event_loop
-            except Exception:
-                logging.error(traceback.format_exc())
+            }
+            existing_data = self.read_data()
+            existing_data.update(new_data)
+            self.write_data(existing_data)
 
     def start_restore_mode(self):
         logging.warning('Check conditions to start restore mode ..')
@@ -250,6 +221,28 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
                 jar_pos_l_lift_up = jbarcode
 
         return (jar_pos_r_lift_down, jar_pos_l_lift_up)
+
+    async def async_read_data(self):
+        loop = asyncio.get_running_loop()
+        data = await loop.run_in_executor(None, self.read_data)
+        return data
+
+    async def async_write_data(self, new_data):
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self.write_data, new_data)
+
+    async def async_remove_completed_jar_data(self, jcode):
+
+        data = await self.async_read_data()
+
+        if jcode not in data:
+            logging.error(f'Jar code {jcode} not found in data.')
+            return
+
+        logging.warning(f'Removing data for jar {jcode}')
+        del data[jcode]
+
+        await self.async_write_data(data)
 
 
 class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-public-methods
