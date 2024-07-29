@@ -826,14 +826,14 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             recovery_actions['IN'] = full_steps[:]
             recovery_actions['IN_A'] = full_steps[:]
-            recovery_actions['A'] = full_steps[2:]
-            recovery_actions['B'] = full_steps[4:]
-            recovery_actions['C'] = full_steps[6:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['B'] = full_steps[3:]
+            recovery_actions['C'] = full_steps[5:]
             recovery_actions['LIFTR_UP'] = full_steps[7:]
             recovery_actions['LIFTR_DOWN'] = full_steps[8:]
-            recovery_actions['D'] = full_steps[10:]
-            recovery_actions['E'] = full_steps[12:]
-            recovery_actions['F'] = full_steps[14:]
+            recovery_actions['D'] = full_steps[9:]
+            recovery_actions['E'] = full_steps[11:]
+            recovery_actions['F'] = full_steps[13:]
             recovery_actions['LIFTL_DOWN'] = full_steps[15:]
             recovery_actions['LIFTL_UP'] = full_steps[16:]
 
@@ -960,6 +960,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     'A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
+                        next_head_letter=("C" if self.n_of_active_heads == 4 else "B")
+                    ),
+                    'B': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
                         next_head_letter="C"
                     ),
                     'C': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
@@ -982,6 +987,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         next_head_letter="D"
                     ),
                     'D': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
+                        next_head_letter=("F" if self.n_of_active_heads == 4 else "E")
+                    ),
+                    'E': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
                         next_head_letter="F"
