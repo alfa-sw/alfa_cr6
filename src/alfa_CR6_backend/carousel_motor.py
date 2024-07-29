@@ -793,154 +793,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return r
 
-    async def __restore_lifters_for_recovery_mode(self):
-
-        C = self.get_machine_head_by_letter("C")
-        D = self.get_machine_head_by_letter("D")
-        F = self.get_machine_head_by_letter("F")
-
-        missing_heads = [head for head, value in [("C", C), ("D", D), ("F", F)] if not value]
-        if missing_heads:
-            raise RuntimeError(f'Aborting recovery mode: Machine head(s) {", ".join(missing_heads)} not found or unavailable.')
-
-        counter = 0
-        while True:
-            if D.status and C.status and F.status:
-                break
-            counter += 1
-            if counter >= 30:
-                raise RuntimeError(f"Aborting recovery mode: Status is missing")
-            await asyncio.sleep(1)
-
-
-        assert C.status, "Aborting recovery mode: Empty status from HEAD C ..."
-        assert D.status, "Aborting recovery mode: Empty status from HEAD D ..."
-        assert F.status, "Aborting recovery mode: Empty status from HEAD F ..."
-
-        tasks = []
-
-        jar_pos_r_lift_down, jar_pos_l_lift_up = self.restore_machine_helper.check_jar_lift_positions()
-        logging.warning(f'jar_pos_r_lift_down -> {jar_pos_r_lift_down}')
-        logging.warning(f'jar_pos_l_lift_up -> {jar_pos_l_lift_up}')
-
-        d_jar_sts = D.status.get("jar_photocells_status", {})
-        f_jar_sts = F.status.get("jar_photocells_status", {})
-        c_jar_sts = C.status.get("jar_photocells_status", {})
-        
-        load_lifter_dx_down = D.check_jar_photocells_status(d_jar_sts, 'LOAD_LIFTER_DOWN_PHOTOCELL')
-        load_lifter_dx_up = D.check_jar_photocells_status(d_jar_sts, 'LOAD_LIFTER_UP_PHOTOCELL')
-        unload_lifter_sx_down = F.check_jar_photocells_status(f_jar_sts, 'UNLOAD_LIFTER_DOWN_PHOTOCELL')
-        unload_lifter_sx_up = F.check_jar_photocells_status(f_jar_sts, 'UNLOAD_LIFTER_UP_PHOTOCELL')
-        lifter_dx_jar_loaded = C.check_jar_photocells_status(c_jar_sts, 'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL')
-        lifter_sx_jar_loaded = F.check_jar_photocells_status(f_jar_sts, 'JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL')
-        logging.debug(f'load_lifter_dx_down: {load_lifter_dx_down} - unknow pos: {not load_lifter_dx_down and not load_lifter_dx_up}')
-        logging.debug(f'unload_lifter_sx_up: {unload_lifter_sx_up} - unknow pos: {not unload_lifter_sx_down and not unload_lifter_sx_up}')
-
-        lifter_dx_check_unknown_pos = not load_lifter_dx_down and not load_lifter_dx_up
-        lifter_sx_check_unknown_pos = not unload_lifter_sx_down and not unload_lifter_sx_up
-
-        if lifter_dx_check_unknown_pos:
-            await C.crx_outputs_management(1, 1)
-            await asyncio.sleep(2)
-            await C.crx_outputs_management(1, 0)
-
-            t = D.crx_outputs_management(1, 2) # move r_lifter to up position
-            tasks.append(t)
-
-        if lifter_sx_check_unknown_pos:
-            await F.crx_outputs_management(1, 4)
-            await asyncio.sleep(2)
-            await F.crx_outputs_management(1, 0)
-
-            t = F.crx_outputs_management(3, 5) # move l_lifter to down position
-            tasks.append(t)
-
-        if unload_lifter_sx_up and not lifter_sx_jar_loaded:
-            t = F.crx_outputs_management(3, 5) # move l_lifter to down position
-
-            if jar_pos_l_lift_up:
-
-                while True:
-                    await F.crx_outputs_management(1, 4)
-                    await F.crx_outputs_management(2, 4)
-                    r = await F.wait_for_jar_photocells_status(
-                        "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True,
-                        timeout=22, show_alert=False)
-                    await F.crx_outputs_management(1, 0)
-                    await F.crx_outputs_management(2, 0)
-
-                    if r:
-                        self.restore_machine_helper.update_jar_data_position(
-                            jar_pos_l_lift_up, "OUT")
-                        break
-
-                    msg_ = 'Timeout ricezione barattolo RULLIERA USCITA: Sbloccare manualmente il barattolo e premere OK per continuare!'
-                    await self.wait_for_carousel_not_frozen(
-                        True, msg_, visibility=2,
-                        show_cancel_btn=False)
-
-                    await asyncio.sleep(0.1)
-
-            tasks.append(t)
-
-        if load_lifter_dx_down and not lifter_dx_jar_loaded:
-            t = D.crx_outputs_management(1, 2) # move r_lifter to up position
-
-            if jar_pos_r_lift_down:
-
-                while True:
-                    await C.crx_outputs_management(1, 4)
-                    await D.crx_outputs_management(0, 5)
-                    r = await D.wait_for_jar_photocells_status(
-                        "JAR_DISPENSING_POSITION_PHOTOCELL", on=True,
-                        timeout=20, show_alert=False)
-                    await C.crx_outputs_management(1, 0)
-                    await D.crx_outputs_management(0, 0)
-
-                    if r:
-                        self.restore_machine_helper.update_jar_data_position(
-                            load_lifter_dx_down, "D")
-                        break
-
-                    msg_ = 'Timeout ricezione barattolo HEAD D: Sbloccare manualmente il barattolo e premere OK per continuare!'
-                    await self.wait_for_carousel_not_frozen(
-                        True, msg_, visibility=2,
-                        show_cancel_btn=False)
-
-                    await asyncio.sleep(0.1)
-                
-            tasks.append(t)
-        
-        if tasks:
-            await asyncio.gather(*tasks)
-
-            while True:
-                if D.check_jar_photocells_status(D.status.get("jar_photocells_status"), 'LOAD_LIFTER_UP_PHOTOCELL') and \
-                   F.check_jar_photocells_status(F.status.get("jar_photocells_status"), 'UNLOAD_LIFTER_DOWN_PHOTOCELL'):
-                    logging.warning('Both D and F lifters are in their default positions.')
-                    break
-                await asyncio.sleep(1)
-
     async def machine_recovery(self):
-
-        # TODO - verifica condizione in cui jar è in posizione dispensazione ma status no in DISPENSING
 
         from sqlalchemy.orm.exc import NoResultFound
         from alfa_CR6_backend.models import Order, Jar, decompile_barcode
-
-        # try:
-        #     await self.__restore_lifters_for_recovery_mode()
-        # except (RuntimeError, AssertionError) as e:
-        #     logging.error(f'Got Exception: {e}')
-        #     logging.error(traceback.format_exc())
-        #     self.main_window.show_carousel_recovery_mode(False)
-        #     self.insert_db_event(
-        #         name="MACHINE RECOVERY",
-        #         level="ERROR",
-        #         severity="",
-        #         source="restore_lifters_for_recovery_mode",
-        #         description=f'Lifter(s) recovery mode exception: {e}')
-        #     return
 
         heads_map = {
             "IN_A": "A",
@@ -955,12 +811,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             "LIFTL_DOWN": "F",
             "LIFTL_UP": "F",
         }
-        head_list = []
-        heads_list = []
         recovery_actions = {}
+
         if self.n_of_active_heads == 6:
 
-            head_list = ['A', 'B', 'C', 'D', 'E', 'F']
             full_steps = [
                 "move_01_02", "dispense_step", "move_02_03",
                 "dispense_step", "move_03_04", "dispense_step",
@@ -970,22 +824,20 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 "move_10_11", "move_11_12",
             ]
 
-            recovery_actions['IN'] = full_steps[:]  # Copia completa
-            recovery_actions['IN_A'] = full_steps[:]  # Copia completa
-            recovery_actions['A'] = full_steps[2:]  # Da 'move_02_03' in poi
-            recovery_actions['B'] = full_steps[4:]  # Da 'move_03_04' in poi
-            recovery_actions['C'] = full_steps[6:]  # Da 'move_04_05' in poi
-            recovery_actions['LIFTR_UP'] = full_steps[7:]  # Da 'move_05_06' in poi
-            recovery_actions['LIFTR_DOWN'] = full_steps[8:]  # Da 'move_06_07' in poi
-            recovery_actions['D'] = full_steps[10:]  # Da 'move_07_08' in poi
-            recovery_actions['E'] = full_steps[12:]  # Da 'move_08_09' in poi
-            recovery_actions['F'] = full_steps[14:]  # Da 'move_09_10' in poi
-            recovery_actions['LIFTL_DOWN'] = full_steps[15:]  # Da 'move_10_11' in poi
-            recovery_actions['LIFTL_UP'] = full_steps[16:]  # Solo 'move_11_12'
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[2:]
+            recovery_actions['B'] = full_steps[4:]
+            recovery_actions['C'] = full_steps[6:]
+            recovery_actions['LIFTR_UP'] = full_steps[7:]
+            recovery_actions['LIFTR_DOWN'] = full_steps[8:]
+            recovery_actions['D'] = full_steps[10:]
+            recovery_actions['E'] = full_steps[12:]
+            recovery_actions['F'] = full_steps[14:]
+            recovery_actions['LIFTL_DOWN'] = full_steps[15:]
+            recovery_actions['LIFTL_UP'] = full_steps[16:]
 
         if self.n_of_active_heads == 4:
-
-            heads_list = ["A", "C", "D", "F"]
 
             full_steps = [
                 "move_01_02", "dispense_step", "move_02_04", "dispense_step", "move_04_05",
@@ -993,29 +845,29 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 "move_09_10", "move_10_11", "move_11_12",
             ]
 
-            recovery_actions['IN'] = full_steps[:]  # Copia completa
-            recovery_actions['IN_A'] = full_steps[:]  # Copia completa
-            recovery_actions['A'] = full_steps[1:]  # Da 'move_02_04' in poi
-            recovery_actions['C'] = full_steps[3:]  # Da 'move_04_05' in poi
-            recovery_actions['LIFTR_UP'] = full_steps[5:]  # Da 'move_05_06' in poi
-            recovery_actions['LIFTR_DOWN'] = full_steps[6:]  # Da 'move_06_07' in poi
-            recovery_actions['D'] = full_steps[7:]  # Da 'move_07_09' in poi
-            recovery_actions['F'] = full_steps[9:]  # Da 'move_09_10' in poi
-            recovery_actions['LIFTL_DOWN'] = full_steps[11:]  # Da 'move_10_11' in poi
-            recovery_actions['LIFTL_UP'] = full_steps[12:]  # Solo 'move_11_12'
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['C'] = full_steps[3:]
+            recovery_actions['LIFTR_UP'] = full_steps[5:]
+            recovery_actions['LIFTR_DOWN'] = full_steps[6:]
+            recovery_actions['D'] = full_steps[7:]
+            recovery_actions['F'] = full_steps[9:]
+            recovery_actions['LIFTL_DOWN'] = full_steps[11:]
+            recovery_actions['LIFTL_UP'] = full_steps[12:]
 
         parametri_movimenti = {
             "move_01_02": {'time_interval_check': False},
         }
 
         jars_to_restore = await self.restore_machine_helper.async_read_data()
-        logging.warning(f'jars_to_restore --> {dict(jars_to_restore)}')
+        logging.debug(f'jars_to_restore --> {dict(jars_to_restore)}')
 
         tasks = []
         previous_task = None
         for j_code, jv in jars_to_restore.items():
             logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
-            logging.warning(f"jv: {jv}")
+            logging.debug(f"jv: {jv}")
 
             try:
 
@@ -1054,6 +906,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         curr_head_jar_sts, curr_position_senson
                     )
 
+                    next_photocell_status = None
+                    if next_position_sensor and next_head_letter:
+                        next_head = self.get_machine_head_by_letter(next_head_letter)
+                        next_head_jar_sts = next_head.status.get("jar_photocells_status", {})
+                        next_photocell_status = next_head.check_jar_photocells_status(
+                            next_head_jar_sts,
+                            next_position_sensor
+                        )
+
                     if curr_head_jar_engagged_photocell:
                         if (
                             skip_condition(jv, _jar)
@@ -1066,24 +927,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             jar_recovery_actions = jar_recovery_actions[1:]
 
                         if jar_recovery_position == "LIFTR_UP":
-                            next_head = self.get_machine_head_by_letter(next_head_letter)
-                            next_head_jar_sts = next_head.status.get("jar_photocells_status", {})
-                            lifter_r_down_photocell = next_head.check_jar_photocells_status(
-                                next_head_jar_sts,
-                                next_position_sensor
-                            )
-                            if lifter_r_down_photocell:
+                            if next_photocell_status:
                                 jar_recovery_actions = jar_recovery_actions[1:]
 
                         if jar_recovery_position == "LIFTL_DOWN":
-                            next_head = self.get_machine_head_by_letter(next_head_letter)
-                            next_head_jar_sts = next_head.status.get("jar_photocells_status", {})
-                            lifter_l_up_photocell = next_head.check_jar_photocells_status(
-                                next_head_jar_sts,
-                                next_position_sensor
-                            )
-                            logging.warning(f"POS: LIFTL_DOWN | lifter_l_up_photocell -> {lifter_l_up_photocell}")
-                            if lifter_l_up_photocell:
+                            logging.warning(f"POS: LIFTL_DOWN | lifter_l_up_photocell -> {next_photocell_status}")
+                            if next_photocell_status:
                                 jar_recovery_actions = jar_recovery_actions[1:]
 
                         return jar_recovery_actions
@@ -1092,103 +941,73 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         if not next_head_letter:
                             return jar_recovery_actions
 
-                        next_head = self.get_machine_head_by_letter(next_head_letter)
-                        next_head_jar_sts = next_head.status.get("jar_photocells_status", {})
-                        next_jar_engagged_photocell = next_head.check_jar_photocells_status(
-                            next_head_jar_sts,
-                            next_position_sensor
-                        )
-
-                        logging.warning(f"next_jar_engagged_photocell: {next_position_sensor} -> {next_jar_engagged_photocell}")
-                        if next_jar_engagged_photocell:
+                        logging.warning(f"next_jar_engagged_photocell: {next_position_sensor} -> {next_photocell_status}")
+                        if next_photocell_status:
                             if jar_recovery_position == "LIFTR_DOWN":
                                 return jar_recovery_actions[1:]
 
                             return jar_recovery_actions[2:]
 
-                        if jar_recovery_position == "LIFTR_DOWN":
-                            return jar_recovery_actions
-
-                        if jar_recovery_position == "LIFTL_UP":
+                        if jar_recovery_position == "LIFTR_DOWN" or jar_recovery_position == "LIFTL_UP":
                             return jar_recovery_actions
 
                         return jar_recovery_actions[1:]
 
-                    # return jar_recovery_actions
-
-                if last_jar_known_pos == 'IN_A':
-                    jar_recovery_actions = determine_recovery_actions(
-                        jv, jar_recovery_actions, current_head, _jar,
-                        jar_recovery_position="IN_A"
-                    )
-
-                if last_jar_known_pos == 'A':
-                    jar_recovery_actions = determine_recovery_actions(
+                determine_actions_map = {
+                    'IN_A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar, jar_recovery_position="IN_A"
+                    ),
+                    'A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
                         next_head_letter="C"
-                    )
-
-                if last_jar_known_pos == 'C':
-
-                    jar_recovery_actions = determine_recovery_actions(
+                    ),
+                    'C': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_LOAD_LIFTER_ROLLER_PHOTOCELL',
                         next_head_letter="C"
-                    )
-
-                if last_jar_known_pos == 'LIFTR_UP':
-
-                    jar_recovery_actions = determine_recovery_actions(
+                    ),
+                    'LIFTR_UP': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         jar_recovery_position="LIFTR_UP",
                         curr_position_senson="JAR_LOAD_LIFTER_ROLLER_PHOTOCELL",
                         next_position_sensor='LOAD_LIFTER_DOWN_PHOTOCELL',
                         next_head_letter="D"
-                    )
-
-                if last_jar_known_pos == 'LIFTR_DOWN':
-
-                    jar_recovery_actions = determine_recovery_actions(
+                    ),
+                    'LIFTR_DOWN': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         jar_recovery_position="LIFTR_DOWN",
                         curr_position_senson="JAR_LOAD_LIFTER_ROLLER_PHOTOCELL",
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
                         next_head_letter="D"
-                    )
-
-                if last_jar_known_pos == 'D':
-                    jar_recovery_actions = determine_recovery_actions(
+                    ),
+                    'D': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
                         next_head_letter="F"
-                    )
-
-                if last_jar_known_pos == 'F':
-                    jar_recovery_actions = determine_recovery_actions(
+                    ),
+                    'F': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL',
                         next_head_letter="F"
-                    )
-
-                if last_jar_known_pos == 'LIFTL_DOWN':
-                    jar_recovery_actions = determine_recovery_actions(
+                    ),
+                    'LIFTL_DOWN': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         jar_recovery_position="LIFTL_DOWN",
                         curr_position_senson="JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
                         next_position_sensor='UNLOAD_LIFTER_UP_PHOTOCELL',
                         next_head_letter="F"
-                    )
-
-                if last_jar_known_pos == 'LIFTL_UP':
-                    jar_recovery_actions = determine_recovery_actions(
+                    ),
+                    'LIFTL_UP': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         jar_recovery_position="LIFTL_UP",
                         curr_position_senson="JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
                         next_position_sensor='JAR_OUTPUT_ROLLER_PHOTOCELL',
                         next_head_letter="F"
                     )
+                }
 
+                jar_recovery_actions = determine_actions_map[last_jar_known_pos](jv, jar_recovery_actions, current_head, _jar)
                 # logging.warning(f"updated jar_recovery_actions -> {jar_recovery_actions}")
                 # logging.warning(f"TEST END !!!")
                 # return
@@ -1241,15 +1060,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 parametri.update(parametri_specifici)
 
             if "dispense" in i:
-                # data = await self.restore_machine_helper.async_read_data()
-                # jar_dispensation_info = data.get(j_code, {}).get("dispensation", None)
-                # jar_last_pos = data.get(j_code, {}).get('pos')
-                # logging.debug(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {jar_last_pos}")
-                # if jar_dispensation_info == "done":
-                #     continue
-                # elif jar_dispensation_info == None:
-                #     if jar_last_pos == "IN_A" or jar_last_pos == "IN":
-                #         jar_last_pos = "A"
                 carousel_action = partial(self.dispense_step, jar_last_pos)
             try:
                 await self.wait_for_carousel_not_frozen(freeze=False, msg="")
