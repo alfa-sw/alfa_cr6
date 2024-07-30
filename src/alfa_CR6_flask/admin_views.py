@@ -554,7 +554,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
                     response_data['file_name'] = f"{complete_name}"
                     response_data['batchid'] = batchid_
 
-            if formula.get("header") == "AkzoNobel Azure InstrumentCloud":
+            elif formula.get("header") == "AkzoNobel Azure InstrumentCloud":
                 OrderParser.parse_akzo_azure_json(formula.copy())
 
                 name = formula.get('mix', {}).get('name', '')
@@ -574,6 +574,9 @@ class AdminIndexView(flask_admin.AdminIndexView):
                     response_data['result'] = "json formula saved."
                     response_data['file_name'] = f"{complete_name}"
                     response_data['id'] = formula.get('id')
+
+            else:
+                logging.error(f"invalid header {formula.get('header')} for received formula")
 
         except Exception as exc:  # pylint: disable=broad-except
             response_status = HTTPStatus.UNPROCESSABLE_ENTITY

@@ -13,6 +13,7 @@ import traceback
 import asyncio
 import json
 import logging
+import redis
 
 import logging.handlers
 
@@ -394,6 +395,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.carousel_frozen = False
         self.main_window.show_carousel_frozen(self.carousel_frozen)
+        self.redis_publisher = RedisOrderPublisher()
 
     def __init_tasks(self):
 
@@ -1272,8 +1274,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 self.db_session.commit()
 
-                if hasattr(self.restore_machine_helper, 'store_jar_data'):
-                    self.restore_machine_helper.store_jar_data(jar, pos)
+                if jar.status in {"ERROR", "DONE"}:
+                    jar_data = jar.object_to_dict(include_relationship=2)
+                    self.redis_publisher.publish_messages(jar_data)
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)

@@ -464,7 +464,8 @@ weight:{RealWeight}
             'status': content['status'],
             'shotUnit': content['mix']['shotUnit'],
             'mixName': content['mix']['name'],
-            'productName': content['mix']['productName']
+            'productName': content['mix']['productName'],
+            'id': content['id']
         }
 
         ingredients = []
@@ -739,7 +740,9 @@ weight:{RealWeight}
 
                     if extra_info and [k for k in ["register",
                                                    "codice colore produttore",
-                                                   "kód farby výrobcu"] if k in extra_info[-1].lower()]:
+                                                   "kód farby výrobcu",
+                                                   "manufacturer colour code",
+                                                   "výrobní kód barvy"] if k in extra_info[-1].lower()]:
                         toks = l.split()
                         # ~ logging.error(f"l:{l}, toks:{toks}")
                         if toks:
@@ -747,7 +750,9 @@ weight:{RealWeight}
 
                     elif extra_info and [k for k in ["kleurcode fabrikant",
                                                      "nome colore produttore",
-                                                     "názov farby výrobcu"] if k in extra_info[-1].lower()]:
+                                                     "názov farby výrobcu",
+                                                     "manufacturer colour name",
+                                                     "výrobní jméno barvy"] if k in extra_info[-1].lower()]:
                         toks = l.split()
                         # ~ logging.error(f"l:{l}, toks:{toks}")
                         if toks:
@@ -1210,8 +1215,28 @@ weight:{RealWeight}
     @staticmethod
     def parse_carcolour_pdf(lines):
 
-        def extract_metadata(line, patterns, meta):
-            for key, pattern in patterns.items():
+        properties = {
+            'meta': {},
+            'ingredients': [],
+            'extra_lines_to_print': {}
+        }
+
+        ingredient_pattern = re.compile(r'(\S+)\s+(.+?)\s+(\d+\.\d*)\s+(\d+\.\d*)')
+
+        def extract_meta(line):
+            meta_patterns = {
+                'Date': r'Date: (.*?) Job No.:',
+                'Manufacturer': r'Manufacturer : (.*)',
+                'OEM Code': r'OEM Code : (.*?)(?:\s{2,}|$|Brand Code :)',
+                'Brand Code': r'Brand Code : (.*)',
+                'Description': r'Description : (.*)',
+                'Variant': r'Variant : (.*?)(?:\s{2,}|$|Finish Effect :)',
+                'Finish Effect': r'Finish Effect : (.*)',
+                'Mixing Scheme': r'Mixing Scheme : (.*)',
+                'Makes': r'Makes : (.*)'
+            }
+            meta = {}
+            for key, pattern in meta_patterns.items():
                 match = re.search(pattern, line)
                 if match:
                     meta_key = key.lower().replace(" ", "_")
@@ -1221,24 +1246,12 @@ weight:{RealWeight}
                     if meta_key == 'oem_code':
                         value = value.split(',')[0].strip()
                     meta[meta_key] = value
-
-        properties = {'meta': {}, 'ingredients': [], 'extra_lines_to_print': {}}
-        meta_patterns = {
-            'Date': r'Date: (.*) Job No.:',
-            'Manufacturer': r'Manufacturer : (.*)',
-            'OEM Code': r'OEM Code : (.*?)(?:\s{2,}|$|Brand Code :)',
-            'Brand Code': r'Brand Code : (.*)',
-            'Description': r'Description : (.*)',
-            'Variant': r'Variant : (.*?)(?:\s{2,}|$|Finish Effect :)',
-            'Finish Effect': r'Finish Effect : (.*)',
-            'Mixing Scheme': r'Mixing Scheme : (.*)',
-            'Makes': r'Makes : (.*)'
-        }
-
-        ingredient_pattern = re.compile(r'(\S+)\s+([\w\s]+?)\s+(\d+\.?\d*)\s+(\d+\.?\d*)')
+            return meta
 
         for line in lines:
-            extract_metadata(line, meta_patterns, properties['meta'])
+            meta_data = extract_meta(line)
+            if meta_data:
+                properties['meta'].update(meta_data)
 
         def extract_ingredient_lines(lines):
             start = False
@@ -1253,14 +1266,17 @@ weight:{RealWeight}
 
         for line in extract_ingredient_lines(lines):
             match = ingredient_pattern.match(line)
-            if match:
-                code, description, incremental, cumulative = match.groups()
-                ingredient = {
-                    "pigment_name": code,
-                    "weight(g)": round(float(incremental), 4),
-                    "description": description.strip()
-                }
-                properties['ingredients'].append(ingredient)
+            if not match:
+                logging.error(f"line: {line} not match ({match}) the ingredient_pattern")
+                continue
+
+            code, description, incremental, cumulative = match.groups()
+            ingredient = {
+                "pigment_name": code,
+                "weight(g)": round(float(incremental), 4),
+                "description": description.strip()
+            }
+            properties['ingredients'].append(ingredient)
 
         properties['extra_lines_to_print'] = [
             f"{properties.get('meta').get('date', '')} - {properties.get('meta').get('makes', '')}",
