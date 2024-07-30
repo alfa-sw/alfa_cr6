@@ -201,27 +201,6 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         logging.warning('Check conditions to start restore mode ..')
         return self.read_data()
 
-    def check_jar_lift_positions(self, jdata=None):
-        """
-            Checks the positions of jars by identifying the barcodes of those located
-            in the 'LIFTR_DOWN' and 'LIFTL_UP' positions.
-
-            :param jdata: A dictionary containing the jar data. If not provided, the data will be read.
-            :return: A tuple containing the barcode of the jar in the 'LIFTR_DOWN' position and the one in the 'LIFTL_UP' position.
-        """
-        jar_pos_r_lift_down = None
-        jar_pos_l_lift_up = None
-        if not jdata or jdata is None:
-            jdata = self.read_data()
-
-        for jbarcode, jv in jdata.items():
-            if jv["pos"] == "LIFTR_DOWN":
-                jar_pos_r_lift_down = jbarcode
-            if jv["pos"] == "LIFTL_UP":
-                jar_pos_l_lift_up = jbarcode
-
-        return (jar_pos_r_lift_down, jar_pos_l_lift_up)
-
     async def async_read_data(self):
         loop = asyncio.get_running_loop()
         data = await loop.run_in_executor(None, self.read_data)

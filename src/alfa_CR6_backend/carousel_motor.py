@@ -887,7 +887,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
                 def skip_condition(jv, _jar):
                     res = False
-                    if jv.get("dispensation", None) == "ongoing":
+                    if jv.get("dispensation") in ("ongoing", "dispensation_failure"):
                         _jar.status = "ERROR"
                         _jar.description = "Uncompleted Jar Order from previous machine shutdown"
                         self.db_session.commit()
@@ -920,7 +920,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             skip_condition(jv, _jar)
                             or jv.get("dispensation") == "done"
                         ):
-                            return jar_recovery_actions[1:]
+                            return jar_recovery_actions[1:], current_head.name
 
                         # special checks
                         if jar_recovery_position == "IN_A":
@@ -935,23 +935,24 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             if next_photocell_status:
                                 jar_recovery_actions = jar_recovery_actions[1:]
 
-                        return jar_recovery_actions
+                        return jar_recovery_actions, current_head.name
 
                     else:
                         if not next_head_letter:
-                            return jar_recovery_actions
+                            return jar_recovery_actions, current_head.name
 
                         logging.warning(f"next_jar_engagged_photocell: {next_position_sensor} -> {next_photocell_status}")
                         if next_photocell_status:
                             if jar_recovery_position == "LIFTR_DOWN":
-                                return jar_recovery_actions[1:]
+                                return jar_recovery_actions[1:], current_head.name
 
-                            return jar_recovery_actions[2:]
+                            return jar_recovery_actions[2:], next_head_letter
 
-                        if jar_recovery_position == "LIFTR_DOWN" or jar_recovery_position == "LIFTL_UP":
-                            return jar_recovery_actions
+                        if jar_recovery_position in ("LIFTR_DOWN", "LIFTL_UP"):
 
-                        return jar_recovery_actions[1:]
+                            return jar_recovery_actions, current_head.name
+
+                        return jar_recovery_actions[1:], current_head.name
 
                 determine_actions_map = {
                     'IN_A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
@@ -1017,15 +1018,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     )
                 }
 
-                jar_recovery_actions = determine_actions_map[last_jar_known_pos](jv, jar_recovery_actions, current_head, _jar)
-                # logging.warning(f"updated jar_recovery_actions -> {jar_recovery_actions}")
-                # logging.warning(f"TEST END !!!")
-                # return
+                jar_recovery_actions, deduced_position = determine_actions_map[last_jar_known_pos](jv, jar_recovery_actions, current_head, _jar)
 
                 logging.warning(f"jar_recovery_actions --> {jar_recovery_actions}")
                 
                 _task = asyncio.ensure_future(
-                    self.run_recovery_actions(j_code, _jar, jar_recovery_actions, parametri_movimenti)
+                    self.run_recovery_actions(j_code, _jar, jar_recovery_actions, parametri_movimenti, deduced_position)
                 )
                 # __jar_runners attributo 'name mangled'
                 self._BaseApplication__jar_runners[j_code] = {
@@ -1051,31 +1049,37 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def run_recovery_actions(
             self, j_code, _jar, jar_recovery_actions,
-            parametri_movimenti, sleeptime=1
+            parametri_movimenti, deduced_position, sleeptime=1
     ):
         logging.warning(f'Inizio recupero per {j_code}')
 
-        for i in jar_recovery_actions:
+        for count, r_ac in enumerate(jar_recovery_actions):
 
-            logging.warning(f'Current Recovery action: "{i}"')
-            carousel_action = getattr(self, i, None)
+            logging.warning(f'Current Recovery action: "{r_ac}"')
+            carousel_action = getattr(self, r_ac, None)
 
             if not carousel_action:
-                logging.warning(f'CarouselMotor has not attribute "{i}" ... Skipping current iteration')
+                logging.warning(f'CarouselMotor has not attribute "{r_ac}" ... Skipping current iteration')
                 continue
 
             parametri = {'jar': _jar}
-            if i in parametri_movimenti:
-                parametri_specifici = parametri_movimenti[i]
+            if r_ac in parametri_movimenti:
+                parametri_specifici = parametri_movimenti[r_ac]
                 parametri.update(parametri_specifici)
 
-            if "dispense" in i:
-                carousel_action = partial(self.dispense_step, jar_last_pos)
+            if "dispense" in r_ac:
+                data = await self.restore_machine_helper.async_read_data()
+                jar_dispensation_info = data.get(j_code, {}).get("dispensation", None)
+                jar_last_pos = data.get(j_code, {}).get('pos')
+                pos_ = deduced_position[0] if count == 0 else jar_last_pos
+                logging.debug(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {pos_}")
+                carousel_action = partial(self.dispense_step, pos_)
+
             try:
                 await self.wait_for_carousel_not_frozen(freeze=False, msg="")
                 await carousel_action(**parametri)
                 await asyncio.sleep(sleeptime)
-                if "move_11_12" in i:
+                if "move_11_12" in r_ac:
                     await self.restore_machine_helper.async_remove_completed_jar_data(j_code)
                     event_args = {
                         "name": "MACHINE RECOVERY",
@@ -1095,6 +1099,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     "level": "ERROR",
                     "severity": "",
                     "source": "run_recovery_actions",
-                    "description": f'Recovery action "{i}" exception: {excp}'
+                    "description": f'Recovery action "{r_ac}" exception: {excp}'
                 }
                 self.insert_db_event(**event_args)
