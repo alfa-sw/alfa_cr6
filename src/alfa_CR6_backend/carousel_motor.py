@@ -26,6 +26,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     timer_01_02 = 0
     double_can_alert = False
     busy_head_A = False
+    running_recovery_mode = False
 
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
@@ -860,14 +861,18 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             "move_01_02": {'time_interval_check': False},
         }
 
+        if running_recovery_mode:
+            logging.warning("Only one machine recovery process can be executed at a time ...")
+            return
+
         jars_to_restore = await self.restore_machine_helper.async_read_data()
         logging.debug(f'jars_to_restore --> {dict(jars_to_restore)}')
 
-        tasks = []
         previous_task = None
         for j_code, jv in jars_to_restore.items():
             logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
             logging.debug(f"jv: {jv}")
+            running_recovery_mode = True
 
             try:
 
@@ -1044,6 +1049,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         while True:
             if not self._BaseApplication__jar_runners:
                 self.main_window.show_carousel_recovery_mode(False)
+                running_recovery_mode = False
                 break
             await asyncio.sleep(1)
 
