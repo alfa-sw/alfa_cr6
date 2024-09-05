@@ -2,6 +2,12 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.4 branch
+
+## 1.4.1 - 2024-09-05
+
+ - added Polish language
+
 ## 1.4.0 - 2024-06-27
 
  - PR#142 - task RM#11 - send order result on redis
@@ -11,7 +17,9 @@ All notable changes to this project will be documented in this file.
  - PR#144 - task RM#82 - improved SERVIND pdf template parsing to handle EN and CZ languages
  - minor improvements for application
 
-## [1.3.0] - 2024-05-21
+## 1.3 branch
+
+## 1.3.0 - 2024-05-21
 
 ### Added
  - Manage TINY Dymo label (19mm x 51mm)
@@ -21,6 +29,8 @@ All notable changes to this project will be documented in this file.
 ### Fixed
  - Removed develop purpose buttons from the debug page that caused unintended effects (eg delete all orders)
  - Fixed wrong total volum calculation during barcode jar checks
+
+## 1.2 branch
 
 ## [1.2.1] - 2024-04-18
 
