@@ -134,17 +134,17 @@ class SingletonMeta(type):
 class RestoreMachineHelper(metaclass=SingletonMeta):
 
     def __init__(self):
-        self.json_file_path = self.__json_file_path()
-        self.__ensure_file_exists()
+        self.json_file_path = self._json_file_path()
+        self._ensure_file_exists()
 
     @staticmethod
-    def __json_file_path():
+    def _json_file_path():
         _settings = import_settings()
         _path = os.path.join(_settings.DATA_PATH, "running_jars.json")
 
         return _path
 
-    def __ensure_file_exists(self):
+    def _ensure_file_exists(self):
         if not os.path.exists(self.json_file_path):
             with open(self.json_file_path, 'w') as file:
                 json.dump({}, file)
@@ -442,7 +442,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             else:
                 self.machine_head_dict[head_index] = None
 
-        t = self.__create_restore_machine_helper_task()
+        t = self._create_restore_machine_helper_task()
         self.__tasks.append(t)
 
     def __close_tasks(self,):
@@ -469,7 +469,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__runners = []
         self.__jar_runners = {}
 
-    async def __create_restore_machine_helper_task(self):
+    async def _create_restore_machine_helper_task(self):
         try:
             self.restore_machine_helper = RestoreMachineHelper()
             if self.restore_machine_helper.start_restore_mode():
