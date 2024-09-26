@@ -646,7 +646,20 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return pars_copy_
 
-    async def do_dispense(self, jar):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    async def do_dispense(self, jar, restore_machine_helper=None):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+
+        def store_data_on_restore_machine_helper(_jar, _pos, _disp, disp_type):
+            if restore_machine_helper and hasattr(restore_machine_helper, 'store_jar_data'):
+                logging.debug(f"disp_type -> {disp_type}")
+                if disp_type in (None, "purge"):
+                    return
+
+                logging.debug(f">>> storing {_pos} - {_disp} for {_jar.barcode}")
+                restore_machine_helper.store_jar_data(
+                    jar=_jar,
+                    pos=_pos,
+                    dispensation=_disp,
+                )
 
         if jar.order and jar.order.description and "PURGE ALL" in jar.order.description.upper():
             ingredients = await self.get_ingredients_for_purge_all(jar)
@@ -691,7 +704,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 outcome_ = ''
                 result_ = ''
                 engaged_circuits_ = []
+                disp_type_map = {1: "order", 2: "purge"}
                 while step < 2:
+                    disp_type = None
                     msg_ = tr_(" before dispensing. Please check jar.")
                     r = await self.app.wait_for_condition(before_dispense_condition, timeout=31, extra_info=msg_)
                     if r:
@@ -708,6 +723,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             timeout_ = 60 * 12
                             step = 2
 
+                            disp_type = disp_type_map.get(2)
+
                         else:
 
                             _splitted_pars = self.get_splitted_dispense_params(pars, step)
@@ -717,12 +734,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 r = await self.send_command(
                                     cmd_name="DISPENSE_FORMULA", type_="macro", params=_splitted_pars)
                                 timeout_ = 60 * 12
+                                disp_type = disp_type_map.get(1)
                             else:
                                 continue
 
                         if r:
                             r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
                             if r:
+
+                                store_data_on_restore_machine_helper(jar, self.name, "ongoing", disp_type)
 
                                 self.runners[-1]['running_engaged_circuits'] = []
 
@@ -740,24 +760,29 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 if r:
                                     outcome_ += tr_('success (step:{}) ').format(step)
                                     result_ = 'OK'
+                                    store_data_on_restore_machine_helper(jar, self.name, "done", disp_type)
                                 else:
                                     outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
                                     outcome_ += "{}, {} ".format(self.status.get("error_code"),
                                                                  tr_(self.status.get("error_message")))
                                     result_ = 'NOK'
+                                    store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure", disp_type)
                                     break
 
                             else:
                                 outcome_ += tr_('failure waiting for dispensation to start (step:{}) ').format(step)
                                 result_ = 'NOK'
+                                store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure", disp_type)
                                 break
                         else:
                             outcome_ += tr_('failure in sending "DISPENSE_FORMULA" command (step:{}) ').format(step)
                             result_ = 'NOK'
+                            store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure", disp_type)
                             break
                     else:
                         outcome_ += tr_('failure in waiting for dispensing condition (step:{}) ').format(step)
                         result_ = 'NOK'
+                        store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure", disp_type)
                         break
 
                 ingredients = jar.get_ingredients_for_machine(self)
@@ -967,6 +992,31 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             for pipe_name in pipe_names:
                 result.append((colorant_name, pipe_name))
         return result
+
+    @staticmethod
+    def check_jar_photocells_status(status_code, photocell_name):
+
+        photocells_map = {
+            "JAR_INPUT_ROLLER_PHOTOCELL": 0x001,
+            "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL": 0x002,
+            "JAR_OUTPUT_ROLLER_PHOTOCELL": 0x004,
+            "LOAD_LIFTER_DOWN_PHOTOCELL": 0x008,
+            "LOAD_LIFTER_UP_PHOTOCELL": 0x010,
+            "UNLOAD_LIFTER_DOWN_PHOTOCELL": 0x020,
+            "UNLOAD_LIFTER_UP_PHOTOCELL": 0x040,
+            "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL": 0x080,
+            "JAR_DISPENSING_POSITION_PHOTOCELL": 0x100,
+            "JAR_DETECTION_MICROSWITCH_1": 0x200,
+            "JAR_DETECTION_MICROSWITCH_2": 0x400,
+        }
+
+        if photocell_name not in photocells_map:
+            raise ValueError(f"Invalid photocell name: {photocell_name}")
+
+        mask = photocells_map[photocell_name]
+
+        # Restituisce True se la photocell è attiva, altrimenti False
+        return bool(status_code & mask)
 
     def get_machine_pigments(self):
         machine_pigments = [p['name'] for p in self.pigment_list if 'name' in p]

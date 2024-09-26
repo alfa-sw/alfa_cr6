@@ -487,6 +487,9 @@ class HomePage(BaseStackedPage):
                 msg_ = tr_("please, enter service password")
                 self.main_window.open_input_dialog(message=msg_,  content="", ok_cb=ok_cb_)
 
+            elif "recovery" in btn_name:
+                QApplication.instance().run_a_coroutine_helper("machine_recovery")
+
             for i, m in QApplication.instance().machine_head_dict.items():
                 if m:
                     self.main_window.update_status_data(i)
@@ -860,6 +863,15 @@ class HomePage(BaseStackedPage):
                 ok_cb=_cb_pipe_selected,
                 choices=pipes_)
 
+    def update_lbl_recovery(self, toggle_lbl_recovery=False):
+        
+        if toggle_lbl_recovery:
+            self.lbl_recovery.setStyleSheet(
+                "QLabel { font-weight: bold; background-color: yellow; font-size: 40px; }")
+            self.lbl_recovery.setAlignment(Qt.AlignCenter)
+            self.lbl_recovery.show()
+        else:
+            self.lbl_recovery.hide()
 
 class HomePageSixHeads(HomePage):
 

@@ -256,6 +256,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.__init_dialogs()
         self.__init_icons()
 
+        self.home_page.recovery_btn.hide()
+
         self.showFullScreen()
 
         # ~ self.refill_1_lbl.mouseReleaseEvent = lambda event: self.show_reserve(0)
@@ -461,6 +463,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+
+    def show_carousel_recovery_mode(self, toggle):
+        self.home_page.update_lbl_recovery(toggle)
+        self.home_page.feed_jar_btn.setEnabled(not toggle)
+
+        if toggle:
+            self.home_page.recovery_btn.show()
+        else:
+            self.home_page.recovery_btn.hide()
 
     def show_reserve(self, head_index, flag=None):
 
