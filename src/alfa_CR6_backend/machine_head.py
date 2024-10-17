@@ -687,13 +687,33 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     flag = flag and self.status["container_presence"]
                     return flag
 
+                def get_error_messages_for_specific_dispense_condition():
+                    error_messages = []
+
+                    if not self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]:
+                        error_messages.append(tr_("Jar is not in the roller dispensing position."))
+
+                    if self.status["status_level"] not in allowed_status_levels_:
+                        error_messages.append(tr_(f"Status '{self.status['status_level']}' is not allowed for dispensing."))
+
+                    if not self.status["container_presence"]:
+                        error_messages.append(tr_("Jar not detected from the sensor under nozzle."))
+
+                    if not error_messages:
+                        return None
+
+                    return "\n".join(error_messages)
+
                 step = 0
                 outcome_ = ''
                 result_ = ''
                 engaged_circuits_ = []
                 while step < 2:
-                    msg_ = tr_(" before dispensing. Please check jar.")
-                    r = await self.app.wait_for_condition(before_dispense_condition, timeout=31, extra_info=msg_)
+                    msg = get_error_messages_for_specific_dispense_condition()
+                    r = await self.app.wait_for_condition(
+                        before_dispense_condition, timeout=31,
+                        show_alert=False
+                    )
                     if r:
                         # ~ jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
                         jar.update_live(machine_head=self, pos=None, t0=None)
@@ -721,7 +741,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 continue
 
                         if r:
-                            r = await self.wait_for_status_level(["DISPENSING"], timeout=41)
+                            r = await self.wait_for_status_level(
+                                ["DISPENSING"], timeout=41, show_alert=False
+                            )
+                            msg_ = tr_("Problem during the start of dispensing.")
                             if r:
 
                                 self.runners[-1]['running_engaged_circuits'] = []
