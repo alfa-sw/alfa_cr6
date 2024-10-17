@@ -798,7 +798,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 A = self.get_machine_head_by_letter("A")
                 # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
                 r = await A.wait_for_jar_photocells_and_status_lev(
-                    "JAR_INPUT_ROLLER_PHOTOCELL", on=True, status_levels=["STANDBY"]
+                    "JAR_INPUT_ROLLER_PHOTOCELL", on=True,
+                    status_levels=["STANDBY"], show_alert=False
                 )
                 if not r:
                     args, fmt = (barcode, ), "Condition not valid while reading barcode:{}"
