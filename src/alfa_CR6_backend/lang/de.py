@@ -202,7 +202,7 @@ D = {
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "KOPF A hat eine Dose zu schnell erkannt. Entfernen Sie alle Dosen von eingangsrollenbahn und von KOPF A!",
     "{} product(s) not dispensed:": "{} produkt(e) nicht dosiert:",
     "Jar is not in the roller dispensing position.": "Die Dose befindet sich nicht in der Abgabeposition der Rollenbahn.",
-    "Jar not detected from the sensor under nozzle.": "Die Dose wurde vom Sensor unter der Düse nicht erkannt.",
+    "Jar not detected from the ultrasonic sensor under nozzle.": "Der Ultraschallsensor unter der Düse hat die Dose nicht erkannt.",
     "Status {} is not allowed for dispensing.": "Status {} ist für die Abgabe nicht erlaubt.",
     "Problem during the start of dispensing.": "Problem beim Start der Abgabe.",
 }

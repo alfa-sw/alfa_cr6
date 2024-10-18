@@ -205,7 +205,7 @@ D = {
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!",
     "{} product(s) not dispensed:": "{} product(s) not dispensed:",
     "Jar is not in the roller dispensing position.": "Jar is not in the roller dispensing position.",
-    "Jar not detected from the sensor under nozzle.": "Jar not detected from the sensor under nozzle.",
+    "Jar not detected from the ultrasonic sensor under nozzle.": "Jar not detected from the ultrasonic sensor under nozzle.",
     "Status {} is not allowed for dispensing.": "Status {} is not allowed for dispensing.",
     "Problem during the start of dispensing.": "Problem during the start of dispensing.",
 }

@@ -202,7 +202,7 @@ D = {
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "La TÊTE A a détecté un bocal trop rapidement. Retirer tous les bocaux du CONVOYEUR D'ENTRÉE et de la TÊTE A!",
     "{} product(s) not dispensed:": "{} produit(s) non distribué(s):",
     "Jar is not in the roller dispensing position.": "Le pot n'est pas dans la position de distribution du convoyeur à rouleaux.",
-    "Jar not detected from the sensor under nozzle.": "Le pot n'a pas été détecté par le capteur sous la buse.",
+    "Jar not detected from the ultrasonic sensor under nozzle.": "Le pot n'a pas été détecté par le capteur ultrasonique sous la buse.",
     "Status {} is not allowed for dispensing.": "Le statut {} n'est pas autorisé pour la distribution.",
     "Problem during the start of dispensing.": "Problème lors du démarrage de la distribution.",
 }
