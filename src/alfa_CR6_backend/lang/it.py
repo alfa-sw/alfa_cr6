@@ -210,7 +210,7 @@ D = {
     "Jar is not in the roller dispensing position.": "Il barattolo non si trova nella posizione di dosaggio della rulliera.",
     "Jar not detected from the ultrasonic sensor under nozzle.": "Il barattolo non è stato rilevato dal sensore ad ultrasuoni sotto l'ugello.",
     "Status {} is not allowed for dispensing.": "Lo stato {} non è consentito per il dosaggio.",
-    "Problem during the start of dispensing.": "Problema durante l'avvio della dispensazione.",
+    "Problem during the start of dispensing. Head status not in standby.": "Problema durante l'avvio della dispensazione. Stato testa non in STANDBY",
 }
 
 
