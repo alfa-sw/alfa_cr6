@@ -710,7 +710,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         error_messages.append(tr_(f"Status '{self.status['status_level']}' is not allowed for dispensing."))
 
                     if not self.status["container_presence"]:
-                        error_messages.append(tr_("Jar not detected from the sensor under nozzle."))
+                        error_messages.append(tr_("Jar not detected from the ultrasonic sensor under nozzle."))
 
                     if not error_messages:
                         return None
@@ -724,7 +724,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 disp_type_map = {1: "order", 2: "purge"}
                 while step < 2:
                     disp_type = None
-                    msg = get_error_messages_for_specific_dispense_condition()
+                    msg_ = get_error_messages_for_specific_dispense_condition()
                     r = await self.app.wait_for_condition(
                         before_dispense_condition, timeout=31,
                         show_alert=False
@@ -849,6 +849,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 dispense_not_successful = True if result_ == 'NOK' else False
                 self.app.update_jar_properties(jar, dispense_not_successful=dispense_not_successful)
 
+                logging.warning(f"error_msg: {error_msg}")
+                logging.warning(f"msg_: {msg_}")
                 if error_msg:
                     await self.app.wait_for_carousel_not_frozen(True, msg=msg_)
 
