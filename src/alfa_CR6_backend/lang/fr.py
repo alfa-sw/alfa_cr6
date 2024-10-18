@@ -204,7 +204,7 @@ D = {
     "Jar is not in the roller dispensing position.": "Le pot n'est pas dans la position de distribution du convoyeur à rouleaux.",
     "Jar not detected from the ultrasonic sensor under nozzle.": "Le pot n'a pas été détecté par le capteur ultrasonique sous la buse.",
     "Status {} is not allowed for dispensing.": "Le statut {} n'est pas autorisé pour la distribution.",
-    "Problem during the start of dispensing.": "Problème lors du démarrage de la distribution.",
+    "Problem during the start of dispensing. Head status not in standby.": "Problème lors du démarrage de la distribution.  Le statut de la tête n'est pas en mode prêt.",
 }
 
 

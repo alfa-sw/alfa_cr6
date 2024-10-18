@@ -207,7 +207,7 @@ D = {
     "Jar is not in the roller dispensing position.": "Jar is not in the roller dispensing position.",
     "Jar not detected from the ultrasonic sensor under nozzle.": "Jar not detected from the ultrasonic sensor under nozzle.",
     "Status {} is not allowed for dispensing.": "Status {} is not allowed for dispensing.",
-    "Problem during the start of dispensing.": "Problem during the start of dispensing.",
+    "Problem during the start of dispensing.  Head status not in standby.": "Problem during the start of dispensing.  Head status not in standby.",
 }
 
 
