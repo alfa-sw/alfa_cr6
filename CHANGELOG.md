@@ -6,6 +6,13 @@ All notable changes to this project will be documented in this file.
 
 *Development release - do not use on field*
 
+### 1.5.0.rc3 - 2024-10-21
+
+ - PR#145 - task RM#111 - added carcolorservice order parser
+ - PR#___ - task RM#200 - added new manuals and QRCodes to help page
+ - PR#___ - task RM#199 - optimized the understanding and readability of user interface messages related to initial checks and dispensation management
+ - added polish language
+
 ## 1.4.0 - 2024-06-27
 
  - PR#142 - task RM#11 - send order result on redis
