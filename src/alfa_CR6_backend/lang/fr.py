@@ -205,6 +205,7 @@ D = {
     "Jar not detected from the ultrasonic sensor under nozzle.": "Le pot n'a pas été détecté par le capteur ultrasonique sous la buse.",
     "Status {} is not allowed for dispensing.": "Le statut {} n'est pas autorisé pour la distribution.",
     "Problem during the start of dispensing. Head status not in standby.": "Problème lors du démarrage de la distribution.  Le statut de la tête n'est pas en mode prêt.",
+    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Volume du pot {}(cc) < Volume de la commande {:.3f}(cc).",
 }
 
 

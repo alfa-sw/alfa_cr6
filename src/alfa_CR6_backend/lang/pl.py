@@ -199,6 +199,7 @@ D = {
     "Jar not detected from the ultrasonic sensor under nozzle.": "Jar not detected from the ultrasonic sensor under nozzle.",
     "Status {} is not allowed for dispensing.": "Status {} is not allowed for dispensing.",
     "Problem during the start of dispensing. Head status not in standby.": "Problem during the start of dispensing. Head status not in standby.",
+    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Jar volume {}(cc) < Order volume {:.3f}(cc).",
 }
 
 

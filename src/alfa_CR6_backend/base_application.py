@@ -640,7 +640,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if jar_volume < ingredients_total_vol:
                     jar = None
                     msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, ingredients_total_vol)
+                    msg_ += tr_("Jar volume {}(cc) < Order volume {:.3f}(cc).").format(jar_volume, ingredients_total_vol)
                     self.main_window.open_alert_dialog(msg_, title="ERROR")
                     logging.error(msg_)
                     verified = True
