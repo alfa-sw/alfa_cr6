@@ -195,11 +195,10 @@ D = {
     "please, choose a circuit to print the corresponding label.": "wybierz pozycję, aby wydrukować pasującą etykietę.",
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "Segment A zbyt szybko wykrył pojemnik. Zdejmij wszystkie pojemniki z rolki wejściowej i z segmentu A!",
     "{} product(s) not dispensed:": "{} produkty, których nie nalano:",
-    "Jar is not in the roller dispensing position.": "Jar is not in the roller dispensing position.",
-    "Jar not detected from the ultrasonic sensor under nozzle.": "Jar not detected from the ultrasonic sensor under nozzle.",
-    "Status {} is not allowed for dispensing.": "Status {} is not allowed for dispensing.",
-    "Problem during the start of dispensing. Head status not in standby.": "Problem during the start of dispensing. Head status not in standby.",
-    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Jar volume {}(cc) < Order volume {:.3f}(cc).",
+    "Jar is not in the roller dispensing position.": "Pojemnik nie znajduje się na pozycji dozowania.",
+    "Jar not detected from the ultrasonic sensor under nozzle.": "Czujnik ultradźwiękowy nie wykrył pojemnika pod dyszą.",
+    "Status {} is not allowed for dispensing.": "Status {} nie pozwala na dozowanie.",
+    "Problem during the start of dispensing. Head status not in standby.": "Problem w trakcie rozpoczęcia dozowania. Głowica nie znajduje się w stanie czuwania.",
 }
 
 
