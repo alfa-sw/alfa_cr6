@@ -198,7 +198,8 @@ D = {
     "Jar is not in the roller dispensing position.": "Pojemnik nie znajduje się na pozycji dozowania.",
     "Jar not detected from the ultrasonic sensor under nozzle.": "Czujnik ultradźwiękowy nie wykrył pojemnika pod dyszą.",
     "Status {} is not allowed for dispensing.": "Status {} nie pozwala na dozowanie.",
-    "Problem during the start of dispensing. Head status not in standby.": "Problem w trakcie rozpoczęcia dozowania. Głowica nie znajduje się w stanie czuwania.",
+    "Problem during the start of dispensing. Head status not in standby.": "Problem w trakcie rozpoczęcia dozowania. Głowica nie znajduje się w stanie GOTOWOŚĆ.",
+    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Objętość pojemnika {}(cc) < Objętość zlecenia {:.3f}(cc)."
 }
 
 

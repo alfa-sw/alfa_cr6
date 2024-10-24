@@ -744,7 +744,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             r = await self.wait_for_status_level(
                                 ["DISPENSING"], timeout=41, show_alert=False
                             )
-                            msg_ = tr_("Problem during the start of dispensing.  Head status not in standby.")
+                            msg_ = tr_("Problem during the start of dispensing. Head status not in standby.")
                             if r:
 
                                 self.runners[-1]['running_engaged_circuits'] = []
