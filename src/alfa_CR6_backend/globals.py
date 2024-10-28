@@ -50,6 +50,7 @@ LANGUAGE_MAP = {
     "french": 'fr',
     "german": 'de',
     "spanish": 'es',
+    "polish": 'pl',
 }
 
 _ALFA_SN = None

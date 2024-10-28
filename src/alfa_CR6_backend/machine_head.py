@@ -762,7 +762,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             r = await self.wait_for_status_level(
                                 ["DISPENSING"], timeout=41, show_alert=False
                             )
-                            msg_ = tr_("Problem during the start of dispensing.")
+                            msg_ = tr_("Problem during the start of dispensing. Head status not in standby.")
+
                             if r:
 
                                 store_data_on_restore_machine_helper(jar, self.name, "ongoing", disp_type)
