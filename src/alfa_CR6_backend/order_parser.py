@@ -122,7 +122,7 @@ class OrderParser:       # pylint: disable=too-many-public-methods
         return properties
 
     @classmethod
-    def parse_nro_xml(cls, xml_as_dict):
+    def parse_AXALTA_xml(cls, xml_as_dict):
 
         properties = {
             "meta": {},
@@ -130,26 +130,22 @@ class OrderParser:       # pylint: disable=too-many-public-methods
             "extra_lines_to_print": [],
         }
 
-        properties["meta"] = xml_as_dict["COLORFORMULA"]["FORMULA"].copy()
+        root = xml_as_dict['DuPont_Exchange_SpoolFile']['FormData']
 
-        formulaitem = xml_as_dict["COLORFORMULA"]["FORMULAITEMS"]["FORMULAITEM"].copy()
+        for item in root['DatabaseItems'].values():
+            for inner_key, inner_value in item.items():
+                properties['meta'][inner_key] = inner_value
 
-        for item in formulaitem:
+        products = root['MixRec']['Product'].copy()
+
+        for item in products:
             properties["ingredients"].append({
-                "pigment_name": item["COLORANT"],
-                "weight(g)": round(float(item["AMOUNT"]), 4),
+                "pigment_name": item["TintCode"],
+                "weight(g)": round(float(item["AbsMass"]), 4),
                 "description": ""
             })
 
-        innercolorcode = properties["meta"].get("INNERCOLORCODE", "")
-        brand = properties["meta"].get("BRAND", "")
-        product = properties["meta"].get("PRODUCT", "")
-        amount = properties["meta"].get("AMOUNT", "")
-
-        properties["extra_lines_to_print"].append(f'{brand}')
-        properties["extra_lines_to_print"].append(f'{innercolorcode}')
-        properties["extra_lines_to_print"].append(f'{product}, {amount}')
-
+        properties["extra_lines_to_print"].append(f'')
         # ~ logging.warning(json.dumps(formulaitem, indent=2, ensure_ascii=False))
 
         return properties
@@ -1442,6 +1438,10 @@ weight:{RealWeight}
                 properties = cls.parse_Besa_SINNEK_xml(xml_as_dict)
                 if properties.get('meta'):
                     properties['meta']['header'] = 'Besa_SINNEK_xml'
+            elif xml_as_dict.get("DuPont_Exchange_SpoolFile"):
+                properties = cls.parse_AXALTA_xml(xml_as_dict)
+                if properties.get('meta'):
+                    properties['meta']['header'] = 'AXALTA_xml'
             else:
                 raise Exception(f"unknown xml file:{path_to_file}")
 
