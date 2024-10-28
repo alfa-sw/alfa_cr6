@@ -207,6 +207,11 @@ D = {
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "La TESTA A ha ha rilevato un barattolo troppo rapidamente. Rimuovere tutti i barattoli dalla rulliera d'ingresso e dalla TESTA A!",
     "{} product(s) not dispensed:": "{} prodotto/i non dispensato/i:",
+    "Jar is not in the roller dispensing position.": "Il barattolo non si trova nella posizione di dosaggio della rulliera.",
+    "Jar not detected from the ultrasonic sensor under nozzle.": "Il barattolo non è stato rilevato dal sensore ad ultrasuoni sotto l'ugello.",
+    "Status {} is not allowed for dispensing.": "Lo stato {} non è consentito per il dosaggio.",
+    "Problem during the start of dispensing. Head status not in standby.": "Problema durante l'avvio della dispensazione. Stato testa non in STANDBY",
+    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Volume barattolo {}(cc) < volume ordine {:.3f}(cc).",
 }
 
 

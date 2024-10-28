@@ -1,14 +1,22 @@
-
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.5 branch
+
+### 1.5.0 - 2024-10-28 (same as 1.5.0.rc3)
+
+ - PR#145 - task RM#111 - added carcolorservice order parser
+ - PR#___ - task RM#200 - added new manuals and QRCodes to help page
+ - PR#___ - task RM#199 - optimized the understanding and readability of user interface messages related to initial checks and dispensation management
+ - added Polish language
+
 ## 1.4 branch
 
-## 1.4.1 - 2024-09-05
+### 1.4.1 - 2024-09-05
 
  - added Polish language
 
-## 1.4.0 - 2024-06-27
+### 1.4.0 - 2024-06-27
 
  - PR#142 - task RM#11 - send order result on redis
  - removed code related to empty cans on machines, since not codified using feature branch method
@@ -19,33 +27,30 @@ All notable changes to this project will be documented in this file.
 
 ## 1.3 branch
 
-## 1.3.0 - 2024-05-21
+### 1.3.0 - 2024-05-21
 
-### Added
+#### Added
  - Manage TINY Dymo label (19mm x 51mm)
  - Improved photocells visualization page for each HEAD
  - Added function to print all label for pigment labels
 
-### Fixed
+#### Fixed
  - Removed develop purpose buttons from the debug page that caused unintended effects (eg delete all orders)
  - Fixed wrong total volum calculation during barcode jar checks
 
 ## 1.2 branch
 
-## [1.2.1] - 2024-04-18
+### 1.2.1 - 2024-04-18
 
-### Fixed
+#### Fixed
  - Revised handling of restore_machine_helper when it is disabled; the poor management was generating a huge amount of event records.
 
+### 1.2.0 - 2024-04-09
 
-## [1.2.0] - 2024-04-09
-
-### Added
+#### Added
  - Implemented logic to analyze CarColourService PDF orders.
 
-
-## [1.1.1] - 2024-03-22
-  
+### 1.1.1 - 2024-03-22
  
-### Fixed
+#### Fixed
  - Removed certain buttons from the debug page that caused unintended and unmanaged effects, potentially due to specific system configurations or operational scenarios not fully tested following the introduction of 485 communication and software evolution.

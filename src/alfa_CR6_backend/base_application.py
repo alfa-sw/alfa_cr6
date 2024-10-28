@@ -640,7 +640,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if jar_volume < ingredients_total_vol:
                     jar = None
                     msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, ingredients_total_vol)
+                    msg_ += tr_("Jar volume {}(cc) < Order volume {:.3f}(cc).").format(jar_volume, ingredients_total_vol)
                     self.main_window.open_alert_dialog(msg_, title="ERROR")
                     logging.error(msg_)
                     verified = True
@@ -680,7 +680,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 A = self.get_machine_head_by_letter("A")
                 # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
                 r = await A.wait_for_jar_photocells_and_status_lev(
-                    "JAR_INPUT_ROLLER_PHOTOCELL", on=True, status_levels=["STANDBY"]
+                    "JAR_INPUT_ROLLER_PHOTOCELL", on=True,
+                    status_levels=["STANDBY"], show_alert=False
                 )
                 if not r:
                     args, fmt = (barcode, ), "Condition not valid while reading barcode:{}"
