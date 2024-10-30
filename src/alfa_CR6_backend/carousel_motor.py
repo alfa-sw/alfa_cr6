@@ -861,7 +861,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             "move_01_02": {'time_interval_check': False},
         }
 
-        if running_recovery_mode:
+        if self.running_recovery_mode:
             logging.warning("Only one machine recovery process can be executed at a time ...")
             return
 
@@ -872,7 +872,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         for j_code, jv in jars_to_restore.items():
             logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
             logging.debug(f"jv: {jv}")
-            running_recovery_mode = True
+            self.running_recovery_mode = True
 
             try:
 
@@ -1049,7 +1049,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         while True:
             if not self._BaseApplication__jar_runners:
                 self.main_window.show_carousel_recovery_mode(False)
-                running_recovery_mode = False
+                self.running_recovery_mode = False
                 break
             await asyncio.sleep(1)
 
