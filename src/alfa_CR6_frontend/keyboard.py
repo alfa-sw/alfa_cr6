@@ -126,7 +126,7 @@ class Keyboard(QWidget):
                 button.button.clicked.connect((lambda n:
                                                lambda: self.on_pushButton_clicked(n))(button.key))
 
-            layout.addWidget(button.button, button.posx, button.posy, button.endx, button.endy)
+            layout.addWidget(button.button, int(button.posx), int(button.posy), int(button.endx), int(button.endy))
         self.setLayout(layout)
 
         self.uinput = None

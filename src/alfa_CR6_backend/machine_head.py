@@ -17,7 +17,6 @@ import copy
 
 
 import aiohttp  # pylint: disable=import-error
-import async_timeout  # pylint: disable=import-error
 
 import websockets  # pylint: disable=import-error
 
@@ -358,7 +357,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         msg = None
         try:
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logging.warning(f"{self.name} time out while waiting in websocket.recv.")
 
         self.cntr += 1
@@ -422,7 +421,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if self.aiohttp_clientsession is None:
                 self.aiohttp_clientsession = aiohttp.ClientSession()
 
-            with async_timeout.timeout(timeout) as cm:
+            async with asyncio.timeout(timeout) as cm:
                 url = "http://{}:{}/{}".format(self.ip_add, self.http_port, path)
                 logging.warning(f" url:{url}")
 
@@ -453,7 +452,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         logging.warning(f"exception while retrieving response from {url} {e}; retrying")
                         await asyncio.sleep(1)
 
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             logging.error(f"{url}, timeout!")
 
             # due to misconfigured exception handling we cannot
