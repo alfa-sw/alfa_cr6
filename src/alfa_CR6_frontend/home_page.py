@@ -405,6 +405,8 @@ class HomePage(BaseStackedPage):
         # self.printer_helper.all_prints_finished.connect(self.on_all_prints_finished)
         # self.printer_helper.print_error.connect(self.on_print_error)
 
+        self.lbl_recovery.hide()
+
     def open_page(self):
 
         self.parent().setCurrentWidget(self)
