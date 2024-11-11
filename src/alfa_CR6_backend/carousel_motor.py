@@ -906,7 +906,20 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         next_position_sensor=None,
                         next_head_letter=None
                 ):
-                    curr_head_jar_sts = current_head.status.get("jar_photocells_status", {})
+                    max_attempts = 30
+                    delay = 1
+                    curr_head_jar_sts = None
+
+                    for attempt in range(1, max_attempts + 1):
+                        curr_head_jar_sts = current_head.status.get("jar_photocells_status", None)
+                        if curr_head_jar_sts is not None:
+                            break
+                        else:
+                            time.sleep(delay)
+
+                    if curr_head_jar_sts is None:
+                        raise RuntimeError("Recovery Mode: Timeout retrieving machine status! Retry again...")
+
                     curr_head_jar_engagged_photocell = current_head.check_jar_photocells_status(
                         curr_head_jar_sts, curr_position_senson
                     )
@@ -1041,6 +1054,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             except NoResultFound:
                 _jar = None
                 logging.error(f"No Jar found with code {j_code}")
+
+            except RuntimeError as e:
+                error_message = str(e)
+                self.running_recovery_mode = False
+                self.main_window.open_alert_dialog(error_message)
+                return
 
             await asyncio.sleep(0.1)
 
