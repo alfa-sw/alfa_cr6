@@ -1547,6 +1547,35 @@
     <string>RECOVERY MODE ON</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="recovery_btn">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>260</y>
+     <width>141</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>../images/recovery.png</normaloff>../images/recovery.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>145</width>
+     <height>85</height>
+    </size>
+   </property>
+   <property name="flat">
+    <bool>true</bool>
+   </property>
+   <attribute name="buttonGroup">
+    <string notr="true">action_btn_group</string>
+   </attribute>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_3_btn</zorder>
