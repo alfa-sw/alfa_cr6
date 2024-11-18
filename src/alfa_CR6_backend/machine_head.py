@@ -416,6 +416,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     async def call_api_rest(self,   # pylint: disable=too-many-arguments
                             path: str, method: str, data: dict, timeout=40, expected_ret_type='json'):
 
+        url = "http://{}:{}/{}".format(self.ip_add, self.http_port, path)
+        logging.warning(f" url:{url}")
         ret = None
         try:
 
@@ -423,8 +425,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 self.aiohttp_clientsession = aiohttp.ClientSession()
 
             with async_timeout.timeout(timeout) as cm:
-                url = "http://{}:{}/{}".format(self.ip_add, self.http_port, path)
-                logging.warning(f" url:{url}")
 
                 if method.upper() == "GET":
                     callable_ = self.aiohttp_clientsession.get
