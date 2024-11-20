@@ -424,7 +424,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if self.aiohttp_clientsession is None:
                 self.aiohttp_clientsession = aiohttp.ClientSession()
 
-            with async_timeout.timeout(timeout) as cm:
+            async with async_timeout.timeout(timeout) as cm:
 
                 if method.upper() == "GET":
                     callable_ = self.aiohttp_clientsession.get
