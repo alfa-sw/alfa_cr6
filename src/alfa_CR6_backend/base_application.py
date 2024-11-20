@@ -130,7 +130,7 @@ class RedisOrderPublisher:
         self.redis = redis.from_url(  # pylint: disable=no-member
             "redis://localhost")
         cmd_channel = self.redis.pubsub(ignore_subscribe_messages=True)
-        await cmd_channel.subscribe(self.ch_name)
+        cmd_channel.subscribe(self.ch_name)
         logging.info(f"Subscribed to channel: {self.ch_name}")
 
     def publish_messages(self, data_message):
