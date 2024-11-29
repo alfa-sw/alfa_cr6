@@ -1223,6 +1223,38 @@
     <string notr="true">action_btn_group</string>
    </attribute>
   </widget>
+  <widget class="QLabel" name="fw_align_ko_lbl">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>260</x>
+     <y>110</y>
+     <width>141</width>
+     <height>141</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color:#000000;
+</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/warning_blinking.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="iconSize" stdset="0">
+    <size>
+     <width>68</width>
+     <height>68</height>
+    </size>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_6_btn</zorder>
@@ -1277,6 +1309,7 @@
   <zorder>expiry_5_label</zorder>
   <zorder>lbl_recovery</zorder>
   <zorder>recovery_btn</zorder>
+  <zorder>fw_align_ko_lbl</zorder>
  </widget>
  <resources/>
  <connections/>
