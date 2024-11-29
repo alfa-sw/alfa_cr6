@@ -16,7 +16,7 @@ import os
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap, QIcon, QMovie
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from alfa_CR6_backend.globals import (
@@ -256,6 +256,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.__init_dialogs()
         self.__init_icons()
 
+        self.home_page.recovery_btn.hide()
+        self.set_warning_icon()
+
         self.showFullScreen()
 
         # ~ self.refill_1_lbl.mouseReleaseEvent = lambda event: self.show_reserve(0)
@@ -338,6 +341,27 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 action_frame_map[btn] = w
 
         self.action_frame_map = action_frame_map
+
+    def set_warning_icon(self):
+
+        file_path = '/tmp/share/data_from_app.json'
+        if not os.path.exists(file_path):
+            logging.error("data_from_app.json is missing! Aborting set_warning_icon()")
+            return
+
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            status = data.get('status', '')
+
+            assert status, "The key 'status' is empty or missing"
+
+            if status == "app_running" :
+                self.home_page.fw_align_ko_lbl.hide()
+            else:
+                self.home_page.fw_align_ko_lbl.show()
+                self.warning_movie = QMovie(get_res("IMAGE", "warning_blinking.gif"))
+                self.home_page.fw_align_ko_lbl.setMovie(self.warning_movie)
+                self.warning_movie.start()
 
     def get_stacked_widget(self):
         return self.stacked_widget

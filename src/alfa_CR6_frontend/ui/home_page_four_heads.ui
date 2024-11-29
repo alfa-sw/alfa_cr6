@@ -1173,6 +1173,88 @@
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QLabel" name="lbl_recovery">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>820</x>
+     <y>900</y>
+     <width>551</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>40</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>RECOVERY MODE ON</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="recovery_btn">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>260</y>
+     <width>141</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>../images/recovery.png</normaloff>../images/recovery.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>145</width>
+     <height>85</height>
+    </size>
+   </property>
+   <property name="flat">
+    <bool>true</bool>
+   </property>
+   <attribute name="buttonGroup">
+    <string notr="true">action_btn_group</string>
+   </attribute>
+  </widget>
+  <widget class="QLabel" name="fw_align_ko_lbl">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="geometry">
+    <rect>
+     <x>260</x>
+     <y>110</y>
+     <width>141</width>
+     <height>141</height>
+    </rect>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">color:#000000;
+</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/warning_blinking.gif</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="iconSize" stdset="0">
+    <size>
+     <width>68</width>
+     <height>68</height>
+    </size>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_6_btn</zorder>
@@ -1225,6 +1307,9 @@
   <zorder>expiry_2_label</zorder>
   <zorder>expiry_6_label</zorder>
   <zorder>expiry_5_label</zorder>
+  <zorder>lbl_recovery</zorder>
+  <zorder>recovery_btn</zorder>
+  <zorder>fw_align_ko_lbl</zorder>
  </widget>
  <resources/>
  <connections/>
