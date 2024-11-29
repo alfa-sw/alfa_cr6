@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file.
 
 ## 1.5 branch
 
+### 1.5.0.post2 - 2024-11-29
+
+ - fixed the RedisOrderPublisher communication setup required for Akzo cloud responses after an order is completed
+
+### 1.5.0.post1 - 2024-11-20
+
+ - fixed error caused by missing keyword 'async' on call_api_rest function
+
 ### 1.5.0 - 2024-10-28 (same as 1.5.0.rc3)
 
  - PR#145 - task RM#111 - added carcolorservice order parser
