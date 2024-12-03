@@ -883,7 +883,7 @@ class OrderPage(BaseStackedPage):
                         self.populate_order_table()
                         self.populate_jar_table()
                     msg = tr_(
-                        "Do you want to create a new order with the not dispensed components from barcode {} ?\nPress CANCEL to clone normally."
+                        "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'"
                     ).format(jar_to_complete.barcode)
                     self.main_window.open_alert_dialog(
                         msg,
