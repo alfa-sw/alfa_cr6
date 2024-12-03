@@ -892,7 +892,7 @@ class OrderPage(BaseStackedPage):
                         cb_args=[order_nr, jar_to_complete.not_dispensed_ingredients],
                         cancel_callback=clone_order_callback,
                         cancel_cb_args=[order_nr],
-                        btns_custom_text=["Recover Old", "Clone New"]
+                        btns_custom_text=["Clone New", "Recover Old"]
                     )
 
                 if order and jar_to_complete is None:
