@@ -52,13 +52,16 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
     def __init__(
             self, msg="", title="", parent=None, ok_callback=None,
-            ok_callback_args=None, hp_callback=None
+            ok_callback_args=None, hp_callback=None, cancel_callback=None,
+            cancel_callback_args=None, btn_ok_text="   OK   ", btn_cancel_text=" Cancel "
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
 
         self.ok_callback = ok_callback
         self.ok_callback_args = ok_callback_args
         self.hp_callback = hp_callback
+        self.cancel_callback = cancel_callback
+        self.cancel_callback_args = cancel_callback_args
 
         self.help_icon = QPixmap(get_res("IMAGE", "help.png"))
 
@@ -92,7 +95,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         for i, b in enumerate(self.buttons()):
             if i == 0:
                 b.setObjectName('esc')
-                b.setText(tr_(' Cancel '))
+                b.setText(tr_(btn_cancel_text))
                 icon_ = self.parent().style().standardIcon(getattr(QStyle, "SP_MessageBoxCritical"))
             elif i == 1 and len(self.buttons()) == 3:
                 b.setObjectName('help')
@@ -100,14 +103,14 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 icon_ = QIcon(self.help_icon)
             else:
                 b.setObjectName('ok')
-                b.setText(tr_('   OK   '))
+                b.setText(tr_(btn_ok_text))
                 icon_ = self.parent().style().standardIcon(getattr(QStyle, "SP_DialogYesButton"))
 
             b.setStyleSheet("""QWidget {font-size: 48px; font-family:Monospace;}""")
             b.setIcon(icon_)
             b.resize(300, 80)
 
-        if self.ok_callback or self.hp_callback:
+        if self.ok_callback or self.hp_callback or self.cancel_callback:
             def on_button_clicked(btn):
 
                 btn_name = btn.objectName().lower()
@@ -121,6 +124,10 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
                 if self.hp_callback and "help" in btn_name:
                     self.hp_callback()
+
+                if self.cancel_callback and "esc" in btn_name:
+                    args_ = self.cancel_callback_args if self.cancel_callback_args is not None else []
+                    self.cancel_callback(*args_)
 
             self.buttonClicked.connect(on_button_clicked)
 
