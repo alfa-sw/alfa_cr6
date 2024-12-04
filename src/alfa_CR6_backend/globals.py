@@ -420,3 +420,16 @@ def create_printable_image_from_jar(jar):
     logging.warning('response: {}'.format(response))
 
     return response
+
+def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp_type):
+    if restore_machine_helper and hasattr(restore_machine_helper, 'store_jar_data'):
+        logging.debug(f"disp_type -> {disp_type}")
+        if disp_type in (None, "purge"):
+            return
+
+        logging.debug(f">>> storing {_pos} - {_disp} for {_jar.barcode}")
+        restore_machine_helper.store_jar_data(
+            jar=_jar,
+            pos=_pos,
+            dispensation=_disp,
+        )
