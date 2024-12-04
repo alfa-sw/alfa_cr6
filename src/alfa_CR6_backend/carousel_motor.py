@@ -16,7 +16,7 @@ from functools import partial
 from typing import Optional
 
 
-from alfa_CR6_backend.globals import tr_
+from alfa_CR6_backend.globals import tr_, store_data_on_restore_machine_helper
 from alfa_CR6_backend.machine_head import DEFAULT_WAIT_FOR_TIMEOUT
 from alfa_CR6_backend.base_application import BaseApplication
 
@@ -660,6 +660,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         if jar.status == "ERROR":
             r = True
+            store_data_on_restore_machine_helper(
+                self.restore_machine_helper,
+                jar
+                machine_letter,
+                "done",
+                "order"
+            )
         else:
             nof_retry = 3
             cntr = 0
