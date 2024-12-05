@@ -7,12 +7,12 @@ D = {
     ",\ncreating {} jars": ",\ncreating {} bokser",
     "CAN PRESENCE": "BOKS TIL STEDE",
     "Cancel": "Avbryt",
-    "Carousel OK": "Automatisering OK":
+    "Carousel OK": "Automatisering OK",
     "Carousel Paused": "Automatisering satt på pause",
     "Condition not valid while reading barcode:{}": "Betingelse ikke gyldig ved lesing av strekkode:{}",
     "DISPENSING POSITION PHOTOCELL": "DOSERINGSPOSISJON FOTOCELLE",
     "INPUT ROLLER PHOTOCELL": "INNGANGSRULLE FOTOCELLE",
-    "Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n": "Boksens volum er ikke tilstrekkelig til å dispensere formelen:{}.\nFjern den
+    "Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n": "Boksens volum er ikke tilstrekkelig til å dispensere formelen:{}.\nFjern den\n",
     "LIFTER DOWN PHOTOCELL": "FOTOCELLE FOR LØFTER NED",
     "LIFTER ROLLER PHOTOCELL": "FOTOCELLE PÅ LØFTERULLE",
     "LIFTER UP PHOTOCELL": "FOTOCELLE FOR LØFTER OPP",
@@ -59,7 +59,7 @@ D = {
     "action 07 (head 4 or E)": "handling 07 (hode 4 eller E)",
     "action 08 (head 2 or F)": "handling 08 (hode 2 eller F)",
     "action 09 (head 2 or F)": "handling 09 (hode 2 eller F)",
-    "action 10 (head 2 or F)": "handling 10 (hode 2 eller F)",S
+    "action 10 (head 2 or F)": "handling 10 (hode 2 eller F)",
     "back to home page": "tilbake til startsiden",
     "barcode": "strekkode",
     "barcode:{} has status {}.\n": "strekkode:{} har status {}.\n",
@@ -88,7 +88,7 @@ D = {
     "edit or add item:": "rediger eller legg til en vare:",
     "file name": "filnavn",
     "file_name:{}": "filnavn:{}",
-    "hit 'OK' to unfreeze it": "trykk "OK" for omstart",
+    "hit 'OK' to unfreeze it": "trykk 'OK' for omstart",
     "loaded:": "lastet:",
     "loading:": "lasting:",
     "machine_head:{}\n": "maskinhode:{}\n",
@@ -144,7 +144,7 @@ D = {
     'timeout expired!\n{} bit_name:{}, on:{}, status_levels:{}, timeout:{}.': 'timeout utløpt!\n{} delnavn:{}, på:{}, statusnivåer:{}, timeout:{}.',
     'timeout expired!\n{} bit_name:{}, on:{}, timeout:{}.': 'timeout utløpt!\n{} delnavn:{}, på:{}, timeout:{}.',
     'timeout expired!\n{} on:{}, status_levels:{}, timeout:{}.': 'timeout utløpt!\n{} på:{}, statusnivåer:{}, timeout:{}.',
-    'waiting for input_roller available and stopped.': 'inngangsrulle venter i tilgjengelig tilstand og er stoppet.':
+    'waiting for input_roller available and stopped.': 'inngangsrulle venter i tilgjengelig tilstand og er stoppet.',
     "view": "vis",
     'waiting for load_lifter roller available and stopped.': 'venter på at løfterulle for last blir tilgjengelig og stoppet.',
     'waiting for unload lifter to be free, stopped.': 'venter på at avlaster er fri, stoppet.',

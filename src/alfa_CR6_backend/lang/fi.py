@@ -44,9 +44,9 @@ D = {
     "Too many files saved and not used. Please delete unused files.": "Liian monta tallennettua käyttämätöntä tiedostoa. Poista käyttämättömät tiedostot.",
     "[{}] Files:  search by file name": "[{}] Tiedostot: haku tiedostonimen perusteella",
     "[{}] Jars:   search by status": "[{}] Tölkit: haku tilan mukaan",
-    "[{}] Orders: search by order nr.": "[{}] Tilaukset: haku tilausnumeron mukaan":
-    "\nRemember to check the volume.\n": "\nMuista tarkistaa tilavuus.\n":
-    "\nand printing barcodes": "\nja viivakoodien tulostaminen":
+    "[{}] Orders: search by order nr.": "[{}] Tilaukset: haku tilausnumeron mukaan",
+    "\nRemember to check the volume.\n": "\nMuista tarkistaa tilavuus.\n",
+    "\nand printing barcodes": "\nja viivakoodien tulostaminen",
     "\npigments to be added by hand after dispensing:\n{}.": "\npigments not present in the machine. Lisää manuaalisesti annostelun jälkeen:\n{}.",
     "\npigments to be refilled before dispensing:{}. ({}/3)\n": "\ntäytä pigmentit ennen annostelua:{}. ({}/3)\n",
     "\nwithout printing barcodes": "\nilman viivakoodien tulostamista",
@@ -177,8 +177,7 @@ D = {
     "edit alias for pigment names": "muokkaa pigmenttinimien aliaksia",
     "data not valid. duplicated alias:": "data ei kelpaa. Alias jo käytössä:",
 
-    "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": 
-        "Valitse pigmentti vasemmalla puolella ja lisää sitten alle luettelo vaihtoehtoisista nimistä, nimi jokaiselle riville. ",
+    "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": "Valitse pigmentti vasemmalla puolella ja lisää sitten alle luettelo vaihtoehtoisista nimistä, nimi jokaiselle riville. ",
 
     "(Trailing whitespaces will be discarded)": "(Jälkimmäiset välilyönnit jätetään pois.)",
     "PURGE_ALL": "PUHDISTA_KAIKKI",

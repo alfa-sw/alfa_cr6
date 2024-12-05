@@ -177,8 +177,7 @@ D = {
     "edit alias for pigment names": "rediger alias for pigmentnavne",
     "data not valid. duplicated alias:": "data ikke gyldige. Duplikeret alias:",
 
-    "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. : 
-        "Vælg et pigment på venstre side, og indsæt derefter en liste over alternative navne nedenfor – et navn for hver linje. ",
+    "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line." : "Vælg et pigment på venstre side, og indsæt derefter en liste over alternative navne nedenfor – et navn for hver linje. ",
 
     "(Trailing whitespaces will be discarded)": "(afsluttende blanke tegn kasseres)",
     "PURGE_ALL": "RENS_ALLE",

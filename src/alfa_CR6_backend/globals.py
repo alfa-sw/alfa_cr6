@@ -51,6 +51,9 @@ LANGUAGE_MAP = {
     "german": 'de',
     "spanish": 'es',
     "polish": 'pl',
+    "danish": 'da',
+    "finnish": 'fi',
+    "norwegian": 'no',
 }
 
 _ALFA_SN = None
