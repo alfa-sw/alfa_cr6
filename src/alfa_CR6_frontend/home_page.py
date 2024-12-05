@@ -406,6 +406,7 @@ class HomePage(BaseStackedPage):
         # self.printer_helper.print_error.connect(self.on_print_error)
 
         self.lbl_recovery.hide()
+        self.recovery_info_btn.hide()
 
     def open_page(self):
 
@@ -872,8 +873,28 @@ class HomePage(BaseStackedPage):
                 "QLabel { font-weight: bold; background-color: yellow; font-size: 40px; }")
             self.lbl_recovery.setAlignment(Qt.AlignCenter)
             self.lbl_recovery.show()
+            self.recovery_info_btn.show()
+
+            try:
+                self.recovery_info_btn.clicked.disconnect(self._on_recovery_info_clicked)
+            except TypeError:
+                pass
+            
+            self.recovery_info_btn.clicked.connect(self._on_recovery_info_clicked)
+
         else:
             self.lbl_recovery.hide()
+            self.recovery_info_btn.hide()
+
+            try:
+                self.recovery_info_btn.clicked.disconnect(self.on_recovery_info_clicked)
+            except TypeError:
+                pass
+
+    def _on_recovery_info_clicked(self):
+        #modal = RecoveryInfoDialog(self, ['1', '2'])
+        recovery_text = "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic"
+        self.main_window.open_recovery_dialog(['1', '2'], lbl_text=recovery_text)
 
 class HomePageSixHeads(HomePage):
 

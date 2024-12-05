@@ -1223,6 +1223,32 @@
     <string notr="true">action_btn_group</string>
    </attribute>
   </widget>
+  <widget class="QPushButton" name="recovery_info_btn">
+   <property name="geometry">
+    <rect>
+     <x>1370</x>
+     <y>900</y>
+     <width>71</width>
+     <height>61</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="icon">
+    <iconset>
+     <normaloff>../images/info.png</normaloff>../images/info.png</iconset>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>50</width>
+     <height>50</height>
+    </size>
+   </property>
+   <property name="flat">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_6_btn</zorder>
@@ -1277,6 +1303,7 @@
   <zorder>expiry_5_label</zorder>
   <zorder>lbl_recovery</zorder>
   <zorder>recovery_btn</zorder>
+  <zorder>recovery_info_btn</zorder>
  </widget>
  <resources/>
  <connections/>

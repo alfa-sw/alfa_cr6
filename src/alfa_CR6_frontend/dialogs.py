@@ -824,3 +824,81 @@ class AliasDialog(BaseDialog):
         self.move(360 + random.randint(-80, 80), 2)
 
         self.show()
+
+import sys
+from PyQt5.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QDialog, QHBoxLayout, QDialogButtonBox
+)
+from PyQt5.QtCore import Qt, QTimer
+
+class RecoveryInfoDialog(QDialog):
+    def __init__(self, parent=None, recovery_items=None, lbl_text=None):
+        super(RecoveryInfoDialog, self).__init__(parent)
+        self.setWindowTitle("Recovery Information")
+        self.setModal(True)
+        self.resize(400, 300)
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        if lbl_text:
+            self.text_label = QLabel(lbl_text)
+            self.layout.addWidget(self.text_label)
+
+        self.recovery_items = recovery_items.copy() if recovery_items else []
+        self.rows = []
+
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        self.button_box.accepted.connect(self.delete_recover_tasks)
+        self.layout.addWidget(self.button_box)
+
+        for item in self.recovery_items.copy():
+            self.add_recovery_row(item)
+
+        self.show()
+
+    def add_recovery_row(self, text):
+
+        row_widget = QWidget()
+        row_layout = QHBoxLayout()
+        row_widget.setLayout(row_layout)
+
+        label = QLabel(text)
+        label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        delete_button = QPushButton("Delete")
+        delete_button.setFixedSize(90, 30)
+        delete_button.setStyleSheet("QPushButton { color: red; font-weight: bold; }")
+
+        row_layout.addWidget(label)
+        row_layout.addStretch()
+        row_layout.addWidget(delete_button)
+
+        self.layout.addWidget(row_widget)
+
+        self.rows.append(row_widget)
+
+        delete_button.clicked.connect(lambda: self.remove_recovery_row(row_widget))
+
+    def remove_recovery_row(self, row_widget):
+        try:
+            index = self.rows.index(row_widget)
+        except ValueError:
+            return
+
+        if 0 <= index < len(self.recovery_items):
+            removed_item = self.recovery_items.pop(index)
+            print(f"Rimosso: {removed_item}")
+
+        self.layout.removeWidget(row_widget)
+        row_widget.deleteLater()
+        self.rows.remove(row_widget)
+
+    def get_recovery_items(self):
+        """
+        Restituisce la lista aggiornata degli elementi di recovery.
+        """
+        return self.recovery_items
+
+    def delete_recover_tasks(self):
+        logging.warning('CHECK IF DELETE THE TASKS')

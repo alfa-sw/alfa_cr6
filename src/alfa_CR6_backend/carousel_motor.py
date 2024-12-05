@@ -662,7 +662,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             r = True
             store_data_on_restore_machine_helper(
                 self.restore_machine_helper,
-                jar
+                jar,
                 machine_letter,
                 "done",
                 "order"
