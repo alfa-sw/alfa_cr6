@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 ## 1.5 branch
 
+### 1.5.0.post3 - 2024-12-06
+
+ - fixed printing of missing data on label in case of order from akzo mixit cloud 
+
 ### 1.5.0.post2 - 2024-11-29
 
  - fixed the RedisOrderPublisher communication setup required for Akzo cloud responses after an order is completed
