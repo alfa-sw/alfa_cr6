@@ -835,7 +835,7 @@ class AliasDialog(BaseDialog):
 
 
 class RecoveryInfoDialog(QDialog):
-    def __init__(self, parent=None, recovery_items=None, lbl_text=None):
+    def __init__(self, parent=None, recovery_items=None, lbl_text=None, app_frozen=False):
         super(RecoveryInfoDialog, self).__init__(parent)
         self.setWindowTitle("Recovery Information")
         self.setModal(True)
@@ -850,6 +850,7 @@ class RecoveryInfoDialog(QDialog):
 
         self.recovery_items = recovery_items.copy() if recovery_items else []
         self.rows = []
+        self.parent = parent
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         self.button_box.accepted.connect(self.close_modal)
@@ -858,6 +859,7 @@ class RecoveryInfoDialog(QDialog):
         for item in self.recovery_items.copy():
             self.add_recovery_row(item)
 
+        self.app_frozen=app_frozen
         self.show()
 
     def add_recovery_row(self, text):
@@ -884,6 +886,12 @@ class RecoveryInfoDialog(QDialog):
         delete_button.clicked.connect(lambda: self.remove_recovery_row(row_widget))
 
     def remove_recovery_row(self, row_widget):
+
+        if not self.app_frozen and self.parent:
+            msg_ = "\nAutomation paused is required!"
+            self.parent.open_alert_dialog(msg_, title="ERROR")
+            return
+
         try:
             index = self.rows.index(row_widget)
         except ValueError:
