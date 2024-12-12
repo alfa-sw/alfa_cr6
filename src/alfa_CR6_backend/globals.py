@@ -428,7 +428,7 @@ def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp
             return
 
         logging.debug(f">>> storing {_pos} - {_disp} for {_jar.barcode}")
-        restore_machine_helper.store_jar_data(
+        restore_helper.store_jar_data(
             jar=_jar,
             pos=_pos,
             dispensation=_disp,
