@@ -31,7 +31,15 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QFrame,
     QTableWidgetItem,
-    QCompleter)
+    QCompleter,
+    QWidget,
+    QVBoxLayout,
+    QLabel,
+    QPushButton,
+    QDialog,
+    QHBoxLayout,
+    QDialogButtonBox
+)
 
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
@@ -825,11 +833,6 @@ class AliasDialog(BaseDialog):
 
         self.show()
 
-import sys
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QDialog, QHBoxLayout, QDialogButtonBox
-)
-from PyQt5.QtCore import Qt, QTimer
 
 class RecoveryInfoDialog(QDialog):
     def __init__(self, parent=None, recovery_items=None, lbl_text=None):
@@ -849,7 +852,7 @@ class RecoveryInfoDialog(QDialog):
         self.rows = []
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok)
-        self.button_box.accepted.connect(self.delete_recover_tasks)
+        self.button_box.accepted.connect(self.close_modal)
         self.layout.addWidget(self.button_box)
 
         for item in self.recovery_items.copy():
@@ -888,17 +891,17 @@ class RecoveryInfoDialog(QDialog):
 
         if 0 <= index < len(self.recovery_items):
             removed_item = self.recovery_items.pop(index)
-            print(f"Rimosso: {removed_item}")
 
         self.layout.removeWidget(row_widget)
         row_widget.deleteLater()
         self.rows.remove(row_widget)
+        label = row_widget.findChild(QLabel)
+        if label:
+            label_text = label.text()
+            tokens = label_text.split('-', maxsplit=1)
+            barcode = tokens[0].strip()
+            QApplication.instance().recovery_mode_delete_jar_task(barcode)
 
-    def get_recovery_items(self):
-        """
-        Restituisce la lista aggiornata degli elementi di recovery.
-        """
-        return self.recovery_items
-
-    def delete_recover_tasks(self):
-        logging.warning('CHECK IF DELETE THE TASKS')
+    def close_modal(self):
+        self.close()
+        

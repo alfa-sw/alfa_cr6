@@ -133,9 +133,10 @@ class SingletonMeta(type):
 
 class RestoreMachineHelper(metaclass=SingletonMeta):
 
-    def __init__(self):
+    def __init__(self, parent=None):
         self.json_file_path = self._json_file_path()
         self._ensure_file_exists()
+        self.parent = parent
 
     @staticmethod
     def _json_file_path():
@@ -223,6 +224,16 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         del data[jcode]
 
         await self.async_write_data(data)
+
+    # async def async_recovery_task_deletion(self, jcode):
+    def recovery_task_deletion(self, jcode):
+        if not self.parent:
+            return
+        self.parent.delete_jar_runner(jcode)
+        running_tasks = self.read_data()
+        if jcode in running_tasks:
+            del running_tasks[jcode]
+            self.write_data(running_tasks)
 
 
 class RedisOrderPublisher:
@@ -471,7 +482,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def _create_restore_machine_helper_task(self):
         try:
-            self.restore_machine_helper = RestoreMachineHelper()
+            self.restore_machine_helper = RestoreMachineHelper(parent=self)
             if self.restore_machine_helper.start_restore_mode():
                 self.main_window.show_carousel_recovery_mode(True)
         except Exception:
@@ -1416,3 +1427,19 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         logging.debug(f'>>>> info_insuff_pigmts: {info_insuff_pigmts}')
         return info_insuff_pigmts
+
+    def get_restorable_jars_for_recovery_mode(self):
+        if not self.restore_machine_helper:
+            return []
+        
+        restorable_jars_dict = self.restore_machine_helper.read_data()
+        lista = []
+        for key, val in restorable_jars_dict.items():
+            pos = val['pos']
+            lista.append(f"{key} - {pos}")
+        return lista
+
+    def recovery_mode_delete_jar_task(self, jar_code):
+        if not self.restore_machine_helper:
+            raise RuntimeError("Missing restore_machine_helper ... Aborting")
+        self.restore_machine_helper.recovery_task_deletion(jar_code)
