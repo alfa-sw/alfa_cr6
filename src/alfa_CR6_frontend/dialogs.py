@@ -900,7 +900,8 @@ class RecoveryInfoDialog(QDialog):
             label_text = label.text()
             tokens = label_text.split('-', maxsplit=1)
             barcode = tokens[0].strip()
-            QApplication.instance().recovery_mode_delete_jar_task(barcode)
+            jar_pos = tokens[1]
+            QApplication.instance().recovery_mode_delete_jar_task(barcode, jar_pos)
 
     def close_modal(self):
         self.close()

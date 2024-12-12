@@ -225,7 +225,6 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
 
         await self.async_write_data(data)
 
-    # async def async_recovery_task_deletion(self, jcode):
     def recovery_task_deletion(self, jcode):
         if not self.parent:
             return
@@ -1439,7 +1438,20 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             lista.append(f"{key} - {pos}")
         return lista
 
-    def recovery_mode_delete_jar_task(self, jar_code):
+    def recovery_mode_delete_jar_task(self, jar_code, jar_pos):
         if not self.restore_machine_helper:
             raise RuntimeError("Missing restore_machine_helper ... Aborting")
         self.restore_machine_helper.recovery_task_deletion(jar_code)
+        logging.warning(f"jar_pos -> {jar_pos}")
+        logging.warning(f"jar_code -> {jar_code}")
+        if jar_pos.strip() not in ('IN', 'IN_A'):
+
+            order_nr, index = decompile_barcode(jar_code)
+            order = self.db_session.query(Order).filter(Order.order_nr == order_nr).one()
+            query_ = self.db_session.query(Jar).filter(Jar.order == order).filter(Jar.index == index)
+            jar = query_.first()
+            logging.warning(f"founded jar: {jar}")
+            if jar:
+                jar.status = 'ERROR'
+                self.db_session.commit()
+
