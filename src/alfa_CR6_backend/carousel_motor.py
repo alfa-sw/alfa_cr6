@@ -807,6 +807,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 
         heads_map = {
+            "IN": "A",
             "IN_A": "A",
             "A": "A",
             "B": "B",
@@ -980,6 +981,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         return jar_recovery_actions[1:], current_head.name
 
                 determine_actions_map = {
+                    'IN': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar, jar_recovery_position="IN_A"
+                    ),
                     'IN_A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar, jar_recovery_position="IN_A"
                     ),
@@ -1076,6 +1080,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             if not self._BaseApplication__jar_runners:
                 self.main_window.show_carousel_recovery_mode(False)
                 self.running_recovery_mode = False
+                self.ready_to_read_a_barcode=True
                 break
             await asyncio.sleep(1)
 
