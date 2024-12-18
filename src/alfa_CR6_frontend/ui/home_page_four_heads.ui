@@ -1203,17 +1203,21 @@
      <height>91</height>
     </rect>
    </property>
-   <property name="text">
-    <string/>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
    </property>
-   <property name="icon">
-    <iconset>
-     <normaloff>../images/recovery.png</normaloff>../images/recovery.png</iconset>
+   <property name="text">
+    <string> START 
+ RECOVERY</string>
    </property>
    <property name="iconSize">
     <size>
-     <width>145</width>
-     <height>85</height>
+     <width>0</width>
+     <height>0</height>
     </size>
    </property>
    <property name="flat">
@@ -1308,7 +1312,7 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="action_btn_group"/>
   <buttongroup name="service_btn_group"/>
+  <buttongroup name="action_btn_group"/>
  </buttongroups>
 </ui>

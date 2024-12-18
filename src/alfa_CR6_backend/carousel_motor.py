@@ -876,6 +876,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         jars_to_restore = await self.restore_machine_helper.async_read_data()
         logging.debug(f'jars_to_restore --> {dict(jars_to_restore)}')
 
+        if self.carousel_frozen:
+            self.freeze_carousel(False)
+
         for j_code, jv in jars_to_restore.items():
             logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
             logging.debug(f"jv: {jv}")

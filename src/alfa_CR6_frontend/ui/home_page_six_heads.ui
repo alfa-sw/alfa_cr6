@@ -1557,11 +1557,8 @@
     </rect>
    </property>
    <property name="text">
-    <string/>
-   </property>
-   <property name="icon">
-    <iconset>
-     <normaloff>../images/recovery.png</normaloff>../images/recovery.png</iconset>
+    <string notr="true">START 
+RECOVERY</string>
    </property>
    <property name="iconSize">
     <size>

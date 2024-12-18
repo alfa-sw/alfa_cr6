@@ -484,7 +484,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.restore_machine_helper = RestoreMachineHelper(parent=self)
             if self.restore_machine_helper.start_restore_mode():
                 self.main_window.show_carousel_recovery_mode(True)
-                self.ready_to_read_a_barcode = False
+                self.freeze_carousel(True)
         except Exception:
             logging.error(traceback.print_exc())
 
@@ -1448,7 +1448,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if jar_pos.strip() not in ('IN', 'IN_A'):
 
             order_nr, index = decompile_barcode(jar_code)
-            order = self.db_session.query(Order).filter(Order.order_nr == order_nr).one()
+            try:
+                order = self.db_session.query(Order).filter(Order.order_nr == order_nr).one()
+            except NoResultFound:
+                logging.error(f"ERROR: Barcode {jar_code} not found in db!")
+                return
             query_ = self.db_session.query(Jar).filter(Jar.order == order).filter(Jar.index == index)
             jar = query_.first()
             logging.warning(f"founded jar: {jar}")

@@ -331,6 +331,11 @@ class HomePage(BaseStackedPage):
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
             )
 
+            if "recovery_btn" in b.objectName():
+                b.setStyleSheet(
+                    """QPushButton { background-color: #00FFFFFF; border: 0px; font-size: 20px;}"""
+                )
+
         self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
         self.action_btn_group.buttonClicked.connect(self.on_action_btn_group_clicked)
 
