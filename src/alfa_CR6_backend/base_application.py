@@ -484,6 +484,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.restore_machine_helper = RestoreMachineHelper(parent=self)
             if self.restore_machine_helper.start_restore_mode():
                 self.main_window.show_carousel_recovery_mode(True)
+                self.ready_to_read_a_barcode = False
                 self.freeze_carousel(True)
         except Exception:
             logging.error(traceback.print_exc())
