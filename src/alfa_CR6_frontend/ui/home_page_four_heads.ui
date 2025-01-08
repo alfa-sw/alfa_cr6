@@ -1199,13 +1199,13 @@
     <rect>
      <x>270</x>
      <y>260</y>
-     <width>141</width>
+     <width>156</width>
      <height>91</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <pointsize>12</pointsize>
+     <pointsize>20</pointsize>
      <weight>75</weight>
      <bold>true</bold>
     </font>
