@@ -1071,6 +1071,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 self.main_window.open_alert_dialog(error_message)
                 return
 
+            except asyncio.CancelledError:
+                logging.error(f"Task {_task} terminated or cancelled")
+
             await asyncio.sleep(0.1)
 
             logging.warning(f'_jar: {_jar}')
