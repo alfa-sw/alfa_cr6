@@ -206,6 +206,10 @@ D = {
     "Status {} is not allowed for dispensing.": "Le statut {} n'est pas autorisé pour la distribution.",
     "Problem during the start of dispensing. Head status not in standby.": "Problème lors du démarrage de la distribution.  Le statut de la tête n'est pas en mode prêt.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Volume du pot {}(cc) < Volume de la commande {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Si vous préférez décharger manuellement certains ou tous les pots,\npressez DELETE pour chacun afin de les retirer définitivement\nde la logique de récupération de la machine.",
+    "\nAutomation paused is required!": "\nUne pause de l'automatisation est requise !",
+
 }
 
 

@@ -897,8 +897,8 @@ class HomePage(BaseStackedPage):
                 pass
 
     def _on_recovery_info_clicked(self):
-        recovery_text = "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic"
-        recovery_text += "\nAutomation paused is required!"
+        recovery_text = tr_("If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic")
+        recovery_text += tr_("\nAutomation paused is required!")
         jars = QApplication.instance().get_restorable_jars_for_recovery_mode()
         self.main_window.open_recovery_dialog(jars, lbl_text=recovery_text)
 
