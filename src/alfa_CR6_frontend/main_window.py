@@ -353,7 +353,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             data = json.load(file)
             status = data.get('status', '')
 
-            assert status, "The key 'status' is empty or missing"
+            if not status:
+                logging.error("The key 'status' is empty or missing")
 
             if status == "app_running" :
                 self.home_page.fw_align_ko_lbl.hide()
