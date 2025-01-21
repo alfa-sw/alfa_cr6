@@ -21,7 +21,7 @@ import async_timeout  # pylint: disable=import-error
 
 import websockets  # pylint: disable=import-error
 
-from alfa_CR6_backend.globals import EPSILON, tr_, get_application_instance
+from alfa_CR6_backend.globals import EPSILON, tr_, get_application_instance, store_data_on_restore_machine_helper
 
 DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
 
@@ -648,19 +648,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def do_dispense(self, jar, restore_machine_helper=None):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
-        def store_data_on_restore_machine_helper(_jar, _pos, _disp, disp_type):
-            if restore_machine_helper and hasattr(restore_machine_helper, 'store_jar_data'):
-                logging.debug(f"disp_type -> {disp_type}")
-                if disp_type in (None, "purge"):
-                    return
-
-                logging.debug(f">>> storing {_pos} - {_disp} for {_jar.barcode}")
-                restore_machine_helper.store_jar_data(
-                    jar=_jar,
-                    pos=_pos,
-                    dispensation=_disp,
-                )
-
         if jar.order and jar.order.description and "PURGE ALL" in jar.order.description.upper():
             ingredients = await self.get_ingredients_for_purge_all(jar)
         else:
@@ -766,7 +753,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                             if r:
 
-                                store_data_on_restore_machine_helper(jar, self.name, "ongoing", disp_type)
+                                store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "ongoing", disp_type)
 
                                 self.runners[-1]['running_engaged_circuits'] = []
 
@@ -784,29 +771,29 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 if r:
                                     outcome_ += tr_('success (step:{}) ').format(step)
                                     result_ = 'OK'
-                                    store_data_on_restore_machine_helper(jar, self.name, "done", disp_type)
+                                    store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "done", disp_type)
                                 else:
                                     outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
                                     outcome_ += "{}, {} ".format(self.status.get("error_code"),
                                                                  tr_(self.status.get("error_message")))
                                     result_ = 'NOK'
-                                    store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure", disp_type)
+                                    store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                                     break
 
                             else:
                                 outcome_ += tr_('failure waiting for dispensation to start (step:{}) ').format(step)
                                 result_ = 'NOK'
-                                store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure", disp_type)
+                                store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                                 break
                         else:
                             outcome_ += tr_('failure in sending "DISPENSE_FORMULA" command (step:{}) ').format(step)
                             result_ = 'NOK'
-                            store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure", disp_type)
+                            store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                             break
                     else:
                         outcome_ += tr_('failure in waiting for dispensing condition (step:{}) ').format(step)
                         result_ = 'NOK'
-                        store_data_on_restore_machine_helper(jar, self.name, "dispensation_failure", disp_type)
+                        store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                         break
 
                 ingredients = jar.get_ingredients_for_machine(self)

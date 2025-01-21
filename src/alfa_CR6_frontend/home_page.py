@@ -331,6 +331,11 @@ class HomePage(BaseStackedPage):
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
             )
 
+            if "recovery_btn" in b.objectName():
+                b.setStyleSheet(
+                    """QPushButton { background-color: #00FFFFFF; color: #47AE4B; border: 2px solid #000000; font-size: 20px; text-align: center;}"""
+                )
+
         self.service_btn_group.buttonClicked.connect(self.on_service_btn_group_clicked)
         self.action_btn_group.buttonClicked.connect(self.on_action_btn_group_clicked)
 
@@ -404,6 +409,9 @@ class HomePage(BaseStackedPage):
         # self.printer_helper = PrinterHelper()
         # self.printer_helper.all_prints_finished.connect(self.on_all_prints_finished)
         # self.printer_helper.print_error.connect(self.on_print_error)
+
+        self.lbl_recovery.hide()
+        self.recovery_info_btn.hide()
 
     def open_page(self):
 
@@ -870,8 +878,29 @@ class HomePage(BaseStackedPage):
                 "QLabel { font-weight: bold; background-color: yellow; font-size: 40px; }")
             self.lbl_recovery.setAlignment(Qt.AlignCenter)
             self.lbl_recovery.show()
+            self.recovery_info_btn.show()
+
+            try:
+                self.recovery_info_btn.clicked.disconnect(self._on_recovery_info_clicked)
+            except TypeError:
+                pass
+            
+            self.recovery_info_btn.clicked.connect(self._on_recovery_info_clicked)
+
         else:
             self.lbl_recovery.hide()
+            self.recovery_info_btn.hide()
+
+            try:
+                self.recovery_info_btn.clicked.disconnect(self._on_recovery_info_clicked)
+            except TypeError:
+                pass
+
+    def _on_recovery_info_clicked(self):
+        recovery_text = tr_("If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic")
+        recovery_text += tr_("\nAutomation paused is required!")
+        jars = QApplication.instance().get_restorable_jars_for_recovery_mode()
+        self.main_window.open_recovery_dialog(jars, lbl_text=recovery_text)
 
 class HomePageSixHeads(HomePage):
 

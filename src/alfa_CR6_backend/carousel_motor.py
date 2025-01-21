@@ -16,7 +16,7 @@ from functools import partial
 from typing import Optional
 
 
-from alfa_CR6_backend.globals import tr_
+from alfa_CR6_backend.globals import tr_, store_data_on_restore_machine_helper
 from alfa_CR6_backend.machine_head import DEFAULT_WAIT_FOR_TIMEOUT
 from alfa_CR6_backend.base_application import BaseApplication
 
@@ -660,6 +660,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         if jar.status == "ERROR":
             r = True
+            store_data_on_restore_machine_helper(
+                self.restore_machine_helper,
+                jar,
+                machine_letter,
+                "done",
+                "order"
+            )
         else:
             nof_retry = 3
             cntr = 0
@@ -800,6 +807,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         from alfa_CR6_backend.models import Order, Jar, decompile_barcode
 
         heads_map = {
+            "IN": "A",
             "IN_A": "A",
             "A": "A",
             "B": "B",
@@ -868,16 +876,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         jars_to_restore = await self.restore_machine_helper.async_read_data()
         logging.debug(f'jars_to_restore --> {dict(jars_to_restore)}')
 
-        previous_task = None
+        if self.carousel_frozen:
+            self.freeze_carousel(False)
+
         for j_code, jv in jars_to_restore.items():
             logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
             logging.debug(f"jv: {jv}")
             self.running_recovery_mode = True
 
             try:
-
-                if previous_task is not None:
-                    await previous_task
 
                 order_nr, index = decompile_barcode(j_code)
                 q = self.db_session.query(Jar).filter(Jar.index == index)
@@ -906,7 +913,20 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         next_position_sensor=None,
                         next_head_letter=None
                 ):
-                    curr_head_jar_sts = current_head.status.get("jar_photocells_status", {})
+                    max_attempts = 30
+                    delay = 1
+                    curr_head_jar_sts = None
+
+                    for attempt in range(1, max_attempts + 1):
+                        curr_head_jar_sts = current_head.status.get("jar_photocells_status", None)
+                        if curr_head_jar_sts is not None:
+                            break
+                        else:
+                            time.sleep(delay)
+
+                    if curr_head_jar_sts is None:
+                        raise RuntimeError("Recovery Mode: Timeout retrieving machine status! Retry again...")
+
                     curr_head_jar_engagged_photocell = current_head.check_jar_photocells_status(
                         curr_head_jar_sts, curr_position_senson
                     )
@@ -960,6 +980,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         return jar_recovery_actions[1:], current_head.name
 
                 determine_actions_map = {
+                    'IN': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar, jar_recovery_position="IN_A"
+                    ),
                     'IN_A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar, jar_recovery_position="IN_A"
                     ),
@@ -1027,7 +1050,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
                 logging.warning(f"jar_recovery_actions --> {jar_recovery_actions}")
                 
-                _task = asyncio.ensure_future(
+                _task = asyncio.create_task(
                     self.run_recovery_actions(j_code, _jar, jar_recovery_actions, parametri_movimenti, deduced_position)
                 )
                 # __jar_runners attributo 'name mangled'
@@ -1036,11 +1059,20 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     "freeze": False,
                     "task": _task}
 
-                previous_task = _task
+                await _task
 
             except NoResultFound:
                 _jar = None
                 logging.error(f"No Jar found with code {j_code}")
+
+            except RuntimeError as e:
+                error_message = str(e)
+                self.running_recovery_mode = False
+                self.main_window.open_alert_dialog(error_message)
+                return
+
+            except asyncio.CancelledError:
+                logging.error(f"Task {_task} terminated or cancelled")
 
             await asyncio.sleep(0.1)
 
@@ -1050,6 +1082,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             if not self._BaseApplication__jar_runners:
                 self.main_window.show_carousel_recovery_mode(False)
                 self.running_recovery_mode = False
+                self.ready_to_read_a_barcode=True
                 break
             await asyncio.sleep(1)
 
@@ -1082,20 +1115,28 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 carousel_action = partial(self.dispense_step, pos_)
 
             try:
-                await self.wait_for_carousel_not_frozen(freeze=False, msg="")
-                await carousel_action(**parametri)
-                await asyncio.sleep(sleeptime)
-                if "move_11_12" in r_ac:
-                    await self.restore_machine_helper.async_remove_completed_jar_data(j_code)
-                    event_args = {
-                        "name": "MACHINE RECOVERY",
-                        "level": "INFO",
-                        "severity": "",
-                        "source": "run_recovery_actions",
-                        "description": f'Recovery completed for JAR {j_code} ({_jar.status})'
-                    }
-                    self.insert_db_event(**event_args)
-                    logging.warning(f'Recovery completed for JAR {j_code}')
+                retry_counter = 0
+                while True:
+                    await self.wait_for_carousel_not_frozen(freeze=False, msg="")
+                    r = await carousel_action(**parametri)
+                    await asyncio.sleep(sleeptime)
+                    if not r:
+                        retry_counter += 1
+                        msg_ = tr_('barcode:{} error in {}. I will retry.').format(j_code, f"\n{r_ac}\n") + f" ({retry_counter})"
+                        await self.wait_for_carousel_not_frozen(True, msg_)
+                    else:
+                        if "move_11_12" in r_ac:
+                            await self.restore_machine_helper.async_remove_completed_jar_data(j_code)
+                            event_args = {
+                                "name": "MACHINE RECOVERY",
+                                "level": "INFO",
+                                "severity": "",
+                                "source": "run_recovery_actions",
+                                "description": f'Recovery completed for JAR {j_code} ({_jar.status})'
+                            }
+                            self.insert_db_event(**event_args)
+                            logging.warning(f'Recovery completed for JAR {j_code}')
+                        break
 
             except Exception as excp:
                 logging.error(excp)

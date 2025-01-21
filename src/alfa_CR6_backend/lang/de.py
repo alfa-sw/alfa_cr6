@@ -207,6 +207,9 @@ D = {
     "Problem during the start of dispensing.  Head status not in standby.": "Problem beim Start der Abgabe. Der Kopfstatus ist nicht im Standby.",
     "Problem during the start of dispensing. Head status not in standby.": "Problem beim Start der Abgabe. Der Kopfstatus ist nicht Bereit.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Dosevolumen {}(cc) < Dosiermenge {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Wenn Sie einige oder alle Dosen manuell entladen möchten,\ndrücken Sie LÖSCHEN für jede einzelne, um sie dauerhaft\naus der Maschinenwiederherstellungslogik zu entfernen.",
+    "\nAutomation paused is required!": "\nEine Pause der Automatisierung ist erforderlich!",
 }
 
 

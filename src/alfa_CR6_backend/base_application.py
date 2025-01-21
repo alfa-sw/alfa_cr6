@@ -133,9 +133,10 @@ class SingletonMeta(type):
 
 class RestoreMachineHelper(metaclass=SingletonMeta):
 
-    def __init__(self):
+    def __init__(self, parent=None):
         self.json_file_path = self._json_file_path()
         self._ensure_file_exists()
+        self.parent = parent
 
     @staticmethod
     def _json_file_path():
@@ -223,6 +224,15 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         del data[jcode]
 
         await self.async_write_data(data)
+
+    def recovery_task_deletion(self, jcode):
+        if not self.parent:
+            return
+        self.parent.delete_jar_runner(jcode)
+        running_tasks = self.read_data()
+        if jcode in running_tasks:
+            del running_tasks[jcode]
+            self.write_data(running_tasks)
 
 
 class RedisOrderPublisher:
@@ -471,9 +481,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def _create_restore_machine_helper_task(self):
         try:
-            self.restore_machine_helper = RestoreMachineHelper()
+            self.restore_machine_helper = RestoreMachineHelper(parent=self)
             if self.restore_machine_helper.start_restore_mode():
                 self.main_window.show_carousel_recovery_mode(True)
+                self.ready_to_read_a_barcode = False
+                self.freeze_carousel(True)
         except Exception:
             logging.error(traceback.print_exc())
 
@@ -1301,6 +1313,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     jar_data = jar.object_to_dict(include_relationship=2)
                     self.redis_publisher.publish_messages(jar_data)
 
+                if self.restore_machine_helper:
+                    self.restore_machine_helper.store_jar_data(jar, pos)
+
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
 
@@ -1413,3 +1428,36 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         logging.debug(f'>>>> info_insuff_pigmts: {info_insuff_pigmts}')
         return info_insuff_pigmts
+
+    def get_restorable_jars_for_recovery_mode(self):
+        if not self.restore_machine_helper:
+            return []
+        
+        restorable_jars_dict = self.restore_machine_helper.read_data()
+        lista = []
+        for key, val in restorable_jars_dict.items():
+            pos = val['pos']
+            lista.append(f"{key} - {pos}")
+        return lista
+
+    def recovery_mode_delete_jar_task(self, jar_code, jar_pos):
+        if not self.restore_machine_helper:
+            raise RuntimeError("Missing restore_machine_helper ... Aborting")
+        self.restore_machine_helper.recovery_task_deletion(jar_code)
+        logging.warning(f"jar_pos -> {jar_pos}")
+        logging.warning(f"jar_code -> {jar_code}")
+        if jar_pos.strip() not in ('IN', 'IN_A'):
+
+            order_nr, index = decompile_barcode(jar_code)
+            try:
+                order = self.db_session.query(Order).filter(Order.order_nr == order_nr).one()
+            except NoResultFound:
+                logging.error(f"ERROR: Barcode {jar_code} not found in db!")
+                return
+            query_ = self.db_session.query(Jar).filter(Jar.order == order).filter(Jar.index == index)
+            jar = query_.first()
+            logging.warning(f"founded jar: {jar}")
+            if jar:
+                jar.status = 'ERROR'
+                self.db_session.commit()
+
