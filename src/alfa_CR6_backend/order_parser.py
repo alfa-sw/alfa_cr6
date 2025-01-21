@@ -1409,7 +1409,12 @@ weight:{RealWeight}
                         extra_lines_to_print.append(v_)
             elif toks[1:]:
                 new_item = {}
-                new_item["pigment_name"] = v['codice'].split('.')[1]
+                codice = v.get('codice', '')
+                if codice.startswith('907'):
+                    new_item["pigment_name"] = codice.split('.')[1]
+                else:
+                    new_item["pigment_name"] = codice
+
                 if v.get('peso') is not None:
                     new_item["weight(g)"] = round(float(v['peso']) / 10., 4)
                 else:
