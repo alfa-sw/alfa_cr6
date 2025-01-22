@@ -204,6 +204,15 @@ D = {
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "Hovedet A registrerede en dåse for hurtigt. Fjern alle dåser fra indføringsvalsen og fra HOVED A!",
     "{} product(s) not dispensed:": "{} produkter ikke doseret:",
+    "Jar is not in the roller dispensing position.": "Dåsen er ikke i doseringsposition på valserne.",
+    "Jar not detected from the ultrasonic sensor under nozzle.": "Dåsen blev ikke registreret af ultralydssensoren under dysen.",
+    "Status {} is not allowed for dispensing.": "Status {} er ikke tilladt til dosering.",
+    "Problem during the start of dispensing. Head status not in standby.": "Problem under opstart af dosering. Hovedstatus er ikke i standby.",
+    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Dåsevolumen {}(cc) < Ordrevolumen {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Hvis du foretrækker at aflæsse enkelte eller alle dåser manuelt,\ntryk på SLET for hver enkelt for at fjerne dem permanent\nfra maskinens gendannelseslogik.",
+    "\nAutomation paused is required!": "\nDet er nødvendigt at sætte automatiseringen på pause!",
+
 }
 
 

@@ -204,6 +204,15 @@ D = {
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "Pää A havaitsi tölkin liian nopeasti. Poista kaikki tölkit sisäänsyöttörullaltaja PÄÄ A:sta!",
     "{} product(s) not dispensed:": "{} tuotetta/tuotteita ei annosteltu.",
+    "Jar is not in the roller dispensing position.": "Tölkki ei ole rullaradan annosteluasennossa.",
+    "Jar not detected from the ultrasonic sensor under nozzle.": "Ultraäänianturi ei tunnista tölkkiä suuttimen alla.",
+    "Status {} is not allowed for dispensing.": "Tila {} ei ole sallittu annostelussa.",
+    "Problem during the start of dispensing. Head status not in standby.": "Ongelma annostelun käynnistämisessä. Pään tila ei ole valmiustilassa.",
+    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Tölkin tilavuus {}(cc) on pienempi kuin tilauksen tilavuus {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Jos haluat poistaa joitakin tai kaikki tölkit manuaalisesti,\npaina POISTA jokaisen tölkin kohdalla poistaaksesi ne pysyvästi\nkoneen palautuslogiikasta.",
+    "\nAutomation paused is required!": "\nAutomaation keskeytys vaaditaan!"
+
 }
 
 

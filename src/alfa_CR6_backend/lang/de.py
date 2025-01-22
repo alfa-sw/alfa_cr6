@@ -204,7 +204,6 @@ D = {
     "Jar is not in the roller dispensing position.": "Die Dose befindet sich nicht in der Abgabeposition der Rollenbahn.",
     "Jar not detected from the ultrasonic sensor under nozzle.": "Der Ultraschallsensor unter der Düse hat die Dose nicht erkannt.",
     "Status {} is not allowed for dispensing.": "Status {} ist für die Abgabe nicht erlaubt.",
-    "Problem during the start of dispensing.  Head status not in standby.": "Problem beim Start der Abgabe. Der Kopfstatus ist nicht im Standby.",
     "Problem during the start of dispensing. Head status not in standby.": "Problem beim Start der Abgabe. Der Kopfstatus ist nicht Bereit.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Dosevolumen {}(cc) < Dosiermenge {:.3f}(cc).",
 
