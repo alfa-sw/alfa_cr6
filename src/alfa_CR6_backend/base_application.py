@@ -18,6 +18,7 @@ import redis
 import logging.handlers
 
 from functools import partial
+from collections import OrderedDict
 
 from PyQt5.QtCore import QEventLoop      # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
@@ -32,7 +33,8 @@ from alfa_CR6_backend.globals import (
     KEYBOARD_PATH,
     EPSILON,
     get_version,
-    tr_)
+    tr_,
+    import_settings)
 
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.order_parser import OrderParser
@@ -117,6 +119,120 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
                         (url_, str(e)), fmt="error downloading file from:{}\n {}.\n", title="ERROR")
 
     return ret
+
+
+class SingletonMeta(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+
+class RestoreMachineHelper(metaclass=SingletonMeta):
+
+    def __init__(self, parent=None):
+        self.json_file_path = self._json_file_path()
+        self._ensure_file_exists()
+        self.parent = parent
+
+    @staticmethod
+    def _json_file_path():
+        _settings = import_settings()
+        _path = os.path.join(_settings.DATA_PATH, "running_jars.json")
+
+        return _path
+
+    def _ensure_file_exists(self):
+        if not os.path.exists(self.json_file_path):
+            with open(self.json_file_path, 'w') as file:
+                json.dump({}, file)
+
+    def write_data(self, data):
+        with open(self.json_file_path, 'w') as file:
+            json.dump(data, file)
+
+    def read_data(self):
+        try:
+            with open(self.json_file_path, 'r') as file:
+                data = json.load(file)
+                logging.debug(f'>>> data: {dict(data)}')
+
+                ordine_pos = [
+                    "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
+                    "E", "D", "LIFTR_DOWN", "LIFTR_UP",
+                    "C", "B", "A", "IN_A", "IN"
+                ]
+                
+                def get_position_index(item):
+                    return ordine_pos.index(item[1]["pos"])
+
+                sorted_items = sorted(data.items(), key=get_position_index)
+                sorted_data = OrderedDict(sorted_items) 
+                
+                return sorted_data
+        except FileNotFoundError:
+            return {}
+
+    def update_jar_data_position(self, jcode, updated_pos):
+        jdata = dict(self.read_data())
+
+        if jcode in jdata:
+            jdata[jcode]["pos"] = updated_pos
+
+        self.write_data(jdata)
+
+    def store_jar_data(self, jar, pos, dispensation=None):
+
+        logging.warning(f'storing data jar {jar} with pos {pos}')
+        if jar:
+            new_data = {
+                f"{jar.barcode}": {
+                    "pos": pos,
+                    "jar_status": jar.status,
+                    "dispensation": dispensation
+                }
+            }
+            existing_data = self.read_data()
+            existing_data.update(new_data)
+            self.write_data(existing_data)
+
+    def start_restore_mode(self):
+        logging.warning('Check conditions to start restore mode ..')
+        return self.read_data()
+
+    async def async_read_data(self):
+        loop = asyncio.get_running_loop()
+        data = await loop.run_in_executor(None, self.read_data)
+        return data
+
+    async def async_write_data(self, new_data):
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self.write_data, new_data)
+
+    async def async_remove_completed_jar_data(self, jcode):
+
+        data = await self.async_read_data()
+
+        if jcode not in data:
+            logging.error(f'Jar code {jcode} not found in data.')
+            return
+
+        logging.warning(f'Removing Recovery data for jar {jcode}')
+        del data[jcode]
+
+        await self.async_write_data(data)
+
+    def recovery_task_deletion(self, jcode):
+        if not self.parent:
+            return
+        self.parent.delete_jar_runner(jcode)
+        running_tasks = self.read_data()
+        if jcode in running_tasks:
+            del running_tasks[jcode]
+            self.write_data(running_tasks)
 
 
 class RedisOrderPublisher:
@@ -295,6 +411,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__modal_freeze_msgbox = None
 
         self.chromium_wrapper = None
+        self.restore_machine_helper = None
 
         if self.settings.SQLITE_CONNECT_STRING:
 
@@ -335,6 +452,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             else:
                 self.machine_head_dict[head_index] = None
 
+        t = self._create_restore_machine_helper_task()
+        self.__tasks.append(t)
+
     def __close_tasks(self,):
 
         for m in self.machine_head_dict.values():
@@ -358,6 +478,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.__runners = []
         self.__jar_runners = {}
+
+    async def _create_restore_machine_helper_task(self):
+        try:
+            self.restore_machine_helper = RestoreMachineHelper(parent=self)
+            if self.restore_machine_helper.start_restore_mode():
+                self.main_window.show_carousel_recovery_mode(True)
+                self.ready_to_read_a_barcode = False
+                self.freeze_carousel(True)
+        except Exception:
+            logging.error(traceback.print_exc())
 
     async def __create_chromium_wrapper_task(self):
 
@@ -1183,6 +1313,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     jar_data = jar.object_to_dict(include_relationship=2)
                     self.redis_publisher.publish_messages(jar_data)
 
+                if self.restore_machine_helper:
+                    self.restore_machine_helper.store_jar_data(jar, pos)
+
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
 
@@ -1295,3 +1428,36 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         logging.debug(f'>>>> info_insuff_pigmts: {info_insuff_pigmts}')
         return info_insuff_pigmts
+
+    def get_restorable_jars_for_recovery_mode(self):
+        if not self.restore_machine_helper:
+            return []
+        
+        restorable_jars_dict = self.restore_machine_helper.read_data()
+        lista = []
+        for key, val in restorable_jars_dict.items():
+            pos = val['pos']
+            lista.append(f"{key} - {pos}")
+        return lista
+
+    def recovery_mode_delete_jar_task(self, jar_code, jar_pos):
+        if not self.restore_machine_helper:
+            raise RuntimeError("Missing restore_machine_helper ... Aborting")
+        self.restore_machine_helper.recovery_task_deletion(jar_code)
+        logging.warning(f"jar_pos -> {jar_pos}")
+        logging.warning(f"jar_code -> {jar_code}")
+        if jar_pos.strip() not in ('IN', 'IN_A'):
+
+            order_nr, index = decompile_barcode(jar_code)
+            try:
+                order = self.db_session.query(Order).filter(Order.order_nr == order_nr).one()
+            except NoResultFound:
+                logging.error(f"ERROR: Barcode {jar_code} not found in db!")
+                return
+            query_ = self.db_session.query(Jar).filter(Jar.order == order).filter(Jar.index == index)
+            jar = query_.first()
+            logging.warning(f"founded jar: {jar}")
+            if jar:
+                jar.status = 'ERROR'
+                self.db_session.commit()
+

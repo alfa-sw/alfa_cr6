@@ -31,7 +31,15 @@ from PyQt5.QtWidgets import (
     QMessageBox,
     QFrame,
     QTableWidgetItem,
-    QCompleter)
+    QCompleter,
+    QWidget,
+    QVBoxLayout,
+    QLabel,
+    QPushButton,
+    QDialog,
+    QHBoxLayout,
+    QDialogButtonBox
+)
 
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
@@ -824,3 +832,85 @@ class AliasDialog(BaseDialog):
         self.move(360 + random.randint(-80, 80), 2)
 
         self.show()
+
+
+class RecoveryInfoDialog(QDialog):
+    def __init__(self, parent=None, recovery_items=None, lbl_text=None, app_frozen=False):
+        super(RecoveryInfoDialog, self).__init__(parent)
+        self.setWindowTitle("Recovery Information")
+        self.setModal(True)
+        self.resize(400, 300)
+
+        self.layout = QVBoxLayout()
+        self.setLayout(self.layout)
+
+        if lbl_text:
+            self.text_label = QLabel(lbl_text)
+            self.layout.addWidget(self.text_label)
+
+        self.recovery_items = recovery_items.copy() if recovery_items else []
+        self.rows = []
+        self.parent = parent
+
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        self.button_box.accepted.connect(self.close_modal)
+        self.layout.addWidget(self.button_box)
+
+        for item in self.recovery_items.copy():
+            self.add_recovery_row(item)
+
+        self.app_frozen=app_frozen
+        self.show()
+
+    def add_recovery_row(self, text):
+
+        row_widget = QWidget()
+        row_layout = QHBoxLayout()
+        row_widget.setLayout(row_layout)
+
+        label = QLabel(text)
+        label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        delete_button = QPushButton("Delete")
+        delete_button.setFixedSize(90, 30)
+        delete_button.setStyleSheet("QPushButton { color: red; font-weight: bold; }")
+
+        row_layout.addWidget(label)
+        row_layout.addStretch()
+        row_layout.addWidget(delete_button)
+
+        self.layout.addWidget(row_widget)
+
+        self.rows.append(row_widget)
+
+        delete_button.clicked.connect(lambda: self.remove_recovery_row(row_widget))
+
+    def remove_recovery_row(self, row_widget):
+
+        if not self.app_frozen and self.parent:
+            msg_ = "\nAutomation paused is required!"
+            self.parent.open_alert_dialog(msg_, title="ERROR")
+            return
+
+        try:
+            index = self.rows.index(row_widget)
+        except ValueError:
+            return
+
+        if 0 <= index < len(self.recovery_items):
+            removed_item = self.recovery_items.pop(index)
+
+        self.layout.removeWidget(row_widget)
+        row_widget.deleteLater()
+        self.rows.remove(row_widget)
+        label = row_widget.findChild(QLabel)
+        if label:
+            label_text = label.text()
+            tokens = label_text.split('-', maxsplit=1)
+            barcode = tokens[0].strip()
+            jar_pos = tokens[1]
+            QApplication.instance().recovery_mode_delete_jar_task(barcode, jar_pos)
+
+    def close_modal(self):
+        self.close()
+        

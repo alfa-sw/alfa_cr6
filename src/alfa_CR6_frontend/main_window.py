@@ -16,7 +16,7 @@ import os
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap, QIcon, QMovie
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from alfa_CR6_backend.globals import (
@@ -25,7 +25,8 @@ from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
     InputDialog,
-    AliasDialog)
+    AliasDialog,
+    RecoveryInfoDialog)
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
@@ -256,6 +257,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.__init_dialogs()
         self.__init_icons()
 
+        self.home_page.recovery_btn.hide()
+        self.set_warning_icon()
+
         self.showFullScreen()
 
         # ~ self.refill_1_lbl.mouseReleaseEvent = lambda event: self.show_reserve(0)
@@ -338,6 +342,28 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 action_frame_map[btn] = w
 
         self.action_frame_map = action_frame_map
+
+    def set_warning_icon(self):
+
+        file_path = '/tmp/share/data_from_app.json'
+        if not os.path.exists(file_path):
+            logging.error("data_from_app.json is missing! Aborting set_warning_icon()")
+            return
+
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+            status = data.get('status', '')
+
+            if not status:
+                logging.error("The key 'status' is empty or missing")
+
+            if status == "app_running" :
+                self.home_page.fw_align_ko_lbl.hide()
+            else:
+                self.home_page.fw_align_ko_lbl.show()
+                self.warning_movie = QMovie(get_res("IMAGE", "warning_blinking.gif"))
+                self.home_page.fw_align_ko_lbl.setMovie(self.warning_movie)
+                self.warning_movie.start()
 
     def get_stacked_widget(self):
         return self.stacked_widget
@@ -462,6 +488,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
+    def show_carousel_recovery_mode(self, toggle):
+        self.home_page.update_lbl_recovery(toggle)
+        self.home_page.feed_jar_btn.setEnabled(not toggle)
+
+        if toggle:
+            self.home_page.recovery_btn.show()
+        else:
+            self.home_page.recovery_btn.hide()
+
     def show_reserve(self, head_index, flag=None):
 
         self.home_page.show_reserve(head_index, flag=flag)
@@ -582,6 +617,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             hp_callback=hp_callback, visibility=visibility,
             show_cancel_btn=show_cancel_btn
         )
+
+    def open_recovery_dialog(self, recovery_items, lbl_text=None):
+        app_frozen = QApplication.instance().carousel_frozen
+        _msgbox = RecoveryInfoDialog(
+            parent=self,
+            recovery_items=recovery_items,
+            lbl_text=lbl_text,
+            app_frozen=app_frozen
+        ) 
 
     def show_barcode(self, barcode, is_ok=False):
 

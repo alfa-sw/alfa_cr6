@@ -212,6 +212,9 @@ D = {
     "Status {} is not allowed for dispensing.": "Lo stato {} non è consentito per il dosaggio.",
     "Problem during the start of dispensing. Head status not in standby.": "Problema durante l'avvio della dispensazione. Stato testa non in STANDBY",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Volume barattolo {}(cc) < volume ordine {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Se preferisci scaricare manualmente alcuni o tutti i barattoli,\npremi CANCELLA per rimuoverli permanentemente\ndalla logica di recupero della macchina.",
+    "\nAutomation paused is required!": "\nÈ necessario fermare l'automazione!",
 }
 
 

@@ -209,6 +209,9 @@ D = {
     "Status {} is not allowed for dispensing.": "Status {} is not allowed for dispensing.",
     "Problem during the start of dispensing. Head status not in standby.": "Problem during the start of dispensing. Head status not in standby.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Jar volume {}(cc) < Order volume {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic",
+    "\nAutomation paused is required!": "\nAutomation paused is required!",
 }
 
 
