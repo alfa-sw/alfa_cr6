@@ -558,7 +558,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def open_alert_dialog(  # pylint: disable=too-many-arguments
             self, args, title="ALERT", fmt=None,
             callback=None, cb_args=None, hp_callback=None,
-            visibility=1, show_cancel_btn=True
+            visibility=1, show_cancel_btn=True,
+            cancel_callback=None, cancel_cb_args=None, btns_custom_text=[]
     ):
 
         if fmt is not None:
@@ -573,10 +574,20 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         if visibility > 0:
 
+            btn_ok_text="   OK   "
+            btn_cancel_text=" Cancel "
+            if btns_custom_text and len(btns_custom_text) >= 2:
+                btn_ok_text=btns_custom_text[1]
+                btn_cancel_text=btns_custom_text[0]
+
             _msgbox = ModalMessageBox(
                 parent=self, msg=msg, title=title,
                 ok_callback=callback, ok_callback_args=cb_args,
-                hp_callback=hp_callback
+                hp_callback=hp_callback,
+                cancel_callback=cancel_callback,
+                cancel_callback_args=cancel_cb_args,
+                btn_cancel_text=btn_cancel_text,
+                btn_ok_text=btn_ok_text
             )
             if not show_cancel_btn:
                 _msgbox.enable_buttons(True, False, False)

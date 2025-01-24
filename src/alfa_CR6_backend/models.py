@@ -372,6 +372,20 @@ class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
         _json_properties = json.loads(self.json_properties)
         return _json_properties.get("not_dispensed_ingredients", {})
 
+    @property
+    def dispensation_outcomes(self):
+        _json_properties = json.loads(self.json_properties)
+        return _json_properties.get("dispensation_outcomes", [])
+
+    def check_for_failure_refused_refill(self):
+        target_substring = "failure for refused refill and insufficiernt pigments".lower()
+        for outcome in self.dispensation_outcomes:
+            if len(outcome) >= 2:
+                message = outcome[1].lower()
+                if target_substring in message:
+                    return True
+        return False
+
     def get_not_dispensed_ingredients(self, effective_engaged_circuits={}):
         _json_properties = json.loads(self.json_properties)
         order_ingredients = _json_properties.get("order_ingredients", [])

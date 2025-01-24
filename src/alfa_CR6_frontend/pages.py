@@ -860,7 +860,42 @@ class OrderPage(BaseStackedPage):
                 model = sel_orders[0].model()
                 order_nr = model.results[row][3]
                 order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).first()
-                if order:
+                jars = QApplication.instance().db_session.query(Jar).filter(Jar.order_id == order.id).all()
+                jar_to_complete = None
+                logging.warning(f"jars -> {jars}")
+                for j in jars:
+                    logging.warning(f"cloned jar: {j}")
+                    if j.check_for_failure_refused_refill():
+                        logging.warning("POPULATE CLONED ORDER USING not_dispensed_ingredients ")
+                        jar_to_complete = j
+                        break
+
+                if order and jar_to_complete:
+                    def clone_order_with_not_dispended_pgmts_callback(order_nr, not_dispensed_ingredients={}):
+                        logging.warning(f"DO SPECIAL MAGICS HERE")
+                        cloned_order = QApplication.instance().clone_order(order_nr, not_dispensed_pgmts=not_dispensed_ingredients)
+                        logging.info(f"Order cloned: {cloned_order}")
+                        self.populate_order_table()
+                        self.populate_jar_table()
+                    def clone_order_callback(order_nr):
+                        cloned_order = QApplication.instance().clone_order(order_nr)
+                        logging.info(f"Order cloned: {cloned_order}")
+                        self.populate_order_table()
+                        self.populate_jar_table()
+                    msg = tr_(
+                        "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'"
+                    ).format(jar_to_complete.barcode)
+                    self.main_window.open_alert_dialog(
+                        msg,
+                        title="INFO",
+                        callback=clone_order_with_not_dispended_pgmts_callback,
+                        cb_args=[order_nr, jar_to_complete.not_dispensed_ingredients],
+                        cancel_callback=clone_order_callback,
+                        cancel_cb_args=[order_nr],
+                        btns_custom_text=["Clone New", "Recover Old"]
+                    )
+
+                if order and jar_to_complete is None:
                     cloned_order = QApplication.instance().clone_order(order_nr)
                     msg = tr_("cloned order:{} \n from:{}.").format(cloned_order.order_nr, order.order_nr)
                     self.main_window.open_alert_dialog(msg, title="INFO")
