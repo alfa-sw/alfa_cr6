@@ -872,7 +872,6 @@ class OrderPage(BaseStackedPage):
 
                 if order and jar_to_complete:
                     def clone_order_with_not_dispended_pgmts_callback(order_nr, not_dispensed_ingredients={}):
-                        logging.warning(f"DO SPECIAL MAGICS HERE")
                         cloned_order = QApplication.instance().clone_order(order_nr, not_dispensed_pgmts=not_dispensed_ingredients)
                         logging.info(f"Order cloned: {cloned_order}")
                         self.populate_order_table()
@@ -892,7 +891,7 @@ class OrderPage(BaseStackedPage):
                         cb_args=[order_nr, jar_to_complete.not_dispensed_ingredients],
                         cancel_callback=clone_order_callback,
                         cancel_cb_args=[order_nr],
-                        btns_custom_text=["Clone New", "Recover Old"]
+                        btns_custom_text=[tr_("Clone New"), tr_("Recover Old")]
                     )
 
                 if order and jar_to_complete is None:

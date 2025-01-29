@@ -234,6 +234,9 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
             del running_tasks[jcode]
             self.write_data(running_tasks)
 
+    def clear_list(self):
+        self.write_data({})
+
 
 class RedisOrderPublisher:
     def __init__(self, redis_url='redis://localhost',ch_name='cr_orders'):
@@ -1294,7 +1297,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.db_session.commit()
 
-    def update_jar_position(self, jar, machine_head=None, status=None, pos=None):
+    def update_jar_position(self, jar, machine_head=None, status=None, pos=None, recovery_pos=None):
 
         if jar is not None: # pylint: disable=too-many-nested-blocks
             for m in self.machine_head_dict.values():
@@ -1327,7 +1330,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.redis_publisher.publish_messages(jar_data)
 
                 if self.restore_machine_helper:
-                    self.restore_machine_helper.store_jar_data(jar, pos)
+                    jar_position = pos if pos is not None else recovery_pos
+                    self.restore_machine_helper.store_jar_data(jar, jar_position)
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)

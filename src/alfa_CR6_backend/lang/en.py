@@ -212,6 +212,9 @@ D = {
 
     "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic",
     "\nAutomation paused is required!": "\nAutomation paused is required!",
+    "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'",
+    "Clone New": "Clone New",
+    "Recover Old": "Recover Old",
 }
 
 

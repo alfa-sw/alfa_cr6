@@ -209,6 +209,9 @@ D = {
 
     "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Wenn Sie einige oder alle Dosen manuell entladen möchten,\ndrücken Sie LÖSCHEN für jede einzelne, um sie dauerhaft\naus der Maschinenwiederherstellungslogik zu entfernen.",
     "\nAutomation paused is required!": "\nEine Pause der Automatisierung ist erforderlich!",
+    "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Möchten Sie einen neuen Auftrag mit den nicht abgegebenen Komponenten aus dem Barcode {} erstellen?\nWenn JA, drücken Sie 'Alten wiederherstellen'",
+    "Clone New": "Neu klonen",
+    "Recover Old": "Alten wiederherstellen",
 }
 
 

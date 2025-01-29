@@ -700,7 +700,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 json_properties["dispensation_outcomes"].append((m.name, outcome_))
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
 
-                self.update_jar_position(jar, machine_head=None, status="ERROR", pos=None)
+                self.update_jar_position(jar, machine_head=None, status="ERROR", pos=None, recovery_pos=machine_letter)
                 logging.warning(f"{jar.barcode} in ERROR.")
                 r = True
             else:
