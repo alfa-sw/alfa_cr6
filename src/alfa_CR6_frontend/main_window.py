@@ -344,25 +344,26 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def set_warning_icon(self):
 
-        file_path = '/tmp/share/data_from_app.json'
-        if not os.path.exists(file_path):
-            logging.error("data_from_app.json is missing! Aborting set_warning_icon()")
-            return
+        self.home_page.fw_align_ko_lbl.hide()
 
-        with open(file_path, 'r') as file:
-            data = json.load(file)
-            status = data.get('status', '')
+        if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+            file_path = '/tmp/share/data_from_app.json'
+            if not os.path.exists(file_path):
+                logging.error("data_from_app.json is missing!")
+                return
 
-            if not status:
-                logging.error("The key 'status' is empty or missing")
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+                status = data.get('status', '')
 
-            if status == "app_running" :
-                self.home_page.fw_align_ko_lbl.hide()
-            else:
-                self.home_page.fw_align_ko_lbl.show()
-                self.warning_movie = QMovie(get_res("IMAGE", "warning_blinking.gif"))
-                self.home_page.fw_align_ko_lbl.setMovie(self.warning_movie)
-                self.warning_movie.start()
+                if not status:
+                    logging.error("The key 'status' is empty or missing")
+
+                if status != "app_running" :
+                    self.home_page.fw_align_ko_lbl.show()
+                    self.warning_movie = QMovie(get_res("IMAGE", "warning_blinking.gif"))
+                    self.home_page.fw_align_ko_lbl.setMovie(self.warning_movie)
+                    self.warning_movie.start()
 
     def get_stacked_widget(self):
         return self.stacked_widget
