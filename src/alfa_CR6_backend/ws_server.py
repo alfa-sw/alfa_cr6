@@ -24,7 +24,7 @@ import websockets  # pylint: disable=import-error
 
 from flask import Markup # pylint: disable=import-error
 
-from alfa_CR6_backend.globals import (get_version, set_language, import_settings, get_application_instance, tr_)
+from alfa_CR6_backend.globals import (get_version, set_language, import_settings, get_application_instance, tr_, set_refill_popup_choices)
 
 here_ = os.path.dirname(os.path.abspath(__file__))
 pth_ = os.path.join(here_, "templates/")
@@ -256,6 +256,11 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         })
         await websocket.send(answer)
 
+    @classmethod
+    async def change_refill_popup_choices(cls, msg_dict, websocket):
+        params = msg_dict.get("params", {})
+        refill_choices = params.get("refill_choices")
+        set_refill_popup_choices(refill_choices)
 
 class WsServer: # pylint: disable=too-many-instance-attributes
 

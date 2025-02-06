@@ -191,6 +191,85 @@
 		<label>(WARN application will be restarted)</label>
 	</div>
 	<div><hr></hr></div>
+	<div>
+		<label>Refill Popup Settings</label>
+		<span class="glyphicon glyphicon glyphicon-oil button-tool" title="" onclick="show_refill_settings_modal();"></span>
+		<label>(WARN application will be restarted)</label>
+	</div>
+	<div id="refillSettingsModal" class="modal fade" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog">
+		  <div class="modal-content">
+			<div class="modal-header">
+			  <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+			  <h4 class="modal-title">Refill Popup Settings</h4>
+			</div>
+			<div class="modal-body">
+			  <form id="refillSettingsForm">
+				<div class="container-fluid">
+				  <div class="row">
+					<div class="col-md-6">
+					  <div class="form-group">
+						<label for="refill_choice_1">Refill choice 1</label>
+						<input type="number" step="0.1" id="refill_choice_1" name="refill_choice_1" class="form-control"
+							   value="{{ refill_choices[0] if refill_choices|length > 0 else 0 }}"
+							   onblur="if(this.value===''){ this.value = 0; }">
+					  </div>
+					</div>
+					<div class="col-md-6">
+					  <div class="form-group">
+						<label for="refill_choice_2">Refill choice 2</label>
+						<input type="number" step="0.1" id="refill_choice_2" name="refill_choice_2" class="form-control"
+							   value="{{ refill_choices[1] if refill_choices|length > 1 else 0 }}"
+							   onblur="if(this.value===''){ this.value = 0; }">
+					  </div>
+					</div>
+				  </div>
+				  <div class="row">
+					<div class="col-md-6">
+					  <div class="form-group">
+						<label for="refill_choice_3">Refill choice 3</label>
+						<input type="number" step="0.1" id="refill_choice_3" name="refill_choice_3" class="form-control"
+							   value="{{ refill_choices[2] if refill_choices|length > 2 else 0 }}"
+							   onblur="if(this.value===''){ this.value = 0; }">
+					  </div>
+					</div>
+					<div class="col-md-6">
+					  <div class="form-group">
+						<label for="refill_choice_4">Refill choice 4</label>
+						<input type="number" step="0.1" id="refill_choice_4" name="refill_choice_4" class="form-control"
+							   value="{{ refill_choices[3] if refill_choices|length > 3 else 0 }}"
+							   onblur="if(this.value===''){ this.value = 0; }">
+					  </div>
+					</div>
+				  </div>
+				  <div class="row">
+					<div class="col-md-6">
+					  <div class="form-group">
+						<label for="refill_choice_5">Refill choice 5</label>
+						<input type="number" step="0.1" id="refill_choice_5" name="refill_choice_5" class="form-control"
+							   value="{{ refill_choices[4] if refill_choices|length > 4 else 0 }}"
+							   onblur="if(this.value===''){ this.value = 0; }">
+					  </div>
+					</div>
+					<div class="col-md-6">
+					  <div class="form-group">
+						<label for="refill_choice_6">Refill choice 6</label>
+						<input type="number" step="0.1" id="refill_choice_6" name="refill_choice_6" class="form-control"
+							   value="{{ refill_choices[5] if refill_choices|length > 5 else 0 }}"
+							   onblur="if(this.value===''){ this.value = 0; }">
+					  </div>
+					</div>
+				  </div>
+				</div>
+			  </form>
+			</div>
+			<div class="modal-footer">
+			  <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+			  <button type="button" class="btn btn-primary" onclick="handleRefillChoicesSubmit()" data-dismiss="modal">Save</button>
+			</div>
+		  </div>
+		</div>
+	</div>
 </div>
 
 <script>
@@ -274,6 +353,29 @@
 			cmd = JSON.stringify(cmd);
 			g_ws_client.send(cmd);
 		};
+	};
+
+	var show_refill_settings_modal = function(){
+		$('#refillSettingsModal').modal('show');
+	}
+
+	var handleRefillChoicesSubmit = function(choices) {
+		var choices = [
+			document.getElementById('refill_choice_1').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_1').value),
+			document.getElementById('refill_choice_2').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_2').value),
+			document.getElementById('refill_choice_3').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_3').value),
+			document.getElementById('refill_choice_4').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_4').value),
+			document.getElementById('refill_choice_5').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_5').value),
+			document.getElementById('refill_choice_6').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_6').value)
+		];
+		var cmd = {"command": 'change_refill_popup_choices', 'params': {'refill_choices': choices}};
+		console.debug(cmd);
+		cmd = JSON.stringify(cmd);
+		if (g_ws_client.readyState === WebSocket.OPEN) {
+			g_ws_client.send(cmd);
+		} else {
+			alert('Websocket connection error! Try to refresh the page (F5) and submit again the Refill Choices');
+		}
 	};
 
 	var on_wsocket_open = function(event) {

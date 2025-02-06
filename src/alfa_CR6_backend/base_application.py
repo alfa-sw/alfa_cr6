@@ -225,6 +225,18 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
 
         await self.async_write_data(data)
 
+    def remove_completed_jar_data(self, jcode):
+        data = dict(self.read_data())
+
+        if jcode not in data:
+            logging.error(f'Jar code {jcode} not found in data.')
+            return
+
+        logging.warning(f'Removing Recovery data for jar {jcode}')
+        del data[jcode]
+
+        self.write_data(data)
+
     def recovery_task_deletion(self, jcode):
         if not self.parent:
             return
@@ -1315,6 +1327,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if self.restore_machine_helper:
                     self.restore_machine_helper.store_jar_data(jar, pos)
+                    if pos == "OUT":
+                        self.restore_machine_helper.remove_completed_jar_data(jar.barcode)
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)

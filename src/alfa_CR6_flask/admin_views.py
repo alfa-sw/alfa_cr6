@@ -494,6 +494,14 @@ class AdminIndexView(flask_admin.AdminIndexView):
                 links.append(l)
 
         logging.warning(f"request.host:{request.host}")
+
+        def get_refill_choices():
+            if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+                us = SETTINGS.USER_SETTINGS
+                return us.get('POPUP_REFILL_CHOICES', [])
+            else:
+                return getattr(SETTINGS, 'POPUP_REFILL_CHOICES', [])
+
         ctx = {
             'links': links,
             'ws_ip_addr_and_port': "{}:{}".format(request.host.split(':')[0], 13000),
@@ -501,6 +509,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
             'current_language': SETTINGS.LANGUAGE,
             'language_map': LANGUAGE_MAP,
             'in_docker': os.getenv("IN_DOCKER", False) in ['1', 'true'],
+            'refill_choices': get_refill_choices()
         }
 
         return self.render(template, **ctx)
