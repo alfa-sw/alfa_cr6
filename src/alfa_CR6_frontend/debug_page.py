@@ -191,6 +191,7 @@ class DebugPage:
                 ("read\nbarcode", "simulate a bar code read"),
                 ("open order\ndialog", "**"),
                 ("view\norders", ""),
+                ("clear list\nrecovery mode", ""),
             ]
 
         if os.getenv("DEV_DEBUG_PAGE", False) in ["1", "true"]:
@@ -469,6 +470,10 @@ class DebugPage:
         elif "remote UI" in cmd_txt:
 
             app.main_window.browser_page.open_page(url="http://127.0.0.1:8090")
+
+        elif "clear list" in cmd_txt:
+
+            app.restore_machine_helper.clear_list()
 
         else:
             app.run_a_coroutine_helper(cmd_txt)

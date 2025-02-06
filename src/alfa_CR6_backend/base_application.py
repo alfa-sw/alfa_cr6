@@ -234,6 +234,9 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
             del running_tasks[jcode]
             self.write_data(running_tasks)
 
+    def clear_list(self):
+        self.write_data({})
+
 
 class RedisOrderPublisher:
     def __init__(self, redis_url='redis://localhost',ch_name='cr_orders'):
