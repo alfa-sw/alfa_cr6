@@ -126,6 +126,23 @@ def save_user_settings(filename, user_settings_dict):
         logging.error("unable to save user settings")
         traceback.print_exc(file=sys.stderr)
 
+
+def set_refill_popup_choices(refill_choices):
+
+    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+        s = import_settings()
+        fn = s.USER_SETTINGS_JSON_FILE
+        us = s.USER_SETTINGS
+        us['POPUP_REFILL_CHOICES'] = refill_choices
+        save_user_settings(fn, us)
+    else:
+        refill_choices_str = json.dumps(refill_choices)
+        cmd_ = f"""sed -i "s/^\(POPUP_REFILL_CHOICES\s*=\s*\).*/\\1{refill_choices_str}/" /opt/alfa_cr6/conf/app_settings.py"""
+        os.system(cmd_)
+
+    os.system("kill -9 {}".format(os.getpid()))
+
+
 def import_settings():
 
     sys.path.append(CONF_PATH)
