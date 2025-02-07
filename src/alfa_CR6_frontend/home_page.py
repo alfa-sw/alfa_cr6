@@ -98,13 +98,12 @@ class PrintLabelHelper:
 
 class RefillProcedureHelper:
 
-    refill_choices = ['100', '250', '500', '750', '1000', '1500', '2000', '2500', '3000']
-    refill_choices_fl_oz = ['16', '32']
-
     def __init__(self, parent, head_index):
 
         self.parent = parent
         self.machine_ = QApplication.instance().machine_head_dict[head_index]
+
+        self.refill_choices = self._get_refill_choices()
 
         self.units_ = "CC"
         if self.machine_.machine_config:
@@ -114,6 +113,17 @@ class RefillProcedureHelper:
 
         t = self.machine_.update_tintometer_data()
         asyncio.ensure_future(t)
+
+    @staticmethod
+    def _get_refill_choices():
+        choices = []
+        if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+            choices = g_settings.USER_SETTINGS.get('POPUP_REFILL_CHOICES', [])
+        else:
+            choices = g_settings.POPUP_REFILL_CHOICES
+
+        logging.warning(f"choices: {choices}")
+        return sorted(choices, reverse=True)
 
     def __qtity_from_ml(self, val, pigment_name):
 
@@ -134,13 +144,6 @@ class RefillProcedureHelper:
         }.get(self.units_, 1)
         # ~ logging.warning(f"_convert_factor({type(_convert_factor)}):{_convert_factor}.")
         return _convert_factor * float(val)
-
-    def __get_refill_choices(self):
-
-        if self.units_ == "FL OZ":
-            return self.refill_choices_fl_oz
-
-        return self.refill_choices
 
     def _cb_confirm_reset(self):
 
@@ -188,7 +191,7 @@ class RefillProcedureHelper:
 
         self.parent.main_window.toggle_keyboard(on_off=False)
 
-        qtity_units_ = self.parent.main_window.input_dialog.get_content_text()
+        qtity_units_ = self.parent.main_window.refill_dialog.get_content_text()
         qtity_units_ = round(float(qtity_units_), 2)
         qtity_ml_ = self.__qtity_to_ml(qtity_units_, pigment_['name'])
 
@@ -227,17 +230,16 @@ class RefillProcedureHelper:
         margin_ml_ = pipe_['maximum_level'] - pipe_['current_level']
         margin_units_ = self.__qtity_from_ml(margin_ml_, pigment_['name'])
 
-        choices = {c: None for c in [_default_qtity_units, ] + self.__get_refill_choices() if float(c) <= margin_units_}
-
         if barcode_check == barcode_:
+            self.parent.main_window.hide_input_dialog()
             self.parent.main_window.toggle_keyboard(on_off=True)
-            self.parent.main_window.open_input_dialog(
+            self.parent.main_window.open_refill_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=msg_,
-                content=_default_qtity_units,
+                unit=self.units_,
                 ok_cb=self._cb_input_quantity,
                 ok_cb_args=(pigment_, pipe_),
-                choices=choices)
+                choices=self.refill_choices)
         else:
 
             self.parent.main_window.open_input_dialog(

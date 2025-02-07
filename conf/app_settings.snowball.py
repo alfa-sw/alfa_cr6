@@ -41,6 +41,7 @@ DEFAULT_USER_SETTINGS = {
    "BARCODE_READER_IDENTIFICATION_STRING": "Barcode", 
    "DOWNLOAD_KCC_LOT_STEP": 1200,
    "WEBENGINE_CUSTOMER_URL": "http://alfadispenser.com/",
-   "LANGUAGE": "it"
+   "LANGUAGE": "it",
+   "POPUP_REFILL_CHOICES" = []
 }
 

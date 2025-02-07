@@ -650,6 +650,8 @@ class InputDialog(BaseDialog):
 
         self.show()
 
+    def hide_dialog(self):
+        self.hide()
 
 class AliasDialog(BaseDialog):
 
@@ -914,3 +916,101 @@ class RecoveryInfoDialog(QDialog):
     def close_modal(self):
         self.close()
         
+class RefillDialog(BaseDialog):
+
+    ui_file_name = "refill_dialog.ui"
+
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.content_container.textChanged.connect(self.on_text_changed)
+        self.esc_button.clicked.connect(self.toggle_app_keyboard)
+
+        self.__ok_cb = None
+        self.__ok_cb_args = None
+        self.ok_on_enter = None
+
+        self.choices = []
+
+    def toggle_app_keyboard(self):
+        self.parent().toggle_keyboard(on_off=False)
+
+    def get_content_text(self):
+
+        return self.content_container.toPlainText()
+
+    def on_text_changed(self):
+
+        if self.on_ok_button_clicked:
+            self.content_container.toPlainText()
+
+    def _update_content_container(self, qtity_value):
+        logging.warning("pressed")
+        logging.warning(f"setting {qtity_value}")
+        self.content_container.setText(qtity_value)
+
+    def _update_choice_buttons(self):
+
+        for i, choice in enumerate(self.choices, start=1):
+            button = self.findChild(QPushButton, f'refill_choice_{i}')
+            logging.warning(button)
+            if button is not None:
+                value = int(choice)
+                button.setEnabled(value > 0)
+                button.setText(str(value))
+                logging.warning(f'btn value: {value}')
+                button.clicked.connect(lambda _, v=value: self._update_content_container(str(v)))
+
+    def on_ok_button_clicked(self):
+
+        try:
+            if self.__ok_cb:
+                tmp__args_ = self.__ok_cb_args if self.__ok_cb_args is not None else []
+                tmp__ok_cb = self.__ok_cb
+                self.__ok_cb = None
+                # ~ tmp__ok_cb(*tmp__args_)
+                asyncio.get_event_loop().call_later(.05, partial(tmp__ok_cb, *tmp__args_))
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+
+    def show_dialog(self,    # pylint: disable=too-many-arguments
+            icon_name=None,
+            message=None,
+            ok_cb=None,
+            ok_cb_args=None,
+            ok_on_enter=False,
+            choices=None,
+            unit=None
+    ):
+
+        self.content_container.setText("")
+        self.ok_on_enter = ok_on_enter
+
+        if icon_name is None:
+            icon_ = self.style().standardIcon(getattr(QStyle, "SP_MessageBoxWarning"))
+        else:
+            icon_ = self.style().standardIcon(getattr(QStyle, icon_name))
+        self.icon_label.setPixmap(icon_.pixmap(QSize(64, 64)))
+
+        if message is None:
+            self.message_label.setText("")
+        else:
+            self.message_label.setText(str(message))
+
+        logging.debug("choices -> %s", choices)
+        if choices:
+            self.choices = choices
+            self._update_choice_buttons()
+
+        self.__ok_cb = None
+        self.__ok_cb_args = None
+        if ok_cb is not None:
+            self.__ok_cb = ok_cb
+            self.__ok_cb_args = ok_cb_args
+
+        if unit:
+            self.unit_label.setText(unit)
+
+        self.show()

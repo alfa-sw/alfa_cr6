@@ -26,7 +26,8 @@ from alfa_CR6_frontend.dialogs import (
     EditDialog,
     InputDialog,
     AliasDialog,
-    RecoveryInfoDialog)
+    RecoveryInfoDialog,
+    RefillDialog)
 
 from alfa_CR6_frontend.pages import (
     OrderPage,
@@ -297,6 +298,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.input_dialog = InputDialog(self)
         self.edit_dialog = EditDialog(self)
         self.alias_dialog = AliasDialog(self)
+        self.refill_dialog = RefillDialog(self)
 
     def __init_action_pages(self):
 
@@ -633,3 +635,20 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         css = "color: #000000" if is_ok else "color: #990000"
         self.menu_line_edit.setStyleSheet(css)
         self.menu_line_edit.setText(f"{barcode}")
+
+    def open_refill_dialog(  # pylint: disable=too-many-arguments
+            self, icon_name=None, message=None,
+            ok_cb=None, ok_cb_args=None, ok_on_enter=False,
+            choices=None, unit=None
+    ):
+        self.refill_dialog.show_dialog(
+            icon_name=icon_name,
+            message=message,
+            ok_cb=ok_cb,
+            ok_cb_args=ok_cb_args,
+            ok_on_enter=ok_on_enter,
+            choices=choices,
+            unit=unit)
+
+    def hide_input_dialog(self):
+        self.input_dialog.hide_dialog()
