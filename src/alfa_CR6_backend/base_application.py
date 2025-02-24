@@ -235,7 +235,8 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                     if event.type == type_key_event and keyEvent.keystate == 0:  # key_up = 0
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:self.BARCODE_LEN]
-                            await self.__on_buffer_read(buffer)
+                            if buffer[:2] == "20":
+                                await self.__on_buffer_read(buffer)
                             buffer = ""
                         else:
                             filtered_ch_ = self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode)
