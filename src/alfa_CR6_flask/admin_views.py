@@ -120,6 +120,8 @@ def _generate_json_complete_filename(formula_name, extension, formula_step=None)
     if extension != "json":
         raise ValueError(f'Found wrong Json extension: "{extension}"')
 
+    formula_name = formula_name.replace("/", "_")
+
     if formula_step:
         fstep_str = str(formula_step)
         if not fstep_str.isdigit():
