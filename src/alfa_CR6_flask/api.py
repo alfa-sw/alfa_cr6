@@ -10,6 +10,7 @@
 import logging
 import traceback
 import json
+import redis
 
 from datetime import datetime, timedelta
 
@@ -22,11 +23,11 @@ from alfa_CR6_backend.models import (Order, Jar, Event, Document)
 # ~ from flask_restless_swagger import SwagAPIManager as APIManager  # pylint: disable=import-error, import-outside-toplevel
 from flask_restless import APIManager  # pylint: disable=import-error, import-outside-toplevel
 from flask_restless.serialization import DefaultSerializer, DefaultDeserializer  # pylint: disable=import-error, import-outside-toplevel
-from flask import request
+from flask import request, Response
 
 
 URL_PREFIX = '/api/v1'
-
+REDIS_BUS = redis.Redis()
 
 class OrderByJobId(Resource):  # pylint: disable=too-few-public-methods
 
@@ -94,6 +95,51 @@ class FilteredOrders(Resource):  # pylint: disable=too-few-public-methods
 
         return res
 
+class HeadStatusApi(Resource):  # pylint: disable=too-few-public-methods
+
+    def get(self, head_id):
+
+        def get_head_status_via_redis(head_id):
+            status = {}
+            ret = REDIS_BUS.get(f"device:machine:status@5{head_id}")
+            if ret:
+                ret = ret.decode()
+                status = json.loads(ret)
+            return status
+
+        if head_id < 0 or head_id > 6:
+            response = {"message": "Invalid head_id. Must be between 0 and 6."}
+            return Response(json.dumps(response), mimetype="application/json", status=400)
+
+        status = get_head_status_via_redis(head_id)
+
+        if not status:
+            response = {
+                "data": None,
+                "result": "not available",
+            }
+            response_json = json.dumps(response, indent=4)
+            return Response(response_json, mimetype="application/json", status=404)
+
+        response = {
+            "data": status,
+            "result": "success",
+        }
+        response_json = json.dumps(response, indent=4)
+        return Response(response_json, mimetype="application/json", status=200)
+
+    def post(self, head_id):
+        return Response(json.dumps({"message": "Method Not Allowed"}), mimetype="application/json", status=405)
+
+    def put(self, head_id):
+        return Response(json.dumps({"message": "Method Not Allowed"}), mimetype="application/json", status=405)
+
+    def delete(self, head_id):
+        return Response(json.dumps({"message": "Method Not Allowed"}), mimetype="application/json", status=405)
+
+    def patch(self, head_id):
+        return Response(json.dumps({"message": "Method Not Allowed"}), mimetype="application/json", status=405)
+
 
 def init_restful_api(app, db):
 
@@ -101,6 +147,7 @@ def init_restful_api(app, db):
 
     _api.add_resource(OrderByJobId, f'{URL_PREFIX}/order_by_job_id/<job_id>', resource_class_kwargs={'db': db})
     _api.add_resource(FilteredOrders, f'{URL_PREFIX}/filtered_orders', resource_class_kwargs={'db': db})
+    _api.add_resource(HeadStatusApi, f'{URL_PREFIX}/head_status/<int:head_id>')
 
     return _api
 
