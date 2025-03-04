@@ -337,8 +337,14 @@ class WsServer: # pylint: disable=too-many-instance-attributes
             })
             # ~ logging.warning("message:{}.".format(message))
 
-            for client in self.ws_clients:
-                await client.send(message)
+            for client in self.ws_clients.copy():
+                try:
+                    await client.send(message)
+                except (websockets.exceptions.ConnectionClosed, asyncio.CancelledError) as e:
+                    logging.warning(f"Removed disconnected Client: {client} ({e})")
+                    self.ws_clients.remove(client)
+                except Exception as e:
+                    logging.error(f"Error sending message to {client}: {e}")
 
         return True
 
