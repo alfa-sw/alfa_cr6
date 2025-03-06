@@ -108,22 +108,28 @@ class HeadStatusApi(Resource):  # pylint: disable=too-few-public-methods
             return status
 
         if head_id < 0 or head_id > 6:
-            response = {"message": "Invalid head_id. Must be between 0 and 6."}
-            return Response(json.dumps(response), mimetype="application/json", status=400)
+            response = {
+                "status": "error",
+                "message": "Invalid head_id. Must be between 0 and 6.",
+                "data": None
+            }
+            return Response(json.dumps(response, indent=4), mimetype="application/json", status=400)
 
         status = get_head_status_via_redis(head_id)
 
         if not status:
             response = {
-                "data": None,
-                "result": "not available",
+                "status": "error",
+                "message": f"Head {head_id} not available",
+                "data": None
             }
             response_json = json.dumps(response, indent=4)
             return Response(response_json, mimetype="application/json", status=404)
 
         response = {
-            "data": status,
-            "result": "success",
+            "status": "success",
+            "message": "",
+            "data": status
         }
         response_json = json.dumps(response, indent=4)
         return Response(response_json, mimetype="application/json", status=200)
