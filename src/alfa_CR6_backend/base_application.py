@@ -931,7 +931,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         # ~ logging.warning(f"order.json_properties:{order.json_properties}")
 
     def _do_create_order( # pylint: disable=too-many-arguments
-        self, properties, description, n_of_jars, file_name=None, silent=False, not_dispensed_pgmts={}):
+        self, properties, description, n_of_jars, file_name=None, silent=False):
 
         order = None
         if self.db_session:
@@ -939,18 +939,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 name_list = [i["pigment_name"] for i in properties.get('ingredients', [])]
                 assert len(name_list) == len(set(name_list)), tr_("duplicated name in ingredient list")
-
-                if not_dispensed_pgmts:
-                    properties['ingredients'] = [
-                        {
-                            'pigment_name': ingr['pigment_name'],
-                            'weight(g)': not_dispensed_pgmts[ingr['pigment_name']],
-                            'description': ingr.get('description', '-')
-                        }
-                        for ingr in properties['ingredients']
-                        if ingr['pigment_name'] in not_dispensed_pgmts
-                    ]
-                    logging.warning(f">>> updated properties -> {properties}")
 
                 try:
                     order = Order(
@@ -984,15 +972,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return order
 
-    def clone_order(self, order_nr, n_of_jars=0, not_dispensed_pgmts={}):
+    def clone_order(self, order_nr, n_of_jars=0):
 
         cloned_order = None
 
         try:
             order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).one()
             properties = json.loads(order.json_properties)
-            logging.warning(f">>>> properties -> {properties}")
-            cloned_order = self._do_create_order(properties, order.description, n_of_jars, not_dispensed_pgmts=not_dispensed_pgmts)
+            cloned_order = self._do_create_order(properties, order.description, n_of_jars)
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
