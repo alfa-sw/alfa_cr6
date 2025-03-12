@@ -10,7 +10,7 @@ import platform
 import os
 
 from alfa_CR6_backend.carousel_motor import CarouselMotor
-from alfa_CR6_backend.globals import import_settings
+from alfa_CR6_backend.globals import import_settings, set_missing_settings
 
 def pre_load_libGLX_on_banana():
 
@@ -23,6 +23,9 @@ def pre_load_libGLX_on_banana():
 
 def main():
 
+    # if not os.getenv("IN_DOCKER", False) in ['1', 'true']:
+    #     set_missing_settings()
+    set_missing_settings()
     settings = import_settings()
 
     try:

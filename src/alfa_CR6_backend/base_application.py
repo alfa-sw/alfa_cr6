@@ -346,6 +346,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
     async def run(self):
 
         try:
+            _settings = import_settings()
 
             import evdev  # pylint: disable=import-error, import-outside-toplevel
 
@@ -364,6 +365,9 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                     type_key_event = evdev.ecodes.EV_KEY  # pylint:  disable=no-member
                     # ~ logging.warning(f"type_key_event:{type_key_event} ({event.type})")
                     if event.type == type_key_event and keyEvent.keystate == 0:  # key_up = 0
+
+                        if getattr(_settings, 'MANUAL_BARCODE_INPUT', False):
+                            continue
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:self.BARCODE_LEN]
                             if buffer[:2] == "20":
