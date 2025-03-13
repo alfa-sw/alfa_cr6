@@ -8,6 +8,7 @@
 # pylint: disable=too-few-public-methods
 # pylint: disable=multiple-statements
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
+# pylint: disable=too-many-lines
 
 import os
 import copy
@@ -247,7 +248,10 @@ class RefillProcedureHelper:
                 message=tr_("barcode mismatch <br/>{} != {}").format(barcode_, barcode_check),
                 content=None)
 
-    async def _rotate_circuit_task(self, pigment_, pipe_, _default_qtity_units, barcode_):
+    async def _rotate_circuit_task(
+            self, pigment_, pipe_, _default_qtity_units, barcode_,
+            skip_verify=False, qrcode_choices=[]
+    ):
 
         def __get_pipe_index_from_name(p_name):
 
@@ -262,19 +266,33 @@ class RefillProcedureHelper:
                                        params=pars_, type_='command', channel='machine')
         asyncio.ensure_future(t)
 
-        self.parent.main_window.open_input_dialog(
-            icon_name="SP_MessageBoxQuestion",
-            message=tr_("please, verify barcode {} on canister.").format(barcode_),
-            content="",
-            ok_cb=self._cb_verify_barcode,
-            ok_cb_args=(pigment_, pipe_, _default_qtity_units, barcode_),
-            ok_on_enter=1)
+        if not skip_verify:
+            self.parent.main_window.open_input_dialog(
+                icon_name="SP_MessageBoxQuestion",
+                message=tr_("please, verify barcode {} on canister.").format(barcode_),
+                content="",
+                ok_cb=self._cb_verify_barcode,
+                ok_cb_args=(pigment_, pipe_, _default_qtity_units, barcode_),
+                ok_on_enter=1)
 
-    def _cb_input_barcode(self):
+        else:
+            current_level_ = pipe_['current_level']
+            current_level_ = self.__qtity_from_ml(current_level_, pigment_['name'])
+            current_level_ = round(current_level_, 2)
+            msg_ = """please, input quantity (in {}) of product: {}<br> for refilling pipe: {} (current level:{}),<br> leave as is for total refill or select from the list."""
+            msg_ = tr_(msg_).format(self.units_.lower(), pigment_['name'], pipe_['name'], current_level_)
 
-        barcode_ = self.parent.main_window.input_dialog.get_content_text()
-        barcode_ = barcode_.strip()
-        logging.warning(f"{self.machine_.name} barcode_:{barcode_}.")
+            self.parent.main_window.hide_input_dialog()
+            self.parent.main_window.toggle_keyboard(on_off=True)
+            self.parent.main_window.open_refill_dialog(
+                icon_name="SP_MessageBoxQuestion",
+                message=msg_,
+                unit=self.units_,
+                ok_cb=self._cb_input_quantity,
+                ok_cb_args=(pigment_, pipe_),
+                choices=qrcode_choices)
+
+    def _cb_input_barcode(self, barcode_):
 
         try:
             # ~ logging.warning(f"{m.name}.pigment_list:\n\t{json.dumps(m.pigment_list, indent=2)}")
@@ -310,13 +328,124 @@ class RefillProcedureHelper:
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
 
+    def _cb_input(self):
+
+        input = self.parent.main_window.input_dialog.get_content_text()
+        input = input.strip()
+
+        debug_input = os.getenv("DEBUG_INPUT")
+        if debug_input is not None and debug_input != "":
+            input = debug_input
+
+        if not input:
+            return
+
+        if input.count("|") >= 10:
+            t = self._check_and_decode_KCC_qrcode_string(input)
+            asyncio.ensure_future(t)
+        else:
+            self._cb_input_barcode(input)
+
+    async def _check_and_decode_KCC_qrcode_string(self, input): # pylint: disable=too-many-statements
+        """
+        memo per refill
+        refillParams['specific_weight'] = QRCodeNewSpecificWeight
+        """
+        import json # pylint: disable=import-outside-toplevel
+
+        try:
+            toks = input.split('$')
+            logging.warning(f"toks: {toks}")
+            sub_toks = toks[1].split('|') if len(toks) == 2 else toks[0].split('|')
+            offset = 1 if len(sub_toks) > 10 else 0
+
+            product_code = sub_toks[offset]
+            lot_number = sub_toks[offset + 1]
+            product_quantity = int(sub_toks[offset + 5])
+            production_date = sub_toks[offset + 9][:8]
+            kcc_qrcode_decoded_info = {
+                'product_code': product_code,
+                'lot_number': lot_number,
+                'product_quantity': product_quantity,
+                'production_date': production_date,
+            }
+            logging.warning(f"kcc_qrcode_decoded_info: {kcc_qrcode_decoded_info}")
+
+            pigment_name = ""
+            lot_specific_weight = -1
+            KCC_lot_specific_info = {}
+            try:
+                path_kcc_lot_specific_info = "/opt/alfa_cr6/tmp/kcc_lot_specific_info.json"
+                with open(path_kcc_lot_specific_info, encoding="UTF-8") as f:
+                    KCC_lot_specific_info = json.load(f)
+
+                def _check(item):
+                    return item.get("FIELD3") == product_code and item.get("FIELD4") == lot_number
+
+                for item in filter(_check, KCC_lot_specific_info):
+                    pigment_name = item.get("FIELD2", '')
+                    lot_specific_weight = float(item.get("FIELD5", -1))
+                    break
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                args, fmt = ('KCC_lot_specific_weight.json', ), "Unexpected error retrieving info from file '{}'"
+                self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                return
+
+            logging.warning(f"pigment_name --> {pigment_name}")
+            logging.warning(f"lot_specific_weight --> {lot_specific_weight}")
+            if not pigment_name or lot_specific_weight < 0:
+                logging.error(f"record not found or incomplete for product code:{product_code}, lot number:{lot_number}")
+                args, fmt = (product_code, lot_number), "record not found or incomplete for product code: {}, lot number:{}"
+                self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+
+            else:
+                _pipe = None
+                _pigment = None
+                for p in self.machine_.pigment_list:
+                    if p.get("name") == pigment_name:
+                        _pigment = p.copy()
+                        _pipe = _pigment.pop('pipes', None)
+                        break
+
+                if not _pipe:
+                    logging.error(f"pipe with pigment:{pigment_name} not found.")
+                    args, fmt = (pigment_name), "pipe with pigment:{} not found."
+                    self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                    return
+
+                _pipe = _pipe[0]
+                specific_weight = _pipe["effective_specific_weight"]
+                if specific_weight < 0.001 and obj.pigment:
+                    specific_weight = _pigment["specific_weight"]
+                if specific_weight < 0.001:
+                    specific_weight = 1.
+                tot_volume = product_quantity + _pipe["current_level"]
+                tot_weight = lot_specific_weight * product_quantity + specific_weight * _pipe["current_level"]
+                new_specific_weight = tot_weight / tot_volume
+
+                logging.warning(f"tot_volume: {tot_volume} - tot_weight: {tot_weight} - new_specific_weight: {new_specific_weight}")
+
+                _default_qtity_ml = _pipe['maximum_level'] - _pipe['current_level']
+                _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, _pigment['name'])
+                _default_qtity_units = round(_default_qtity_units, 2)
+
+                t = self._rotate_circuit_task(
+                    _pigment, _pipe, _default_qtity_units, input,
+                    skip_verify=True,qrcode_choices=[product_quantity])
+                asyncio.ensure_future(t)
+
+        except Exception as e:
+            logging.error(traceback.format_exc())
+            self.parent.main_window.open_alert_dialog(args=str(e), title="ERROR")
+
     def run(self):
 
         self.parent.main_window.open_input_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("please, input barcode for refill"),
             content="",
-            ok_cb=self._cb_input_barcode,
+            ok_cb=self._cb_input,
             ok_on_enter=1)
 
 

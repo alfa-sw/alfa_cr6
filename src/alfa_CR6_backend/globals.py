@@ -462,7 +462,8 @@ def set_missing_settings():
         ("ENABLE_BTN_PURGE_ALL", False),
         ("ENABLE_BTN_ORDER_NEW", True),
         ("ENABLE_BTN_ORDER_CLONE", True),
-        ("MANUAL_BARCODE_INPUT", False)
+        ("MANUAL_BARCODE_INPUT", False),
+        ("POPUP_REFILL_CHOICES", [500, 1000])
     ]
 
     if not os.path.exists(path_app_settings):
