@@ -155,7 +155,7 @@ class RefillProcedureHelper:
             channel="machine")
         asyncio.ensure_future(t)
 
-    async def __update_level_task(self, pigment_, pipe_, qtity_ml_):
+    async def __update_level_task(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None):
 
         def _cb_on_refill(answer):
             logging.warning(f"answer:{answer}.")
@@ -178,17 +178,19 @@ class RefillProcedureHelper:
         # ~ answer = await self.machine_.call_api_rest("apiV1/ad_hoc", "POST", data, timeout=8)
         # ~ _cb_on_refill(answer)
         params_ = {'items': [{'name': pipe_['name'], 'qtity': qtity_ml_}]}
+        if updated_spec_weight:
+            params_['items'][0]['specific_weight'] = updated_spec_weight
         await self.machine_.send_command(cmd_name="REFILL", params=params_, type_="macro", callback_on_macro_answer=_cb_on_refill)
 
         await self.machine_.update_tintometer_data()
         self.parent.main_window.browser_page.reload_page()
 
-    def _cb_confirm_quantity(self, pigment_, pipe_, qtity_ml_):
+    def _cb_confirm_quantity(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None):
 
-        t = self.__update_level_task(pigment_, pipe_, qtity_ml_)
+        t = self.__update_level_task(pigment_, pipe_, qtity_ml_, updated_spec_weight)
         asyncio.ensure_future(t)
 
-    def _cb_input_quantity(self, pigment_, pipe_):
+    def _cb_input_quantity(self, pigment_, pipe_, updated_spec_weight=None):
 
         self.parent.main_window.toggle_keyboard(on_off=False)
 
@@ -208,7 +210,7 @@ class RefillProcedureHelper:
                 message=msg_,
                 content=None,
                 ok_cb=self._cb_confirm_quantity,
-                ok_cb_args=(pigment_, pipe_, qtity_ml_))
+                ok_cb_args=(pigment_, pipe_, qtity_ml_, updated_spec_weight))
         else:
             msg_ = """refilling with {} ({}) would exceed maximum level! Aborting."""
             msg_ = tr_(msg_).format(qtity_units_, self.units_.lower())
@@ -250,7 +252,7 @@ class RefillProcedureHelper:
 
     async def _rotate_circuit_task(
             self, pigment_, pipe_, _default_qtity_units, barcode_,
-            skip_verify=False, qrcode_choices=[]
+            skip_verify=False, qrcode_refill_infos={}
     ):
 
         def __get_pipe_index_from_name(p_name):
@@ -289,8 +291,8 @@ class RefillProcedureHelper:
                 message=msg_,
                 unit=self.units_,
                 ok_cb=self._cb_input_quantity,
-                ok_cb_args=(pigment_, pipe_),
-                choices=qrcode_choices)
+                ok_cb_args=(pigment_, pipe_, qrcode_refill_infos.get("new_specific_weight")),
+                choices=[qrcode_refill_infos.get("qty")])
 
     def _cb_input_barcode(self, barcode_):
 
@@ -430,9 +432,14 @@ class RefillProcedureHelper:
                 _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, _pigment['name'])
                 _default_qtity_units = round(_default_qtity_units, 2)
 
+                qrcode_refill = {
+                    "qty": product_quantity,
+                    "new_specific_weight": new_specific_weight,
+                }
+
                 t = self._rotate_circuit_task(
                     _pigment, _pipe, _default_qtity_units, input,
-                    skip_verify=True,qrcode_choices=[product_quantity])
+                    skip_verify=True, qrcode_refill_infos=qrcode_refill)
                 asyncio.ensure_future(t)
 
         except Exception as e:
