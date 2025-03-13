@@ -937,12 +937,12 @@ class OrderPage(BaseStackedPage):
         QApplication.instance().update_tintometer_data_on_all_heads()
 
     def toggle_order_and_purge_btns(self):
-        show_purgeall = getattr(g_settings, "SHOW_BTN_PURGE_ALL", True)
+        show_purgeall = getattr(g_settings, "ENABLE_BTN_PURGE_ALL", True)
         self.purge_all_btn.setEnabled(show_purgeall)
 
-        show_order_new = getattr(g_settings, "SHOW_BTN_ORDER_NEW", True)
+        show_order_new = getattr(g_settings, "ENABLE_BTN_ORDER_NEW", True)
         self.new_order_btn.setEnabled(show_order_new)
 
-        show_order_clone = getattr(g_settings, "SHOW_BTN_ORDER_CLONE", True)
+        show_order_clone = getattr(g_settings, "ENABLE_BTN_ORDER_CLONE", True)
         self.clone_order_btn.setEnabled(show_order_clone)
 
