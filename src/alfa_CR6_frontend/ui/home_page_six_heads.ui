@@ -1526,27 +1526,6 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="lbl_recovery">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="geometry">
-    <rect>
-     <x>820</x>
-     <y>900</y>
-     <width>551</width>
-     <height>51</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>40</pointsize>
-    </font>
-   </property>
-   <property name="text">
-    <string>RECOVERY MODE ON</string>
-   </property>
-  </widget>
   <widget class="QLabel" name="fw_align_ko_lbl">
    <property name="geometry">
     <rect>
@@ -1644,13 +1623,12 @@
   <zorder>expiry_4_label</zorder>
   <zorder>expiry_5_label</zorder>
   <zorder>expiry_6_label</zorder>
-  <zorder>lbl_recovery</zorder>
   <zorder>fw_align_ko_lbl</zorder>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="action_btn_group"/>
   <buttongroup name="service_btn_group"/>
+  <buttongroup name="action_btn_group"/>
  </buttongroups>
 </ui>
