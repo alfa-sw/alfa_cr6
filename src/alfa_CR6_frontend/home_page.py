@@ -418,7 +418,7 @@ class RefillProcedureHelper:
 
                 _pipe = _pipe[0]
                 specific_weight = _pipe["effective_specific_weight"]
-                if specific_weight < 0.001 and obj.pigment:
+                if specific_weight < 0.001 and _pigment:
                     specific_weight = _pigment["specific_weight"]
                 if specific_weight < 0.001:
                     specific_weight = 1.
