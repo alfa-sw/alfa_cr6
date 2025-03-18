@@ -23,8 +23,6 @@ def pre_load_libGLX_on_banana():
 
 def main():
 
-    # if not os.getenv("IN_DOCKER", False) in ['1', 'true']:
-    #     set_missing_settings()
     set_missing_settings()
     settings = import_settings()
 

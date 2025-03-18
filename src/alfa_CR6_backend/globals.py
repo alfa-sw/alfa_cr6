@@ -456,31 +456,45 @@ def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp
 
 def set_missing_settings():
 
-    path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
-    _settings = [
-        ("FORCE_ORDER_JAR_TO_ONE", False),
-        ("ENABLE_BTN_PURGE_ALL", False),
-        ("ENABLE_BTN_ORDER_NEW", True),
-        ("ENABLE_BTN_ORDER_CLONE", True),
-        ("MANUAL_BARCODE_INPUT", False),
-        ("POPUP_REFILL_CHOICES", [500, 1000])
-    ]
+    _SETTINGS = {
+        "FORCE_ORDER_JAR_TO_ONE": False,
+        "ENABLE_BTN_PURGE_ALL": False,
+        "ENABLE_BTN_ORDER_NEW": True,
+        "ENABLE_BTN_ORDER_CLONE": True,
+        "MANUAL_BARCODE_INPUT": False,
+        "POPUP_REFILL_CHOICES": [500, 1000]
+    }
 
-    if not os.path.exists(path_app_settings):
-        raise RuntimeError("Missing app_settings.py file in path '/opt/alfa_cr6/conf/' ")
+    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+        s = import_settings()
+        fn = s.USER_SETTINGS_JSON_FILE
+        us = s.USER_SETTINGS
+        updated = False
+        for key, value in _SETTINGS.items():
+            if key not in us:
+                us[key] = value
+                updated = True
+        if updated:
+            save_user_settings(fn, us)
 
-    try:
-        for key, value in _settings:
-            linea = f'{key} = {value}'
-            command = (
-                f'if ! grep -qE "^{key}\\s*=" {path_app_settings}; then '
-                f'echo "{linea}" >> {path_app_settings}; '
-                f'fi'
-            )
-            subprocess.run(command, shell=True, check=True)
-    except subprocess.CalledProcessError as e:
-        logging.error(f"{e.returncode} - {e.stderr}")
-        raise RuntimeError("Error while updating settings ..") from e
+    else:
+        path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
+
+        if not os.path.exists(path_app_settings):
+            raise RuntimeError("Missing app_settings.py file in path '/opt/alfa_cr6/conf/' ")
+
+        try:
+            for key, value in _SETTINGS:
+                linea = f'{key} = {value}'
+                command = (
+                    f'if ! grep -qE "^{key}\\s*=" {path_app_settings}; then '
+                    f'echo "{linea}" >> {path_app_settings}; '
+                    f'fi'
+                )
+                subprocess.run(command, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"{e.returncode} - {e.stderr}")
+            raise RuntimeError("Error while updating settings ..") from e
 
 def toggle_manual_barcode_read():
     import re
