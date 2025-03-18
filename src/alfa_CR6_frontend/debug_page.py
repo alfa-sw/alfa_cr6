@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
 
 from alfa_CR6_backend.models import (Jar, Order, decompile_barcode)
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
-from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings)
+from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings, toggle_manual_barcode_read)
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
 
@@ -192,6 +192,7 @@ class DebugPage:
                 ("open order\ndialog", "**"),
                 ("view\norders", ""),
                 ("clear list\nrecovery mode", ""),
+                ("enable/disable\nbarcode reader", ""),
             ]
 
         if os.getenv("DEV_DEBUG_PAGE", False) in ["1", "true"]:
@@ -475,6 +476,15 @@ class DebugPage:
 
             app.restore_machine_helper.clear_list()
 
+        elif "enable/disable\nbarcode reader" in cmd_txt:
+            try:
+                toggle = toggle_manual_barcode_read()
+                msg = "Enabled manual barcode read" if toggle else "Disabled manual barcode read"
+                msg = msg + "\nApplication restart needed!"
+                app.main_window.open_alert_dialog(args=msg, title="INFO")
+
+            except Exception as e:
+                app.main_window.open_alert_dialog(args=str(e), title="ERROR")
         else:
             app.run_a_coroutine_helper(cmd_txt)
 

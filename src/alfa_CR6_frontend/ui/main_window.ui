@@ -259,6 +259,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <attribute name="buttonGroup">
+      <string notr="true">menu_btn_group</string>
+     </attribute>
     </widget>
    </widget>
    <widget class="QStackedWidget" name="stacked_widget">

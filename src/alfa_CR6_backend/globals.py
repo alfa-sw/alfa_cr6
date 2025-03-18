@@ -481,3 +481,41 @@ def set_missing_settings():
     except subprocess.CalledProcessError as e:
         logging.error(f"{e.returncode} - {e.stderr}")
         raise RuntimeError("Error while updating settings ..") from e
+
+def toggle_manual_barcode_read():
+    import re
+
+    path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
+    try:
+
+        if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+            s = import_settings()
+            fn = s.USER_SETTINGS_JSON_FILE
+            us = s.USER_SETTINGS
+            if not "MANUAL_BARCODE_INPUT" in us:
+                raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT' ")
+            new_val = not us['MANUAL_BARCODE_INPUT']
+            us['MANUAL_BARCODE_INPUT'] = new_val
+            save_user_settings(fn, us)
+            return new_val
+
+        with open(path_app_settings, 'r') as f:
+            content = f.read()
+
+            match = re.search(r'^(MANUAL_BARCODE_INPUT\s*=\s*)(True|False)', content, re.MULTILINE)
+            if not match:
+                raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT' ")
+
+            prefix = match.group(1)
+            current_value = match.group(2)
+            new_value_bool = not (current_value == 'True')
+            new_line = prefix + ("True" if new_value_bool else "False")
+            content_new = re.sub(r'^(MANUAL_BARCODE_INPUT\s*=\s*)(True|False)', new_line, content, flags=re.MULTILINE)
+
+            with open(path_app_settings, 'w') as f:
+                f.write(content_new)
+
+            return new_value_bool
+
+    except Exception as e:
+        raise e
