@@ -216,6 +216,11 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
         try:
 
+            YEARS = [
+                "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+                "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"
+            ]
+
             import evdev  # pylint: disable=import-error, import-outside-toplevel
 
             self.__open_device(evdev)
@@ -235,7 +240,9 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                     if event.type == type_key_event and keyEvent.keystate == 0:  # key_up = 0
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:self.BARCODE_LEN]
-                            await self.__on_buffer_read(buffer)
+
+                            if buffer[:2] in YEARS and int(buffer[2]) <= 1:
+                                await self.__on_buffer_read(buffer)
                             buffer = ""
                         else:
                             filtered_ch_ = self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode)
