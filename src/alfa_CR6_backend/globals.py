@@ -455,6 +455,9 @@ def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp
         )
 
 def set_missing_settings():
+    """
+    Inserts missing settings when updating from older software versions.
+    """
 
     _SETTINGS = {
         "FORCE_ORDER_JAR_TO_ONE": False,
@@ -484,7 +487,7 @@ def set_missing_settings():
             raise RuntimeError("Missing app_settings.py file in path '/opt/alfa_cr6/conf/' ")
 
         try:
-            for key, value in _SETTINGS:
+            for key, value in _SETTINGS.items():
                 linea = f'{key} = {value}'
                 command = (
                     f'if ! grep -qE "^{key}\\s*=" {path_app_settings}; then '
