@@ -471,6 +471,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                         self.open_alert_dialog(args="MANUAL BARCODE INPUT\nEmpty Barcode ...", show_cancel_btn=False)
                         return
 
+                    if manual_barcode in QApplication.instance()._BaseApplication__jar_runners:
+                        args, fmt = (manual_barcode, ), "{} already in progress!"
+                        self.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                        self.show_barcode(manual_barcode, is_ok=False)
+                        return
+
                     loop = asyncio.get_event_loop()
                     t = QApplication.instance()._BaseApplication__jar_task(manual_barcode)
                     QApplication.instance()._BaseApplication__jar_runners[manual_barcode] = {
