@@ -54,6 +54,7 @@ LANGUAGE_MAP = {
     "danish": 'da',
     "finnish": 'fi',
     "norwegian": 'no',
+    "arabic": 'ar',
 }
 
 _ALFA_SN = None
