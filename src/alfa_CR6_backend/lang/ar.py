@@ -1,3 +1,4 @@
+from alfa_CR6_backend.lang import error_ar
 
 D = {
     " ?": " ؟",
@@ -213,3 +214,5 @@ D = {
     "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "إذا كنت تفضل تفريغ بعض العبوات أو جميعها يدويًا، \nفاضغط على زر الحذف لكل واحدة لإزالتها نهائيًا\n من منطق استعادة الآلة",
     "\nAutomation paused is required!": "\nيلزم إيقاف التشغيل الآلي مؤقتًا!",
 }
+
+D.update(error_ar.D)
