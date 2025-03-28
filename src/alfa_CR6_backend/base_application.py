@@ -290,11 +290,12 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     BARCODE_LEN = 12
 
-    def __init__(self, barcode_handler, identification_string, exception_handler=None):
+    def __init__(self, barcode_handler, identification_string, exception_handler=None, manual_input=False):
 
         self.barcode_handler = barcode_handler
         self._identification_string = identification_string
         self.exception_handler = exception_handler
+        self.manual_input=manual_input
 
         self.last_read_event_time = 0
         self.last_read_event_buffer = '-'
@@ -346,10 +347,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
     async def run(self):
 
         try:
-            YEARS = [
-                "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
-                "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"
-            ]
+
             _settings = import_settings()
 
             import evdev  # pylint: disable=import-error, import-outside-toplevel
@@ -374,7 +372,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                             continue
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:self.BARCODE_LEN]
-                            if buffer[:2] in YEARS and int(buffer[2]) <= 1:
+                            if self.is_valid_alfa_barcode(buffer):
                                 await self.__on_buffer_read(buffer)
                             buffer = ""
                         else:
@@ -391,6 +389,28 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                 self.exception_handler(e)
             else:
                 logging.error(traceback.format_exc())
+
+    async def manual_read(self, buffer: str):
+
+        try:
+            assert self.manual_input
+            logging.warning("Calling __on_buffer_read()")
+            await self.__on_buffer_read(buffer)
+        except Exception as e:  # pylint: disable=broad-except
+            if self.exception_handler:
+                self.exception_handler(e)
+            else:
+                logging.error(traceback.format_exc())
+
+    @staticmethod
+    def is_valid_alfa_barcode(buffer):
+        YEARS = [
+            "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+            "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"
+        ]
+
+        check =  buffer[:2] in YEARS and int(buffer[2]) <= 1
+        return check
 
 
 class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods

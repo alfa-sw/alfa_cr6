@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from alfa_CR6_backend.globals import (
     get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP, DEFAULT_DEBUG_PAGE_PWD)
+from alfa_CR6_backend.base_application import BarCodeReader
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
@@ -459,34 +460,26 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 def on_ok_callback():
                     head_A = QApplication.instance().get_machine_head_by_letter("A")
                     sensor = head_A.status["jar_photocells_status"] & 0x001 and 1
-                    logging.warning(f"input roller can sensor: {sensor}")
                     manual_barcode = self.input_dialog.get_content_text()
-                    logging.warning(f"manual_barcode -> {manual_barcode}")
 
                     if not sensor:
-                        self.open_alert_dialog(args="MANUAL BARCODE INPUT\nMissing Shuttle on JAR_INPUT_ROLLER_PHOTOCELL ...", show_cancel_btn=False)
+                        message = tr_("Missing Jar on JAR_INPUT_ROLLER_PHOTOCELL")
+                        self.open_alert_dialog(args=message, show_cancel_btn=False)
                         return
 
                     if not manual_barcode:
-                        self.open_alert_dialog(args="MANUAL BARCODE INPUT\nEmpty Barcode ...", show_cancel_btn=False)
+                        message = tr_("Empty Barcode")
+                        self.open_alert_dialog(args="Empty Barcode ...", show_cancel_btn=False)
                         return
 
-                    if manual_barcode in QApplication.instance()._BaseApplication__jar_runners:
-                        args, fmt = (manual_barcode, ), "{} already in progress!"
-                        self.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                        self.show_barcode(manual_barcode, is_ok=False)
-                        return
-
+                    barcode_reader = BarCodeReader(QApplication.instance().on_barcode_read, "", True, True)
                     loop = asyncio.get_event_loop()
-                    t = QApplication.instance()._BaseApplication__jar_task(manual_barcode)
-                    QApplication.instance()._BaseApplication__jar_runners[manual_barcode] = {
-                        "task": asyncio.ensure_future(t, loop=loop),
-                        "frozen": True
-                    }
+                    t = barcode_reader.manual_read(manual_barcode)
+                    asyncio.ensure_future(t, loop=loop)
 
                 self.open_input_dialog(
                     icon_name="SP_MessageBoxQuestion",
-                    message="BARCODE:",
+                    message="MANUAL BARCODE INPUT:",
                     content="",
                     ok_cb=on_ok_callback,
                     ok_on_enter=True,
