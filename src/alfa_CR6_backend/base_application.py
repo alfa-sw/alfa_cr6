@@ -80,6 +80,11 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
                             logging.warning(f"ip:port {ip}:{port}")
 
                             if not force_file_xfert and ip in ["localhost", "127.0.0.1"]:
+                                if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+                                    import shutil
+                                    shutil.copy2(tmp_file_path_, "/opt/alfa/data/KCC_lot_specific_info.json")
+                                    ret = True
+                                    break
                                 os.system(f"rsync {tmp_file_path_} /opt/alfa/data/KCC_lot_specific_info.json")
                                 ret = True
                                 break
