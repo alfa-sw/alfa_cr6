@@ -17,8 +17,11 @@ import importlib
 import codecs
 import json
 import shlex
+import unicodedata
 
 import redis  # pylint: disable=import-error
+import arabic_reshaper  # pylint: disable=import-error
+from bidi.algorithm import get_display  # pylint: disable=import-error
 
 from barcode import EAN13                   # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
@@ -354,6 +357,19 @@ def _get_print_label_options():
 
     return options
 
+def process_text(text):
+    has_rtl = any(unicodedata.bidirectional(ch) in ('R', 'AL', 'AN') for ch in text)
+    if not has_rtl:
+        return text
+
+    contains_arabic = any('\u0600' <= ch <= '\u06FF' for ch in text)
+    if contains_arabic:
+        reshaped = arabic_reshaper.reshape(text)
+        return get_display(reshaped)
+
+    # for other RTL languages (e.g. Hebrew, Syriac, Thaana, etc.)
+    return get_display(text)
+
 def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
 
     options = _get_print_label_options()
@@ -428,7 +444,8 @@ def create_printable_image_from_jar(jar):
             n_to_pad = n_of_lines + 1 - len(lines_to_print)
             lines_to_print.extend(["." for i in range(n_to_pad)])
 
-        printable_text = '\n'.join(lines_to_print)
+        processed_lines = [process_text(line) for line in lines_to_print]
+        printable_text = '\n'.join(processed_lines)
 
         EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
 
