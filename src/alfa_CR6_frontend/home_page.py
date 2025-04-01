@@ -377,7 +377,7 @@ class RefillProcedureHelper:
             lot_specific_weight = -1
             KCC_lot_specific_info = {}
             try:
-                path_kcc_lot_specific_info = "/opt/alfa_cr6/tmp/kcc_lot_specific_info.json"
+                path_kcc_lot_specific_info = "/opt/alfa_cr6/tmp/KCC_lot_specific_info.json"
                 with open(path_kcc_lot_specific_info, encoding="UTF-8") as f:
                     KCC_lot_specific_info = json.load(f)
 
