@@ -406,11 +406,12 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
 
     return response
 
-def create_printable_image_from_jar(jar):
+def create_printable_image_from_jar(jar, options=None):
 
     recipe_barcode = str(jar.barcode)
 
-    options = _get_print_label_options()
+    if options is None:
+        options = _get_print_label_options()
 
     response = None
 
