@@ -458,6 +458,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 import asyncio
 
                 def on_ok_callback():
+                    self.toggle_keyboard(on_off=False)
                     head_A = QApplication.instance().get_machine_head_by_letter("A")
                     sensor = head_A.status["jar_photocells_status"] & 0x001 and 1
                     manual_barcode = self.input_dialog.get_content_text()
@@ -477,6 +478,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     t = barcode_reader.manual_read(manual_barcode)
                     asyncio.ensure_future(t, loop=loop)
 
+                self.toggle_keyboard(on_off=True)
                 self.open_input_dialog(
                     icon_name="SP_MessageBoxQuestion",
                     message="MANUAL BARCODE INPUT:",

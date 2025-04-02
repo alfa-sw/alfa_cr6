@@ -531,6 +531,7 @@ class InputDialog(BaseDialog):
         self.choices = []
 
         # ~ self.ok_button.clicked.connect(self.hide)
+        self.esc_button.clicked.connect(self.toggle_app_keyboard)
 
     def get_selected_choice(self):
 
@@ -651,8 +652,9 @@ class InputDialog(BaseDialog):
 
         self.show()
 
-    def hide_dialog(self):
-        self.hide()
+    def toggle_app_keyboard(self):
+        self.parent().toggle_keyboard(on_off=False)
+
 
 class AliasDialog(BaseDialog):
 
