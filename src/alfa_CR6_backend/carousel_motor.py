@@ -424,11 +424,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             break
                     self.double_can_alert = False
                     # ~ r = await _move_can_to_A()
-                    asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
                     await self.restore_machine_helper.async_remove_completed_jar_data(jar.barcode)
+                    asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
 
             self.busy_head_A = False
 
+        await asyncio.sleep(0.2)
         return r
 
     async def move_02_03(self, jar=None):  # 'A -> B'
