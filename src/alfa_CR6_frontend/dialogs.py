@@ -652,6 +652,9 @@ class InputDialog(BaseDialog):
 
         self.show()
 
+    def hide_dialog(self):
+        self.hide()
+
     def toggle_app_keyboard(self):
         self.parent().toggle_keyboard(on_off=False)
 
