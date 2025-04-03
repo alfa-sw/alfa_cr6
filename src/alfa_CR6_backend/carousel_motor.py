@@ -424,10 +424,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             break
                     self.double_can_alert = False
                     # ~ r = await _move_can_to_A()
+                    await self.restore_machine_helper.async_remove_completed_jar_data(jar.barcode)
                     asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
 
             self.busy_head_A = False
 
+        await asyncio.sleep(0.2)
         return r
 
     async def move_02_03(self, jar=None):  # 'A -> B'
@@ -700,7 +702,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 json_properties["dispensation_outcomes"].append((m.name, outcome_))
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
 
-                self.update_jar_position(jar, machine_head=None, status="ERROR", pos=None)
+                self.update_jar_position(jar, machine_head=None, status="ERROR", pos=None, recovery_pos=machine_letter)
                 logging.warning(f"{jar.barcode} in ERROR.")
                 r = True
             else:

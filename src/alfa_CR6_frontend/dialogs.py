@@ -117,13 +117,14 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         if self.ok_callback or self.hp_callback:
             def on_button_clicked(btn):
-
                 btn_name = btn.objectName().lower()
                 logging.warning(f"btn_name:{btn_name}, btn:{btn}, btn.text():{btn.text()}")
-                # ~ logging.warning(f"self.buttons().index(btn):{self.buttons().index(btn)}")
 
-                # ~ if "ok" in btn.text().lower():
                 if self.ok_callback and "ok" in btn_name:
+                    if getattr(self, 'executing_callback', False):
+                        return
+                    self.executing_callback = True
+
                     args_ = self.ok_callback_args if self.ok_callback_args is not None else []
                     self.ok_callback(*args_)
 
@@ -530,6 +531,7 @@ class InputDialog(BaseDialog):
         self.choices = []
 
         # ~ self.ok_button.clicked.connect(self.hide)
+        self.esc_button.clicked.connect(self.toggle_app_keyboard)
 
     def get_selected_choice(self):
 
@@ -652,6 +654,10 @@ class InputDialog(BaseDialog):
 
     def hide_dialog(self):
         self.hide()
+
+    def toggle_app_keyboard(self):
+        self.parent().toggle_keyboard(on_off=False)
+
 
 class AliasDialog(BaseDialog):
 

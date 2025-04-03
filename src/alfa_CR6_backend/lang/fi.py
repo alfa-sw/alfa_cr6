@@ -211,7 +211,10 @@ D = {
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Tölkin tilavuus {}(cc) on pienempi kuin tilauksen tilavuus {:.3f}(cc).",
 
     "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Jos haluat poistaa joitakin tai kaikki tölkit manuaalisesti,\npaina POISTA jokaisen tölkin kohdalla poistaaksesi ne pysyvästi\nkoneen palautuslogiikasta.",
-    "\nAutomation paused is required!": "\nAutomaation keskeytys vaaditaan!"
+    "\nAutomation paused is required!": "\nAutomaation keskeytys vaaditaan!",
+    "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Haluatko luoda uuden tilauksen viivakoodin {} annostelemattomista komponenteista?\nJos KYLLÄ, paina 'Palauta vanha'",
+    "Clone New": "Kloonaa uusi",
+    "Recover Old": "Palauta vanha",
 
 }
 

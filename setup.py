@@ -41,6 +41,8 @@ INSTALL_REQUIRES = [
     # ~ 'flask-restless-swagger-2',
     'Flask-Restless-NG',
     'flask_restful',
+    'arabic-reshaper<=3.0.0',
+    'python_bidi<=0.6.6',
 ]
 
 

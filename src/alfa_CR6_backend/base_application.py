@@ -80,6 +80,11 @@ async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfe
                             logging.warning(f"ip:port {ip}:{port}")
 
                             if not force_file_xfert and ip in ["localhost", "127.0.0.1"]:
+                                if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+                                    import shutil
+                                    shutil.copy2(tmp_file_path_, "/opt/alfa_cr6/tmp/KCC_lot_specific_info.json")
+                                    ret = True
+                                    break
                                 os.system(f"rsync {tmp_file_path_} /opt/alfa/data/KCC_lot_specific_info.json")
                                 ret = True
                                 break
@@ -290,11 +295,12 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     BARCODE_LEN = 12
 
-    def __init__(self, barcode_handler, identification_string, exception_handler=None):
+    def __init__(self, barcode_handler, identification_string, exception_handler=None, manual_input=False):
 
         self.barcode_handler = barcode_handler
         self._identification_string = identification_string
         self.exception_handler = exception_handler
+        self.manual_input=manual_input
 
         self.last_read_event_time = 0
         self.last_read_event_buffer = '-'
@@ -347,6 +353,8 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
         try:
 
+            _settings = import_settings()
+
             import evdev  # pylint: disable=import-error, import-outside-toplevel
 
             self.__open_device(evdev)
@@ -364,9 +372,13 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                     type_key_event = evdev.ecodes.EV_KEY  # pylint:  disable=no-member
                     # ~ logging.warning(f"type_key_event:{type_key_event} ({event.type})")
                     if event.type == type_key_event and keyEvent.keystate == 0:  # key_up = 0
+
+                        if getattr(_settings, 'MANUAL_BARCODE_INPUT', False):
+                            continue
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:self.BARCODE_LEN]
-                            await self.__on_buffer_read(buffer)
+                            if self.is_valid_alfa_barcode(buffer):
+                                await self.__on_buffer_read(buffer)
                             buffer = ""
                         else:
                             filtered_ch_ = self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode)
@@ -382,6 +394,28 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                 self.exception_handler(e)
             else:
                 logging.error(traceback.format_exc())
+
+    async def manual_read(self, buffer: str):
+
+        try:
+            assert self.manual_input
+            logging.warning("Calling __on_buffer_read()")
+            await self.__on_buffer_read(buffer)
+        except Exception as e:  # pylint: disable=broad-except
+            if self.exception_handler:
+                self.exception_handler(e)
+            else:
+                logging.error(traceback.format_exc())
+
+    @staticmethod
+    def is_valid_alfa_barcode(buffer):
+        YEARS = [
+            "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
+            "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"
+        ]
+
+        check =  buffer[:2] in YEARS and int(buffer[2]) <= 1
+        return check
 
 
 class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
@@ -1296,7 +1330,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.db_session.commit()
 
-    def update_jar_position(self, jar, machine_head=None, status=None, pos=None):
+    def update_jar_position(self, jar, machine_head=None, status=None, pos=None, recovery_pos=None):
 
         if jar is not None: # pylint: disable=too-many-nested-blocks
             for m in self.machine_head_dict.values():
@@ -1329,8 +1363,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.redis_publisher.publish_messages(jar_data)
 
                 if self.restore_machine_helper:
-                    self.restore_machine_helper.store_jar_data(jar, pos)
-                    if pos == "OUT":
+                    jar_position = pos if pos is not None else recovery_pos
+                    self.restore_machine_helper.store_jar_data(jar, jar_position)
+                    if jar_position == "OUT":
                         self.restore_machine_helper.remove_completed_jar_data(jar.barcode)
 
             except Exception as e:  # pylint: disable=broad-except

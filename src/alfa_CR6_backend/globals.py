@@ -17,8 +17,11 @@ import importlib
 import codecs
 import json
 import shlex
+import unicodedata
 
 import redis  # pylint: disable=import-error
+import arabic_reshaper  # pylint: disable=import-error
+from bidi.algorithm import get_display  # pylint: disable=import-error
 
 from barcode import EAN13                   # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
@@ -54,6 +57,7 @@ LANGUAGE_MAP = {
     "danish": 'da',
     "finnish": 'fi',
     "norwegian": 'no',
+    "arabic": 'ar',
 }
 
 _ALFA_SN = None
@@ -353,6 +357,19 @@ def _get_print_label_options():
 
     return options
 
+def process_text(text):
+    has_rtl = any(unicodedata.bidirectional(ch) in ('R', 'AL', 'AN') for ch in text)
+    if not has_rtl:
+        return text
+
+    contains_arabic = any('\u0600' <= ch <= '\u06FF' for ch in text)
+    if contains_arabic:
+        reshaped = arabic_reshaper.reshape(text)
+        return get_display(reshaped)
+
+    # for other RTL languages (e.g. Hebrew, Syriac, Thaana, etc.)
+    return get_display(text)
+
 def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
 
     options = _get_print_label_options()
@@ -389,11 +406,12 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
 
     return response
 
-def create_printable_image_from_jar(jar):
+def create_printable_image_from_jar(jar, options=None):
 
     recipe_barcode = str(jar.barcode)
 
-    options = _get_print_label_options()
+    if options is None:
+        options = _get_print_label_options()
 
     response = None
 
@@ -427,7 +445,8 @@ def create_printable_image_from_jar(jar):
             n_to_pad = n_of_lines + 1 - len(lines_to_print)
             lines_to_print.extend(["." for i in range(n_to_pad)])
 
-        printable_text = '\n'.join(lines_to_print)
+        processed_lines = [process_text(line) for line in lines_to_print]
+        printable_text = '\n'.join(processed_lines)
 
         EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
 
@@ -453,3 +472,86 @@ def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp
             pos=_pos,
             dispensation=_disp,
         )
+
+def set_missing_settings():
+    """
+    Inserts missing settings when updating from older software versions.
+    """
+
+    _SETTINGS = {
+        "FORCE_ORDER_JAR_TO_ONE": False,
+        "ENABLE_BTN_PURGE_ALL": False,
+        "ENABLE_BTN_ORDER_NEW": True,
+        "ENABLE_BTN_ORDER_CLONE": True,
+        "MANUAL_BARCODE_INPUT": False,
+        "POPUP_REFILL_CHOICES": [500, 1000]
+    }
+
+    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+        s = import_settings()
+        fn = s.USER_SETTINGS_JSON_FILE
+        us = s.USER_SETTINGS
+        updated = False
+        for key, value in _SETTINGS.items():
+            if key not in us:
+                us[key] = value
+                updated = True
+        if updated:
+            save_user_settings(fn, us)
+
+    else:
+        path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
+
+        if not os.path.exists(path_app_settings):
+            raise RuntimeError("Missing app_settings.py file in path '/opt/alfa_cr6/conf/' ")
+
+        try:
+            for key, value in _SETTINGS.items():
+                linea = f'{key} = {value}'
+                command = (
+                    f'if ! grep -qE "^{key}\\s*=" {path_app_settings}; then '
+                    f'echo "{linea}" >> {path_app_settings}; '
+                    f'fi'
+                )
+                subprocess.run(command, shell=True, check=True)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"{e.returncode} - {e.stderr}")
+            raise RuntimeError("Error while updating settings ..") from e
+
+def toggle_manual_barcode_read():
+    import re
+
+    path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
+    try:
+
+        if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+            s = import_settings()
+            fn = s.USER_SETTINGS_JSON_FILE
+            us = s.USER_SETTINGS
+            if not "MANUAL_BARCODE_INPUT" in us:
+                raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT' ")
+            new_val = not us['MANUAL_BARCODE_INPUT']
+            us['MANUAL_BARCODE_INPUT'] = new_val
+            save_user_settings(fn, us)
+            return new_val
+
+        with open(path_app_settings, 'r') as f:
+            content = f.read()
+
+            match = re.search(r'^(MANUAL_BARCODE_INPUT\s*=\s*)(True|False)', content, re.MULTILINE)
+            if not match:
+                raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT' ")
+
+            prefix = match.group(1)
+            current_value = match.group(2)
+            new_value_bool = not (current_value == 'True')
+            new_line = prefix + ("True" if new_value_bool else "False")
+            content_new = re.sub(r'^(MANUAL_BARCODE_INPUT\s*=\s*)(True|False)', new_line, content, flags=re.MULTILINE)
+
+            with open(path_app_settings, 'w') as f:
+                f.write(content_new)
+
+            return new_value_bool
+
+    except Exception as e:
+        raise e

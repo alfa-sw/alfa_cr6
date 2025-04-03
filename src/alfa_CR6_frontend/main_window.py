@@ -21,6 +21,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 
 from alfa_CR6_backend.globals import (
     get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP, DEFAULT_DEBUG_PAGE_PWD)
+from alfa_CR6_backend.base_application import BarCodeReader
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
@@ -270,6 +271,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         # ~ self.refill_5_lbl.mouseReleaseEvent = lambda event: self.show_reserve(4)
         # ~ self.refill_6_lbl.mouseReleaseEvent = lambda event: self.show_reserve(5)
 
+        self._set_manual_barcode_btn()
+
     def __init_icons(self):
 
         self.gray_icon = QPixmap(get_res("IMAGE", "gray.png"))
@@ -344,6 +347,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 action_frame_map[btn] = w
 
         self.action_frame_map = action_frame_map
+
+    def _set_manual_barcode_btn(self):
+        manual_barcode_btn = getattr(self.settings, "MANUAL_BARCODE_INPUT", False)
+        self.manual_barcode_btn.setEnabled(manual_barcode_btn)
 
     def set_warning_icon(self):
 
@@ -445,6 +452,41 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             elif "change_workspace" in btn_name:
                 if os.system("/opt/snowball_client.py display change_workspace_wm") != 0:
                     raise RuntimeError("command execution failure")
+
+            elif "manual_barcode" in btn_name:
+
+                import asyncio
+
+                def on_ok_callback():
+                    self.toggle_keyboard(on_off=False)
+                    head_A = QApplication.instance().get_machine_head_by_letter("A")
+                    sensor = head_A.status["jar_photocells_status"] & 0x001 and 1
+                    manual_barcode = self.input_dialog.get_content_text()
+
+                    if not sensor:
+                        message = tr_("Missing Jar on JAR_INPUT_ROLLER_PHOTOCELL")
+                        self.open_alert_dialog(args=message, show_cancel_btn=False)
+                        return
+
+                    if not manual_barcode:
+                        message = tr_("Empty Barcode")
+                        self.open_alert_dialog(args="Empty Barcode ...", show_cancel_btn=False)
+                        return
+
+                    barcode_reader = BarCodeReader(QApplication.instance().on_barcode_read, "", True, True)
+                    loop = asyncio.get_event_loop()
+                    t = barcode_reader.manual_read(manual_barcode)
+                    asyncio.ensure_future(t, loop=loop)
+
+                self.toggle_keyboard(on_off=True)
+                self.open_input_dialog(
+                    icon_name="SP_MessageBoxQuestion",
+                    message="MANUAL BARCODE INPUT:",
+                    content="",
+                    ok_cb=on_ok_callback,
+                    ok_on_enter=True,
+                    content_editable=True
+                )
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)

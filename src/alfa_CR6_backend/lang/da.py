@@ -212,6 +212,9 @@ D = {
 
     "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Hvis du foretrækker at aflæsse enkelte eller alle dåser manuelt,\ntryk på SLET for hver enkelt for at fjerne dem permanent\nfra maskinens gendannelseslogik.",
     "\nAutomation paused is required!": "\nDet er nødvendigt at sætte automatiseringen på pause!",
+    "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Vil du oprette en ny ordre med de ikke-doserede komponenter fra stregkode {}?\nHvis JA, tryk på 'Gendan gammel'",
+    "Clone New": "Klon ny",
+    "Recover Old": "Gendan gammel",
 
 }
 

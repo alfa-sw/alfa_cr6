@@ -1704,7 +1704,7 @@ RECOVERY</string>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="action_btn_group"/>
   <buttongroup name="service_btn_group"/>
+  <buttongroup name="action_btn_group"/>
  </buttongroups>
 </ui>

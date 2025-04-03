@@ -30,7 +30,7 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
 
 from alfa_CR6_backend.models import (Jar, Order, decompile_barcode)
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
-from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings)
+from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings, toggle_manual_barcode_read)
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 
 
@@ -148,35 +148,29 @@ class DebugPage:
             b.setToolTip(n[1])
             self.button_group.addButton(b)
 
-        for i, n in enumerate(
-            [
-                # ~ ("check\njar", "check jar from barcode"),
-                ("move_12_00", "deliver jar"),
-                ("freeze\ncarousel", "stop the movements of the jars, until unfreeze."),
-                ("unfreeze\ncarousel", "restar the movements of the jars."),
-                # ~ (
-                # ~ "LIFTL\nUP",
-                # ~ "send command UP to left lifter without waiting for any condition",
-                # ~ ),
-                # ~ (
-                # ~ "LIFTL\nDOWN",
-                # ~ "send command DOWN to left lifter without waiting for any condition",
-                # ~ ),
-                # ~ (
-                # ~ "LIFTR\nUP",
-                # ~ "send command UP to right lifter without waiting for any condition",
-                # ~ ),
-                # ~ (
-                # ~ "LIFTR\nDOWN",
-                # ~ "send command DOWN to right lifter without waiting for any condition",
-                # ~ ),
-                ("remote UI", "**"),
-                ("show\nnetwork", "**"),
-                ("show\nsettings", "**"),
-                ("minimize\nmain window", ""),
-                ("open URL\nin text bar", "open the URL in text bar at bottom."),
+        second_row_btns = [
+            ("move_12_00", "deliver jar"),
+            ("freeze\ncarousel", "stop the movements of the jars, until unfreeze."),
+            ("unfreeze\ncarousel", "restar the movements of the jars."),
+            ("remote UI", "**"),
+            ("show\nnetwork", "**"),
+            ("show\nsettings", "**"),
+            ("minimize\nmain window", ""),
+            ("open URL\nin text bar", "open the URL in text bar at bottom."),
+        ]
+        if os.getenv("DEV_DEBUG_PAGE", False) in ["1", "true"]:
+            dev_btns = [
+                ("clear\nanswers", "clear answers"),
+                ("clear\njars", "delete all the progressing jars"),
+                ("reset jar\ndb status", "reset all jar_status to NEW in db sqlite"),
+                (
+                    "delete\norders in db",
+                    "delelete all jars and all orders in db sqlite",
+                ),
             ]
-        ):
+            second_row_btns.extend(dev_btns)
+
+        for i, n in enumerate(second_row_btns):
 
             b = QPushButton(n[0], parent=self.buttons_frame)
             b.setGeometry(20 + i * 152, 65, 150, 60)
@@ -191,20 +185,10 @@ class DebugPage:
                 ("read\nbarcode", "simulate a bar code read"),
                 ("open order\ndialog", "**"),
                 ("view\norders", ""),
+                ("download KCC\nSpecific\nGravity file", "download KCC file with specific gravity lot info"),
                 ("clear list\nrecovery mode", ""),
+                ("enable/disable\nbarcode reader", ""),
             ]
-
-        if os.getenv("DEV_DEBUG_PAGE", False) in ["1", "true"]:
-            dev_btns = [
-                ("clear\nanswers", "clear answers"),
-                ("clear\njars", "delete all the progressing jars"),
-                ("reset jar\ndb status", "reset all jar_status to NEW in db sqlite"),
-                (
-                    "delete\norders in db",
-                    "delelete all jars and all orders in db sqlite",
-                ),
-            ]
-            third_row_btns.extend(dev_btns)
 
         for i, n in enumerate(third_row_btns):
 
@@ -474,6 +458,20 @@ class DebugPage:
         elif "clear list" in cmd_txt:
 
             app.restore_machine_helper.clear_list()
+
+        elif "enable/disable\nbarcode reader" in cmd_txt:
+            try:
+                toggle = toggle_manual_barcode_read()
+                msg = "Enabled manual barcode read" if toggle else "Disabled manual barcode read"
+                msg = msg + "\nApplication restart needed!"
+                app.main_window.open_alert_dialog(args=msg, title="INFO")
+
+            except Exception as e:
+                app.main_window.open_alert_dialog(args=str(e), title="ERROR")
+
+        elif "download KCC\nSpecific\nGravity file" in cmd_txt:
+            t = self._download_KCC_lot_info_file()
+            asyncio.ensure_future(t)
 
         else:
             app.run_a_coroutine_helper(cmd_txt)
