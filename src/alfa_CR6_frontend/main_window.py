@@ -259,6 +259,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.__init_dialogs()
         self.__init_icons()
 
+        self.home_page.recovery_btn.hide()
         self.set_warning_icon()
 
         self.showFullScreen()
