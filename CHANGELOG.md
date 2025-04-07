@@ -1,6 +1,19 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.6 branch
+
+### 1.6.0
+ - PR#148 - task RM#46 - implements jar recovery mode: in the event of a shutdown, it is possible to resume interrupted orders (except those that were dispensing)
+ - PR#149 - task RM#216 - improving jar recovery mode
+ - PR#151 - task RM#287 - refactoring popup Barcode Refill to enhance user experience
+ - PR#152 - task RM#234 - fixed the issue with the label creation popup not being dismissed immediately: every press of the OK button sent the command to generate labels.
+ - PR#152 - task RM#299 - added setting to show/hide purge all button.
+ - PR#152 - task RM#312 - added KCC QRCode refill logic using the refill popup.
+ - PR#152 - task RM#300 - added setting to show/hide copy/clone orders buttons.
+ - PR#152 - task RM#301 - added a manual barcode input mode (enabled via settings) that bypasses automatic scanning from the physical barcode reader, preventing machine downtime in case of a malfunction of it.
+ - PR#152 - task RM#327 - added Arabic language
+
 ## 1.5 branch
 
 ### 1.5.0.post3 - 2024-12-06
