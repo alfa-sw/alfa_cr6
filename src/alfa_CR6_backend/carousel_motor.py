@@ -13,8 +13,10 @@ import time
 import asyncio
 import traceback
 from functools import partial
+from typing import Optional
 
-from alfa_CR6_backend.globals import tr_
+
+from alfa_CR6_backend.globals import tr_, store_data_on_restore_machine_helper
 from alfa_CR6_backend.machine_head import DEFAULT_WAIT_FOR_TIMEOUT
 from alfa_CR6_backend.base_application import BaseApplication
 
@@ -24,6 +26,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     timer_01_02 = 0
     double_can_alert = False
     busy_head_A = False
+    running_recovery_mode = False
 
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
@@ -78,7 +81,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_condition(      # pylint: disable=too-many-arguments
             self, condition, timeout, show_alert=True,
-            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None):
+            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None
+    ) -> Optional[bool]:
 
         ret = None
         t0 = time.time()
@@ -144,6 +148,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_dispense_position_available(self, jar, head_letter, extra_check=None):
 
+        logging.warning(f'#### head_letter: {head_letter}')
+        logging.warning(f'#### self.machine_head_dict: {self.machine_head_dict}')
         m = self.get_machine_head_by_letter(head_letter)
 
         logging.warning(f"{m.name} jar:{jar}")
@@ -359,11 +365,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return r
 
-    async def move_01_02(self, jar=None):  # 'IN -> A'
+    async def move_01_02(self, jar=None, time_interval_check=True):  # 'IN -> A'
 
         logging.warning(f"j:{jar}")
 
         A = self.get_machine_head_by_letter("A")
+        logging.warning(f'>>> A: {A}')
 
         async def _move_can_to_A():
 
@@ -405,7 +412,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             logging.warning(f"j:{jar}, dt:{dt}, self.double_can_alert:{self.double_can_alert}, self.timer_01_02:{self.timer_01_02}")
 
-            if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL"):
+            if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL") and time_interval_check:
                 timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
 
                 if dt < timeout_ or self.double_can_alert:
@@ -417,10 +424,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             break
                     self.double_can_alert = False
                     # ~ r = await _move_can_to_A()
+                    await self.restore_machine_helper.async_remove_completed_jar_data(jar.barcode)
                     asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
 
             self.busy_head_A = False
 
+        await asyncio.sleep(0.2)
         return r
 
     async def move_02_03(self, jar=None):  # 'A -> B'
@@ -653,6 +662,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         if jar.status == "ERROR":
             r = True
+            store_data_on_restore_machine_helper(
+                self.restore_machine_helper,
+                jar,
+                machine_letter,
+                "done",
+                "order"
+            )
         else:
             nof_retry = 3
             cntr = 0
@@ -686,11 +702,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 json_properties["dispensation_outcomes"].append((m.name, outcome_))
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
 
-                self.update_jar_position(jar, machine_head=None, status="ERROR", pos=None)
+                self.update_jar_position(jar, machine_head=None, status="ERROR", pos=None, recovery_pos=machine_letter)
                 logging.warning(f"{jar.barcode} in ERROR.")
                 r = True
             else:
-                r = await m.do_dispense(jar)
+                r = await m.do_dispense(jar, self.restore_machine_helper)
                 logging.warning(f"{m.name}, j:{jar}.")
                 logging.debug(f"jar.json_properties:{jar.json_properties}.")
 
@@ -786,3 +802,352 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         await self.wait_for_jar_delivery(jar)
 
         return r
+
+    async def machine_recovery(self):
+
+        from sqlalchemy.orm.exc import NoResultFound
+        from alfa_CR6_backend.models import Order, Jar, decompile_barcode
+
+        heads_map = {
+            "IN": "A",
+            "IN_A": "A",
+            "A": "A",
+            "B": "B",
+            "C": "C",
+            "LIFTR_UP": "C",
+            "LIFTR_DOWN": "C",
+            "D": "D",
+            "E": "E",
+            "F": "F",
+            "LIFTL_DOWN": "F",
+            "LIFTL_UP": "F",
+        }
+        recovery_actions = {}
+
+        if self.n_of_active_heads == 6:
+
+            full_steps = [
+                "move_01_02", "dispense_step", "move_02_03",
+                "dispense_step", "move_03_04", "dispense_step",
+                "move_04_05", "move_05_06", "move_06_07",
+                "dispense_step", "move_07_08", "dispense_step",
+                "move_08_09", "dispense_step", "move_09_10",
+                "move_10_11", "move_11_12",
+            ]
+
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['B'] = full_steps[3:]
+            recovery_actions['C'] = full_steps[5:]
+            recovery_actions['LIFTR_UP'] = full_steps[7:]
+            recovery_actions['LIFTR_DOWN'] = full_steps[8:]
+            recovery_actions['D'] = full_steps[9:]
+            recovery_actions['E'] = full_steps[11:]
+            recovery_actions['F'] = full_steps[13:]
+            recovery_actions['LIFTL_DOWN'] = full_steps[15:]
+            recovery_actions['LIFTL_UP'] = full_steps[16:]
+
+        if self.n_of_active_heads == 4:
+
+            full_steps = [
+                "move_01_02", "dispense_step", "move_02_04", "dispense_step", "move_04_05",
+                "move_05_06", "move_06_07", "dispense_step", "move_07_09", "dispense_step",
+                "move_09_10", "move_10_11", "move_11_12",
+            ]
+
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['C'] = full_steps[3:]
+            recovery_actions['LIFTR_UP'] = full_steps[5:]
+            recovery_actions['LIFTR_DOWN'] = full_steps[6:]
+            recovery_actions['D'] = full_steps[7:]
+            recovery_actions['F'] = full_steps[9:]
+            recovery_actions['LIFTL_DOWN'] = full_steps[11:]
+            recovery_actions['LIFTL_UP'] = full_steps[12:]
+
+        parametri_movimenti = {
+            "move_01_02": {'time_interval_check': False},
+        }
+
+        if self.running_recovery_mode:
+            logging.warning("Only one machine recovery process can be executed at a time ...")
+            return
+
+        jars_to_restore = await self.restore_machine_helper.async_read_data()
+        logging.debug(f'jars_to_restore --> {dict(jars_to_restore)}')
+
+        if self.carousel_frozen:
+            self.freeze_carousel(False)
+
+        for j_code, jv in jars_to_restore.items():
+            logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
+            logging.debug(f"jv: {jv}")
+            self.running_recovery_mode = True
+
+            try:
+
+                order_nr, index = decompile_barcode(j_code)
+                q = self.db_session.query(Jar).filter(Jar.index == index)
+                q = q.join(Order).filter((Order.order_nr == order_nr))
+                _jar = q.one()
+
+                last_jar_known_pos = jv.get("pos")
+                jar_recovery_actions = recovery_actions[last_jar_known_pos]
+
+                head_letter = heads_map[last_jar_known_pos]
+                current_head = self.get_machine_head_by_letter(head_letter)
+
+                def skip_condition(jv, _jar):
+                    res = False
+                    if jv.get("dispensation") in ("ongoing", "dispensation_failure"):
+                        _jar.status = "ERROR"
+                        _jar.description = "Uncompleted Jar Order from previous machine shutdown"
+                        self.db_session.commit()
+                        res = True
+                    return res
+
+                def determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        jar_recovery_position=None,
+                        curr_position_senson="JAR_DISPENSING_POSITION_PHOTOCELL",
+                        next_position_sensor=None,
+                        next_head_letter=None
+                ):
+                    max_attempts = 30
+                    delay = 1
+                    curr_head_jar_sts = None
+
+                    for attempt in range(1, max_attempts + 1):
+                        curr_head_jar_sts = current_head.status.get("jar_photocells_status", None)
+                        if curr_head_jar_sts is not None:
+                            break
+                        else:
+                            time.sleep(delay)
+
+                    if curr_head_jar_sts is None:
+                        raise RuntimeError("Recovery Mode: Timeout retrieving machine status! Retry again...")
+
+                    curr_head_jar_engagged_photocell = current_head.check_jar_photocells_status(
+                        curr_head_jar_sts, curr_position_senson
+                    )
+
+                    next_photocell_status = None
+                    if next_position_sensor and next_head_letter:
+                        next_head = self.get_machine_head_by_letter(next_head_letter)
+                        next_head_jar_sts = next_head.status.get("jar_photocells_status", {})
+                        next_photocell_status = next_head.check_jar_photocells_status(
+                            next_head_jar_sts,
+                            next_position_sensor
+                        )
+
+                    if curr_head_jar_engagged_photocell:
+                        if (
+                            skip_condition(jv, _jar)
+                            or jv.get("dispensation") == "done"
+                        ):
+                            return jar_recovery_actions[1:], current_head.name
+
+                        # special checks
+                        if jar_recovery_position == "IN_A":
+                            jar_recovery_actions = jar_recovery_actions[1:]
+
+                        if jar_recovery_position == "LIFTR_UP":
+                            if next_photocell_status:
+                                jar_recovery_actions = jar_recovery_actions[1:]
+
+                        if jar_recovery_position == "LIFTL_DOWN":
+                            logging.warning(f"POS: LIFTL_DOWN | lifter_l_up_photocell -> {next_photocell_status}")
+                            if next_photocell_status:
+                                jar_recovery_actions = jar_recovery_actions[1:]
+
+                        return jar_recovery_actions, current_head.name
+
+                    else:
+                        if not next_head_letter:
+                            return jar_recovery_actions, current_head.name
+
+                        logging.warning(f"next_jar_engagged_photocell: {next_position_sensor} -> {next_photocell_status}")
+                        if next_photocell_status:
+                            if jar_recovery_position == "LIFTR_DOWN":
+                                return jar_recovery_actions[1:], current_head.name
+
+                            return jar_recovery_actions[2:], next_head_letter
+
+                        if jar_recovery_position in ("LIFTR_DOWN", "LIFTL_UP"):
+
+                            return jar_recovery_actions, current_head.name
+
+                        return jar_recovery_actions[1:], current_head.name
+
+                determine_actions_map = {
+                    'IN': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar, jar_recovery_position="IN_A"
+                    ),
+                    'IN_A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar, jar_recovery_position="IN_A"
+                    ),
+                    'A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
+                        next_head_letter=("C" if self.n_of_active_heads == 4 else "B")
+                    ),
+                    'B': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
+                        next_head_letter="C"
+                    ),
+                    'C': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_LOAD_LIFTER_ROLLER_PHOTOCELL',
+                        next_head_letter="C"
+                    ),
+                    'LIFTR_UP': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        jar_recovery_position="LIFTR_UP",
+                        curr_position_senson="JAR_LOAD_LIFTER_ROLLER_PHOTOCELL",
+                        next_position_sensor='LOAD_LIFTER_DOWN_PHOTOCELL',
+                        next_head_letter="D"
+                    ),
+                    'LIFTR_DOWN': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        jar_recovery_position="LIFTR_DOWN",
+                        curr_position_senson="JAR_LOAD_LIFTER_ROLLER_PHOTOCELL",
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
+                        next_head_letter="D"
+                    ),
+                    'D': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
+                        next_head_letter=("F" if self.n_of_active_heads == 4 else "E")
+                    ),
+                    'E': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
+                        next_head_letter="F"
+                    ),
+                    'F': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL',
+                        next_head_letter="F"
+                    ),
+                    'LIFTL_DOWN': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        jar_recovery_position="LIFTL_DOWN",
+                        curr_position_senson="JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
+                        next_position_sensor='UNLOAD_LIFTER_UP_PHOTOCELL',
+                        next_head_letter="F"
+                    ),
+                    'LIFTL_UP': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
+                        jar_recovery_position="LIFTL_UP",
+                        curr_position_senson="JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL",
+                        next_position_sensor='JAR_OUTPUT_ROLLER_PHOTOCELL',
+                        next_head_letter="F"
+                    )
+                }
+
+                jar_recovery_actions, deduced_position = determine_actions_map[last_jar_known_pos](jv, jar_recovery_actions, current_head, _jar)
+
+                logging.warning(f"jar_recovery_actions --> {jar_recovery_actions}")
+                
+                _task = asyncio.create_task(
+                    self.run_recovery_actions(j_code, _jar, jar_recovery_actions, parametri_movimenti, deduced_position)
+                )
+                # __jar_runners attributo 'name mangled'
+                self._BaseApplication__jar_runners[j_code] = {
+                    "jar": _jar,
+                    "freeze": False,
+                    "task": _task}
+
+                await _task
+
+            except NoResultFound:
+                _jar = None
+                logging.error(f"No Jar found with code {j_code}")
+
+            except RuntimeError as e:
+                error_message = str(e)
+                self.running_recovery_mode = False
+                self.main_window.open_alert_dialog(error_message)
+                return
+
+            except asyncio.CancelledError:
+                logging.error(f"Task {_task} terminated or cancelled")
+
+            await asyncio.sleep(0.1)
+
+            logging.warning(f'_jar: {_jar}')
+
+        while True:
+            if not self._BaseApplication__jar_runners:
+                self.main_window.show_carousel_recovery_mode(False)
+                self.running_recovery_mode = False
+                self.ready_to_read_a_barcode=True
+                break
+            await asyncio.sleep(1)
+
+    async def run_recovery_actions(
+            self, j_code, _jar, jar_recovery_actions,
+            parametri_movimenti, deduced_position, sleeptime=1
+    ):
+        logging.warning(f'Inizio recupero per {j_code}')
+
+        for count, r_ac in enumerate(jar_recovery_actions):
+
+            logging.warning(f'Current Recovery action: "{r_ac}"')
+            carousel_action = getattr(self, r_ac, None)
+
+            if not carousel_action:
+                logging.warning(f'CarouselMotor has not attribute "{r_ac}" ... Skipping current iteration')
+                continue
+
+            parametri = {'jar': _jar}
+            if r_ac in parametri_movimenti:
+                parametri_specifici = parametri_movimenti[r_ac]
+                parametri.update(parametri_specifici)
+
+            if "dispense" in r_ac:
+                data = await self.restore_machine_helper.async_read_data()
+                jar_dispensation_info = data.get(j_code, {}).get("dispensation", None)
+                jar_last_pos = data.get(j_code, {}).get('pos')
+                pos_ = deduced_position[0] if count == 0 else jar_last_pos
+                logging.debug(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {pos_}")
+                carousel_action = partial(self.dispense_step, pos_)
+
+            try:
+                retry_counter = 0
+                while True:
+                    await self.wait_for_carousel_not_frozen(freeze=False, msg="")
+                    r = await carousel_action(**parametri)
+                    await asyncio.sleep(sleeptime)
+                    if not r:
+                        retry_counter += 1
+                        msg_ = tr_('barcode:{} error in {}. I will retry.').format(j_code, f"\n{r_ac}\n") + f" ({retry_counter})"
+                        await self.wait_for_carousel_not_frozen(True, msg_)
+                    else:
+                        if "move_11_12" in r_ac:
+                            await self.restore_machine_helper.async_remove_completed_jar_data(j_code)
+                            event_args = {
+                                "name": "MACHINE RECOVERY",
+                                "level": "INFO",
+                                "severity": "",
+                                "source": "run_recovery_actions",
+                                "description": f'Recovery completed for JAR {j_code} ({_jar.status})'
+                            }
+                            self.insert_db_event(**event_args)
+                            logging.warning(f'Recovery completed for JAR {j_code}')
+                        break
+
+            except Exception as excp:
+                logging.error(excp)
+                loop = asyncio.get_running_loop()
+                event_args = {
+                    "name": "MACHINE RECOVERY",
+                    "level": "ERROR",
+                    "severity": "",
+                    "source": "run_recovery_actions",
+                    "description": f'Recovery action "{r_ac}" exception: {excp}'
+                }
+                self.insert_db_event(**event_args)

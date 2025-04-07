@@ -216,6 +216,12 @@ D = {
     "Status {} is not allowed for dispensing.": "Status {} is not allowed for dispensing.",
     "Problem during the start of dispensing. Head status not in standby.": "Problem during the start of dispensing. Head status not in standby.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Jar volume {}(cc) < Order volume {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic",
+    "\nAutomation paused is required!": "\nAutomation paused is required!",
+    "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'",
+    "Clone New": "Clone New",
+    "Recover Old": "Recover Old",
 }
 
 D.update(error_kr.D)

@@ -205,6 +205,12 @@ D = {
     "Status {} is not allowed for dispensing.": "El estado {} no está permitido para dispensar.",
     "Problem during the start of dispensing. Head status not in standby.": "Problema durante el inicio de la dispensación. El estado del cabezal no está en listo.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Capacidad del bote {}(cc) < Volumen del pedido {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Si prefieres descargar manualmente algunos o todos los botes,\npresiona DELETE para cada uno para eliminarlos permanentemente\nde la lógica de recuperación de la máquina.",
+    "\nAutomation paused is required!": "\n¡Se requiere una pausa de la automatización!",
+    "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "¿Desea crear un nuevo pedido con los componentes no dispensados del código de barras {}?\nSi SÍ, pulse 'Recuperar'",
+    "Clone New": "Clonar",
+    "Recover Old": "Recuperar",
 }
 
 

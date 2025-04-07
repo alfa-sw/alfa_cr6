@@ -199,7 +199,14 @@ D = {
     "Jar not detected from the ultrasonic sensor under nozzle.": "Czujnik ultradźwiękowy nie wykrył pojemnika pod dyszą.",
     "Status {} is not allowed for dispensing.": "Status {} nie pozwala na dozowanie.",
     "Problem during the start of dispensing. Head status not in standby.": "Problem w trakcie rozpoczęcia dozowania. Głowica nie znajduje się w stanie GOTOWOŚĆ.",
-    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Objętość pojemnika {}(cc) < Objętość zlecenia {:.3f}(cc)."
+    "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Objętość pojemnika {}(cc) < Objętość zlecenia {:.3f}(cc).",
+
+    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Jeśli wolisz ręcznie wyładować niektóre lub wszystkie pojemniki,\nnaciśnij DELETE dla każdego, aby trwale je usunąć\nz logiki odzyskiwania maszyny.",
+    "\nAutomation paused is required!": "\nWymagane jest wstrzymanie automatyzacji!",
+    "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Czy chcesz utworzyć nowe zamówienie z niewydanymi składnikami z kodu kreskowego {}?\nJeśli TAK, naciśnij 'Przywróć stare'",
+    "Clone New": "Sklonuj nowe",
+    "Recover Old": "Przywróć stare",
+
 }
 
 
