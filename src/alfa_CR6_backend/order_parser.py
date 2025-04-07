@@ -458,27 +458,38 @@ weight:{RealWeight}
     def parse_akzo_azure_json(content):
 
         properties = {}
+        unit = content['mix']['shotUnit']
         properties['extra_lines_to_print'] = []
         properties['meta'] = {
             'canVolume': content['canVolume'],
             'status': content['status'],
-            'shotUnit': content['mix']['shotUnit'],
+            'shotUnit': unit,
             'mixName': content['mix']['name'],
             'productName': content['mix']['productName'],
             'id': content['id']
         }
 
+        if unit != "gram":
+            properties['meta']['error'] = "unit is not gram"
+
         ingredients = []
+        total_amount = 0.
         for i in content['mix']['components']:
             ingr = {}
             if i.get("code") is not None:
                 ingr["pigment_name"] = i.get("code")
                 ingr["description"] = i.get("description")
-                ingr["weight(g)"] = round(float(i.get("desiredAmount")), 4)
+                amount = round(float(i.get("desiredAmount")), 4)
+                ingr["weight(g)"] = amount
                 ingredients.append(ingr)
-        properties["ingredients"]=ingredients
+                total_amount = total_amount + amount
 
-        # logging.warning(f"properties: {properties}")
+        properties["extra_lines_to_print"] = [
+            properties['meta']['productName'],
+            properties['meta']['mixName'],
+            f'{total_amount}({unit})'
+        ]
+        properties["ingredients"] = ingredients
         return properties
 
     @staticmethod
