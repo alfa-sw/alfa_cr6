@@ -34,6 +34,27 @@
     <string>url lbl</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="devtools_btn">
+   <property name="geometry">
+    <rect>
+     <x>1780</x>
+     <y>2</y>
+     <width>120</width>
+     <height>26</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background-color: transparent; border: none; color: transparent;</string>
+   </property>
+   <property name="text">
+    <string></string>
+   </property>
+  </widget>
   <widget class="QLabel" name="refill_label">
    <property name="geometry">
     <rect>
