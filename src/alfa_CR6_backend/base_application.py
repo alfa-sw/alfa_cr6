@@ -336,6 +336,10 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                 # filter out reading events with the same value, in the time interval of 5 sec
                 pass
             else:
+                if not self.is_valid_alfa_barcode(buffer):
+                    logging.error(f"not valid ALFA barcode! buffer:{buffer}")
+                    return
+
                 if self.barcode_handler:
                     try:
                         ret = await self.barcode_handler(buffer)
@@ -378,8 +382,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                             continue
                         if keyEvent.keycode == "KEY_ENTER":
                             buffer = buffer[:self.BARCODE_LEN]
-                            if self.is_valid_alfa_barcode(buffer):
-                                await self.__on_buffer_read(buffer)
+                            await self.__on_buffer_read(buffer)
                             buffer = ""
                         else:
                             filtered_ch_ = self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode)
