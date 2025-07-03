@@ -174,7 +174,8 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
                 def get_position_index(item):
                     return ordine_pos.index(item[1]["pos"])
 
-                sorted_items = sorted(data.items(), key=get_position_index)
+                valid_items = [(k, v) for k, v in data.items() if v.get("pos") is not None and v.get("pos") in ordine_pos]
+                sorted_items = sorted(valid_items, key=get_position_index)
                 sorted_data = OrderedDict(sorted_items) 
                 
                 return sorted_data
@@ -217,7 +218,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self.write_data, new_data)
 
-    async def async_remove_completed_jar_data(self, jcode):
+    async def async_remove_jar_data(self, jcode):
 
         data = await self.async_read_data()
 
@@ -230,7 +231,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
 
         await self.async_write_data(data)
 
-    def remove_completed_jar_data(self, jcode):
+    def remove_jar_data(self, jcode):
         data = dict(self.read_data())
 
         if jcode not in data:
@@ -1226,6 +1227,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 del j
                 logging.warning(f"deleted:{barcode}")
 
+                if self.restore_machine_helper:
+                    self.restore_machine_helper.remove_jar_data(barcode)
+
                 self.ws_server.refresh_can_list()
 
         except Exception as e:  # pylint: disable=broad-except
@@ -1366,7 +1370,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     jar_position = pos if pos is not None else recovery_pos
                     self.restore_machine_helper.store_jar_data(jar, jar_position)
                     if jar_position == "OUT":
-                        self.restore_machine_helper.remove_completed_jar_data(jar.barcode)
+                        self.restore_machine_helper.remove_jar_data(jar.barcode)
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
