@@ -1071,3 +1071,40 @@ class HomePageFourHeads(HomePage):
 
     container_presence_3_label = None
     container_presence_4_label = None
+
+class HomePageCR3Heads(HomePage):
+
+    ui_file_name = "home_page_three_heads.ui"
+    help_file_name = ''
+
+    action_02_btn = None
+    action_04_btn = None
+    action_06_btn = None
+
+    STEP_06_label = None
+    STEP_07_label = None
+    STEP_08_label = None
+    STEP_09_label = None
+    STEP_10_label = None
+    STEP_11_label = None
+    STEP_12_label = None
+
+    refill_2_lbl = None
+    refill_4_lbl = None
+    refill_6_lbl = None
+
+    expiry_2_label = None
+    expiry_4_label = None
+    expiry_6_label = None
+
+    reserve_2_label = None
+    reserve_4_label = None
+    reserve_6_label = None
+
+    service_2_btn = None
+    service_4_btn = None
+    service_6_btn = None
+
+    container_presence_2_label = None
+    container_presence_4_label = None
+    container_presence_6_label = None
