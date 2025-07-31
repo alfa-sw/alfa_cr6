@@ -424,7 +424,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             break
                     self.double_can_alert = False
                     # ~ r = await _move_can_to_A()
-                    await self.restore_machine_helper.async_remove_completed_jar_data(jar.barcode)
+                    await self.restore_machine_helper.async_remove_jar_data(jar.barcode)
                     asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
 
             self.busy_head_A = False
@@ -1128,7 +1128,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         await self.wait_for_carousel_not_frozen(True, msg_)
                     else:
                         if "move_11_12" in r_ac:
-                            await self.restore_machine_helper.async_remove_completed_jar_data(j_code)
+                            await self.restore_machine_helper.async_remove_jar_data(j_code)
                             event_args = {
                                 "name": "MACHINE RECOVERY",
                                 "level": "INFO",

@@ -308,8 +308,37 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         self.webengine_view.loadProgress.connect(self.__on_load_progress)
         self.webengine_view.loadFinished.connect(self.__on_load_finish)
 
-        self.webengine_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
+        if self.splitter is None:
+            self._setup_devtools_splitter()
+        else:
+            self.webengine_view.setParent(self.splitter)
+            self.splitter.replaceWidget(0, self.webengine_view)
+
+        if self.splitter is None:
+            self.webengine_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
+
         self.webengine_view.show()
+
+    def _setup_devtools_splitter(self):
+
+        try:
+            from PyQt5.QtWidgets import QSplitter
+            from PyQt5.QtCore import Qt
+            self.splitter = QSplitter(Qt.Horizontal, self)
+            self.splitter.setContentsMargins(0, 0, 0, 0)
+
+            # Posiziona lo splitter sotto la URL bar (come era la webengine_view)
+            # URL bar è a (4, 2, 1900, 26), quindi splitter inizia da y=28
+            self.splitter.setGeometry(8, 28, 1904, 960)
+
+            self.webengine_view.setParent(self.splitter)
+            self.splitter.addWidget(self.webengine_view)
+
+            self.splitter.show()
+            logging.info("DevTools splitter setup completed (DevTools will be created on demand)")
+
+        except Exception as e:
+            logging.error(f"Error setting up DevTools splitter: {e}")
 
     def __init__(self, *args, **kwargs):
 
@@ -324,6 +353,14 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             self._webengine_page = SingleWebEnginePage(self)
 
         self.url_lbl.mouseReleaseEvent = lambda event: self.__on_click_url_label()
+
+        self.devtools_view = None
+        self.devtools_page = None
+        self.splitter = None
+
+        devtools_btn = getattr(self, 'devtools_btn', None)
+        if devtools_btn:
+            devtools_btn.clicked.connect(self.toggleDevTools)
 
         self.__load_progress = 0
         self.start_load = tr_("start load:")
@@ -362,7 +399,83 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         self.url_lbl.setText(
             '<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
 
+    def toggleDevTools(self):
+
+        try:
+            if not self.splitter:
+                logging.warning("Splitter not initialized yet - call ignored")
+                return
+
+            if self.devtools_view and self.devtools_page:
+                logging.info("Destroying DevTools...")
+                self._destroy_devtools()
+                logging.info("DevTools destroyed and hidden")
+            else:
+                logging.info("Creating DevTools on demand...")
+                self._create_devtools()
+                logging.info("DevTools created and shown")
+
+        except Exception as e:
+            logging.error(f"Error toggling DevTools: {e}")
+            if hasattr(self, 'main_window') and hasattr(self.main_window, 'open_alert_dialog'):
+                self.main_window.open_alert_dialog(f"Error toggling DevTools:\n{e}", title="Error")
+
+    def _create_devtools(self):
+        """Create DevTools on demand"""
+        try:
+            self.devtools_view = QWebEngineView(self.splitter)
+            self.devtools_page = QWebEnginePage(self.devtools_view)
+            self.devtools_view.setPage(self.devtools_page)
+
+            self.splitter.addWidget(self.devtools_view)
+
+            if self.webengine_view and self.webengine_view.page():
+                if hasattr(self.webengine_view.page(), 'setDevToolsPage'):
+                    self.webengine_view.page().setDevToolsPage(self.devtools_page)
+                    logging.info("DevTools relationship established using setDevToolsPage")
+                elif hasattr(self.devtools_page, 'setInspectedPage'):
+                    self.devtools_page.setInspectedPage(self.webengine_view.page())
+                    logging.info("DevTools relationship established using setInspectedPage")
+
+            self.devtools_view.show()
+            self.splitter.setSizes([600, 400])  # 60% browser, 40% DevTools
+
+        except Exception as e:
+            logging.error(f"Error creating DevTools: {e}")
+            raise
+
+    def _destroy_devtools(self):
+
+        try:
+
+            if self.webengine_view and self.webengine_view.page():
+                if hasattr(self.webengine_view.page(), 'setDevToolsPage'):
+                    self.webengine_view.page().setDevToolsPage(None)
+                elif self.devtools_page and hasattr(self.devtools_page, 'setInspectedPage'):
+                    self.devtools_page.setInspectedPage(None)
+
+            if self.devtools_view:
+                self.devtools_view.setParent(None)
+                self.devtools_view.deleteLater()
+                self.devtools_view = None
+
+            if self.devtools_page:
+                self.devtools_page.deleteLater()
+                self.devtools_page = None
+
+        except Exception as e:
+            logging.error(f"Error destroying DevTools: {e}")
+            raise
+
     def clean(self):
+        # Clean up DevTools if they exist
+        if hasattr(self, 'devtools_view') and self.devtools_view:
+            try:
+                self._destroy_devtools()
+                logging.info("DevTools cleaned up")
+            except:
+                pass
+
         if self._webengine_page:
             del self._webengine_page
 
