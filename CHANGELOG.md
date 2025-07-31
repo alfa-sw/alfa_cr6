@@ -1,6 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.7 branch
+
+### 1.7.0
+ - PR#___ - task RM#366, RM#350 - improved recovery mode's logic to avoid data inconsistencies in the JSON file (JARs deleted but still present in the file, or JARs with unknown locations)
+ - PR#___ - task RM#369 - added the DevTools component on demand to QTWebPages.
+ - Improved barcode reader logic to further reduce spurious event readings. 
+
 ## 1.6 branch
 
 ### 1.6.0
