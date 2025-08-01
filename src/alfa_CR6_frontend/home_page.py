@@ -1080,6 +1080,10 @@ class HomePageCR3Heads(HomePage):
     action_02_btn = None
     action_04_btn = None
     action_06_btn = None
+    action_07_btn = None
+    action_08_btn = None
+    action_09_btn = None
+    action_10_btn = None
 
     STEP_06_label = None
     STEP_07_label = None
@@ -1108,3 +1112,6 @@ class HomePageCR3Heads(HomePage):
     container_presence_2_label = None
     container_presence_4_label = None
     container_presence_6_label = None
+
+    unload_lifter_down_label = None
+    unload_lifter_up_label = None

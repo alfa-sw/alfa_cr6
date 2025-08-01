@@ -153,35 +153,6 @@
     <string notr="true">action_btn_group</string>
    </attribute>
   </widget>
-  <widget class="QPushButton" name="deliver_jar_btn">
-   <property name="geometry">
-    <rect>
-     <x>60</x>
-     <y>650</y>
-     <width>171</width>
-     <height>91</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="icon">
-    <iconset>
-     <normaloff>../images/arrow-red.png</normaloff>../images/arrow-red.png</iconset>
-   </property>
-   <property name="iconSize">
-    <size>
-     <width>120</width>
-     <height>60</height>
-    </size>
-   </property>
-   <property name="flat">
-    <bool>true</bool>
-   </property>
-   <attribute name="buttonGroup">
-    <string notr="true">action_btn_group</string>
-   </attribute>
-  </widget>
   <widget class="QPushButton" name="action_01_btn">
    <property name="geometry">
     <rect>
@@ -541,8 +512,8 @@
   <widget class="QLabel" name="STEP_05_label">
    <property name="geometry">
     <rect>
-     <x>1680</x>
-     <y>380</y>
+     <x>1690</x>
+     <y>460</y>
      <width>85</width>
      <height>85</height>
     </rect>
@@ -557,8 +528,8 @@
   <widget class="QLabel" name="STEP_04_label">
    <property name="geometry">
     <rect>
-     <x>1430</x>
-     <y>370</y>
+     <x>1400</x>
+     <y>460</y>
      <width>85</width>
      <height>85</height>
     </rect>
@@ -759,7 +730,7 @@
 </string>
    </property>
    <property name="text">
-    <string>3 (B)</string>
+    <string>2 (B)</string>
    </property>
    <property name="scaledContents">
     <bool>true</bool>
@@ -816,7 +787,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="expiry_3_label">
+  <widget class="QLabel" name="expiry_5_label">
    <property name="geometry">
     <rect>
      <x>1060</x>
@@ -835,7 +806,7 @@
     <bool>true</bool>
    </property>
   </widget>
-  <widget class="QLabel" name="expiry_5_label">
+  <widget class="QLabel" name="expiry_3_label">
    <property name="geometry">
     <rect>
      <x>1500</x>
@@ -962,7 +933,6 @@ RECOVERY</string>
   <zorder>service_5_btn</zorder>
   <zorder>service_0_btn</zorder>
   <zorder>feed_jar_btn</zorder>
-  <zorder>deliver_jar_btn</zorder>
   <zorder>action_01_btn</zorder>
   <zorder>action_02_btn</zorder>
   <zorder>action_03_btn</zorder>
@@ -991,8 +961,8 @@ RECOVERY</string>
   <zorder>head_id_3_lbl</zorder>
   <zorder>head_id_5_lbl</zorder>
   <zorder>expiry_1_label</zorder>
-  <zorder>expiry_3_label</zorder>
   <zorder>expiry_5_label</zorder>
+  <zorder>expiry_3_label</zorder>
   <zorder>lbl_recovery</zorder>
   <zorder>recovery_info_btn</zorder>
   <zorder>recovery_btn</zorder>
@@ -1001,7 +971,7 @@ RECOVERY</string>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
+  <buttongroup name="service_btn_group"/>
  </buttongroups>
 </ui>

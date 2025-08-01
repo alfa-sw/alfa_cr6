@@ -14,6 +14,7 @@ import asyncio
 import traceback
 from functools import partial
 from typing import Optional
+import os
 
 
 from alfa_CR6_backend.globals import tr_, store_data_on_restore_machine_helper
@@ -446,18 +447,25 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def move_04_05(self, jar=None):  # 'C -> UP'
 
-        D = self.get_machine_head_by_letter("D")
+        machine_variant = os.getenv('MACHINE_VARIANT', None)
+        in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
         C = self.get_machine_head_by_letter("C")
-
-        r = await self.wait_for_load_lifter_is_up(jar)
+        r = True
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            D = self.get_machine_head_by_letter("D")
+            r = await self.wait_for_load_lifter_is_up(jar)
 
         if r:
             def condition():
-                flag = not D.status.get('crx_outputs_status', 0x0) & 0x02
-                flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x01
+                if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+                    flag = not D.status.get('crx_outputs_status', 0x0) & 0x02
+                    flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x01
+                else:
+                    flag = not C.status.get('crx_outputs_status', 0x0) & 0x01
                 flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
                 flag = flag and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
-                flag = flag and D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+                if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+                    flag = flag and D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
                 return flag
 
             r = await self.wait_for_condition(
@@ -866,6 +874,20 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             recovery_actions['F'] = full_steps[9:]
             recovery_actions['LIFTL_DOWN'] = full_steps[11:]
             recovery_actions['LIFTL_UP'] = full_steps[12:]
+
+        if self.n_of_active_heads == 3:
+
+            full_steps = [
+                "move_01_02", "dispense_step", "move_02_03",
+                "dispense_step", "move_03_04", "dispense_step",
+                "move_04_05",
+            ]
+
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['B'] = full_steps[3:]
+            recovery_actions['C'] = full_steps[5:]
 
         parametri_movimenti = {
             "move_01_02": {'time_interval_check': False},
