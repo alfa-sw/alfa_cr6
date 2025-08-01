@@ -17,6 +17,7 @@ import traceback
 import copy
 import random
 import asyncio
+import aiohttp
 from datetime import datetime
 from functools import partial
 
@@ -38,7 +39,8 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QDialog,
     QHBoxLayout,
-    QDialogButtonBox
+    QDialogButtonBox,
+    QTextBrowser
 )
 
 from alfa_CR6_backend.models import Order, Jar
@@ -1020,3 +1022,143 @@ class RefillDialog(BaseDialog):
             self.unit_label.setText(unit)
 
         self.show()
+
+
+class PackageSizesDialog(BaseDialog):
+
+    ui_file_name = "package_sizes_dialog.ui"
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.overlay = None
+
+        self.package_table.setColumnCount(3)
+        self.package_table.setHorizontalHeaderLabels([tr_("Nome"), tr_("Size"), tr_("Label")])
+
+        self.package_table.horizontalHeader().setVisible(True)
+        self.package_table.horizontalHeader().setStyleSheet("""
+            QHeaderView::section {
+                background-color: #E0E0E0;
+                padding: 4px;
+                border: 1px solid #999999;
+                font-weight: bold;
+                font-size: 24px;
+            }
+        """)
+
+        # Set font size for table content
+        self.package_table.setStyleSheet("""
+            QTableWidget {
+                background-color: #AAFFFFFF;
+                font-size: 20px;
+            }
+            QTableWidget::item {
+                padding: 4px;
+                font-size: 20px;
+            }
+        """)
+
+        self.title_lbl.setStyleSheet("""
+            QLabel {
+                font-size: 26px;
+            }
+        """)
+
+        self.ok_button.hide()
+        self.esc_button.clicked.connect(self.hide)
+
+        self._load_package_data_sync()
+
+    def __set_row(self, row, package):
+
+        name = package.get("name", "N/A")
+        size = package.get("size", "N/A")
+        description = package.get("description", "N/A")
+
+        self.package_table.setItem(row, 0, QTableWidgetItem(str(name)))
+        self.package_table.setItem(row, 1, QTableWidgetItem(str(size)))
+        self.package_table.setItem(row, 2, QTableWidgetItem(str(description)))
+
+    def __show_error_in_table(self, error_msg, font_size=18):
+
+        self.package_table.setColumnCount(1)
+        self.package_table.setRowCount(1)
+        self.package_table.horizontalHeader().setVisible(False)
+
+        item = QTableWidgetItem(error_msg)
+        font = QFont()
+        font.setPointSize(font_size)
+        font.setBold(True)
+        item.setFont(font)
+
+        item.setTextAlignment(Qt.AlignCenter)
+        self.package_table.setItem(0, 0, item)
+        self.package_table.resizeRowsToContents()
+
+    def _load_package_data_sync(self):
+
+        app = QApplication.instance()
+
+        machine_head = None
+        for head in app.machine_head_dict.values():
+            if head:
+                machine_head = head
+                break
+
+        asyncio.ensure_future(self._async_load_package_data(machine_head))
+
+    async def _async_load_package_data(self, machine_head):
+
+        try:
+
+            ret = await machine_head.call_api_rest("apiV1/package", "GET", {}, 1.5)
+            logging.warning(f"ret -> {ret}")
+
+            if not ret or not ret.get("objects"):
+                error_msg = "HEAD A(1) offline: cannot retrieve package infos"
+                self.__show_error_in_table(error_msg)
+                return
+
+            packages = ret.get("objects", [])
+            self.package_table.setRowCount(len(packages))
+
+            for row, package in enumerate(packages):
+                self.__set_row(row, package)
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            error_msg = f"Errore nel caricamento dei dati: {str(e)}"
+            self.__show_error_in_table(error_msg)
+
+    def _create_overlay(self):
+
+        if not hasattr(self, 'overlay'):
+            self.overlay = None
+
+        if self.parent():
+            self.overlay = QWidget(self.parent())
+            self.overlay.setStyleSheet("background-color: rgba(0, 0, 0, 50);")
+            self.overlay.resize(self.parent().size())
+            self.overlay.move(0, 0)
+            self.overlay.show()
+            self.overlay.raise_()
+
+            # Make sure dialog is above overlay
+            self.raise_()
+
+    def _remove_overlay(self):
+        if hasattr(self, 'overlay') and self.overlay:
+            self.overlay.hide()
+            self.overlay.deleteLater()
+            self.overlay = None
+
+    def show_dialog(self):
+        self._create_overlay()
+        self.show()
+        self.raise_()  # Ensure dialog is on top
+        return self
+
+    def hide(self):
+        self._remove_overlay()
+        super().hide()
