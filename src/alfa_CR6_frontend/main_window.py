@@ -750,7 +750,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def open_alert_dialog(  # pylint: disable=too-many-arguments
             self, args, title="ALERT", fmt=None,
             callback=None, cb_args=None, hp_callback=None,
-            visibility=1, show_cancel_btn=True
+            visibility=1, show_cancel_btn=True, traceback=None
     ):
 
         if fmt is not None:
@@ -759,7 +759,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         else:
             msg = str(args)
             msg_ = ''
-        json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}, indent=2, ensure_ascii=False)
+
+        alert_infos = {'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}
+        if traceback:
+            alert_infos['traceback'] = traceback
+        json_properties_ = json.dumps(
+            alert_infos,
+            indent=2,
+            ensure_ascii=False
+        )
 
         logging.warning(f"dialog visibility:{visibility} msg:{msg}")
 
