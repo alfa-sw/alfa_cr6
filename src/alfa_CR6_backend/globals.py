@@ -473,7 +473,7 @@ def create_printable_image_for_package(package):
 
         pack_name = package.get('name').upper()
         pack_size = package.get('size')
-        barcode_text = f'SHUTTLE-{pack_size}'
+        barcode_text = f'SHUTTLE-{pack_name}'
         printable_text = f"{pack_name}"
 
         # barcode CODE39

@@ -29,6 +29,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     busy_head_A = False
     running_recovery_mode = False
 
+    machine_variant = os.getenv('MACHINE_VARIANT', None)
+    in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
         'documentable': False,
@@ -126,7 +129,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_jar_delivery(self, jar):
 
-        F = self.get_machine_head_by_letter("F")
+        last_head_letter = "F"
+        if self.in_docker and self.machine_variant in ['CR3', 'CR2']:
+            last_head_letter = "C"
+        last_head = self.get_machine_head_by_letter(last_head_letter)
         r = None
 
         jar.update_live(pos="WAIT")
@@ -136,7 +142,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             # ~ r = await F.wait_for_jar_photocells_status(
             # ~ "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
             # ~ if r:
-            r = await F.wait_for_jar_photocells_status(
+            r = await last_head.wait_for_jar_photocells_status(
                 "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=24 * 60 * 60)
 
         except Exception as e:  # pylint: disable=broad-except
@@ -354,8 +360,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             # ~ flag = flag and not A.jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL']
             logging.warning(f"flag:{flag}.")
             return flag
-        r = await self.wait_for_condition(
-            condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info, stability_count=1, step=0.5)
+
+        r = False
+        if (self.in_docker
+            and self.machine_variant in ['CR3', 'CR2']
+            and A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False)
+        ):
+            r = True
+        else:
+            r = await self.wait_for_condition(
+                condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info, stability_count=1, step=0.5)
 
         if r:
             await A.crx_outputs_management(1, 2)
@@ -363,6 +377,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             await A.crx_outputs_management(1, 0)
         else:
             logging.warning("input_roller is busy, nothing to do.")
+
+        if r and self.in_docker and self.machine_variant in ['CR3']:
+            await self._handle_cr3_barcode_input()
 
         return r
 
@@ -758,10 +775,32 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_11_12,
         ]
 
+        sequence_cr3 = [
+            self.move_01_02,
+            partial(self.dispense_step, "A"),
+            self.move_02_03,
+            partial(self.dispense_step, "B"),
+            self.move_03_04,
+            partial(self.dispense_step, "C"),
+            self.move_04_05,
+        ]
+
+        sequence_cr2 = [
+            self.move_01_02,
+            partial(self.dispense_step, "A"),
+            self.move_02_04,
+            partial(self.dispense_step, "C"),
+            self.move_04_05,
+        ]
+
         if n_of_heads == 6:
             sequence = sequence_6
         elif n_of_heads == 4:
             sequence = sequence_4
+        elif n_of_heads == 3:
+            sequence = sequence_cr3
+        elif n_of_heads == 2:
+            sequence = sequence_cr2
 
         barcode_ = jar and jar.barcode
 

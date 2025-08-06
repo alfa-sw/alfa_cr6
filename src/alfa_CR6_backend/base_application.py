@@ -466,6 +466,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.chromium_wrapper = None
         self.restore_machine_helper = None
 
+        self.shuttle_size_from_gun_barcode_scanner = None # CR3 & CR2
+
         if self.settings.SQLITE_CONNECT_STRING:
 
             from alfa_CR6_backend.models import init_models  # pylint: disable=import-outside-toplevel
@@ -782,8 +784,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if jar:
 
-            A = self.get_machine_head_by_letter("A")
-            jar_size = await A.get_stabilized_jar_size()
+            variant = os.getenv('MACHINE_VARIANT')
+            if variant in ['CR3', 'CR2']:
+                jar_size = self.shuttle_size_from_gun_barcode_scanner
+                logging.debug(f"Using shuttle_size_from_gun_barcode_scanner: {jar_size}")
+            else:
+                A = self.get_machine_head_by_letter("A")
+                jar_size = await A.get_stabilized_jar_size()
+
             if jar_size is None:
                 jar = None
                 args, fmt = (barcode, ), "barcode:{} cannot read can size from microswitches.\n"
@@ -808,6 +816,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 jar_volume = 0
                 if len(package_size_list) > jar_size:
                     jar_volume = package_size_list[jar_size]
+                if variant in ['CR3', 'CR2']:
+                    jar_volume = self.shuttle_size_from_gun_barcode_scanner
 
                 self.update_jar_properties(jar)
 
@@ -894,6 +904,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         self.main_window.show_barcode(barcode, is_ok=True)
                         logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
                         ret = barcode
+                        logging.warning(f"__jar_runners: {self.__jar_runners}")
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
 
@@ -1519,4 +1530,94 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if jar:
                 jar.status = 'ERROR'
                 self.db_session.commit()
+
+    async def _handle_cr3_barcode_input(self):
+        A = self.get_machine_head_by_letter("A")
+
+        shuttle_event = asyncio.Event()
+        formula_event = asyncio.Event()
+
+        shuttle_barcode = ""
+        formula_barcode = ""
+
+        async def validate_shuttle(barcode: str) -> (bool, str):
+            logging.warning(f"barcode: {barcode}")
+            if "SHUTTLE-" not in barcode:
+                return False, "UNKNOWN BARCODE SHUTTLE FORMAT"
+            shuttle_name = barcode.split("SHUTTLE-")[1]
+            try:
+                ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
+                if not ret or not ret.get("objects"):
+                    return False, "API ERROR"
+
+                packages = ret["objects"]
+                size_map = {p["name"]: p["size"] for p in packages if p.get("name") and p.get("size")}
+
+                if shuttle_name in size_map:
+                    self.shuttle_size_from_gun_barcode_scanner = size_map[shuttle_name]
+                    logging.warning(f"SHUTTLE - {shuttle_name}: {size_map[shuttle_name]}")
+                    return True, ""
+                else:
+                    return False, "UNKNOWN SHUTTLE"
+
+            except Exception as e:
+                logging.error(f"An unexpected error has been occurred: {e}")
+                return False, "An unexpected error has been occurred."
+
+        def on_shuttle_ok():
+            nonlocal shuttle_barcode
+            shuttle_barcode = self.main_window.input_dialog.get_content_text().strip()
+            shuttle_event.set()
+            logging.warning(f"Shuttle barcode received: {shuttle_barcode}")
+
+        def on_formula_ok():
+            nonlocal formula_barcode
+            raw = self.main_window.input_dialog.get_content_text()
+            formula_barcode = "".join(raw.split())
+            formula_event.set()
+            logging.warning(f"Formula barcode received: {formula_barcode}")
+
+        while True:
+            shuttle_event.clear()
+            self.main_window.open_input_dialog(
+                message=tr_("Scan shuttle barcode"),
+                content="",
+                ok_cb=on_shuttle_ok,
+                ok_on_enter=True
+            )
+            await shuttle_event.wait()
+
+            valid, msg = await validate_shuttle(shuttle_barcode)
+            if valid:
+                self.main_window.hide_input_dialog()
+                break
+
+            logging.warning(f"Invalid shuttle barcode: {shuttle_barcode} - {msg}")
+            self.main_window.hide_input_dialog()
+            self.main_window.open_alert_dialog(msg, title="ERROR BARCODE SHUTTLE")
+
+        while True:
+            formula_event.clear()
+            self.main_window.open_input_dialog(
+                message=tr_("Scan order barcode"),
+                content="",
+                ok_cb=on_formula_ok,
+                ok_on_enter=True
+            )
+            await formula_event.wait()
+
+            if formula_barcode.isdigit():
+                self.main_window.hide_input_dialog()
+                break
+
+            logging.warning(f"Invalid formula barcode: {formula_barcode} (non è solo numeri)")
+            self.main_window.hide_input_dialog()
+            self.main_window.open_alert_dialog(
+                tr_("Invalid order barcode"),
+                title="ERROR ORDER BARCODE"
+            )
+
+        logging.warning(f"Barcodes collected — Shuttle: {shuttle_barcode}, Formula: {formula_barcode}")
+        await self.on_barcode_read(formula_barcode)
+
 
