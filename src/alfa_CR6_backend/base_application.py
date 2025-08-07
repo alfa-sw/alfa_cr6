@@ -870,6 +870,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 self.main_window.show_barcode(barcode, is_ok=True)
 
+                if (
+                    self.machine_variant in ['CR3', 'CR2']
+                    and barcode in self.__jar_runners
+                ):
+                    args, fmt = (barcode, ), "{} already in progress!"
+                    self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                    self.main_window.show_barcode(barcode, is_ok=False)
+
                 A = self.get_machine_head_by_letter("A")
                 # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
                 r = await A.wait_for_jar_photocells_and_status_lev(
@@ -1544,14 +1552,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(f"barcode: {barcode}")
             if "SHUTTLE-" not in barcode:
                 return False, "UNKNOWN BARCODE SHUTTLE FORMAT"
-            shuttle_name = barcode.split("SHUTTLE-")[1]
+            shuttle_name = barcode.split("SHUTTLE-")[1].lower().rstrip()
             try:
                 ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
                 if not ret or not ret.get("objects"):
                     return False, "API ERROR"
 
                 packages = ret["objects"]
-                size_map = {p["name"]: p["size"] for p in packages if p.get("name") and p.get("size")}
+                size_map = {p["name"].lower().rstrip(): p["size"] for p in packages if p.get("name") and p.get("size")}
 
                 if shuttle_name in size_map:
                     self.shuttle_size_from_gun_barcode_scanner = size_map[shuttle_name]
@@ -1618,6 +1626,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             )
 
         logging.warning(f"Barcodes collected — Shuttle: {shuttle_barcode}, Formula: {formula_barcode}")
-        await self.on_barcode_read(formula_barcode)
+        
+        self.ready_to_read_a_barcode = True
+        
+        result = await self.on_barcode_read(formula_barcode)
+        if not result:
+            logging.warning("on_barcode_read failed, resetting ready_to_read_a_barcode state")
+            self.ready_to_read_a_barcode = True
+
 
 
