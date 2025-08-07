@@ -129,10 +129,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_jar_delivery(self, jar):
 
-        last_head_letter = "F"
-        if self.in_docker and self.machine_variant in ['CR3', 'CR2']:
-            last_head_letter = "C"
-        last_head = self.get_machine_head_by_letter(last_head_letter)
+        F = self.get_machine_head_by_letter("F")
         r = None
 
         jar.update_live(pos="WAIT")
@@ -142,7 +139,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             # ~ r = await F.wait_for_jar_photocells_status(
             # ~ "JAR_OUTPUT_ROLLER_PHOTOCELL", on=True, timeout=60, show_alert=True)
             # ~ if r:
-            r = await last_head.wait_for_jar_photocells_status(
+            r = await F.wait_for_jar_photocells_status(
                 "JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=24 * 60 * 60)
 
         except Exception as e:  # pylint: disable=broad-except
@@ -361,12 +358,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             logging.warning(f"flag:{flag}.")
             return flag
 
-        r = False
         if (self.in_docker
             and self.machine_variant in ['CR3', 'CR2']
-            and A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False)
         ):
             r = True
+            if A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False):
+                r = False
         else:
             r = await self.wait_for_condition(
                 condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info, stability_count=1, step=0.5)
@@ -378,7 +375,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         else:
             logging.warning("input_roller is busy, nothing to do.")
 
-        if r and self.in_docker and self.machine_variant in ['CR3']:
+        if (A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False)
+            and self.in_docker
+            and self.machine_variant in ['CR3', 'CR2']
+        ):
             await self._handle_cr3_barcode_input()
 
         return r
@@ -462,7 +462,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return await self.move_from_to(jar, "A", "C", show_alert=False)
 
-    async def move_04_05(self, jar=None):  # 'C -> UP'
+    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CR2/CR3
 
         machine_variant = os.getenv('MACHINE_VARIANT', None)
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
@@ -499,7 +499,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await C.crx_outputs_management(1, 0)
 
                 if r:
-                    self.update_jar_position(jar=jar, pos="LIFTR_UP")
+                    if self.in_docker and self.machine_variant in ['CR3', 'CR2']:
+                        self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="_")
+                    else:
+                        self.update_jar_position(jar=jar, pos="LIFTR_UP")
 
         return r
 
@@ -846,7 +849,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             await self.wait_for_carousel_not_frozen(not r, tr_("barcode:{}").format(barcode_) + tr_("STEP {} +").format(f"\n{_tag}\n"))
 
-        await self.wait_for_jar_delivery(jar)
+        if self.machine_variant not in ['CR3', 'CR2']:
+            await self.wait_for_jar_delivery(jar)
 
         return r
 
