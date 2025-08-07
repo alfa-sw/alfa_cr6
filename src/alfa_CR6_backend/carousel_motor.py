@@ -297,6 +297,26 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             else:
                 break
 
+    async def wait_for_cr_linear_deliver_line_available(self, jar):
+        """
+        Wait for CR linear (CR2/CR3) delivery line to be available.
+        """
+
+        C = self.get_machine_head_by_letter("C")
+        while True:
+            def condition():
+                # Check if JAR_LOAD_LIFTER_ROLLER_PHOTOCELL is free (False means free)
+                flag = not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', False)
+                return flag
+
+            r = await self.wait_for_condition(condition, show_alert=False, timeout=2.0)
+
+            if not r:
+                # The delivery line is busy, wait and show alert
+                await self.wait_for_carousel_not_frozen(True, tr_("please, remove completed items from output roller"))
+            else:
+                break
+
     async def move_from_to(
             self, jar, letter_from, letter_to,
             check_lower_heads_panel_table_status=False,
@@ -468,17 +488,18 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
         C = self.get_machine_head_by_letter("C")
         r = True
+
+        if in_docker and machine_variant in ['CR2', 'CR3']:
+            await self.wait_for_cr_linear_deliver_line_available(jar)
         if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
             D = self.get_machine_head_by_letter("D")
             r = await self.wait_for_load_lifter_is_up(jar)
 
         if r:
             def condition():
+                flag = not C.status.get('crx_outputs_status', 0x0) & 0x01
                 if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
-                    flag = not D.status.get('crx_outputs_status', 0x0) & 0x02
-                    flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x01
-                else:
-                    flag = not C.status.get('crx_outputs_status', 0x0) & 0x01
+                    flag = flag and not D.status.get('crx_outputs_status', 0x0) & 0x02
                 flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
                 flag = flag and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
                 if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
