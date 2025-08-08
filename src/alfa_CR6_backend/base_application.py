@@ -871,39 +871,42 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.main_window.show_barcode(barcode, is_ok=True)
 
                 # For CR3/CR2 variants, perform additional checks before proceeding
-                if self.machine_variant in ['CR3', 'CR2']:
-                    if barcode in self.__jar_runners:
-                        args, fmt = (barcode, ), "{} already in progress!"
-                        self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                        self.main_window.show_barcode(barcode, is_ok=False)
-                        return None
+                # if self.machine_variant in ['CR3a', 'CR2a']:
+                #     if barcode in self.__jar_runners:
+                #         args, fmt = (barcode, ), "{} already in progress!"
+                #         self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                #         self.main_window.show_barcode(barcode, is_ok=False)
+                #         return None
 
-                    try:
-                        order_nr, index = decompile_barcode(barcode)
-                        q = self.db_session.query(Jar).filter(Jar.index == index)
-                        q = q.join(Order).filter((Order.order_nr == order_nr))
-                        jar = q.first()
+                #     try:
+                #         order_nr, index = decompile_barcode(barcode)
+                #         q = self.db_session.query(Jar).filter(Jar.index == index)
+                #         q = q.join(Order).filter((Order.order_nr == order_nr))
+                #         jar = q.first()
 
-                        if jar and jar.status in ["DONE", "ERROR"]:
-                            args, fmt = (barcode, tr_(jar.status)), "barcode:{} has status {}.\n"
-                            self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                            self.main_window.show_barcode(barcode, is_ok=False)
-                            return None
-                    except Exception as e:
-                        logging.error(f"Error checking jar status for barcode {barcode}: {e}")
-                        self.main_window.open_alert_dialog(
-                            (barcode, str(e)),
-                            fmt="Error checking barcode:{} - {}",
-                            title="ERROR"
-                        )
-                        self.main_window.show_barcode(barcode, is_ok=False)
-                        return None
+                #         if jar and jar.status in ["DONE", "ERROR"]:
+                #             args, fmt = (barcode, tr_(jar.status)), "barcode:{} has status {}.\n"
+                #             self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                #             self.main_window.show_barcode(barcode, is_ok=False)
+                #             # return None
+                #     except Exception as e:
+                #         logging.error(f"Error checking jar status for barcode {barcode}: {e}")
+                #         self.main_window.open_alert_dialog(
+                #             (barcode, str(e)),
+                #             fmt="Error checking barcode:{} - {}",
+                #             title="ERROR"
+                #         )
+                #         self.main_window.show_barcode(barcode, is_ok=False)
+                #         return None
 
                 A = self.get_machine_head_by_letter("A")
                 # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
+                status_levels_ = ["STANDBY"]
+                if self.in_docker and self.machine_variant in ['CR3', 'CR2']:
+                    status_levels_ = ["STANDBY", "JAR_POSITIONING", "DISPENSING"]
                 r = await A.wait_for_jar_photocells_and_status_lev(
                     "JAR_INPUT_ROLLER_PHOTOCELL", on=True,
-                    status_levels=["STANDBY"], show_alert=False
+                    status_levels=status_levels_, show_alert=False
                 )
                 if not r:
                     args, fmt = (barcode, ), "Condition not valid while reading barcode:{}"
@@ -913,8 +916,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                     self.ready_to_read_a_barcode = False
 
-                    # For non-CR3/CR2 variants, check if barcode is already in progress
-                    if self.machine_variant not in ['CR3', 'CR2'] and barcode in self.__jar_runners:
+                    if barcode in self.__jar_runners:
                         args, fmt = (barcode, ), "{} already in progress!"
                         self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                         self.main_window.show_barcode(barcode, is_ok=False)
