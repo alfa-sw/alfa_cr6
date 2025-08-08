@@ -23,7 +23,7 @@ import redis  # pylint: disable=import-error
 import arabic_reshaper  # pylint: disable=import-error
 from bidi.algorithm import get_display  # pylint: disable=import-error
 
-from barcode import EAN13, Code39           # pylint: disable=import-error
+from barcode import EAN13, Code128           # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
 
 from alfa_CR6_backend import version
@@ -476,13 +476,13 @@ def create_printable_image_for_package(package):
         barcode_text = f'SHUTTLE-{pack_name}'
         printable_text = f"{pack_name}"
 
-        # barcode CODE39
+        # barcode CODE128
         options = {
             'module_width': 0.2,
-            'module_height': 15.0,
-            'quiet_zone': 6.5,
+            # 'module_height': 15.0,
+            # 'quiet_zone': 6.5,
+            'module_height': 10.0,
             'font_size': 22,
-            'text_distance': 5.0,
         }
         rotate = 90
         # options = _get_print_label_options()
@@ -491,7 +491,7 @@ def create_printable_image_for_package(package):
         # rotate = options.pop('rotate')
 
         with open(TMP_PACKAGE_BARCODE_IMAGE, 'wb') as file_:
-            Code39(barcode_text, writer=ImageWriter(), add_checksum=False).write(file_, options, printable_text)
+            Code128(barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
             response = TMP_PACKAGE_BARCODE_IMAGE
             if response:
                 from PIL import Image   # pylint: disable=import-outside-toplevel
@@ -500,7 +500,8 @@ def create_printable_image_for_package(package):
     except Exception as e:  # pylint: disable=broad-except
         logging.error(f'Error creating package barcode: {str(e)}')
         logging.error(traceback.format_exc())
-        response = None
+        # response = None
+        raise e
 
     return response
 
