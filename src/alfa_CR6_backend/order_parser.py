@@ -82,6 +82,7 @@ class OrderParser:       # pylint: disable=too-many-public-methods
     basf_1_pdf_header = "Base Target Amt. CumAmt."  # BASF Refinty
     basf_2_pdf_headers = ["Base Amount", "Ingredients Kontrolle"]  # BASF Cosima
     carcolour_pdf_footer = 'PPG Industries, Inc. PPG CONFIDENTIAL INFORMATION'
+    multichem_greenline_cloud_pdf_header = 'GreenLine (CP99)' # Multichem greenline cloud system
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -1301,6 +1302,126 @@ weight:{RealWeight}
         logging.warning(properties)
         return properties
 
+    @staticmethod
+    def parse_multichem_greenline_cloud_pdf(original_lines):
+
+        lines = [
+            l.rstrip("\r\n").replace("\xa0", " ")
+            for l in original_lines
+            if l and l.strip()
+        ]
+
+        props = {"meta": {}, "ingredients": [], "extra_lines_to_print": []}
+
+        meta_map = {
+            "Hersteller": "manufacturer",
+            "OEM Code": "oem_code",
+            "Farbtonname": "color_name",
+            "Menge:": "quantity",
+            "VOC:": "voc",
+            "Preis:": "price",
+            "Chip-Nummer": "chip_number",
+            "System": "system",
+        }
+
+        def grab_value_after(key_label, src_lines):
+            for L in src_lines:
+                if key_label in L:
+                    val = L.split(key_label, 1)[1].strip()
+                    # logging.warning(f"val -> {val}")
+                    return val
+            return ""
+
+        for german_key, meta_key in meta_map.items():
+            val = grab_value_after(german_key, lines)
+            logging.warning(f"val --> {val}")
+            logging.warning(f"meta_key -> {meta_key}")
+            if val:
+                props["meta"][meta_key] = val
+
+        # for L in lines:
+        #     if "Mischlack" in L and "Waage" in L:
+        #         break
+        #     # euristica: BRAND CODICE NOME...
+        #     if L.isupper() and " " in L and len(L) > 10:
+        #         props["meta"]["title"] = L
+        #         break
+
+        # --- INGREDIENTI ------------------------------------------------------
+        start_idx = -1
+        for i, L in enumerate(lines):
+            if ("Mischlack" in L) and ("Waage" in L) and ("Kumulativ" in L):
+                start_idx = i + 1
+                break
+
+        ingredients = []
+        if start_idx != -1:
+            for L in lines[start_idx:]:
+                if any(tag in L for tag in ("Kommentar", "Comments")):
+                    break
+
+                row = L.strip()
+                if not row:
+                    if ingredients:
+                        break
+                    continue
+
+                m = re.search(r"([0-9]+(?:[.,][0-9]+)?)\s+([0-9]+(?:[.,][0-9]+)?)\s*$", row)
+                if not m:
+                    if ingredients:
+                        break
+                    else:
+                        continue
+
+                waage_str, _cumul_str = m.group(1), m.group(2)
+                left = row[:m.start()].rstrip()
+
+                parts = re.split(r"\s{2,}", left)
+                if len(parts) < 2:
+                    toks = left.split(" ")
+                    if len(toks) >= 2:
+                        code = " ".join(toks[:2])  # es. "843 GL"
+                        descr = " ".join(toks[2:]).strip()
+                    else:
+                        continue
+                else:
+                    code = parts[0].strip()
+                    descr = " ".join(p.strip() for p in parts[1:]).strip()
+
+                try:
+                    w = float(waage_str.replace(",", "."))
+                except ValueError:
+                    if ingredients:
+                        break
+                    continue
+
+                ingredients.append({
+                    "pigment_name": code,
+                    "description": descr,
+                    "weight(g)": round(w, 4),
+                })
+
+        props["ingredients"] = ingredients
+
+        # --- EXTRA LINES -------------------------------------------------------
+        brand = props["meta"].get("manufacturer", "")
+        oem = props["meta"].get("oem_code", "")
+        qty = props["meta"].get("quantity", "")
+        color_name = props["meta"].get("color_name", "")
+        title = props["meta"].get("title", "")
+        chip_number = props["meta"].get("chip_number", "")
+
+        props["extra_lines_to_print"] = [
+            f"{brand} {oem}",
+            f"{color_name}",
+            f"{chip_number}",
+            f"{qty}",
+        ]
+
+        _extra = props["extra_lines_to_print"] 
+
+        return props
+
     @classmethod
     def parse_pdf_order(cls, path_to_file, fixed_pitch=5):  # pylint: disable=too-many-branches, too-many-statements
 
@@ -1388,6 +1509,12 @@ weight:{RealWeight}
 
         elif cls.carcolour_pdf_footer in lines[-1]:
             properties = cls.parse_carcolour_pdf(lines)
+
+        elif any(cls.multichem_greenline_cloud_pdf_header in l for l in lines[:10]):
+            properties = cls.parse_multichem_greenline_cloud_pdf(original_lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.multichem_greenline_cloud_pdf_header
 
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
