@@ -301,21 +301,31 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         """
         Wait for CR linear (CR2/CR3) delivery line to be available.
         """
-
         C = self.get_machine_head_by_letter("C")
+
         while True:
             def condition():
-                # Check if JAR_LOAD_LIFTER_ROLLER_PHOTOCELL is free (False means free)
-                flag = not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', False)
-                return flag
+                return not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', False)
 
-            r = await self.wait_for_condition(condition, show_alert=False, timeout=2.0)
-
-            if not r:
-                # The delivery line is busy, wait and show alert
-                await self.wait_for_carousel_not_frozen(True, tr_("please, remove completed items from output roller"))
-            else:
+            r = await self.wait_for_condition(condition, show_alert=False, timeout=3.5)
+            if r:
                 break
+
+            ok_event = asyncio.Event()
+
+            def on_ok():
+                if not ok_event.is_set():
+                    ok_event.set()
+
+            self.main_window.open_alert_dialog(
+                tr_("please, remove completed items from output roller"),
+                title='ALERT',
+                visibility=1,
+                show_cancel_btn=False,
+                callback=on_ok
+            )
+
+            await ok_event.wait()
 
     async def move_from_to(
             self, jar, letter_from, letter_to,
