@@ -23,7 +23,7 @@ import redis  # pylint: disable=import-error
 import arabic_reshaper  # pylint: disable=import-error
 from bidi.algorithm import get_display  # pylint: disable=import-error
 
-from barcode import EAN13                   # pylint: disable=import-error
+from barcode import EAN13, Code128           # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
 
 from alfa_CR6_backend import version
@@ -39,6 +39,7 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 
 TMP_BARCODE_IMAGE = "/opt/alfa_cr6/tmp/tmp_file.png"
 TMP_PIGMENT_IMAGE = "/opt/alfa_cr6/tmp/tmp_pigment_label.png"
+TMP_PACKAGE_BARCODE_IMAGE = "/opt/alfa_cr6/tmp/tmp_package_barcode.png"
 
 if os.environ.get("TMP_FILE_PNG"): # JUST FOR TEST, NOT PRODUCTION!
     TMP_BARCODE_IMAGE = os.environ["TMP_FILE_PNG"]
@@ -457,6 +458,50 @@ def create_printable_image_from_jar(jar, options=None):
         Image.open(TMP_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_BARCODE_IMAGE)
 
     logging.warning('response: {}'.format(response))
+
+    return response
+
+def create_printable_image_for_package(package):
+    # standard Code39
+
+    response = None
+
+    try:
+        if not os.path.exists(TMP_PACKAGE_BARCODE_IMAGE):
+            with open(TMP_PACKAGE_BARCODE_IMAGE, 'w', encoding='UTF-8'):
+                logging.warning(f'empty file created at:{TMP_PACKAGE_BARCODE_IMAGE}')
+
+        pack_name = package.get('name').upper()
+        pack_size = package.get('size')
+        barcode_text = f'SHUTTLE-{pack_name}'
+        printable_text = f"{pack_name}"
+
+        # barcode CODE128
+        options = {
+            'module_width': 0.2,
+            # 'module_height': 15.0,
+            # 'quiet_zone': 6.5,
+            'module_height': 10.0,
+            'font_size': 22,
+        }
+        rotate = 90
+        # options = _get_print_label_options()
+        # l_lenght = options.pop('line_lenght')
+        # n_of_lines = options.pop('n_of_lines')
+        # rotate = options.pop('rotate')
+
+        with open(TMP_PACKAGE_BARCODE_IMAGE, 'wb') as file_:
+            Code128(barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
+            response = TMP_PACKAGE_BARCODE_IMAGE
+            if response:
+                from PIL import Image   # pylint: disable=import-outside-toplevel
+                Image.open(TMP_PACKAGE_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_PACKAGE_BARCODE_IMAGE)
+
+    except Exception as e:  # pylint: disable=broad-except
+        logging.error(f'Error creating package barcode: {str(e)}')
+        logging.error(traceback.format_exc())
+        # response = None
+        raise e
 
     return response
 

@@ -10,6 +10,7 @@
 # pylint: disable=multiple-statements
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
+import os
 import logging
 import traceback
 from functools import partial
@@ -29,6 +30,10 @@ from alfa_CR6_frontend.pages import BaseStackedPage
 class ActionPage(BaseStackedPage):
 
     ui_file_name = "action_frame.ui"
+    machine_variant = os.getenv('MACHINE_VARIANT', None)
+    in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
+
 
     @staticmethod
     def __check_conditions(args):
@@ -55,8 +60,11 @@ class ActionPage(BaseStackedPage):
         # Testa 5 "Start lifter roller CW"
         elif args == ("single_move", "C", [1, 1]):
 
-            D = QApplication.instance().get_machine_head_by_letter("D")
-            ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+            if in_docker and machine_variant in ["CR3", "CR2"]:
+                ret = True
+            else:
+                D = QApplication.instance().get_machine_head_by_letter("D")
+                ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
 
         # Testa 5 "Start lifter roller CCW"
         elif args == ("single_move", "C", [1, 4]):
