@@ -1564,6 +1564,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.db_session.commit()
 
     async def _handle_cr3_barcode_input(self):
+        import re
+
+        BARCODE_NEW_PATTERN = re.compile(
+            r'^\d{1,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$',
+            re.IGNORECASE
+        )
         A = self.get_machine_head_by_letter("A")
 
         shuttle_event = asyncio.Event()
@@ -1574,9 +1580,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         async def validate_shuttle(barcode: str) -> (bool, str):
             logging.warning(f"barcode: {barcode}")
-            if "SHUTTLE-" not in barcode:
+            barcode_match = BARCODE_NEW_PATTERN.match(barcode)
+            if not barcode_match:
                 return False, "UNKNOWN BARCODE SHUTTLE FORMAT"
-            shuttle_name = barcode.split("SHUTTLE-")[1].lower().rstrip()
+            shuttle_name = barcode_match.group(0).lower().rstrip()
             try:
                 ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
                 if not ret or not ret.get("objects"):

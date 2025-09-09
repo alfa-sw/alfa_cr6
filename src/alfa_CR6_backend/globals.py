@@ -473,7 +473,7 @@ def create_printable_image_for_package(package):
 
         pack_name = package.get('name').upper()
         pack_size = package.get('size')
-        barcode_text = f'SHUTTLE-{pack_name}'
+        # barcode_text = f'SHUTTLE-{pack_name}'
         printable_text = f"{pack_name}"
 
         # barcode CODE128
@@ -491,7 +491,7 @@ def create_printable_image_for_package(package):
         # rotate = options.pop('rotate')
 
         with open(TMP_PACKAGE_BARCODE_IMAGE, 'wb') as file_:
-            Code128(barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
+            Code128(printable_text, writer=ImageWriter()).write(file_, options, printable_text)
             response = TMP_PACKAGE_BARCODE_IMAGE
             if response:
                 from PIL import Image   # pylint: disable=import-outside-toplevel
