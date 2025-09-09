@@ -1126,3 +1126,64 @@ class HomePageCR3Heads(HomePage):
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
             (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
         ]
+
+class HomePageCR2Heads(HomePage):
+
+    ui_file_name = "home_page_two_heads.ui"
+    help_file_name = ''
+
+    action_02_btn = None
+    action_03_btn = None
+    action_04_btn = None
+    action_06_btn = None
+    action_07_btn = None
+    action_08_btn = None
+    action_09_btn = None
+    action_10_btn = None
+
+    STEP_03_label = None
+    STEP_06_label = None
+    STEP_07_label = None
+    STEP_08_label = None
+    STEP_09_label = None
+    STEP_10_label = None
+    STEP_11_label = None
+    STEP_12_label = None
+
+    refill_2_lbl = None
+    refill_3_lbl = None
+    refill_4_lbl = None
+    refill_6_lbl = None
+
+    expiry_2_label = None
+    expiry_3_label = None
+    expiry_4_label = None
+    expiry_6_label = None
+
+    reserve_2_label = None
+    reserve_3_label = None
+    reserve_4_label = None
+    reserve_6_label = None
+
+    service_2_btn = None
+    service_3_btn = None
+    service_4_btn = None
+    service_6_btn = None
+
+    container_presence_2_label = None
+    container_presence_3_label = None
+    container_presence_4_label = None
+    container_presence_6_label = None
+
+    unload_lifter_down_label = None
+    unload_lifter_up_label = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.jar_pixmap_map = [
+            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
+        ]

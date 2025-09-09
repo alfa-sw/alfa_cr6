@@ -36,7 +36,7 @@ from alfa_CR6_frontend.pages import (
 
 from alfa_CR6_frontend.action_page import ActionPage
 from alfa_CR6_frontend.browser_page import BrowserPage
-from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads, HomePageCR3Heads)
+from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads, HomePageCR3Heads, HomePageCR2Heads)
 
 
 from alfa_CR6_frontend.keyboard import Keyboard
@@ -389,7 +389,11 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         elif QApplication.instance().n_of_active_heads == 3:
             self.home_page = HomePageCR3Heads(parent=self)
-            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_4_small.png"))
+            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_cr3_small.png"))
+
+        elif QApplication.instance().n_of_active_heads == 2:
+            self.home_page = HomePageCR2Heads(parent=self)
+            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_cr2_small.png"))
 
         self.home_btn.setIcon(QIcon(home_btn_pixmap))
         self.home_btn.setIconSize(QSize(280, 72))
