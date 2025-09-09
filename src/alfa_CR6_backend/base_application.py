@@ -1607,6 +1607,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             raw = self.main_window.input_dialog.get_content_text()
             formula_barcode = "".join(raw.split())
             formula_event.set()
+            formula_barcode = formula_barcode[:12]
             logging.warning(f"Formula barcode received: {formula_barcode}")
 
         while True:

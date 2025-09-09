@@ -462,7 +462,7 @@ def create_printable_image_from_jar(jar, options=None):
     return response
 
 def create_printable_image_for_package(package):
-    # standard Code39
+    # standard Code128
 
     response = None
 

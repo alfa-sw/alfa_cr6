@@ -613,6 +613,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     head_A = QApplication.instance().get_machine_head_by_letter("A")
                     sensor = head_A.status["jar_photocells_status"] & 0x001 and 1
                     manual_barcode = self.input_dialog.get_content_text()
+                    manual_barcode = manual_barcode[:12]
 
                     if not sensor:
                         message = tr_("Missing Jar on JAR_INPUT_ROLLER_PHOTOCELL")
