@@ -870,35 +870,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 self.main_window.show_barcode(barcode, is_ok=True)
 
-                # For CR3/CR2 variants, perform additional checks before proceeding
-                # if self.machine_variant in ['CR3a', 'CR2a']:
-                #     if barcode in self.__jar_runners:
-                #         args, fmt = (barcode, ), "{} already in progress!"
-                #         self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                #         self.main_window.show_barcode(barcode, is_ok=False)
-                #         return None
-
-                #     try:
-                #         order_nr, index = decompile_barcode(barcode)
-                #         q = self.db_session.query(Jar).filter(Jar.index == index)
-                #         q = q.join(Order).filter((Order.order_nr == order_nr))
-                #         jar = q.first()
-
-                #         if jar and jar.status in ["DONE", "ERROR"]:
-                #             args, fmt = (barcode, tr_(jar.status)), "barcode:{} has status {}.\n"
-                #             self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                #             self.main_window.show_barcode(barcode, is_ok=False)
-                #             # return None
-                #     except Exception as e:
-                #         logging.error(f"Error checking jar status for barcode {barcode}: {e}")
-                #         self.main_window.open_alert_dialog(
-                #             (barcode, str(e)),
-                #             fmt="Error checking barcode:{} - {}",
-                #             title="ERROR"
-                #         )
-                #         self.main_window.show_barcode(barcode, is_ok=False)
-                #         return None
-
                 A = self.get_machine_head_by_letter("A")
                 # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
                 status_levels_ = ["STANDBY"]
@@ -926,17 +897,56 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             logging.warning(f'carousel is frozen({self.carousel_frozen}) - returning from on_barcode_read ..')
                             return
 
-                        # let's run a task that will manage the jar through the entire path inside the system
-                        t = self.__jar_task(barcode)
-                        self.__jar_runners[barcode] = {
-                            "task": asyncio.ensure_future(t),
-                            "frozen": True
-                        }
 
-                        self.main_window.show_barcode(barcode, is_ok=True)
-                        logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
-                        ret = barcode
-                        logging.warning(f"__jar_runners: {self.__jar_runners}")
+                        if self.machine_variant not in ['CR3', 'CR2']:
+                            t = self.__jar_task(barcode)
+                            self.__jar_runners[barcode] = {
+                                "task": asyncio.ensure_future(t),
+                                "frozen": True
+                            }
+
+                            self.main_window.show_barcode(barcode, is_ok=True)
+                            logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
+                            ret = barcode
+                            logging.warning(f"__jar_runners: {self.__jar_runners}")
+
+                        else:
+
+                            A = self.get_machine_head_by_letter("A")
+                            free_timer_started = None
+                            loop = asyncio.get_event_loop()
+                            while True:
+                                jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
+                                ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
+
+                                if jin and ja:
+                                    free_timer_started = None
+                                    await asyncio.sleep(0.1)
+                                    continue
+
+                                elif not ja and jin:
+                                    t = self.__jar_task(barcode)
+                                    self.__jar_runners[barcode] = {
+                                        "task": asyncio.ensure_future(t),
+                                        "frozen": True
+                                    }
+                                    self.main_window.show_barcode(barcode, is_ok=True)
+                                    logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
+                                    ret = barcode
+                                    logging.warning(f"__jar_runners: {self.__jar_runners}")
+                                    break
+
+                                elif ja and not jin:
+                                    if free_timer_started is None:
+                                        free_timer_started = loop.time()
+                                    elif loop.time() - free_timer_started >= 2.0:
+                                        logging.warning("CR3/CR2: JIN freed >2s while JA occupied -> exit without creating runner")
+                                        break
+                                else:
+                                    free_timer_started = None
+
+                                await asyncio.sleep(0.1)
+
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
 
@@ -1281,6 +1291,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         except Exception as e:  # pylint: disable=broad-except
 
             self.handle_exception(e)
+
+
 
     def get_jar_runners(self):
 
