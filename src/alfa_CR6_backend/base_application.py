@@ -468,6 +468,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.shuttle_size_from_gun_barcode_scanner = None # CR3 & CR2
 
+        # CR3/CR2 deferred jar creation when both JIN and JA are occupied
+        self._cr3_ja_block_sequence_active = False
+        self._cr3_pending_barcode = None
+        self._cr3_sequence_watcher_task = None
+
         if self.settings.SQLITE_CONNECT_STRING:
 
             from alfa_CR6_backend.models import init_models  # pylint: disable=import-outside-toplevel
@@ -859,10 +864,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         barcode = str(barcode)
         # ~ logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
 
-        if not barcode or not self.ready_to_read_a_barcode:
+        if not barcode or (not self.ready_to_read_a_barcode and not self._cr3_ja_block_sequence_active):
 
             logging.debug(f"skipping barcode:{barcode}")
             self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
+        elif self._cr3_ja_block_sequence_active and self.machine_variant in ['CR3', 'CR2']:
+            self._cr3_pending_barcode = str(barcode)
+            return None
 
         else:
 
@@ -913,39 +921,77 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         else:
 
                             A = self.get_machine_head_by_letter("A")
-                            free_timer_started = None
                             loop = asyncio.get_event_loop()
-                            while True:
-                                jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
-                                ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
+                            jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
+                            ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
 
-                                if jin and ja:
+                            if jin and ja:
+                                self._cr3_pending_barcode = barcode
+                                if not self._cr3_ja_block_sequence_active:
+                                    self._cr3_ja_block_sequence_active = True
                                     free_timer_started = None
-                                    await asyncio.sleep(0.1)
-                                    continue
+                                    while True:
+                                        jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
+                                        ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
 
-                                elif not ja and jin:
-                                    t = self.__jar_task(barcode)
-                                    self.__jar_runners[barcode] = {
-                                        "task": asyncio.ensure_future(t),
-                                        "frozen": True
-                                    }
-                                    self.main_window.show_barcode(barcode, is_ok=True)
-                                    logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
-                                    ret = barcode
-                                    logging.warning(f"__jar_runners: {self.__jar_runners}")
-                                    break
-
-                                elif ja and not jin:
-                                    if free_timer_started is None:
-                                        free_timer_started = loop.time()
-                                    elif loop.time() - free_timer_started >= 2.0:
-                                        logging.warning("CR3/CR2: JIN freed >2s while JA occupied -> exit without creating runner")
-                                        break
+                                        if jin and ja:
+                                            free_timer_started = None
+                                            await asyncio.sleep(0.1)
+                                            continue
+                                        elif not ja and jin:
+                                            bc = self._cr3_pending_barcode or barcode
+                                            t = self.__jar_task(bc)
+                                            self.__jar_runners[bc] = {
+                                                "task": asyncio.ensure_future(t),
+                                                "frozen": True
+                                            }
+                                            self.main_window.show_barcode(bc, is_ok=True)
+                                            logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
+                                            ret = bc
+                                            logging.warning(f"__jar_runners: {self.__jar_runners}")
+                                            break
+                                        elif ja and not jin:
+                                            if free_timer_started is None:
+                                                free_timer_started = loop.time()
+                                            elif loop.time() - free_timer_started >= 2.0:
+                                                logging.warning("CR3/CR2: JIN freed >2s while JA occupied -> exit without creating runner")
+                                                break
+                                        else:
+                                            free_timer_started = None
+                                        await asyncio.sleep(0.1)
+                                    self._cr3_pending_barcode = None
+                                    self._cr3_ja_block_sequence_active = False
                                 else:
-                                    free_timer_started = None
+                                    logging.debug("CR3/CR2: JA+JIN busy; updated pending barcode, watcher already active")
 
-                                await asyncio.sleep(0.1)
+                            elif not ja and jin:
+                                bc = self._cr3_pending_barcode or barcode
+                                t = self.__jar_task(bc)
+                                self.__jar_runners[bc] = {
+                                    "task": asyncio.ensure_future(t),
+                                    "frozen": True
+                                }
+                                self.main_window.show_barcode(bc, is_ok=True)
+                                logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
+                                ret = bc
+                                logging.warning(f"__jar_runners: {self.__jar_runners}")
+                                self._cr3_pending_barcode = None
+                                self._cr3_ja_block_sequence_active = False
+
+                            elif ja and not jin:
+                                free_timer_started = loop.time()
+                                while True:
+                                    jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
+                                    ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
+                                    if ja and not jin:
+                                        if loop.time() - free_timer_started >= 2.0:
+                                            logging.warning("CR3/CR2: JIN freed >2s while JA occupied -> exit without creating runner")
+                                            break
+                                    else:
+                                        break
+                                    await asyncio.sleep(0.1)
+                            else:
+                                pass
 
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
