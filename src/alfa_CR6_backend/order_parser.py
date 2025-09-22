@@ -1701,7 +1701,7 @@ weight:{RealWeight}
                     else:
                         properties_list = self.parse_pdf_order(path_to_file, fixed_pitch=None)
 
-                elif mime_type == 'text/plain':
+                elif mime_type in ('text/plain', 'application/x-wine-extension-ini'):
                     properties_list = [self.parse_txt_order(path_to_file), ]
                 else:
                     raise Exception(f"unknown mime_type:{mime_type} for file:{path_to_file}") from e
