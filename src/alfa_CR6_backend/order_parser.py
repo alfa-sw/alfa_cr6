@@ -229,6 +229,8 @@ weight:{RealWeight}
         properties["extra_lines_to_print"].append(f'"{AKZOCode}" {amount}({typeOfUnit})')
 
         formulaRecipeItem = xml_as_dict["ColorFormula"]["FormulaRecipe"]["FormulaRecipeItem"].copy()
+        if not isinstance(formulaRecipeItem, list):
+            formulaRecipeItem = [formulaRecipeItem]
 
         for item in formulaRecipeItem:
             properties["ingredients"].append({
