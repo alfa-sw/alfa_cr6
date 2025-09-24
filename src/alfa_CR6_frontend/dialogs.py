@@ -972,15 +972,33 @@ class RefillDialog(BaseDialog):
 
     def _update_choice_buttons(self):
 
+        def _format_value(v):
+            try:
+                f = float(v)
+                return int(f) if f.is_integer() else round(f, 2)
+            except Exception:
+                return v
+
         for i, choice in enumerate(self.choices, start=1):
             button = self.findChild(QPushButton, f'refill_choice_{i}')
             logging.warning(button)
             if button is not None:
-                value = int(choice)
-                button.setEnabled(value > 0)
-                button.setText(str(value))
-                logging.warning(f'btn value: {value}')
-                button.clicked.connect(lambda _, v=value: self._update_content_container(str(v)))
+                # Support both numeric values and dicts like {"label": "FILL UP", "value": 123.45}
+                if isinstance(choice, dict):
+                    value = float(choice.get('value', 0) or 0)
+                    label = str(choice.get('label', '') or '')
+                    disp_val = _format_value(value)
+                    button.setEnabled(value > 0)
+                    button.setText(f"{label}\n{disp_val}".strip())
+                    logging.warning(f'btn value: {value} ({label})')
+                    button.clicked.connect(lambda _, v=value: self._update_content_container(str(v)))
+                else:
+                    value = float(choice)
+                    disp_val = _format_value(value)
+                    button.setEnabled(value > 0)
+                    button.setText(str(disp_val))
+                    logging.warning(f'btn value: {value}')
+                    button.clicked.connect(lambda _, v=value: self._update_content_container(str(v)))
 
     def on_ok_button_clicked(self):
 

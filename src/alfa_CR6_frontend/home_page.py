@@ -236,13 +236,19 @@ class RefillProcedureHelper:
         if barcode_check == barcode_:
             self.parent.main_window.hide_input_dialog()
             self.parent.main_window.toggle_keyboard(on_off=True)
+            info_flup = f"{margin_units_} {self.units_}"
+            choices_ = [{
+                "label": tr_("FILL UP"),
+                "value": round(margin_units_, 2)
+            }] + list(self.refill_choices)
+
             self.parent.main_window.open_refill_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=msg_,
                 unit=self.units_,
                 ok_cb=self._cb_input_quantity,
                 ok_cb_args=(pigment_, pipe_),
-                choices=self.refill_choices)
+                choices=choices_)
         else:
 
             self.parent.main_window.open_input_dialog(
@@ -286,13 +292,25 @@ class RefillProcedureHelper:
 
             self.parent.main_window.hide_input_dialog()
             self.parent.main_window.toggle_keyboard(on_off=True)
+            margin_ml_ = pipe_['maximum_level'] - pipe_['current_level']
+            margin_units_ = self.__qtity_from_ml(margin_ml_, pigment_['name'])
+
+            choices_ = [{
+                "label": tr_("FILL UP"),
+                "value": round(margin_units_, 2)
+            }]
+            # Keep QR-proposed qty as an additional choice if present
+            qr_qty = qrcode_refill_infos.get("qty")
+            if qr_qty is not None:
+                choices_.append(qr_qty)
+
             self.parent.main_window.open_refill_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=msg_,
                 unit=self.units_,
                 ok_cb=self._cb_input_quantity,
                 ok_cb_args=(pigment_, pipe_, qrcode_refill_infos.get("new_specific_weight")),
-                choices=[qrcode_refill_infos.get("qty")])
+                choices=choices_)
 
     def _cb_input_barcode(self, barcode_):
 
