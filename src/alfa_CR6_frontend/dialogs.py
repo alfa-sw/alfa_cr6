@@ -533,7 +533,7 @@ class InputDialog(BaseDialog):
         self.choices = []
 
         # ~ self.ok_button.clicked.connect(self.hide)
-        self.esc_button.clicked.connect(self.toggle_app_keyboard)
+        self.esc_button.clicked.connect(self.close_actions)
 
     def get_selected_choice(self):
 
@@ -657,8 +657,14 @@ class InputDialog(BaseDialog):
     def hide_dialog(self):
         self.hide()
 
-    def toggle_app_keyboard(self):
-        self.parent().toggle_keyboard(on_off=False)
+    def close_actions(self):
+        try:
+            self.parent().toggle_keyboard(on_off=False)
+            QApplication.instance().barcode_read_blocked_on_refill = False
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
 
 class AliasDialog(BaseDialog):
@@ -933,7 +939,7 @@ class RefillDialog(BaseDialog):
         super().__init__(*args, **kwargs)
 
         self.content_container.textChanged.connect(self.on_text_changed)
-        self.esc_button.clicked.connect(self.toggle_app_keyboard)
+        self.esc_button.clicked.connect(self.close_actions)
 
         self.__ok_cb = None
         self.__ok_cb_args = None
@@ -941,8 +947,14 @@ class RefillDialog(BaseDialog):
 
         self.choices = []
 
-    def toggle_app_keyboard(self):
-        self.parent().toggle_keyboard(on_off=False)
+    def close_actions(self):
+        try:
+            self.parent().toggle_keyboard(on_off=False)
+            QApplication.instance().barcode_read_blocked_on_refill = False
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
     def get_content_text(self):
 
@@ -956,7 +968,7 @@ class RefillDialog(BaseDialog):
     def _update_content_container(self, qtity_value):
         logging.warning("pressed")
         logging.warning(f"setting {qtity_value}")
-        self.content_container.setText(qtity_value)
+        self.content_container.setPlainText(qtity_value)
 
     def _update_choice_buttons(self):
 

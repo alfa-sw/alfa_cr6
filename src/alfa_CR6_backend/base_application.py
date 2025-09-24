@@ -864,6 +864,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         barcode = str(barcode)
         # ~ logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
 
+        if (getattr(self, 'barcode_read_blocked_on_refill', False)):
+            return None
+
         if not barcode or (not self.ready_to_read_a_barcode and not self._cr3_ja_block_sequence_active):
 
             logging.debug(f"skipping barcode:{barcode}")

@@ -945,6 +945,8 @@ class HomePage(BaseStackedPage):
     def refill_lbl_clicked(self, head_index):
 
         if self.refill_lbl_is_active(head_index):
+            QApplication.instance().barcode_read_blocked_on_refill = True
+            logging.warning(f"impostato a barcode_read_blocked_on_refill=True")
             rph = RefillProcedureHelper(parent=self, head_index=head_index)
             rph.run()
 

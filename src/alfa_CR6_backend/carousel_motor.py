@@ -32,6 +32,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     machine_variant = os.getenv('MACHINE_VARIANT', None)
     in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
+    # True only for CR4/CR6 with fixed barcode
+    barcode_read_blocked_on_refill = False
+
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
         'documentable': False,
