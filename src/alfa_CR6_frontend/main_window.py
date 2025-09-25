@@ -734,7 +734,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self, icon_name=None, message=None, content=None,
             ok_cb=None, ok_cb_args=None, ok_on_enter=False,
             choices=None, bg_image=None, to_html=None, wide=None,
-            content_editable=True
+            content_editable=True,
+            use_combo_for_choice=False
     ):
 
         self.input_dialog.show_dialog(
@@ -748,7 +749,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             bg_image=bg_image,
             to_html=to_html,
             wide=wide,
-            content_editable=content_editable)
+            content_editable=content_editable,
+            use_combo_for_choice=use_combo_for_choice)
 
         logging.warning(str(message))
 

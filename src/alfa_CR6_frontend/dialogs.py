@@ -531,11 +531,16 @@ class InputDialog(BaseDialog):
         self.ok_on_enter = None
 
         self.choices = []
+        self.use_combo_for_choice = False
 
         # ~ self.ok_button.clicked.connect(self.hide)
         self.esc_button.clicked.connect(self.close_actions)
 
     def get_selected_choice(self):
+
+        if getattr(self, 'use_combo_for_choice', False):
+            key = self.combo_box.currentText()
+            return self.choices.get(key)
 
         key = self.content_container.toPlainText()
         return self.choices.get(key)
@@ -546,6 +551,8 @@ class InputDialog(BaseDialog):
 
     def on_combo_box_index_changed(self, index): # pylint: disable=unused-argument
 
+        if getattr(self, 'use_combo_for_choice', False):
+            return
         txt_ = self.combo_box.currentText()
         self.content_container.setText(txt_)
 
@@ -580,11 +587,13 @@ class InputDialog(BaseDialog):
         bg_image=None,
         to_html=None,
         wide=None,
-        content_editable=True):
+        content_editable=True,
+        use_combo_for_choice=False):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
         self.ok_on_enter = ok_on_enter
+        self.use_combo_for_choice = bool(use_combo_for_choice)
 
         if icon_name is None:
             icon_ = self.style().standardIcon(getattr(QStyle, "SP_MessageBoxWarning"))
@@ -609,6 +618,9 @@ class InputDialog(BaseDialog):
             self.combo_box.clear()
             for choice in keys_:
                 self.combo_box.addItem(choice)
+            # Ensure a default valid selection
+            if self.combo_box.count() > 0:
+                self.combo_box.setCurrentIndex(0)
             self.combo_box.show()
             self.combo_box.resize(self.combo_box.width(), 40)
 

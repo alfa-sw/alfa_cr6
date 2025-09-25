@@ -332,14 +332,48 @@ class RefillProcedureHelper:
 
                 pipes_ = pigment_['pipes'][:]
                 pipes_.sort(key=lambda p: p['current_level'] - p['maximum_level'])
-                pipe_ = pipes_[0]
 
-                _default_qtity_ml = pipe_['maximum_level'] - pipe_['current_level']
-                _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, pigment_['name'])
-                _default_qtity_units = round(_default_qtity_units, 2)
+                if len(pipes_) > 1:
 
-                t = self._rotate_circuit_task(pigment_, pipe_, _default_qtity_units, barcode_)
-                asyncio.ensure_future(t)
+                    choices = {}
+                    for p in pipes_:
+                        try:
+                            curr = round(float(p.get('current_level', 0)), 2)
+                            mx = round(float(p.get('maximum_level', 0)), 2)
+                            label = f"{p.get('name', '?')} (level {curr}/{mx})"
+                        except Exception:
+                            label = str(p.get('name', '?'))
+                        choices[label] = p
+
+                    def _on_pipe_selected(pigment=pigment_, barcode=barcode_):
+                        sel_pipe = self.parent.main_window.input_dialog.get_selected_choice()
+                        pipe_sel = sel_pipe or pipes_[0]
+                        _default_qtity_ml = pipe_sel['maximum_level'] - pipe_sel['current_level']
+                        _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, pigment['name'])
+                        _default_qtity_units = round(_default_qtity_units, 2)
+                        t = self._rotate_circuit_task(pigment, pipe_sel, _default_qtity_units, barcode)
+                        asyncio.ensure_future(t)
+
+                    self.parent.main_window.open_input_dialog(
+                        icon_name="SP_MessageBoxQuestion",
+                        message=tr_("Multiple circuits found for {}").format(pigment_['name']),
+                        content= tr_('Choose circuit to refill:'),
+                        choices=choices,
+                        ok_cb=_on_pipe_selected,
+                        ok_on_enter=False,
+                        content_editable=False,
+                        use_combo_for_choice=True
+                    )
+
+                else:
+                    pipe_ = pipes_[0]
+
+                    _default_qtity_ml = pipe_['maximum_level'] - pipe_['current_level']
+                    _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, pigment_['name'])
+                    _default_qtity_units = round(_default_qtity_units, 2)
+
+                    t = self._rotate_circuit_task(pigment_, pipe_, _default_qtity_units, barcode_)
+                    asyncio.ensure_future(t)
 
             else:
                 QApplication.instance().main_window.open_alert_dialog(
