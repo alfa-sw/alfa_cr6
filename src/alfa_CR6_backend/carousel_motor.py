@@ -966,6 +966,19 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             recovery_actions['B'] = full_steps[3:]
             recovery_actions['C'] = full_steps[5:]
 
+        if self.n_of_active_heads == 2:
+
+            full_steps = [
+                "move_01_02", "dispense_step",
+                "move_02_04", "dispense_step",
+                "move_04_05",
+            ]
+
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['C'] = full_steps[3:]
+
         parametri_movimenti = {
             "move_01_02": {'time_interval_check': False},
         }
@@ -1090,7 +1103,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     'A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
-                        next_head_letter=("C" if self.n_of_active_heads == 4 else "B")
+                        next_head_letter=("C" if self.n_of_active_heads in (2,4) else "B")
                     ),
                     'B': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
