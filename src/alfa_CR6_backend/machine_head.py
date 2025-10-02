@@ -275,7 +275,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 and self.status.get("status_level") != "RESET"):
             await self.update_tintometer_data(silent=False)
 
-            self.app.main_window.open_alert_dialog((self.name, ), fmt="{} RESETTING")
+            # self.app.main_window.open_alert_dialog((self.name, ), fmt="{} RESETTING")
 
         old_flag = self.status.get("jar_photocells_status", 0) & 0x001
         new_flag = status.get("jar_photocells_status", 0) & 0x001
