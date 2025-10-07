@@ -641,7 +641,25 @@ class InputDialog(BaseDialog):
             if self.combo_box.count() > 0:
                 self.combo_box.setCurrentIndex(0)
             self.combo_box.show()
-            self.combo_box.resize(self.combo_box.width(), 40)
+
+            # Increase font and size when using combo for choices
+            if self.use_combo_for_choice:
+                try:
+                    self.combo_box.setMinimumHeight(60)
+                    self.combo_box.resize(self.combo_box.width(), 60)
+                    self.combo_box.setStyleSheet(
+                        """
+                        QComboBox { font-size: 34px; min-height: 60px; }
+                        QComboBox QAbstractItemView { font-size: 30px; }
+                        QAbstractItemView::item { min-height: 48px; }
+                        """
+                    )
+                    self.resize(self.width(), max(self.height(), 625))
+                except Exception:
+                    logging.error(traceback.format_exc())
+                    pass
+            else:
+                self.combo_box.resize(self.combo_box.width(), 40)
 
         if content is None:
             self.content_container.setText("")
