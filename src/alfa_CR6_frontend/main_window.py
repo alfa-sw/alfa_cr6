@@ -14,6 +14,8 @@ import traceback
 import json
 import os
 
+from typing import List, Union
+
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon, QMovie
@@ -616,13 +618,16 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     manual_barcode = manual_barcode[:12]
 
                     if not sensor:
-                        message = tr_("Missing Jar on JAR_INPUT_ROLLER_PHOTOCELL")
-                        self.open_alert_dialog(args=message, show_cancel_btn=False)
+                        message = [
+                            "Missing Jar on ",
+                            "JAR_INPUT_ROLLER_PHOTOCELL"
+                        ]
+                        self.open_alert_dialog((), fmt=message, show_cancel_btn=False)
                         return
 
                     if not manual_barcode:
-                        message = tr_("Empty Barcode")
-                        self.open_alert_dialog(args="Empty Barcode ...", show_cancel_btn=False)
+                        message = "Empty Barcode"
+                        self.open_alert_dialog((), fmt=message, show_cancel_btn=False)
                         return
 
                     barcode_reader = BarCodeReader(QApplication.instance().on_barcode_read, "", True, True)
@@ -757,12 +762,27 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def open_alert_dialog(  # pylint: disable=too-many-arguments
             self, args, title="ALERT", fmt=None,
             callback=None, cb_args=None, hp_callback=None,
-            visibility=1, show_cancel_btn=True, traceback=None
+            visibility=1, show_cancel_btn=True, traceback=None,
+            localize_args=False
     ):
+        # msg  -> localized msg for UI
+        # msg_ -> non localized msg (eng) for db event
 
         if fmt is not None:
-            msg = tr_(fmt).format(*args)
-            msg_ = fmt.format(*args)
+            args_ = (args,) if not isinstance(args, (list, tuple)) else tuple(args)
+            ui_args_ = tuple(tr_(a) if localize_args and isinstance(a, str) else a for a in args_)
+
+            if isinstance(fmt, (list, tuple)):
+                # msg  = "".join(tr_(part).format(*ui_args_) for part in fmt)
+                # msg_ = "".join(part.format(*args_) for part in fmt)
+                fmt_joined_tr  = "".join(tr_(part) for part in fmt)
+                fmt_joined_raw = "".join(fmt)
+
+                msg  = fmt_joined_tr.format(*ui_args_)
+                msg_ = fmt_joined_raw.format(*args_)
+            else:
+                msg  = tr_(fmt).format(*ui_args_)
+                msg_ = fmt.format(*args_)
         else:
             msg = str(args)
             msg_ = ''
@@ -801,28 +821,46 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             json_properties=json_properties_,
             description=f"{msg_ or msg}")
 
-    def open_frozen_dialog( # pylint: disable=too-many-arguments
-            self, msg, title="ALERT", force_explicit_restart=False,
-            ok_callback=None, hp_callback=None, visibility=1,
-            show_cancel_btn=True
+    def open_frozen_dialog(  # pylint: disable=too-many-arguments
+            self, message_args=(),
+            message_fmt: Union[str, List[str]] = None,
+            title="ALERT",
+            force_explicit_restart=False, ok_callback=None,
+            hp_callback=None, visibility=1, show_cancel_btn=True,
+            localize_args=False
     ):
 
-        logging.info(msg)
-        msg_ = tr_("carousel is paused.")
-        msg_ += f'\n------------------------------\n"{msg}"\n------------------------------\n'
+        base_fmt_parts = [
+            "carousel is paused.",
+            '\n------------------------------\n"'
+        ]
+
+        if isinstance(message_fmt, str):
+            base_fmt_parts.append(message_fmt)
+        elif isinstance(message_fmt, list):
+            base_fmt_parts.extend(message_fmt)
+
+        base_fmt_parts.append('"\n------------------------------\n')
+
+
         if force_explicit_restart:
-            # ~ self.open_alert_dialog(msg_, title=title)
             callback = ok_callback
             cb_args = []
         else:
-            msg_ += tr_("hit 'OK' to unfreeze it")
+            base_fmt_parts.append("hit 'OK' to unfreeze it")
             callback = QApplication.instance().freeze_carousel
             cb_args = [False, ]
 
         self.open_alert_dialog(
-            msg_, title=title, callback=callback, cb_args=cb_args,
-            hp_callback=hp_callback, visibility=visibility,
-            show_cancel_btn=show_cancel_btn
+            message_args,
+            fmt=base_fmt_parts,
+            title=title,
+            callback=callback,
+            cb_args=cb_args,
+            hp_callback=hp_callback,
+            visibility=visibility,
+            show_cancel_btn=show_cancel_btn,
+            localize_args=localize_args
         )
 
     def open_recovery_dialog(self, recovery_items, lbl_text=None):

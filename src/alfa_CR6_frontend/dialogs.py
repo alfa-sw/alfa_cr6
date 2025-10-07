@@ -187,6 +187,23 @@ class BaseDialog(QFrame):
 
         self.hide()
 
+    def _log_db_event(self, msg, localized_msg, source=None, level="INFO"):
+        alert_infos = {'fmt': msg, 'args': {}, 'msg_': msg, 'msg': localized_msg}
+        json_properties_ = json.dumps(
+            alert_infos,
+            indent=2,
+            ensure_ascii=False
+        )
+
+        QApplication.instance().insert_db_event(
+            name='UI_DIALOG',
+            level=level,
+            severity='',
+            source=source,
+            json_properties=json_properties_,
+            description=msg
+        )
+
 
 class EditDialog(BaseDialog):
 
@@ -426,17 +443,19 @@ class EditDialog(BaseDialog):
     def __save_changes(self):
 
         if self.warning_lbl.text():
-            msg = tr_("confirm saving changes")
+            args = ()
+            msg = ["confirm saving changes"]
             n_of_jars = self.n_of_jars_spinbox.value()
             print_barcodes = self.print_check_box.isChecked()
             if n_of_jars:
-                msg += tr_(",\ncreating {} jars").format(n_of_jars)
+                args = str(n_of_jars)
+                msg.append(",\ncreating {} jars")
                 if print_barcodes:
-                    msg += tr_("\nand printing barcodes")
+                    msg.append("\nand printing barcodes")
                 else:
-                    msg += tr_("\nwithout printing barcodes")
-            msg += tr_(" ?")
-            self.parent().open_alert_dialog(msg, title="ALERT", callback=self.__do_save_changes)
+                    msg.append("\nwithout printing barcodes")
+            msg.append(" ?")
+            self.parent().open_alert_dialog(args, fmt=msg, title="ALERT", callback=self.__do_save_changes)
         else:
             self.hide()
 
@@ -769,7 +788,7 @@ class AliasDialog(BaseDialog):
         # ~ logging.warning(f"_duplicated_list:{_duplicated_list}")
 
         if _duplicated_list:
-            self.parent().open_alert_dialog(tr_("data not valid. duplicated alias:") + f" {_duplicated_list}", title="ERROR")
+            self.parent().open_alert_dialog(_duplicated_list, fmt="data not valid. duplicated alias: {}", title="ERROR")
             return False
 
         return True
@@ -1141,26 +1160,29 @@ class PackageSizesDialog(BaseDialog):
         try:
 
             result = dymo_print_package_label(package, fake=False)
+            logging.warning(f"result :: {result}")
 
             if result.get('result') == 'OK':
-                pass
-            else:
-                error_msg = "[PackageSizesDialog] An unexpected error has been occurred."
-                logging.error(error_msg)
-                logging.error(traceback.format_exc())
-                QApplication.instance().main_window.open_alert_dialog(
-                    error_msg,
-                    traceback=result.get('msg', 'UNKNOWN ERROR'),
-                    show_cancel_btn=False
-                )
+                return
+
+            error_msg = result.get('msg', "")
+            logging.error(error_msg)
+            QApplication.instance().main_window.open_alert_dialog(
+                (),
+                fmt=error_msg,
+                show_cancel_btn=False
+            )
 
         except Exception as e:
-            error_msg = "[PackageSizesDialog] An unexpected error has been occurred."
-            logging.error(error_msg)
+            error_msg = [
+                "[PackageSizesDialog]",
+                "An unexpected error has been occurred"
+            ]
             logging.error(traceback.format_exc())
             QApplication.instance().main_window.open_alert_dialog(
-                error_msg,
-                traceback=traceback.format_exc(),
+                (),
+                fmt=error_msg,
+                traceback=result.get('msg', 'UNKNOWN ERROR'),
                 show_cancel_btn=False
             )
 
@@ -1170,7 +1192,8 @@ class PackageSizesDialog(BaseDialog):
         self.package_table.setRowCount(1)
         self.package_table.horizontalHeader().setVisible(False)
 
-        item = QTableWidgetItem(error_msg)
+        localized_err_msg = tr_(error_msg)
+        item = QTableWidgetItem(localized_err_msg)
         font = QFont()
         font.setPointSize(font_size)
         font.setBold(True)
@@ -1179,6 +1202,7 @@ class PackageSizesDialog(BaseDialog):
         item.setTextAlignment(Qt.AlignCenter)
         self.package_table.setItem(0, 0, item)
         self.package_table.resizeRowsToContents()
+        self._log_db_event(error_msg, localized_err_msg, source="PackageSizesDialog")
 
     def _load_package_data_sync(self):
 
@@ -1197,22 +1221,26 @@ class PackageSizesDialog(BaseDialog):
         try:
 
             ret = await machine_head.call_api_rest("apiV1/package", "GET", {}, 1.5)
-            logging.warning(f"ret -> {ret}")
 
-            if not ret or not ret.get("objects"):
-                error_msg = "HEAD A(1) offline: cannot retrieve package infos"
+            if not ret or ret.get("objects") is None:
+                error_msg = "HEAD 1 (A): no response or invalid data"
                 self.__show_error_in_table(error_msg)
                 return
 
-            packages = ret.get("objects", [])
-            self.package_table.setRowCount(len(packages))
+            packages = ret.get("objects")
 
+            if not packages:
+                error_msg = "HEAD 1 (A): no package data found"
+                self.__show_error_in_table(error_msg)
+                return
+
+            self.package_table.setRowCount(len(packages))
             for row, package in enumerate(packages):
                 self.__set_row(row, package)
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
-            error_msg = f"Errore nel caricamento dei dati: {str(e)}"
+            error_msg = f"An unexpected error has been occurred. {str(e)}"
             self.__show_error_in_table(error_msg)
 
     def _create_overlay(self):

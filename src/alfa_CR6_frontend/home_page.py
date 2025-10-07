@@ -15,6 +15,7 @@ import copy
 import logging
 import traceback
 import asyncio
+import json
 
 from PyQt5.QtCore import Qt
 
@@ -184,6 +185,23 @@ class RefillProcedureHelper:
 
         await self.machine_.update_tintometer_data()
         self.parent.main_window.browser_page.reload_page()
+
+        margs = (pipe_['name'], qtity_ml_)
+        rfll_msg = "Refilled pipe {} with {} ML".format(*margs)
+        alert_infos = {'fmt': rfll_msg, 'args': margs, 'msg_': rfll_msg, 'msg': rfll_msg}
+        json_properties_ = json.dumps(
+            alert_infos,
+            indent=2,
+            ensure_ascii=False
+        )
+        QApplication.instance().insert_db_event(
+            name='UI_DIALOG',
+            level="INFO",
+            severity='',
+            source="RefillProcedureHelper",
+            json_properties=json_properties_,
+            description=rfll_msg
+        )
 
     def _cb_confirm_quantity(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None):
 
@@ -376,8 +394,11 @@ class RefillProcedureHelper:
                     asyncio.ensure_future(t)
 
             else:
+                h_idx = int(self.machine_.index) + 1
                 QApplication.instance().main_window.open_alert_dialog(
-                    tr_("barcode not known:{}").format(barcode_))
+                    (barcode_, str(h_idx), self.machine_.name),
+                    fmt="The code entered '{}' does not match any toner on HEAD {} ({})"
+                )
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
@@ -496,7 +517,12 @@ class RefillProcedureHelper:
 
         except Exception as e:
             logging.error(traceback.format_exc())
-            self.parent.main_window.open_alert_dialog(args=str(e), title="ERROR")
+            decode_KCC_qrcode
+            self.parent.main_window.open_alert_dialog(
+                args=(),
+                fmt="DECODE KCC QRCODE EXCEPTION",
+                title="ERROR",
+                traceback=traceback.format_exc())
 
     def run(self):
 
@@ -946,7 +972,9 @@ class HomePage(BaseStackedPage):
         m = QApplication.instance().machine_head_dict[head_index]
         if m.low_level_pipes:
             QApplication.instance().main_window.open_alert_dialog(
-                tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(m.name, m.low_level_pipes))
+                (m.name, m.low_level_pipes),
+                fmt="{} Please, Check Pipe Levels: low_level_pipes:{}"
+            )
 
     @staticmethod
     def expiry_label_clicked(head_index):

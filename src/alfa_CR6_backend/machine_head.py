@@ -227,10 +227,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 and self.status.get("status_level") != "ALARM"):
 
             self.app.freeze_carousel(True)
-            _ = "{} ALARM. {}: {}, {}: {}".format(self.name, tr_('error_code'), status.get(
-                "error_code"), tr_('error_message'), tr_(status.get("error_message")))
+            m_fmt = "{} ALARM. {}: {}, {}: {}"
+            m_args = (self.name, 'error_code', status.get(
+                "error_code"), 'error_message', status.get("error_message"))
 
-            logging.error(_)
+            logging.error(m_fmt.format(*m_args))
 
             here = os.path.dirname(os.path.abspath(__file__))
             dir_path = os.path.join(
@@ -249,7 +250,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             else:
                 _cb = None
 
-            self.app.main_window.open_frozen_dialog(_, force_explicit_restart=True, hp_callback=_cb)
+            self.app.main_window.open_frozen_dialog(
+                message_args=m_args, message_fmt=m_fmt,
+                force_explicit_restart=True, hp_callback=_cb,
+                localize_args=True
+            )
 
             try:
                 get_application_instance().insert_db_event(
@@ -505,9 +510,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     r = await self.send_command("CRX_OUTPUTS_MANAGEMENT", params)
                     self.__crx_inner_status[output_number]['value'] = output_action
                     mask_ = 0x1 << output_number
-                    msg_ = tr_("{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}").format(
-                        self.name, output_number, output_action, self.status.get('crx_outputs_status', 0x0))
-
+                    msg_ = "{} waiting for CRX_OUTPUTS_MANAGEMENT({}, {}) execution. crx_outputs_status:{}"
+                    args = (self.name, output_number, output_action, self.status.get('crx_outputs_status', 0x0))
                     if output_action:
                         def condition():
                             return self.status.get('crx_outputs_status', 0x0) & mask_
@@ -520,7 +524,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     if not r:
                         logging.error(f"msg_:{msg_}")
                         if not silent:
-                            self.app.main_window.open_alert_dialog(msg_)
+                            self.app.main_window.open_alert_dialog(args, fmt=msg_)
 
                 except Exception as e:  # pylint: disable=broad-except
                     self.app.handle_exception(e)
@@ -711,7 +715,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 disp_type_map = {1: "order", 2: "purge"}
                 while step < 2:
                     disp_type = None
-                    msg_ = get_error_messages_for_specific_dispense_condition()
+                    # msg_ = get_error_messages_for_specific_dispense_condition()
+                    msg_ = ""
                     r = await self.app.wait_for_condition(
                         before_dispense_condition, timeout=31,
                         show_alert=False
@@ -791,6 +796,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                             break
                     else:
+                        msg_ = get_error_messages_for_specific_dispense_condition()
                         outcome_ += tr_('failure in waiting for dispensing condition (step:{}) ').format(step)
                         result_ = 'NOK'
                         store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
@@ -840,7 +846,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 logging.warning(f"error_msg: {error_msg}")
                 logging.warning(f"msg_: {msg_}")
                 if error_msg:
-                    await self.app.wait_for_carousel_not_frozen(True, msg=msg_)
+                    await self.app.wait_for_carousel_not_frozen(
+                        True,
+                        message_args=(),
+                        message_fmt=msg_
+                    )
 
         return True
 

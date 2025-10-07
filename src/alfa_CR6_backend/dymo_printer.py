@@ -31,24 +31,25 @@ def _check_dymo_printer_presence():
 
 def _dymo_print_tmp_image(_printable_image_pth, fake=False):
 
+    if fake:
+        return {'result': 'OK', 'msg': 'Dry run, not printed'}
+
     ret = {}
     _dymo_printer_presence = _check_dymo_printer_presence()
     logging.warning(f'_printable_image_pth:{_printable_image_pth}, _dymo_printer_presence:{_dymo_printer_presence}')
     if not _printable_image_pth:
         return {'result': 'NOK', 'msg': 'Cannot create printable image'}
 
-    if _dymo_printer_presence or os.getenv("IN_DOCKER", False) in ['1', 'true']:
-        _print_cups_cmd = f'lp -o fit-to-page {_printable_image_pth}'
-        logging.debug(f'_print_cups_cmd: {_print_cups_cmd}')
+    # if _dymo_printer_presence or os.getenv("IN_DOCKER", False) in ['1', 'true']:
+    if not _dymo_printer_presence:
+        ret = {'result': 'NOK', 'msg': 'Printer not detected'}
+        return ret
 
-        if fake:
-            return {'result': 'OK', 'msg': 'Dry run, not printed'}
+    _print_cups_cmd = f'lp -o fit-to-page {_printable_image_pth}'
+    logging.debug("_print_cups_cmd: %s", _print_cups_cmd)
 
-        res_print = _exec_cmd(_print_cups_cmd)
-        ret = {'result': 'OK', 'msg': res_print}
-
-    else:
-        ret = {'result': 'NOK', 'msg': 'Dymo not plugged'}
+    res_print = _exec_cmd(_print_cups_cmd)
+    ret = {'result': 'OK', 'msg': res_print}
 
     return ret
 

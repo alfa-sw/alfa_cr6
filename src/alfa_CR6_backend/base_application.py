@@ -669,21 +669,26 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if insufficient_pigments or unknown_pigments:
                     self.main_window.show_barcode(jar.barcode, is_ok=False)
-                    msg_ = f"barcode: {barcode}\n"
+                    msg_ = ["barcode: {}\n"]
+                    msg_args = (barcode,)
 
                     if insufficient_pigments and cntr <= 3:
                         fmt_insuff_pigmts = self.build_insufficient_pigments_infos(insufficient_pigments)
-                        msg_ += tr_("\npigments to be refilled before dispensing:{}. ({}/3)\n").format(
-                            fmt_insuff_pigmts, cntr)
+                        msg_.append("\npigments to be refilled before dispensing:{}. ({}/3)\n")
+                        msg_args = msg_args + (fmt_insuff_pigmts, cntr,)
                     else:
                         cntr = 4
 
                     if unknown_pigments:
-                        msg_ += tr_("\npigments to be added by hand after dispensing:\n{}.").format(
-                            list(unknown_pigments.keys()))
-                        msg_ += tr_("\nRemember to check the volume.\n")
+                        msg_.append("\npigments to be added by hand after dispensing:\n{}.")
+                        msg_args = msg_args + (list(unknown_pigments.keys()),)
+                        msg_.append("\nRemember to check the volume.\n")
 
-                    await self.wait_for_carousel_not_frozen(True, msg=msg_)
+                    await self.wait_for_carousel_not_frozen(
+                        True,
+                        message_args=msg_args,
+                        message_fmt=msg_
+                    )
 
                 else:
                     self.main_window.show_barcode(jar.barcode, is_ok=True)
@@ -837,17 +842,23 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if jar_volume < ingredients_total_vol:
                     jar = None
-                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                    msg_ += tr_("Jar volume {}(cc) < Order volume {:.3f}(cc).").format(jar_volume, ingredients_total_vol)
-                    self.main_window.open_alert_dialog(msg_, title="ERROR")
+                    args = (barcode, jar_volume, ingredients_total_vol)
+                    fmt = [
+                        "Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n",
+                        "Jar volume {}(cc) < Order volume {:.3f}(cc)."
+                    ]
+                    self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                     logging.error(msg_)
                     verified = True
 
                 if not verified and jar_volume < remaining_volume:
                     jar = None
-                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, remaining_volume)
-                    self.main_window.open_alert_dialog(msg_, title="ERROR")
+                    args = (barcode, jar_volume, remaining_volume)
+                    fmt = [
+                        "Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n",
+                        "{}(cc)<{:.3f}(cc)."
+                    ]
+                    self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                     logging.error(msg_)
 
         else:
@@ -1348,14 +1359,17 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         return {k: j for k, j in self.__jar_runners.items() if j and j.get('jar')}
 
     async def wait_for_carousel_not_frozen(
-            self, freeze=False, msg="", visibility=1,
-            show_cancel_btn=True
+            self, freeze=False, message_args=(), message_fmt=None,
+            visibility=1, show_cancel_btn=True
     ):  # pylint: disable=too-many-statements
 
         if freeze and not self.carousel_frozen:
             self.freeze_carousel(True)
             self.main_window.open_frozen_dialog(
-                msg, visibility=visibility, show_cancel_btn=show_cancel_btn
+                message_args,
+                message_fmt=message_fmt,
+                visibility=visibility,
+                show_cancel_btn=show_cancel_btn
             )
 
         _runner = None
@@ -1435,9 +1449,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         d2 = jar_json_properties.get("unknown_pigments", {})
         _diff = get_dict_diff(d1, d2)
         if _diff:
-            msg = f"{jar.barcode}\n"
-            msg += tr_("pigments in machine db have changed, check can label. diff:{}").format(_diff)
-            self.main_window.open_alert_dialog(f"{msg}", title="ALERT")
+            args = (jar.barcode, _diff)
+            fmt = "{}\n pigments in machine db have changed, check can label. diff:{}\n"
+            self.main_window.open_alert_dialog(args, fmt=fmt, title="ALERT")
 
         self.db_session.commit()
 
@@ -1643,12 +1657,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(f"barcode: {barcode}")
             barcode_match = BARCODE_NEW_PATTERN.match(barcode)
             if not barcode_match:
-                return False, "UNKNOWN BARCODE SHUTTLE FORMAT"
+                return False, "INVALID SHUTTLE BARCODE: {}", barcode
             shuttle_name = barcode_match.group(0).lower().rstrip()
             try:
                 ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
-                if not ret or not ret.get("objects"):
-                    return False, "API ERROR"
+                if not ret or ret.get("objects") is None:
+                    return False, "Impossibile to retrieve packages data", ""
+                if not ret.get("objects"):
+                    return False, "HEAD 1 (A): no package data found", ""
 
                 packages = ret["objects"]
                 size_map = {p["name"].lower().rstrip(): p["size"] for p in packages if p.get("name") and p.get("size")}
@@ -1656,9 +1672,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if shuttle_name in size_map:
                     self.shuttle_size_from_gun_barcode_scanner = size_map[shuttle_name]
                     logging.warning(f"SHUTTLE - {shuttle_name}: {size_map[shuttle_name]}")
-                    return True, ""
+                    return True, "", ""
                 else:
-                    return False, "UNKNOWN SHUTTLE"
+                    return False, "UNKNOWN SHUTTLE: {}", shuttle_name
 
             except Exception as e:
                 logging.error(f"An unexpected error has been occurred: {e}")
@@ -1688,14 +1704,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             )
             await shuttle_event.wait()
 
-            valid, msg = await validate_shuttle(shuttle_barcode)
+            valid, msg, args = await validate_shuttle(shuttle_barcode)
             if valid:
                 self.main_window.hide_input_dialog()
                 break
 
             logging.warning(f"Invalid shuttle barcode: {shuttle_barcode} - {msg}")
             self.main_window.hide_input_dialog()
-            self.main_window.open_alert_dialog(msg, title="ERROR BARCODE SHUTTLE")
+            self.main_window.open_alert_dialog(args, fmt=msg, title="ERROR BARCODE SHUTTLE")
 
         while True:
             formula_event.clear()
@@ -1714,7 +1730,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(f"Invalid formula barcode: {formula_barcode} (non è solo numeri)")
             self.main_window.hide_input_dialog()
             self.main_window.open_alert_dialog(
-                tr_("Invalid order barcode"),
+                (formula_barcode),
+                fmt="Invalid order barcode: {}",
                 title="ERROR ORDER BARCODE"
             )
 
