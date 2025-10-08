@@ -1120,7 +1120,14 @@ class HomePage(BaseStackedPage):
         recovery_text = tr_("If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic")
         recovery_text += tr_("\nAutomation paused is required!")
         jars = QApplication.instance().get_restorable_jars_for_recovery_mode()
-        self.main_window.open_recovery_dialog(jars, lbl_text=recovery_text)
+        top_label = "Below is the list of pending orders: "
+        bottom = [
+            "Orders in green will be completed during Recovery Mode.",
+            "Orders in red cannot be completed and will automatically move towards the machine exit.",
+            "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.",
+            "Automation paused is required!"
+        ]
+        self.main_window.open_recovery_dialog(jars, lbl_text=top_label, bottom_lbl_text=bottom)
 
 class HomePageSixHeads(HomePage):
 

@@ -40,7 +40,9 @@ from PyQt5.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QDialogButtonBox,
-    QTextBrowser
+    QTextBrowser,
+    QSizePolicy,
+    QLayout,
 )
 
 from alfa_CR6_backend.models import Order, Jar
@@ -900,41 +902,65 @@ class AliasDialog(BaseDialog):
 
 
 class RecoveryInfoDialog(QDialog):
-    def __init__(self, parent=None, recovery_items=None, lbl_text=None, app_frozen=False):
+    def __init__(self, parent=None, recovery_items=[], lbl_text=None, app_frozen=False, bottom_lbl_text=[]):
         super(RecoveryInfoDialog, self).__init__(parent)
         self.setWindowTitle("Recovery Information")
         self.setModal(True)
-        self.resize(400, 300)
+        self.setMinimumWidth(520)
 
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
+        self.parent = parent
+        self.app_frozen = app_frozen
+        self.recovery_items = recovery_items
+        self.rows = []
+
+        self.main_layout = QVBoxLayout(self)
 
         if lbl_text:
-            self.text_label = QLabel(lbl_text)
-            self.layout.addWidget(self.text_label)
+            self.top_label = QLabel(tr_(lbl_text))
+            self.top_label.setWordWrap(True)
+            self.top_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+            self.top_label.adjustSize()
+            self.main_layout.addWidget(self.top_label)
 
-        self.recovery_items = recovery_items.copy() if recovery_items else []
-        self.rows = []
-        self.parent = parent
+        self.rows_container = QWidget()
+        self.rows_layout = QVBoxLayout(self.rows_container)
+        self.rows_layout.setAlignment(Qt.AlignTop)
+
+        self.main_layout.addWidget(self.rows_container)
+        db_text = ["[RecoveryInfoDialog] \n"]
+        db_text.append(lbl_text)
+        for item in self.recovery_items.copy():
+            _lbl = f"{item[0]} - {item[1]}"
+            _flag = item[2]
+            self.add_recovery_row(_lbl, _flag)
+            db_text.append(_lbl)
+
+        if bottom_lbl_text:
+            qlbl_bottom = "\n".join(tr_(t) for t in bottom_lbl_text)
+            self.bottom_label = QLabel(qlbl_bottom)
+            self.bottom_label.setWordWrap(True)
+            self.bottom_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+            self.bottom_label.adjustSize()
+            self.main_layout.addWidget(self.bottom_label)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         self.button_box.accepted.connect(self.close_modal)
-        self.layout.addWidget(self.button_box)
+        self.main_layout.addWidget(self.button_box)
 
-        for item in self.recovery_items.copy():
-            self.add_recovery_row(item)
-
-        self.app_frozen=app_frozen
+        db_text.extend(bottom_lbl_text)
+        self.store_event(db_text)
+        self._apply_content_sizing()
         self.show()
 
-    def add_recovery_row(self, text):
+    def add_recovery_row(self, text, recover_ok=True):
 
         row_widget = QWidget()
-        row_layout = QHBoxLayout()
-        row_widget.setLayout(row_layout)
+        row_layout = QHBoxLayout(row_widget)
 
         label = QLabel(text)
         label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        css_color = "#2B842B" if recover_ok else "#BA2D09"
+        label.setStyleSheet(f"color: {css_color};")
 
         delete_button = QPushButton("Delete")
         delete_button.setFixedSize(90, 30)
@@ -944,14 +970,14 @@ class RecoveryInfoDialog(QDialog):
         row_layout.addStretch()
         row_layout.addWidget(delete_button)
 
-        self.layout.addWidget(row_widget)
-
+        self.rows_layout.addWidget(row_widget)
         self.rows.append(row_widget)
+
+        self._apply_content_sizing()
 
         delete_button.clicked.connect(lambda: self.remove_recovery_row(row_widget))
 
     def remove_recovery_row(self, row_widget):
-
         if not self.app_frozen and self.parent:
             msg_ = "\nAutomation paused is required!"
             self.parent.open_alert_dialog(msg_, title="ERROR")
@@ -963,21 +989,99 @@ class RecoveryInfoDialog(QDialog):
             return
 
         if 0 <= index < len(self.recovery_items):
-            removed_item = self.recovery_items.pop(index)
+            _removed_item = self.recovery_items.pop(index)
 
-        self.layout.removeWidget(row_widget)
+        self.rows_layout.removeWidget(row_widget)
         row_widget.deleteLater()
         self.rows.remove(row_widget)
+
+        self._apply_content_sizing()
+
         label = row_widget.findChild(QLabel)
         if label:
             label_text = label.text()
             tokens = label_text.split('-', maxsplit=1)
-            barcode = tokens[0].strip()
-            jar_pos = tokens[1]
-            QApplication.instance().recovery_mode_delete_jar_task(barcode, jar_pos)
+            if len(tokens) == 2:
+                barcode = tokens[0].strip()
+                jar_pos = tokens[1]
+                QApplication.instance().recovery_mode_delete_jar_task(barcode, jar_pos)
+                delete_infos = ["DELETED", label_text]
+                self.store_event(delete_infos)
+
+    def _apply_content_sizing(self):
+
+        if not hasattr(self, 'button_box'):
+            return
+
+        self.layout().activate()
+
+        margins = self.main_layout.contentsMargins()
+        spacing = self.main_layout.spacing()
+
+        total_h = margins.top() + margins.bottom()
+
+        if hasattr(self, 'top_label') and self.top_label is not None:
+            self.top_label.adjustSize()
+            total_h += self.top_label.sizeHint().height()
+            total_h += spacing
+
+        rows_h = 0
+        for i in range(self.rows_layout.count()):
+            item = self.rows_layout.itemAt(i)
+            if item and item.widget():
+                item.widget().adjustSize()
+                rows_h += item.widget().sizeHint().height()
+                rows_h += self.rows_layout.spacing()
+        total_h += rows_h
+
+        if hasattr(self, 'bottom_label') and self.bottom_label is not None:
+            self.bottom_label.adjustSize()
+            total_h += self.bottom_label.sizeHint().height()
+            total_h += spacing
+
+        self.button_box.adjustSize()
+        total_h += self.button_box.sizeHint().height()
+
+        desktop = QApplication.instance().desktop().availableGeometry(self)
+        max_h = int(desktop.height() * 0.9)
+        self.setMaximumHeight(max_h)
+
+        min_w = max(
+            self.minimumWidth(),
+            self.top_label.sizeHint().width() if hasattr(self, 'top_label') and self.top_label is not None else 0,
+            self.bottom_label.sizeHint().width() if hasattr(self, 'bottom_label') and self.bottom_label is not None else 0,
+            self.button_box.sizeHint().width(),
+        )
+        self.setMinimumWidth(min_w + margins.left() + margins.right() + 20)
+
+        self.resize(self.minimumWidth(), min(total_h, max_h))
 
     def close_modal(self):
+        self.store_event("[RecoveryInfoDialog] popup closed")
         self.close()
+    
+    def store_event(self, db_text):
+        # msg  -> localized msg for UI
+        # msg_ -> non localized msg (eng) for db event
+
+        _msg = _l_msg = db_text
+        if isinstance(db_text, list):
+            _l_msg = "\n".join(tr_(text) for text in db_text)
+            _msg = "\n".join(text for text in db_text)
+        recovery_infos = {'fmt': (), 'args': (), 'msg_': _msg, 'msg': _l_msg}
+        json_properties_ = json.dumps(
+            recovery_infos,
+            indent=2,
+            ensure_ascii=False
+        )
+        QApplication.instance().insert_db_event(
+            name='UI_DIALOG',
+            level="INFO",
+            severity='',
+            source="RecoveryInfoDialog",
+            json_properties=json_properties_,
+            description=_msg
+        )
         
 class RefillDialog(BaseDialog):
 

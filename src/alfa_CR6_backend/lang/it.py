@@ -236,6 +236,7 @@ D = {
     "Impossibile to retrieve packages data": "Impossibile to retrieve packages data",
     "An unexpected error has been occurred": "An unexpected error has been occurred",
     "Printer not detected": "Stampante non rilevata",
+    "The selected jar size is not recognised": "La dimensione del barattolo selezionata non è riconosciuta"
 }
 
 

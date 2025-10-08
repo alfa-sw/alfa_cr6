@@ -863,13 +863,14 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             localize_args=localize_args
         )
 
-    def open_recovery_dialog(self, recovery_items, lbl_text=None):
+    def open_recovery_dialog(self, recovery_items, lbl_text=None, bottom_lbl_text=None):
         app_frozen = QApplication.instance().carousel_frozen
         _msgbox = RecoveryInfoDialog(
             parent=self,
             recovery_items=recovery_items,
             lbl_text=lbl_text,
-            app_frozen=app_frozen
+            app_frozen=app_frozen,
+            bottom_lbl_text=bottom_lbl_text
         ) 
 
     def show_barcode(self, barcode, is_ok=False):

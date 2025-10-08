@@ -797,7 +797,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             variant = os.getenv('MACHINE_VARIANT')
             if variant in ['CR3', 'CR2']:
                 jar_size = self.shuttle_size_from_gun_barcode_scanner
-                logging.debug(f"Using shuttle_size_from_gun_barcode_scanner: {jar_size}")
+                logging.debug("Using shuttle_size_from_gun_barcode_scanner: %s", jar_size)
             else:
                 A = self.get_machine_head_by_letter("A")
                 jar_size = await A.get_stabilized_jar_size()
@@ -824,10 +824,18 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 package_size_list.sort()
                 logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
                 jar_volume = 0
-                if len(package_size_list) > jar_size:
-                    jar_volume = package_size_list[jar_size]
                 if variant in ['CR3', 'CR2']:
                     jar_volume = self.shuttle_size_from_gun_barcode_scanner
+                else:
+                    try:
+                        p_idx = int(jar_size)
+                        jar_volume = package_size_list[p_idx]
+                    except IndexError:
+                        args = ()
+                        fmt = "The selected jar size is not recognised"
+                        self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                        logging.error(msg_)
+                        return jar
 
                 self.update_jar_properties(jar)
 
@@ -1613,8 +1621,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         restorable_jars_dict = self.restore_machine_helper.read_data()
         lista = []
         for key, val in restorable_jars_dict.items():
-            pos = val['pos']
-            lista.append(f"{key} - {pos}")
+            j_status = not (
+                val.get('jar_status') == "ERROR"
+                or val.get('dispensation') in ("ongoing", "dispensation_failure")
+            )
+            restorable_jar = (key, val['pos'], j_status)
+            lista.append(restorable_jar)
         return lista
 
     def recovery_mode_delete_jar_task(self, jar_code, jar_pos):
