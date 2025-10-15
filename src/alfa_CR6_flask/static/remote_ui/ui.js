@@ -58,7 +58,7 @@ var wsocket_send = function(obj) {
 
 var wsocket_connect = function(ws_server_url, on_open_cb) {
     console.log('wsocket_connect() ws_server_url:', ws_server_url);
-    if ((__g_ws_client === null) || (ws_client.readyState == 3)/* CLOSED */) {
+    if ((__g_ws_client === null) || (__g_ws_client.readyState == 3)/* CLOSED */) {
         __g_ws_client = new WebSocket(ws_server_url);
         __g_ws_client.onerror = function(event) { console.log('__on_wsocket_error, event: ' + JSON.stringify(event)); }; 
         __g_ws_client.onopen  = function(event) { 

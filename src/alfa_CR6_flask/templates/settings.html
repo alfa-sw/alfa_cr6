@@ -1,0 +1,170 @@
+<!DOCTYPE HTML>
+<html lang="{{ lang }}">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>App Settings</title>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/ui.css') }}"/>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/bootstrap.min.css') }}"/>
+    <style>
+      body { padding: 10px; }
+      .settings-container { max-width: 1200px; margin: auto; }
+      .actions { margin: 10px 0; display:flex; gap:8px; }
+      #settings_output { white-space: pre-wrap; font-family: monospace; background: #f7f7f7; padding: 10px; border-radius: 6px; }
+      table { width:100%; border-collapse: collapse; }
+      th, td { border: 1px solid #ddd; padding: 6px; }
+      th { background: #fafafa; }
+      input[type="text"] { width: 100%; }
+    </style>
+  </head>
+  <body>
+    <div class="settings-container">
+      <h2>APP SETTINGS</h2>
+      <div id="settings_origin" class="text-muted" style="margin-bottom:6px;"></div>
+
+      <div class="actions">
+        <button id="btn_refresh" class="btn btn-default">Refresh</button>
+        <button id="btn_save" class="btn btn-primary">Save</button>
+        <span id="save_status" class="text-muted" style="padding-left:8px;"></span>
+      </div>
+
+      <div id="settings_form_wrapper">
+        <table id="settings_table">
+          <thead>
+            <tr><th>Name</th><th>Value</th></tr>
+          </thead>
+          <tbody id="settings_tbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script type="text/javascript" src="{{ url_for('static', filename='remote_ui/ui.js') }}"></script>
+    <script>
+      const wsUrl = "ws://{{ ws_ip_port }}"; // canale WS standard
+      let currentSettings = {};
+
+      function buildTable(data) {
+        const tbody = document.getElementById('settings_tbody');
+        tbody.innerHTML = '';
+        const sortedKeys = Object.keys(data).sort();
+        for (const k of sortedKeys) {
+          // escludi attributi complessi non utili o volatili
+          if (k.startsWith('_')) continue;
+          const v = data[k];
+          const tr = document.createElement('tr');
+          const tdKey = document.createElement('td');
+          tdKey.textContent = k;
+          const tdVal = document.createElement('td');
+
+          if (typeof v === 'boolean') {
+            // Coppia di checkbox mutuamente esclusivi: True / False
+            const wrap = document.createElement('div');
+            wrap.className = 'bool-pair';
+
+            const makeBoolCb = (labelText, val) => {
+              const lbl = document.createElement('label');
+              lbl.style.marginRight = '12px';
+              const cb = document.createElement('input');
+              cb.type = 'checkbox';
+              cb.className = 'bool-ck';
+              cb.dataset.key = k;
+              cb.dataset.value = String(val); // "true" | "false"
+              cb.checked = v === val;
+              cb.addEventListener('change', () => {
+                if (cb.checked) {
+                  // Se seleziono questo, deseleziono l'altro
+                  const other = wrap.querySelector(`input.bool-ck[data-key="${k}"][data-value="${String(!val)}"]`);
+                  if (other) other.checked = false;
+                } else {
+                  // Evita che entrambe siano deselezionate
+                  const sibling = wrap.querySelector(`input.bool-ck[data-key="${k}"][data-value="${String(!val)}"]`);
+                  if (sibling && !sibling.checked) cb.checked = true;
+                }
+              });
+              lbl.appendChild(cb);
+              lbl.appendChild(document.createTextNode(' ' + labelText));
+              return lbl;
+            };
+
+            wrap.appendChild(makeBoolCb('True', true));
+            wrap.appendChild(makeBoolCb('False', false));
+            tdVal.appendChild(wrap);
+          } else {
+            // Input testo per gli altri tipi
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = typeof v === 'object' ? JSON.stringify(v) : String(v);
+            input.dataset.key = k;
+            tdVal.appendChild(input);
+          }
+
+          tr.appendChild(tdKey); tr.appendChild(tdVal);
+          tbody.appendChild(tr);
+        }
+      }
+
+      function requestSettingsJson() {
+        if (!__g_ws_client || __g_ws_client.readyState !== 1) return;
+        const msg = { command: 'ask_settings_json', params: {} };
+        __g_ws_client.send(JSON.stringify(msg));
+      }
+
+      function saveSettings() {
+        if (!__g_ws_client || __g_ws_client.readyState !== 1) return;
+
+        const textInputs = document.querySelectorAll('#settings_tbody input[type="text"]');
+        const updates = {};
+
+        // Leggi input testo (prova a fare JSON.parse)
+        textInputs.forEach(inp => {
+          const key = inp.dataset.key;
+          let val = inp.value;
+          try { val = JSON.parse(val); } catch (_) {}
+          updates[key] = val;
+        });
+
+        // Leggi i booleani: in base alla checkbox "true"
+        document.querySelectorAll('#settings_tbody input.bool-ck[data-value="true"]').forEach(cbTrue => {
+          const key = cbTrue.dataset.key;
+          updates[key] = !!cbTrue.checked; // true se "true" è selezionato, altrimenti false
+        });
+
+        const msg = { command: 'save_settings', params: { updates } };
+        document.getElementById('save_status').textContent = 'Salvataggio...';
+        __g_ws_client.send(JSON.stringify(msg));
+      }
+
+      function wsMessageHandlerForSettings(event) {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'ask_settings_json') {
+            currentSettings = data.value || {};
+            document.getElementById('settings_origin').innerText = 'Origine: ' + (data.origin || '-');
+            buildTable(currentSettings);
+          } else if (data.type === 'save_settings_result') {
+            const ok = data.value === 'OK';
+            document.getElementById('save_status').textContent = ok ? 'Salvato' : 'Errore salvataggio';
+            if (ok) {
+              // dopo salvataggio ricarico i settings aggiornati
+              requestSettingsJson();
+            }
+          }
+        } catch (e) { console.error(e); }
+      }
+
+      function connectAndInit() {
+        wsocket_connect(wsUrl, function () { requestSettingsJson(); });
+        __g_ws_client.onmessage = function (event) { wsMessageHandlerForSettings(event); };
+      }
+
+      document.getElementById('btn_refresh').addEventListener('click', requestSettingsJson);
+      document.getElementById('btn_save').addEventListener('click', saveSettings);
+
+      connectAndInit();
+    </script>
+  </body>
+</html>

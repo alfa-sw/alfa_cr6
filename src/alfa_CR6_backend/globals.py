@@ -21,8 +21,10 @@ import unicodedata
 
 import redis  # pylint: disable=import-error
 import arabic_reshaper  # pylint: disable=import-error
-from bidi.algorithm import get_display  # pylint: disable=import-error
 
+from alfa_CR6_backend.settings_manager import SettingsManager
+
+from bidi.algorithm import get_display  # pylint: disable=import-error
 from barcode import EAN13, Code128           # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
 
@@ -148,15 +150,16 @@ def set_refill_popup_choices(refill_choices):
     os.system("kill -9 {}".format(os.getpid()))
 
 
-def import_settings():
+def import_settings(set_missing_app_settings=False):
 
     sys.path.append(CONF_PATH)
     import app_settings  # pylint: disable=import-error,import-outside-toplevel
     sys.path.remove(CONF_PATH)
     
-    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+    env_in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+    if env_in_docker:
         fn = app_settings.USER_SETTINGS_JSON_FILE
-        logging.info(f"importing user settings from {fn}")
+        # logging.warning(f"importing user settings from {fn}")
         try:
             user_config_dict = {}
             with open(fn, "r") as f:
@@ -170,6 +173,14 @@ def import_settings():
             app_settings.__dict__[el_name] = value
         
         app_settings.__dict__['USER_SETTINGS']  = user_settings_dict
+        if set_missing_app_settings:
+            SettingsManager.ensure_missing_defaults()
+            defaults = getattr(app_settings, 'DEFAULT_USER_SETTINGS', {}) or {}
+            merged = {**defaults, **user_settings_dict}
+            app_settings.__dict__['USER_SETTINGS'] = merged
+
+    if not env_in_docker and set_missing_app_settings:
+        SettingsManager.ensure_missing_defaults()
 
     for pth in (app_settings.LOGS_PATH,
                 app_settings.TMP_PATH,
@@ -517,51 +528,6 @@ def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp
             pos=_pos,
             dispensation=_disp,
         )
-
-def set_missing_settings():
-    """
-    Inserts missing settings when updating from older software versions.
-    """
-
-    _SETTINGS = {
-        "FORCE_ORDER_JAR_TO_ONE": False,
-        "ENABLE_BTN_PURGE_ALL": False,
-        "ENABLE_BTN_ORDER_NEW": True,
-        "ENABLE_BTN_ORDER_CLONE": True,
-        "MANUAL_BARCODE_INPUT": False,
-        "POPUP_REFILL_CHOICES": [500, 1000]
-    }
-
-    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-        s = import_settings()
-        fn = s.USER_SETTINGS_JSON_FILE
-        us = s.USER_SETTINGS
-        updated = False
-        for key, value in _SETTINGS.items():
-            if key not in us:
-                us[key] = value
-                updated = True
-        if updated:
-            save_user_settings(fn, us)
-
-    else:
-        path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
-
-        if not os.path.exists(path_app_settings):
-            raise RuntimeError("Missing app_settings.py file in path '/opt/alfa_cr6/conf/' ")
-
-        try:
-            for key, value in _SETTINGS.items():
-                linea = f'{key} = {value}'
-                command = (
-                    f'if ! grep -qE "^{key}\\s*=" {path_app_settings}; then '
-                    f'echo "{linea}" >> {path_app_settings}; '
-                    f'fi'
-                )
-                subprocess.run(command, shell=True, check=True)
-        except subprocess.CalledProcessError as e:
-            logging.error(f"{e.returncode} - {e.stderr}")
-            raise RuntimeError("Error while updating settings ..") from e
 
 def toggle_manual_barcode_read():
     import re

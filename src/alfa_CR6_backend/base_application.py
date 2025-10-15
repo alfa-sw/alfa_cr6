@@ -615,7 +615,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 except Exception as e:  # pylint: disable=broad-except
                     self.handle_exception(e)
 
-                if hasattr(self.settings, "DOWNLOAD_KCC_LOT_STEP") and self.settings.DOWNLOAD_KCC_LOT_STEP:
+                if hasattr(self.settings, "DOWNLOAD_KCC_LOT_STEP") and self.settings.DOWNLOAD_KCC_LOT_STEP > 0:
                     if time.time() - last_check_KCC_specific_gravity_lot_time > self.settings.DOWNLOAD_KCC_LOT_STEP:
                         try:
                             last_check_KCC_specific_gravity_lot_time = time.time()

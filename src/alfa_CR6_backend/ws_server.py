@@ -25,6 +25,7 @@ import websockets  # pylint: disable=import-error
 from flask import Markup # pylint: disable=import-error
 
 from alfa_CR6_backend.globals import (get_version, set_language, import_settings, get_application_instance, tr_, set_refill_popup_choices)
+from alfa_CR6_backend.settings_manager import SettingsManager
 
 here_ = os.path.dirname(os.path.abspath(__file__))
 pth_ = os.path.join(here_, "templates/")
@@ -168,6 +169,43 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
             'value': answ_,
         })
         await websocket.send(answer)
+
+    @classmethod
+    async def ask_settings_json(cls, msg_dict, websocket): # pylint: disable=unused-argument
+        """Return settings as a JSON object plus origin info (docker/host)."""
+        try:
+            data = SettingsManager.get_editable_settings()
+            origin = 'docker' if (os.getenv('IN_DOCKER', False) in ['1', 'true']) else 'host'
+            answer = json.dumps({
+                'type': 'ask_settings_json',
+                'value': data,
+                'origin': origin,
+            })
+            await websocket.send(answer)
+        except Exception:
+            logging.error(traceback.format_exc())
+
+    @classmethod
+    async def save_settings(cls, msg_dict, websocket):
+        """Save provided settings. Expects params.updates = {key: value}."""
+        try:
+            params = msg_dict.get('params', {})
+            updates = params.get('updates', {}) or {}
+            if not isinstance(updates, dict):
+                raise ValueError('updates must be a dict')
+
+            # Validate and apply through centralized manager
+            SettingsManager.set_updates(updates)
+
+            # force re-import on next request
+            cls.settings = None
+
+            answer = json.dumps({'type': 'save_settings_result', 'value': 'OK'})
+            await websocket.send(answer)
+        except Exception:
+            logging.error(traceback.format_exc())
+            answer = json.dumps({'type': 'save_settings_result', 'value': 'ERROR'})
+            await websocket.send(answer)
 
     @classmethod
     async def create_order_from_file(cls, msg_dict, websocket):
