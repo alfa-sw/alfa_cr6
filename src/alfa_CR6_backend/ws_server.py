@@ -176,10 +176,16 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         try:
             data = SettingsManager.get_editable_settings()
             origin = 'docker' if (os.getenv('IN_DOCKER', False) in ['1', 'true']) else 'host'
+
+            # Provide filtered schema for visible keys so UI can render constraints
+            properties = SettingsManager.SCHEMA.get('properties', {})
+            visible_schema = {k: v for k, v in properties.items() if v.get('ui_show', True) and k in data}
+
             answer = json.dumps({
                 'type': 'ask_settings_json',
                 'value': data,
                 'origin': origin,
+                'schema': visible_schema,
             })
             await websocket.send(answer)
         except Exception:
@@ -191,6 +197,8 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         try:
             params = msg_dict.get('params', {})
             updates = params.get('updates', {}) or {}
+            logging.warning(f"params :: {params}")
+            logging.warning(f"updates :: {updates}")
             if not isinstance(updates, dict):
                 raise ValueError('updates must be a dict')
 

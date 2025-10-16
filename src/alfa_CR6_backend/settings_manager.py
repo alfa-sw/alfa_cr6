@@ -25,6 +25,7 @@ class SettingsManager:
             'LANGUAGE': {
                 'type': 'string',
                 'default': 'it',
+                'ui_show': False,
             },
             'USE_PIGMENT_ID_AS_BARCODE': {
                 'type': 'boolean',
@@ -33,17 +34,24 @@ class SettingsManager:
             'LOAD_LIFTER_IS_UP_LONG_TIMEOUT': {
                 'type': 'number',
                 'minimum': 30.3,
+                'maximum': 100,
                 'default': 90.0,
+                'description': 'Timeout in secs (30.3 - 99.3)',
+                'ui_error': 'Error: value must be between 30.3 and 99.3 secs',
             },
             'MOVE_01_02_TIME_INTERVAL': {
                 'type': 'number',
                 'minimum': 7.0,
                 'maximum': 8.5,
                 'default': 8.0,
+                'multipleOf': 0.1,
+                'description': 'Time interval in seconds (7.0 - 8.5) for the shuttle to travel from INPUT ROLLER PHOTOCELL to HEAD A PHOTOCELL',
+                'ui_error': 'Error: value must be between 7.0 and 8.5 secs',
             },
             'FORCE_ORDER_JAR_TO_ONE': {
                 'type': 'boolean',
                 'default': False,
+                'description': 'When enabled, creating multiple jars for the same order is not more allowed.'
             },
             'ENABLE_BTN_PURGE_ALL': {
                 'type': 'boolean',
@@ -60,6 +68,7 @@ class SettingsManager:
             'MANUAL_BARCODE_INPUT': {
                 'type': 'boolean',
                 'default': False,
+                'description': 'Enables manual entry of an order barcode in case the roller input barcode scanner is not working.',
             },
             'POPUP_REFILL_CHOICES': {
                 'type': 'array',
@@ -67,9 +76,18 @@ class SettingsManager:
                 'maxItems': 5,
                 'items': {
                     'type': 'integer',
-                    'minimum': 50
+                    'minimum': 50,
                 },
-                'default': [500, 1000]
+                'default': [500, 1000],
+                'description': 'Defines the available choices displayed in the HMI refill popup.',
+                'ui_error': 'Error: it must contain numeric values (integers or floats) with at least 2 elements and no more than 5 elements.',
+            },
+            'DOWNLOAD_KCC_LOT_STEP': {
+                'type': 'integer',
+                'minimum': 0,
+                'maximum': 4000,
+                'default': 0,
+                'description': 'Interval of time (in secs) to download lot lot specific info from KCC site. 0 means disabled; maximum value 4000',
             },
         },
     }
@@ -212,14 +230,16 @@ class SettingsManager:
         finally:
             sys.path.remove(CONF_PATH)
 
-        editable_keys = set(SettingsManager.SCHEMA.get('properties', {}).keys())
+        properties = SettingsManager.SCHEMA.get('properties', {})
+        editable_keys = set(properties.keys())
+        visible_keys = {k for k, spec in properties.items() if spec.get('ui_show', True)}
 
         if hasattr(s, "USER_SETTINGS") and isinstance(getattr(s, "USER_SETTINGS"), dict):
             source = dict(getattr(s, "USER_SETTINGS"))
         else:
             source = {k: getattr(s, k) for k in editable_keys if hasattr(s, k)}
 
-        filtered = {k: v for k, v in source.items() if k in editable_keys}
+        filtered = {k: v for k, v in source.items() if k in editable_keys and k in visible_keys}
 
         return filtered
 
@@ -291,7 +311,7 @@ class SettingsManager:
 
     @staticmethod
     def ensure_missing_defaults():
-        """Garantisce la presenza dei default noti."""
+
         defaults = SettingsManager.DEFAULTS
         logging.warning(f"jsonschema settings defaults: {defaults}")
         if SettingsManager._in_docker():
@@ -301,7 +321,7 @@ class SettingsManager:
 
     @staticmethod
     def set_updates(updates: dict):
-        """Valida e applica gli updates sul backend appropriato."""
+
         safe_updates = SettingsManager._validate_updates(dict(updates or {}))
         if SettingsManager._in_docker():
             SettingsManager._set_settings_in_docker(safe_updates)

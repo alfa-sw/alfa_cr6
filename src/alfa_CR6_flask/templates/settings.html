@@ -18,6 +18,9 @@
       th, td { border: 1px solid #ddd; padding: 6px; }
       th { background: #fafafa; }
       input[type="text"] { width: 100%; }
+      .row-invalid td { background: #fff3cd !important; }
+      .ui-error { margin-top: 4px; font-weight: bold; color: #a94442; }
+      .ui-desc { margin-top: 4px; color: #6c757d; font-size: 0.9em; }
     </style>
   </head>
   <body>
@@ -42,26 +45,37 @@
       </div>
     </div>
 
+    <script src="{{ url_for('static', filename='remote_ui/avj.min.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename='remote_ui/ui.js') }}"></script>
     <script>
       const wsUrl = "ws://{{ ws_ip_port }}"; // canale WS standard
       let currentSettings = {};
+      let ajvInstance = null;
+      let perKeyValidators = {};
 
       function buildTable(data) {
         const tbody = document.getElementById('settings_tbody');
         tbody.innerHTML = '';
+        const schema = window.currentSchema || {};
+        if (!ajvInstance) {
+          try { ajvInstance = new Ajv({ allErrors: true, schemaId: 'auto', multipleOfPrecision: 12 }); } catch (e) { console.warn('AJV init failed', e); }
+        }
+        perKeyValidators = {};
         const sortedKeys = Object.keys(data).sort();
         for (const k of sortedKeys) {
-          // escludi attributi complessi non utili o volatili
           if (k.startsWith('_')) continue;
           const v = data[k];
           const tr = document.createElement('tr');
           const tdKey = document.createElement('td');
           tdKey.textContent = k;
           const tdVal = document.createElement('td');
+          const desc = document.createElement('div');
+          desc.className = 'ui-desc';
+          const errBox = document.createElement('div');
+          errBox.className = 'ui-error';
+          errBox.style.display = 'none';
 
           if (typeof v === 'boolean') {
-            // Coppia di checkbox mutuamente esclusivi: True / False
             const wrap = document.createElement('div');
             wrap.className = 'bool-pair';
 
@@ -76,11 +90,9 @@
               cb.checked = v === val;
               cb.addEventListener('change', () => {
                 if (cb.checked) {
-                  // Se seleziono questo, deseleziono l'altro
                   const other = wrap.querySelector(`input.bool-ck[data-key="${k}"][data-value="${String(!val)}"]`);
                   if (other) other.checked = false;
                 } else {
-                  // Evita che entrambe siano deselezionate
                   const sibling = wrap.querySelector(`input.bool-ck[data-key="${k}"][data-value="${String(!val)}"]`);
                   if (sibling && !sibling.checked) cb.checked = true;
                 }
@@ -93,13 +105,89 @@
             wrap.appendChild(makeBoolCb('True', true));
             wrap.appendChild(makeBoolCb('False', false));
             tdVal.appendChild(wrap);
+            if (schema[k] && schema[k].description) {
+              desc.textContent = schema[k].description;
+              tdVal.appendChild(desc);
+            }
+            tdVal.appendChild(errBox);
+          } else if ((schema[k] && (schema[k].type === 'number' || schema[k].type === 'integer')) || typeof v === 'number') {
+            const spec = schema[k] || {};
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.dataset.key = k;
+            input.value = String(v);
+            if (spec.minimum !== undefined) input.min = String(spec.minimum);
+            if (spec.maximum !== undefined) input.max = String(spec.maximum);
+            if (spec.multipleOf !== undefined) input.step = String(spec.multipleOf);
+            if (spec.type === 'integer') input.step = '1';
+            try {
+              const keySchema = Object.assign({}, spec);
+              const wrapperSchema = { type: 'object', properties: { [k]: keySchema }, required: [] };
+              perKeyValidators[k] = ajvInstance ? ajvInstance.compile(wrapperSchema) : null;
+            } catch (e) { console.warn('AJV compile key failed', k, e); }
+
+            input.addEventListener('input', () => {
+              const val = input.value;
+              if (val === '') {
+                input.classList.add('is-invalid');
+                const tr = input.closest('tr');
+                if (tr) tr.classList.add('row-invalid');
+                errBox.textContent = 'This value is mandatory!';
+                errBox.style.display = '';
+                return;
+              }
+              const num = Number(val);
+              let invalid = Number.isNaN(num);
+              let ajvErrors = [];
+              if (!invalid) {
+                const validator = perKeyValidators[k];
+                if (validator) {
+                  const ok = validator({ [k]: num });
+                  invalid = !ok;
+                  if (!ok && validator.errors) ajvErrors = validator.errors;
+                } else {
+                  if (spec.minimum !== undefined && num < spec.minimum) invalid = true;
+                  if (spec.maximum !== undefined && num > spec.maximum) invalid = true;
+                  if (spec.type === 'integer' && !Number.isInteger(num)) invalid = true;
+                  if (spec.multipleOf !== undefined) {
+                    const mul = Number(spec.multipleOf);
+                    if (mul > 0) {
+                      const ratio = num / mul;
+                      const rem = Math.abs(ratio - Math.round(ratio));
+                      if (rem > 1e-9) invalid = true;
+                    }
+                  }
+                }
+              }
+              input.classList.toggle('is-invalid', invalid);
+              const tr = input.closest('tr');
+              if (tr) tr.classList.toggle('row-invalid', invalid);
+              if (invalid) {
+                const uiErr = (spec && spec.ui_error) ? spec.ui_error : (ajvErrors[0] && ajvErrors[0].message ? ajvErrors[0].message : 'Valore non valido');
+                errBox.textContent = uiErr;
+                errBox.style.display = '';
+              } else {
+                errBox.textContent = '';
+                errBox.style.display = 'none';
+              }
+            });
+            tdVal.appendChild(input);
+            if (spec && spec.description) {
+              desc.textContent = spec.description;
+              tdVal.appendChild(desc);
+            }
+            tdVal.appendChild(errBox);
           } else {
-            // Input testo per gli altri tipi
             const input = document.createElement('input');
             input.type = 'text';
             input.value = typeof v === 'object' ? JSON.stringify(v) : String(v);
             input.dataset.key = k;
             tdVal.appendChild(input);
+            if (schema[k] && schema[k].description) {
+              desc.textContent = schema[k].description;
+              tdVal.appendChild(desc);
+            }
+            tdVal.appendChild(errBox);
           }
 
           tr.appendChild(tdKey); tr.appendChild(tdVal);
@@ -117,9 +205,10 @@
         if (!__g_ws_client || __g_ws_client.readyState !== 1) return;
 
         const textInputs = document.querySelectorAll('#settings_tbody input[type="text"]');
+        const numberInputs = document.querySelectorAll('#settings_tbody input[type="number"]');
+        const schema = window.currentSchema || {};
         const updates = {};
 
-        // Leggi input testo (prova a fare JSON.parse)
         textInputs.forEach(inp => {
           const key = inp.dataset.key;
           let val = inp.value;
@@ -127,11 +216,113 @@
           updates[key] = val;
         });
 
-        // Leggi i booleani: in base alla checkbox "true"
+        let hasInvalid = false;
+        numberInputs.forEach(inp => {
+          const key = inp.dataset.key;
+          const spec = schema[key] || {};
+          const raw = inp.value;
+          const num = Number(raw);
+          let invalid = raw === '' || Number.isNaN(num);
+          let ajvErrors = [];
+          if (!invalid) {
+            const validator = perKeyValidators[key];
+            if (validator) {
+              const ok = validator({ [key]: num });
+              invalid = !ok;
+              if (!ok && validator.errors) ajvErrors = validator.errors;
+            } else {
+              if (spec.minimum !== undefined && num < spec.minimum) invalid = true;
+              if (spec.maximum !== undefined && num > spec.maximum) invalid = true;
+              if (spec.type === 'integer' && !Number.isInteger(num)) invalid = true;
+              if (spec.multipleOf !== undefined) {
+                const mul = Number(spec.multipleOf);
+                if (mul > 0) {
+                  const ratio = num / mul;
+                  const rem = Math.abs(ratio - Math.round(ratio));
+                  if (rem > 1e-9) invalid = true;
+                }
+              }
+            }
+          }
+          inp.classList.toggle('is-invalid', invalid);
+          const tr = inp.closest('tr');
+          if (tr) tr.classList.toggle('row-invalid', invalid);
+          const cell = inp.closest('td');
+          if (cell) {
+            let box = cell.querySelector('.ui-error');
+            if (!box) { box = document.createElement('div'); box.className = 'ui-error'; cell.appendChild(box); }
+            if (invalid) {
+              const spec = schema[key] || {};
+              const uiMsg = (raw === '') ? 'Il valore è obbligatorio' : (spec.ui_error || (ajvErrors[0] && ajvErrors[0].message) || 'Valore non valido');
+              box.textContent = uiMsg;
+              box.style.display = '';
+            } else {
+              box.textContent = '';
+              box.style.display = 'none';
+            }
+          }
+          // set title with first error
+          if (invalid && ajvErrors.length > 0) {
+            inp.title = ajvErrors[0].message || 'Invalid value';
+          } else {
+            inp.title = '';
+          }
+          if (invalid) { hasInvalid = true; }
+          else { updates[key] = num; }
+        });
+        if (hasInvalid) {
+          document.getElementById('save_status').textContent = 'Error';
+          return;
+        }
+
         document.querySelectorAll('#settings_tbody input.bool-ck[data-value="true"]').forEach(cbTrue => {
           const key = cbTrue.dataset.key;
-          updates[key] = !!cbTrue.checked; // true se "true" è selezionato, altrimenti false
+          updates[key] = !!cbTrue.checked;
         });
+
+        let finalInvalid = false;
+        let finalErrors = [];
+        // clear previous row highlights
+        document.querySelectorAll('#settings_tbody tr').forEach(tr => tr.classList.remove('row-invalid'));
+        if (ajvInstance) {
+          try {
+            const properties = {};
+            Object.keys(updates).forEach(k => { if (schema[k]) properties[k] = schema[k]; });
+            const fullSchema = { type: 'object', properties, additionalProperties: false };
+            const validate = ajvInstance.compile(fullSchema);
+            finalInvalid = !validate(updates);
+            if (finalInvalid && validate.errors) finalErrors = validate.errors;
+          } catch (e) { console.warn('AJV full-validate error', e); }
+        }
+        if (finalInvalid) {
+          // Map errors to rows by property and show UI messages
+          finalErrors.forEach(err => {
+            const path = (err.dataPath || err.instancePath || '').replace(/^\./, '');
+            if (!path) return;
+            const inp = document.querySelector(`#settings_tbody input[data-key="${path}"]`);
+            if (inp) {
+              const tr = inp.closest('tr');
+              if (tr) tr.classList.add('row-invalid');
+              inp.classList.add('is-invalid');
+              const spec = schema[path] || {};
+              const uiErr = spec.ui_error || err.message || 'Valore non valido';
+              // find or create errBox in the same cell
+              const cell = inp.closest('td');
+              if (cell) {
+                let box = cell.querySelector('.ui-error');
+                if (!box) {
+                  box = document.createElement('div');
+                  box.className = 'ui-error';
+                  cell.appendChild(box);
+                }
+                box.textContent = uiErr;
+                box.style.display = '';
+              }
+            }
+          });
+          document.getElementById('save_status').textContent = 'Schema validation failed';
+          return;
+        }
 
         const msg = { command: 'save_settings', params: { updates } };
         document.getElementById('save_status').textContent = 'Salvataggio...';
@@ -143,11 +334,12 @@
           const data = JSON.parse(event.data);
           if (data.type === 'ask_settings_json') {
             currentSettings = data.value || {};
-            document.getElementById('settings_origin').innerText = 'Origine: ' + (data.origin || '-');
+            window.currentSchema = data.schema || {};
+            document.getElementById('settings_origin').innerText = 'Origin: ' + (data.origin || '-');
             buildTable(currentSettings);
           } else if (data.type === 'save_settings_result') {
             const ok = data.value === 'OK';
-            document.getElementById('save_status').textContent = ok ? 'Salvato' : 'Errore salvataggio';
+            document.getElementById('save_status').textContent = ok ? 'Saved' : 'Error';
             if (ok) {
               // dopo salvataggio ricarico i settings aggiornati
               requestSettingsJson();
@@ -161,7 +353,6 @@
         __g_ws_client.onmessage = function (event) { wsMessageHandlerForSettings(event); };
       }
 
-      document.getElementById('btn_refresh').addEventListener('click', requestSettingsJson);
       document.getElementById('btn_save').addEventListener('click', saveSettings);
 
       connectAndInit();
