@@ -197,8 +197,6 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
         try:
             params = msg_dict.get('params', {})
             updates = params.get('updates', {}) or {}
-            logging.warning(f"params :: {params}")
-            logging.warning(f"updates :: {updates}")
             if not isinstance(updates, dict):
                 raise ValueError('updates must be a dict')
 
