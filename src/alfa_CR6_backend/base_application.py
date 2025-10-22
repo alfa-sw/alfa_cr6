@@ -282,6 +282,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
         "KEY_SPACE": " ",
+        # digits
         "KEY_1": "1",
         "KEY_2": "2",
         "KEY_3": "3",
@@ -292,11 +293,26 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
         "KEY_8": "8",
         "KEY_9": "9",
         "KEY_0": "0",
+        # letters (needed for shuttle size barcodes)
+        "KEY_A": "A", "KEY_B": "B", "KEY_C": "C", "KEY_D": "D", "KEY_E": "E",
+        "KEY_F": "F", "KEY_G": "G", "KEY_H": "H", "KEY_I": "I", "KEY_J": "J",
+        "KEY_K": "K", "KEY_L": "L", "KEY_M": "M", "KEY_N": "N", "KEY_O": "O",
+        "KEY_P": "P", "KEY_Q": "Q", "KEY_R": "R", "KEY_S": "S", "KEY_T": "T",
+        "KEY_U": "U", "KEY_V": "V", "KEY_W": "W", "KEY_X": "X", "KEY_Y": "Y",
+        "KEY_Z": "Z",
     }
 
     BARCODE_LEN = 12
 
-    def __init__(self, barcode_handler, identification_string, exception_handler=None, manual_input=False):
+    def __init__(
+            self,
+            barcode_handler,
+            identification_string,
+            exception_handler=None,
+            manual_input=False,
+            accept_any_len=False,
+            skip_alfa_validation=False
+    ):
 
         self.barcode_handler = barcode_handler
         self._identification_string = identification_string
@@ -307,6 +323,8 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
         self.last_read_event_buffer = '-'
 
         self._device = None
+        self._accept_any_len = accept_any_len
+        self._skip_alfa_validation = skip_alfa_validation
 
     def __open_device(self, evdev):
 
@@ -323,30 +341,25 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     async def __on_buffer_read(self, buffer):
         ret = None
-        if len(buffer) != self.BARCODE_LEN:
-
+        if not self._accept_any_len and len(buffer) != self.BARCODE_LEN:
             logging.warning(f"format mismatch! buffer:{buffer}")
-
         else:
-
             t = time.time()
             logging.debug(f"buffer:{buffer}")
-
             if self.last_read_event_buffer == buffer and t - self.last_read_event_time < 5.0:
                 # filter out reading events with the same value, in the time interval of 5 sec
                 pass
             else:
-                if not self.is_valid_alfa_barcode(buffer):
-                    logging.error(f"not valid ALFA barcode! buffer:{buffer}")
-                    return
-
+                if not self._skip_alfa_validation:
+                    if not self.is_valid_alfa_barcode(buffer):
+                        logging.error(f"not valid ALFA barcode! buffer:{buffer}")
+                        return
                 if self.barcode_handler:
                     try:
                         ret = await self.barcode_handler(buffer)
                         if ret:
                             self.last_read_event_buffer = buffer[:]
                             self.last_read_event_time = t
-
                     except Exception as e:  # pylint: disable=broad-except
                         if self.exception_handler:
                             self.exception_handler(e)
@@ -573,25 +586,52 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             except Exception:                # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
-    async def __create_barcode_task(self):
-
-        while 1:
-
-            _bc_identification_string = os.getenv("BARCODE_READER_IDENTIFICATION_STRING", False)
-            if not _bc_identification_string:
-
-                if hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
-                    _bc_identification_string = self.settings.BARCODE_READER_IDENTIFICATION_STRING
-
-            if not _bc_identification_string or _bc_identification_string == "DISABLED":
-                break
-
-            b = BarCodeReader(self.on_barcode_read, _bc_identification_string, exception_handler=self.handle_exception)
-            logging.warning(f" #### created barcode reader: {b} #### ")
-            await b.run()
+    async def __barcode_reader_worker(
+            self,
+            identification_string: str,
+            handler,
+            accept_any_len=False,
+            skip_alfa_validation=False
+    ):
+        while True:
+            try:
+                b = BarCodeReader(
+                    handler,
+                    identification_string,
+                    exception_handler=self.handle_exception,
+                    accept_any_len=accept_any_len,
+                    skip_alfa_validation=skip_alfa_validation
+                )
+                logging.warning(f" #### created barcode reader ({identification_string}): {b} #### ")
+                await b.run()
+            except Exception:
+                logging.error(traceback.format_exc())
             await asyncio.sleep(10)
 
-        logging.warning(f" #### terminating barcode reader: {b} #### ")
+    async def __create_barcode_task(self):
+
+        bc_pps = os.getenv("BARCODE_READER_IDENTIFICATION_STRING")
+        if not bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
+            bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+
+        bc_shuttle = os.getenv("SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING")
+        if not bc_shuttle and hasattr(self.settings, "SECOND_BARCODE_READER_IDENTIFICATION_STRING"):
+            bc_shuttle = self.settings.SECOND_BARCODE_READER_IDENTIFICATION_STRING
+
+        bcs = []
+        if bc_pps and bc_pps != "DISABLED":
+            bcs.append((bc_pps, self.on_barcode_read, False, False))
+        if bc_shuttle and bc_shuttle != "DISABLED":
+            bcs.append((bc_shuttle, self.on_shuttle_barcode_read, True, True))
+
+        if not bcs:
+            logging.warning(" #### no barcode readers configured (disabled) #### ")
+            return
+
+        await asyncio.gather(*(
+            self.__barcode_reader_worker(bc_id, bc_h, accept_any_len, skip_alfa_validation) 
+            for bc_id, bc_h, accept_any_len, skip_alfa_validation in bcs
+        ))
 
     async def __create_inner_loop_task(self):
 
@@ -799,8 +839,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 jar_size = self.shuttle_size_from_gun_barcode_scanner
                 logging.debug("Using shuttle_size_from_gun_barcode_scanner: %s", jar_size)
             else:
+                # TODO - second barcode read used for jar_size
                 A = self.get_machine_head_by_letter("A")
-                jar_size = await A.get_stabilized_jar_size()
+                await asyncio.sleep(0.5)
+                logging.warning(f"shuttle_size_from_gun_barcode_scanner :: {self.shuttle_size_from_gun_barcode_scanner}")
+                if self.shuttle_size_from_gun_barcode_scanner:
+                    jar_size = self.shuttle_size_from_gun_barcode_scanner
+                else:
+                    logging.warning("shuttle_size_from_gun_barcode_scanner NONE - calling A.get_stabilized_jar_size()")
+                    jar_size = await A.get_stabilized_jar_size()
 
             if jar_size is None:
                 jar = None
@@ -831,11 +878,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         p_idx = int(jar_size)
                         jar_volume = package_size_list[p_idx]
                     except IndexError:
-                        args = ()
-                        fmt = "The selected jar size is not recognised"
-                        self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                        logging.error(msg_)
-                        return jar
+                        if not self.shuttle_size_from_gun_barcode_scanner:
+                            args = ()
+                            fmt = "The selected jar size is not recognised"
+                            self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                            logging.error(fmt)
+                            return jar
+                        # CR4/CR6 with physical shuttle size barcode
+                        jar_volume = self.shuttle_size_from_gun_barcode_scanner
 
                 self.update_jar_properties(jar)
 
@@ -1019,6 +1069,52 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.handle_exception(e)
 
         return ret
+
+    async def on_shuttle_barcode_read(self, barcode: str):
+        """
+        Handle barcode coming from the SHUTTLE_BARCODE_READER to set jar size.
+        """
+        try:
+            barcode = (barcode or "").strip()
+            if not barcode:
+                return None
+
+            variant = os.getenv('MACHINE_VARIANT')
+            if variant in ['CR3', 'CR2']:
+                return None
+
+            logging.warning(f"barcode :: {barcode}")
+            # import re
+            # BARCODE_NEW_PATTERN = re.compile(r'^\d{1,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$', re.IGNORECASE)
+            # if not BARCODE_NEW_PATTERN.match(barcode):
+            #     logging.warning(f"SECOND READER: invalid shuttle barcode format: {barcode}")
+            #     return None
+
+            A = self.get_machine_head_by_letter("A")
+            try:
+                ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
+                if not ret or ret.get("objects") is None:
+                    logging.error("SECOND READER: cannot retrieve packages data")
+                    return None
+                packages = ret.get("objects", [])
+                size_map = {p.get("name", "").lower().rstrip(): p.get("size") for p in packages if p.get("name") and p.get("size")}
+                key = barcode.lower().rstrip()
+                if key in size_map:
+                    self.shuttle_size_from_gun_barcode_scanner = size_map[key]
+                    logging.warning(f"SECOND READER: shuttle '{key}' -> size {size_map[key]}")
+                    # Feedback to UI
+                    # self.main_window.show_barcode(f"SHUTTLE: {key} -> {size_map[key]}", is_ok=True)
+                    # return key
+                else:
+                    logging.warning(f"SECOND READER: unknown shuttle '{key}'")
+                    self.main_window.open_alert_dialog((key,), fmt="UNKNOWN SHUTTLE: {}", title="WARNING")
+                    return None
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(f"SECOND READER: unexpected error: {e}")
+                return None
+        except Exception as e:  # pylint: disable=broad-except
+            self.handle_exception(e)
+            return None
 
     async def on_head_msg_received(self, head_index, msg_dict):
 
