@@ -495,11 +495,14 @@ def create_printable_image_for_package(package):
             'module_height': 10.0,
             'font_size': 22,
         }
+        variant = os.getenv('MACHINE_VARIANT')
+        if variant not in ['CR3', 'CR2']:
+            options = {
+                'module_width': 0.08,
+                'module_height': 2.8,
+                'font_size': 14,
+            }
         rotate = 90
-        # options = _get_print_label_options()
-        # l_lenght = options.pop('line_lenght')
-        # n_of_lines = options.pop('n_of_lines')
-        # rotate = options.pop('rotate')
 
         with open(TMP_PACKAGE_BARCODE_IMAGE, 'wb') as file_:
             Code128(printable_text, writer=ImageWriter()).write(file_, options, printable_text)
