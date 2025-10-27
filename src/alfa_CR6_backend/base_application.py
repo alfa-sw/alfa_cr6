@@ -479,7 +479,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.chromium_wrapper = None
         self.restore_machine_helper = None
 
-        self.shuttle_size_from_gun_barcode_scanner = None # CR3 & CR2
+        self.shuttle_size_from_barcode_scanner = None
 
         # CR3/CR2 deferred jar creation when both JIN and JA are occupied
         self._cr3_ja_block_sequence_active = False
@@ -610,26 +610,45 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def __create_barcode_task(self):
 
+        # Resolve identification strings (env overrides settings)
         bc_pps = os.getenv("BARCODE_READER_IDENTIFICATION_STRING")
         if not bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
             bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
 
         bc_shuttle = os.getenv("SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING")
-        if not bc_shuttle and hasattr(self.settings, "SECOND_BARCODE_READER_IDENTIFICATION_STRING"):
-            bc_shuttle = self.settings.SECOND_BARCODE_READER_IDENTIFICATION_STRING
+        if not bc_shuttle and hasattr(self.settings, "SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING"):
+            bc_shuttle = self.settings.SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING
 
+        # Determine how many readers to run: 0, 1, 2
+        readers_count = None
+        try:
+            rc_env = os.getenv("BARCODE_READERS_COUNT")
+            readers_count = int(rc_env) if rc_env is not None else None
+        except Exception:
+            readers_count = None
+        if readers_count is None:
+            readers_count = getattr(self.settings, "BARCODE_READERS_COUNT", 1)
+        readers_count = max(0, min(2, int(readers_count)))
+
+        # Build list based on readers_count
         bcs = []
-        if bc_pps and bc_pps != "DISABLED":
-            bcs.append((bc_pps, self.on_barcode_read, False, False))
-        if bc_shuttle and bc_shuttle != "DISABLED":
-            bcs.append((bc_shuttle, self.on_shuttle_barcode_read, True, True))
+        if readers_count == 0:
+            logging.warning(" #### barcode readers disabled by settings #### ")
+        elif readers_count == 1:
+            if bc_pps and bc_pps != "DISABLED":
+                bcs.append((bc_pps, self.on_barcode_read, False, False))
+        else:  # readers_count == 2
+            if bc_pps and bc_pps != "DISABLED":
+                bcs.append((bc_pps, self.on_barcode_read, False, False))
+            if bc_shuttle and bc_shuttle != "DISABLED":
+                bcs.append((bc_shuttle, self.on_shuttle_barcode_read, True, True))
 
         if not bcs:
             logging.warning(" #### no barcode readers configured (disabled) #### ")
             return
 
         await asyncio.gather(*(
-            self.__barcode_reader_worker(bc_id, bc_h, accept_any_len, skip_alfa_validation) 
+            self.__barcode_reader_worker(bc_id, bc_h, accept_any_len, skip_alfa_validation)
             for bc_id, bc_h, accept_any_len, skip_alfa_validation in bcs
         ))
 
@@ -836,18 +855,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             variant = os.getenv('MACHINE_VARIANT')
             if variant in ['CR3', 'CR2']:
-                jar_size = self.shuttle_size_from_gun_barcode_scanner
-                logging.debug("Using shuttle_size_from_gun_barcode_scanner: %s", jar_size)
+                jar_size = self.shuttle_size_from_barcode_scanner
+                logging.debug("Using shuttle_size_from_barcode_scanner: %s", jar_size)
             else:
-                # TODO - second barcode read used for jar_size
                 A = self.get_machine_head_by_letter("A")
                 await asyncio.sleep(0.5)
-                logging.warning(f"shuttle_size_from_gun_barcode_scanner :: {self.shuttle_size_from_gun_barcode_scanner}")
-                if self.shuttle_size_from_gun_barcode_scanner:
-                    jar_size = self.shuttle_size_from_gun_barcode_scanner
-                else:
-                    logging.warning("shuttle_size_from_gun_barcode_scanner NONE - calling A.get_stabilized_jar_size()")
-                    jar_size = await A.get_stabilized_jar_size()
+                jar_size = self.shuttle_size_from_barcode_scanner or await A.get_stabilized_jar_size()
 
             if jar_size is None:
                 jar = None
@@ -872,20 +885,20 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
                 jar_volume = 0
                 if variant in ['CR3', 'CR2']:
-                    jar_volume = self.shuttle_size_from_gun_barcode_scanner
+                    jar_volume = self.shuttle_size_from_barcode_scanner
                 else:
                     try:
                         p_idx = int(jar_size)
                         jar_volume = package_size_list[p_idx]
                     except IndexError:
-                        if not self.shuttle_size_from_gun_barcode_scanner:
+                        if not self.shuttle_size_from_barcode_scanner:
                             args = ()
                             fmt = "The selected jar size is not recognised"
                             self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                             logging.error(fmt)
                             return jar
                         # CR4/CR6 with physical shuttle size barcode
-                        jar_volume = self.shuttle_size_from_gun_barcode_scanner
+                        jar_volume = self.shuttle_size_from_barcode_scanner
 
                 self.update_jar_properties(jar)
 
@@ -1100,13 +1113,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 size_map = {p.get("name", "").lower().rstrip(): p.get("size") for p in packages if p.get("name") and p.get("size")}
                 key = barcode.lower().rstrip()
                 if key in size_map:
-                    self.shuttle_size_from_gun_barcode_scanner = size_map[key]
+                    self.shuttle_size_from_barcode_scanner = size_map[key]
                     logging.warning(f"SECOND READER: shuttle '{key}' -> size {size_map[key]}")
                     # Feedback to UI
                     # self.main_window.show_barcode(f"SHUTTLE: {key} -> {size_map[key]}", is_ok=True)
                     # return key
                 else:
-                    logging.warning(f"SECOND READER: unknown shuttle '{key}'")
+                    logging.warning(f"SHUTTLE BARCODE READER: unknown shuttle '{key}'")
                     self.main_window.open_alert_dialog((key,), fmt="UNKNOWN SHUTTLE: {}", title="WARNING")
                     return None
             except Exception as e:  # pylint: disable=broad-except
@@ -1778,7 +1791,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 size_map = {p["name"].lower().rstrip(): p["size"] for p in packages if p.get("name") and p.get("size")}
 
                 if shuttle_name in size_map:
-                    self.shuttle_size_from_gun_barcode_scanner = size_map[shuttle_name]
+                    self.shuttle_size_from_barcode_scanner = size_map[shuttle_name]
                     logging.warning(f"SHUTTLE - {shuttle_name}: {size_map[shuttle_name]}")
                     return True, "", ""
                 else:
