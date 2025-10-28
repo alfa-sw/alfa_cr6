@@ -1161,7 +1161,7 @@ class HomePageFourHeads(HomePage):
     container_presence_3_label = None
     container_presence_4_label = None
 
-class HomePageCR3Heads(HomePage):
+class HomePageCRX60Heads(HomePage):
 
     ui_file_name = "home_page_three_heads.ui"
     help_file_name = ''
@@ -1216,7 +1216,7 @@ class HomePageCR3Heads(HomePage):
             (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
         ]
 
-class HomePageCR2Heads(HomePage):
+class HomePageCRX40Heads(HomePage):
 
     ui_file_name = "home_page_two_heads.ui"
     help_file_name = ''

@@ -496,7 +496,7 @@ def create_printable_image_for_package(package):
             'font_size': 22,
         }
         variant = os.getenv('MACHINE_VARIANT')
-        if variant not in ['CR3', 'CR2']:
+        if variant not in ['CRX60', 'CRX40']:
             options = {
                 'module_width': 0.08,
                 'module_height': 2.8,

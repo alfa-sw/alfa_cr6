@@ -118,7 +118,7 @@
     <string/>
    </property>
    <property name="pixmap">
-    <pixmap>../images/sinottico_cr3.png</pixmap>
+    <pixmap>../images/sinottico_CRX60.png</pixmap>
    </property>
    <property name="scaledContents">
     <bool>true</bool>

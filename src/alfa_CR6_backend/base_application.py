@@ -481,10 +481,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.shuttle_size_from_barcode_scanner = None
 
-        # CR3/CR2 deferred jar creation when both JIN and JA are occupied
-        self._cr3_ja_block_sequence_active = False
-        self._cr3_pending_barcode = None
-        self._cr3_sequence_watcher_task = None
+        # CRX40/CRX60 deferred jar creation when both JIN and JA are occupied
+        self._crx_ja_block_sequence_active = False
+        self._crx_pending_barcode = None
+        self._crx_sequence_watcher_task = None
 
         if self.settings.SQLITE_CONNECT_STRING:
 
@@ -854,7 +854,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if jar:
 
             variant = os.getenv('MACHINE_VARIANT')
-            if variant in ['CR3', 'CR2']:
+            if variant in ['CRX60', 'CRX40']:
                 jar_size = self.shuttle_size_from_barcode_scanner
                 logging.debug("Using shuttle_size_from_barcode_scanner: %s", jar_size)
             else:
@@ -884,7 +884,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 package_size_list.sort()
                 logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
                 jar_volume = 0
-                if variant in ['CR3', 'CR2']:
+                if variant in ['CRX60', 'CRX40']:
                     jar_volume = self.shuttle_size_from_barcode_scanner
                 else:
                     try:
@@ -949,12 +949,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if (getattr(self, 'barcode_read_blocked_on_refill', False)):
             return None
 
-        if not barcode or (not self.ready_to_read_a_barcode and not self._cr3_ja_block_sequence_active):
+        if not barcode or (not self.ready_to_read_a_barcode and not self._crx_ja_block_sequence_active):
 
             logging.debug(f"skipping barcode:{barcode}")
             self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
-        elif self._cr3_ja_block_sequence_active and self.machine_variant in ['CR3', 'CR2']:
-            self._cr3_pending_barcode = str(barcode)
+        elif self._crx_ja_block_sequence_active and self.machine_variant in ['CRX60', 'CRX40']:
+            self._crx_pending_barcode = str(barcode)
             return None
 
         else:
@@ -966,7 +966,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 A = self.get_machine_head_by_letter("A")
                 # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
                 status_levels_ = ["STANDBY"]
-                if self.in_docker and self.machine_variant in ['CR3', 'CR2']:
+                if self.in_docker and self.machine_variant in ['CRX60', 'CRX40']:
                     status_levels_ = ["STANDBY", "JAR_POSITIONING", "DISPENSING"]
                 r = await A.wait_for_jar_photocells_and_status_lev(
                     "JAR_INPUT_ROLLER_PHOTOCELL", on=True,
@@ -991,7 +991,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             return
 
 
-                        if self.machine_variant not in ['CR3', 'CR2']:
+                        if self.machine_variant not in ['CRX60', 'CRX40']:
                             t = self.__jar_task(barcode)
                             self.__jar_runners[barcode] = {
                                 "task": asyncio.ensure_future(t),
@@ -1011,9 +1011,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
 
                             if jin and ja:
-                                self._cr3_pending_barcode = barcode
-                                if not self._cr3_ja_block_sequence_active:
-                                    self._cr3_ja_block_sequence_active = True
+                                self._crx_pending_barcode = barcode
+                                if not self._crx_ja_block_sequence_active:
+                                    self._crx_ja_block_sequence_active = True
                                     free_timer_started = None
                                     while True:
                                         jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
@@ -1024,7 +1024,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                                             await asyncio.sleep(0.1)
                                             continue
                                         elif not ja and jin:
-                                            bc = self._cr3_pending_barcode or barcode
+                                            bc = self._crx_pending_barcode or barcode
                                             t = self.__jar_task(bc)
                                             self.__jar_runners[bc] = {
                                                 "task": asyncio.ensure_future(t),
@@ -1039,18 +1039,18 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                                             if free_timer_started is None:
                                                 free_timer_started = loop.time()
                                             elif loop.time() - free_timer_started >= 2.0:
-                                                logging.warning("CR3/CR2: JIN freed >2s while JA occupied -> exit without creating runner")
+                                                logging.warning("CRX60/CRX40: JIN freed >2s while JA occupied -> exit without creating runner")
                                                 break
                                         else:
                                             free_timer_started = None
                                         await asyncio.sleep(0.1)
-                                    self._cr3_pending_barcode = None
-                                    self._cr3_ja_block_sequence_active = False
+                                    self._crx_pending_barcode = None
+                                    self._crx_ja_block_sequence_active = False
                                 else:
-                                    logging.debug("CR3/CR2: JA+JIN busy; updated pending barcode, watcher already active")
+                                    logging.debug("CRX60/CRX40: JA+JIN busy; updated pending barcode, watcher already active")
 
                             elif not ja and jin:
-                                bc = self._cr3_pending_barcode or barcode
+                                bc = self._crx_pending_barcode or barcode
                                 t = self.__jar_task(bc)
                                 self.__jar_runners[bc] = {
                                     "task": asyncio.ensure_future(t),
@@ -1060,8 +1060,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                                 logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
                                 ret = bc
                                 logging.warning(f"__jar_runners: {self.__jar_runners}")
-                                self._cr3_pending_barcode = None
-                                self._cr3_ja_block_sequence_active = False
+                                self._crx_pending_barcode = None
+                                self._crx_ja_block_sequence_active = False
 
                             elif ja and not jin:
                                 free_timer_started = loop.time()
@@ -1070,7 +1070,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                                     ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
                                     if ja and not jin:
                                         if loop.time() - free_timer_started >= 2.0:
-                                            logging.warning("CR3/CR2: JIN freed >2s while JA occupied -> exit without creating runner")
+                                            logging.warning("CRX60/CRX40: JIN freed >2s while JA occupied -> exit without creating runner")
                                             break
                                     else:
                                         break
@@ -1093,7 +1093,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 return None
 
             variant = os.getenv('MACHINE_VARIANT')
-            if variant in ['CR3', 'CR2']:
+            if variant in ['CRX60', 'CRX40']:
                 return None
 
             logging.warning(f"barcode :: {barcode}")
@@ -1759,7 +1759,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 jar.status = 'ERROR'
                 self.db_session.commit()
 
-    async def _handle_cr3_barcode_input(self):
+    async def _handle_crx_barcode_input(self):
         import re
 
         BARCODE_NEW_PATTERN = re.compile(

@@ -311,7 +311,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_cr_linear_deliver_line_available(self, jar):
         """
-        Wait for CR linear (CR2/CR3) delivery line to be available.
+        Wait for CR linear (CRX40/CRX60) delivery line to be available.
         """
         C = self.get_machine_head_by_letter("C")
 
@@ -402,7 +402,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             return flag
 
         if (self.in_docker
-            and self.machine_variant in ['CR3', 'CR2']
+            and self.machine_variant in ['CRX60', 'CRX40']
         ):
             r = True
             if A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False):
@@ -420,9 +420,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         if (A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False)
             and self.in_docker
-            and self.machine_variant in ['CR3', 'CR2']
+            and self.machine_variant in ['CRX60', 'CRX40']
         ):
-            await self._handle_cr3_barcode_input()
+            await self._handle_crx_barcode_input()
 
         return r
 
@@ -510,14 +510,14 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return await self.move_from_to(jar, "A", "C", show_alert=False)
 
-    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CR2/CR3
+    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60
 
         machine_variant = os.getenv('MACHINE_VARIANT', None)
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
         C = self.get_machine_head_by_letter("C")
         r = True
 
-        if in_docker and machine_variant in ['CR2', 'CR3']:
+        if in_docker and machine_variant in ['CRX40', 'CRX60']:
             await self.wait_for_cr_linear_deliver_line_available(jar)
         if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
             D = self.get_machine_head_by_letter("D")
@@ -548,7 +548,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await C.crx_outputs_management(1, 0)
 
                 if r:
-                    if self.in_docker and self.machine_variant in ['CR3', 'CR2']:
+                    if self.in_docker and self.machine_variant in ['CRX60', 'CRX40']:
                         self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="_")
                     else:
                         self.update_jar_position(jar=jar, pos="LIFTR_UP")
@@ -831,7 +831,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_11_12,
         ]
 
-        sequence_cr3 = [
+        sequence_crx60 = [
             self.move_01_02,
             partial(self.dispense_step, "A"),
             self.move_02_03,
@@ -841,7 +841,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_04_05,
         ]
 
-        sequence_cr2 = [
+        sequence_crx40 = [
             self.move_01_02,
             partial(self.dispense_step, "A"),
             self.move_02_04,
@@ -854,9 +854,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         elif n_of_heads == 4:
             sequence = sequence_4
         elif n_of_heads == 3:
-            sequence = sequence_cr3
+            sequence = sequence_crx60
         elif n_of_heads == 2:
-            sequence = sequence_cr2
+            sequence = sequence_crx40
 
         barcode_ = jar and jar.barcode
 
@@ -920,7 +920,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 message_fmt=("barcode:{}", "STEP {} +")
             )
 
-        if self.machine_variant not in ['CR3', 'CR2']:
+        if self.machine_variant not in ['CRX60', 'CRX40']:
             await self.wait_for_jar_delivery(jar)
 
         return r

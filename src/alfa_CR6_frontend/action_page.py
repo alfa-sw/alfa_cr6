@@ -60,7 +60,7 @@ class ActionPage(BaseStackedPage):
         # Testa 5 "Start lifter roller CW"
         elif args == ("single_move", "C", [1, 1]):
 
-            if in_docker and machine_variant in ["CR3", "CR2"]:
+            if in_docker and machine_variant in ["CRX60", "CRX40"]:
                 ret = True
             else:
                 D = QApplication.instance().get_machine_head_by_letter("D")
