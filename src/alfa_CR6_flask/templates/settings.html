@@ -29,9 +29,11 @@
       <div id="settings_origin" class="text-muted" style="margin-bottom:6px;"></div>
 
       <div class="actions">
-        <button id="btn_refresh" class="btn btn-default">Refresh</button>
         <button id="btn_save" class="btn btn-primary">Save</button>
         <span id="save_status" class="text-muted" style="padding-left:8px;"></span>
+      </div>
+      <div class="alert alert-warning" role="alert" style="margin-top:6px;">
+        Note: saving settings will restart the application. The connection may temporarily drop.
       </div>
 
       <div id="settings_form_wrapper">
@@ -339,11 +341,8 @@
             buildTable(currentSettings);
           } else if (data.type === 'save_settings_result') {
             const ok = data.value === 'OK';
-            document.getElementById('save_status').textContent = ok ? 'Saved' : 'Error';
-            if (ok) {
-              // dopo salvataggio ricarico i settings aggiornati
-              requestSettingsJson();
-            }
+            document.getElementById('save_status').textContent = ok ? 'Saved. Restarting application...' : 'Error';
+            // After successful save, backend will restart supervisor; connection may drop.
           }
         } catch (e) { console.error(e); }
       }

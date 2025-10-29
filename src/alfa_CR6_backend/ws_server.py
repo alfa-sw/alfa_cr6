@@ -208,6 +208,16 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
 
             answer = json.dumps({'type': 'save_settings_result', 'value': 'OK'})
             await websocket.send(answer)
+
+            async def _reload_supervisor():
+                try:
+                    await asyncio.sleep(1.0)
+                    import subprocess
+                    subprocess.run(['sudo', 'supervisorctl', 'reload'], check=False)
+                except Exception:
+                    logging.error('Failed to reload supervisor:\n%s', traceback.format_exc())
+
+            asyncio.create_task(_reload_supervisor())
         except Exception:
             logging.error(traceback.format_exc())
             answer = json.dumps({'type': 'save_settings_result', 'value': 'ERROR'})
