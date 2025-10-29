@@ -672,6 +672,22 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.runners.append(self.app._BaseApplication__jar_runners.get(jar.barcode))  # pylint: disable=protected-access
 
         r = True
+
+        if not ingredients and self.name == 'A':
+            def before_dispense_condition():
+                flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
+                flag = flag and self.status["status_level"] in allowed_status_levels_
+                flag = flag and self.status["container_presence"]
+                return flag
+            r = await self.app.wait_for_condition(
+                before_dispense_condition, timeout=2.5,
+                show_alert=False
+            )
+            if not r:
+                jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
+                fmt = "Jar not detected from the ultrasonic sensor under nozzle."
+                self.app.main_window.open_alert_dialog((), fmt=fmt, title="ALERT")
+
         if ingredients:
 
             json_properties = json.loads(jar.json_properties)
