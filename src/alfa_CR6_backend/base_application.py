@@ -610,41 +610,32 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def __create_barcode_task(self):
 
-        # Resolve identification strings (env overrides settings)
-        bc_pps = os.getenv("BARCODE_READER_IDENTIFICATION_STRING")
+        file_path = '/tmp/share/container_env_variables.json'
+        bc_pps = None
+        bc_shuttle = None
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                env_data = json.load(f) or {}
+                bc_pps = env_data.get("BARCODE_READER_IDENTIFICATION_STRING")
+                bc_shuttle = env_data.get("SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING")
+        except Exception:
+            logging.warning(f"Failed to read barcode IDs from {file_path}. Falling back to settings.")
+            return
+
         if not bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
             bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
 
-        bc_shuttle = os.getenv("SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING")
         if not bc_shuttle and hasattr(self.settings, "SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING"):
             bc_shuttle = self.settings.SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING
 
-        # Determine how many readers to run: 0, 1, 2
-        readers_count = None
-        try:
-            rc_env = os.getenv("BARCODE_READERS_COUNT")
-            readers_count = int(rc_env) if rc_env is not None else None
-        except Exception:
-            readers_count = None
-        if readers_count is None:
-            readers_count = getattr(self.settings, "BARCODE_READERS_COUNT", 1)
-        readers_count = max(0, min(2, int(readers_count)))
-
-        # Build list based on readers_count
         bcs = []
-        if readers_count == 0:
-            logging.warning(" #### barcode readers disabled by settings #### ")
-        elif readers_count == 1:
-            if bc_pps and bc_pps != "DISABLED":
-                bcs.append((bc_pps, self.on_barcode_read, False, False))
-        else:  # readers_count == 2
-            if bc_pps and bc_pps != "DISABLED":
-                bcs.append((bc_pps, self.on_barcode_read, False, False))
-            if bc_shuttle and bc_shuttle != "DISABLED":
-                bcs.append((bc_shuttle, self.on_shuttle_barcode_read, True, True))
+        if bc_pps and bc_pps != "DISABLED":
+            bcs.append((bc_pps, self.on_barcode_read, False, False))
+        if bc_shuttle and bc_shuttle != "DISABLED":
+            bcs.append((bc_shuttle, self.on_shuttle_barcode_read, True, True))
 
         if not bcs:
-            logging.warning(" #### no barcode readers configured (disabled) #### ")
+            logging.warning(" #### no barcode readers configured (maybe CRX variant) #### ")
             return
 
         await asyncio.gather(*(
