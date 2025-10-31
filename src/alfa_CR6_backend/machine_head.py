@@ -674,6 +674,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         r = True
 
         if not ingredients and self.name == 'A':
+            allowed_status_levels_ = ['DIAGNOSTIC', 'STANDBY', 'POSITIONING', 'JAR_POSITIONING']
             def before_dispense_condition():
                 flag = self.jar_photocells_status["JAR_DISPENSING_POSITION_PHOTOCELL"]
                 flag = flag and self.status["status_level"] in allowed_status_levels_
