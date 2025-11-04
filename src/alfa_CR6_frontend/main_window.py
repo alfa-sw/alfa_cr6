@@ -14,6 +14,8 @@ import traceback
 import json
 import os
 
+from typing import List, Union
+
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QPixmap, QIcon, QMovie
@@ -36,158 +38,301 @@ from alfa_CR6_frontend.pages import (
 
 from alfa_CR6_frontend.action_page import ActionPage
 from alfa_CR6_frontend.browser_page import BrowserPage
-from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads)
+from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads, HomePageCRX60Heads, HomePageCRX40Heads)
 
 
 from alfa_CR6_frontend.keyboard import Keyboard
 
-ACTION_PAGE_LIST = [
-    {"title": tr_("action 01 (head 1 or A)"),
-     "buttons": [
-         {"text": tr_("Start input roller"), "action_args": ("single_move", "A", [1, 1])},
-         {"text": tr_("Stop  input roller"), "action_args": ("single_move", "A", [1, 0])},
-         {"text": tr_("Start input roller to photocell"), "action_args": ("single_move", "A", [1, 2])},
-         {"text": tr_("move 00 01 ('feed')"), "action_args": ("move_00_01",)},
-         {"text": tr_("move 01 02 ('IN -> A')"), "action_args": ("move_01_02",)}, ],
-     "labels_args": [
-         ("A", "JAR_INPUT_ROLLER_PHOTOCELL", tr_("INPUT ROLLER PHOTOCELL")),
-         ("A", "JAR_DETECTION_MICROSWITCH_1", tr_("MICROSWITCH 1")),
-         ("A", "JAR_DETECTION_MICROSWITCH_2", tr_("MICROSWITCH 2")), ], },
-    {"title": tr_("action 02 (head 1 or A)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "A", [0, 1])},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "A", [0, 0])},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "A", [0, 2])}, ],
-     "labels_args": [
-         ("A", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("A", "container_presence", tr_("CAN PRESENCE")),
-         ("A", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
-         ("A", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
-         ("A", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
-         ("A", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
-         ("A", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
-         ("A", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
-         ("A", "panel_table_status", tr_("PANEL TABLE STATUS")),], },
-    {"title": tr_("action 03 (head 3 or B)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "B", [0, 1])},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "B", [0, 0])},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "B", [0, 2])}, ],
-     "labels_args": [
-         ("B", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("B", "container_presence", tr_("CAN PRESENCE")),
-         ("B", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
-         ("B", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
-         ("B", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
-         ("B", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
-         ("B", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
-         ("B", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
-         ("B", "panel_table_status", tr_("PANEL TABLE STATUS")),], },
-    {"title": tr_("action 04 (head 5, 6 or C, D)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "C", [0, 1])},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "C", [0, 0])},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "C", [0, 2])},
-         {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
-         {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
-         {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
-     "labels_args": [
-         ("C", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("C", "container_presence", tr_("CAN PRESENCE")),
-         ("C", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
-         ("C", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
-         ("C", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
-         ("C", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
-         ("C", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
-         ("C", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
-         ("C", "panel_table_status", tr_("PANEL TABLE STATUS")),], },
-    {"title": tr_("action 05 (head 5, 6 or C, D)"),
-     "buttons": [
-         {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "C", [1, 1])},
-         {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "C", [1, 4])},
-         {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "C", [1, 0])},
-         {"text": tr_("Start lifter up"), "action_args": ("single_move", "D", [1, 2])},
-         {"text": tr_("Start lifter down"), "action_args": ("single_move", "D", [1, 5])},
-         {"text": tr_("Stop  lifter"), "action_args": ("single_move", "D", [1, 0])},
-         {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
-         {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
-         {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)}, ],
-     "labels_args": [
-         ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
-         ("D", "LOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
-         ("D", "LOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")), ], },
-    {"title": tr_("action 06 (head 6 or D)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "D", [0, 1])},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "D", [0, 0])},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "D", [0, 2])}, ],
-     "labels_args": [
-         ("D", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("D", "container_presence", tr_("CAN PRESENCE")),
-         ("D", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
-         ("D", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
-         ("D", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
-         ("D", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
-         ("D", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
-         ("D", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
-         ("D", "panel_table_status", tr_("PANEL TABLE STATUS")),], },
-    {"title": tr_("action 07 (head 4 or E)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "E", [0, 1])},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "E", [0, 0])},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "E", [0, 2])}, ],
-     "labels_args": [
-         ("E", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("E", "container_presence", tr_("CAN PRESENCE")),
-         ("E", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
-         ("E", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
-         ("E", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
-         ("E", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
-         ("E", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
-         ("E", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
-         ("E", "panel_table_status", tr_("PANEL TABLE STATUS")),], },
-    {"title": tr_("action 08 (head 2 or F)"),
-     "buttons": [
-         {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "F", [0, 1])},
-         {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "F", [0, 0])},
-         {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "F", [0, 2])},
-         {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)}, ],
-     "labels_args": [
-         ("F", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
-         ("F", "container_presence", tr_("CAN PRESENCE")),
-         ("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")),
-         ("F", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
-         ("F", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
-         ("F", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
-         ("F", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
-         ("F", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
-         ("F", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
-         ("F", "panel_table_status", tr_("PANEL TABLE STATUS")),], },
-    {"title": tr_("action 09 (head 2 or F)"),
-     "buttons": [
-         {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "F", [1, 1])},
-         {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "F", [1, 4])},
-         {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "F", [1, 0])},
-         {"text": tr_("Start lifter up"), "action_args": ("single_move", "F", [3, 2])},
-         {"text": tr_("Start lifter down"), "action_args": ("single_move", "F", [3, 5])},
-         {"text": tr_("Stop  lifter"), "action_args": ("single_move", "F", [3, 0])},
-         {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
-         {"text": tr_("move 10 11 ('DOWN -> UP')"), "action_args": ("move_10_11",)},
-         {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)}, ],
-     "labels_args": [
-         ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
-         ("F", "UNLOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
-         ("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")), ], },
-    {"title": tr_("action 10 (head 2 or F)"),
-     "buttons": [
-         {"text": tr_("Start output roller CCW"), "action_args": ("single_move", "F", [2, 4])},
-         {"text": tr_("Stop  output roller"), "action_args": ("single_move", "F", [2, 0])},
-         {"text": tr_("Start output roller CCW to photocell dark"), "action_args": ("single_move", "F", [2, 5])},
-         {"text": tr_("Start output roller CCW to photocell light"), "action_args": ("single_move", "F", [2, 6])},
-         {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},
-         {"text": tr_("move 12 00 ('deliver')"), "action_args": ("move_12_00",)}, ],
-     "labels_args": [
-         ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL", tr_("OUTPUT ROLLER PHOTOCELL")), ], }, ]
+
+def get_action_page_list():
+
+    machine_variant = os.getenv('MACHINE_VARIANT', None)
+    in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
+    def action01_buttons():
+        return [
+            {"text": tr_("Start input roller"), "action_args": ("single_move", "A", [1, 1])},
+            {"text": tr_("Stop  input roller"), "action_args": ("single_move", "A", [1, 0])},
+            {"text": tr_("Start input roller to photocell"), "action_args": ("single_move", "A", [1, 2])},
+            {"text": tr_("move 00 01 ('feed')"), "action_args": ("move_00_01",)},
+            {"text": tr_("move 01 02 ('IN -> A')"), "action_args": ("move_01_02",)},
+        ]
+
+    def action01_labels():
+        return [
+            ("A", "JAR_INPUT_ROLLER_PHOTOCELL", tr_("INPUT ROLLER PHOTOCELL")),
+            ("A", "JAR_DETECTION_MICROSWITCH_1", tr_("MICROSWITCH 1")),
+            ("A", "JAR_DETECTION_MICROSWITCH_2", tr_("MICROSWITCH 2")),
+        ]
+
+    def action02_buttons():
+        return [
+            {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "A", [0, 1])},
+            {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "A", [0, 0])},
+            {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "A", [0, 2])},
+        ]
+
+    def action02_labels():
+        return [
+            ("A", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+            ("A", "container_presence", tr_("CAN PRESENCE")),
+            ("A", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
+            ("A", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
+            ("A", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
+            ("A", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
+            ("A", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
+            ("A", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
+            ("A", "panel_table_status", tr_("PANEL TABLE STATUS")),
+        ]
+
+    def action03_buttons():
+        return [
+            {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "B", [0, 1])},
+            {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "B", [0, 0])},
+            {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "B", [0, 2])},
+        ]
+
+    def action03_labels(machine_variant):
+        labels = [
+            ("B", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+        ]
+
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            labels.append(("B", "container_presence", tr_("CAN PRESENCE")))
+        labels += [
+            ("B", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
+            ("B", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
+            ("B", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
+            ("B", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
+            ("B", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
+            ("B", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
+            ("B", "panel_table_status", tr_("PANEL TABLE STATUS")),
+        ]
+        return labels
+
+    def action04_buttons(machine_variant):
+        buttons = [
+            {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "C", [0, 1])},
+            {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "C", [0, 0])},
+            {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "C", [0, 2])},
+        ]
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            buttons += [
+                {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "C", [1, 4])},
+                {"text": tr_("Start lifter up"), "action_args": ("single_move", "D", [1, 2])},
+                {"text": tr_("Start lifter down"), "action_args": ("single_move", "D", [1, 5])},
+                {"text": tr_("Stop  lifter"), "action_args": ("single_move", "D", [1, 0])},
+            ]
+            buttons.append({"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)})
+            buttons += [
+                {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
+                {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)},
+            ]
+        else:
+            buttons.append({"text": tr_("move 04 05 ('C -> OUT')"), "action_args": ("move_04_05",)})
+        return buttons
+
+    def action04_labels(machine_variant):
+        labels = [
+            ("C", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+        ]
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            labels.append(("C", "container_presence", tr_("CAN PRESENCE")))
+        labels += [
+            ("C", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
+            ("C", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
+            ("C", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
+            ("C", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
+            ("C", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
+            ("C", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
+            ("C", "panel_table_status", tr_("PANEL TABLE STATUS")),
+        ]
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            labels += [
+                ("D", "LOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
+                ("D", "LOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")),
+            ]
+        return labels
+
+    def action05_buttons(machine_variant):
+        buttons = [
+            {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "C", [1, 1])},
+        ]
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            buttons.append({"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "C", [1, 4])})
+        buttons.append({"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "C", [1, 0])})
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            buttons += [
+                {"text": tr_("Start lifter up"), "action_args": ("single_move", "D", [1, 2])},
+                {"text": tr_("Start lifter down"), "action_args": ("single_move", "D", [1, 5])},
+                {"text": tr_("Stop  lifter"), "action_args": ("single_move", "D", [1, 0])},
+                {"text": tr_("move 04 05 ('C -> UP')"), "action_args": ("move_04_05",)},
+                {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
+                {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)},
+            ]
+        return buttons
+
+    def action05_labels(machine_variant):
+        labels = [
+            ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL" if machine_variant in ['CR4', 'CR6'] else "ROLLER PHOTOCELL")),
+        ]
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            labels += [
+                ("D", "LOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
+                ("D", "LOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")),
+            ]
+        return labels
+
+    def action06_buttons():
+        return [
+            {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "D", [0, 1])},
+            {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "D", [0, 0])},
+            {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "D", [0, 2])},
+        ]
+
+    def action06_labels():
+        return [
+            ("D", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+            ("D", "container_presence", tr_("CAN PRESENCE")),
+            ("D", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
+            ("D", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
+            ("D", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
+            ("D", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
+            ("D", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
+            ("D", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
+            ("D", "panel_table_status", tr_("PANEL TABLE STATUS")),
+        ]
+
+    def action07_buttons():
+        return [
+            {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "E", [0, 1])},
+            {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "E", [0, 0])},
+            {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "E", [0, 2])},
+        ]
+
+    def action07_labels():
+        return [
+            ("E", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+            ("E", "container_presence", tr_("CAN PRESENCE")),
+            ("E", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
+            ("E", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
+            ("E", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
+            ("E", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
+            ("E", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
+            ("E", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
+            ("E", "panel_table_status", tr_("PANEL TABLE STATUS")),
+        ]
+
+    def action08_buttons():
+        return [
+            {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "F", [0, 1])},
+            {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "F", [0, 0])},
+            {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "F", [0, 2])},
+            {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
+        ]
+
+    def action08_labels():
+        return [
+            ("F", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+            ("F", "container_presence", tr_("CAN PRESENCE")),
+            ("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")),
+            ("F", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
+            ("F", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
+            ("F", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
+            ("F", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
+            ("F", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
+            ("F", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
+            ("F", "panel_table_status", tr_("PANEL TABLE STATUS")),
+        ]
+
+    def action09_buttons():
+        return [
+            {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "F", [1, 1])},
+            {"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "F", [1, 4])},
+            {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "F", [1, 0])},
+            {"text": tr_("Start lifter up"), "action_args": ("single_move", "F", [3, 2])},
+            {"text": tr_("Start lifter down"), "action_args": ("single_move", "F", [3, 5])},
+            {"text": tr_("Stop  lifter"), "action_args": ("single_move", "F", [3, 0])},
+            {"text": tr_("move 09 10 ('F -> DOWN')"), "action_args": ("move_09_10",)},
+            {"text": tr_("move 10 11 ('DOWN -> UP')"), "action_args": ("move_10_11",)},
+            {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},
+        ]
+
+    def action09_labels():
+        return [
+            ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL")),
+            ("F", "UNLOAD_LIFTER_UP_PHOTOCELL", tr_("LIFTER UP PHOTOCELL")),
+            ("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL", tr_("LIFTER DOWN PHOTOCELL")),
+        ]
+
+    def action10_buttons():
+        return [
+            {"text": tr_("Start output roller CCW"), "action_args": ("single_move", "F", [2, 4])},
+            {"text": tr_("Stop  output roller"), "action_args": ("single_move", "F", [2, 0])},
+            {"text": tr_("Start output roller CCW to photocell dark"), "action_args": ("single_move", "F", [2, 5])},
+            {"text": tr_("Start output roller CCW to photocell light"), "action_args": ("single_move", "F", [2, 6])},
+            {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},
+            {"text": tr_("move 12 00 ('deliver')"), "action_args": ("move_12_00",)},
+        ]
+
+    def action10_labels():
+        return [
+            ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL", tr_("OUTPUT ROLLER PHOTOCELL")),
+        ]
+
+    action_list = [
+        {
+            "title": tr_("action 01 (head 1 or A)"),
+            "buttons": action01_buttons(),
+            "labels_args": action01_labels(),
+        },
+        {
+            "title": tr_("action 02 (head 1 or A)"),
+            "buttons": action02_buttons(),
+            "labels_args": action02_labels(),
+        },
+        {
+            "title": tr_("action 03 (head 3 or B)"),
+            "buttons": action03_buttons(),
+            "labels_args": action03_labels(machine_variant),
+        },
+        {
+            "title": tr_("action 04 (head 5, 6 or C, D)"),
+            "buttons": action04_buttons(machine_variant),
+            "labels_args": action04_labels(machine_variant),
+        },
+        {
+            "title": tr_("action 05 (head 5, 6 or C, D)"),
+            "buttons": action05_buttons(machine_variant),
+            "labels_args": action05_labels(machine_variant),
+        },
+        {
+            "title": tr_("action 06 (head 6 or D)"),
+            "buttons": action06_buttons(),
+            "labels_args": action06_labels(),
+        },
+        {
+            "title": tr_("action 07 (head 4 or E)"),
+            "buttons": action07_buttons(),
+            "labels_args": action07_labels(),
+        },
+        {
+            "title": tr_("action 08 (head 2 or F)"),
+            "buttons": action08_buttons(),
+            "labels_args": action08_labels(),
+        },
+        {
+            "title": tr_("action 09 (head 2 or F)"),
+            "buttons": action09_buttons(),
+            "labels_args": action09_labels(),
+        },
+        {
+            "title": tr_("action 10 (head 2 or F)"),
+            "buttons": action10_buttons(),
+            "labels_args": action10_labels(),
+        },
+    ]
+    return action_list
 
 
 class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
@@ -243,6 +388,14 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         elif QApplication.instance().n_of_active_heads == 4:
             self.home_page = HomePageFourHeads(parent=self)
             home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_4_small.png"))
+
+        elif QApplication.instance().n_of_active_heads == 3:
+            self.home_page = HomePageCRX60Heads(parent=self)
+            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_CRX60_small.png"))
+
+        elif QApplication.instance().n_of_active_heads == 2:
+            self.home_page = HomePageCRX40Heads(parent=self)
+            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_CRX40_small.png"))
 
         self.home_btn.setIcon(QIcon(home_btn_pixmap))
         self.home_btn.setIconSize(QSize(280, 72))
@@ -305,7 +458,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def __init_action_pages(self):
 
-        action_page_list_ = ACTION_PAGE_LIST
+        action_page_list_ = get_action_page_list()
 
         action_button_list_ = [
             self.home_page.action_01_btn,
@@ -462,15 +615,19 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                     head_A = QApplication.instance().get_machine_head_by_letter("A")
                     sensor = head_A.status["jar_photocells_status"] & 0x001 and 1
                     manual_barcode = self.input_dialog.get_content_text()
+                    manual_barcode = manual_barcode[:12]
 
                     if not sensor:
-                        message = tr_("Missing Jar on JAR_INPUT_ROLLER_PHOTOCELL")
-                        self.open_alert_dialog(args=message, show_cancel_btn=False)
+                        message = [
+                            "Missing Jar on ",
+                            "JAR_INPUT_ROLLER_PHOTOCELL"
+                        ]
+                        self.open_alert_dialog((), fmt=message, show_cancel_btn=False)
                         return
 
                     if not manual_barcode:
-                        message = tr_("Empty Barcode")
-                        self.open_alert_dialog(args="Empty Barcode ...", show_cancel_btn=False)
+                        message = "Empty Barcode"
+                        self.open_alert_dialog((), fmt=message, show_cancel_btn=False)
                         return
 
                     barcode_reader = BarCodeReader(QApplication.instance().on_barcode_read, "", True, True)
@@ -582,7 +739,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self, icon_name=None, message=None, content=None,
             ok_cb=None, ok_cb_args=None, ok_on_enter=False,
             choices=None, bg_image=None, to_html=None, wide=None,
-            content_editable=True
+            content_editable=True,
+            use_combo_for_choice=False
     ):
 
         self.input_dialog.show_dialog(
@@ -596,23 +754,47 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             bg_image=bg_image,
             to_html=to_html,
             wide=wide,
-            content_editable=content_editable)
+            content_editable=content_editable,
+            use_combo_for_choice=use_combo_for_choice)
 
         logging.warning(str(message))
 
     def open_alert_dialog(  # pylint: disable=too-many-arguments
             self, args, title="ALERT", fmt=None,
             callback=None, cb_args=None, hp_callback=None,
-            visibility=1, show_cancel_btn=True
+            visibility=1, show_cancel_btn=True, traceback=None,
+            localize_args=False
     ):
+        # msg  -> localized msg for UI
+        # msg_ -> non localized msg (eng) for db event
 
         if fmt is not None:
-            msg = tr_(fmt).format(*args)
-            msg_ = fmt.format(*args)
+            args_ = (args,) if not isinstance(args, (list, tuple)) else tuple(args)
+            ui_args_ = tuple(tr_(a) if localize_args and isinstance(a, str) else a for a in args_)
+
+            if isinstance(fmt, (list, tuple)):
+                # msg  = "".join(tr_(part).format(*ui_args_) for part in fmt)
+                # msg_ = "".join(part.format(*args_) for part in fmt)
+                fmt_joined_tr  = "".join(tr_(part) for part in fmt)
+                fmt_joined_raw = "".join(fmt)
+
+                msg  = fmt_joined_tr.format(*ui_args_)
+                msg_ = fmt_joined_raw.format(*args_)
+            else:
+                msg  = tr_(fmt).format(*ui_args_)
+                msg_ = fmt.format(*args_)
         else:
             msg = str(args)
             msg_ = ''
-        json_properties_ = json.dumps({'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}, indent=2, ensure_ascii=False)
+
+        alert_infos = {'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}
+        if traceback:
+            alert_infos['traceback'] = traceback
+        json_properties_ = json.dumps(
+            alert_infos,
+            indent=2,
+            ensure_ascii=False
+        )
 
         logging.warning(f"dialog visibility:{visibility} msg:{msg}")
 
@@ -639,37 +821,56 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             json_properties=json_properties_,
             description=f"{msg_ or msg}")
 
-    def open_frozen_dialog( # pylint: disable=too-many-arguments
-            self, msg, title="ALERT", force_explicit_restart=False,
-            ok_callback=None, hp_callback=None, visibility=1,
-            show_cancel_btn=True
+    def open_frozen_dialog(  # pylint: disable=too-many-arguments
+            self, message_args=(),
+            message_fmt: Union[str, List[str]] = None,
+            title="ALERT",
+            force_explicit_restart=False, ok_callback=None,
+            hp_callback=None, visibility=1, show_cancel_btn=True,
+            localize_args=False
     ):
 
-        logging.info(msg)
-        msg_ = tr_("carousel is paused.")
-        msg_ += f'\n------------------------------\n"{msg}"\n------------------------------\n'
+        base_fmt_parts = [
+            "carousel is paused.",
+            '\n------------------------------\n"'
+        ]
+
+        if isinstance(message_fmt, str):
+            base_fmt_parts.append(message_fmt)
+        elif isinstance(message_fmt, list):
+            base_fmt_parts.extend(message_fmt)
+
+        base_fmt_parts.append('"\n------------------------------\n')
+
+
         if force_explicit_restart:
-            # ~ self.open_alert_dialog(msg_, title=title)
             callback = ok_callback
             cb_args = []
         else:
-            msg_ += tr_("hit 'OK' to unfreeze it")
+            base_fmt_parts.append("hit 'OK' to unfreeze it")
             callback = QApplication.instance().freeze_carousel
             cb_args = [False, ]
 
         self.open_alert_dialog(
-            msg_, title=title, callback=callback, cb_args=cb_args,
-            hp_callback=hp_callback, visibility=visibility,
-            show_cancel_btn=show_cancel_btn
+            message_args,
+            fmt=base_fmt_parts,
+            title=title,
+            callback=callback,
+            cb_args=cb_args,
+            hp_callback=hp_callback,
+            visibility=visibility,
+            show_cancel_btn=show_cancel_btn,
+            localize_args=localize_args
         )
 
-    def open_recovery_dialog(self, recovery_items, lbl_text=None):
+    def open_recovery_dialog(self, recovery_items, lbl_text=None, bottom_lbl_text=None):
         app_frozen = QApplication.instance().carousel_frozen
         _msgbox = RecoveryInfoDialog(
             parent=self,
             recovery_items=recovery_items,
             lbl_text=lbl_text,
-            app_frozen=app_frozen
+            app_frozen=app_frozen,
+            bottom_lbl_text=bottom_lbl_text
         ) 
 
     def show_barcode(self, barcode, is_ok=False):

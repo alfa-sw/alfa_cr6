@@ -22,3 +22,14 @@ def init_remote_ui(app, db):
             'lang': 'en',
         }
         return render_template(template, **ctx)
+
+    @app.route('/settings')
+    def settings():
+
+        template = '/settings.html'
+
+        ctx = {
+            'ws_ip_port': "{}:{}".format(request.host.split(':')[0], 13000),
+            'lang': 'en',
+        }
+        return render_template(template, **ctx)

@@ -17,6 +17,7 @@ import traceback
 import copy
 import random
 import asyncio
+import aiohttp
 from datetime import datetime
 from functools import partial
 
@@ -38,11 +39,14 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QDialog,
     QHBoxLayout,
-    QDialogButtonBox
+    QDialogButtonBox,
+    QTextBrowser,
+    QSizePolicy,
+    QLayout,
 )
 
 from alfa_CR6_backend.models import Order, Jar
-from alfa_CR6_backend.dymo_printer import dymo_print_jar
+from alfa_CR6_backend.dymo_printer import dymo_print_jar, dymo_print_package_label
 
 from alfa_CR6_backend.globals import get_res, tr_, import_settings
 
@@ -184,6 +188,23 @@ class BaseDialog(QFrame):
         self.esc_button.setAutoFillBackground(True)
 
         self.hide()
+
+    def _log_db_event(self, msg, localized_msg, source=None, level="INFO"):
+        alert_infos = {'fmt': msg, 'args': {}, 'msg_': msg, 'msg': localized_msg}
+        json_properties_ = json.dumps(
+            alert_infos,
+            indent=2,
+            ensure_ascii=False
+        )
+
+        QApplication.instance().insert_db_event(
+            name='UI_DIALOG',
+            level=level,
+            severity='',
+            source=source,
+            json_properties=json_properties_,
+            description=msg
+        )
 
 
 class EditDialog(BaseDialog):
@@ -424,17 +445,19 @@ class EditDialog(BaseDialog):
     def __save_changes(self):
 
         if self.warning_lbl.text():
-            msg = tr_("confirm saving changes")
+            args = ()
+            msg = ["confirm saving changes"]
             n_of_jars = self.n_of_jars_spinbox.value()
             print_barcodes = self.print_check_box.isChecked()
             if n_of_jars:
-                msg += tr_(",\ncreating {} jars").format(n_of_jars)
+                args = str(n_of_jars)
+                msg.append(",\ncreating {} jars")
                 if print_barcodes:
-                    msg += tr_("\nand printing barcodes")
+                    msg.append("\nand printing barcodes")
                 else:
-                    msg += tr_("\nwithout printing barcodes")
-            msg += tr_(" ?")
-            self.parent().open_alert_dialog(msg, title="ALERT", callback=self.__do_save_changes)
+                    msg.append("\nwithout printing barcodes")
+            msg.append(" ?")
+            self.parent().open_alert_dialog(args, fmt=msg, title="ALERT", callback=self.__do_save_changes)
         else:
             self.hide()
 
@@ -529,11 +552,16 @@ class InputDialog(BaseDialog):
         self.ok_on_enter = None
 
         self.choices = []
+        self.use_combo_for_choice = False
 
         # ~ self.ok_button.clicked.connect(self.hide)
-        self.esc_button.clicked.connect(self.toggle_app_keyboard)
+        self.esc_button.clicked.connect(self.close_actions)
 
     def get_selected_choice(self):
+
+        if getattr(self, 'use_combo_for_choice', False):
+            key = self.combo_box.currentText()
+            return self.choices.get(key)
 
         key = self.content_container.toPlainText()
         return self.choices.get(key)
@@ -544,6 +572,8 @@ class InputDialog(BaseDialog):
 
     def on_combo_box_index_changed(self, index): # pylint: disable=unused-argument
 
+        if getattr(self, 'use_combo_for_choice', False):
+            return
         txt_ = self.combo_box.currentText()
         self.content_container.setText(txt_)
 
@@ -578,11 +608,13 @@ class InputDialog(BaseDialog):
         bg_image=None,
         to_html=None,
         wide=None,
-        content_editable=True):
+        content_editable=True,
+        use_combo_for_choice=False):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
         self.ok_on_enter = ok_on_enter
+        self.use_combo_for_choice = bool(use_combo_for_choice)
 
         if icon_name is None:
             icon_ = self.style().standardIcon(getattr(QStyle, "SP_MessageBoxWarning"))
@@ -607,8 +639,29 @@ class InputDialog(BaseDialog):
             self.combo_box.clear()
             for choice in keys_:
                 self.combo_box.addItem(choice)
+            # Ensure a default valid selection
+            if self.combo_box.count() > 0:
+                self.combo_box.setCurrentIndex(0)
             self.combo_box.show()
-            self.combo_box.resize(self.combo_box.width(), 40)
+
+            # Increase font and size when using combo for choices
+            if self.use_combo_for_choice:
+                try:
+                    self.combo_box.setMinimumHeight(60)
+                    self.combo_box.resize(self.combo_box.width(), 60)
+                    self.combo_box.setStyleSheet(
+                        """
+                        QComboBox { font-size: 34px; min-height: 60px; }
+                        QComboBox QAbstractItemView { font-size: 30px; }
+                        QAbstractItemView::item { min-height: 48px; }
+                        """
+                    )
+                    self.resize(self.width(), max(self.height(), 625))
+                except Exception:
+                    logging.error(traceback.format_exc())
+                    pass
+            else:
+                self.combo_box.resize(self.combo_box.width(), 40)
 
         if content is None:
             self.content_container.setText("")
@@ -655,8 +708,14 @@ class InputDialog(BaseDialog):
     def hide_dialog(self):
         self.hide()
 
-    def toggle_app_keyboard(self):
-        self.parent().toggle_keyboard(on_off=False)
+    def close_actions(self):
+        try:
+            self.parent().toggle_keyboard(on_off=False)
+            QApplication.instance().barcode_read_blocked_on_refill = False
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
 
 class AliasDialog(BaseDialog):
@@ -749,7 +808,7 @@ class AliasDialog(BaseDialog):
         # ~ logging.warning(f"_duplicated_list:{_duplicated_list}")
 
         if _duplicated_list:
-            self.parent().open_alert_dialog(tr_("data not valid. duplicated alias:") + f" {_duplicated_list}", title="ERROR")
+            self.parent().open_alert_dialog(_duplicated_list, fmt="data not valid. duplicated alias: {}", title="ERROR")
             return False
 
         return True
@@ -843,41 +902,65 @@ class AliasDialog(BaseDialog):
 
 
 class RecoveryInfoDialog(QDialog):
-    def __init__(self, parent=None, recovery_items=None, lbl_text=None, app_frozen=False):
+    def __init__(self, parent=None, recovery_items=[], lbl_text=None, app_frozen=False, bottom_lbl_text=[]):
         super(RecoveryInfoDialog, self).__init__(parent)
         self.setWindowTitle("Recovery Information")
         self.setModal(True)
-        self.resize(400, 300)
+        self.setMinimumWidth(520)
 
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
+        self.parent = parent
+        self.app_frozen = app_frozen
+        self.recovery_items = recovery_items
+        self.rows = []
+
+        self.main_layout = QVBoxLayout(self)
 
         if lbl_text:
-            self.text_label = QLabel(lbl_text)
-            self.layout.addWidget(self.text_label)
+            self.top_label = QLabel(tr_(lbl_text))
+            self.top_label.setWordWrap(True)
+            self.top_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+            self.top_label.adjustSize()
+            self.main_layout.addWidget(self.top_label)
 
-        self.recovery_items = recovery_items.copy() if recovery_items else []
-        self.rows = []
-        self.parent = parent
+        self.rows_container = QWidget()
+        self.rows_layout = QVBoxLayout(self.rows_container)
+        self.rows_layout.setAlignment(Qt.AlignTop)
+
+        self.main_layout.addWidget(self.rows_container)
+        db_text = ["[RecoveryInfoDialog] \n"]
+        db_text.append(lbl_text)
+        for item in self.recovery_items.copy():
+            _lbl = f"{item[0]} - {item[1]}"
+            _flag = item[2]
+            self.add_recovery_row(_lbl, _flag)
+            db_text.append(_lbl)
+
+        if bottom_lbl_text:
+            qlbl_bottom = "\n".join(tr_(t) for t in bottom_lbl_text)
+            self.bottom_label = QLabel(qlbl_bottom)
+            self.bottom_label.setWordWrap(True)
+            self.bottom_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+            self.bottom_label.adjustSize()
+            self.main_layout.addWidget(self.bottom_label)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok)
         self.button_box.accepted.connect(self.close_modal)
-        self.layout.addWidget(self.button_box)
+        self.main_layout.addWidget(self.button_box)
 
-        for item in self.recovery_items.copy():
-            self.add_recovery_row(item)
-
-        self.app_frozen=app_frozen
+        db_text.extend(bottom_lbl_text)
+        self.store_event(db_text)
+        self._apply_content_sizing()
         self.show()
 
-    def add_recovery_row(self, text):
+    def add_recovery_row(self, text, recover_ok=True):
 
         row_widget = QWidget()
-        row_layout = QHBoxLayout()
-        row_widget.setLayout(row_layout)
+        row_layout = QHBoxLayout(row_widget)
 
         label = QLabel(text)
         label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        css_color = "#2B842B" if recover_ok else "#BA2D09"
+        label.setStyleSheet(f"color: {css_color};")
 
         delete_button = QPushButton("Delete")
         delete_button.setFixedSize(90, 30)
@@ -887,14 +970,14 @@ class RecoveryInfoDialog(QDialog):
         row_layout.addStretch()
         row_layout.addWidget(delete_button)
 
-        self.layout.addWidget(row_widget)
-
+        self.rows_layout.addWidget(row_widget)
         self.rows.append(row_widget)
+
+        self._apply_content_sizing()
 
         delete_button.clicked.connect(lambda: self.remove_recovery_row(row_widget))
 
     def remove_recovery_row(self, row_widget):
-
         if not self.app_frozen and self.parent:
             msg_ = "\nAutomation paused is required!"
             self.parent.open_alert_dialog(msg_, title="ERROR")
@@ -906,21 +989,99 @@ class RecoveryInfoDialog(QDialog):
             return
 
         if 0 <= index < len(self.recovery_items):
-            removed_item = self.recovery_items.pop(index)
+            _removed_item = self.recovery_items.pop(index)
 
-        self.layout.removeWidget(row_widget)
+        self.rows_layout.removeWidget(row_widget)
         row_widget.deleteLater()
         self.rows.remove(row_widget)
+
+        self._apply_content_sizing()
+
         label = row_widget.findChild(QLabel)
         if label:
             label_text = label.text()
             tokens = label_text.split('-', maxsplit=1)
-            barcode = tokens[0].strip()
-            jar_pos = tokens[1]
-            QApplication.instance().recovery_mode_delete_jar_task(barcode, jar_pos)
+            if len(tokens) == 2:
+                barcode = tokens[0].strip()
+                jar_pos = tokens[1]
+                QApplication.instance().recovery_mode_delete_jar_task(barcode, jar_pos)
+                delete_infos = ["DELETED", label_text]
+                self.store_event(delete_infos)
+
+    def _apply_content_sizing(self):
+
+        if not hasattr(self, 'button_box'):
+            return
+
+        self.layout().activate()
+
+        margins = self.main_layout.contentsMargins()
+        spacing = self.main_layout.spacing()
+
+        total_h = margins.top() + margins.bottom()
+
+        if hasattr(self, 'top_label') and self.top_label is not None:
+            self.top_label.adjustSize()
+            total_h += self.top_label.sizeHint().height()
+            total_h += spacing
+
+        rows_h = 0
+        for i in range(self.rows_layout.count()):
+            item = self.rows_layout.itemAt(i)
+            if item and item.widget():
+                item.widget().adjustSize()
+                rows_h += item.widget().sizeHint().height()
+                rows_h += self.rows_layout.spacing()
+        total_h += rows_h
+
+        if hasattr(self, 'bottom_label') and self.bottom_label is not None:
+            self.bottom_label.adjustSize()
+            total_h += self.bottom_label.sizeHint().height()
+            total_h += spacing
+
+        self.button_box.adjustSize()
+        total_h += self.button_box.sizeHint().height()
+
+        desktop = QApplication.instance().desktop().availableGeometry(self)
+        max_h = int(desktop.height() * 0.9)
+        self.setMaximumHeight(max_h)
+
+        min_w = max(
+            self.minimumWidth(),
+            self.top_label.sizeHint().width() if hasattr(self, 'top_label') and self.top_label is not None else 0,
+            self.bottom_label.sizeHint().width() if hasattr(self, 'bottom_label') and self.bottom_label is not None else 0,
+            self.button_box.sizeHint().width(),
+        )
+        self.setMinimumWidth(min_w + margins.left() + margins.right() + 20)
+
+        self.resize(self.minimumWidth(), min(total_h, max_h))
 
     def close_modal(self):
+        self.store_event("[RecoveryInfoDialog] popup closed")
         self.close()
+    
+    def store_event(self, db_text):
+        # msg  -> localized msg for UI
+        # msg_ -> non localized msg (eng) for db event
+
+        _msg = _l_msg = db_text
+        if isinstance(db_text, list):
+            _l_msg = "\n".join(tr_(text) for text in db_text)
+            _msg = "\n".join(text for text in db_text)
+        recovery_infos = {'fmt': (), 'args': (), 'msg_': _msg, 'msg': _l_msg}
+        json_properties_ = json.dumps(
+            recovery_infos,
+            indent=2,
+            ensure_ascii=False
+        )
+        QApplication.instance().insert_db_event(
+            name='UI_DIALOG',
+            level="INFO",
+            severity='',
+            source="RecoveryInfoDialog",
+            json_properties=json_properties_,
+            description=_msg
+        )
         
 class RefillDialog(BaseDialog):
 
@@ -931,7 +1092,7 @@ class RefillDialog(BaseDialog):
         super().__init__(*args, **kwargs)
 
         self.content_container.textChanged.connect(self.on_text_changed)
-        self.esc_button.clicked.connect(self.toggle_app_keyboard)
+        self.esc_button.clicked.connect(self.close_actions)
 
         self.__ok_cb = None
         self.__ok_cb_args = None
@@ -939,8 +1100,14 @@ class RefillDialog(BaseDialog):
 
         self.choices = []
 
-    def toggle_app_keyboard(self):
-        self.parent().toggle_keyboard(on_off=False)
+    def close_actions(self):
+        try:
+            self.parent().toggle_keyboard(on_off=False)
+            QApplication.instance().barcode_read_blocked_on_refill = False
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
     def get_content_text(self):
 
@@ -954,19 +1121,37 @@ class RefillDialog(BaseDialog):
     def _update_content_container(self, qtity_value):
         logging.warning("pressed")
         logging.warning(f"setting {qtity_value}")
-        self.content_container.setText(qtity_value)
+        self.content_container.setPlainText(qtity_value)
 
     def _update_choice_buttons(self):
+
+        def _format_value(v):
+            try:
+                f = float(v)
+                return int(f) if f.is_integer() else round(f, 2)
+            except Exception:
+                return v
 
         for i, choice in enumerate(self.choices, start=1):
             button = self.findChild(QPushButton, f'refill_choice_{i}')
             logging.warning(button)
             if button is not None:
-                value = int(choice)
-                button.setEnabled(value > 0)
-                button.setText(str(value))
-                logging.warning(f'btn value: {value}')
-                button.clicked.connect(lambda _, v=value: self._update_content_container(str(v)))
+                # Support both numeric values and dicts like {"label": "FILL UP", "value": 123.45}
+                if isinstance(choice, dict):
+                    value = float(choice.get('value', 0) or 0)
+                    label = str(choice.get('label', '') or '')
+                    disp_val = _format_value(value)
+                    button.setEnabled(value > 0)
+                    button.setText(f"{label}\n{disp_val}".strip())
+                    logging.warning(f'btn value: {value} ({label})')
+                    button.clicked.connect(lambda _, v=value: self._update_content_container(str(v)))
+                else:
+                    value = float(choice)
+                    disp_val = _format_value(value)
+                    button.setEnabled(value > 0)
+                    button.setText(str(disp_val))
+                    logging.warning(f'btn value: {value}')
+                    button.clicked.connect(lambda _, v=value: self._update_content_container(str(v)))
 
     def on_ok_button_clicked(self):
 
@@ -1020,3 +1205,194 @@ class RefillDialog(BaseDialog):
             self.unit_label.setText(unit)
 
         self.show()
+
+
+class PackageSizesDialog(BaseDialog):
+
+    ui_file_name = "package_sizes_dialog.ui"
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+        self.overlay = None
+
+        self.package_table.setColumnCount(3)
+        self.package_table.setHorizontalHeaderLabels([tr_("Nome"), tr_("Size"), tr_("Barcode")])
+
+        self.package_table.horizontalHeader().setVisible(True)
+        self.package_table.horizontalHeader().setStyleSheet("""
+            QHeaderView::section {
+                background-color: #E0E0E0;
+                padding: 4px;
+                border: 1px solid #999999;
+                font-weight: bold;
+                font-size: 24px;
+            }
+        """)
+
+        # Set font size for table content
+        self.package_table.setStyleSheet("""
+            QTableWidget {
+                background-color: #AAFFFFFF;
+                font-size: 20px;
+            }
+            QTableWidget::item {
+                padding: 4px;
+                font-size: 20px;
+            }
+        """)
+
+        self.title_lbl.setStyleSheet("""
+            QLabel {
+                font-size: 26px;
+            }
+        """)
+
+        self.ok_button.hide()
+        self.esc_button.clicked.connect(self.hide)
+
+        self._load_package_data_sync()
+
+    def __set_row(self, row, package):
+
+        name = package.get("name", "N/A")
+        size = package.get("size", "N/A")
+        description = package.get("description", "N/A")
+
+        self.package_table.setItem(row, 0, QTableWidgetItem(str(name)))
+        self.package_table.setItem(row, 1, QTableWidgetItem(str(size)))
+
+        barcode_widget = QWidget()
+        barcode_layout = QHBoxLayout(barcode_widget)
+        barcode_layout.setContentsMargins(5, 5, 5, 5)
+
+        barcode_label = QLabel()
+        barcode_pixmap = QPixmap(get_res("IMAGE", "barcode_C128.png"))
+        scaled_pixmap = barcode_pixmap.scaled(80, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        barcode_label.setPixmap(scaled_pixmap)
+        barcode_label.setAlignment(Qt.AlignCenter)
+
+        barcode_label.mousePressEvent = lambda event: self._generate_barcode_label(package)
+
+        barcode_layout.addWidget(barcode_label)
+        self.package_table.setCellWidget(row, 2, barcode_widget)
+
+    def _generate_barcode_label(self, package):
+
+        try:
+
+            result = dymo_print_package_label(package, fake=False)
+            logging.warning(f"result :: {result}")
+
+            if result.get('result') == 'OK':
+                return
+
+            error_msg = result.get('msg', "")
+            logging.error(error_msg)
+            QApplication.instance().main_window.open_alert_dialog(
+                (),
+                fmt=error_msg,
+                show_cancel_btn=False
+            )
+
+        except Exception as e:
+            error_msg = [
+                "[PackageSizesDialog]",
+                "An unexpected error has been occurred"
+            ]
+            logging.error(traceback.format_exc())
+            QApplication.instance().main_window.open_alert_dialog(
+                (),
+                fmt=error_msg,
+                traceback=result.get('msg', 'UNKNOWN ERROR'),
+                show_cancel_btn=False
+            )
+
+    def __show_error_in_table(self, error_msg, font_size=18):
+
+        self.package_table.setColumnCount(1)
+        self.package_table.setRowCount(1)
+        self.package_table.horizontalHeader().setVisible(False)
+
+        localized_err_msg = tr_(error_msg)
+        item = QTableWidgetItem(localized_err_msg)
+        font = QFont()
+        font.setPointSize(font_size)
+        font.setBold(True)
+        item.setFont(font)
+
+        item.setTextAlignment(Qt.AlignCenter)
+        self.package_table.setItem(0, 0, item)
+        self.package_table.resizeRowsToContents()
+        self._log_db_event(error_msg, localized_err_msg, source="PackageSizesDialog")
+
+    def _load_package_data_sync(self):
+
+        app = QApplication.instance()
+
+        machine_head = None
+        for head in app.machine_head_dict.values():
+            if head:
+                machine_head = head
+                break
+
+        asyncio.ensure_future(self._async_load_package_data(machine_head))
+
+    async def _async_load_package_data(self, machine_head):
+
+        try:
+
+            ret = await machine_head.call_api_rest("apiV1/package", "GET", {}, 1.5)
+
+            if not ret or ret.get("objects") is None:
+                error_msg = "HEAD 1 (A): no response or invalid data"
+                self.__show_error_in_table(error_msg)
+                return
+
+            packages = ret.get("objects")
+
+            if not packages:
+                error_msg = "HEAD 1 (A): no package data found"
+                self.__show_error_in_table(error_msg)
+                return
+
+            self.package_table.setRowCount(len(packages))
+            for row, package in enumerate(packages):
+                self.__set_row(row, package)
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            error_msg = f"An unexpected error has been occurred. {str(e)}"
+            self.__show_error_in_table(error_msg)
+
+    def _create_overlay(self):
+
+        if not hasattr(self, 'overlay'):
+            self.overlay = None
+
+        if self.parent():
+            self.overlay = QWidget(self.parent())
+            self.overlay.setStyleSheet("background-color: rgba(0, 0, 0, 50);")
+            self.overlay.resize(self.parent().size())
+            self.overlay.move(0, 0)
+            self.overlay.show()
+            self.overlay.raise_()
+
+            # Make sure dialog is above overlay
+            self.raise_()
+
+    def _remove_overlay(self):
+        if hasattr(self, 'overlay') and self.overlay:
+            self.overlay.hide()
+            self.overlay.deleteLater()
+            self.overlay = None
+
+    def show_dialog(self):
+        self._create_overlay()
+        self.show()
+        self.raise_()  # Ensure dialog is on top
+        return self
+
+    def hide(self):
+        self._remove_overlay()
+        super().hide()

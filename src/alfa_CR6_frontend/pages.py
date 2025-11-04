@@ -453,8 +453,8 @@ class HelpPage(BaseStackedPage):
                 self.help_text_browser.setHtml(content)
             self.parent().setCurrentWidget(self)
         else:
-            _msg = tr_("sorry, this help page is missing.")
-            self.main_window.open_alert_dialog(_msg, title="ALERT")
+            _msg = "sorry, this help page is missing."
+            self.main_window.open_alert_dialog((), fmt=_msg, title="ALERT")
 
 
 class OrderPage(BaseStackedPage):
@@ -839,8 +839,10 @@ class OrderPage(BaseStackedPage):
             # ~ new_order = QApplication.instance().create_order()
             new_order = QApplication.instance().create_new_order()
             if new_order:
-                msg = tr_("created order:{}.").format(new_order.order_nr)
-                self.main_window.open_alert_dialog(msg, title="INFO")
+                msg = "created order:{}."
+                o_nr = f"{new_order.order_nr}"
+                logging.warning(f"ORDER NR: {o_nr}")
+                self.main_window.open_alert_dialog((o_nr), fmt=msg, title="INFO")
                 self.populate_order_table()
                 self.populate_jar_table()
 
@@ -864,12 +866,12 @@ class OrderPage(BaseStackedPage):
                 order = QApplication.instance().db_session.query(Order).filter(Order.order_nr == order_nr).first()
                 if order:
                     cloned_order = QApplication.instance().clone_order(order_nr)
-                    msg = tr_("cloned order:{} \n from:{}.").format(cloned_order.order_nr, order.order_nr)
-                    self.main_window.open_alert_dialog(msg, title="INFO")
+                    msg = "cloned order:{} \n from:{}."
+                    self.main_window.open_alert_dialog((cloned_order.order_nr, order.order_nr), fmt=msg, title="INFO")
                     self.populate_order_table()
                     self.populate_jar_table()
             else:
-                self.main_window.open_alert_dialog(tr_("no item selected. Please, select one to clone."))
+                self.main_window.open_alert_dialog((), fmt="no item selected. Please, select one to clone.")
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
 

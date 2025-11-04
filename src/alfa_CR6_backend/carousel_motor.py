@@ -14,6 +14,7 @@ import asyncio
 import traceback
 from functools import partial
 from typing import Optional
+import os
 
 
 from alfa_CR6_backend.globals import tr_, store_data_on_restore_machine_helper
@@ -27,6 +28,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     double_can_alert = False
     busy_head_A = False
     running_recovery_mode = False
+
+    machine_variant = os.getenv('MACHINE_VARIANT', None)
+    in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
+    # True only for CR4/CR6 with fixed barcode
+    barcode_read_blocked_on_refill = False
 
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
@@ -170,7 +177,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             if not r:
                 logging.warning(f"{m.name} jar:{jar}")
-                await self.wait_for_carousel_not_frozen(True, tr_('{} waiting for dispense position to get available.'.format(m.name)))
+                # TODO - better to save also photocell status and crx status
+                await self.wait_for_carousel_not_frozen(
+                    True,
+                    message_args=(m.name,),
+                    message_fmt="{} waiting for dispense position to get available."
+                )
             else:
                 break
 
@@ -289,9 +301,44 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     r = await self.wait_for_condition(condition, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
                                                       show_alert=True, extra_info=tr_('waiting for unload lifter to be free, stopped.'))
             if not r:
-                await self.wait_for_carousel_not_frozen(True, tr_("please, remove completed items from output roller"))
+                await self.wait_for_carousel_not_frozen(
+                    True,
+                    message_args=(),
+                    message_fmt="please, remove completed items from output roller"
+                )
             else:
                 break
+
+    async def wait_for_cr_linear_deliver_line_available(self, jar):
+        """
+        Wait for CR linear (CRX40/CRX60) delivery line to be available.
+        """
+        C = self.get_machine_head_by_letter("C")
+
+        while True:
+            def condition():
+                return not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', False)
+
+            r = await self.wait_for_condition(condition, show_alert=False, timeout=3.5)
+            if r:
+                break
+
+            ok_event = asyncio.Event()
+
+            def on_ok():
+                if not ok_event.is_set():
+                    ok_event.set()
+
+            self.main_window.open_alert_dialog(
+                (),
+                fmt="Please, remove completed order(s) from output roller",
+                title='ALERT',
+                visibility=1,
+                show_cancel_btn=False,
+                callback=on_ok
+            )
+
+            await ok_event.wait()
 
     async def move_from_to(
             self, jar, letter_from, letter_to,
@@ -353,8 +400,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             # ~ flag = flag and not A.jar_photocells_status['JAR_INPUT_ROLLER_PHOTOCELL']
             logging.warning(f"flag:{flag}.")
             return flag
-        r = await self.wait_for_condition(
-            condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info, stability_count=1, step=0.5)
+
+        if (self.in_docker
+            and self.machine_variant in ['CRX60', 'CRX40']
+        ):
+            r = True
+            if A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False):
+                r = False
+        else:
+            r = await self.wait_for_condition(
+                condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info, stability_count=1, step=0.5)
 
         if r:
             await A.crx_outputs_management(1, 2)
@@ -362,6 +417,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             await A.crx_outputs_management(1, 0)
         else:
             logging.warning("input_roller is busy, nothing to do.")
+
+        if (A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False)
+            and self.in_docker
+            and self.machine_variant in ['CRX60', 'CRX40']
+        ):
+            await self._handle_crx_barcode_input()
 
         return r
 
@@ -416,10 +477,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
 
                 if dt < timeout_ or self.double_can_alert:
-                    msg_ = tr_('The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!')
+                    msg_ = 'The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!'
                     while True:
                         await self.wait_for_carousel_not_frozen(
-                            True, msg_, visibility=2, show_cancel_btn=False)
+                            True,
+                            message_args=(),
+                            message_fmt=msg_,
+                            visibility=2,
+                            show_cancel_btn=False
+                        )
                         if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
                             break
                     self.double_can_alert = False
@@ -444,20 +510,28 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return await self.move_from_to(jar, "A", "C", show_alert=False)
 
-    async def move_04_05(self, jar=None):  # 'C -> UP'
+    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60
 
-        D = self.get_machine_head_by_letter("D")
+        machine_variant = os.getenv('MACHINE_VARIANT', None)
+        in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
         C = self.get_machine_head_by_letter("C")
+        r = True
 
-        r = await self.wait_for_load_lifter_is_up(jar)
+        if in_docker and machine_variant in ['CRX40', 'CRX60']:
+            await self.wait_for_cr_linear_deliver_line_available(jar)
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            D = self.get_machine_head_by_letter("D")
+            r = await self.wait_for_load_lifter_is_up(jar)
 
         if r:
             def condition():
-                flag = not D.status.get('crx_outputs_status', 0x0) & 0x02
-                flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x01
+                flag = not C.status.get('crx_outputs_status', 0x0) & 0x01
+                if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+                    flag = flag and not D.status.get('crx_outputs_status', 0x0) & 0x02
                 flag = flag and not C.status.get('crx_outputs_status', 0x0) & 0x02
                 flag = flag and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
-                flag = flag and D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+                if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+                    flag = flag and D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
                 return flag
 
             r = await self.wait_for_condition(
@@ -474,7 +548,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await C.crx_outputs_management(1, 0)
 
                 if r:
-                    self.update_jar_position(jar=jar, pos="LIFTR_UP")
+                    if self.in_docker and self.machine_variant in ['CRX60', 'CRX40']:
+                        self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="_")
+                    else:
+                        self.update_jar_position(jar=jar, pos="LIFTR_UP")
 
         return r
 
@@ -683,12 +760,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 insufficient_pigments = list(json_properties.get("insufficient_pigments", {}).keys())
 
                 if insufficient_pigments:
-                    msg_ = tr_('Missing material for barcode {}.\n please refill pigments:{}. ({}/{})').format(
-                        jar.barcode, insufficient_pigments, cntr, nof_retry)
+                    m_args = (jar.barcode, insufficient_pigments, cntr, nof_retry, )
+                    msg_ = ['Missing material for barcode {}.\n please refill pigments:{}. ({}/{})']
                     if cntr == nof_retry:
-                        msg_ += tr_("\nOtherwise the can's status will be marked as ERROR.")
-                    logging.warning(msg_)
-                    r = await self.wait_for_carousel_not_frozen(True, msg_)
+                        msg_.append("\nOtherwise the can's status will be marked as ERROR.")
+                    logging.warning("".join(msg_))
+                    r = await self.wait_for_carousel_not_frozen(
+                        True,
+                        message_args=m_args,
+                        message_fmt=msg_
+                    )
 
             await m.update_tintometer_data()
             self.update_jar_properties(jar)
@@ -750,10 +831,32 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_11_12,
         ]
 
+        sequence_crx60 = [
+            self.move_01_02,
+            partial(self.dispense_step, "A"),
+            self.move_02_03,
+            partial(self.dispense_step, "B"),
+            self.move_03_04,
+            partial(self.dispense_step, "C"),
+            self.move_04_05,
+        ]
+
+        sequence_crx40 = [
+            self.move_01_02,
+            partial(self.dispense_step, "A"),
+            self.move_02_04,
+            partial(self.dispense_step, "C"),
+            self.move_04_05,
+        ]
+
         if n_of_heads == 6:
             sequence = sequence_6
         elif n_of_heads == 4:
             sequence = sequence_4
+        elif n_of_heads == 3:
+            sequence = sequence_crx60
+        elif n_of_heads == 2:
+            sequence = sequence_crx40
 
         barcode_ = jar and jar.barcode
 
@@ -768,7 +871,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             retry_counter = 0
             while True:
 
-                await self.wait_for_carousel_not_frozen(freeze=False, msg="")
+                await self.wait_for_carousel_not_frozen(
+                    False,
+                    message_args=(),
+                    message_fmt=""
+                )
 
                 if "move_01_02" in _tag and self.busy_head_A:
                     await asyncio.sleep(0.05)
@@ -779,11 +886,14 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 if not r:
                     if "move_01_02" in _tag:
 
-                        msg_ = tr_('barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!').format(barcode_, f"\n{_tag}\n")
-
                         self.delete_entering_jar()
 
-                        await self.wait_for_carousel_not_frozen(True, msg_, visibility=2)
+                        await self.wait_for_carousel_not_frozen(
+                            True,
+                            message_args=(barcode_, f"\n{_tag}\n"),
+                            message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
+                            visibility=2
+                        )
 
                         self.timer_01_02 = time.time()
                         logging.warning(f"self.timer_01_02:{self.timer_01_02}")
@@ -791,15 +901,27 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         return
 
                     retry_counter += 1
-                    msg_ = tr_('barcode:{} error in {}. I will retry.').format(barcode_, f"\n{_tag}\n") + f" ({retry_counter})"
-                    await self.wait_for_carousel_not_frozen(True, msg_)
+                    msg_ = [
+                        "barcode:{} error in {}. I will retry.",
+                        "({})"
+                    ]
+                    await self.wait_for_carousel_not_frozen(
+                        True,
+                        message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
+                        message_fmt=msg_
+                    )
 
                 else:
                     break
 
-            await self.wait_for_carousel_not_frozen(not r, tr_("barcode:{}").format(barcode_) + tr_("STEP {} +").format(f"\n{_tag}\n"))
+            await self.wait_for_carousel_not_frozen(
+                freeze=not r,
+                message_args=(barcode_, f"\n{_tag}\n"),
+                message_fmt=("barcode:{}", "STEP {} +")
+            )
 
-        await self.wait_for_jar_delivery(jar)
+        if self.machine_variant not in ['CRX60', 'CRX40']:
+            await self.wait_for_jar_delivery(jar)
 
         return r
 
@@ -867,6 +989,33 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             recovery_actions['LIFTL_DOWN'] = full_steps[11:]
             recovery_actions['LIFTL_UP'] = full_steps[12:]
 
+        if self.n_of_active_heads == 3:
+
+            full_steps = [
+                "move_01_02", "dispense_step", "move_02_03",
+                "dispense_step", "move_03_04", "dispense_step",
+                "move_04_05",
+            ]
+
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['B'] = full_steps[3:]
+            recovery_actions['C'] = full_steps[5:]
+
+        if self.n_of_active_heads == 2:
+
+            full_steps = [
+                "move_01_02", "dispense_step",
+                "move_02_04", "dispense_step",
+                "move_04_05",
+            ]
+
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['C'] = full_steps[3:]
+
         parametri_movimenti = {
             "move_01_02": {'time_interval_check': False},
         }
@@ -927,7 +1076,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             time.sleep(delay)
 
                     if curr_head_jar_sts is None:
-                        raise RuntimeError("Recovery Mode: Timeout retrieving machine status! Retry again...")
+                        raise RuntimeError("[Recovery Mode] Timeout retrieving machine status! Retry again...")
 
                     curr_head_jar_engagged_photocell = current_head.check_jar_photocells_status(
                         curr_head_jar_sts, curr_position_senson
@@ -991,7 +1140,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     'A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
-                        next_head_letter=("C" if self.n_of_active_heads == 4 else "B")
+                        next_head_letter=("C" if self.n_of_active_heads in (2,4) else "B")
                     ),
                     'B': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
@@ -1070,7 +1219,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             except RuntimeError as e:
                 error_message = str(e)
                 self.running_recovery_mode = False
-                self.main_window.open_alert_dialog(error_message)
+                self.main_window.open_alert_dialog((), fmt=error_message)
                 return
 
             except asyncio.CancelledError:
@@ -1124,8 +1273,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     await asyncio.sleep(sleeptime)
                     if not r:
                         retry_counter += 1
-                        msg_ = tr_('barcode:{} error in {}. I will retry.').format(j_code, f"\n{r_ac}\n") + f" ({retry_counter})"
-                        await self.wait_for_carousel_not_frozen(True, msg_)
+                        msg_ = [
+                            "barcode:{} error in {}. I will retry.",
+                            "({})"
+                        ]
+                        m_args = (j_code, f"\n{r_ac}\n", str(retry_counter))
+                        await self.wait_for_carousel_not_frozen(
+                            True,
+                            message_args=m_args,
+                            message_fmt=msg_
+                        )
                     else:
                         if "move_11_12" in r_ac:
                             await self.restore_machine_helper.async_remove_jar_data(j_code)

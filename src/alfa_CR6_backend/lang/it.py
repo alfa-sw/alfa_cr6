@@ -76,7 +76,7 @@ D = {
     "confirm unfreezing carousel?": "confermi il riavvio dell'automazione?",
     "copy": "copia",
     "create order": "crea ordine",
-    "created order:{}.": "creare un ordine:{}.",
+    "created order:{}.": "ordine creato:{}.",
     "date_created:{}\n": "data_creazione:{}\n",
     "delete": "rimuovi",
     "description:{}\n": "descrizione:{}\n",
@@ -176,7 +176,7 @@ D = {
     "confirm removing {}?": "confermi la rimozione di: {}?",
 
     "edit alias for pigment names": "edit alias for pigment names",
-    "data not valid. duplicated alias:": "data not valid. duplicated alias:",
+    "data not valid. duplicated alias: {}": "data not valid. duplicated alias: {}",
 
     "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": 
         "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ",
@@ -213,11 +213,29 @@ D = {
     "Problem during the start of dispensing. Head status not in standby.": "Problema durante l'avvio della dispensazione. Stato testa non in STANDBY",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Volume barattolo {}(cc) < volume ordine {:.3f}(cc).",
 
-    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Se preferisci scaricare manualmente alcuni o tutti i barattoli,\npremi CANCELLA per rimuoverli permanentemente\ndalla logica di recupero della macchina.",
-    "\nAutomation paused is required!": "\nÈ necessario fermare l'automazione!",
+    "Automation paused is required!": "È necessario fermare l'automazione!",
     "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Si desidera creare un nuovo ordine con i componenti non erogati dal codice a barre {} ?\nSe SI' premere 'Recupera Vecchio'",
     "Clone New": "Clona nuovo",
     "Recover Old": "Recupera vecchio",
+    "[Recovery Mode] Timeout retrieving machine status! Retry again...": "[Recovery Mode] Timeout retrieving machine status! Retry again...",
+    "Please, remove completed order(s) from output roller": "Si prega di rimuovere gli ordini completati dalla rulliera di uscita",
+    "INVALID SHUTTLE BARCODE: {}": "BARCODE SHUTTLE NON VALIDO: {}",
+    "API ERROR: {}": "API ERROR: {}",
+    "UNKNOWN SHUTTLE: {}": "NAVETTA SCONOSCIUTA: {}",
+    "Invalid order barcode: {}": "Barcode ordine non valido: {}",
+    "[PackageSizesDialog] An unexpected error has been occurred.": "[PackageSizesDialog] An unexpected error has been occurred.",
+    "DECODE KCC QRCODE EXCEPTION": "DECODE KCC QRCODE EXCEPTION",
+    "Missing Jar on ": "Barattolo non rilevato su ",
+    "Empty Barcode": "Empty Barcode",
+    "HEAD A(1) offline: cannot retrieve package infos": "HEAD A(1) offline: cannot retrieve package infos",
+    "An unexpected error has been occurred: {}": "An unexpected error has been occurred: {}",
+    "The code entered '{}' does not match any toner on HEAD {} ({})": "Il codice inserito '{}' non corrisponde a nessun pigmento della TESTA {} ({})",
+    "HEAD 1 (A): no response or invalid data": "HEAD 1 (A): nessuna risposta o dati non validi",
+    "HEAD 1 (A): no package data found": "HEAD 1 (A): Nessun barattolo trovato",
+    "Impossibile to retrieve packages data": "Impossibile to retrieve packages data",
+    "An unexpected error has been occurred": "An unexpected error has been occurred",
+    "Printer not detected": "Stampante non rilevata",
+    "The selected jar size is not recognised": "La dimensione del barattolo selezionata non è riconosciuta"
 }
 
 
