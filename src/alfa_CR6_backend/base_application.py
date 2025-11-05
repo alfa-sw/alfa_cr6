@@ -620,7 +620,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 bc_shuttle = env_data.get("SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING")
         except Exception:
             logging.warning(f"Failed to read barcode IDs from {file_path}. Falling back to settings.")
-            return
 
         if not bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
             bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
@@ -910,6 +909,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         "Jar volume {}(cc) < Order volume {:.3f}(cc)."
                     ]
                     self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                    msg_ = "".join(fmt).format(*args)
                     logging.error(msg_)
                     verified = True
 
@@ -921,6 +921,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         "{}(cc)<{:.3f}(cc)."
                     ]
                     self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                    msg_ = "".join(fmt).format(*args)
                     logging.error(msg_)
 
         else:
