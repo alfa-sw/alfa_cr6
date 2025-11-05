@@ -59,11 +59,15 @@ def get_action_page_list():
         ]
 
     def action01_labels():
-        return [
+        labels = [
             ("A", "JAR_INPUT_ROLLER_PHOTOCELL", tr_("INPUT ROLLER PHOTOCELL")),
-            ("A", "JAR_DETECTION_MICROSWITCH_1", tr_("MICROSWITCH 1")),
-            ("A", "JAR_DETECTION_MICROSWITCH_2", tr_("MICROSWITCH 2")),
         ]
+        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
+            labels += [
+                ("A", "JAR_DETECTION_MICROSWITCH_1", tr_("MICROSWITCH 1")),
+                ("A", "JAR_DETECTION_MICROSWITCH_2", tr_("MICROSWITCH 2")),
+            ]
+        return labels
 
     def action02_buttons():
         return [
@@ -155,14 +159,12 @@ def get_action_page_list():
         return labels
 
     def action05_buttons(machine_variant):
-        buttons = [
-            {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "C", [1, 1])},
-        ]
-        if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
-            buttons.append({"text": tr_("Start lifter roller CCW"), "action_args": ("single_move", "C", [1, 4])})
-        buttons.append({"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "C", [1, 0])})
+        buttons = []
+
         if not in_docker or (in_docker and machine_variant in ['CR4', 'CR6']):
             buttons += [
+                {"text": tr_("Start lifter roller CW"), "action_args": ("single_move", "C", [1, 1])},
+                {"text": tr_("Stop  lifter roller"), "action_args": ("single_move", "C", [1, 0])},
                 {"text": tr_("Start lifter up"), "action_args": ("single_move", "D", [1, 2])},
                 {"text": tr_("Start lifter down"), "action_args": ("single_move", "D", [1, 5])},
                 {"text": tr_("Stop  lifter"), "action_args": ("single_move", "D", [1, 0])},
@@ -170,6 +172,13 @@ def get_action_page_list():
                 {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
                 {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)},
             ]
+
+        if in_docker and 'CRX' in machine_variant:
+            buttons += [
+                {"text": tr_("Start output roller CW"), "action_args": ("single_move", "C", [1, 1])},
+                {"text": tr_("Stop  output roller"), "action_args": ("single_move", "C", [1, 0])},
+            ]
+
         return buttons
 
     def action05_labels(machine_variant):
