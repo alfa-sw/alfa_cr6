@@ -1268,7 +1268,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             try:
                 retry_counter = 0
                 while True:
-                    await self.wait_for_carousel_not_frozen(freeze=False, msg="")
+                    await self.wait_for_carousel_not_frozen(freeze=False, message_fmt="")
                     r = await carousel_action(**parametri)
                     await asyncio.sleep(sleeptime)
                     if not r:
