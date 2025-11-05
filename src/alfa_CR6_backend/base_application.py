@@ -621,8 +621,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         except Exception:
             logging.warning(f"Failed to read barcode IDs from {file_path}. Falling back to settings.")
 
-        if not bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
-            bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+        if not bc_pps:
+            bc_pps = os.getenv("BARCODE_READER_IDENTIFICATION_STRING")
+            if not bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
+                bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
 
         if not bc_shuttle and hasattr(self.settings, "SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING"):
             bc_shuttle = self.settings.SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING
@@ -886,7 +888,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             fmt = "The selected jar size is not recognised"
                             self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                             logging.error(fmt)
-                            return jar
+                            return None
                         # CR4/CR6 with physical shuttle size barcode
                         jar_volume = self.shuttle_size_from_barcode_scanner
 
