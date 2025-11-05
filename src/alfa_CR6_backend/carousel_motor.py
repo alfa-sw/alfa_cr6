@@ -319,7 +319,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             def condition():
                 return not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', False)
 
-            r = await self.wait_for_condition(condition, show_alert=False, timeout=3.5)
+            r = await self.wait_for_condition(condition, show_alert=False, timeout=15)
             if r:
                 break
 
