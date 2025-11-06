@@ -357,8 +357,7 @@
 			document.getElementById('refill_choice_2').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_2').value),
 			document.getElementById('refill_choice_3').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_3').value),
 			document.getElementById('refill_choice_4').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_4').value),
-			document.getElementById('refill_choice_5').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_5').value),
-			document.getElementById('refill_choice_6').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_6').value)
+			document.getElementById('refill_choice_5').value === "" ? 0 : parseFloat(document.getElementById('refill_choice_5').value)
 		];
 		var cmd = {"command": 'change_refill_popup_choices', 'params': {'refill_choices': choices}};
 		console.debug(cmd);
