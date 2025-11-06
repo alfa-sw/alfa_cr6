@@ -77,6 +77,7 @@ class SettingsManager:
                 'items': {
                     'type': 'integer',
                     'minimum': 50,
+                    'ui_error': 'Each value must be ≥ 50',
                 },
                 'default': [500, 1000],
                 'description': 'Defines the available choices displayed in the HMI refill popup.',

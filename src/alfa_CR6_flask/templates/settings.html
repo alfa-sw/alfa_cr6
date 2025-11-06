@@ -297,29 +297,44 @@
           } catch (e) { console.warn('AJV full-validate error', e); }
         }
         if (finalInvalid) {
-          // Map errors to rows by property and show UI messages
+          // Map errors to rows by top-level property (handles array item vs array-level)
           finalErrors.forEach(err => {
-            const path = (err.dataPath || err.instancePath || '').replace(/^\./, '');
-            if (!path) return;
-            const inp = document.querySelector(`#settings_tbody input[data-key="${path}"]`);
-            if (inp) {
-              const tr = inp.closest('tr');
-              if (tr) tr.classList.add('row-invalid');
-              inp.classList.add('is-invalid');
-              const spec = schema[path] || {};
-              const uiErr = spec.ui_error || err.message || 'Valore non valido';
-              // find or create errBox in the same cell
-              const cell = inp.closest('td');
-              if (cell) {
-                let box = cell.querySelector('.ui-error');
-                if (!box) {
-                  box = document.createElement('div');
-                  box.className = 'ui-error';
-                  cell.appendChild(box);
-                }
-                box.textContent = uiErr;
-                box.style.display = '';
-              }
+            const rawPath = (err.dataPath || err.instancePath || '').replace(/^\./, '').replace(/^\//, '');
+            const keyword = err.keyword || '';
+            if (!rawPath && !keyword) return;
+            const topKey = rawPath ? rawPath.split(/[.\[\/]/)[0] : '';
+            const propKey = topKey || (err.params && err.params.missingProperty) || '';
+            if (!propKey) return;
+            const inp = document.querySelector(`#settings_tbody input[data-key="${propKey}"]`);
+            if (!inp) return;
+
+            const tr = inp.closest('tr');
+            if (tr) tr.classList.add('row-invalid');
+            inp.classList.add('is-invalid');
+
+            const specTop = schema[propKey] || {};
+            const specItem = specTop.items || {};
+            // Decide which UI message to show
+            // - item-level errors (paths like key[0]) -> prefer items.ui_error
+            // - array-level errors (minItems/maxItems/uniqueItems/additionalItems) -> prefer top-level ui_error
+            const isItemLevel = /[\[\/]\d+[\]\/]?/.test(rawPath || '');
+            let idxLabel = '';
+            const m1 = (rawPath || '').match(/\[(\d+)\]/) || (rawPath || '').match(/\/(\d+)(?:\/|$)/);
+            if (m1 && m1[1] !== undefined) idxLabel = `[${m1[1]}] `;
+
+            let uiErr;
+            if (isItemLevel) {
+              uiErr = specItem.ui_error || (err.message ? `${idxLabel}${err.message}` : 'Valore non valido');
+            } else {
+              uiErr = specTop.ui_error || err.message || 'Valore non valido';
+            }
+
+            const cell = inp.closest('td');
+            if (cell) {
+              let box = cell.querySelector('.ui-error');
+              if (!box) { box = document.createElement('div'); box.className = 'ui-error'; cell.appendChild(box); }
+              box.textContent = uiErr;
+              box.style.display = '';
             }
           });
           document.getElementById('save_status').textContent = 'Schema validation failed';
