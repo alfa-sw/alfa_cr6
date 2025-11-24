@@ -175,7 +175,7 @@ D = {
     "confirm removing {}?": "vahvista {}:n poisto?",
 
     "edit alias for pigment names": "muokkaa pigmenttinimien aliaksia",
-    "data not valid. duplicated alias:": "data ei kelpaa. Alias jo käytössä:",
+    "data not valid. duplicated alias: {}": "data ei kelpaa. Alias jo käytössä: {}",
 
     "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": "Valitse pigmentti vasemmalla puolella ja lisää sitten alle luettelo vaihtoehtoisista nimistä, nimi jokaiselle riville. ",
 
@@ -210,11 +210,32 @@ D = {
     "Problem during the start of dispensing. Head status not in standby.": "Ongelma annostelun käynnistämisessä. Pään tila ei ole valmiustilassa.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Tölkin tilavuus {}(cc) on pienempi kuin tilauksen tilavuus {:.3f}(cc).",
 
-    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Jos haluat poistaa joitakin tai kaikki tölkit manuaalisesti,\npaina POISTA jokaisen tölkin kohdalla poistaaksesi ne pysyvästi\nkoneen palautuslogiikasta.",
-    "\nAutomation paused is required!": "\nAutomaation keskeytys vaaditaan!",
+    "Automation paused is required!": "Automaation keskeytys vaaditaan!",
     "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Haluatko luoda uuden tilauksen viivakoodin {} annostelemattomista komponenteista?\nJos KYLLÄ, paina 'Palauta vanha'",
     "Clone New": "Kloonaa uusi",
     "Recover Old": "Palauta vanha",
+    "[Recovery Mode] Timeout retrieving machine status! Retry again...": "[Palautustila] Aikakatkaisu koneen tilaa haettaessa! Yritä uudelleen...",
+    "Please, remove completed order(s) from output roller": "Poista valmiit tilaukset ulossyöttörullalta",
+    "INVALID SHUTTLE BARCODE: {}": "VIRHEELLINEN SHUTTLE-VIIVAKOODI: {}",
+    "API ERROR: {}": "API-VIRHE: {}",
+    "UNKNOWN SHUTTLE: {}": "TUNTEMATON SHUTTLE: {}",
+    "Invalid order barcode: {}": "Virheellinen tilausviivakoodi: {}",
+    "[PackageSizesDialog] An unexpected error has been occurred.": "[PackageSizesDialog] Tapahtui odottamaton virhe.",
+    "DECODE KCC QRCODE EXCEPTION": "POIKKEUS KCC-QR-KOODIN DEKOODAUKSESSA",
+    "Missing Jar on ": "Tölkki puuttuu kohdassa ",
+    "Empty Barcode": "Tyhjä viivakoodi",
+    "HEAD A(1) offline: cannot retrieve package infos": "PÄÄ A(1) offline: pakkaustietoja ei voida hakea",
+    "An unexpected error has been occurred: {}": "Tapahtui odottamaton virhe: {}",
+    "The code entered '{}' does not match any toner on HEAD {} ({})": "Syötetty koodi '{}' ei vastaa mitään toneria päässä {} ({})",
+    "HEAD 1 (A): no response or invalid data": "PÄÄ 1 (A): ei vastausta tai virheelliset tiedot",
+    "HEAD 1 (A): no package data found": "PÄÄ 1 (A): pakkaustietoja ei löytynyt",
+    "Impossibile to retrieve packages data": "Pakkaustietoja ei voida hakea",
+    "An unexpected error has been occurred": "Tapahtui odottamaton virhe",
+    "Printer not detected": "Tulostinta ei havaittu",
+    "Below is the list of pending orders:": "Alla on lista odottavista tilauksista:",
+    "Orders in green will be completed during Recovery Mode.": "Vihreät tilaukset suoritetaan Palautustilan aikana.",
+    "Orders in red cannot be completed and will automatically move towards the machine exit.": "Punaisia tilauksia ei voida suorittaa ja ne siirtyvät automaattisesti kohti koneen ulostuloa.",
+    "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "Jos jotkin tilaukset on jo poistettu koneesta fyysisesti, paina 'Poista' poistaaksesi ne myös automaation muistista.",
 
 }
 

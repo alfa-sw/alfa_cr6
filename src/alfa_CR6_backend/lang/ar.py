@@ -175,7 +175,7 @@ D = {
     "confirm removing {}?": "هل تريد تأكيد إزالة {}؟",
 
     "edit alias for pigment names": "تحرير الاسم المستعار لأسماء الأصباغ",
-    "data not valid. duplicated alias:": "البيانات غير صالحة. الاسم المستعار مكرر:",
+    "data not valid. duplicated alias: {}": "{} البيانات غير صالحة. الاسم المستعار مكرر:",
 
     "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": 
         "يُرجى تحديد صبغة على اليسار، ثم إدراج اسم لكل سطر أسفل قائمة الأسماء البديلة. ",
@@ -211,8 +211,33 @@ D = {
     "Problem during the start of dispensing. Head status not in standby.": "حدثت مشكلة أثناء بدء الخلط والتوزيع. حالة الرأس ليست في وضع الاستعداد.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "حجم العبوة {}(سم مكعب) < حجم الطلب {:.3f} (سم مكعب).",
 
-    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "إذا كنت تفضل تفريغ بعض العبوات أو جميعها يدويًا، \nفاضغط على زر الحذف لكل واحدة لإزالتها نهائيًا\n من منطق استعادة الآلة",
-    "\nAutomation paused is required!": "\nيلزم إيقاف التشغيل الآلي مؤقتًا!",
+    "Automation paused is required!": "يلزم إيقاف التشغيل الآلي مؤقتًا!",
+    "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "هل تريد إنشاء طلب جديد بالمكوّنات التي لم يتم خلطها وتوزيعها من رمز الباركود {}؟\nإذا كانت الإجابة نعم فاضغط 'استعادة القديم'",
+    "Clone New": "استنساخ جديد",
+    "Recover Old": "استعادة القديم",
+    "[Recovery Mode] Timeout retrieving machine status! Retry again...": "[وضع الاستعادة] انتهت مهلة الحصول على حالة الآلة! أعد المحاولة...",
+    "Please, remove completed order(s) from output roller": "يُرجى إزالة الطلبات المكتملة من بكرة الإخراج",
+    "INVALID SHUTTLE BARCODE: {}": "رمز الباركود الخاص بـ SHUTTLE غير صالح: {}",
+    "API ERROR: {}": "خطأ API: {}",
+    "UNKNOWN SHUTTLE: {}": "SHUTTLE غير معروف: {}",
+    "Invalid order barcode: {}": "رمز باركود الطلب غير صالح: {}",
+    "[PackageSizesDialog] An unexpected error has been occurred.": "[PackageSizesDialog] حدث خطأ غير متوقع.",
+    "DECODE KCC QRCODE EXCEPTION": "استثناء أثناء فك ترميز رمز QR KCC",
+    "Missing Jar on ": "عبوة مفقودة في ",
+    "Empty Barcode": "رمز باركود فارغ",
+    "HEAD A(1) offline: cannot retrieve package infos": "الرأس A(1) خارج الخدمة: لا يمكن استرجاع معلومات العبوات",
+    "An unexpected error has been occurred: {}": "حدث خطأ غير متوقع: {}",
+    "The code entered '{}' does not match any toner on HEAD {} ({})": "الكود المُدخل '{}' لا يطابق أي تونر على الرأس {} ({})",
+    "HEAD 1 (A): no response or invalid data": "الرأس 1 (A): لا توجد استجابة أو بيانات غير صالحة",
+    "HEAD 1 (A): no package data found": "الرأس 1 (A): لم يتم العثور على بيانات العبوات",
+    "Impossibile to retrieve packages data": "تعذّر استرجاع بيانات العبوات",
+    "An unexpected error has been occurred": "حدث خطأ غير متوقع",
+    "Printer not detected": "لم يتم اكتشاف الطابعة",
+    "Below is the list of pending orders:": "فيما يلي قائمة الطلبات المعلّقة:",
+    "Orders in green will be completed during Recovery Mode.": "سيتم إكمال الطلبات باللون الأخضر أثناء وضع الاستعادة.",
+    "Orders in red cannot be completed and will automatically move towards the machine exit.": "لا يمكن إكمال الطلبات باللون الأحمر وستتحرك تلقائيًا نحو مخرج الآلة.",
+    "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "إذا تمت إزالة بعض الطلبات فعليًا من الآلة بالفعل، فاضغط 'حذف' لإزالتها أيضًا من ذاكرة الأتمتة.",
+
 }
 
 D.update(error_ar.D)
