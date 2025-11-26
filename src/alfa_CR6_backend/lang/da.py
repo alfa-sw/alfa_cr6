@@ -175,7 +175,7 @@ D = {
     "confirm removing {}?": "bekræft fjernelse af {}?",
 
     "edit alias for pigment names": "rediger alias for pigmentnavne",
-    "data not valid. duplicated alias:": "data ikke gyldige. Duplikeret alias:",
+    "data not valid. duplicated alias: {}": "data ikke gyldige. Duplikeret alias: {}",
 
     "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line." : "Vælg et pigment på venstre side, og indsæt derefter en liste over alternative navne nedenfor – et navn for hver linje. ",
 
@@ -211,10 +211,33 @@ D = {
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Dåsevolumen {}(cc) < Ordrevolumen {:.3f}(cc).",
 
     "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Hvis du foretrækker at aflæsse enkelte eller alle dåser manuelt,\ntryk på SLET for hver enkelt for at fjerne dem permanent\nfra maskinens gendannelseslogik.",
-    "\nAutomation paused is required!": "\nDet er nødvendigt at sætte automatiseringen på pause!",
+    "Automation paused is required!": "Det er nødvendigt at sætte automatiseringen på pause!",
     "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Vil du oprette en ny ordre med de ikke-doserede komponenter fra stregkode {}?\nHvis JA, tryk på 'Gendan gammel'",
     "Clone New": "Klon ny",
     "Recover Old": "Gendan gammel",
+    "[Recovery Mode] Timeout retrieving machine status! Retry again...": "[Gendannelsestilstand] Timeout ved hentning af maskinstatus! Prøv igen...",
+    "Please, remove completed order(s) from output roller": "Fjern venligst de gennemførte ordrer fra udføringsvalsen",
+    "INVALID SHUTTLE BARCODE: {}": "UGYLDIG SHUTTLE-STREGKODE: {}",
+    "API ERROR: {}": "API-FEJL: {}",
+    "UNKNOWN SHUTTLE: {}": "UKENDT SHUTTLE: {}",
+    "Invalid order barcode: {}": "Ugyldig ordrestregkode: {}",
+    "[PackageSizesDialog] An unexpected error has been occurred.": "[PackageSizesDialog] Der er opstået en uventet fejl.",
+    "DECODE KCC QRCODE EXCEPTION": "FEJL VED DEKODNING AF KCC QR-KODE",
+    "Missing Jar on ": "Manglende dåse på ",
+    "Empty Barcode": "Tom stregkode",
+    "HEAD A(1) offline: cannot retrieve package infos": "HOVED A(1) offline: kan ikke hente pakkeoplysninger",
+    "An unexpected error has been occurred: {}": "Der er opstået en uventet fejl: {}",
+    "The code entered '{}' does not match any toner on HEAD {} ({})": "Den indtastede kode '{}' matcher ingen toner på HOVED {} ({})",
+    "HEAD 1 (A): no response or invalid data": "HOVED 1 (A): ingen respons eller ugyldige data",
+    "HEAD 1 (A): no package data found": "HOVED 1 (A): ingen pakkedata fundet",
+    "Impossibile to retrieve packages data": "Kan ikke hente pakkedata",
+    "An unexpected error has been occurred": "Der er opstået en uventet fejl",
+    "Printer not detected": "Printer ikke registreret",
+    "Below is the list of pending orders:": "Nedenfor er listen over afventende ordrer:",
+    "Orders in green will be completed during Recovery Mode.": "Ordrer i grøn vil blive fuldført under gendannelsestilstand.",
+    "Orders in red cannot be completed and will automatically move towards the machine exit.": "Ordrer i rød kan ikke fuldføres og vil automatisk bevæge sig mod maskinens udgang.",
+    "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "Hvis nogle ordrer allerede er fjernet fysisk fra maskinen, tryk på SLET for også at fjerne dem fra automatiseringens hukommelse.",
+
 
 }
 
