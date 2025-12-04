@@ -27,13 +27,13 @@ from alfa_CR6_backend.globals import (get_res, tr_)
 from alfa_CR6_frontend.pages import BaseStackedPage
 
 
+MACHINE_VARIANT = os.getenv('MACHINE_VARIANT', None)
+IN_DOCKER = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
+
 class ActionPage(BaseStackedPage):
 
     ui_file_name = "action_frame.ui"
-    machine_variant = os.getenv('MACHINE_VARIANT', None)
-    in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
-
-
 
     @staticmethod
     def __check_conditions(args):
@@ -52,15 +52,18 @@ class ActionPage(BaseStackedPage):
         # Testa 5 "Start dispensing roller" "Start dispensing roller to photocell"
         if args in (('single_move', 'C', [0, 1]), ('single_move', 'C', [0, 2])):
 
-            D = QApplication.instance().get_machine_head_by_letter("D")
-            C = QApplication.instance().get_machine_head_by_letter("C")
-            ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
-            ret = ret and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
+            if IN_DOCKER and MACHINE_VARIANT in ["CRX60", "CRX40"]:
+                ret = True
+            else:
+                D = QApplication.instance().get_machine_head_by_letter("D")
+                C = QApplication.instance().get_machine_head_by_letter("C")
+                ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+                ret = ret and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
 
         # Testa 5 "Start lifter roller CW"
         elif args == ("single_move", "C", [1, 1]):
 
-            if in_docker and machine_variant in ["CRX60", "CRX40"]:
+            if IN_DOCKER and MACHINE_VARIANT in ["CRX60", "CRX40"]:
                 ret = True
             else:
                 D = QApplication.instance().get_machine_head_by_letter("D")
