@@ -234,6 +234,14 @@ D = {
     "Orders in red cannot be completed and will automatically move towards the machine exit.": "Les commandes en rouge ne peuvent pas être terminées et se déplaceront automatiquement vers la sortie de la machine.",
     "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "Si certaines commandes ont déjà été retirées physiquement de la machine, appuyez sur Supprimer pour les enlever aussi de la mémoire de l’automatisation.",
 
+    "BRUSH PHOTOCELL": "PHOTOCELLULE BROSSE",
+    "ROTATING TABLE PHOTOCELL": "PHOTOCELLULE TABLE TOURNANTE",
+    "PUMP MOTOR HOME PHOTOCELL": "PHOTOCELLULE HOME MOTEUR POMPE",
+    "PUMP MOTOR INGR PHOTOCELL": "PHOTOCELLULE INGR MOTEUR POMPE",
+    "VALVE PHOTOCELL LEFT": "PHOTOCELLULE VANNE GAUCHE",
+    "VALVE PHOTOCELL RIGHT": "PHOTOCELLULE VANNE DROITE",
+    "PANEL TABLE STATUS": "ÉTAT TABLEAU DE COMMANDE",
+    "ROLLER PHOTOCELL": "PHOTOCELLULE CONVOYEUR",
 }
 
 

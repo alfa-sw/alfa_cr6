@@ -228,6 +228,15 @@ D = {
     "Orders in red cannot be completed and will automatically move towards the machine exit.": "Zlecenia oznaczone na czerwono nie mogą zostać zakończone i automatycznie zostaną przesunięte w kierunku wyjścia maszyny.",
     "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "Jeśli niektóre zlecenia zostały już fizycznie usunięte z maszyny, naciśnij Usuń, aby usunąć je także z pamięci automatyzacji.",
 
+    "BRUSH PHOTOCELL": "FOTOKOMÓRKA SZCZOTKI",
+    "ROTATING TABLE PHOTOCELL": "FOTOKOMÓRKA STOŁU OBROTOWEGO",
+    "PUMP MOTOR HOME PHOTOCELL": "FOTOKOMÓRKA POZYCJI BAZOWEJ SILNIKA POMPY",
+    "PUMP MOTOR INGR PHOTOCELL": "FOTOKOMÓRKA WEJŚCIA SILNIKA POMPY",
+    "VALVE PHOTOCELL LEFT": "FOTOKOMÓRKA LEWEGO ZAWORU",
+    "VALVE PHOTOCELL RIGHT": "FOTOKOMÓRKA PRAWEGO ZAWORU",
+    "PANEL TABLE STATUS": "STATUS PANELU STOŁU",
+    "ROLLER PHOTOCELL": "FOTOKOMÓRKA ROLKI",
+
 }
 
 

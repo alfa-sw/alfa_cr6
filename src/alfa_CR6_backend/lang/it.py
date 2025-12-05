@@ -235,7 +235,20 @@ D = {
     "Impossibile to retrieve packages data": "Errore: non è stata ricevuto nessun dato shuttle dal database",
     "An unexpected error has been occurred": "Si è verificato un errore imprevisto",
     "Printer not detected": "Stampante non rilevata",
-    "The selected jar size is not recognised": "La dimensione del barattolo selezionata non è riconosciuta"
+    "The selected jar size is not recognised": "La dimensione del barattolo selezionata non è riconosciuta",
+    "Below is the list of pending orders:": "Below is the list of pending orders:",
+    "Orders in green will be completed during Recovery Mode.": "Orders in green will be completed during Recovery Mode.",
+    "Orders in red cannot be completed and will automatically move towards the machine exit.": "Orders in red cannot be completed and will automatically move towards the machine exit.",
+    "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.",
+
+    "BRUSH PHOTOCELL": "FOTOCELLULA SPAZZOLA",
+    "ROTATING TABLE PHOTOCELL": "FOTOCELLULA TAVOLA ROTANTE",
+    "PUMP MOTOR HOME PHOTOCELL": "FOTOCELLULA PUMP MOTOR HOME",
+    "PUMP MOTOR INGR PHOTOCELL": "FOTOCELLULA PUMP MOTOR INGR",
+    "VALVE PHOTOCELL LEFT": "FOTOCELLULA VALVOLA SX",
+    "VALVE PHOTOCELL RIGHT": "FOTOCELLULA VALVOLA DX",
+    "PANEL TABLE STATUS": "STATUS PANNELLO",
+    "ROLLER PHOTOCELL": "FOTOCELLULA RULLIERA",
 }
 
 

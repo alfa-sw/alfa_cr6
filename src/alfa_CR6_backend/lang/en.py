@@ -236,6 +236,15 @@ D = {
     "Orders in green will be completed during Recovery Mode.": "Orders in green will be completed during Recovery Mode.",
     "Orders in red cannot be completed and will automatically move towards the machine exit.": "Orders in red cannot be completed and will automatically move towards the machine exit.",
     "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.",
+
+    "BRUSH PHOTOCELL": "BRUSH PHOTOCELL",
+    "ROTATING TABLE PHOTOCELL": "ROTATING TABLE PHOTOCELL",
+    "PUMP MOTOR HOME PHOTOCELL": "PUMP MOTOR HOME PHOTOCELL",
+    "PUMP MOTOR INGR PHOTOCELL": "PUMP MOTOR INGR PHOTOCELL",
+    "VALVE PHOTOCELL LEFT": "VALVE PHOTOCELL LEFT",
+    "VALVE PHOTOCELL RIGHT": "VALVE PHOTOCELL RIGHT",
+    "PANEL TABLE STATUS": "PANEL TABLE STATUS",
+    "ROLLER PHOTOCELL": "ROLLER PHOTOCELL",
 }
 
 
