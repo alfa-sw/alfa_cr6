@@ -237,6 +237,14 @@ D = {
     "Orders in red cannot be completed and will automatically move towards the machine exit.": "Punaisia tilauksia ei voida suorittaa ja ne siirtyvät automaattisesti kohti koneen ulostuloa.",
     "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "Jos jotkin tilaukset on jo poistettu koneesta fyysisesti, paina 'Poista' poistaaksesi ne myös automaation muistista.",
 
+    "BRUSH PHOTOCELL": "HARJAN VALOKENNO",
+    "ROTATING TABLE PHOTOCELL": "PYÖRIVÄN PÖYDÄN VALOKENNO",
+    "PUMP MOTOR HOME PHOTOCELL": "PUMPUN MOOTTORIN KOTIASENNON VALOKENNO",
+    "PUMP MOTOR INGR PHOTOCELL": "PUMPUN MOOTTORIN INGR-VALOKENNO",
+    "VALVE PHOTOCELL LEFT": "VASEN VENTTIILIN VALOKENNO",
+    "VALVE PHOTOCELL RIGHT": "OIKEA VENTTIILIN VALOKENNO",
+    "PANEL TABLE STATUS": "PANEELIPÖYDÄN TILA",
+    "ROLLER PHOTOCELL": "RULLAN VALOKENNO",
 }
 
 

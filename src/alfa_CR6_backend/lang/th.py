@@ -238,6 +238,14 @@ D = {
     "Orders in red cannot be completed and will automatically move towards the machine exit.": "คำสั่งซื้อที่เป็นสีแดงไม่สามารถเสร็จสมบูรณ์ได้และจะย้ายไปยังทางออกของเครื่องโดยอัตโนมัติ",
     "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "หากมีการนำคำสั่งซื้อบางรายการออกจากเครื่องทางกายภาพแล้ว โปรดกด ลบ เพื่อนำออกจากหน่วยความจำระบบอัตโนมัติด้วย",
 
+    "BRUSH PHOTOCELL": "โฟโต้เซลล์แปรง",
+    "ROTATING TABLE PHOTOCELL": "โฟโต้เซลล์โต๊ะหมุน",
+    "PUMP MOTOR HOME PHOTOCELL": "โฟโต้เซลล์ตำแหน่งเริ่มต้นมอเตอร์ปั๊ม",
+    "PUMP MOTOR INGR PHOTOCELL": "โฟโต้เซลล์ด้านดูดของมอเตอร์ปั๊ม",
+    "VALVE PHOTOCELL LEFT": "โฟโต้เซลล์วาล์วซ้าย",
+    "VALVE PHOTOCELL RIGHT": "โฟโต้เซลล์วาล์วขวา",
+    "PANEL TABLE STATUS": "สถานะแผงโต๊ะ",
+    "ROLLER PHOTOCELL": "โฟโต้เซลล์ลูกกลิ้ง",
 }
 
 D.update(error_th.D)

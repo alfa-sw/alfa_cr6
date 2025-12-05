@@ -238,6 +238,14 @@ D = {
     "Orders in red cannot be completed and will automatically move towards the machine exit.": "Ordrer i rød kan ikke fuldføres og vil automatisk bevæge sig mod maskinens udgang.",
     "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "Hvis nogle ordrer allerede er fjernet fysisk fra maskinen, tryk på SLET for også at fjerne dem fra automatiseringens hukommelse.",
 
+    "BRUSH PHOTOCELL": "FOTOCELLE FOR BØRSTE",
+    "ROTATING TABLE PHOTOCELL": "FOTOCELLE FOR DREJEBORD",
+    "PUMP MOTOR HOME PHOTOCELL": "FOTOCELLE FOR PUMPEMOTORS HJEMSTILLING",
+    "PUMP MOTOR INGR PHOTOCELL": "FOTOCELLE FOR PUMPEMOTOR INGR",
+    "VALVE PHOTOCELL LEFT": "FOTOCELLE FOR VENSTRE VENTIL",
+    "VALVE PHOTOCELL RIGHT": "FOTOCELLE FOR HØJRE VENTIL",
+    "PANEL TABLE STATUS": "STATUS FOR BETJENINGSPANEL",
+    "ROLLER PHOTOCELL": "FOTOCELLE FOR VALSE",
 
 }
 

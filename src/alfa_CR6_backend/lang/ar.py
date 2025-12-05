@@ -238,6 +238,14 @@ D = {
     "Orders in red cannot be completed and will automatically move towards the machine exit.": "لا يمكن إكمال الطلبات باللون الأحمر وستتحرك تلقائيًا نحو مخرج الآلة.",
     "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "إذا تمت إزالة بعض الطلبات فعليًا من الآلة بالفعل، فاضغط 'حذف' لإزالتها أيضًا من ذاكرة الأتمتة.",
 
+    "BRUSH PHOTOCELL": "الخلية الضوئية للفرشاة",
+    "ROTATING TABLE PHOTOCELL": "الخلية الضوئية للطاولة الدوّارة",
+    "PUMP MOTOR HOME PHOTOCELL": "الخلية الضوئية للوضعية الرئيسية لمحرك المضخة",
+    "PUMP MOTOR INGR PHOTOCELL": "الخلية الضوئية لمحرك المضخة INGR",
+    "VALVE PHOTOCELL LEFT": "الخلية الضوئية للصمام الأيسر",
+    "VALVE PHOTOCELL RIGHT": "الخلية الضوئية للصمام الأيمن",
+    "PANEL TABLE STATUS": "حالة لوحة التحكم",
+    "ROLLER PHOTOCELL": "الخلية الضوئية للبكرة",
 }
 
 D.update(error_ar.D)
