@@ -1162,6 +1162,9 @@ class RefillDialog(BaseDialog):
                 self.__ok_cb = None
                 # ~ tmp__ok_cb(*tmp__args_)
                 asyncio.get_event_loop().call_later(.05, partial(tmp__ok_cb, *tmp__args_))
+    
+            QApplication.instance().barcode_read_blocked_on_refill = False
+
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
