@@ -98,6 +98,7 @@ D = {
     "move 02 04 ('A -> C')": "Bewegen 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "Bewegen 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "Bewegen 04 05 ('C -> Rollenbahn Hebevorrichtung hoch')",
+    "move 04 05 ('C -> OUT')": "Bewegen 04 05 ('C -> Ausgangsrollenbahn')",
     "move 05 06 ('UP -> DOWN')": "Bewegen 05 06 ('Hebevorrichtung hoch -> Hebevorrichtung niedrig')",
     "move 06 07 ('DOWN -> D')": "Bewegen 06 07 ('Rollenbahn Hebevorrichtung niedrig -> D')",
     "move 07 08 ('D -> E')": "Bewegen 07 08 ('D -> E')",
@@ -242,6 +243,14 @@ D = {
     "VALVE PHOTOCELL RIGHT": "FOTOZELLE VENTIL RECHTS",
     "PANEL TABLE STATUS": "STATUS BEDIENPULT",
     "ROLLER PHOTOCELL": "FOTOZELLE ROLLENBAHN",
+
+    "RECOVERY MODE ON": "Wiederherstellungsmodus",
+    "FILL UP": "Nachfüllen",
+    "START \nRECOVERY": "Wiederherstellung\nstarten",
+    "Below is the list of pending orders:": "Nachfolgend die Liste der ausstehenden Aufträge:",
+    "OK": "OK",
+    "Delete": "Löschen",
+
 }
 
 

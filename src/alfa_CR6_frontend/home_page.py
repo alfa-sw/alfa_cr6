@@ -642,6 +642,7 @@ class HomePage(BaseStackedPage):
         # self.printer_helper.print_error.connect(self.on_print_error)
 
         self.lbl_recovery.hide()
+        self.recovery_btn.setText(tr_("START \nRECOVERY"))
         self.recovery_info_btn.hide()
 
     def open_page(self):
@@ -1094,6 +1095,7 @@ class HomePage(BaseStackedPage):
     def update_lbl_recovery(self, toggle_lbl_recovery=False):
         
         if toggle_lbl_recovery:
+            self.lbl_recovery.setText(tr_("RECOVERY MODE ON"))
             self.lbl_recovery.setStyleSheet(
                 "QLabel { font-weight: bold; background-color: yellow; font-size: 40px; }")
             self.lbl_recovery.setAlignment(Qt.AlignCenter)
@@ -1120,7 +1122,7 @@ class HomePage(BaseStackedPage):
         recovery_text = tr_("If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic")
         recovery_text += tr_("\nAutomation paused is required!")
         jars = QApplication.instance().get_restorable_jars_for_recovery_mode()
-        top_label = "Below is the list of pending orders: "
+        top_label = tr_("Below is the list of pending orders:")
         bottom = [
             "Orders in green will be completed during Recovery Mode.",
             "Orders in red cannot be completed and will automatically move towards the machine exit.",
