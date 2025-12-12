@@ -32,6 +32,7 @@ from alfa_CR6_backend.models import (Jar, Order, decompile_barcode)
 from alfa_CR6_backend.dymo_printer import dymo_print_jar
 from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings, toggle_manual_barcode_read)
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
+from alfa_CR6_frontend.dialogs import PackageSizesDialog
 
 
 def simulate_read_barcode(allowed_jar_statuses=("NEW", "DONE"), barcode=None):
@@ -188,6 +189,7 @@ class DebugPage:
                 ("download KCC\nSpecific\nGravity file", "download KCC file with specific gravity lot info"),
                 ("clear list\nrecovery mode", ""),
                 ("enable/disable\nbarcode reader", ""),
+                ("show\npackage sizes", "show all package sizes from API"),
             ]
 
         for i, n in enumerate(third_row_btns):
@@ -472,6 +474,9 @@ class DebugPage:
         elif "download KCC\nSpecific\nGravity file" in cmd_txt:
             t = self._download_KCC_lot_info_file()
             asyncio.ensure_future(t)
+
+        elif "show\npackage sizes" in cmd_txt:
+            self._show_package_sizes_dialog()
 
         else:
             app.run_a_coroutine_helper(cmd_txt)
@@ -770,3 +775,14 @@ class DebugPage:
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             # ~ QApplication.instance().main_window.open_alert_dialog(f"{e}")
+
+    def _show_package_sizes_dialog(self):  # pylint: disable=no-self-use
+
+        try:
+            dialog = PackageSizesDialog(parent=self.main_frame)
+            dialog.show_dialog()
+
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            QApplication.instance().main_window.open_alert_dialog(f"Unexpected error: {str(e)}", title="Errore")
+

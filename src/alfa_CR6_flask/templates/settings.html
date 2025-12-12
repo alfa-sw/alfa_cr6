@@ -1,0 +1,375 @@
+<!DOCTYPE HTML>
+<html lang="{{ lang }}">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>App Settings</title>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/ui.css') }}"/>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/bootstrap.min.css') }}"/>
+    <style>
+      body { padding: 10px; }
+      .settings-container { max-width: 1200px; margin: auto; }
+      .actions { margin: 10px 0; display:flex; gap:8px; }
+      #settings_output { white-space: pre-wrap; font-family: monospace; background: #f7f7f7; padding: 10px; border-radius: 6px; }
+      table { width:100%; border-collapse: collapse; }
+      th, td { border: 1px solid #ddd; padding: 6px; }
+      th { background: #fafafa; }
+      input[type="text"] { width: 100%; }
+      .row-invalid td { background: #fff3cd !important; }
+      .ui-error { margin-top: 4px; font-weight: bold; color: #a94442; }
+      .ui-desc { margin-top: 4px; color: #6c757d; font-size: 0.9em; }
+    </style>
+  </head>
+  <body>
+    <div class="settings-container">
+      <h2>APP SETTINGS</h2>
+      <div id="settings_origin" class="text-muted" style="margin-bottom:6px;"></div>
+
+      <div class="actions">
+        <button id="btn_save" class="btn btn-primary">Save</button>
+        <span id="save_status" class="text-muted" style="padding-left:8px;"></span>
+      </div>
+      <div class="alert alert-warning" role="alert" style="margin-top:6px;">
+        Note: saving settings will restart the application. The connection may temporarily drop.
+      </div>
+
+      <div id="settings_form_wrapper">
+        <table id="settings_table">
+          <thead>
+            <tr><th>Name</th><th>Value</th></tr>
+          </thead>
+          <tbody id="settings_tbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='remote_ui/avj.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='remote_ui/ui.js') }}"></script>
+    <script>
+      const wsUrl = "ws://{{ ws_ip_port }}"; // canale WS standard
+      let currentSettings = {};
+      let ajvInstance = null;
+      let perKeyValidators = {};
+
+      function buildTable(data) {
+        const tbody = document.getElementById('settings_tbody');
+        tbody.innerHTML = '';
+        const schema = window.currentSchema || {};
+        if (!ajvInstance) {
+          try { ajvInstance = new Ajv({ allErrors: true, schemaId: 'auto', multipleOfPrecision: 12 }); } catch (e) { console.warn('AJV init failed', e); }
+        }
+        perKeyValidators = {};
+        const sortedKeys = Object.keys(data).sort();
+        for (const k of sortedKeys) {
+          if (k.startsWith('_')) continue;
+          const v = data[k];
+          const tr = document.createElement('tr');
+          const tdKey = document.createElement('td');
+          tdKey.textContent = k;
+          const tdVal = document.createElement('td');
+          const desc = document.createElement('div');
+          desc.className = 'ui-desc';
+          const errBox = document.createElement('div');
+          errBox.className = 'ui-error';
+          errBox.style.display = 'none';
+
+          if (typeof v === 'boolean') {
+            const wrap = document.createElement('div');
+            wrap.className = 'bool-pair';
+
+            const makeBoolCb = (labelText, val) => {
+              const lbl = document.createElement('label');
+              lbl.style.marginRight = '12px';
+              const cb = document.createElement('input');
+              cb.type = 'checkbox';
+              cb.className = 'bool-ck';
+              cb.dataset.key = k;
+              cb.dataset.value = String(val); // "true" | "false"
+              cb.checked = v === val;
+              cb.addEventListener('change', () => {
+                if (cb.checked) {
+                  const other = wrap.querySelector(`input.bool-ck[data-key="${k}"][data-value="${String(!val)}"]`);
+                  if (other) other.checked = false;
+                } else {
+                  const sibling = wrap.querySelector(`input.bool-ck[data-key="${k}"][data-value="${String(!val)}"]`);
+                  if (sibling && !sibling.checked) cb.checked = true;
+                }
+              });
+              lbl.appendChild(cb);
+              lbl.appendChild(document.createTextNode(' ' + labelText));
+              return lbl;
+            };
+
+            wrap.appendChild(makeBoolCb('True', true));
+            wrap.appendChild(makeBoolCb('False', false));
+            tdVal.appendChild(wrap);
+            if (schema[k] && schema[k].description) {
+              desc.textContent = schema[k].description;
+              tdVal.appendChild(desc);
+            }
+            tdVal.appendChild(errBox);
+          } else if ((schema[k] && (schema[k].type === 'number' || schema[k].type === 'integer')) || typeof v === 'number') {
+            const spec = schema[k] || {};
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.dataset.key = k;
+            input.value = String(v);
+            if (spec.minimum !== undefined) input.min = String(spec.minimum);
+            if (spec.maximum !== undefined) input.max = String(spec.maximum);
+            if (spec.multipleOf !== undefined) input.step = String(spec.multipleOf);
+            if (spec.type === 'integer') input.step = '1';
+            try {
+              const keySchema = Object.assign({}, spec);
+              const wrapperSchema = { type: 'object', properties: { [k]: keySchema }, required: [] };
+              perKeyValidators[k] = ajvInstance ? ajvInstance.compile(wrapperSchema) : null;
+            } catch (e) { console.warn('AJV compile key failed', k, e); }
+
+            input.addEventListener('input', () => {
+              const val = input.value;
+              if (val === '') {
+                input.classList.add('is-invalid');
+                const tr = input.closest('tr');
+                if (tr) tr.classList.add('row-invalid');
+                errBox.textContent = 'This value is mandatory!';
+                errBox.style.display = '';
+                return;
+              }
+              const num = Number(val);
+              let invalid = Number.isNaN(num);
+              let ajvErrors = [];
+              if (!invalid) {
+                const validator = perKeyValidators[k];
+                if (validator) {
+                  const ok = validator({ [k]: num });
+                  invalid = !ok;
+                  if (!ok && validator.errors) ajvErrors = validator.errors;
+                } else {
+                  if (spec.minimum !== undefined && num < spec.minimum) invalid = true;
+                  if (spec.maximum !== undefined && num > spec.maximum) invalid = true;
+                  if (spec.type === 'integer' && !Number.isInteger(num)) invalid = true;
+                  if (spec.multipleOf !== undefined) {
+                    const mul = Number(spec.multipleOf);
+                    if (mul > 0) {
+                      const ratio = num / mul;
+                      const rem = Math.abs(ratio - Math.round(ratio));
+                      if (rem > 1e-9) invalid = true;
+                    }
+                  }
+                }
+              }
+              input.classList.toggle('is-invalid', invalid);
+              const tr = input.closest('tr');
+              if (tr) tr.classList.toggle('row-invalid', invalid);
+              if (invalid) {
+                const uiErr = (spec && spec.ui_error) ? spec.ui_error : (ajvErrors[0] && ajvErrors[0].message ? ajvErrors[0].message : 'Valore non valido');
+                errBox.textContent = uiErr;
+                errBox.style.display = '';
+              } else {
+                errBox.textContent = '';
+                errBox.style.display = 'none';
+              }
+            });
+            tdVal.appendChild(input);
+            if (spec && spec.description) {
+              desc.textContent = spec.description;
+              tdVal.appendChild(desc);
+            }
+            tdVal.appendChild(errBox);
+          } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = typeof v === 'object' ? JSON.stringify(v) : String(v);
+            input.dataset.key = k;
+            tdVal.appendChild(input);
+            if (schema[k] && schema[k].description) {
+              desc.textContent = schema[k].description;
+              tdVal.appendChild(desc);
+            }
+            tdVal.appendChild(errBox);
+          }
+
+          tr.appendChild(tdKey); tr.appendChild(tdVal);
+          tbody.appendChild(tr);
+        }
+      }
+
+      function requestSettingsJson() {
+        if (!__g_ws_client || __g_ws_client.readyState !== 1) return;
+        const msg = { command: 'ask_settings_json', params: {} };
+        __g_ws_client.send(JSON.stringify(msg));
+      }
+
+      function saveSettings() {
+        if (!__g_ws_client || __g_ws_client.readyState !== 1) return;
+
+        const textInputs = document.querySelectorAll('#settings_tbody input[type="text"]');
+        const numberInputs = document.querySelectorAll('#settings_tbody input[type="number"]');
+        const schema = window.currentSchema || {};
+        const updates = {};
+
+        textInputs.forEach(inp => {
+          const key = inp.dataset.key;
+          let val = inp.value;
+          try { val = JSON.parse(val); } catch (_) {}
+          updates[key] = val;
+        });
+
+        let hasInvalid = false;
+        numberInputs.forEach(inp => {
+          const key = inp.dataset.key;
+          const spec = schema[key] || {};
+          const raw = inp.value;
+          const num = Number(raw);
+          let invalid = raw === '' || Number.isNaN(num);
+          let ajvErrors = [];
+          if (!invalid) {
+            const validator = perKeyValidators[key];
+            if (validator) {
+              const ok = validator({ [key]: num });
+              invalid = !ok;
+              if (!ok && validator.errors) ajvErrors = validator.errors;
+            } else {
+              if (spec.minimum !== undefined && num < spec.minimum) invalid = true;
+              if (spec.maximum !== undefined && num > spec.maximum) invalid = true;
+              if (spec.type === 'integer' && !Number.isInteger(num)) invalid = true;
+              if (spec.multipleOf !== undefined) {
+                const mul = Number(spec.multipleOf);
+                if (mul > 0) {
+                  const ratio = num / mul;
+                  const rem = Math.abs(ratio - Math.round(ratio));
+                  if (rem > 1e-9) invalid = true;
+                }
+              }
+            }
+          }
+          inp.classList.toggle('is-invalid', invalid);
+          const tr = inp.closest('tr');
+          if (tr) tr.classList.toggle('row-invalid', invalid);
+          const cell = inp.closest('td');
+          if (cell) {
+            let box = cell.querySelector('.ui-error');
+            if (!box) { box = document.createElement('div'); box.className = 'ui-error'; cell.appendChild(box); }
+            if (invalid) {
+              const spec = schema[key] || {};
+              const uiMsg = (raw === '') ? 'Il valore è obbligatorio' : (spec.ui_error || (ajvErrors[0] && ajvErrors[0].message) || 'Valore non valido');
+              box.textContent = uiMsg;
+              box.style.display = '';
+            } else {
+              box.textContent = '';
+              box.style.display = 'none';
+            }
+          }
+          // set title with first error
+          if (invalid && ajvErrors.length > 0) {
+            inp.title = ajvErrors[0].message || 'Invalid value';
+          } else {
+            inp.title = '';
+          }
+          if (invalid) { hasInvalid = true; }
+          else { updates[key] = num; }
+        });
+        if (hasInvalid) {
+          document.getElementById('save_status').textContent = 'Error';
+          return;
+        }
+
+        document.querySelectorAll('#settings_tbody input.bool-ck[data-value="true"]').forEach(cbTrue => {
+          const key = cbTrue.dataset.key;
+          updates[key] = !!cbTrue.checked;
+        });
+
+        let finalInvalid = false;
+        let finalErrors = [];
+        // clear previous row highlights
+        document.querySelectorAll('#settings_tbody tr').forEach(tr => tr.classList.remove('row-invalid'));
+        if (ajvInstance) {
+          try {
+            const properties = {};
+            Object.keys(updates).forEach(k => { if (schema[k]) properties[k] = schema[k]; });
+            const fullSchema = { type: 'object', properties, additionalProperties: false };
+            const validate = ajvInstance.compile(fullSchema);
+            finalInvalid = !validate(updates);
+            if (finalInvalid && validate.errors) finalErrors = validate.errors;
+          } catch (e) { console.warn('AJV full-validate error', e); }
+        }
+        if (finalInvalid) {
+          // Map errors to rows by top-level property (handles array item vs array-level)
+          finalErrors.forEach(err => {
+            const rawPath = (err.dataPath || err.instancePath || '').replace(/^\./, '').replace(/^\//, '');
+            const keyword = err.keyword || '';
+            if (!rawPath && !keyword) return;
+            const topKey = rawPath ? rawPath.split(/[.\[\/]/)[0] : '';
+            const propKey = topKey || (err.params && err.params.missingProperty) || '';
+            if (!propKey) return;
+            const inp = document.querySelector(`#settings_tbody input[data-key="${propKey}"]`);
+            if (!inp) return;
+
+            const tr = inp.closest('tr');
+            if (tr) tr.classList.add('row-invalid');
+            inp.classList.add('is-invalid');
+
+            const specTop = schema[propKey] || {};
+            const specItem = specTop.items || {};
+            // Decide which UI message to show
+            // - item-level errors (paths like key[0]) -> prefer items.ui_error
+            // - array-level errors (minItems/maxItems/uniqueItems/additionalItems) -> prefer top-level ui_error
+            const isItemLevel = /[\[\/]\d+[\]\/]?/.test(rawPath || '');
+            let idxLabel = '';
+            const m1 = (rawPath || '').match(/\[(\d+)\]/) || (rawPath || '').match(/\/(\d+)(?:\/|$)/);
+            if (m1 && m1[1] !== undefined) idxLabel = `[${m1[1]}] `;
+
+            let uiErr;
+            if (isItemLevel) {
+              uiErr = specItem.ui_error || (err.message ? `${idxLabel}${err.message}` : 'Valore non valido');
+            } else {
+              uiErr = specTop.ui_error || err.message || 'Valore non valido';
+            }
+
+            const cell = inp.closest('td');
+            if (cell) {
+              let box = cell.querySelector('.ui-error');
+              if (!box) { box = document.createElement('div'); box.className = 'ui-error'; cell.appendChild(box); }
+              box.textContent = uiErr;
+              box.style.display = '';
+            }
+          });
+          document.getElementById('save_status').textContent = 'Schema validation failed';
+          return;
+        }
+
+        const msg = { command: 'save_settings', params: { updates } };
+        document.getElementById('save_status').textContent = 'Salvataggio...';
+        __g_ws_client.send(JSON.stringify(msg));
+      }
+
+      function wsMessageHandlerForSettings(event) {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'ask_settings_json') {
+            currentSettings = data.value || {};
+            window.currentSchema = data.schema || {};
+            document.getElementById('settings_origin').innerText = 'Origin: ' + (data.origin || '-');
+            buildTable(currentSettings);
+          } else if (data.type === 'save_settings_result') {
+            const ok = data.value === 'OK';
+            document.getElementById('save_status').textContent = ok ? 'Saved. Restarting application...' : 'Error';
+            // After successful save, backend will restart supervisor; connection may drop.
+          }
+        } catch (e) { console.error(e); }
+      }
+
+      function connectAndInit() {
+        wsocket_connect(wsUrl, function () { requestSettingsJson(); });
+        __g_ws_client.onmessage = function (event) { wsMessageHandlerForSettings(event); };
+      }
+
+      document.getElementById('btn_save').addEventListener('click', saveSettings);
+
+      connectAndInit();
+    </script>
+  </body>
+</html>

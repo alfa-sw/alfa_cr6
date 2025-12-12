@@ -21,9 +21,11 @@ import unicodedata
 
 import redis  # pylint: disable=import-error
 import arabic_reshaper  # pylint: disable=import-error
-from bidi.algorithm import get_display  # pylint: disable=import-error
 
-from barcode import EAN13                   # pylint: disable=import-error
+from alfa_CR6_backend.settings_manager import SettingsManager
+
+from bidi.algorithm import get_display  # pylint: disable=import-error
+from barcode import EAN13, Code128           # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
 
 from alfa_CR6_backend import version
@@ -39,6 +41,7 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 
 TMP_BARCODE_IMAGE = "/opt/alfa_cr6/tmp/tmp_file.png"
 TMP_PIGMENT_IMAGE = "/opt/alfa_cr6/tmp/tmp_pigment_label.png"
+TMP_PACKAGE_BARCODE_IMAGE = "/opt/alfa_cr6/tmp/tmp_package_barcode.png"
 
 if os.environ.get("TMP_FILE_PNG"): # JUST FOR TEST, NOT PRODUCTION!
     TMP_BARCODE_IMAGE = os.environ["TMP_FILE_PNG"]
@@ -58,6 +61,7 @@ LANGUAGE_MAP = {
     "finnish": 'fi',
     "norwegian": 'no',
     "arabic": 'ar',
+    "thai": 'th',
 }
 
 _ALFA_SN = None
@@ -147,15 +151,16 @@ def set_refill_popup_choices(refill_choices):
     os.system("kill -9 {}".format(os.getpid()))
 
 
-def import_settings():
+def import_settings(set_missing_app_settings=False):
 
     sys.path.append(CONF_PATH)
     import app_settings  # pylint: disable=import-error,import-outside-toplevel
     sys.path.remove(CONF_PATH)
     
-    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
+    env_in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+    if env_in_docker:
         fn = app_settings.USER_SETTINGS_JSON_FILE
-        logging.info(f"importing user settings from {fn}")
+        # logging.warning(f"importing user settings from {fn}")
         try:
             user_config_dict = {}
             with open(fn, "r") as f:
@@ -169,6 +174,14 @@ def import_settings():
             app_settings.__dict__[el_name] = value
         
         app_settings.__dict__['USER_SETTINGS']  = user_settings_dict
+        if set_missing_app_settings:
+            SettingsManager.ensure_missing_defaults()
+            defaults = getattr(app_settings, 'DEFAULT_USER_SETTINGS', {}) or {}
+            merged = {**defaults, **user_settings_dict}
+            app_settings.__dict__['USER_SETTINGS'] = merged
+
+    if not env_in_docker and set_missing_app_settings:
+        SettingsManager.ensure_missing_defaults()
 
     for pth in (app_settings.LOGS_PATH,
                 app_settings.TMP_PATH,
@@ -460,6 +473,53 @@ def create_printable_image_from_jar(jar, options=None):
 
     return response
 
+def create_printable_image_for_package(package):
+    # standard Code128
+
+    response = None
+
+    try:
+        if not os.path.exists(TMP_PACKAGE_BARCODE_IMAGE):
+            with open(TMP_PACKAGE_BARCODE_IMAGE, 'w', encoding='UTF-8'):
+                logging.warning(f'empty file created at:{TMP_PACKAGE_BARCODE_IMAGE}')
+
+        pack_name = package.get('name').upper()
+        pack_size = package.get('size')
+        # barcode_text = f'SHUTTLE-{pack_name}'
+        printable_text = f"{pack_name}"
+
+        # barcode CODE128
+        options = {
+            'module_width': 0.2,
+            # 'module_height': 15.0,
+            # 'quiet_zone': 6.5,
+            'module_height': 10.0,
+            'font_size': 22,
+        }
+        variant = os.getenv('MACHINE_VARIANT')
+        if variant not in ['CRX60', 'CRX40']:
+            options = {
+                'module_width': 0.08,
+                'module_height': 2.8,
+                'font_size': 14,
+            }
+        rotate = 90
+
+        with open(TMP_PACKAGE_BARCODE_IMAGE, 'wb') as file_:
+            Code128(printable_text, writer=ImageWriter()).write(file_, options, printable_text)
+            response = TMP_PACKAGE_BARCODE_IMAGE
+            if response:
+                from PIL import Image   # pylint: disable=import-outside-toplevel
+                Image.open(TMP_PACKAGE_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_PACKAGE_BARCODE_IMAGE)
+
+    except Exception as e:  # pylint: disable=broad-except
+        logging.error(f'Error creating package barcode: {str(e)}')
+        logging.error(traceback.format_exc())
+        # response = None
+        raise e
+
+    return response
+
 def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp_type):
     if restore_helper:
         logging.debug(f"disp_type -> {disp_type}")
@@ -472,51 +532,6 @@ def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp
             pos=_pos,
             dispensation=_disp,
         )
-
-def set_missing_settings():
-    """
-    Inserts missing settings when updating from older software versions.
-    """
-
-    _SETTINGS = {
-        "FORCE_ORDER_JAR_TO_ONE": False,
-        "ENABLE_BTN_PURGE_ALL": False,
-        "ENABLE_BTN_ORDER_NEW": True,
-        "ENABLE_BTN_ORDER_CLONE": True,
-        "MANUAL_BARCODE_INPUT": False,
-        "POPUP_REFILL_CHOICES": [500, 1000]
-    }
-
-    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-        s = import_settings()
-        fn = s.USER_SETTINGS_JSON_FILE
-        us = s.USER_SETTINGS
-        updated = False
-        for key, value in _SETTINGS.items():
-            if key not in us:
-                us[key] = value
-                updated = True
-        if updated:
-            save_user_settings(fn, us)
-
-    else:
-        path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
-
-        if not os.path.exists(path_app_settings):
-            raise RuntimeError("Missing app_settings.py file in path '/opt/alfa_cr6/conf/' ")
-
-        try:
-            for key, value in _SETTINGS.items():
-                linea = f'{key} = {value}'
-                command = (
-                    f'if ! grep -qE "^{key}\\s*=" {path_app_settings}; then '
-                    f'echo "{linea}" >> {path_app_settings}; '
-                    f'fi'
-                )
-                subprocess.run(command, shell=True, check=True)
-        except subprocess.CalledProcessError as e:
-            logging.error(f"{e.returncode} - {e.stderr}")
-            raise RuntimeError("Error while updating settings ..") from e
 
 def toggle_manual_barcode_read():
     import re

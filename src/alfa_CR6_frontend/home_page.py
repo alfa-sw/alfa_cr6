@@ -15,6 +15,7 @@ import copy
 import logging
 import traceback
 import asyncio
+import json
 
 from PyQt5.QtCore import Qt
 
@@ -185,6 +186,23 @@ class RefillProcedureHelper:
         await self.machine_.update_tintometer_data()
         self.parent.main_window.browser_page.reload_page()
 
+        margs = (pipe_['name'], qtity_ml_)
+        rfll_msg = "Refilled pipe {} with {} ML".format(*margs)
+        alert_infos = {'fmt': rfll_msg, 'args': margs, 'msg_': rfll_msg, 'msg': rfll_msg}
+        json_properties_ = json.dumps(
+            alert_infos,
+            indent=2,
+            ensure_ascii=False
+        )
+        QApplication.instance().insert_db_event(
+            name='UI_DIALOG',
+            level="INFO",
+            severity='',
+            source="RefillProcedureHelper",
+            json_properties=json_properties_,
+            description=rfll_msg
+        )
+
     def _cb_confirm_quantity(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None):
 
         t = self.__update_level_task(pigment_, pipe_, qtity_ml_, updated_spec_weight)
@@ -236,13 +254,19 @@ class RefillProcedureHelper:
         if barcode_check == barcode_:
             self.parent.main_window.hide_input_dialog()
             self.parent.main_window.toggle_keyboard(on_off=True)
+            info_flup = f"{margin_units_} {self.units_}"
+            choices_ = [{
+                "label": tr_("FILL UP"),
+                "value": round(margin_units_, 2)
+            }] + list(self.refill_choices)
+
             self.parent.main_window.open_refill_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=msg_,
                 unit=self.units_,
                 ok_cb=self._cb_input_quantity,
                 ok_cb_args=(pigment_, pipe_),
-                choices=self.refill_choices)
+                choices=choices_)
         else:
 
             self.parent.main_window.open_input_dialog(
@@ -286,13 +310,25 @@ class RefillProcedureHelper:
 
             self.parent.main_window.hide_input_dialog()
             self.parent.main_window.toggle_keyboard(on_off=True)
+            margin_ml_ = pipe_['maximum_level'] - pipe_['current_level']
+            margin_units_ = self.__qtity_from_ml(margin_ml_, pigment_['name'])
+
+            choices_ = [{
+                "label": tr_("FILL UP"),
+                "value": round(margin_units_, 2)
+            }]
+            # Keep QR-proposed qty as an additional choice if present
+            qr_qty = qrcode_refill_infos.get("qty")
+            if qr_qty is not None:
+                choices_.append(qr_qty)
+
             self.parent.main_window.open_refill_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=msg_,
                 unit=self.units_,
                 ok_cb=self._cb_input_quantity,
                 ok_cb_args=(pigment_, pipe_, qrcode_refill_infos.get("new_specific_weight")),
-                choices=[qrcode_refill_infos.get("qty")])
+                choices=choices_)
 
     def _cb_input_barcode(self, barcode_):
 
@@ -314,18 +350,55 @@ class RefillProcedureHelper:
 
                 pipes_ = pigment_['pipes'][:]
                 pipes_.sort(key=lambda p: p['current_level'] - p['maximum_level'])
-                pipe_ = pipes_[0]
 
-                _default_qtity_ml = pipe_['maximum_level'] - pipe_['current_level']
-                _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, pigment_['name'])
-                _default_qtity_units = round(_default_qtity_units, 2)
+                if len(pipes_) > 1:
 
-                t = self._rotate_circuit_task(pigment_, pipe_, _default_qtity_units, barcode_)
-                asyncio.ensure_future(t)
+                    choices = {}
+                    for p in pipes_:
+                        try:
+                            curr = round(float(p.get('current_level', 0)), 2)
+                            mx = round(float(p.get('maximum_level', 0)), 2)
+                            label = f"{p.get('name', '?')} (level {curr}/{mx})"
+                        except Exception:
+                            label = str(p.get('name', '?'))
+                        choices[label] = p
+
+                    def _on_pipe_selected(pigment=pigment_, barcode=barcode_):
+                        sel_pipe = self.parent.main_window.input_dialog.get_selected_choice()
+                        pipe_sel = sel_pipe or pipes_[0]
+                        _default_qtity_ml = pipe_sel['maximum_level'] - pipe_sel['current_level']
+                        _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, pigment['name'])
+                        _default_qtity_units = round(_default_qtity_units, 2)
+                        t = self._rotate_circuit_task(pigment, pipe_sel, _default_qtity_units, barcode)
+                        asyncio.ensure_future(t)
+
+                    self.parent.main_window.open_input_dialog(
+                        icon_name="SP_MessageBoxQuestion",
+                        message=tr_("Multiple circuits found for {}").format(pigment_['name']),
+                        content= tr_('Choose circuit to refill:'),
+                        choices=choices,
+                        ok_cb=_on_pipe_selected,
+                        ok_on_enter=False,
+                        content_editable=False,
+                        use_combo_for_choice=True
+                    )
+
+                else:
+                    pipe_ = pipes_[0]
+
+                    _default_qtity_ml = pipe_['maximum_level'] - pipe_['current_level']
+                    _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, pigment_['name'])
+                    _default_qtity_units = round(_default_qtity_units, 2)
+
+                    t = self._rotate_circuit_task(pigment_, pipe_, _default_qtity_units, barcode_)
+                    asyncio.ensure_future(t)
 
             else:
+                h_idx = int(self.machine_.index) + 1
                 QApplication.instance().main_window.open_alert_dialog(
-                    tr_("barcode not known:{}").format(barcode_))
+                    (barcode_, str(h_idx), self.machine_.name),
+                    fmt="The code entered '{}' does not match any toner on HEAD {} ({})"
+                )
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
@@ -444,7 +517,12 @@ class RefillProcedureHelper:
 
         except Exception as e:
             logging.error(traceback.format_exc())
-            self.parent.main_window.open_alert_dialog(args=str(e), title="ERROR")
+            decode_KCC_qrcode
+            self.parent.main_window.open_alert_dialog(
+                args=(),
+                fmt="DECODE KCC QRCODE EXCEPTION",
+                title="ERROR",
+                traceback=traceback.format_exc())
 
     def run(self):
 
@@ -461,6 +539,21 @@ class HomePage(BaseStackedPage):
     def __init__(self, *args, **kwargs):  # pylint:disable=too-many-branches, too-many-statements
 
         super().__init__(*args, **kwargs)
+
+        self.jar_pixmap_map = [
+            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
+            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_UP",),
+            (self.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_DOWN",),
+            (self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
+            (self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "E",),
+            (self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "F",),
+            (self.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
+            (self.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
+            (self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
+        ]
 
         self.running_jars_lbl.setStyleSheet("font-size: 15px")
 
@@ -549,6 +642,7 @@ class HomePage(BaseStackedPage):
         # self.printer_helper.print_error.connect(self.on_print_error)
 
         self.lbl_recovery.hide()
+        self.recovery_btn.setText(tr_("START \nRECOVERY"))
         self.recovery_info_btn.hide()
 
     def open_page(self):
@@ -748,22 +842,7 @@ class HomePage(BaseStackedPage):
                 list_.append(f"{_ : >4}")
         self.running_jars_lbl.setText("\n".join(list_))
 
-        map_ = [
-            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
-            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
-            (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
-            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
-            (self.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_UP",),
-            (self.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_DOWN",),
-            (self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
-            (self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "E",),
-            (self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "F",),
-            (self.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
-            (self.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
-            (self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
-        ]
-
-        for lbl, head_letters_bit_names, position in map_:
+        for lbl, head_letters_bit_names, position in self.jar_pixmap_map:
             if lbl:
                 self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position)
 
@@ -894,7 +973,9 @@ class HomePage(BaseStackedPage):
         m = QApplication.instance().machine_head_dict[head_index]
         if m.low_level_pipes:
             QApplication.instance().main_window.open_alert_dialog(
-                tr_("{} Please, Check Pipe Levels: low_level_pipes:{}").format(m.name, m.low_level_pipes))
+                (m.name, m.low_level_pipes),
+                fmt="{} Please, Check Pipe Levels: low_level_pipes:{}"
+            )
 
     @staticmethod
     def expiry_label_clicked(head_index):
@@ -945,6 +1026,8 @@ class HomePage(BaseStackedPage):
     def refill_lbl_clicked(self, head_index):
 
         if self.refill_lbl_is_active(head_index):
+            QApplication.instance().barcode_read_blocked_on_refill = True
+            logging.warning(f"impostato a barcode_read_blocked_on_refill=True")
             rph = RefillProcedureHelper(parent=self, head_index=head_index)
             rph.run()
 
@@ -1012,6 +1095,7 @@ class HomePage(BaseStackedPage):
     def update_lbl_recovery(self, toggle_lbl_recovery=False):
         
         if toggle_lbl_recovery:
+            self.lbl_recovery.setText(tr_("RECOVERY MODE ON"))
             self.lbl_recovery.setStyleSheet(
                 "QLabel { font-weight: bold; background-color: yellow; font-size: 40px; }")
             self.lbl_recovery.setAlignment(Qt.AlignCenter)
@@ -1038,7 +1122,14 @@ class HomePage(BaseStackedPage):
         recovery_text = tr_("If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic")
         recovery_text += tr_("\nAutomation paused is required!")
         jars = QApplication.instance().get_restorable_jars_for_recovery_mode()
-        self.main_window.open_recovery_dialog(jars, lbl_text=recovery_text)
+        top_label = tr_("Below is the list of pending orders:")
+        bottom = [
+            "Orders in green will be completed during Recovery Mode.",
+            "Orders in red cannot be completed and will automatically move towards the machine exit.",
+            "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.",
+            "Automation paused is required!"
+        ]
+        self.main_window.open_recovery_dialog(jars, lbl_text=top_label, bottom_lbl_text=bottom)
 
 class HomePageSixHeads(HomePage):
 
@@ -1071,3 +1162,119 @@ class HomePageFourHeads(HomePage):
 
     container_presence_3_label = None
     container_presence_4_label = None
+
+class HomePageCRX60Heads(HomePage):
+
+    ui_file_name = "home_page_three_heads.ui"
+    help_file_name = ''
+
+    action_02_btn = None
+    action_04_btn = None
+    action_06_btn = None
+    action_07_btn = None
+    action_08_btn = None
+    action_09_btn = None
+    action_10_btn = None
+
+    STEP_06_label = None
+    STEP_07_label = None
+    STEP_08_label = None
+    STEP_09_label = None
+    STEP_10_label = None
+    STEP_11_label = None
+    STEP_12_label = None
+
+    refill_2_lbl = None
+    refill_4_lbl = None
+    refill_6_lbl = None
+
+    expiry_2_label = None
+    expiry_4_label = None
+    expiry_6_label = None
+
+    reserve_2_label = None
+    reserve_4_label = None
+    reserve_6_label = None
+
+    service_2_btn = None
+    service_4_btn = None
+    service_6_btn = None
+
+    container_presence_2_label = None
+    container_presence_4_label = None
+    container_presence_6_label = None
+
+    unload_lifter_down_label = None
+    unload_lifter_up_label = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.jar_pixmap_map = [
+            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
+            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
+        ]
+
+class HomePageCRX40Heads(HomePage):
+
+    ui_file_name = "home_page_two_heads.ui"
+    help_file_name = ''
+
+    action_02_btn = None
+    action_03_btn = None
+    action_04_btn = None
+    action_06_btn = None
+    action_07_btn = None
+    action_08_btn = None
+    action_09_btn = None
+    action_10_btn = None
+
+    STEP_03_label = None
+    STEP_06_label = None
+    STEP_07_label = None
+    STEP_08_label = None
+    STEP_09_label = None
+    STEP_10_label = None
+    STEP_11_label = None
+    STEP_12_label = None
+
+    refill_2_lbl = None
+    refill_3_lbl = None
+    refill_4_lbl = None
+    refill_6_lbl = None
+
+    expiry_2_label = None
+    expiry_3_label = None
+    expiry_4_label = None
+    expiry_6_label = None
+
+    reserve_2_label = None
+    reserve_3_label = None
+    reserve_4_label = None
+    reserve_6_label = None
+
+    service_2_btn = None
+    service_3_btn = None
+    service_4_btn = None
+    service_6_btn = None
+
+    container_presence_2_label = None
+    container_presence_3_label = None
+    container_presence_4_label = None
+    container_presence_6_label = None
+
+    unload_lifter_down_label = None
+    unload_lifter_up_label = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.jar_pixmap_map = [
+            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
+        ]

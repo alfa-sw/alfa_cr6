@@ -13,7 +13,7 @@ import logging
 import subprocess
 import os
 
-from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment)
+from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment,create_printable_image_for_package)
 
 def _exec_cmd(command, shell=False):
 
@@ -31,6 +31,9 @@ def _check_dymo_printer_presence():
 
 def _dymo_print_tmp_image(_printable_image_pth, fake=False):
 
+    if fake:
+        return {'result': 'OK', 'msg': 'Dry run, not printed'}
+
     ret = {}
     _dymo_printer_presence = _check_dymo_printer_presence()
     logging.warning(f'_printable_image_pth:{_printable_image_pth}, _dymo_printer_presence:{_dymo_printer_presence}')
@@ -39,16 +42,12 @@ def _dymo_print_tmp_image(_printable_image_pth, fake=False):
 
     if _dymo_printer_presence or os.getenv("IN_DOCKER", False) in ['1', 'true']:
         _print_cups_cmd = f'lp -o fit-to-page {_printable_image_pth}'
-        logging.debug(f'_print_cups_cmd: {_print_cups_cmd}')
-
-        if fake:
-            return {'result': 'OK', 'msg': 'Dry run, not printed'}
+        logging.debug("_print_cups_cmd: %s", _print_cups_cmd)
 
         res_print = _exec_cmd(_print_cups_cmd)
         ret = {'result': 'OK', 'msg': res_print}
-
     else:
-        ret = {'result': 'NOK', 'msg': 'Dymo not plugged'}
+        ret = {'result': 'NOK', 'msg': 'Printer not detected'}
 
     return ret
 
@@ -72,6 +71,18 @@ def dymo_print_pigment_label(barcode_txt, pigment_name, pipe_name, fake=False):
     try:
         _printable_image_pth = create_printable_image_for_pigment(
             barcode_txt, pigment_name, pipe_name)
+        ret = _dymo_print_tmp_image(_printable_image_pth, fake=fake)
+    except Exception:   # pylint: disable=broad-except
+        logging.error(traceback.format_exc())
+        ret = {'result': 'NOK', 'msg': traceback.format_exc()}
+
+    return ret
+
+def dymo_print_package_label(package, fake=False):
+
+    ret = {}
+    try:
+        _printable_image_pth = create_printable_image_for_package(package)
         ret = _dymo_print_tmp_image(_printable_image_pth, fake=fake)
     except Exception:   # pylint: disable=broad-except
         logging.error(traceback.format_exc())

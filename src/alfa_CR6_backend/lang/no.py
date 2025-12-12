@@ -1,5 +1,4 @@
 from alfa_CR6_backend.lang import error_no
-
 D = {
     " ?": " ?",
     "alias": "alias",
@@ -98,6 +97,7 @@ D = {
     "move 02 04 ('A -> C')": "flytte 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "flytte 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "flytte 04 05 ('C -> OPP')",
+    "move 04 05 ('C -> OUT')": "flytte 04 05 ('C -> UT')",
     "move 05 06 ('UP -> DOWN')": "flytte 05 06 ('UP -> NED')",
     "move 06 07 ('DOWN -> D')": "flytte 06 07 ('NED -> D')",
     "move 07 08 ('D -> E')": "flytte 07 08 ('D -> E')",
@@ -175,7 +175,7 @@ D = {
     "confirm removing {}?": "bekreft fjerning av {}?",
 
     "edit alias for pigment names": "rediger alias for pigmentnavn",
-    "data not valid. duplicated alias:": "data ikke gyldig. Duplisert alias:",
+    "data not valid. duplicated alias: {}": "data ikke gyldig. Duplisert alias: {}",
 
     "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": 
         "Velg et pigment til venstre, og legg deretter til en liste med alternative navn nedenfor, et navn for hver linje. ",
@@ -211,11 +211,48 @@ D = {
     "Problem during the start of dispensing. Head status not in standby.": "Ongelma annostelun käynnistämisessä. Pään tila ei ole valmiustilassa.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Tölkin tilavuus {}(cc) on pienempi kuin tilauksen tilavuus {:.3f}(cc).",
 
-    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "Jos haluat poistaa joitakin tai kaikki tölkit manuaalisesti,\npaina POISTA jokaisen tölkin kohdalla poistaaksesi ne pysyvästi\nkoneen palautuslogiikasta.",
-    "\nAutomation paused is required!": "\nAutomaation keskeytys vaaditaan!",
+    "Automation paused is required!": "Automaation keskeytys vaaditaan!",
     "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Ønsker du å opprette en ny bestilling med de ikke-doserte komponentene fra strekkode {}?\nHvis JA, trykk på 'Gjenopprett gammel'",
     "Clone New": "Klon ny",
     "Recover Old": "Gjenopprett gammel",
+    "[Recovery Mode] Timeout retrieving machine status! Retry again...": "[Gjenopprettingsmodus] Tidsavbrudd ved henting av maskinstatus! Prøv igjen...",
+    "Please, remove completed order(s) from output roller": "Fjern fullførte bestillinger fra utgangsrullen",
+    "INVALID SHUTTLE BARCODE: {}": "UGYLDIG SHUTTLE-STREKKODE: {}",
+    "API ERROR: {}": "API-FEIL: {}",
+    "UNKNOWN SHUTTLE: {}": "UKJENT SHUTTLE: {}",
+    "Invalid order barcode: {}": "Ugyldig bestillingsstrekkode: {}",
+    "[PackageSizesDialog] An unexpected error has been occurred.": "[PackageSizesDialog] Det oppstod en uventet feil.",
+    "DECODE KCC QRCODE EXCEPTION": "FEIL VED DEKODING AV KCC QR-KODE",
+    "Missing Jar on ": "Manglende boks på ",
+    "Empty Barcode": "Tom strekkode",
+    "HEAD A(1) offline: cannot retrieve package infos": "HODE A(1) offline: kan ikke hente pakkeinformasjon",
+    "An unexpected error has been occurred: {}": "Det oppstod en uventet feil: {}",
+    "The code entered '{}' does not match any toner on HEAD {} ({})": "Koden '{}' stemmer ikke med noen toner på HODE {} ({})",
+    "HEAD 1 (A): no response or invalid data": "HODE 1 (A): ingen respons eller ugyldige data",
+    "HEAD 1 (A): no package data found": "HODE 1 (A): ingen pakkedata funnet",
+    "Impossibile to retrieve packages data": "Kan ikke hente pakkedata",
+    "An unexpected error has been occurred": "Det oppstod en uventet feil",
+    "Printer not detected": "Skriver ikke oppdaget",
+    "Below is the list of pending orders:": "Nedenfor er listen over ventende bestillinger:",
+    "Orders in green will be completed during Recovery Mode.": "Bestillinger i grønt vil bli fullført under gjenopprettingsmodus.",
+    "Orders in red cannot be completed and will automatically move towards the machine exit.": "Bestillinger i rødt kan ikke fullføres og vil automatisk flyttes mot maskinens utgang.",
+    "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "Hvis noen bestillinger allerede er fjernet fysisk fra maskinen, trykk på Slett for å fjerne dem også fra automatiseringens minne.",
+
+    "BRUSH PHOTOCELL": "FOTOCELLE FOR BØRSTE",
+    "ROTATING TABLE PHOTOCELL": "FOTOCELLE FOR DREIEBORD",
+    "PUMP MOTOR HOME PHOTOCELL": "FOTOCELLE FOR PUMPEMOTOR STARTPOSISJON",
+    "PUMP MOTOR INGR PHOTOCELL": "FOTOCELLE FOR PUMPEMOTOR INGR.",
+    "VALVE PHOTOCELL LEFT": "FOTOCELLE FOR VENTIL VENSTRE",
+    "VALVE PHOTOCELL RIGHT": "FOTOCELLE FOR VENTIL HØYRE",
+    "PANEL TABLE STATUS": "PANELTABELL STATUS",
+    "ROLLER PHOTOCELL": "FOTOCELLE FOR RULLE",
+
+    "RECOVERY MODE ON": "Gjenopprettingsmodus PÅ",
+    "FILL UP": "Fyll på",
+    "START \nRECOVERY": "Start\nGjenoppretting",
+    "Below is the list of pending orders:": "Nedenfor er listen over ventende bestillinger:",
+    "OK": "OK",
+    "Delete": "Slett",
 
 }
 

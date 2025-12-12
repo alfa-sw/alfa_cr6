@@ -1,6 +1,26 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.8 branch
+
+### 1.8.0
+ - PR#153 - task RM#381 - added CRX40 & CRX60 logic
+ - PR#___ - task RM#154 - sinottico event description is always saved in eng into the db
+ - PR#___ - task RM#321 - handle custom extension X-WINE-EXTENSION-INI (PaliniColor)
+ - PR#___ - task RM#335 - added web gui to modify the APP_SETTINGS (instead of editing directly the python file)
+ - PR#___ - task RM#338 - improved RECOVERY MODE popup infos
+ - PR#___ - task RM#339 - added MIXIT XML parser
+ - PR#___ - task RM#343 - sinottico REFILL POPUP now ignores data from input barcode reader
+ - PR#___ - task RM#355 - fixed output roller stop delay at photocell trigger by using a incorrect FW-managed stop command
+ - PR#___ - task RM#393 - improved barcode-based refill: added REFILL UP logic (instead of calculating the volume based on the current level)
+ - PR#___ - task RM#394 - improved barcode-based refill: when a product is mapped to multiple circuits, the operator can now select which circuit to top up (instead of refilling only the first match)
+ - PR#___ - task RM#396 - added barcode-based shuttle volume detection (requires 2 YOKO Barcode Readers)
+ - PR#___ - task RM#400 - replaced blocking alert()/confirm()/prompt() dialogs with non-blocking async modals (Promise-based) to prevent WebSocket backpressure and keep the UI responsive.
+ - PR#___ - task RM#414 - Added PPS presence check on HEAD 1 (A): if no PPS signal is detected, the UI now shows an error message and the order will be aborted.
+ - added Thai language
+ - updated existing translations
+ - tweaked the UI to accommodate long-label languages
+
 ## 1.7 branch
 
 ### 1.7.0

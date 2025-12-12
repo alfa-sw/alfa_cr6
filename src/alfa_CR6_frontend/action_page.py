@@ -10,6 +10,7 @@
 # pylint: disable=multiple-statements
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
+import os
 import logging
 import traceback
 from functools import partial
@@ -24,6 +25,10 @@ from PyQt5.QtWidgets import (
 
 from alfa_CR6_backend.globals import (get_res, tr_)
 from alfa_CR6_frontend.pages import BaseStackedPage
+
+
+MACHINE_VARIANT = os.getenv('MACHINE_VARIANT', None)
+IN_DOCKER = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
 
 class ActionPage(BaseStackedPage):
@@ -47,16 +52,22 @@ class ActionPage(BaseStackedPage):
         # Testa 5 "Start dispensing roller" "Start dispensing roller to photocell"
         if args in (('single_move', 'C', [0, 1]), ('single_move', 'C', [0, 2])):
 
-            D = QApplication.instance().get_machine_head_by_letter("D")
-            C = QApplication.instance().get_machine_head_by_letter("C")
-            ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
-            ret = ret and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
+            if IN_DOCKER and MACHINE_VARIANT in ["CRX60", "CRX40"]:
+                ret = True
+            else:
+                D = QApplication.instance().get_machine_head_by_letter("D")
+                C = QApplication.instance().get_machine_head_by_letter("C")
+                ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+                ret = ret and not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
 
         # Testa 5 "Start lifter roller CW"
         elif args == ("single_move", "C", [1, 1]):
 
-            D = QApplication.instance().get_machine_head_by_letter("D")
-            ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
+            if IN_DOCKER and MACHINE_VARIANT in ["CRX60", "CRX40"]:
+                ret = True
+            else:
+                D = QApplication.instance().get_machine_head_by_letter("D")
+                ret = D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
 
         # Testa 5 "Start lifter roller CCW"
         elif args == ("single_move", "C", [1, 4]):

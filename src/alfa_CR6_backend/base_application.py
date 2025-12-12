@@ -282,6 +282,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
         "KEY_SPACE": " ",
+        # digits
         "KEY_1": "1",
         "KEY_2": "2",
         "KEY_3": "3",
@@ -292,11 +293,26 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
         "KEY_8": "8",
         "KEY_9": "9",
         "KEY_0": "0",
+        # letters (needed for shuttle size barcodes)
+        "KEY_A": "A", "KEY_B": "B", "KEY_C": "C", "KEY_D": "D", "KEY_E": "E",
+        "KEY_F": "F", "KEY_G": "G", "KEY_H": "H", "KEY_I": "I", "KEY_J": "J",
+        "KEY_K": "K", "KEY_L": "L", "KEY_M": "M", "KEY_N": "N", "KEY_O": "O",
+        "KEY_P": "P", "KEY_Q": "Q", "KEY_R": "R", "KEY_S": "S", "KEY_T": "T",
+        "KEY_U": "U", "KEY_V": "V", "KEY_W": "W", "KEY_X": "X", "KEY_Y": "Y",
+        "KEY_Z": "Z",
     }
 
     BARCODE_LEN = 12
 
-    def __init__(self, barcode_handler, identification_string, exception_handler=None, manual_input=False):
+    def __init__(
+            self,
+            barcode_handler,
+            identification_string,
+            exception_handler=None,
+            manual_input=False,
+            accept_any_len=False,
+            skip_alfa_validation=False
+    ):
 
         self.barcode_handler = barcode_handler
         self._identification_string = identification_string
@@ -307,6 +323,8 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
         self.last_read_event_buffer = '-'
 
         self._device = None
+        self._accept_any_len = accept_any_len
+        self._skip_alfa_validation = skip_alfa_validation
 
     def __open_device(self, evdev):
 
@@ -323,30 +341,25 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     async def __on_buffer_read(self, buffer):
         ret = None
-        if len(buffer) != self.BARCODE_LEN:
-
+        if not self._accept_any_len and len(buffer) != self.BARCODE_LEN:
             logging.warning(f"format mismatch! buffer:{buffer}")
-
         else:
-
             t = time.time()
             logging.debug(f"buffer:{buffer}")
-
             if self.last_read_event_buffer == buffer and t - self.last_read_event_time < 5.0:
                 # filter out reading events with the same value, in the time interval of 5 sec
                 pass
             else:
-                if not self.is_valid_alfa_barcode(buffer):
-                    logging.error(f"not valid ALFA barcode! buffer:{buffer}")
-                    return
-
+                if not self._skip_alfa_validation:
+                    if not self.is_valid_alfa_barcode(buffer):
+                        logging.error(f"not valid ALFA barcode! buffer:{buffer}")
+                        return
                 if self.barcode_handler:
                     try:
                         ret = await self.barcode_handler(buffer)
                         if ret:
                             self.last_read_event_buffer = buffer[:]
                             self.last_read_event_time = t
-
                     except Exception as e:  # pylint: disable=broad-except
                         if self.exception_handler:
                             self.exception_handler(e)
@@ -466,6 +479,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.chromium_wrapper = None
         self.restore_machine_helper = None
 
+        self.shuttle_size_from_barcode_scanner = None
+
+        # CRX40/CRX60 deferred jar creation when both JIN and JA are occupied
+        self._crx_ja_block_sequence_active = False
+        self._crx_pending_barcode = None
+        self._crx_sequence_watcher_task = None
+
         if self.settings.SQLITE_CONNECT_STRING:
 
             from alfa_CR6_backend.models import init_models  # pylint: disable=import-outside-toplevel
@@ -566,25 +586,63 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             except Exception:                # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
-    async def __create_barcode_task(self):
-
-        while 1:
-
-            _bc_identification_string = os.getenv("BARCODE_READER_IDENTIFICATION_STRING", False)
-            if not _bc_identification_string:
-
-                if hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
-                    _bc_identification_string = self.settings.BARCODE_READER_IDENTIFICATION_STRING
-
-            if not _bc_identification_string or _bc_identification_string == "DISABLED":
-                break
-
-            b = BarCodeReader(self.on_barcode_read, _bc_identification_string, exception_handler=self.handle_exception)
-            logging.warning(f" #### created barcode reader: {b} #### ")
-            await b.run()
+    async def __barcode_reader_worker(
+            self,
+            identification_string: str,
+            handler,
+            accept_any_len=False,
+            skip_alfa_validation=False
+    ):
+        while True:
+            try:
+                b = BarCodeReader(
+                    handler,
+                    identification_string,
+                    exception_handler=self.handle_exception,
+                    accept_any_len=accept_any_len,
+                    skip_alfa_validation=skip_alfa_validation
+                )
+                logging.warning(f" #### created barcode reader ({identification_string}): {b} #### ")
+                await b.run()
+            except Exception:
+                logging.error(traceback.format_exc())
             await asyncio.sleep(10)
 
-        logging.warning(f" #### terminating barcode reader: {b} #### ")
+    async def __create_barcode_task(self):
+
+        file_path = '/tmp/share/container_env_variables.json'
+        bc_pps = None
+        bc_shuttle = None
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                env_data = json.load(f) or {}
+                bc_pps = env_data.get("BARCODE_READER_IDENTIFICATION_STRING")
+                bc_shuttle = env_data.get("SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING")
+        except Exception:
+            logging.warning(f"Failed to read barcode IDs from {file_path}. Falling back to settings.")
+
+        if not bc_pps:
+            bc_pps = os.getenv("BARCODE_READER_IDENTIFICATION_STRING")
+            if not bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
+                bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+
+        if not bc_shuttle and hasattr(self.settings, "SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING"):
+            bc_shuttle = self.settings.SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING
+
+        bcs = []
+        if bc_pps and bc_pps != "DISABLED":
+            bcs.append((bc_pps, self.on_barcode_read, False, False))
+        if bc_shuttle and bc_shuttle != "DISABLED":
+            bcs.append((bc_shuttle, self.on_shuttle_barcode_read, True, True))
+
+        if not bcs:
+            logging.warning(" #### no barcode readers configured (maybe CRX variant) #### ")
+            return
+
+        await asyncio.gather(*(
+            self.__barcode_reader_worker(bc_id, bc_h, accept_any_len, skip_alfa_validation)
+            for bc_id, bc_h, accept_any_len, skip_alfa_validation in bcs
+        ))
 
     async def __create_inner_loop_task(self):
 
@@ -608,7 +666,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 except Exception as e:  # pylint: disable=broad-except
                     self.handle_exception(e)
 
-                if hasattr(self.settings, "DOWNLOAD_KCC_LOT_STEP") and self.settings.DOWNLOAD_KCC_LOT_STEP:
+                if hasattr(self.settings, "DOWNLOAD_KCC_LOT_STEP") and self.settings.DOWNLOAD_KCC_LOT_STEP > 0:
                     if time.time() - last_check_KCC_specific_gravity_lot_time > self.settings.DOWNLOAD_KCC_LOT_STEP:
                         try:
                             last_check_KCC_specific_gravity_lot_time = time.time()
@@ -662,21 +720,26 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if insufficient_pigments or unknown_pigments:
                     self.main_window.show_barcode(jar.barcode, is_ok=False)
-                    msg_ = f"barcode: {barcode}\n"
+                    msg_ = ["barcode: {}\n"]
+                    msg_args = (barcode,)
 
                     if insufficient_pigments and cntr <= 3:
                         fmt_insuff_pigmts = self.build_insufficient_pigments_infos(insufficient_pigments)
-                        msg_ += tr_("\npigments to be refilled before dispensing:{}. ({}/3)\n").format(
-                            fmt_insuff_pigmts, cntr)
+                        msg_.append("\npigments to be refilled before dispensing:{}. ({}/3)\n")
+                        msg_args = msg_args + (fmt_insuff_pigmts, cntr,)
                     else:
                         cntr = 4
 
                     if unknown_pigments:
-                        msg_ += tr_("\npigments to be added by hand after dispensing:\n{}.").format(
-                            list(unknown_pigments.keys()))
-                        msg_ += tr_("\nRemember to check the volume.\n")
+                        msg_.append("\npigments to be added by hand after dispensing:\n{}.")
+                        msg_args = msg_args + (list(unknown_pigments.keys()),)
+                        msg_.append("\nRemember to check the volume.\n")
 
-                    await self.wait_for_carousel_not_frozen(True, msg=msg_)
+                    await self.wait_for_carousel_not_frozen(
+                        True,
+                        message_args=msg_args,
+                        message_fmt=msg_
+                    )
 
                 else:
                     self.main_window.show_barcode(jar.barcode, is_ok=True)
@@ -782,8 +845,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if jar:
 
-            A = self.get_machine_head_by_letter("A")
-            jar_size = await A.get_stabilized_jar_size()
+            variant = os.getenv('MACHINE_VARIANT')
+            if variant in ['CRX60', 'CRX40']:
+                jar_size = self.shuttle_size_from_barcode_scanner
+                logging.debug("Using shuttle_size_from_barcode_scanner: %s", jar_size)
+            else:
+                A = self.get_machine_head_by_letter("A")
+                await asyncio.sleep(0.5)
+                jar_size = self.shuttle_size_from_barcode_scanner or await A.get_stabilized_jar_size()
+
             if jar_size is None:
                 jar = None
                 args, fmt = (barcode, ), "barcode:{} cannot read can size from microswitches.\n"
@@ -806,8 +876,21 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 package_size_list.sort()
                 logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
                 jar_volume = 0
-                if len(package_size_list) > jar_size:
-                    jar_volume = package_size_list[jar_size]
+                if variant in ['CRX60', 'CRX40']:
+                    jar_volume = self.shuttle_size_from_barcode_scanner
+                else:
+                    try:
+                        p_idx = int(jar_size)
+                        jar_volume = package_size_list[p_idx]
+                    except IndexError:
+                        if not self.shuttle_size_from_barcode_scanner:
+                            args = ()
+                            fmt = "The selected jar size is not recognised"
+                            self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                            logging.error(fmt)
+                            return None
+                        # CR4/CR6 with physical shuttle size barcode
+                        jar_volume = self.shuttle_size_from_barcode_scanner
 
                 self.update_jar_properties(jar)
 
@@ -822,17 +905,25 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if jar_volume < ingredients_total_vol:
                     jar = None
-                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                    msg_ += tr_("Jar volume {}(cc) < Order volume {:.3f}(cc).").format(jar_volume, ingredients_total_vol)
-                    self.main_window.open_alert_dialog(msg_, title="ERROR")
+                    args = (barcode, jar_volume, ingredients_total_vol)
+                    fmt = [
+                        "Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n",
+                        "Jar volume {}(cc) < Order volume {:.3f}(cc)."
+                    ]
+                    self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                    msg_ = "".join(fmt).format(*args)
                     logging.error(msg_)
                     verified = True
 
                 if not verified and jar_volume < remaining_volume:
                     jar = None
-                    msg_ = tr_("Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n").format(barcode)
-                    msg_ += "{}(cc)<{:.3f}(cc).".format(jar_volume, remaining_volume)
-                    self.main_window.open_alert_dialog(msg_, title="ERROR")
+                    args = (barcode, jar_volume, remaining_volume)
+                    fmt = [
+                        "Jar volume not sufficient for barcode:{}.\nPlease, remove it.\n",
+                        "{}(cc)<{:.3f}(cc)."
+                    ]
+                    self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                    msg_ = "".join(fmt).format(*args)
                     logging.error(msg_)
 
         else:
@@ -849,10 +940,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         barcode = str(barcode)
         # ~ logging.warning(f" ###### barcode({type(barcode)}):{barcode}")
 
-        if not barcode or not self.ready_to_read_a_barcode:
+        if (getattr(self, 'barcode_read_blocked_on_refill', False)):
+            return None
+
+        if not barcode or (not self.ready_to_read_a_barcode and not self._crx_ja_block_sequence_active):
 
             logging.debug(f"skipping barcode:{barcode}")
             self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
+        elif self._crx_ja_block_sequence_active and self.machine_variant in ['CRX60', 'CRX40']:
+            self._crx_pending_barcode = str(barcode)
+            return None
 
         else:
 
@@ -862,9 +959,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 A = self.get_machine_head_by_letter("A")
                 # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
+                status_levels_ = ["STANDBY"]
+                if self.in_docker and self.machine_variant in ['CRX60', 'CRX40']:
+                    status_levels_ = ["STANDBY", "JAR_POSITIONING", "DISPENSING"]
                 r = await A.wait_for_jar_photocells_and_status_lev(
                     "JAR_INPUT_ROLLER_PHOTOCELL", on=True,
-                    status_levels=["STANDBY"], show_alert=False
+                    status_levels=status_levels_, show_alert=False
                 )
                 if not r:
                     args, fmt = (barcode, ), "Condition not valid while reading barcode:{}"
@@ -884,20 +984,144 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             logging.warning(f'carousel is frozen({self.carousel_frozen}) - returning from on_barcode_read ..')
                             return
 
-                        # let's run a task that will manage the jar through the entire path inside the system
-                        t = self.__jar_task(barcode)
-                        self.__jar_runners[barcode] = {
-                            "task": asyncio.ensure_future(t),
-                            "frozen": True
-                        }
 
-                        self.main_window.show_barcode(barcode, is_ok=True)
-                        logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
-                        ret = barcode
+                        if self.machine_variant not in ['CRX60', 'CRX40']:
+                            t = self.__jar_task(barcode)
+                            self.__jar_runners[barcode] = {
+                                "task": asyncio.ensure_future(t),
+                                "frozen": True
+                            }
+
+                            self.main_window.show_barcode(barcode, is_ok=True)
+                            logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
+                            ret = barcode
+                            logging.warning(f"__jar_runners: {self.__jar_runners}")
+
+                        else:
+
+                            A = self.get_machine_head_by_letter("A")
+                            loop = asyncio.get_event_loop()
+                            jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
+                            ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
+
+                            if jin and ja:
+                                self._crx_pending_barcode = barcode
+                                if not self._crx_ja_block_sequence_active:
+                                    self._crx_ja_block_sequence_active = True
+                                    free_timer_started = None
+                                    while True:
+                                        jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
+                                        ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
+
+                                        if jin and ja:
+                                            free_timer_started = None
+                                            await asyncio.sleep(0.1)
+                                            continue
+                                        elif not ja and jin:
+                                            bc = self._crx_pending_barcode or barcode
+                                            t = self.__jar_task(bc)
+                                            self.__jar_runners[bc] = {
+                                                "task": asyncio.ensure_future(t),
+                                                "frozen": True
+                                            }
+                                            self.main_window.show_barcode(bc, is_ok=True)
+                                            logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
+                                            ret = bc
+                                            logging.warning(f"__jar_runners: {self.__jar_runners}")
+                                            break
+                                        elif ja and not jin:
+                                            if free_timer_started is None:
+                                                free_timer_started = loop.time()
+                                            elif loop.time() - free_timer_started >= 2.0:
+                                                logging.warning("CRX60/CRX40: JIN freed >2s while JA occupied -> exit without creating runner")
+                                                break
+                                        else:
+                                            free_timer_started = None
+                                        await asyncio.sleep(0.1)
+                                    self._crx_pending_barcode = None
+                                    self._crx_ja_block_sequence_active = False
+                                else:
+                                    logging.debug("CRX60/CRX40: JA+JIN busy; updated pending barcode, watcher already active")
+
+                            elif not ja and jin:
+                                bc = self._crx_pending_barcode or barcode
+                                t = self.__jar_task(bc)
+                                self.__jar_runners[bc] = {
+                                    "task": asyncio.ensure_future(t),
+                                    "frozen": True
+                                }
+                                self.main_window.show_barcode(bc, is_ok=True)
+                                logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
+                                ret = bc
+                                logging.warning(f"__jar_runners: {self.__jar_runners}")
+                                self._crx_pending_barcode = None
+                                self._crx_ja_block_sequence_active = False
+
+                            elif ja and not jin:
+                                free_timer_started = loop.time()
+                                while True:
+                                    jin = bool(A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", 0))
+                                    ja  = bool(A.jar_photocells_status.get("JAR_DISPENSING_POSITION_PHOTOCELL", 0))
+                                    if ja and not jin:
+                                        if loop.time() - free_timer_started >= 2.0:
+                                            logging.warning("CRX60/CRX40: JIN freed >2s while JA occupied -> exit without creating runner")
+                                            break
+                                    else:
+                                        break
+                                    await asyncio.sleep(0.1)
+                            else:
+                                pass
+
             except Exception as e:  # pylint: disable=broad-except
                 self.handle_exception(e)
 
         return ret
+
+    async def on_shuttle_barcode_read(self, barcode: str):
+        """
+        Handle barcode coming from the SHUTTLE_BARCODE_READER to set jar size.
+        """
+        try:
+            barcode = (barcode or "").strip()
+            if not barcode:
+                return None
+
+            variant = os.getenv('MACHINE_VARIANT')
+            if variant in ['CRX60', 'CRX40']:
+                return None
+
+            logging.warning(f"barcode :: {barcode}")
+            # import re
+            # BARCODE_NEW_PATTERN = re.compile(r'^\d{1,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$', re.IGNORECASE)
+            # if not BARCODE_NEW_PATTERN.match(barcode):
+            #     logging.warning(f"SECOND READER: invalid shuttle barcode format: {barcode}")
+            #     return None
+
+            A = self.get_machine_head_by_letter("A")
+            try:
+                ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
+                if not ret or ret.get("objects") is None:
+                    logging.error("SECOND READER: cannot retrieve packages data")
+                    return None
+                packages = ret.get("objects", [])
+                size_map = {p.get("name", "").lower().rstrip(): p.get("size") for p in packages if p.get("name") and p.get("size")}
+                key = barcode.lower().rstrip()
+                if key in size_map:
+                    self.shuttle_size_from_barcode_scanner = size_map[key]
+                    logging.warning(f"SECOND READER: shuttle '{key}' -> size {size_map[key]}")
+                    # Feedback to UI
+                    # self.main_window.show_barcode(f"SHUTTLE: {key} -> {size_map[key]}", is_ok=True)
+                    # return key
+                else:
+                    logging.warning(f"SHUTTLE BARCODE READER: unknown shuttle '{key}'")
+                    self.main_window.open_alert_dialog((key,), fmt="UNKNOWN SHUTTLE: {}", title="WARNING")
+                    return None
+            except Exception as e:  # pylint: disable=broad-except
+                logging.error(f"SECOND READER: unexpected error: {e}")
+                return None
+        except Exception as e:  # pylint: disable=broad-except
+            self.handle_exception(e)
+            return None
 
     async def on_head_msg_received(self, head_index, msg_dict):
 
@@ -1239,19 +1463,24 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             self.handle_exception(e)
 
+
+
     def get_jar_runners(self):
 
         return {k: j for k, j in self.__jar_runners.items() if j and j.get('jar')}
 
     async def wait_for_carousel_not_frozen(
-            self, freeze=False, msg="", visibility=1,
-            show_cancel_btn=True
+            self, freeze=False, message_args=(), message_fmt=None,
+            visibility=1, show_cancel_btn=True
     ):  # pylint: disable=too-many-statements
 
         if freeze and not self.carousel_frozen:
             self.freeze_carousel(True)
             self.main_window.open_frozen_dialog(
-                msg, visibility=visibility, show_cancel_btn=show_cancel_btn
+                message_args,
+                message_fmt=message_fmt,
+                visibility=visibility,
+                show_cancel_btn=show_cancel_btn
             )
 
         _runner = None
@@ -1331,9 +1560,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         d2 = jar_json_properties.get("unknown_pigments", {})
         _diff = get_dict_diff(d1, d2)
         if _diff:
-            msg = f"{jar.barcode}\n"
-            msg += tr_("pigments in machine db have changed, check can label. diff:{}").format(_diff)
-            self.main_window.open_alert_dialog(f"{msg}", title="ALERT")
+            args = (jar.barcode, _diff)
+            fmt = "{}\n pigments in machine db have changed, check can label. diff:{}\n"
+            self.main_window.open_alert_dialog(args, fmt=fmt, title="ALERT")
 
         self.db_session.commit()
 
@@ -1495,8 +1724,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         restorable_jars_dict = self.restore_machine_helper.read_data()
         lista = []
         for key, val in restorable_jars_dict.items():
-            pos = val['pos']
-            lista.append(f"{key} - {pos}")
+            j_status = not (
+                val.get('jar_status') == "ERROR"
+                or val.get('dispensation') in ("ongoing", "dispensation_failure")
+            )
+            restorable_jar = (key, val['pos'], j_status)
+            lista.append(restorable_jar)
         return lista
 
     def recovery_mode_delete_jar_task(self, jar_code, jar_pos):
@@ -1519,4 +1752,112 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if jar:
                 jar.status = 'ERROR'
                 self.db_session.commit()
+
+    async def _handle_crx_barcode_input(self):
+        import re
+
+        BARCODE_NEW_PATTERN = re.compile(
+            r'^\d{1,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$',
+            re.IGNORECASE
+        )
+        A = self.get_machine_head_by_letter("A")
+
+        shuttle_event = asyncio.Event()
+        formula_event = asyncio.Event()
+
+        shuttle_barcode = ""
+        formula_barcode = ""
+
+        async def validate_shuttle(barcode: str) -> (bool, str):
+            logging.warning(f"barcode: {barcode}")
+            barcode_match = BARCODE_NEW_PATTERN.match(barcode)
+            if not barcode_match:
+                return False, "INVALID SHUTTLE BARCODE: {}", barcode
+            shuttle_name = barcode_match.group(0).lower().rstrip()
+            try:
+                ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
+                if not ret or ret.get("objects") is None:
+                    return False, "Impossibile to retrieve packages data", ""
+                if not ret.get("objects"):
+                    return False, "HEAD 1 (A): no package data found", ""
+
+                packages = ret["objects"]
+                size_map = {p["name"].lower().rstrip(): p["size"] for p in packages if p.get("name") and p.get("size")}
+
+                if shuttle_name in size_map:
+                    self.shuttle_size_from_barcode_scanner = size_map[shuttle_name]
+                    logging.warning(f"SHUTTLE - {shuttle_name}: {size_map[shuttle_name]}")
+                    return True, "", ""
+                else:
+                    return False, "UNKNOWN SHUTTLE: {}", shuttle_name
+
+            except Exception as e:
+                logging.error(f"An unexpected error has been occurred: {e}")
+                return False, "An unexpected error has been occurred."
+
+        def on_shuttle_ok():
+            nonlocal shuttle_barcode
+            shuttle_barcode = self.main_window.input_dialog.get_content_text().strip()
+            shuttle_event.set()
+            logging.warning(f"Shuttle barcode received: {shuttle_barcode}")
+
+        def on_formula_ok():
+            nonlocal formula_barcode
+            raw = self.main_window.input_dialog.get_content_text()
+            formula_barcode = "".join(raw.split())
+            formula_event.set()
+            formula_barcode = formula_barcode[:12]
+            logging.warning(f"Formula barcode received: {formula_barcode}")
+
+        while True:
+            shuttle_event.clear()
+            self.main_window.open_input_dialog(
+                message=tr_("Scan shuttle barcode"),
+                content="",
+                ok_cb=on_shuttle_ok,
+                ok_on_enter=True
+            )
+            await shuttle_event.wait()
+
+            valid, msg, args = await validate_shuttle(shuttle_barcode)
+            if valid:
+                self.main_window.hide_input_dialog()
+                break
+
+            logging.warning(f"Invalid shuttle barcode: {shuttle_barcode} - {msg}")
+            self.main_window.hide_input_dialog()
+            self.main_window.open_alert_dialog(args, fmt=msg, title="ERROR BARCODE SHUTTLE")
+
+        while True:
+            formula_event.clear()
+            self.main_window.open_input_dialog(
+                message=tr_("Scan order barcode"),
+                content="",
+                ok_cb=on_formula_ok,
+                ok_on_enter=True
+            )
+            await formula_event.wait()
+
+            if formula_barcode.isdigit():
+                self.main_window.hide_input_dialog()
+                break
+
+            logging.warning(f"Invalid formula barcode: {formula_barcode} (non è solo numeri)")
+            self.main_window.hide_input_dialog()
+            self.main_window.open_alert_dialog(
+                (formula_barcode),
+                fmt="Invalid order barcode: {}",
+                title="ERROR ORDER BARCODE"
+            )
+
+        logging.warning(f"Barcodes collected — Shuttle: {shuttle_barcode}, Formula: {formula_barcode}")
+        
+        self.ready_to_read_a_barcode = True
+        
+        result = await self.on_barcode_read(formula_barcode)
+        if not result:
+            logging.warning("on_barcode_read failed, resetting ready_to_read_a_barcode state")
+            self.ready_to_read_a_barcode = True
+
+
 

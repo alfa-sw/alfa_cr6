@@ -97,6 +97,7 @@ D = {
     "move 02 04 ('A -> C')": "move 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "move 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "move 04 05 ('C -> UP')",
+    "move 04 05 ('C -> OUT')": "move 04 05 ('C -> OUT')",
     "move 05 06 ('UP -> DOWN')": "move 05 06 ('UP -> DOWN')",
     "move 06 07 ('DOWN -> D')": "move 06 07 ('DOWN -> D')",
     "move 07 08 ('D -> E')": "move 07 08 ('D -> E')",
@@ -174,7 +175,7 @@ D = {
     "confirm removing {}?": "confirm removing {}?",
 
     "edit alias for pigment names": "edit alias for pigment names",
-    "data not valid. duplicated alias:": "data not valid. duplicated alias:",
+    "data not valid. duplicated alias: {}": "data not valid. duplicated alias: {}",
 
     "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ": 
         "Please, select a pigment on the left, then insert below a list of altermative names, a name for each line. ",
@@ -210,11 +211,49 @@ D = {
     "Problem during the start of dispensing. Head status not in standby.": "Problem during the start of dispensing. Head status not in standby.",
     "Jar volume {}(cc) < Order volume {:.3f}(cc).": "Jar volume {}(cc) < Order volume {:.3f}(cc).",
 
-    "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic": "If you prefer to unload manually some or all jars,\npress DELETE for each one to remove permanently\nthem from the machine recovery logic",
-    "\nAutomation paused is required!": "\nAutomation paused is required!",
+    "Automation paused is required!": "Automation paused is required!",
     "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'": "Do you want to create a new order with the not dispensed components from barcode {} ?\nIf YES press 'Recover Old'",
     "Clone New": "Clone New",
     "Recover Old": "Recover Old",
+    "[Recovery Mode] Timeout retrieving machine status! Retry again...": "[Recovery Mode] Timeout retrieving machine status! Retry again...",
+    "Please, remove completed order(s) from output roller": "Please, remove completed order(s) from output roller",
+    "INVALID SHUTTLE BARCODE: {}": "INVALID SHUTTLE BARCODE: {}",
+    "API ERROR: {}": "API ERROR: {}",
+    "UNKNOWN SHUTTLE: {}": "UNKNOWN SHUTTLE: {}",
+    "Invalid order barcode: {}": "Invalid order barcode: {}",
+    "[PackageSizesDialog] An unexpected error has been occurred.": "[PackageSizesDialog] An unexpected error has been occurred.",
+    "DECODE KCC QRCODE EXCEPTION": "DECODE KCC QRCODE EXCEPTION",
+    "Missing Jar on ": "Missing Jar on ",
+    "Empty Barcode": "Empty Barcode",
+    "HEAD A(1) offline: cannot retrieve package infos": "HEAD A(1) offline: cannot retrieve package infos",
+    "An unexpected error has been occurred: {}": "An unexpected error has been occurred: {}",
+    "The code entered '{}' does not match any toner on HEAD {} ({})": "The code entered '{}' does not match any toner on HEAD {} ({})",
+    "HEAD 1 (A): no response or invalid data": "HEAD 1 (A): no response or invalid data",
+    "HEAD 1 (A): no package data found": "HEAD 1 (A): no package data found",
+    "Impossibile to retrieve packages data": "Impossibile to retrieve packages data",
+    "An unexpected error has been occurred": "An unexpected error has been occurred",
+    "Printer not detected": "Printer not detected",
+    "Below is the list of pending orders:": "Below is the list of pending orders:",
+    "Orders in green will be completed during Recovery Mode.": "Orders in green will be completed during Recovery Mode.",
+    "Orders in red cannot be completed and will automatically move towards the machine exit.": "Orders in red cannot be completed and will automatically move towards the machine exit.",
+    "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.": "If some orders have already been physically removed from the machine, press Delete to remove them also from the automation memory.",
+
+    "BRUSH PHOTOCELL": "BRUSH PHOTOCELL",
+    "ROTATING TABLE PHOTOCELL": "ROTATING TABLE PHOTOCELL",
+    "PUMP MOTOR HOME PHOTOCELL": "PUMP MOTOR HOME PHOTOCELL",
+    "PUMP MOTOR INGR PHOTOCELL": "PUMP MOTOR INGR PHOTOCELL",
+    "VALVE PHOTOCELL LEFT": "VALVE PHOTOCELL LEFT",
+    "VALVE PHOTOCELL RIGHT": "VALVE PHOTOCELL RIGHT",
+    "PANEL TABLE STATUS": "PANEL TABLE STATUS",
+    "ROLLER PHOTOCELL": "ROLLER PHOTOCELL",
+
+    "RECOVERY MODE ON": "RECOVERY MODE ON",
+    "FILL UP": "FILL UP",
+    "START \nRECOVERY": "START \nRECOVERY",
+    "Below is the list of pending orders:": "Below is the list of pending orders:",
+    "OK": "OK",
+    "Delete": "Delete",
+
 }
 
 
