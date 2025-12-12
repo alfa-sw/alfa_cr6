@@ -97,6 +97,7 @@ D = {
     "move 02 04 ('A -> C')": "déplacer 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "déplacer 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "déplacer 04 05 ('C -> convoyeur élévateur haut')",
+    "move 04 05 ('C -> OUT')": "déplacer 04 05 ('C -> convoyeur de sortie')",
     "move 05 06 ('UP -> DOWN')": "déplacer 05 06 ('élévateur haut -> élévateur bas')",
     "move 06 07 ('DOWN -> D')": "déplacer 06 07 ('convoyeur élévateur bas -> D')",
     "move 07 08 ('D -> E')": "déplacer 07 08 ('D -> E')",
@@ -242,6 +243,14 @@ D = {
     "VALVE PHOTOCELL RIGHT": "PHOTOCELLULE VANNE DROITE",
     "PANEL TABLE STATUS": "ÉTAT TABLEAU DE COMMANDE",
     "ROLLER PHOTOCELL": "PHOTOCELLULE CONVOYEUR",
+
+    "RECOVERY MODE ON": "Mode de récupération activé",
+    "FILL UP": "Faire l’appoint",
+    "START \nRECOVERY": "Démarrer\nla récupération",
+    "Below is the list of pending orders:": "Ci-dessous la liste des commandes en attente :",
+    "OK": "OK",
+    "Delete": "Supprimer",
+
 }
 
 

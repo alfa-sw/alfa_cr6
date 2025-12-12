@@ -1,5 +1,4 @@
 from alfa_CR6_backend.lang import error_no
-
 D = {
     " ?": " ?",
     "alias": "alias",
@@ -98,6 +97,7 @@ D = {
     "move 02 04 ('A -> C')": "flytte 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "flytte 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "flytte 04 05 ('C -> OPP')",
+    "move 04 05 ('C -> OUT')": "flytte 04 05 ('C -> UT')",
     "move 05 06 ('UP -> DOWN')": "flytte 05 06 ('UP -> NED')",
     "move 06 07 ('DOWN -> D')": "flytte 06 07 ('NED -> D')",
     "move 07 08 ('D -> E')": "flytte 07 08 ('D -> E')",
@@ -246,6 +246,14 @@ D = {
     "VALVE PHOTOCELL RIGHT": "FOTOCELLE FOR VENTIL HØYRE",
     "PANEL TABLE STATUS": "PANELTABELL STATUS",
     "ROLLER PHOTOCELL": "FOTOCELLE FOR RULLE",
+
+    "RECOVERY MODE ON": "Gjenopprettingsmodus PÅ",
+    "FILL UP": "Fyll på",
+    "START \nRECOVERY": "Start\nGjenoppretting",
+    "Below is the list of pending orders:": "Nedenfor er listen over ventende bestillinger:",
+    "OK": "OK",
+    "Delete": "Slett",
+
 }
 
 D.update(error_no.D)

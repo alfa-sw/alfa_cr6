@@ -97,6 +97,7 @@ D = {
     "move 02 04 ('A -> C')": "przesuń 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "przesuń 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "przesuń 04 05 ('C -> GÓRA')",
+    "move 04 05 ('C -> OUT')": "przesuń 04 05 ('C -> WYJŚCIE')",
     "move 05 06 ('UP -> DOWN')": "przesuń 05 06 ('GÓRA -> DÓŁ')",
     "move 06 07 ('DOWN -> D')": "przesuń 06 07 ('DÓŁ -> D')",
     "move 07 08 ('D -> E')": "przesuń 07 08 ('D -> E')",
@@ -236,6 +237,13 @@ D = {
     "VALVE PHOTOCELL RIGHT": "FOTOKOMÓRKA PRAWEGO ZAWORU",
     "PANEL TABLE STATUS": "STATUS PANELU STOŁU",
     "ROLLER PHOTOCELL": "FOTOKOMÓRKA ROLKI",
+
+    "RECOVERY MODE ON": "TRYB ODZYSKIWANIA WŁĄCZONY",
+    "FILL UP": "UZUPEŁNIJ",
+    "START \nRECOVERY": "URUCHOM\nODZYSKIWANIE",
+    "Below is the list of pending orders:": "Poniżej znajduje się lista oczekujących zleceń:",
+    "OK": "OK",
+    "Delete": "Usuń",
 
 }
 

@@ -97,6 +97,7 @@ D = {
     "move 02 04 ('A -> C')": "muovi 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "muovi 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "muovi 04 05 ('C -> rulliera sollevatore alto')",
+    "move 04 05 ('C -> OUT')": "muovi 04 05 ('C -> rulliera d'uscita')",
     "move 05 06 ('UP -> DOWN')": "muovi 05 06 ('sollevatore alto -> sollevatore basso')",
     "move 06 07 ('DOWN -> D')": "muovi 06 07 ('rulliera sollevatore basso -> D')",
     "move 07 08 ('D -> E')": "muovi 07 08 ('D -> E')",
@@ -249,6 +250,14 @@ D = {
     "VALVE PHOTOCELL RIGHT": "FOTOCELLULA VALVOLA DX",
     "PANEL TABLE STATUS": "STATUS PANNELLO",
     "ROLLER PHOTOCELL": "FOTOCELLULA RULLIERA",
+
+    "RECOVERY MODE ON": "Modalità recupero attiva",
+    "FILL UP": "Rabbocca",
+    "START \nRECOVERY": "Avvia\nrecupero",
+    "Below is the list of pending orders:": "Di seguito è riportato l'elenco degli ordini in sospeso:",
+    "OK": "OK",
+    "Delete": "Elimina",
+
 }
 
 

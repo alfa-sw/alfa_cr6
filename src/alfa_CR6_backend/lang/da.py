@@ -98,6 +98,7 @@ D = {
     "move 02 04 ('A -> C')": "flyt 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "flyt 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "flyt 04 05 ('C -> OP')",
+    "move 04 05 ('C -> OUT')": "flyt 04 05 ('C -> UD')",
     "move 05 06 ('UP -> DOWN')": "flyt 05 06 ('OP -> NED')",
     "move 06 07 ('DOWN -> D')": "flyt 06 07 ('NED -> D')",
     "move 07 08 ('D -> E')": "flyt 07 08 ('D -> E')",
@@ -246,6 +247,13 @@ D = {
     "VALVE PHOTOCELL RIGHT": "FOTOCELLE FOR HØJRE VENTIL",
     "PANEL TABLE STATUS": "STATUS FOR BETJENINGSPANEL",
     "ROLLER PHOTOCELL": "FOTOCELLE FOR VALSE",
+
+    "RECOVERY MODE ON": "Gendannelsestilstand til",
+    "FILL UP": "Genpåfyld",
+    "START \nRECOVERY": "Start\ngendannelse",
+    "Below is the list of pending orders:": "Nedenfor er listen over afventende ordrer:",
+    "OK": "OK",
+    "Delete": "Slet",
 
 }
 

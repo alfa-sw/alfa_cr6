@@ -98,6 +98,7 @@ D = {
     "move 02 04 ('A -> C')": "siirrä 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "siirrä 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "siirrä 04 05 ('C -> YLÖS')",
+    "move 04 05 ('C -> OUT')": "siirrä 04 05 ('C -> ULOS')",
     "move 05 06 ('UP -> DOWN')": "siirrä 05 06 ('YLÖS -> ALAS')",
     "move 06 07 ('DOWN -> D')": "siirrä 06 07 ('ALAS -> D')",
     "move 07 08 ('D -> E')": "siirrä 07 08 ('D -> E')",
@@ -245,6 +246,14 @@ D = {
     "VALVE PHOTOCELL RIGHT": "OIKEA VENTTIILIN VALOKENNO",
     "PANEL TABLE STATUS": "PANEELIPÖYDÄN TILA",
     "ROLLER PHOTOCELL": "RULLAN VALOKENNO",
+
+    "RECOVERY MODE ON": "Palautustila PÄÄLLÄ",
+    "FILL UP": "Täytä",
+    "START \nRECOVERY": "Käynnistä\npalautus",
+    "Below is the list of pending orders:": "Alla on lista odottavista tilauksista:",
+    "OK": "OK",
+    "Delete": "Poista",
+
 }
 
 

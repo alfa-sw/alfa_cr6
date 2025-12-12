@@ -97,6 +97,7 @@ D = {
     "move 02 04 ('A -> C')": "move 02 04 ('A -> C')",
     "move 03 04 ('B -> C')": "move 03 04 ('B -> C')",
     "move 04 05 ('C -> UP')": "move 04 05 ('C -> UP')",
+    "move 04 05 ('C -> OUT')": "move 04 05 ('C -> OUT')",
     "move 05 06 ('UP -> DOWN')": "move 05 06 ('UP -> DOWN')",
     "move 06 07 ('DOWN -> D')": "move 06 07 ('DOWN -> D')",
     "move 07 08 ('D -> E')": "move 07 08 ('D -> E')",
@@ -245,6 +246,14 @@ D = {
     "VALVE PHOTOCELL RIGHT": "VALVE PHOTOCELL RIGHT",
     "PANEL TABLE STATUS": "PANEL TABLE STATUS",
     "ROLLER PHOTOCELL": "ROLLER PHOTOCELL",
+
+    "RECOVERY MODE ON": "RECOVERY MODE ON",
+    "FILL UP": "FILL UP",
+    "START \nRECOVERY": "START \nRECOVERY",
+    "Below is the list of pending orders:": "Below is the list of pending orders:",
+    "OK": "OK",
+    "Delete": "Delete",
+
 }
 
 

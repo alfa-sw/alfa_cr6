@@ -944,6 +944,9 @@ class RecoveryInfoDialog(QDialog):
             self.main_layout.addWidget(self.bottom_label)
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok)
+        ok_button = self.button_box.button(QDialogButtonBox.Ok)
+        if ok_button:
+            ok_button.setText(tr_("OK"))
         self.button_box.accepted.connect(self.close_modal)
         self.main_layout.addWidget(self.button_box)
 
@@ -962,7 +965,7 @@ class RecoveryInfoDialog(QDialog):
         css_color = "#2B842B" if recover_ok else "#BA2D09"
         label.setStyleSheet(f"color: {css_color};")
 
-        delete_button = QPushButton("Delete")
+        delete_button = QPushButton(tr_("Delete"))
         delete_button.setFixedSize(90, 30)
         delete_button.setStyleSheet("QPushButton { color: red; font-weight: bold; }")
 
@@ -1142,7 +1145,8 @@ class RefillDialog(BaseDialog):
                     label = str(choice.get('label', '') or '')
                     disp_val = _format_value(value)
                     button.setEnabled(value > 0)
-                    button.setText(f"{label}\n{disp_val}".strip())
+                    translated_label = tr_(label)
+                    button.setText(f"{translated_label}\n{disp_val}".strip())
                     logging.warning(f'btn value: {value} ({label})')
                     button.clicked.connect(lambda _, v=value: self._update_content_container(str(v)))
                 else:
