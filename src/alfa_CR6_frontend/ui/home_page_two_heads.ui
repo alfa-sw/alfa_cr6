@@ -653,9 +653,9 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>820</x>
+     <x>540</x>
      <y>900</y>
-     <width>551</width>
+     <width>831</width>
      <height>51</height>
     </rect>
    </property>
@@ -667,13 +667,16 @@
    <property name="text">
     <string>RECOVERY MODE ON</string>
    </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
   </widget>
   <widget class="QPushButton" name="recovery_btn">
    <property name="geometry">
     <rect>
      <x>70</x>
      <y>290</y>
-     <width>141</width>
+     <width>200</width>
      <height>91</height>
     </rect>
    </property>
@@ -785,7 +788,7 @@ RECOVERY</string>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
+  <buttongroup name="service_btn_group"/>
  </buttongroups>
 </ui>

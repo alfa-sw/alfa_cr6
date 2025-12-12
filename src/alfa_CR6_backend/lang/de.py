@@ -244,7 +244,7 @@ D = {
     "PANEL TABLE STATUS": "STATUS BEDIENPULT",
     "ROLLER PHOTOCELL": "FOTOZELLE ROLLENBAHN",
 
-    "RECOVERY MODE ON": "Wiederherstellungsmodus EIN",
+    "RECOVERY MODE ON": "Wiederherstellungsmodus",
     "FILL UP": "Nachfüllen",
     "START \nRECOVERY": "Wiederherstellung\nstarten",
     "Below is the list of pending orders:": "Nachfolgend die Liste der ausstehenden Aufträge:",

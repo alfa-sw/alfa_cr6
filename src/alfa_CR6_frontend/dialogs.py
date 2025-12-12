@@ -947,6 +947,7 @@ class RecoveryInfoDialog(QDialog):
         ok_button = self.button_box.button(QDialogButtonBox.Ok)
         if ok_button:
             ok_button.setText(tr_("OK"))
+            ok_button.setFixedSize(70, 50)
         self.button_box.accepted.connect(self.close_modal)
         self.main_layout.addWidget(self.button_box)
 
@@ -966,7 +967,7 @@ class RecoveryInfoDialog(QDialog):
         label.setStyleSheet(f"color: {css_color};")
 
         delete_button = QPushButton(tr_("Delete"))
-        delete_button.setFixedSize(90, 30)
+        delete_button.setFixedSize(160, 40)
         delete_button.setStyleSheet("QPushButton { color: red; font-weight: bold; }")
 
         row_layout.addWidget(label)
