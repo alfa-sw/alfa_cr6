@@ -197,7 +197,7 @@ class SettingsManager:
             if m:
                 current_val_txt = m.group(2).strip()
                 if current_val_txt != new_val:
-                    replacement = rf'\1{new_val}'
+                    replacement = r'\g<1>' + new_val
                     content = re.sub(pattern, replacement, content, count=1, flags=re.MULTILINE)
                     logging.warning("host: update %r: %s -> %s", k, current_val_txt, new_val)
                     changed = True
