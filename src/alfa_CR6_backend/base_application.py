@@ -722,6 +722,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 insufficient_pigments = json_properties["insufficient_pigments"]
                 unknown_pigments = json_properties["unknown_pigments"]
 
+                if jar.status in ["DONE", "ERROR"]:
+                    break
+
                 if insufficient_pigments or unknown_pigments:
                     self.main_window.show_barcode(jar.barcode, is_ok=False)
                     msg_ = ["barcode: {}\n"]
@@ -1140,6 +1143,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         callback=callback
                     )
                     self.shuttle_bc_ready_to_read_a_barcode = False
+                    self.shuttle_size_from_barcode_scanner = False
                     return None
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(f"SECOND READER: unexpected error: {e}")
