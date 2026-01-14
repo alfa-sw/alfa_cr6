@@ -496,13 +496,13 @@ def create_printable_image_for_package(package):
             'module_height': 10.0,
             'font_size': 22,
         }
-        variant = os.getenv('MACHINE_VARIANT')
-        if variant not in ['CRX60', 'CRX40']:
-            options = {
-                'module_width': 0.08,
-                'module_height': 2.8,
-                'font_size': 14,
-            }
+        # variant = os.getenv('MACHINE_VARIANT')
+        # if variant not in ['CRX60', 'CRX40']:
+        #     options = {
+        #         'module_width': 0.08,
+        #         'module_height': 2.8,
+        #         'font_size': 14,
+        #     }
         rotate = 90
 
         with open(TMP_PACKAGE_BARCODE_IMAGE, 'wb') as file_:
