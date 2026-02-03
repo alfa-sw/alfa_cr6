@@ -1462,7 +1462,7 @@ weight:{RealWeight}
                 can_size = line_clean.split(":", 1)[1].strip()
                 properties['meta']['can_size'] = can_size
 
-            elif "Component" in line and "Recipe %" in line and "Amount (g)" in line:
+            elif "Component" in line and "Recipe" in line and "Amount (g)" in line:
                 in_ingredient_section = True
                 continue
 
