@@ -887,6 +887,28 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     logging.warning(f"{self.name}, {output_number}, output:{output}")
                     await self.crx_outputs_management(output_number, 0, timeout=0)
 
+    def __reset_state(self):
+        self.status = {}
+        self.photocells_status = {}
+        self.jar_photocells_status = {}
+        self.jar_size_detect = None
+        self.websocket = None
+        self.last_answer = None
+
+    def __log_document(self, doc_type, extra=None):
+        try:
+            props = {"index": self.index, "head_name": self.name,
+                     "ip": self.ip_add, "ws_port": self.ws_port, "http_port": self.http_port}
+            if extra:
+                props.update(extra)
+            self.app.insert_db_document(
+                name=f"MachineHead {self.name}",
+                type=doc_type,
+                json_properties=json.dumps(props, ensure_ascii=False),
+            )
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
     async def run(self):
         t = self.__watch_dog_task()
         asyncio.ensure_future(t)
@@ -896,15 +918,32 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             try:
                 async with websockets.connect(ws_url, timeout=40) as websocket:
                     self.websocket = websocket
+                    self.__ws_id = str(id(websocket))
+                    self.__log_document("WS_CONNECTED", {"ws_id": self.__ws_id})
                     while True:
                         await self.handle_ws_recv()
             except (OSError, ConnectionRefusedError,
-                    websockets.exceptions.ConnectionClosedError) as e:
+                    websockets.exceptions.ConnectionClosed) as e:
                 logging.error(f"{self.name} e:{e}")
+                _rcvd = getattr(e, 'rcvd', None)
+                extra = {
+                    "exception_type": type(e).__name__,
+                    "error": str(e),
+                    "close_code": _rcvd.code if _rcvd else (1006 if isinstance(e, websockets.exceptions.ConnectionClosed) else None),
+                    "close_reason": _rcvd.reason if _rcvd else ("abnormal closure (no close frame received)" if isinstance(e, websockets.exceptions.ConnectionClosed) else None),
+                    "status": self.status,
+                    "photocells_status": self.photocells_status,
+                    "jar_photocells_status": self.jar_photocells_status,
+                    "ws_id": getattr(self, '_MachineHead__ws_id', None)
+                }
+                self.__log_document("WS_CLOSED", extra)
+                # self.__reset_state()
                 await asyncio.sleep(5)
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(f"{self.name} e:{e}")
                 logging.error(traceback.format_exc())
+                self.__log_document("WS_EXCP", {"exception_type": type(e).__name__, "error": str(e)})
+                # self.__reset_state()
                 await asyncio.sleep(2)
         logging.warning(" *** exiting *** ")
 

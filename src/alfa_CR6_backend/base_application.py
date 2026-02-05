@@ -27,7 +27,7 @@ from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
 import aiohttp  # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Order, Jar, Event, decompile_barcode
+from alfa_CR6_backend.models import Order, Jar, Event, Document, decompile_barcode
 from alfa_CR6_backend.globals import (
     UI_PATH,
     KEYBOARD_PATH,
@@ -1313,6 +1313,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         try:
             evt = Event(**args)
             self.db_session.add(evt)
+            self.db_session.commit()
+        except BaseException:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.db_session.rollback()
+
+    def insert_db_document(self, **args):
+
+        try:
+            doc = Document(**args)
+            self.db_session.add(doc)
             self.db_session.commit()
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
