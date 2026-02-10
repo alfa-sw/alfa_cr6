@@ -1481,7 +1481,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     async def wait_for_carousel_not_frozen(
             self, freeze=False, message_args=(), message_fmt=None,
-            visibility=1, show_cancel_btn=True
+            visibility=1, show_cancel_btn=True, extra_properties=None
     ):  # pylint: disable=too-many-statements
 
         if freeze and not self.carousel_frozen:
@@ -1490,7 +1490,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 message_args,
                 message_fmt=message_fmt,
                 visibility=visibility,
-                show_cancel_btn=show_cancel_btn
+                show_cancel_btn=show_cancel_btn,
+                extra_properties=extra_properties
             )
 
         _runner = None

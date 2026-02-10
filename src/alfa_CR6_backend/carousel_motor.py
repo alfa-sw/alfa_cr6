@@ -177,11 +177,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             if not r:
                 logging.warning(f"{m.name} jar:{jar}")
-                # TODO - better to save also photocell status and crx status
                 await self.wait_for_carousel_not_frozen(
                     True,
                     message_args=(m.name,),
-                    message_fmt="{} waiting for dispense position to get available."
+                    message_fmt="{} waiting for dispense position to get available.",
+                    extra_properties={
+                        'photocells_status': m.photocells_status,
+                        'jar_photocells_status': m.jar_photocells_status,
+                        'status': m.status,
+                    }
                 )
             else:
                 break

@@ -772,7 +772,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self, args, title="ALERT", fmt=None,
             callback=None, cb_args=None, hp_callback=None,
             visibility=1, show_cancel_btn=True, traceback=None,
-            localize_args=False
+            localize_args=False, extra_properties=None
     ):
         # msg  -> localized msg for UI
         # msg_ -> non localized msg (eng) for db event
@@ -799,6 +799,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         alert_infos = {'fmt': fmt, 'args': args, 'msg_': msg_, 'msg': msg}
         if traceback:
             alert_infos['traceback'] = traceback
+        if extra_properties:
+            alert_infos['extra_properties'] = extra_properties
         json_properties_ = json.dumps(
             alert_infos,
             indent=2,
@@ -836,7 +838,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             title="ALERT",
             force_explicit_restart=False, ok_callback=None,
             hp_callback=None, visibility=1, show_cancel_btn=True,
-            localize_args=False
+            localize_args=False, extra_properties=None
     ):
 
         base_fmt_parts = [
@@ -869,7 +871,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             hp_callback=hp_callback,
             visibility=visibility,
             show_cancel_btn=show_cancel_btn,
-            localize_args=localize_args
+            localize_args=localize_args,
+            extra_properties=extra_properties
         )
 
     def open_recovery_dialog(self, recovery_items, lbl_text=None, bottom_lbl_text=None):
