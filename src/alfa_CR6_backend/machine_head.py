@@ -72,7 +72,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.machine_config = None
 
         self._current_circuit_engaged = None
-        self.runners = []
+        self._current_runner = None
 
     def __str__(self):
         return f"[{self.index}:{self.name}]"
@@ -347,13 +347,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             if new_circuit_engaged != self._current_circuit_engaged:
                 if new_circuit_engaged == 0:
-                    if self._current_circuit_engaged:
-                        self.runners[-1].setdefault('running_engaged_circuits', [])
-                        self.runners[-1]['running_engaged_circuits'].append(self._current_circuit_engaged)
+                    if self._current_circuit_engaged and self._current_runner:
+                        self._current_runner.setdefault('running_engaged_circuits', [])
+                        self._current_runner['running_engaged_circuits'].append(self._current_circuit_engaged)
                 self._current_circuit_engaged = new_circuit_engaged
-            if self.runners:
+            if self._current_runner:
                 logging.warning(
-                    f"new_circuit_engaged:{new_circuit_engaged}, running_engaged_circuits:{self.runners[-1].get('running_engaged_circuits')}")
+                    f"new_circuit_engaged:{new_circuit_engaged}, running_engaged_circuits:{self._current_runner.get('running_engaged_circuits')}")
 
         return diff
 
@@ -669,7 +669,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         # ~ logging.warning(f"ret:{ret}")
         pipe_formula_ml = ret.get('result') == 'OK' and ret.get('pipe_formula')
 
-        self.runners.append(self.app._BaseApplication__jar_runners.get(jar.barcode))  # pylint: disable=protected-access
+        self._current_runner = self.app._BaseApplication__jar_runners.get(jar.barcode)  # pylint: disable=protected-access
 
         r = True
 
@@ -777,7 +777,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                                 store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "ongoing", disp_type)
 
-                                self.runners[-1]['running_engaged_circuits'] = []
+                                self._current_runner['running_engaged_circuits'] = []
 
                                 # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
                                 def break_condition():
@@ -786,8 +786,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 r = await self.wait_for_status_level(
                                     ["STANDBY"], timeout=timeout_, show_alert=False, break_condition=break_condition)
 
-                                engaged_circuits_ += self.runners[-1]['running_engaged_circuits'][:]
-                                self.runners[-1]['running_engaged_circuits'] = None
+                                engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
+                                self._current_runner['running_engaged_circuits'] = None
                                 self._current_circuit_engaged = None
 
                                 if r:
@@ -869,6 +869,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         message_fmt=msg_
                     )
 
+        self._current_runner = None
         return True
 
     async def close(self):
