@@ -936,7 +936,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     "status": self.status,
                     "photocells_status": self.photocells_status,
                     "jar_photocells_status": self.jar_photocells_status,
-                    "ws_id": getattr(self, '_MachineHead__ws_id', None)
+                    "ws_id": getattr(self, '_MachineHead__ws_id', None),
+                    "traceback": traceback.format_exc()
                 }
                 self.__log_document("WS_CLOSED", extra)
                 # self.__reset_state()
