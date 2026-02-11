@@ -479,7 +479,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.chromium_wrapper = None
         self.restore_machine_helper = None
 
-        self.shuttle_size_from_barcode_scanner = None
+        self.shuttle_size_from_barcode_scanner = False
+        self._shuttle_size_ready_evt = asyncio.Event()
 
         # CRX40/CRX60 deferred jar creation when both JIN and JA are occupied
         self._crx_ja_block_sequence_active = False
@@ -611,29 +612,33 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     async def __create_barcode_task(self):
 
         file_path = '/tmp/share/container_env_variables.json'
-        bc_pps = None
-        bc_shuttle = None
+        self.id_bc_pps = None
+        self.id_bc_shuttle = None
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 env_data = json.load(f) or {}
-                bc_pps = env_data.get("BARCODE_READER_IDENTIFICATION_STRING")
-                bc_shuttle = env_data.get("SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING")
+                self.id_bc_pps = env_data.get("BARCODE_READER_IDENTIFICATION_STRING")
+                self.id_bc_shuttle = env_data.get("SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING")
         except Exception:
             logging.warning(f"Failed to read barcode IDs from {file_path}. Falling back to settings.")
 
-        if not bc_pps:
-            bc_pps = os.getenv("BARCODE_READER_IDENTIFICATION_STRING")
-            if not bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
-                bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
+        if not self.id_bc_pps:
+            self.id_bc_pps = os.getenv("BARCODE_READER_IDENTIFICATION_STRING")
+            if not self.id_bc_pps and hasattr(self.settings, "BARCODE_READER_IDENTIFICATION_STRING"):
+                self.id_bc_pps = self.settings.BARCODE_READER_IDENTIFICATION_STRING
 
-        if not bc_shuttle and hasattr(self.settings, "SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING"):
-            bc_shuttle = self.settings.SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING
+        if not self.id_bc_shuttle and hasattr(self.settings, "SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING"):
+            self.id_bc_shuttle = self.settings.SHUTTLE_BARCODE_READER_IDENTIFICATION_STRING
+
+        logging.warning(f"self.id_bc_pps -> {self.id_bc_pps}")
+        logging.warning(f"self.id_bc_shuttle -> {self.id_bc_shuttle}")
 
         bcs = []
-        if bc_pps and bc_pps != "DISABLED":
-            bcs.append((bc_pps, self.on_barcode_read, False, False))
-        if bc_shuttle and bc_shuttle != "DISABLED":
-            bcs.append((bc_shuttle, self.on_shuttle_barcode_read, True, True))
+        if self.id_bc_pps and self.id_bc_pps != "DISABLED":
+            bcs.append((self.id_bc_pps, self.on_barcode_read, False, False))
+        if self.id_bc_shuttle and self.id_bc_shuttle != "DISABLED":
+            self.shuttle_bc_ready_to_read_a_barcode = True
+            bcs.append((self.id_bc_shuttle, self.on_shuttle_barcode_read, True, True))
 
         if not bcs:
             logging.warning(" #### no barcode readers configured (maybe CRX variant) #### ")
@@ -717,6 +722,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 # ~ unavailable_pigments = json_properties["unavailable_pigments"]
                 insufficient_pigments = json_properties["insufficient_pigments"]
                 unknown_pigments = json_properties["unknown_pigments"]
+
+                if jar.status in ["DONE", "ERROR"]:
+                    break
 
                 if insufficient_pigments or unknown_pigments:
                     self.main_window.show_barcode(jar.barcode, is_ok=False)
@@ -955,6 +963,19 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             try:
 
+                # if self.id_bc_shuttle and self.id_bc_shuttle != 'DISABLED' and not self.shuttle_size_from_barcode_scanner:
+                #     logging.warning(f"self.id_bc_shuttle -> {self.id_bc_shuttle}")
+                #     logging.warning(f"self.shuttle_size_from_barcode_scanner -> {self.shuttle_size_from_barcode_scanner}")
+                #     return
+                if self.id_bc_shuttle and self.id_bc_shuttle != 'DISABLED' and self.machine_variant not in ['CRX60', 'CRX40']:
+                    if not self._shuttle_size_ready_evt.is_set():
+                        self.main_window.show_barcode("Waiting for valid shuttle barcode...", is_ok=False)
+                        return None
+                    self._shuttle_size_ready_evt.clear()
+
+                logging.warning(f"self.shuttle_size_from_barcode_scanner -> {self.shuttle_size_from_barcode_scanner}")
+                logging.warning(f"self.id_bc_shuttle -> {self.id_bc_shuttle}")
+
                 self.main_window.show_barcode(barcode, is_ok=True)
 
                 A = self.get_machine_head_by_letter("A")
@@ -1082,6 +1103,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         Handle barcode coming from the SHUTTLE_BARCODE_READER to set jar size.
         """
         try:
+
+            if not getattr(self, "shuttle_bc_ready_to_read_a_barcode", False):
+                return None
+
             barcode = (barcode or "").strip()
             if not barcode:
                 return None
@@ -1109,15 +1134,29 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if key in size_map:
                     self.shuttle_size_from_barcode_scanner = size_map[key]
                     logging.warning(f"SECOND READER: shuttle '{key}' -> size {size_map[key]}")
+                    self._shuttle_size_ready_evt.set()
                     # Feedback to UI
                     # self.main_window.show_barcode(f"SHUTTLE: {key} -> {size_map[key]}", is_ok=True)
                     # return key
                 else:
                     logging.warning(f"SHUTTLE BARCODE READER: unknown shuttle '{key}'")
-                    self.main_window.open_alert_dialog((key,), fmt="UNKNOWN SHUTTLE: {}", title="WARNING")
+                    self.shuttle_size_from_barcode_scanner = False
+                    self._shuttle_size_ready_evt.clear()
+                    def callback():
+                        self.shuttle_bc_ready_to_read_a_barcode = True
+                    self.main_window.open_alert_dialog(
+                        (key,),
+                        fmt="UNKNOWN SHUTTLE: {}",
+                        title="WARNING",
+                        show_cancel_btn=False,
+                        callback=callback
+                    )
+                    self.shuttle_bc_ready_to_read_a_barcode = False
                     return None
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(f"SECOND READER: unexpected error: {e}")
+                self.shuttle_size_from_barcode_scanner = False
+                self._shuttle_size_ready_evt.clear()
                 return None
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
