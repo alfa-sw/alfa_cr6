@@ -932,6 +932,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     "error": str(e),
                     "close_code": _rcvd.code if _rcvd else (1006 if isinstance(e, websockets.exceptions.ConnectionClosed) else None),
                     "close_reason": _rcvd.reason if _rcvd else ("abnormal closure (no close frame received)" if isinstance(e, websockets.exceptions.ConnectionClosed) else None),
+                    "description": "TCP connection failure (ECONNREFUSED) - no service listening on target port" if isinstance(e, ConnectionRefusedError) else None,
                     "status": self.status,
                     "photocells_status": self.photocells_status,
                     "jar_photocells_status": self.jar_photocells_status,
