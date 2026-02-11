@@ -31,6 +31,14 @@ here_ = os.path.dirname(os.path.abspath(__file__))
 pth_ = os.path.join(here_, "templates/")
 JINJA_ENVIRONMENT = Environment(loader=FileSystemLoader(pth_ ))
 
+
+async def _safe_send(client, message, timeout=5):
+    try:
+        await asyncio.wait_for(client.send(message), timeout=timeout)
+    except Exception:
+        pass
+
+
 class HomePage:
 
     async def refresh_page(self, msg_dict, websocket, parent):
@@ -323,10 +331,13 @@ class WsServer: # pylint: disable=too-many-instance-attributes
         self.parent = parent
         self.ws_host = ws_host
         self.ws_port = ws_port
-        asyncio.ensure_future(websockets.serve(self.new_client_handler, self.ws_host, self.ws_port))
+        asyncio.ensure_future(websockets.serve(
+            self.new_client_handler, self.ws_host, self.ws_port,
+            ping_interval=20, ping_timeout=10, close_timeout=5,
+            max_size=2**20))
 
-        self.ws_clients = []
-        self.remote_ui_clients = []
+        self.ws_clients = set()
+        self.remote_ui_clients = set()
 
         self.__version__ = get_version()
 
@@ -396,8 +407,11 @@ class WsServer: # pylint: disable=too-many-instance-attributes
             })
             # ~ logging.warning("message:{}.".format(message))
 
-            for client in self.ws_clients:
-                await client.send(message)
+            for client in set(self.ws_clients):
+                try:
+                    await asyncio.wait_for(client.send(message), timeout=5)
+                except Exception:
+                    self.ws_clients.discard(client)
 
         return True
 
@@ -415,8 +429,11 @@ class WsServer: # pylint: disable=too-many-instance-attributes
                 'type': 'current_language_label',
                 'value': self.parent.settings.LANGUAGE,
             })
-            for client in self.ws_clients:
-                await client.send(msg_)
+            for client in set(self.ws_clients):
+                try:
+                    await asyncio.wait_for(client.send(msg_), timeout=5)
+                except Exception:
+                    self.ws_clients.discard(client)
 
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -425,11 +442,11 @@ class WsServer: # pylint: disable=too-many-instance-attributes
         try:
             logging.warning("appending websocket:{}, path:{}.".format(websocket, path))
             if 'remote_ui' in path:
-                self.remote_ui_clients.append(websocket)
+                self.remote_ui_clients.add(websocket)
                 async for message in websocket:  # start listening for messages from ws client
                     await RemoteUiMessageHandler.handle_msg(message, websocket, self.parent)
             else:
-                self.ws_clients.append(websocket)
+                self.ws_clients.add(websocket)
                 await self.__refresh_client_info()
                 async for message in websocket:  # start listening for messages from ws client
                     await WsMessageHandler.handle_msg(message, websocket, self.parent)
@@ -439,9 +456,9 @@ class WsServer: # pylint: disable=too-many-instance-attributes
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
         finally:
-            if websocket in self.ws_clients:
-                logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
-                self.ws_clients.remove(websocket)
+            logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
+            self.ws_clients.discard(websocket)
+            self.remote_ui_clients.discard(websocket)
 
     def refresh_can_list(self):
 
