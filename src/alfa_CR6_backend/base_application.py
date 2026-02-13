@@ -1003,6 +1003,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                         if self.carousel_frozen:
                             logging.warning(f'carousel is frozen({self.carousel_frozen}) - returning from on_barcode_read ..')
+                            self.ready_to_read_a_barcode = True
                             return
 
 
