@@ -711,11 +711,11 @@ class InputDialog(BaseDialog):
     def close_actions(self):
         try:
             self.parent().toggle_keyboard(on_off=False)
-            QApplication.instance().barcode_read_blocked_on_refill = False
-
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+        finally:
+            QApplication.instance().barcode_read_blocked_on_refill = False
 
 
 class AliasDialog(BaseDialog):
@@ -1107,11 +1107,11 @@ class RefillDialog(BaseDialog):
     def close_actions(self):
         try:
             self.parent().toggle_keyboard(on_off=False)
-            QApplication.instance().barcode_read_blocked_on_refill = False
-
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+        finally:
+            QApplication.instance().barcode_read_blocked_on_refill = False
 
     def get_content_text(self):
 
@@ -1167,12 +1167,11 @@ class RefillDialog(BaseDialog):
                 self.__ok_cb = None
                 # ~ tmp__ok_cb(*tmp__args_)
                 asyncio.get_event_loop().call_later(.05, partial(tmp__ok_cb, *tmp__args_))
-    
-            QApplication.instance().barcode_read_blocked_on_refill = False
-
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+        finally:
+            QApplication.instance().barcode_read_blocked_on_refill = False
 
     def show_dialog(self,    # pylint: disable=too-many-arguments
             icon_name=None,
