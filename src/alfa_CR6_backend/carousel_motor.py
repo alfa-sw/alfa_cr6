@@ -35,6 +35,22 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     # True only for CR4/CR6 with fixed barcode
     barcode_read_blocked_on_refill = False
 
+    MOVE_SOURCE_HEAD_MAP = {
+        "move_01_02": "A",
+        "move_02_03": "A",
+        "move_03_04": "B",
+        "move_02_04": "A",
+        "move_04_05": "C",
+        "move_05_06": "D",
+        "move_06_07": "D",
+        "move_07_08": "D",
+        "move_08_09": "E",
+        "move_07_09": "D",
+        "move_09_10": "F",
+        "move_10_11": "F",
+        "move_11_12": "F",
+    }
+
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
         'documentable': False,
@@ -185,7 +201,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         'photocells_status': m.photocells_status,
                         'jar_photocells_status': m.jar_photocells_status,
                         'status': m.status,
-                    }
+                    },
+                    error_head=m
                 )
             else:
                 break
@@ -308,7 +325,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await self.wait_for_carousel_not_frozen(
                     True,
                     message_args=(),
-                    message_fmt="please, remove completed items from output roller"
+                    message_fmt="please, remove completed items from output roller",
+                    error_head=F
                 )
             else:
                 break
@@ -488,7 +506,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             message_args=(),
                             message_fmt=msg_,
                             visibility=2,
-                            show_cancel_btn=False
+                            show_cancel_btn=False,
+                            error_head=A
                         )
                         if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
                             break
@@ -867,10 +886,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         self.update_jar_position(jar=jar, status="ENTERING", pos="IN")
 
         for step in sequence:
-            _tag = str(step).split("bound method CarouselMotor.")
-            _tag = _tag[1:] and _tag[1].split(" ")[0]
-            _tag = "{} ({})".format(tr_(_tag), jar.position)
+            _method_name = str(step).split("bound method CarouselMotor.")
+            _method_name = _method_name[1:] and _method_name[1].split(" ")[0]
+            _tag = "{} ({})".format(tr_(_method_name), jar.position)
             logging.warning(f"_tag:{_tag} for jar {jar}")
+
+            _src_letter = self.MOVE_SOURCE_HEAD_MAP.get(_method_name)
+            _error_head = self.get_machine_head_by_letter(_src_letter) if _src_letter else None
 
             retry_counter = 0
             while True:
@@ -896,7 +918,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             True,
                             message_args=(barcode_, f"\n{_tag}\n"),
                             message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
-                            visibility=2
+                            visibility=2,
+                            error_head=_error_head
                         )
 
                         self.timer_01_02 = time.time()
@@ -912,8 +935,17 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     await self.wait_for_carousel_not_frozen(
                         True,
                         message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
-                        message_fmt=msg_
+                        message_fmt=msg_,
+                        error_head=_error_head
                     )
+
+                    if _error_head is not None and self._can_send_led_command(_error_head):
+                        await _error_head.send_command(
+                            cmd_name="RESET", params={'mode': 0})
+                        await self.wait_for_condition(
+                            lambda: _error_head.status.get('status_level') == 'STANDBY',
+                            timeout=DEFAULT_WAIT_FOR_TIMEOUT,
+                            show_alert=False)
 
                 else:
                     break
@@ -921,7 +953,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             await self.wait_for_carousel_not_frozen(
                 freeze=not r,
                 message_args=(barcode_, f"\n{_tag}\n"),
-                message_fmt=("barcode:{}", "STEP {} +")
+                message_fmt=("barcode:{}", "STEP {} +"),
+                error_head=_error_head
             )
 
         if self.machine_variant not in ['CRX60', 'CRX40']:
@@ -1269,6 +1302,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 logging.debug(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {pos_}")
                 carousel_action = partial(self.dispense_step, pos_)
 
+            _src_letter = self.MOVE_SOURCE_HEAD_MAP.get(r_ac)
+            _error_head = self.get_machine_head_by_letter(_src_letter) if _src_letter else None
+
             try:
                 retry_counter = 0
                 while True:
@@ -1285,7 +1321,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         await self.wait_for_carousel_not_frozen(
                             True,
                             message_args=m_args,
-                            message_fmt=msg_
+                            message_fmt=msg_,
+                            error_head=_error_head
                         )
                     else:
                         if "move_11_12" in r_ac:

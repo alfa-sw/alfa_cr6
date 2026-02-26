@@ -1519,12 +1519,32 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         return {k: j for k, j in self.__jar_runners.items() if j and j.get('jar')}
 
+    def _can_send_led_command(self, head):
+        if not os.getenv("IN_DOCKER", False) in ['1', 'true']:
+            return False
+        fw_ver = head.status.get('application_fw_version', '')
+        try:
+            patch = int(fw_ver.split('.')[2], 16)
+            return patch >= 32
+        except (IndexError, ValueError):
+            return False
+
     async def wait_for_carousel_not_frozen(
             self, freeze=False, message_args=(), message_fmt=None,
-            visibility=1, show_cancel_btn=True, extra_properties=None
+            visibility=1, show_cancel_btn=True, extra_properties=None,
+            error_head=None
     ):  # pylint: disable=too-many-statements
 
+        _led_active = error_head is not None and self._can_send_led_command(error_head)
+
         if freeze and not self.carousel_frozen:
+
+            if _led_active:
+                asyncio.ensure_future(
+                    error_head.send_command(
+                        "DIAG_SET_TINTING_PERIPHERALS",
+                        {"Type": 2, "Action": 1}))
+
             self.freeze_carousel(True)
             self.main_window.open_frozen_dialog(
                 message_args,
@@ -1545,6 +1565,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         while self.carousel_frozen:
             await asyncio.sleep(0.2)
+
+        # if _led_active:
+        #     asyncio.ensure_future(
+        #         error_head.send_command(
+        #             "DIAG_SET_TINTING_PERIPHERALS",
+        #             {"Type": 2, "Action": 0}))
 
         if _runner:
             _runner['frozen'] = False
