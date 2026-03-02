@@ -244,6 +244,62 @@ weight:{RealWeight}
 
         return properties
 
+    @classmethod
+    def parse_dupont_xml(cls, xml_as_dict):
+
+        properties = {
+            "meta": {},
+            "ingredients": [],
+            "extra_lines_to_print": [],
+        }
+
+        spoolfile = xml_as_dict["DuPont_Exchange_SpoolFile"]
+        form_data = spoolfile["FormData"]
+
+        # --- meta ---
+        file_id = spoolfile.get("@FileID", "")
+        mf_info = form_data.get("DatabaseItems", {}).get("MfInfo", {})
+        job_items = form_data.get("JobItems", {})
+
+        brand = mf_info.get("MfName", "") or ""
+        col_code = mf_info.get("ColCode", "") or ""
+        col_name = mf_info.get("ColName", "") or ""
+        volume_requested = job_items.get("@VolumeRequested", "") or ""
+        job_nr = job_items.get("@jobNr", "") or ""
+
+        properties["meta"] = {
+            "fileId": file_id,
+            "brand": brand,
+            "colorCode": col_code,
+            "colorName": col_name,
+            "volumeRequested": volume_requested,
+            "jobNr": job_nr,
+        }
+
+        # --- ingredients (from MixRec/Product) ---
+        mix_rec = form_data.get("MixRec", {})
+        products = mix_rec.get("Product", [])
+        if not isinstance(products, list):
+            products = [products]
+
+        for product in products:
+            abs_mass = product.get("AbsMass")
+            if abs_mass is None:
+                continue
+            properties["ingredients"].append({
+                "pigment_name": product.get("TintCode", ""),
+                "weight(g)": round(float(abs_mass), 5),
+                "description": product.get("TintName", "") or "",
+            })
+
+        # --- extra_lines_to_print ---
+        properties["extra_lines_to_print"].append(f'{brand}')
+        properties["extra_lines_to_print"].append(f'{col_code} - {col_name}')
+        if volume_requested:
+            properties["extra_lines_to_print"].append(f'Vol:{volume_requested}L')
+
+        return properties
+
     @staticmethod
     def parse_mcm_csv(lines):
         # ~ logging.warning(f"lines:{lines}")
@@ -1673,6 +1729,10 @@ weight:{RealWeight}
                 properties = cls.parse_Besa_SINNEK_xml(xml_as_dict)
                 if properties.get('meta'):
                     properties['meta']['header'] = 'Besa_SINNEK_xml'
+            elif xml_as_dict.get("DuPont_Exchange_SpoolFile"):
+                properties = cls.parse_dupont_xml(xml_as_dict)
+                if properties.get('meta'):
+                    properties['meta']['header'] = 'dupont_xml'
             else:
                 raise Exception(f"unknown xml file:{path_to_file}")
 
