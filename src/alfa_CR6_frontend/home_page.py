@@ -268,11 +268,14 @@ class RefillProcedureHelper:
                 ok_cb_args=(pigment_, pipe_),
                 choices=choices_)
         else:
+            def _cb_reset_refill_block():
+                QApplication.instance().barcode_read_blocked_on_refill = False
 
             self.parent.main_window.open_input_dialog(
                 icon_name="SP_MessageBoxCritical",
                 message=tr_("barcode mismatch <br/>{} != {}").format(barcode_, barcode_check),
-                content=None)
+                content=None,
+                ok_cb=_cb_reset_refill_block)
 
     async def _rotate_circuit_task(
             self, pigment_, pipe_, _default_qtity_units, barcode_,
@@ -395,9 +398,16 @@ class RefillProcedureHelper:
 
             else:
                 h_idx = int(self.machine_.index) + 1
+
+                def _cb_reset_refill_block():
+                    QApplication.instance().barcode_read_blocked_on_refill = False
+
+                QApplication.instance().main_window.hide_input_dialog()
                 QApplication.instance().main_window.open_alert_dialog(
                     (barcode_, str(h_idx), self.machine_.name),
-                    fmt="The code entered '{}' does not match any toner on HEAD {} ({})"
+                    fmt="The code entered '{}' does not match any toner on HEAD {} ({})",
+                    callback=_cb_reset_refill_block,
+                    show_cancel_btn=False
                 )
 
         except Exception as e:  # pylint: disable=broad-except
