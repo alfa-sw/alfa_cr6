@@ -1525,7 +1525,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         fw_ver = head.status.get('application_fw_version', '')
         try:
             patch = int(fw_ver.split('.')[2], 16)
-            return patch >= 32
+            return patch >= 34
         except (IndexError, ValueError):
             return False
 
@@ -1542,8 +1542,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if _led_active:
                 asyncio.ensure_future(
                     error_head.send_command(
-                        "DIAG_SET_TINTING_PERIPHERALS",
-                        {"Type": 2, "Action": 1}))
+                        "SET_ATTENTION_REQUEST_STATUS",
+                        {"Action": 1}))
 
             self.freeze_carousel(True)
             self.main_window.open_frozen_dialog(
@@ -1566,11 +1566,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         while self.carousel_frozen:
             await asyncio.sleep(0.2)
 
-        # if _led_active:
-        #     asyncio.ensure_future(
-        #         error_head.send_command(
-        #             "DIAG_SET_TINTING_PERIPHERALS",
-        #             {"Type": 2, "Action": 0}))
+        if _led_active:
+            asyncio.ensure_future(
+                error_head.send_command(
+                    "SET_ATTENTION_REQUEST_STATUS",
+                    {"Action": 0}))
 
         if _runner:
             _runner['frozen'] = False
