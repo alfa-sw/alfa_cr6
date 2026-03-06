@@ -318,7 +318,7 @@ class SettingsManager:
         if SettingsManager._in_docker():
             SettingsManager._update_settings_in_docker(defaults, "align")
         else:
-            SettingsManager._update_settings_legacy(defaults)
+            SettingsManager._update_settings_legacy(defaults, "align")
 
     @staticmethod
     def set_updates(updates: dict):

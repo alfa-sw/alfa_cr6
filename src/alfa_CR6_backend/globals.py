@@ -122,8 +122,16 @@ def set_language(lang):
         us['LANGUAGE'] = lang
         save_user_settings(fn, us)
     else:
-        cmd_ = f"""sed -i 's/LANGUAGE.=.".."/LANGUAGE = "{lang}"/g' /opt/alfa_cr6/conf/app_settings.py"""
-        os.system(cmd_)
+        _path = '/opt/alfa_cr6/conf/app_settings.py'
+        with open(_path, 'r') as f:
+            content = f.read()
+        lines = []
+        for line in content.splitlines(True):
+            if line.strip().startswith('LANGUAGE') and '=' in line:
+                line = f'LANGUAGE = "{lang}"\n'
+            lines.append(line)
+        with open(_path, 'w') as f:
+            f.writelines(lines)
 
     os.system("kill -9 {}".format(os.getpid()))
 
