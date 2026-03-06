@@ -1128,12 +1128,22 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if variant in ['CRX60', 'CRX40']:
                 return None
 
-            logging.warning(f"barcode :: {barcode}")
-            # import re
-            # BARCODE_NEW_PATTERN = re.compile(r'^\d{1,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$', re.IGNORECASE)
-            # if not BARCODE_NEW_PATTERN.match(barcode):
-            #     logging.warning(f"SECOND READER: invalid shuttle barcode format: {barcode}")
-            #     return None
+            logging.warning(f"[SHUTTLE] barcode :: '{barcode}'")
+
+            # --- dedup ---
+            t_now = time.time()
+            _last_buf = getattr(self, '_shuttle_last_read_buffer', '')
+            _last_t = getattr(self, '_shuttle_last_read_time', 0)
+            if barcode == _last_buf and t_now - _last_t < 5.0:
+                logging.warning(f"[SHUTTLE] DEDUP filter: '{barcode}' dt={t_now - _last_t:.3f}s")
+                return None
+            self._shuttle_last_read_buffer = barcode
+            self._shuttle_last_read_time = t_now
+
+            # --- format validation ---
+            if not re.match(r'^\d{2,4}\s(ml|gr|fl[\s_]?oz)$', barcode, re.IGNORECASE):
+                logging.warning(f"[SHUTTLE] invalid format, discarded: '{barcode}'")
+                return None
 
             A = self.get_machine_head_by_letter("A")
             try:
@@ -1925,7 +1935,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         import re
 
         BARCODE_NEW_PATTERN = re.compile(
-            r'^\d{1,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$',
+            r'^\d{2,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$',
             re.IGNORECASE
         )
         A = self.get_machine_head_by_letter("A")
