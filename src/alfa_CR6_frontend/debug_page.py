@@ -29,7 +29,7 @@ from PyQt5.QtWidgets import (     # pylint: disable=no-name-in-module
     QPushButton)
 
 from alfa_CR6_backend.models import (Jar, Order, decompile_barcode)
-from alfa_CR6_backend.dymo_printer import dymo_print_jar
+from alfa_CR6_backend.dymo_printer import dymo_print_jar, async_dymo_print_jar
 from alfa_CR6_backend.globals import (tr_, set_language, LANGUAGE_MAP, import_settings, toggle_manual_barcode_read)
 from alfa_CR6_backend.base_application import download_KCC_specific_gravity_lot
 from alfa_CR6_frontend.dialogs import PackageSizesDialog
@@ -657,8 +657,7 @@ class DebugPage:
         logging.warning(f"fileNames:{fileNames}")
 
         def cb_(j):
-            response = dymo_print_jar(j)
-            logging.warning(f"response:{response}")
+            asyncio.ensure_future(async_dymo_print_jar(j))
 
 
 

@@ -428,20 +428,41 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
 
     return response
 
-def create_printable_image_from_jar(jar, options=None):
+def extract_jar_print_data(jar):
 
-    recipe_barcode = str(jar.barcode)
+    return {
+        'barcode': str(jar.barcode),
+        'extra_lines_to_print': list(jar.extra_lines_to_print),
+        'unknown_pigments': dict(jar.unknown_pigments),
+        'not_dispensed_ingredients': dict(jar.not_dispensed_ingredients),
+    }
+
+
+def create_printable_image_from_jar(jar, options=None, output_path=None):
+
+    if isinstance(jar, dict):
+        recipe_barcode = jar['barcode']
+        extra_lines = jar['extra_lines_to_print']
+        unknown_pigments = jar['unknown_pigments']
+        not_dispensed = jar['not_dispensed_ingredients']
+    else:
+        recipe_barcode = str(jar.barcode)
+        extra_lines = jar.extra_lines_to_print
+        unknown_pigments = jar.unknown_pigments
+        not_dispensed = jar.not_dispensed_ingredients
 
     if options is None:
         options = _get_print_label_options()
 
+    _image_path = output_path or TMP_BARCODE_IMAGE
+
     response = None
 
-    if not os.path.exists(TMP_BARCODE_IMAGE):
-        with open(TMP_BARCODE_IMAGE, 'w', encoding='UTF-8'):
-            logging.warning(f'empty file created at:{TMP_BARCODE_IMAGE}')
+    if not os.path.exists(_image_path):
+        with open(_image_path, 'w', encoding='UTF-8'):
+            logging.warning(f'empty file created at:{_image_path}')
 
-    with open(TMP_BARCODE_IMAGE, 'wb') as file_:
+    with open(_image_path, 'wb') as file_:
         recipe_barcode_text = f'{recipe_barcode}'
 
         l_lenght = options.pop('line_lenght')
@@ -449,16 +470,16 @@ def create_printable_image_from_jar(jar, options=None):
         rotate = options.pop('rotate')
 
         lines_to_print = [recipe_barcode, ]
-        lines_to_print += [f"{l}"[:l_lenght] for l in jar.extra_lines_to_print]
+        lines_to_print += [f"{l}"[:l_lenght] for l in extra_lines]
         if options.get('print_missing_products'):
-            logging.warning(f'jar.unknown_pigments:{jar.unknown_pigments}')
-            if jar.unknown_pigments:
-                lines_to_print += [tr_("{} product(s) missing:").format(len(jar.unknown_pigments))]
-                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.unknown_pigments.items()]
+            logging.warning(f'unknown_pigments:{unknown_pigments}')
+            if unknown_pigments:
+                lines_to_print += [tr_("{} product(s) missing:").format(len(unknown_pigments))]
+                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in unknown_pigments.items()]
 
-            if jar.not_dispensed_ingredients:
-                lines_to_print += [tr_("{} product(s) not dispensed:").format(len(jar.not_dispensed_ingredients))]
-                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.not_dispensed_ingredients.items()]
+            if not_dispensed:
+                lines_to_print += [tr_("{} product(s) not dispensed:").format(len(not_dispensed))]
+                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in not_dispensed.items()]
 
         if len(lines_to_print) > n_of_lines + 1:
             logging.warning(f"not enough space to print all lines")
@@ -472,11 +493,11 @@ def create_printable_image_from_jar(jar, options=None):
 
         EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
 
-        response = TMP_BARCODE_IMAGE
+        response = _image_path
 
     if response and rotate:
         from PIL import Image   # pylint: disable=import-outside-toplevel
-        Image.open(TMP_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_BARCODE_IMAGE)
+        Image.open(_image_path).rotate(rotate, expand=1).save(_image_path)
 
     logging.warning('response: {}'.format(response))
 

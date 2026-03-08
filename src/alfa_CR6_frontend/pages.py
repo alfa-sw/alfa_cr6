@@ -10,6 +10,7 @@
 # pylint: disable=multiple-statements
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
+import asyncio
 import os
 import logging
 import json
@@ -37,7 +38,7 @@ from PyQt5.QtWidgets import (
 
 
 from alfa_CR6_backend.models import Order, Jar, decompile_barcode
-from alfa_CR6_backend.dymo_printer import dymo_print_jar
+from alfa_CR6_backend.dymo_printer import dymo_print_jar, async_dymo_print_jar, async_dymo_print_jars
 from alfa_CR6_backend.globals import (
     IMAGES_PATH, import_settings, get_res, get_encoding, tr_)
 from alfa_CR6_flask.admin_views import _to_html_table
@@ -780,12 +781,15 @@ class OrderPage(BaseStackedPage):
 
                     msg_ = tr_("do you want to print barcode:\n {} ?").format(barcode)
 
+                    def _print_jar_cb(j):
+                        asyncio.ensure_future(async_dymo_print_jar(j))
+
                     self.main_window.open_input_dialog(
                         icon_name="SP_MessageBoxInformation",
                         message=msg_,
                         content=content,
-                        ok_cb=dymo_print_jar,
-                        ok_cb_args=[jar, ], 
+                        ok_cb=_print_jar_cb,
+                        ok_cb_args=[jar, ],
                         to_html=True,
                         wide=True)
 
@@ -952,11 +956,7 @@ class OrderPage(BaseStackedPage):
         orders = app.create_orders_from_file(path_to_file, n_of_jars=n)
 
         def print_label_cb_(jars_to_print):
-            for a in jars_to_print:
-                logging.warning(f"a:{a}")
-                response = dymo_print_jar(a)
-                logging.warning(f"response:{response}")
-                time.sleep(.05)
+            asyncio.ensure_future(async_dymo_print_jars(jars_to_print))
 
         ok_flag = False
         jars_to_print = []

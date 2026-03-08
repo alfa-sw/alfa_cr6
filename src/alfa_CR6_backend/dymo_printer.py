@@ -8,16 +8,23 @@
 # pylint: disable=line-too-long
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
+import asyncio
+import functools
+import shlex
+import tempfile
 import traceback
 import logging
 import subprocess
 import os
 
-from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment,create_printable_image_for_package)
+from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment,create_printable_image_for_package,extract_jar_print_data)
 
 def _exec_cmd(command, shell=False):
 
-    command_list = command.split(' ')
+    if isinstance(command, str):
+        command_list = shlex.split(command)
+    else:
+        command_list = command
     logging.debug('command_list -> {}'.format(command_list))
     os_cmd_reply = subprocess.check_output(command_list, shell=shell, stderr=subprocess.STDOUT).decode()
     reply_cmd = [i.strip() for i in os_cmd_reply.split('\n')]
@@ -89,3 +96,87 @@ def dymo_print_package_label(package, fake=False):
         ret = {'result': 'NOK', 'msg': traceback.format_exc()}
 
     return ret
+
+
+def _images_to_pdf(image_paths, pdf_path):
+
+    from PIL import Image   # pylint: disable=import-outside-toplevel
+    images = [Image.open(p) for p in image_paths]
+    images[0].save(pdf_path, save_all=True, append_images=images[1:])
+    for img in images:
+        img.close()
+
+
+def _dymo_print_pdf(pdf_path):
+
+    ret = {}
+    _dymo_printer_presence = _check_dymo_printer_presence()
+    logging.warning(f'_dymo_print_pdf: {pdf_path}, _dymo_printer_presence:{_dymo_printer_presence}')
+
+    if _dymo_printer_presence or os.getenv("IN_DOCKER", False) in ['1', 'true']:
+        _print_cups_cmd = f'lp -o fit-to-page {pdf_path}'
+        logging.debug("_print_cups_cmd: %s", _print_cups_cmd)
+        res_print = _exec_cmd(_print_cups_cmd)
+        ret = {'result': 'OK', 'msg': res_print}
+    else:
+        ret = {'result': 'NOK', 'msg': 'Printer not detected'}
+
+    return ret
+
+
+async def async_dymo_print_jar(jar):
+    loop = asyncio.get_event_loop()
+    try:
+        _printable_image_pth = create_printable_image_from_jar(jar)
+    except Exception:   # pylint: disable=broad-except
+        logging.error(traceback.format_exc())
+        return {'result': 'NOK', 'msg': traceback.format_exc()}
+    return await loop.run_in_executor(None, _dymo_print_tmp_image, _printable_image_pth)
+
+
+async def async_dymo_print_jars(jars):
+
+    jar_data_list = [extract_jar_print_data(jar) for jar in jars]
+
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _generate_and_print_jars, jar_data_list)
+
+
+def _generate_and_print_jars(jar_data_list):
+
+    image_paths = []
+    fd_pdf, pdf_path = tempfile.mkstemp(suffix='.pdf', dir='/opt/alfa_cr6/tmp/')
+    os.close(fd_pdf)
+    try:
+        for jar_data in jar_data_list:
+            fd, tmp_file = tempfile.mkstemp(suffix='.png', dir='/opt/alfa_cr6/tmp/')
+            os.close(fd)
+            try:
+                _path = create_printable_image_from_jar(jar_data, output_path=tmp_file)
+                if _path:
+                    image_paths.append(_path)
+            except Exception:   # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+
+        if not image_paths:
+            return {'result': 'NOK', 'msg': 'No images generated'}
+
+        _images_to_pdf(image_paths, pdf_path)
+        return _dymo_print_pdf(pdf_path)
+
+    finally:
+        for p in image_paths + [pdf_path]:
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
+
+
+async def async_dymo_print_package_label(package, fake=False):
+    loop = asyncio.get_event_loop()
+    try:
+        _printable_image_pth = create_printable_image_for_package(package)
+    except Exception:   # pylint: disable=broad-except
+        logging.error(traceback.format_exc())
+        return {'result': 'NOK', 'msg': traceback.format_exc()}
+    return await loop.run_in_executor(None, functools.partial(_dymo_print_tmp_image, _printable_image_pth, fake=fake))
