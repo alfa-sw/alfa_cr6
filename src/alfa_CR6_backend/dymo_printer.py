@@ -101,10 +101,14 @@ def dymo_print_package_label(package, fake=False):
 def _images_to_pdf(image_paths, pdf_path):
 
     from PIL import Image   # pylint: disable=import-outside-toplevel
-    images = [Image.open(p) for p in image_paths]
-    images[0].save(pdf_path, save_all=True, append_images=images[1:])
-    for img in images:
-        img.close()
+    images = []
+    try:
+        for p in image_paths:
+            images.append(Image.open(p).convert('1'))
+        images[0].save(pdf_path, save_all=True, append_images=images[1:], resolution=300)
+    finally:
+        for img in images:
+            img.close()
 
 
 def _dymo_print_pdf(pdf_path):
