@@ -1532,16 +1532,24 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     async def wait_for_carousel_not_frozen(
             self, freeze=False, message_args=(), message_fmt=None,
             visibility=1, show_cancel_btn=True, extra_properties=None,
-            error_head=None
+            error_head=None, dest_head=None
     ):  # pylint: disable=too-many-statements
 
         _led_active = error_head is not None and self._can_send_led_command(error_head)
+        _dest_led_active = dest_head is not None and self._can_send_led_command(dest_head)
 
         if freeze and not self.carousel_frozen:
 
             if _led_active:
+                logging.warning(f"{error_head.name} - SET_ATTENTION_REQUEST_STATUS -> 1")
                 asyncio.ensure_future(
                     error_head.send_command(
+                        "SET_ATTENTION_REQUEST_STATUS",
+                        {"Action": 1}))
+            if _dest_led_active:
+                logging.warning(f"{dest_head.name} - SET_ATTENTION_REQUEST_STATUS -> 1")
+                asyncio.ensure_future(
+                    dest_head.send_command(
                         "SET_ATTENTION_REQUEST_STATUS",
                         {"Action": 1}))
 
@@ -1569,6 +1577,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if _led_active:
             asyncio.ensure_future(
                 error_head.send_command(
+                    "SET_ATTENTION_REQUEST_STATUS",
+                    {"Action": 0}))
+        if _dest_led_active:
+            asyncio.ensure_future(
+                dest_head.send_command(
                     "SET_ATTENTION_REQUEST_STATUS",
                     {"Action": 0}))
 

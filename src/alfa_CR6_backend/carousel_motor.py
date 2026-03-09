@@ -51,6 +51,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         "move_11_12": "F",
     }
 
+    # head that should activate attention LED when jar moves towards it
+    MOVE_DEST_LED_HEAD_MAP = {
+        "move_02_03": "B",   # A -> B
+        "move_03_04": "C",   # B -> C
+        "move_02_04": "C",   # A -> C
+        "move_07_08": "E",   # D -> E
+        "move_08_09": "F",   # E -> F
+        "move_07_09": "F",   # D -> F
+    }
+
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
         'documentable': False,
@@ -511,6 +521,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         )
                         if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
                             break
+                    if self._can_send_led_command(A):
+                        logging.warning(f"The Head A detected a Can too quickly - SET_ATTENTION_REQUEST_STATUS -> 1")
+                        asyncio.ensure_future(
+                            A.send_command(
+                                "SET_ATTENTION_REQUEST_STATUS",
+                                {"Action": 0}))
                     self.double_can_alert = False
                     # ~ r = await _move_can_to_A()
                     await self.restore_machine_helper.async_remove_jar_data(jar.barcode)
@@ -894,6 +910,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             _src_letter = self.MOVE_SOURCE_HEAD_MAP.get(_method_name)
             _error_head = self.get_machine_head_by_letter(_src_letter) if _src_letter else None
 
+            _dst_letter = self.MOVE_DEST_LED_HEAD_MAP.get(_method_name)
+            _dst_head = self.get_machine_head_by_letter(_dst_letter) if _dst_letter else None
+
+            logging.warning(f"_error_head -> {_error_head}")
+            logging.warning(f"_dst_head -> {_dst_head}")
             retry_counter = 0
             while True:
 
@@ -919,7 +940,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             message_args=(barcode_, f"\n{_tag}\n"),
                             message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
                             visibility=2,
-                            error_head=_error_head
+                            error_head=_error_head,
+                            dest_head=_dst_head
                         )
 
                         self.timer_01_02 = time.time()
@@ -936,7 +958,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         True,
                         message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
                         message_fmt=msg_,
-                        error_head=_error_head
+                        error_head=_error_head,
+                        dest_head=_dst_head
                     )
 
                 else:
@@ -946,7 +969,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 freeze=not r,
                 message_args=(barcode_, f"\n{_tag}\n"),
                 message_fmt=("barcode:{}", "STEP {} +"),
-                error_head=_error_head
+                error_head=_error_head,
+                dest_head=_dst_head
             )
 
         if self.machine_variant not in ['CRX60', 'CRX40']:
