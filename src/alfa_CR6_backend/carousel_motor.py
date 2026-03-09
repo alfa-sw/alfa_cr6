@@ -939,14 +939,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         error_head=_error_head
                     )
 
-                    if _error_head is not None and self._can_send_led_command(_error_head):
-                        await _error_head.send_command(
-                            cmd_name="RESET", params={'mode': 0})
-                        await self.wait_for_condition(
-                            lambda: _error_head.status.get('status_level') == 'STANDBY',
-                            timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-                            show_alert=False)
-
                 else:
                     break
 
