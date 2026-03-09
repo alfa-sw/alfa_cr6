@@ -22,16 +22,14 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
-from alfa_CR6_backend.globals import (import_settings, get_res, tr_, TMP_PIGMENT_IMAGE, DEFAULT_DEBUG_PAGE_PWD)
-from alfa_CR6_backend.dymo_printer import dymo_print_pigment_label
+from alfa_CR6_backend.globals import (import_settings, get_res, tr_, DEFAULT_DEBUG_PAGE_PWD)
+from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels
 
 from alfa_CR6_frontend.pages import BaseStackedPage
 from alfa_CR6_frontend.debug_page import simulate_read_barcode
 
 
 g_settings = import_settings()
-
-import functools
 
 class PrintException(Exception):
     def __init__(self, message, payload):
@@ -46,45 +44,29 @@ class PrintLabelHelper:
         self.printables = printables
 
     async def print_labels(self):
-        loop = asyncio.get_running_loop()
         fake_print = os.getenv("FAKE_DYMO_PRINT", False) in ["1", "true"]
 
-        for printable in self.printables:
-            barcode_txt = printable.get('barcode_txt', '')
-            pigment_name = printable.get('pigment_name', '')
-            pipe_name = printable.get('pipe_name', '')
-            fake = printable.get('fake', False)
-            partial_func = functools.partial(
-                dymo_print_pigment_label,
-                barcode_txt,
-                pigment_name,
-                pipe_name,
-                fake_print
-            )
+        try:
+            ret = await async_dymo_print_pigment_labels(self.printables, fake=fake_print)
+            logging.debug(f"print_labels ret: {ret}")
 
-            try:
-                # Esegui la funzione sincrona in un executor
-                ret = await loop.run_in_executor(None, partial_func)
-                logging.debug(f"ret: {ret}")
+            if ret['result'] != 'OK':
+                raise PrintException("Printing failed", ret)
 
-                if ret['result'] != 'OK':
-                    raise PrintException("Printing failed", ret)
-                
-            except PrintException as pexc:
-                error_message = pexc.payload
-                logging.error(f"PrintException: {error_message}")
-                QApplication.instance().main_window.open_input_dialog(
-                    icon_name="SP_MessageBoxCritical",
-                    message=error_message,
-                    content=None)
-                return
+        except PrintException as pexc:
+            error_message = pexc.payload
+            logging.error(f"PrintException: {error_message}")
+            QApplication.instance().main_window.open_input_dialog(
+                icon_name="SP_MessageBoxCritical",
+                message=error_message,
+                content=None)
+            return
 
         msg_ = tr_("OK")
         QApplication.instance().main_window.open_input_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=msg_,
-            content=None,
-            bg_image=TMP_PIGMENT_IMAGE)
+            content=None)
 
     def run(self):
 

@@ -392,15 +392,18 @@ def process_text(text):
     # for other RTL languages (e.g. Hebrew, Syriac, Thaana, etc.)
     return get_display(text)
 
-def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
+def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name, options=None, output_path=None):
 
-    options = _get_print_label_options()
+    if options is None:
+        options = _get_print_label_options()
+
+    _image_path = output_path or TMP_PIGMENT_IMAGE
 
     response = None
 
-    if not os.path.exists(TMP_PIGMENT_IMAGE):
-        with open(TMP_PIGMENT_IMAGE, 'w', encoding='UTF-8'):
-            logging.warning(f'empty file created at:{TMP_PIGMENT_IMAGE}')
+    if not os.path.exists(_image_path):
+        with open(_image_path, 'w', encoding='UTF-8'):
+            logging.warning(f'empty file created at:{_image_path}')
 
     options['module_height'] = 5
     if not barcode_txt:
@@ -414,15 +417,15 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
 
     printable_text = '\n'.join(lines_to_print)
 
-    with open(TMP_PIGMENT_IMAGE, 'wb') as file_:
+    with open(_image_path, 'wb') as file_:
         rotate = options.pop('rotate')
         EAN13(barcode_txt, writer=ImageWriter()).write(file_, options, printable_text)
 
-        response = TMP_PIGMENT_IMAGE
+        response = _image_path
 
     if response and rotate:
         from PIL import Image   # pylint: disable=import-outside-toplevel
-        Image.open(TMP_PIGMENT_IMAGE).rotate(rotate, expand=1).save(TMP_PIGMENT_IMAGE)
+        Image.open(_image_path).rotate(rotate, expand=1).save(_image_path)
 
     logging.warning('response: {}'.format(response))
 
