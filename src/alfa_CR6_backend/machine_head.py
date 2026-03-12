@@ -728,96 +728,107 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 step = 0
                 outcome_ = ''
                 result_ = ''
+                cancelled = False
                 engaged_circuits_ = []
                 disp_type_map = {1: "order", 2: "purge"}
-                while step < 2:
-                    disp_type = None
-                    # msg_ = get_error_messages_for_specific_dispense_condition()
-                    msg_ = ""
-                    r = await self.app.wait_for_condition(
-                        before_dispense_condition, timeout=31,
-                        show_alert=False
-                    )
-                    if r:
-                        # ~ jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
-                        jar.update_live(machine_head=self, pos=None, t0=None)
+                try:
+                    while step < 2:
+                        disp_type = None
+                        # msg_ = get_error_messages_for_specific_dispense_condition()
+                        msg_ = ""
+                        r = await self.app.wait_for_condition(
+                            before_dispense_condition, timeout=31,
+                            show_alert=False
+                        )
+                        if r:
+                            # ~ jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
+                            jar.update_live(machine_head=self, pos=None, t0=None)
 
-                        if "PURGE ALL" in jar.order.description.upper():
+                            if "PURGE ALL" in jar.order.description.upper():
 
-                            pars['items'] = pars.pop("ingredients")
-
-                            r = await self.send_command(
-                                cmd_name="PURGE", type_="macro", params=pars)
-
-                            timeout_ = 60 * 12
-                            step = 2
-
-                            disp_type = disp_type_map.get(2)
-
-                        else:
-
-                            _splitted_pars = self.get_splitted_dispense_params(pars, step)
-                            step += 1
-                            if _splitted_pars.get("ingredients"):
+                                pars['items'] = pars.pop("ingredients")
 
                                 r = await self.send_command(
-                                    cmd_name="DISPENSE_FORMULA", type_="macro", params=_splitted_pars)
-                                timeout_ = 60 * 12
-                                disp_type = disp_type_map.get(1)
-                            else:
-                                continue
+                                    cmd_name="PURGE", type_="macro", params=pars)
 
-                        if r:
-                            r = await self.wait_for_status_level(
-                                ["DISPENSING"], timeout=41, show_alert=False
-                            )
-                            msg_ = tr_("Problem during the start of dispensing. Head status not in standby.")
+                                timeout_ = 60 * 12
+                                step = 2
+
+                                disp_type = disp_type_map.get(2)
+
+                            else:
+
+                                _splitted_pars = self.get_splitted_dispense_params(pars, step)
+                                step += 1
+                                if _splitted_pars.get("ingredients"):
+
+                                    r = await self.send_command(
+                                        cmd_name="DISPENSE_FORMULA", type_="macro", params=_splitted_pars)
+                                    timeout_ = 60 * 12
+                                    disp_type = disp_type_map.get(1)
+                                else:
+                                    continue
 
                             if r:
-
-                                store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "ongoing", disp_type)
-
-                                self._current_runner['running_engaged_circuits'] = []
-
-                                # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
-                                def break_condition():
-                                    return self.status["status_level"] in ['ALARM', 'RESET']
-
                                 r = await self.wait_for_status_level(
-                                    ["STANDBY"], timeout=timeout_, show_alert=False, break_condition=break_condition)
-
-                                engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
-                                self._current_runner['running_engaged_circuits'] = None
-                                self._current_circuit_engaged = None
+                                    ["DISPENSING"], timeout=41, show_alert=False
+                                )
+                                msg_ = tr_("Problem during the start of dispensing. Head status not in standby.")
 
                                 if r:
-                                    outcome_ += tr_('success (step:{}) ').format(step)
-                                    result_ = 'OK'
-                                    store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "done", disp_type)
+
+                                    store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "ongoing", disp_type)
+
+                                    self._current_runner['running_engaged_circuits'] = []
+
+                                    # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
+                                    def break_condition():
+                                        return self.status["status_level"] in ['ALARM', 'RESET']
+
+                                    r = await self.wait_for_status_level(
+                                        ["STANDBY"], timeout=timeout_, show_alert=False, break_condition=break_condition)
+
+                                    engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
+                                    self._current_runner['running_engaged_circuits'] = None
+                                    self._current_circuit_engaged = None
+
+                                    if r:
+                                        outcome_ += tr_('success (step:{}) ').format(step)
+                                        result_ = 'OK'
+                                        store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "done", disp_type)
+                                    else:
+                                        outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
+                                        outcome_ += "{}, {} ".format(self.status.get("error_code"),
+                                                                     tr_(self.status.get("error_message")))
+                                        result_ = 'NOK'
+                                        store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
+                                        break
+
                                 else:
-                                    outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
-                                    outcome_ += "{}, {} ".format(self.status.get("error_code"),
-                                                                 tr_(self.status.get("error_message")))
+                                    outcome_ += tr_('failure waiting for dispensation to start (step:{}) ').format(step)
                                     result_ = 'NOK'
                                     store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                                     break
-
                             else:
-                                outcome_ += tr_('failure waiting for dispensation to start (step:{}) ').format(step)
+                                outcome_ += tr_('failure in sending "DISPENSE_FORMULA" command (step:{}) ').format(step)
                                 result_ = 'NOK'
                                 store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                                 break
                         else:
-                            outcome_ += tr_('failure in sending "DISPENSE_FORMULA" command (step:{}) ').format(step)
+                            msg_ = get_error_messages_for_specific_dispense_condition()
+                            outcome_ += tr_('failure in waiting for dispensing condition (step:{}) ').format(step)
                             result_ = 'NOK'
                             store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                             break
-                    else:
-                        msg_ = get_error_messages_for_specific_dispense_condition()
-                        outcome_ += tr_('failure in waiting for dispensing condition (step:{}) ').format(step)
-                        result_ = 'NOK'
-                        store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
-                        break
+                except asyncio.CancelledError:
+                    cancelled = True
+                    outcome_ += tr_('cancelled (step:{}) ').format(step)
+                    result_ = 'NOK'
+                    if self._current_runner and self._current_runner.get('running_engaged_circuits') is not None:
+                        engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
+                        self._current_runner['running_engaged_circuits'] = None
+                    self._current_circuit_engaged = None
+                    logging.warning(f"do_dispense cancelled for jar {jar.barcode} on head {self.name}")
 
                 ingredients = jar.get_ingredients_for_machine(self)
                 dispensed_quantities_gr = json_properties.get("dispensed_quantities_gr", {})
@@ -862,12 +873,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 logging.warning(f"error_msg: {error_msg}")
                 logging.warning(f"msg_: {msg_}")
-                if error_msg:
+                if error_msg and not cancelled:
                     await self.app.wait_for_carousel_not_frozen(
                         True,
                         message_args=(),
                         message_fmt=msg_
                     )
+
+                if cancelled:
+                    self._current_runner = None
+                    raise asyncio.CancelledError()
 
         self._current_runner = None
         return True

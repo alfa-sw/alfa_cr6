@@ -760,6 +760,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         except asyncio.CancelledError:
             logging.warning(f"cancelled: {barcode}")
+            if jar:
+                jar.order.update_status(self.db_session)
+                self.db_session.commit()
+                jar_data = jar.object_to_dict(include_relationship=2)
+                self.redis_publisher.publish_messages(jar_data)
         except Exception as e:  # pylint: disable=broad-except
             if jar:
                 jar.status = "ERROR"
@@ -1491,9 +1496,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 j = self.__jar_runners.pop(barcode)
 
-                j["jar"].status = "ERROR"
-                j["jar"].position = "REMOVED"
-                j["jar"].machine_head = None
+                jar = j["jar"]
+                jar.status = "ERROR"
+                jar.position = "REMOVED"
+                jar.machine_head = None
                 self.db_session.commit()
 
                 logging.warning(f'cancelling:{j["task"]}')

@@ -19,6 +19,8 @@ import codecs
 import subprocess
 from functools import partial
 
+import xmltodict
+
 from sqlalchemy.sql import or_
 
 from PyQt5.uic import loadUi
@@ -41,6 +43,60 @@ from alfa_CR6_backend.globals import (
 from alfa_CR6_flask.admin_views import _to_html_table
 
 g_settings = import_settings()
+
+
+def _publish_dupont_cancelled(properties, label=''):
+    """Publish a Redis cr_orders message so the Axalta agent generates a
+    'Deleted job' result XML (WeighingStatus Aborted="0", WeighedAbsMass=-1).
+
+    Args:
+        properties: dict with 'meta' (must include header='dupont_xml') and 'ingredients'.
+        label: descriptive label for logging.
+    """
+    meta = properties.get('meta', {})
+    if meta.get('header') != 'dupont_xml':
+        return
+
+    message = {
+        'status': 'ERROR',
+        'date_modified': None,
+        'json_properties': {
+            'dispensed_quantities_gr': {},
+        },
+        'order': {
+            'inner_status': 'ERROR',
+            'json_properties': properties,
+        },
+    }
+
+    app = QApplication.instance()
+    if app and getattr(app, 'redis_publisher', None):
+        app.redis_publisher.publish_messages(message)
+        logging.warning(f"Published DuPont CANCELLED to Redis for {label}")
+
+
+def _notify_redis_file_cancelled(file_name):
+    """Notify via Redis that a file order was cancelled.
+
+    Dispatches to the appropriate handler based on file content:
+      - DuPont CCC XML → _publish_dupont_cancelled
+    """
+    try:
+        if not file_name.lower().endswith('.xml'):
+            return
+        pth_ = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
+        with open(pth_, 'rb') as f:
+            xml_as_dict = xmltodict.parse(f.read())
+
+        if xml_as_dict.get("DuPont_Exchange_SpoolFile"):
+            from alfa_CR6_backend.order_parser import OrderParser  # pylint: disable=import-outside-toplevel
+            properties = OrderParser.parse_dupont_xml(xml_as_dict)
+            properties['meta']['header'] = 'dupont_xml'
+            _publish_dupont_cancelled(properties, label=f"file: {file_name}")
+
+    except Exception:  # pylint: disable=broad-except
+        logging.error(traceback.format_exc())
+
 
 ORDER_PAGE_COLUMNS_ORDERS = {
     'file': ["delete", "view", "create order", "file name"],
@@ -219,6 +275,14 @@ class OrderTableModel(BaseTableModel):
         logging.warning(f"order_nr:{order_nr}, self.session:{self.session}")
         if self.session:
             order = self.session.query(Order).filter(Order.order_nr == order_nr).one()
+
+            if order.status == 'NEW':
+                try:
+                    properties = json.loads(order.json_properties)
+                    _publish_dupont_cancelled(properties, label=f"order: {order_nr}")
+                except Exception:  # pylint: disable=broad-except
+                    logging.error(traceback.format_exc())
+
             for j in order.jars:
                 QApplication.instance().delete_jar_runner(j.barcode)
                 j.position = 'DELETED'
@@ -770,6 +834,7 @@ class OrderPage(BaseStackedPage):
             if col == ORDER_PAGE_COLUMNS_ORDERS['file'].index("delete"):
 
                 def cb():
+                    _notify_redis_file_cancelled(file_name)
                     model.remove_file(file_name)
                     self.populate_file_table()
 
