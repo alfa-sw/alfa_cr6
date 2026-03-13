@@ -868,7 +868,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         for k, v in ingredients.items():
                             specific_weight = self.get_specific_weight(k)
                             dispensed_quantities_gr[k] = dispensed_quantities_gr.get(
-                                k, 0) + round(v * specific_weight, 4)
+                                k, 0) + round(v * specific_weight, 5)
                             json_properties["specific_weights"][self.name][k] = specific_weight
 
                         json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
