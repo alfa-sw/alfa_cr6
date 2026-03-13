@@ -46,7 +46,7 @@ def get_dict_diff(dict1, dict2):
     set1 = set(dict1.items())
     set2 = set(dict2.items())
     diff = set1 ^ set2
-    return diff
+    return dict(diff)
 
 async def download_KCC_specific_gravity_lot(force_download=False, force_file_xfert=False): # pylint: disable=too-many-locals
 

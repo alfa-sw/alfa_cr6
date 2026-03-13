@@ -822,15 +822,39 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             break
                 except asyncio.CancelledError:
                     cancelled = True
-                    outcome_ += tr_('cancelled (step:{}) ').format(step)
-                    result_ = 'NOK'
+                    logging.warning(f"do_dispense cancelled for jar {jar.barcode} on head {self.name}")
+
+                    if self.status.get("status_level") == "DISPENSING":
+                        logging.warning(f"waiting for head {self.name} to finish dispensing before cleanup")
+                        try:
+                            await asyncio.shield(
+                                self.wait_for_status_level(["STANDBY"], timeout=timeout_, show_alert=False))
+                            outcome_ += tr_('success (step:{}) ').format(step)
+                            result_ = 'OK'
+                        except asyncio.CancelledError:
+                            logging.warning(f"shield cancelled, head {self.name} may still be dispensing")
+                            outcome_ += tr_('cancelled during dispensation (step:{}) ').format(step)
+                            result_ = 'NOK'
+                    else:
+                        outcome_ += tr_('cancelled (step:{}) ').format(step)
+                        result_ = 'NOK'
+
                     if self._current_runner and self._current_runner.get('running_engaged_circuits') is not None:
                         engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
                         self._current_runner['running_engaged_circuits'] = None
                     self._current_circuit_engaged = None
-                    logging.warning(f"do_dispense cancelled for jar {jar.barcode} on head {self.name}")
 
                 ingredients = jar.get_ingredients_for_machine(self)
+                if cancelled and result_ == 'OK':
+                    # only count ingredients from completed steps (0..step-1)
+                    completed_ingredients = {}
+                    for completed_step in range(step):
+                        step_pars = self.get_splitted_dispense_params(pars, completed_step)
+                        for k, v in step_pars.get("ingredients", {}).items():
+                            if k in ingredients:
+                                completed_ingredients[k] = ingredients[k]
+                    ingredients = completed_ingredients
+
                 dispensed_quantities_gr = json_properties.get("dispensed_quantities_gr", {})
                 visited_head_names = json_properties.get("visited_head_names", [])
                 visited_head_names.append(self.name)
@@ -848,10 +872,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             json_properties["specific_weights"][self.name][k] = specific_weight
 
                         json_properties["dispensed_quantities_gr"] = dispensed_quantities_gr
-                        jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
+                        if not cancelled:
+                            jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
                 else:
                     error_msg = tr_("ERROR in dispensing:\n") + outcome_
-                    jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
+                    if not cancelled:
+                        jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
 
                 json_properties.setdefault("dispensation_outcomes", [])
                 json_properties["dispensation_outcomes"].append((self.name, outcome_))
@@ -868,8 +894,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
-                dispense_not_successful = True if result_ == 'NOK' else False
-                self.app.update_jar_properties(jar, dispense_not_successful=dispense_not_successful)
+                if not cancelled:
+                    dispense_not_successful = True if result_ == 'NOK' else False
+                    self.app.update_jar_properties(jar, dispense_not_successful=dispense_not_successful)
 
                 logging.warning(f"error_msg: {error_msg}")
                 logging.warning(f"msg_: {msg_}")
