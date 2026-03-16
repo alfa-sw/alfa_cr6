@@ -933,19 +933,26 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 if not r:
                     if "move_01_02" in _tag:
 
-                        self.delete_entering_jar()
-
                         await self.wait_for_carousel_not_frozen(
                             True,
                             message_args=(barcode_, f"\n{_tag}\n"),
                             message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
                             visibility=2,
+                            show_cancel_btn=False,
                             error_head=_error_head,
                             dest_head=_dst_head
                         )
 
+                        self.delete_entering_jar()
+
                         self.timer_01_02 = time.time()
                         logging.warning(f"self.timer_01_02:{self.timer_01_02}")
+
+                        if getattr(self, 'id_bc_shuttle', None) and self.id_bc_shuttle != 'DISABLED':
+                            logging.warning("move_01_02 error: resetting shuttle barcode state")
+                            self.shuttle_size_from_barcode_scanner = False
+                            self._shuttle_size_ready_evt.clear()
+                            self.shuttle_bc_ready_to_read_a_barcode = True
 
                         return
 
