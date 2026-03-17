@@ -531,6 +531,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     # ~ r = await _move_can_to_A()
                     await self.restore_machine_helper.async_remove_jar_data(jar.barcode)
                     asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
+                    if not A.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False):
+                        # input roller already empty: DARK->LIGHT won't fire, re-arm manually
+                        self.ready_to_read_a_barcode = True
+                    # else: input roller occupied - hardware DARK->LIGHT will re-arm when operator clears it
+                    if getattr(self, 'id_bc_shuttle', None) and self.id_bc_shuttle != 'DISABLED':
+                        logging.warning("move_01_02 double_can: resetting shuttle barcode state")
+                        self.shuttle_size_from_barcode_scanner = False
+                        self._shuttle_size_ready_evt.clear()
+                        self.shuttle_bc_ready_to_read_a_barcode = True
 
             self.busy_head_A = False
 
@@ -933,21 +942,28 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 if not r:
                     if "move_01_02" in _tag:
 
-                        await self.wait_for_carousel_not_frozen(
-                            True,
-                            message_args=(barcode_, f"\n{_tag}\n"),
-                            message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
-                            visibility=2,
-                            show_cancel_btn=False,
-                            error_head=_error_head,
-                            dest_head=_dst_head
-                        )
+                        while True:
+                            await self.wait_for_carousel_not_frozen(
+                                True,
+                                message_args=(barcode_, f"\n{_tag}\n"),
+                                message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
+                                visibility=2,
+                                show_cancel_btn=False,
+                                error_head=_error_head,
+                                dest_head=_dst_head
+                            )
+                            if not _error_head or (
+                                not _error_head.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False) and
+                                not _error_head.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', False)
+                            ):
+                                break
 
                         self.delete_entering_jar()
 
                         self.timer_01_02 = time.time()
                         logging.warning(f"self.timer_01_02:{self.timer_01_02}")
 
+                        self.ready_to_read_a_barcode = True
                         if getattr(self, 'id_bc_shuttle', None) and self.id_bc_shuttle != 'DISABLED':
                             logging.warning("move_01_02 error: resetting shuttle barcode state")
                             self.shuttle_size_from_barcode_scanner = False

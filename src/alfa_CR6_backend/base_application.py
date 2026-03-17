@@ -968,16 +968,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             try:
 
-                # if self.id_bc_shuttle and self.id_bc_shuttle != 'DISABLED' and not self.shuttle_size_from_barcode_scanner:
-                #     logging.warning(f"self.id_bc_shuttle -> {self.id_bc_shuttle}")
-                #     logging.warning(f"self.shuttle_size_from_barcode_scanner -> {self.shuttle_size_from_barcode_scanner}")
-                #     return
-                if self.id_bc_shuttle and self.id_bc_shuttle != 'DISABLED' and self.machine_variant not in ['CRX60', 'CRX40']:
-                    if not self._shuttle_size_ready_evt.is_set():
-                        self.main_window.show_barcode("Waiting for valid shuttle barcode...", is_ok=False)
-                        return None
-                    self._shuttle_size_ready_evt.clear()
-
                 logging.warning(f"self.shuttle_size_from_barcode_scanner -> {self.shuttle_size_from_barcode_scanner}")
                 logging.warning(f"self.id_bc_shuttle -> {self.id_bc_shuttle}")
 
@@ -1004,13 +994,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         args, fmt = (barcode, ), "{} already in progress!"
                         self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                         self.main_window.show_barcode(barcode, is_ok=False)
+                        self.ready_to_read_a_barcode = True
                     else:
 
                         if self.carousel_frozen:
                             logging.warning(f'carousel is frozen({self.carousel_frozen}) - returning from on_barcode_read ..')
                             self.ready_to_read_a_barcode = True
                             return
-
 
                         if self.machine_variant not in ['CRX60', 'CRX40']:
                             t = self.__jar_task(barcode)
