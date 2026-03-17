@@ -838,6 +838,27 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <widget class="QLabel" name="STEP_01_02_label">
+   <property name="geometry">
+    <rect>
+     <x>670</x>
+     <y>370</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
   <widget class="QLabel" name="container_presence_1_label">
    <property name="geometry">
     <rect>
@@ -1288,6 +1309,111 @@
     </size>
    </property>
   </widget>
+  <widget class="QLabel" name="STEP_02_04_label">
+   <property name="geometry">
+    <rect>
+     <x>1050</x>
+     <y>370</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_04_05_label">
+   <property name="geometry">
+    <rect>
+     <x>1431</x>
+     <y>370</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_06_07_label">
+   <property name="geometry">
+    <rect>
+     <x>1422</x>
+     <y>740</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_07_09_label">
+   <property name="geometry">
+    <rect>
+     <x>1050</x>
+     <y>740</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_09_10_label">
+   <property name="geometry">
+    <rect>
+     <x>660</x>
+     <y>740</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_6_btn</zorder>
@@ -1316,6 +1442,7 @@
   <zorder>STEP_10_label</zorder>
   <zorder>STEP_02_label</zorder>
   <zorder>STEP_09_label</zorder>
+  <zorder>STEP_01_02_label</zorder>
   <zorder>STEP_01_label</zorder>
   <zorder>STEP_11_label</zorder>
   <zorder>STEP_12_label</zorder>
@@ -1344,11 +1471,16 @@
   <zorder>recovery_btn</zorder>
   <zorder>recovery_info_btn</zorder>
   <zorder>fw_align_ko_lbl</zorder>
+  <zorder>STEP_02_04_label</zorder>
+  <zorder>STEP_04_05_label</zorder>
+  <zorder>STEP_06_07_label</zorder>
+  <zorder>STEP_07_09_label</zorder>
+  <zorder>STEP_09_10_label</zorder>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="action_btn_group"/>
   <buttongroup name="service_btn_group"/>
+  <buttongroup name="action_btn_group"/>
  </buttongroups>
 </ui>

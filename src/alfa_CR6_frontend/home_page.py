@@ -17,7 +17,7 @@ import traceback
 import asyncio
 import json
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
@@ -536,23 +536,49 @@ class RefillProcedureHelper:
 
 class HomePage(BaseStackedPage):
 
+    # in-transit labels: shown when adjacent photocells are simultaneously occupied
+    # subclasses declare = None for labels missing from their UI file
+    STEP_01_02_label = None
+
+    _blink_step_label = None
+    _blink_state = False
+    STEP_02_03_label = None
+    STEP_02_04_label = None  # four-heads only (skips HEAD B)
+    STEP_03_04_label = None
+    STEP_04_05_label = None
+    STEP_06_07_label = None
+    STEP_07_08_label = None
+    STEP_07_09_label = None  # four-heads only (skips HEAD E)
+    STEP_08_09_label = None
+    STEP_09_10_label = None
+
     def __init__(self, *args, **kwargs):  # pylint:disable=too-many-branches, too-many-statements
 
         super().__init__(*args, **kwargs)
 
         self.jar_pixmap_map = [
-            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
-            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
-            (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
-            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
-            (self.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_UP",),
-            (self.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_DOWN",),
-            (self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
-            (self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "E",),
-            (self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "F",),
-            (self.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
-            (self.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
-            (self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
+            (self.STEP_01_label,    (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A",),
+            (self.STEP_02_label,    (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_02_03_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("B", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A",),
+            (self.STEP_02_04_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A",),
+            (self.STEP_03_label,    (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
+            (self.STEP_03_04_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "B",),
+            (self.STEP_04_label,    (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_04_05_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL")), "C",),
+            (self.STEP_05_label,    (("D", "LOAD_LIFTER_UP_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_UP",),
+            (self.STEP_06_label,    (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_DOWN",),
+            (self.STEP_06_07_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"), ("D", "JAR_DISPENSING_POSITION_PHOTOCELL")), "LIFTR_DOWN",),
+            (self.STEP_07_label,    (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
+            (self.STEP_07_08_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("E", "JAR_DISPENSING_POSITION_PHOTOCELL")), "D",),
+            (self.STEP_07_09_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_DISPENSING_POSITION_PHOTOCELL")), "D",),
+            (self.STEP_08_label,    (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "E",),
+            (self.STEP_08_09_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_DISPENSING_POSITION_PHOTOCELL")), "E",),
+            (self.STEP_09_label,    (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "F",),
+            (self.STEP_09_10_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL")), "F",),
+            (self.STEP_10_label,    (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
+            (self.STEP_11_label,    (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
+            (self.STEP_12_label,    (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
         ]
 
         self.running_jars_lbl.setStyleSheet("font-size: 15px")
@@ -843,8 +869,35 @@ class HomePage(BaseStackedPage):
         self.running_jars_lbl.setText("\n".join(list_))
 
         for lbl, head_letters_bit_names, position in self.jar_pixmap_map:
-            if lbl:
+            if lbl and lbl is not self._blink_step_label:
                 self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position)
+
+    def start_step_blink(self, step_key):
+        lbl = getattr(self, f"STEP_{step_key}_label", None)
+        if lbl:
+            self._blink_step_label = lbl
+            self._blink_state = False
+            self._do_blink()
+
+    def stop_step_blink(self):
+        lbl = self._blink_step_label
+        self._blink_step_label = None
+        if lbl:
+            lbl.setStyleSheet("QLabel {}")
+            lbl.setText("")
+
+    def _do_blink(self):
+        if not self._blink_step_label:
+            return
+        self._blink_state = not self._blink_state
+        if self._blink_state:
+            _url = get_res("IMAGE", "jar-orange.png")
+            self._blink_step_label.setStyleSheet(
+                f'color:#000000; border-image:url("{_url}"); font-size: 15px')
+        else:
+            self._blink_step_label.setStyleSheet("QLabel {}")
+            self._blink_step_label.setText("")
+        QTimer.singleShot(500, self._do_blink)
 
     @staticmethod
     def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
@@ -1136,6 +1189,9 @@ class HomePageSixHeads(HomePage):
     ui_file_name = "home_page_six_heads.ui"
     help_file_name = 'home_six_heads.html'
 
+    STEP_02_04_label = None  # four-heads only
+    STEP_07_09_label = None  # four-heads only
+
 
 class HomePageFourHeads(HomePage):
 
@@ -1147,6 +1203,11 @@ class HomePageFourHeads(HomePage):
 
     STEP_03_label = None
     STEP_08_label = None
+
+    STEP_02_03_label = None  # six-heads only (HEAD B not present)
+    STEP_03_04_label = None  # six-heads only
+    STEP_07_08_label = None  # six-heads only (HEAD E not present)
+    STEP_08_09_label = None  # six-heads only
 
     refill_3_lbl = None
     refill_4_lbl = None
@@ -1212,6 +1273,7 @@ class HomePageCRX60Heads(HomePage):
 
         self.jar_pixmap_map = [
             (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A",),
             (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
             (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
@@ -1274,6 +1336,7 @@ class HomePageCRX40Heads(HomePage):
 
         self.jar_pixmap_map = [
             (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A",),
             (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
             (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),

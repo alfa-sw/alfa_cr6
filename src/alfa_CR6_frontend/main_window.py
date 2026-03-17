@@ -712,6 +712,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.home_page.show_reserve(head_index, flag=flag)
 
+    def start_step_blink(self, step_key):
+        self.home_page.start_step_blink(step_key)
+
+    def stop_step_blink(self):
+        self.home_page.stop_step_blink()
+
     def show_carousel_frozen(self, flag):
         if flag:
             self.home_page.freeze_carousel_btn.setText(tr_("Carousel Paused"))

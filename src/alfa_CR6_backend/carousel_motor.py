@@ -940,8 +940,11 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 r = await step(jar)
 
                 if not r:
+                    _step_key = _method_name.replace("move_", "") if _method_name else None
+
                     if "move_01_02" in _tag:
 
+                        self.main_window.start_step_blink(_step_key)
                         while True:
                             await self.wait_for_carousel_not_frozen(
                                 True,
@@ -957,6 +960,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                                 not _error_head.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', False)
                             ):
                                 break
+                        self.main_window.stop_step_blink()
 
                         self.delete_entering_jar()
 
@@ -977,6 +981,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         "barcode:{} error in {}. I will retry.",
                         "({})"
                     ]
+                    self.main_window.start_step_blink(_step_key)
                     await self.wait_for_carousel_not_frozen(
                         True,
                         message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
@@ -984,6 +989,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         error_head=_error_head,
                         dest_head=_dst_head
                     )
+                    self.main_window.stop_step_blink()
 
                 else:
                     break
