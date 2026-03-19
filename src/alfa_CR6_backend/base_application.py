@@ -475,6 +475,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.__tasks_to_freeze = 0
         self.__modal_freeze_msgbox = None
+        # Attention LEDs are shared across concurrent jar tasks and freeze flows.
+        self._attention_led_requests = {}
 
         self.chromium_wrapper = None
         self.restore_machine_helper = None
@@ -731,18 +733,13 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     msg_ = ["barcode: {}\n"]
                     msg_args = (barcode,)
 
+                    _refill_led_token = ("jar_refill", barcode, cntr)
                     _refill_led_heads = []
                     if insufficient_pigments and cntr <= 3:
                         fmt_insuff_pigmts = self.build_insufficient_pigments_infos(insufficient_pigments)
                         msg_.append("\npigments to be refilled before dispensing:{}. ({}/3)\n")
                         msg_args = msg_args + (fmt_insuff_pigmts, cntr,)
-                        _refill_led_heads = [
-                            h for h in self.machine_head_dict.values()
-                            if h and self._can_send_led_command(h)
-                        ]
-                        for _h in _refill_led_heads:
-                            logging.warning(f"{_h.name} - SET_ATTENTION_REQUEST_STATUS -> 1 (pigments to refill)")
-                            asyncio.ensure_future(_h.send_command("SET_ATTENTION_REQUEST_STATUS", {"Action": 1}))
+                        _refill_led_heads = [h for h in self.machine_head_dict.values() if h]
                     else:
                         cntr = 4
 
@@ -751,15 +748,23 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         msg_args = msg_args + (list(unknown_pigments.keys()),)
                         msg_.append("\nRemember to check the volume.\n")
 
-                    await self.wait_for_carousel_not_frozen(
-                        True,
-                        message_args=msg_args,
-                        message_fmt=msg_
-                    )
-
-                    for _h in _refill_led_heads:
-                        logging.warning(f"{_h.name} - SET_ATTENTION_REQUEST_STATUS -> 0 (pigments refilled)")
-                        asyncio.ensure_future(_h.send_command("SET_ATTENTION_REQUEST_STATUS", {"Action": 0}))
+                    try:
+                        self.request_attention_leds(
+                            _refill_led_heads,
+                            _refill_led_token,
+                            reason=f"pigments to refill for barcode {barcode}",
+                        )
+                        await self.wait_for_carousel_not_frozen(
+                            True,
+                            message_args=msg_args,
+                            message_fmt=msg_
+                        )
+                    finally:
+                        self.release_attention_leds(
+                            _refill_led_heads,
+                            _refill_led_token,
+                            reason=f"pigments refilled for barcode {barcode}",
+                        )
 
                 else:
                     self.main_window.show_barcode(jar.barcode, is_ok=True)
@@ -1537,64 +1542,129 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         except (IndexError, ValueError):
             return False
 
+    @staticmethod
+    def _get_attention_led_key(head):
+        return head and head.name
+
+    def _send_attention_led_command(self, head, action, reason=None, require_capability=True):
+        if not head:
+            return False
+        if require_capability and not self._can_send_led_command(head):
+            return False
+
+        if reason:
+            logging.warning(f"{head.name} - SET_ATTENTION_REQUEST_STATUS -> {action} ({reason})")
+        else:
+            logging.warning(f"{head.name} - SET_ATTENTION_REQUEST_STATUS -> {action}")
+
+        asyncio.ensure_future(
+            head.send_command(
+                "SET_ATTENTION_REQUEST_STATUS",
+                {"Action": action}))
+        return True
+
+    def request_attention_led(self, head, token, reason=None):
+        if not head or not self._can_send_led_command(head):
+            return False
+
+        head_key = self._get_attention_led_key(head)
+        requests = self._attention_led_requests.setdefault(head_key, {})
+        if token in requests:
+            return True
+
+        should_turn_on = not requests
+        requests[token] = reason
+        if should_turn_on:
+            self._send_attention_led_command(head, 1, reason=reason)
+
+        return True
+
+    def release_attention_led(self, head, token, reason=None):
+        if not head:
+            return False
+
+        head_key = self._get_attention_led_key(head)
+        requests = self._attention_led_requests.get(head_key)
+        if not requests or token not in requests:
+            return False
+
+        requests.pop(token, None)
+        if requests:
+            return True
+
+        self._attention_led_requests.pop(head_key, None)
+        self._send_attention_led_command(head, 0, reason=reason, require_capability=False)
+        return True
+
+    def request_attention_leds(self, heads, token, reason=None):
+        for head in heads:
+            self.request_attention_led(head, token, reason=reason)
+
+    def release_attention_leds(self, heads, token, reason=None):
+        for head in heads:
+            self.release_attention_led(head, token, reason=reason)
+
     async def wait_for_carousel_not_frozen(
             self, freeze=False, message_args=(), message_fmt=None,
             visibility=1, show_cancel_btn=True, extra_properties=None,
             error_head=None, dest_head=None
     ):  # pylint: disable=too-many-statements
 
-        _led_active = error_head is not None and self._can_send_led_command(error_head)
-        _dest_led_active = dest_head is not None and self._can_send_led_command(dest_head)
-
-        if freeze and not self.carousel_frozen:
-
-            if _led_active:
-                logging.warning(f"{error_head.name} - SET_ATTENTION_REQUEST_STATUS -> 1")
-                asyncio.ensure_future(
-                    error_head.send_command(
-                        "SET_ATTENTION_REQUEST_STATUS",
-                        {"Action": 1}))
-            if _dest_led_active:
-                logging.warning(f"{dest_head.name} - SET_ATTENTION_REQUEST_STATUS -> 1")
-                asyncio.ensure_future(
-                    dest_head.send_command(
-                        "SET_ATTENTION_REQUEST_STATUS",
-                        {"Action": 1}))
-
-            self.freeze_carousel(True)
-            self.main_window.open_frozen_dialog(
-                message_args,
-                message_fmt=message_fmt,
-                visibility=visibility,
-                show_cancel_btn=show_cancel_btn,
-                extra_properties=extra_properties
-            )
-
+        _error_led_token = object()
+        _dest_led_token = object()
+        _error_led_claimed = False
+        _dest_led_claimed = False
         _runner = None
-        if self.carousel_frozen:
-            _t = asyncio.current_task()
-            for v in self.__jar_runners.values():
-                if _t is v.get('task'):
-                    _runner = v
-                    _runner['frozen'] = True
-                    break
 
-        while self.carousel_frozen:
-            await asyncio.sleep(0.2)
+        try:
+            if freeze and not self.carousel_frozen:
 
-        if _led_active:
-            asyncio.ensure_future(
-                error_head.send_command(
-                    "SET_ATTENTION_REQUEST_STATUS",
-                    {"Action": 0}))
-        if _dest_led_active:
-            asyncio.ensure_future(
-                dest_head.send_command(
-                    "SET_ATTENTION_REQUEST_STATUS",
-                    {"Action": 0}))
+                _error_led_claimed = self.request_attention_led(
+                    error_head,
+                    _error_led_token,
+                    reason="carousel frozen"
+                )
+                _dest_led_claimed = self.request_attention_led(
+                    dest_head,
+                    _dest_led_token,
+                    reason="carousel frozen"
+                )
 
-        if _runner:
-            _runner['frozen'] = False
+                self.freeze_carousel(True)
+                self.main_window.open_frozen_dialog(
+                    message_args,
+                    message_fmt=message_fmt,
+                    visibility=visibility,
+                    show_cancel_btn=show_cancel_btn,
+                    extra_properties=extra_properties
+                )
+
+            if self.carousel_frozen:
+                _t = asyncio.current_task()
+                for v in self.__jar_runners.values():
+                    if _t is v.get('task'):
+                        _runner = v
+                        _runner['frozen'] = True
+                        break
+
+            while self.carousel_frozen:
+                await asyncio.sleep(0.2)
+        finally:
+            if _error_led_claimed:
+                self.release_attention_led(
+                    error_head,
+                    _error_led_token,
+                    reason="carousel resumed"
+                )
+            if _dest_led_claimed:
+                self.release_attention_led(
+                    dest_head,
+                    _dest_led_token,
+                    reason="carousel resumed"
+                )
+
+            if _runner:
+                _runner['frozen'] = False
 
     def update_jar_properties(self, jar, dispense_not_successful=False):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
@@ -1956,6 +2026,4 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if not result:
             logging.warning("on_barcode_read failed, resetting ready_to_read_a_barcode state")
             self.ready_to_read_a_barcode = True
-
-
 

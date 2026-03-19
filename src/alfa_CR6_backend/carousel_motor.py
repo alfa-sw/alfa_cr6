@@ -521,12 +521,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         )
                         if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
                             break
-                    if self._can_send_led_command(A):
-                        logging.warning(f"The Head A detected a Can too quickly - SET_ATTENTION_REQUEST_STATUS -> 1")
-                        asyncio.ensure_future(
-                            A.send_command(
-                                "SET_ATTENTION_REQUEST_STATUS",
-                                {"Action": 0}))
                     self.double_can_alert = False
                     # ~ r = await _move_can_to_A()
                     await self.restore_machine_helper.async_remove_jar_data(jar.barcode)
@@ -813,21 +807,25 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     if cntr == nof_retry:
                         msg_.append("\nOtherwise the can's status will be marked as ERROR.")
                     logging.warning("".join(msg_))
-                    _refill_led_heads = [
-                        h for h in self.machine_head_dict.values()
-                        if h and self._can_send_led_command(h)
-                    ]
-                    for _h in _refill_led_heads:
-                        logging.warning(f"{_h.name} - SET_ATTENTION_REQUEST_STATUS -> 1 (missing material)")
-                        asyncio.ensure_future(_h.send_command("SET_ATTENTION_REQUEST_STATUS", {"Action": 1}))
-                    r = await self.wait_for_carousel_not_frozen(
-                        True,
-                        message_args=m_args,
-                        message_fmt=msg_
-                    )
-                    for _h in _refill_led_heads:
-                        logging.warning(f"{_h.name} - SET_ATTENTION_REQUEST_STATUS -> 0 (missing material resolved)")
-                        asyncio.ensure_future(_h.send_command("SET_ATTENTION_REQUEST_STATUS", {"Action": 0}))
+                    _refill_led_token = ("dispense_step_refill", jar.barcode, m.name, cntr)
+                    _refill_led_heads = [h for h in self.machine_head_dict.values() if h]
+                    try:
+                        self.request_attention_leds(
+                            _refill_led_heads,
+                            _refill_led_token,
+                            reason=f"missing material for barcode {jar.barcode}",
+                        )
+                        r = await self.wait_for_carousel_not_frozen(
+                            True,
+                            message_args=m_args,
+                            message_fmt=msg_
+                        )
+                    finally:
+                        self.release_attention_leds(
+                            _refill_led_heads,
+                            _refill_led_token,
+                            reason=f"missing material resolved for barcode {jar.barcode}",
+                        )
 
             await m.update_tintometer_data()
             self.update_jar_properties(jar)
