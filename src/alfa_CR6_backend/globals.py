@@ -62,6 +62,7 @@ LANGUAGE_MAP = {
     "norwegian": 'no',
     "arabic": 'ar',
     "thai": 'th',
+    "portuguese": 'pt',
 }
 
 _ALFA_SN = None
