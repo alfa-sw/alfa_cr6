@@ -813,11 +813,21 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     if cntr == nof_retry:
                         msg_.append("\nOtherwise the can's status will be marked as ERROR.")
                     logging.warning("".join(msg_))
+                    _refill_led_heads = [
+                        h for h in self.machine_head_dict.values()
+                        if h and self._can_send_led_command(h)
+                    ]
+                    for _h in _refill_led_heads:
+                        logging.warning(f"{_h.name} - SET_ATTENTION_REQUEST_STATUS -> 1 (missing material)")
+                        asyncio.ensure_future(_h.send_command("SET_ATTENTION_REQUEST_STATUS", {"Action": 1}))
                     r = await self.wait_for_carousel_not_frozen(
                         True,
                         message_args=m_args,
                         message_fmt=msg_
                     )
+                    for _h in _refill_led_heads:
+                        logging.warning(f"{_h.name} - SET_ATTENTION_REQUEST_STATUS -> 0 (missing material resolved)")
+                        asyncio.ensure_future(_h.send_command("SET_ATTENTION_REQUEST_STATUS", {"Action": 0}))
 
             await m.update_tintometer_data()
             self.update_jar_properties(jar)

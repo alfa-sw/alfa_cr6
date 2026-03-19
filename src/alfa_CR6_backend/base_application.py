@@ -731,10 +731,18 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     msg_ = ["barcode: {}\n"]
                     msg_args = (barcode,)
 
+                    _refill_led_heads = []
                     if insufficient_pigments and cntr <= 3:
                         fmt_insuff_pigmts = self.build_insufficient_pigments_infos(insufficient_pigments)
                         msg_.append("\npigments to be refilled before dispensing:{}. ({}/3)\n")
                         msg_args = msg_args + (fmt_insuff_pigmts, cntr,)
+                        _refill_led_heads = [
+                            h for h in self.machine_head_dict.values()
+                            if h and self._can_send_led_command(h)
+                        ]
+                        for _h in _refill_led_heads:
+                            logging.warning(f"{_h.name} - SET_ATTENTION_REQUEST_STATUS -> 1 (pigments to refill)")
+                            asyncio.ensure_future(_h.send_command("SET_ATTENTION_REQUEST_STATUS", {"Action": 1}))
                     else:
                         cntr = 4
 
@@ -748,6 +756,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         message_args=msg_args,
                         message_fmt=msg_
                     )
+
+                    for _h in _refill_led_heads:
+                        logging.warning(f"{_h.name} - SET_ATTENTION_REQUEST_STATUS -> 0 (pigments refilled)")
+                        asyncio.ensure_future(_h.send_command("SET_ATTENTION_REQUEST_STATUS", {"Action": 0}))
 
                 else:
                     self.main_window.show_barcode(jar.barcode, is_ok=True)
