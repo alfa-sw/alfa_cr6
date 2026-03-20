@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import os
 import json
 import logging
@@ -76,8 +78,8 @@ class SettingsManager:
                 'maxItems': 5,
                 'items': {
                     'type': 'integer',
-                    'minimum': 50,
-                    'ui_error': 'Each value must be ≥ 50',
+                    'minimum': 1,
+                    'ui_error': 'Each value must be ≥ 1',
                 },
                 'default': [500, 1000],
                 'description': 'Defines the available choices displayed in the HMI refill popup.',
@@ -246,69 +248,89 @@ class SettingsManager:
 
     # ---------- API pubblica ----------
     @staticmethod
+    def _normalize_updates(updates: dict) -> dict:
+        """Coercizione leggera dei tipi per migliorare la UX dell'API.
+
+        - stringhe booleane ("true"/"false"/...) -> bool
+        - numeri passati come stringa -> int/float
+        - array JSON passati come stringa -> list
+        Non modifica il dict originale.
+        """
+        known_keys = set(SettingsManager.SCHEMA.get('properties', {}).keys())
+        normalized = {}
+
+        for key, val in updates.items():
+            if key.startswith("_"):
+                continue
+            if key not in known_keys:
+                raise ValueError(f"Unknown setting: {key!r}")
+
+            spec = SettingsManager.SCHEMA['properties'][key]
+            expected_type = spec.get('type')
+
+            if expected_type == 'boolean' and isinstance(val, str):
+                low = val.lower()
+                if low in ('true', '1', 'yes', 'on'):
+                    val = True
+                elif low in ('false', '0', 'no', 'off'):
+                    val = False
+
+            elif expected_type == 'number' and isinstance(val, str):
+                try:
+                    val = float(val)
+                except (ValueError, TypeError):
+                    pass
+
+            elif expected_type == 'integer' and isinstance(val, str):
+                try:
+                    val = int(val)
+                except (ValueError, TypeError):
+                    pass
+
+            elif expected_type == 'array' and isinstance(val, str):
+                try:
+                    val = json.loads(val)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
+            normalized[key] = val
+
+        return normalized
+
+    @staticmethod
+    def _validate_against_schema(updates: dict):
+        """Valida updates contro lo SCHEMA. Alza ValueError se invalido."""
+        try:
+            from jsonschema import Draft6Validator  # pylint: disable=import-outside-toplevel
+        except ImportError:
+            raise RuntimeError(
+                "jsonschema is required to validate settings "
+                "(listed in setup.py install_requires)"
+            )
+
+        validator = Draft6Validator(SettingsManager.SCHEMA)
+        errors = []
+        for key, val in updates.items():
+            for err in validator.iter_errors({key: val}):
+                spec = SettingsManager.SCHEMA['properties'].get(key, {})
+                ui_msg = spec.get('ui_error')
+                errors.append(ui_msg if ui_msg else f"{key}: {err.message}")
+        if errors:
+            raise ValueError('; '.join(errors))
+
+    @staticmethod
     def _validate_updates(updates: dict) -> dict:
-        """Valida (e coercede leggermente) gli updates contro lo schema.
-        Ritorna una copia possibilmente coerced. Alza ValueError se invalido.
+        """Normalizza e valida gli updates contro lo schema.
+        Ritorna una copia normalizzata. Alza ValueError se invalido.
         """
         if updates is None:
             return {}
         if not isinstance(updates, dict):
             raise ValueError('updates must be a dict')
 
-        # Prova con jsonschema se disponibile
-        try:
-            from jsonschema import Draft6Validator  # type: ignore
-            validator = Draft6Validator(SettingsManager.SCHEMA)
-            errors = []
-            for key, val in updates.items():
-                if key in SettingsManager.SCHEMA['properties']:
-                    for err in validator.iter_errors({key: val}):
-                        errors.append(f"{key}: {err.message}")
-            if errors:
-                raise ValueError('Invalid settings: ' + '; '.join(errors))
-        except Exception:
-            # Fallback minimale
-            for key, val in list(updates.items()):
-                if key == 'MOVE_01_02_TIME_INTERVAL':
-                    try:
-                        ival = int(val)
-                        if ival < 1 or ival > 3600:
-                            raise ValueError
-                        updates[key] = ival
-                    except Exception:
-                        raise ValueError('MOVE_01_02_TIME_INTERVAL must be integer in [1,3600]')
-                elif key in (
-                    'FORCE_ORDER_JAR_TO_ONE',
-                    'ENABLE_BTN_PURGE_ALL',
-                    'ENABLE_BTN_ORDER_NEW',
-                    'ENABLE_BTN_ORDER_CLONE',
-                    'MANUAL_BARCODE_INPUT',
-                ):
-                    if isinstance(val, str):
-                        if val.lower() in ('true', '1', 'yes', 'on'):
-                            updates[key] = True
-                        elif val.lower() in ('false', '0', 'no', 'off'):
-                            updates[key] = False
-                    if not isinstance(updates[key], bool):
-                        raise ValueError(f'{key} must be boolean')
-                elif key == 'POPUP_REFILL_CHOICES':
-                    if isinstance(val, str):
-                        # accetta JSON testuale
-                        try:
-                            val = json.loads(val)
-                        except Exception:
-                            pass
-                    if not isinstance(val, list) or not val:
-                        raise ValueError('POPUP_REFILL_CHOICES must be non-empty list of positive integers')
-                    coerced = []
-                    for it in val:
-                        ival = int(it)
-                        if ival < 1:
-                            raise ValueError('POPUP_REFILL_CHOICES items must be >=1')
-                        coerced.append(ival)
-                    updates[key] = coerced
-                # Chiavi sconosciute: lasciate inalterate
-        return updates
+        normalized = SettingsManager._normalize_updates(dict(updates))
+        SettingsManager._validate_against_schema(normalized)
+        return normalized
 
     @staticmethod
     def ensure_missing_defaults():

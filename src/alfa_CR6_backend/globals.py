@@ -115,24 +115,7 @@ def set_language(lang):
         logging.error("unsupported language")
         return
 
-    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-        s = import_settings()
-        fn = s.USER_SETTINGS_JSON_FILE
-        us = s.USER_SETTINGS
-        us['LANGUAGE'] = lang
-        save_user_settings(fn, us)
-    else:
-        _path = '/opt/alfa_cr6/conf/app_settings.py'
-        with open(_path, 'r') as f:
-            content = f.read()
-        lines = []
-        for line in content.splitlines(True):
-            if line.strip().startswith('LANGUAGE') and '=' in line:
-                line = f'LANGUAGE = "{lang}"\n'
-            lines.append(line)
-        with open(_path, 'w') as f:
-            f.writelines(lines)
-
+    SettingsManager.set_updates({"LANGUAGE": lang})
     os.system("kill -9 {}".format(os.getpid()))
 
 def save_user_settings(filename, user_settings_dict):
@@ -146,17 +129,7 @@ def save_user_settings(filename, user_settings_dict):
 
 def set_refill_popup_choices(refill_choices):
 
-    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-        s = import_settings()
-        fn = s.USER_SETTINGS_JSON_FILE
-        us = s.USER_SETTINGS
-        us['POPUP_REFILL_CHOICES'] = refill_choices
-        save_user_settings(fn, us)
-    else:
-        refill_choices_str = json.dumps(refill_choices)
-        cmd_ = f"""sed -i "s/^\(POPUP_REFILL_CHOICES\s*=\s*\).*/\\1{refill_choices_str}/" /opt/alfa_cr6/conf/app_settings.py"""
-        os.system(cmd_)
-
+    SettingsManager.set_updates({"POPUP_REFILL_CHOICES": refill_choices})
     os.system("kill -9 {}".format(os.getpid()))
 
 
@@ -568,39 +541,11 @@ def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp
         )
 
 def toggle_manual_barcode_read():
-    import re
 
-    path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
-    try:
+    current = SettingsManager.get_editable_settings().get('MANUAL_BARCODE_INPUT')
+    if current is None:
+        raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT'")
 
-        if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-            s = import_settings()
-            fn = s.USER_SETTINGS_JSON_FILE
-            us = s.USER_SETTINGS
-            if not "MANUAL_BARCODE_INPUT" in us:
-                raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT' ")
-            new_val = not us['MANUAL_BARCODE_INPUT']
-            us['MANUAL_BARCODE_INPUT'] = new_val
-            save_user_settings(fn, us)
-            return new_val
-
-        with open(path_app_settings, 'r') as f:
-            content = f.read()
-
-            match = re.search(r'^(MANUAL_BARCODE_INPUT\s*=\s*)(True|False)', content, re.MULTILINE)
-            if not match:
-                raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT' ")
-
-            prefix = match.group(1)
-            current_value = match.group(2)
-            new_value_bool = not (current_value == 'True')
-            new_line = prefix + ("True" if new_value_bool else "False")
-            content_new = re.sub(r'^(MANUAL_BARCODE_INPUT\s*=\s*)(True|False)', new_line, content, flags=re.MULTILINE)
-
-            with open(path_app_settings, 'w') as f:
-                f.write(content_new)
-
-            return new_value_bool
-
-    except Exception as e:
-        raise e
+    new_val = not current
+    SettingsManager.set_updates({"MANUAL_BARCODE_INPUT": new_val})
+    return new_val
