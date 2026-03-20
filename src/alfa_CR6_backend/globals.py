@@ -541,9 +541,10 @@ def create_printable_image_for_package(package):
         with open(TMP_PACKAGE_BARCODE_IMAGE, 'wb') as file_:
             Code128(printable_text, writer=ImageWriter()).write(file_, options, printable_text)
             response = TMP_PACKAGE_BARCODE_IMAGE
-            if response:
-                from PIL import Image   # pylint: disable=import-outside-toplevel
-                Image.open(TMP_PACKAGE_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_PACKAGE_BARCODE_IMAGE)
+
+        if response:
+            from PIL import Image   # pylint: disable=import-outside-toplevel
+            Image.open(TMP_PACKAGE_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_PACKAGE_BARCODE_IMAGE)
 
     except Exception as e:  # pylint: disable=broad-except
         logging.error(f'Error creating package barcode: {str(e)}')
