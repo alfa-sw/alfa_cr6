@@ -105,7 +105,7 @@ def _images_to_pdf(image_paths, pdf_path):
     images = []
     try:
         for p in image_paths:
-            images.append(Image.open(p).convert('1'))
+            images.append(Image.open(p).convert('L'))
         images[0].save(pdf_path, save_all=True, append_images=images[1:], resolution=300)
     finally:
         for img in images:
