@@ -7,8 +7,8 @@
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
     <title>App Settings</title>
-    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/ui.css') }}"/>
-    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='remote_ui/bootstrap.min.css') }}"/>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='settings/ui.css') }}"/>
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='settings/bootstrap.min.css') }}"/>
     <style>
       body { padding: 10px; }
       .settings-container { max-width: 1200px; margin: auto; }
@@ -47,8 +47,8 @@
       </div>
     </div>
 
-    <script src="{{ url_for('static', filename='remote_ui/avj.min.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename='remote_ui/ui.js') }}"></script>
+    <script src="{{ url_for('static', filename='settings/avj.min.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='settings/ui.js') }}"></script>
     <script>
       const wsUrl = "ws://{{ ws_ip_port }}"; // canale WS standard
       let currentSettings = {};

@@ -18,8 +18,6 @@ import logging
 
 import logging.handlers
 
-from jinja2 import Environment, FileSystemLoader
-
 import websockets  # pylint: disable=import-error
 
 from flask import Markup # pylint: disable=import-error
@@ -27,75 +25,6 @@ from flask import Markup # pylint: disable=import-error
 from alfa_CR6_backend.globals import (get_version, set_language, import_settings, get_application_instance, tr_, set_refill_popup_choices)
 from alfa_CR6_backend.settings_manager import SettingsManager
 
-here_ = os.path.dirname(os.path.abspath(__file__))
-pth_ = os.path.join(here_, "templates/")
-JINJA_ENVIRONMENT = Environment(loader=FileSystemLoader(pth_ ))
-
-
-async def _safe_send(client, message, timeout=5):
-    try:
-        await asyncio.wait_for(client.send(message), timeout=timeout)
-    except Exception:
-        pass
-
-
-class HomePage:
-
-    async def refresh_page(self, msg_dict, websocket, parent):
-
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-
-        template = JINJA_ENVIRONMENT.get_template("home_page.html")
-        html_ = template.render()
-        logging.warning(f"html_:{html_}.")
-
-        msg = json.dumps({
-            'type': 'html',
-            'target': 'home_page',
-            'value': html_,
-        })
-        await websocket.send(msg)
-
-    async def click(self, msg_dict, websocket, parent):
-
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-
-
-class MenuPage:
-
-    async def refresh_page(self, msg_dict, websocket, parent):
-
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-
-    async def click(self, msg_dict, websocket, parent):
-
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-
-
-class RemoteUiMessageHandler: # pylint: disable=too-few-public-methods
-
-    pages = {
-        'home_page': HomePage(),
-        'menu_page': MenuPage(),
-    }
-
-    @classmethod
-    async def handle_msg(cls, msg, websocket, parent):
-
-        # ~ logging.warning(f"websocket:{websocket}, msg:{msg}.")
-        try:
-            msg_dict = json.loads(msg)
-            logging.warning(f"msg_dict:{msg_dict}.")
-            event = msg_dict.get('event')
-            page_id = msg_dict.get('page_id')
-
-            handler = getattr(cls.pages.get(page_id), event)
-            if handler:
-                ret = await handler(msg_dict, websocket, parent)
-                logging.warning(f"ret:{ret}.")
-
-        except Exception:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
 
 class WsMessageHandler: # pylint: disable=too-few-public-methods
 
@@ -337,7 +266,6 @@ class WsServer: # pylint: disable=too-many-instance-attributes
             max_size=2**20))
 
         self.ws_clients = set()
-        self.remote_ui_clients = set()
 
         self.__version__ = get_version()
 
@@ -441,15 +369,10 @@ class WsServer: # pylint: disable=too-many-instance-attributes
     async def new_client_handler(self, websocket, path):
         try:
             logging.warning("appending websocket:{}, path:{}.".format(websocket, path))
-            if 'remote_ui' in path:
-                self.remote_ui_clients.add(websocket)
-                async for message in websocket:  # start listening for messages from ws client
-                    await RemoteUiMessageHandler.handle_msg(message, websocket, self.parent)
-            else:
-                self.ws_clients.add(websocket)
-                await self.__refresh_client_info()
-                async for message in websocket:  # start listening for messages from ws client
-                    await WsMessageHandler.handle_msg(message, websocket, self.parent)
+            self.ws_clients.add(websocket)
+            await self.__refresh_client_info()
+            async for message in websocket:  # start listening for messages from ws client
+                await WsMessageHandler.handle_msg(message, websocket, self.parent)
 
         except websockets.exceptions.ConnectionClosed:  # pylint: disable=broad-except
             logging.warning("")
@@ -458,7 +381,6 @@ class WsServer: # pylint: disable=too-many-instance-attributes
         finally:
             logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
             self.ws_clients.discard(websocket)
-            self.remote_ui_clients.discard(websocket)
 
     def refresh_can_list(self):
 
