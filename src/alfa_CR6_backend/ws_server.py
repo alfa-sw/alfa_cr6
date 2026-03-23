@@ -26,6 +26,15 @@ from alfa_CR6_backend.globals import (get_version, set_language, import_settings
 from alfa_CR6_backend.settings_manager import SettingsManager
 
 
+async def _send_protocol_error(websocket, code):
+    answer = json.dumps({
+        'type': 'error',
+        'code': code,
+    })
+    await websocket.send(answer)
+    return answer
+
+
 class WsMessageHandler: # pylint: disable=too-few-public-methods
 
     settings = None
@@ -43,13 +52,39 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
 
             cls.parent = parent
 
-            msg_dict = json.loads(msg)
+            try:
+                msg_dict = json.loads(msg)
+            except json.JSONDecodeError:
+                logging.warning("bad_request: invalid json payload")
+                answer = await _send_protocol_error(websocket, 'bad_request')
+                logging.warning(f"answer:{answer}")
+                return
+
+            if not isinstance(msg_dict, dict):
+                logging.warning(
+                    "bad_request: expected object payload, got:%s",
+                    type(msg_dict).__name__,
+                )
+                answer = await _send_protocol_error(websocket, 'bad_request')
+                logging.warning(f"answer:{answer}")
+                return
 
             if msg_dict.get("command"):
+                answer = None
+                command = msg_dict.get("command")
 
-                if hasattr(cls, msg_dict["command"]):
-                    _callable = getattr(cls, msg_dict["command"])
+                if not isinstance(command, str):
+                    logging.warning("bad_request: command is not a string")
+                    answer = await _send_protocol_error(websocket, 'bad_request')
+                    logging.warning(f"answer:{answer}")
+                    return
+
+                if hasattr(cls, command):
+                    _callable = getattr(cls, command)
                     answer = await _callable(msg_dict, websocket)
+                else:
+                    logging.warning("bad_request: unknown command:%s", command)
+                    answer = await _send_protocol_error(websocket, 'bad_request')
 
                 logging.warning(f"answer:{answer}")
 
@@ -67,8 +102,18 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
                 await websocket.send(answer)
                 logging.warning(f"answer:{answer}")
 
+            else:
+                logging.warning("bad_request: missing supported command field")
+                answer = await _send_protocol_error(websocket, 'bad_request')
+                logging.warning(f"answer:{answer}")
+
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+            try:
+                answer = await _send_protocol_error(websocket, 'internal_error')
+                logging.warning(f"answer:{answer}")
+            except Exception:  # pylint: disable=broad-except
+                logging.error("failed sending internal_error:\n%s", traceback.format_exc())
 
     @classmethod
     async def change_language(cls, msg_dict, websocket): # pylint: disable=unused-argument
