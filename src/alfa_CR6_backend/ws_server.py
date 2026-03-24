@@ -412,8 +412,8 @@ class WsServer: # pylint: disable=too-many-instance-attributes
             async for message in websocket:  # start listening for messages from ws client
                 await WsMessageHandler.handle_msg(message, websocket, self.parent)
 
-        except websockets.exceptions.ConnectionClosed:  # pylint: disable=broad-except
-            logging.warning("")
+        except websockets.exceptions.ConnectionClosed as e:  # pylint: disable=broad-except
+            logging.warning("websocket connection closed: %s, path:%s", e, path)
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
         finally:
