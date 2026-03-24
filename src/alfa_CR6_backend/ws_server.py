@@ -89,18 +89,9 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
                 logging.warning(f"answer:{answer}")
 
             elif msg_dict.get("debug_command"):
-
-                try:
-                    cmd_ = msg_dict["debug_command"]
-                    ret = eval(cmd_)     # pylint: disable=eval-used
-                except Exception as e:   # pylint: disable=broad-except
-                    ret = str(e)
-                answer = json.dumps({
-                    'type': 'debug_answer',
-                    'value': html.escape(str(ret)),
-                })
-                await websocket.send(answer)
-                logging.warning(f"answer:{answer}")
+                logging.warning("bad_request: debug_command disabled")
+                answer = await _send_protocol_error(websocket, 'bad_request')
+                logging.warning(f"[debug_command] answer:{answer}")
 
             else:
                 logging.warning("bad_request: missing supported command field")
