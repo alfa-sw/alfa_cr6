@@ -359,6 +359,16 @@ class WsServer: # pylint: disable=too-many-instance-attributes
 
         return Markup(html_)
 
+    async def _broadcast_raw(self, message):
+        async def _safe_send(client):
+            try:
+                await asyncio.wait_for(client.send(message), timeout=5)
+            except Exception:
+                self.ws_clients.discard(client)
+
+        if self.ws_clients:
+            await asyncio.gather(*[_safe_send(c) for c in set(self.ws_clients)])
+
     async def broadcast_msg(self, type_, msg):
 
         if self.ws_clients:
@@ -371,11 +381,7 @@ class WsServer: # pylint: disable=too-many-instance-attributes
             })
             # ~ logging.warning("message:{}.".format(message))
 
-            for client in set(self.ws_clients):
-                try:
-                    await asyncio.wait_for(client.send(message), timeout=5)
-                except Exception:
-                    self.ws_clients.discard(client)
+            await self._broadcast_raw(message)
 
         return True
 
@@ -393,11 +399,7 @@ class WsServer: # pylint: disable=too-many-instance-attributes
                 'type': 'current_language_label',
                 'value': self.parent.settings.LANGUAGE,
             })
-            for client in set(self.ws_clients):
-                try:
-                    await asyncio.wait_for(client.send(msg_), timeout=5)
-                except Exception:
-                    self.ws_clients.discard(client)
+            await self._broadcast_raw(msg_)
 
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
