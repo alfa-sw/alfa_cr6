@@ -550,24 +550,24 @@ class HomePage(BaseStackedPage):
 
         self.jar_pixmap_map = [
             (self.STEP_01_label,    (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
-            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A", (("IN_A",), ("A",)),),
             (self.STEP_02_label,    (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
-            (self.STEP_02_03_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("B", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A",),
-            (self.STEP_02_04_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A",),
+            (self.STEP_02_03_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("B", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A", (("A",), ("B",)),),
+            (self.STEP_02_04_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A", (("A",), ("C",)),),
             (self.STEP_03_label,    (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
-            (self.STEP_03_04_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "B",),
+            (self.STEP_03_04_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "B", (("B",), ("C",)),),
             (self.STEP_04_label,    (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
-            (self.STEP_04_05_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL")), "C",),
+            (self.STEP_04_05_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL")), "C", (("C",), ("LIFTR_UP", "LIFTR_DOWN")),),
             (self.STEP_05_label,    (("D", "LOAD_LIFTER_UP_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_UP",),
             (self.STEP_06_label,    (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_DOWN",),
-            (self.STEP_06_07_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"), ("D", "JAR_DISPENSING_POSITION_PHOTOCELL")), "LIFTR_DOWN",),
+            (self.STEP_06_07_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"), ("D", "JAR_DISPENSING_POSITION_PHOTOCELL")), "LIFTR_DOWN", (("LIFTR_UP", "LIFTR_DOWN"), ("D",)),),
             (self.STEP_07_label,    (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
-            (self.STEP_07_08_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("E", "JAR_DISPENSING_POSITION_PHOTOCELL")), "D",),
-            (self.STEP_07_09_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_DISPENSING_POSITION_PHOTOCELL")), "D",),
+            (self.STEP_07_08_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("E", "JAR_DISPENSING_POSITION_PHOTOCELL")), "D", (("D",), ("E",)),),
+            (self.STEP_07_09_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_DISPENSING_POSITION_PHOTOCELL")), "D", (("D",), ("F",)),),
             (self.STEP_08_label,    (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "E",),
-            (self.STEP_08_09_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_DISPENSING_POSITION_PHOTOCELL")), "E",),
+            (self.STEP_08_09_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_DISPENSING_POSITION_PHOTOCELL")), "E", (("E",), ("F",)),),
             (self.STEP_09_label,    (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "F",),
-            (self.STEP_09_10_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL")), "F",),
+            (self.STEP_09_10_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL")), "F", (("F",), ("LIFTL_DOWN", "LIFTL_UP")),),
             (self.STEP_10_label,    (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
             (self.STEP_11_label,    (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
             (self.STEP_12_label,    (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
@@ -860,9 +860,12 @@ class HomePage(BaseStackedPage):
                 list_.append(f"{_ : >4}")
         self.running_jars_lbl.setText("\n".join(list_))
 
-        for lbl, head_letters_bit_names, position in self.jar_pixmap_map:
+        for entry in self.jar_pixmap_map:
+            lbl, head_letters_bit_names, position = entry[:3]
+            adjacent_positions = entry[3] if len(entry) > 3 else None
             if lbl and lbl is not self._blink_step_label:
-                self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position)
+                self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position,
+                                                adjacent_positions=adjacent_positions)
 
     def start_step_blink(self, step_key):
         lbl = getattr(self, f"STEP_{step_key}_label", None)
@@ -893,7 +896,7 @@ class HomePage(BaseStackedPage):
 
     @staticmethod
     def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
-            lbl, head_letters_bit_names, position=None, icon=None):
+            lbl, head_letters_bit_names, position=None, icon=None, adjacent_positions=None):
 
         if lbl:
             def _get_bit(head_letter, bit_name):
@@ -908,8 +911,17 @@ class HomePage(BaseStackedPage):
                 ]
 
                 if icon is None:
-                    if false_condition:
-                        lbl.setStyleSheet("QLabel {{}}")
+                    hide = bool(false_condition)
+                    if not hide and adjacent_positions:
+                        # Adjacent photocells alone are ambiguous: they may belong
+                        # to different jars while jar_runners is still empty or
+                        # only partially populated. Keep middle labels hidden in
+                        # normal rendering and reserve them for explicit blink/error
+                        # states handled elsewhere.
+                        hide = True
+
+                    if hide:
+                        lbl.setStyleSheet("QLabel {}")
                         lbl.setText("")
                     else:
                         _text = ""
@@ -1265,7 +1277,7 @@ class HomePageCRX60Heads(HomePage):
 
         self.jar_pixmap_map = [
             (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
-            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A", (("IN_A",), ("A",)),),
             (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
             (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
@@ -1328,7 +1340,7 @@ class HomePageCRX40Heads(HomePage):
 
         self.jar_pixmap_map = [
             (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
-            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A", (("IN_A",), ("A",)),),
             (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
             (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
