@@ -1004,6 +1004,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     args, fmt = (barcode, ), "Condition not valid while reading barcode:{}"
                     self.main_window.open_alert_dialog(args, fmt=fmt)
                     logging.error(fmt.format(*args))
+                    self.insert_db_document(
+                        name="BARCODE_COND_NOT_VALID",
+                        type="HEADS_SNAPSHOT",
+                        json_properties=json.dumps(
+                            {"barcode": barcode, "heads": self._get_heads_snapshot()},
+                            ensure_ascii=False,
+                        ),
+                    )
                 else:
 
                     self.ready_to_read_a_barcode = False
@@ -1380,6 +1388,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.db_session.rollback()
+
+    def _get_heads_snapshot(self):
+        return {
+            str(k): {
+                "status": m.status if m is not None else None,
+                "jar_photocells_status": m.jar_photocells_status if m is not None else None,
+                "photocells_status": m.photocells_status if m is not None else None,
+            }
+            for k, m in self.machine_head_dict.items()
+        }
 
     def insert_db_document(self, **args):
 
