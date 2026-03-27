@@ -1581,6 +1581,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if require_capability and not self._can_send_led_command(head):
             return False
 
+        if head.status.get("status_level") == "RESET":
+            logging.warning(f"{head.name} - SET_ATTENTION_REQUEST_STATUS -> {action} skipped (head in RESET)")
+            return False
+
         if reason:
             logging.warning(f"{head.name} - SET_ATTENTION_REQUEST_STATUS -> {action} ({reason})")
         else:
