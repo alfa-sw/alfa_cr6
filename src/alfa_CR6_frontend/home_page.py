@@ -543,6 +543,7 @@ class HomePage(BaseStackedPage):
     STEP_07_09_label = None  # four-heads only (skips HEAD E)
     STEP_08_09_label = None
     STEP_09_10_label = None
+    STEP_11_12_label = None
 
     def __init__(self, *args, **kwargs):  # pylint:disable=too-many-branches, too-many-statements
 
@@ -570,6 +571,7 @@ class HomePage(BaseStackedPage):
             (self.STEP_09_10_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL")), "F", (("F",), ("LIFTL_DOWN", "LIFTL_UP")),),
             (self.STEP_10_label,    (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
             (self.STEP_11_label,    (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
+            (self.STEP_11_12_label, (("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"), ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL")), "LIFTL_UP", (("LIFTL_UP", "LIFTL_DOWN"), ("OUT",)),),
             (self.STEP_12_label,    (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
         ]
 

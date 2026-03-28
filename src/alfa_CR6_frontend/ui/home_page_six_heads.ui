@@ -1237,6 +1237,27 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <widget class="QLabel" name="STEP_11_12_label">
+   <property name="geometry">
+    <rect>
+     <x>345</x>
+     <y>470</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
   <widget class="QLabel" name="container_presence_1_label">
    <property name="geometry">
     <rect>
@@ -1846,6 +1867,7 @@ RECOVERY</string>
   <zorder>STEP_08_label</zorder>
   <zorder>STEP_11_label</zorder>
   <zorder>STEP_12_label</zorder>
+  <zorder>STEP_11_12_label</zorder>
   <zorder>container_presence_1_label</zorder>
   <zorder>container_presence_3_label</zorder>
   <zorder>container_presence_5_label</zorder>
