@@ -989,7 +989,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         "barcode:{} error in {}. I will retry.",
                         "({})"
                     ]
-                    self.main_window.start_step_blink(_step_key)
+                    _is_too_many_jars = (
+                        _error_head and
+                        _error_head.status.get("status_level") == "ALARM" and
+                        _error_head.status.get("error_code") in (1211, "TOO_MANY_JARS_ON_CONVEYOR_ROLLER")
+                    )
+                    if not _is_too_many_jars:
+                        self.main_window.start_step_blink(_step_key)
                     await self.wait_for_carousel_not_frozen(
                         True,
                         message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
