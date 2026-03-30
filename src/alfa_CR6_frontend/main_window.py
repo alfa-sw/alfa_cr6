@@ -38,7 +38,7 @@ from alfa_CR6_frontend.pages import (
 
 from alfa_CR6_frontend.action_page import ActionPage
 from alfa_CR6_frontend.browser_page import BrowserPage
-from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads, HomePageCRX60Heads, HomePageCRX40Heads)
+from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads, HomePageCRX60Heads, HomePageCRX80Heads, HomePageCRX40Heads)
 
 
 from alfa_CR6_frontend.keyboard import Keyboard
@@ -395,8 +395,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_6_small.png"))
 
         elif QApplication.instance().n_of_active_heads == 4:
-            self.home_page = HomePageFourHeads(parent=self)
-            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_4_small.png"))
+            if os.getenv('MACHINE_VARIANT', None) == 'CRX80':
+                self.home_page = HomePageCRX80Heads(parent=self)
+                home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_CRX80_small.png"))
+            else:
+                self.home_page = HomePageFourHeads(parent=self)
+                home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_4_small.png"))
 
         elif QApplication.instance().n_of_active_heads == 3:
             self.home_page = HomePageCRX60Heads(parent=self)

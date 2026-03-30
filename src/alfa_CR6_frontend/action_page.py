@@ -52,7 +52,7 @@ class ActionPage(BaseStackedPage):
         # Testa 5 "Start dispensing roller" "Start dispensing roller to photocell"
         if args in (('single_move', 'C', [0, 1]), ('single_move', 'C', [0, 2])):
 
-            if IN_DOCKER and MACHINE_VARIANT in ["CRX60", "CRX40"]:
+            if IN_DOCKER and MACHINE_VARIANT in ["CRX60", "CRX40", "CRX80"]:
                 ret = True
             else:
                 D = QApplication.instance().get_machine_head_by_letter("D")
@@ -63,7 +63,7 @@ class ActionPage(BaseStackedPage):
         # Testa 5 "Start lifter roller CW"
         elif args == ("single_move", "C", [1, 1]):
 
-            if IN_DOCKER and MACHINE_VARIANT in ["CRX60", "CRX40"]:
+            if IN_DOCKER and MACHINE_VARIANT in ["CRX60", "CRX40", "CRX80"]:
                 ret = True
             else:
                 D = QApplication.instance().get_machine_head_by_letter("D")
