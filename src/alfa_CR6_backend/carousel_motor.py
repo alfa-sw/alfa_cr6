@@ -60,6 +60,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         "move_08_09": "F",   # E -> F
         "move_07_09": "F",   # D -> F
     }
+    if machine_variant == 'CRX80':
+        MOVE_DEST_LED_HEAD_MAP["move_04_05"] = "D"  # C -> D
 
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
