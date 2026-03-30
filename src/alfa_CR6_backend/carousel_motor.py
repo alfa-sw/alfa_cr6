@@ -434,7 +434,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             return flag
 
         if (self.in_docker
-            and self.machine_variant in ['CRX60', 'CRX40']
+            and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']
         ):
             r = True
             if A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False):
@@ -452,7 +452,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         if (A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False)
             and self.in_docker
-            and self.machine_variant in ['CRX60', 'CRX40']
+            and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']
         ):
             await self._handle_crx_barcode_input()
 
@@ -552,10 +552,14 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return await self.move_from_to(jar, "A", "C", show_alert=False)
 
-    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60
+    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60 or 'C -> D' CRX80
 
         machine_variant = os.getenv('MACHINE_VARIANT', None)
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
+        if in_docker and machine_variant == 'CRX80':
+            return await self.move_from_to(jar, "C", "D", show_alert=False)
+
         C = self.get_machine_head_by_letter("C")
         r = True
 
@@ -590,14 +594,42 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await C.crx_outputs_management(1, 0)
 
                 if r:
-                    if self.in_docker and self.machine_variant in ['CRX60', 'CRX40']:
+                    if self.in_docker and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']:
                         self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="_")
                     else:
                         self.update_jar_position(jar=jar, pos="LIFTR_UP")
 
         return r
 
-    async def move_05_06(self, jar=None):  # 'UP -> DOWN'
+    async def move_05_06(self, jar=None):  # 'UP -> DOWN' or 'D -> OUT' CRX80
+
+        machine_variant = os.getenv('MACHINE_VARIANT', None)
+        in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
+        if in_docker and machine_variant == 'CRX80':
+            D = self.get_machine_head_by_letter("D")
+            await self.wait_for_cr_linear_deliver_line_available(jar)
+
+            def condition():
+                flag = not D.status.get('crx_outputs_status', 0x0) & 0x01
+                flag = flag and not D.status.get('crx_outputs_status', 0x0) & 0x02
+                flag = flag and not D.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
+                return flag
+
+            r = await self.wait_for_condition(
+                condition, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
+                extra_info=tr_('waiting for load_lifter roller available and stopped.'))
+            if r:
+                await D.crx_outputs_management(0, 1)
+                await D.crx_outputs_management(1, 2)
+                r = await D.wait_for_jar_photocells_status(
+                    "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True,
+                    timeout=17, show_alert=False)
+                await D.crx_outputs_management(0, 0)
+                await D.crx_outputs_management(1, 0)
+                if r:
+                    self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="_")
+            return r
 
         D = self.get_machine_head_by_letter("D")
 
@@ -897,6 +929,18 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_04_05,
         ]
 
+        sequence_crx80 = [
+            self.move_01_02,
+            partial(self.dispense_step, "A"),
+            self.move_02_03,
+            partial(self.dispense_step, "B"),
+            self.move_03_04,
+            partial(self.dispense_step, "C"),
+            self.move_04_05,
+            partial(self.dispense_step, "D"),
+            self.move_05_06,
+        ]
+
         sequence_crx40 = [
             self.move_01_02,
             partial(self.dispense_step, "A"),
@@ -908,7 +952,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if n_of_heads == 6:
             sequence = sequence_6
         elif n_of_heads == 4:
-            sequence = sequence_4
+            if self.machine_variant == 'CRX80':
+                sequence = sequence_crx80
+            else:
+                sequence = sequence_4
         elif n_of_heads == 3:
             sequence = sequence_crx60
         elif n_of_heads == 2:
@@ -1016,7 +1063,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 dest_head=_dst_head
             )
 
-        if self.machine_variant not in ['CRX60', 'CRX40']:
+        if self.machine_variant not in ['CRX60', 'CRX40', 'CRX80']:
             await self.wait_for_jar_delivery(jar)
 
         return r
@@ -1066,7 +1113,22 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             recovery_actions['LIFTL_DOWN'] = full_steps[15:]
             recovery_actions['LIFTL_UP'] = full_steps[16:]
 
-        if self.n_of_active_heads == 4:
+        if self.n_of_active_heads == 4 and self.machine_variant == 'CRX80':
+
+            full_steps = [
+                "move_01_02", "dispense_step", "move_02_03",
+                "dispense_step", "move_03_04", "dispense_step",
+                "move_04_05", "dispense_step", "move_05_06",
+            ]
+
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['B'] = full_steps[3:]
+            recovery_actions['C'] = full_steps[5:]
+            recovery_actions['D'] = full_steps[7:]
+
+        elif self.n_of_active_heads == 4:
 
             full_steps = [
                 "move_01_02", "dispense_step", "move_02_04", "dispense_step", "move_04_05",
