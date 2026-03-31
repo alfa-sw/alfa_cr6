@@ -444,7 +444,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         2: "B",
         3: "E",
         4: "C",
-        5: "D", }
+        5: "D",
+        6: "D", }
 
     n_of_active_heads = 0
 
