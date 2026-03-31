@@ -1367,10 +1367,10 @@ class HomePageCRX80Heads(HomePage):
             (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
             (self.STEP_03_04_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "B", (("B",), ("C",)),),
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
-            (self.STEP_04_05_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("D", "JAR_DISPENSING_POSITION_PHOTOCELL")), "C", (("C",), ("D",)),),
-            (self.STEP_05_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
-            (self.STEP_05_06_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("D", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL")), "D", (("D",), ("OUT",)),),
-            (self.STEP_06_label, (("D", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
+            (self.STEP_04_05_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("G", "JAR_DISPENSING_POSITION_PHOTOCELL")), "C", (("C",), ("G",)),),
+            (self.STEP_05_label, (("G", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "G",),
+            (self.STEP_05_06_label, (("G", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("G", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL")), "G", (("G",), ("OUT",)),),
+            (self.STEP_06_label, (("G", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
         ]
 
 

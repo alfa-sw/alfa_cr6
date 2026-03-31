@@ -168,7 +168,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
 
                 ordine_pos = [
                     "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
-                    "E", "D", "LIFTR_DOWN", "LIFTR_UP",
+                    "E", "D", "G", "LIFTR_DOWN", "LIFTR_UP",
                     "C", "B", "A", "IN_A", "IN"
                 ]
                 
@@ -445,7 +445,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         3: "E",
         4: "C",
         5: "D",
-        6: "D", }
+        6: "G", }
 
     n_of_active_heads = 0
 

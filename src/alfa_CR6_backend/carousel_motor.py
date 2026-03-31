@@ -61,7 +61,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         "move_07_09": "F",   # D -> F
     }
     if machine_variant == 'CRX80':
-        MOVE_DEST_LED_HEAD_MAP["move_04_05"] = "D"  # C -> D
+        MOVE_DEST_LED_HEAD_MAP["move_04_05"] = "G"  # C -> G
 
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
@@ -554,13 +554,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return await self.move_from_to(jar, "A", "C", show_alert=False)
 
-    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60 or 'C -> D' CRX80
+    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60 or 'C -> G' CRX80
 
         machine_variant = os.getenv('MACHINE_VARIANT', None)
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
         if in_docker and machine_variant == 'CRX80':
-            return await self.move_from_to(jar, "C", "D", show_alert=False)
+            return await self.move_from_to(jar, "C", "G", show_alert=False)
 
         C = self.get_machine_head_by_letter("C")
         r = True
@@ -603,13 +603,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return r
 
-    async def move_05_06(self, jar=None):  # 'UP -> DOWN' or 'D -> OUT' CRX80
+    async def move_05_06(self, jar=None):  # 'UP -> DOWN' or 'G -> OUT' CRX80
 
         machine_variant = os.getenv('MACHINE_VARIANT', None)
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
         if in_docker and machine_variant == 'CRX80':
-            D = self.get_machine_head_by_letter("D")
+            D = self.get_machine_head_by_letter("G")
             await self.wait_for_cr_linear_deliver_line_available(jar)
 
             def condition():
@@ -939,7 +939,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_03_04,
             partial(self.dispense_step, "C"),
             self.move_04_05,
-            partial(self.dispense_step, "D"),
+            partial(self.dispense_step, "G"),
             self.move_05_06,
         ]
 
@@ -1128,7 +1128,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             recovery_actions['A'] = full_steps[1:]
             recovery_actions['B'] = full_steps[3:]
             recovery_actions['C'] = full_steps[5:]
-            recovery_actions['D'] = full_steps[7:]
+            recovery_actions['G'] = full_steps[7:]
 
         elif self.n_of_active_heads == 4:
 
@@ -1329,7 +1329,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     'D': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
-                        next_head_letter=("D" if self.machine_variant == 'CRX80' else "F" if self.n_of_active_heads == 4 else "E")
+                        next_head_letter=("G" if self.machine_variant == 'CRX80' else "F" if self.n_of_active_heads == 4 else "E")
                     ),
                     'E': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
