@@ -1300,7 +1300,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     'A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
-                        next_head_letter=("C" if self.n_of_active_heads in (2,4) else "B")
+                        next_head_letter=("B" if self.machine_variant == 'CRX80' else "C" if self.n_of_active_heads in (2,4) else "B")
                     ),
                     'B': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
@@ -1329,7 +1329,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     'D': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
-                        next_head_letter=("F" if self.n_of_active_heads == 4 else "E")
+                        next_head_letter=("D" if self.machine_variant == 'CRX80' else "F" if self.n_of_active_heads == 4 else "E")
                     ),
                     'E': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
