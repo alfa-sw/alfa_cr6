@@ -92,10 +92,10 @@
   <widget class="QPushButton" name="service_0_btn">
    <property name="geometry">
     <rect>
-     <x>70</x>
+     <x>90</x>
      <y>230</y>
-     <width>201</width>
-     <height>91</height>
+     <width>171</width>
+     <height>101</height>
     </rect>
    </property>
    <property name="autoFillBackground">
@@ -233,7 +233,7 @@
   <widget class="QPushButton" name="action_03_btn">
    <property name="geometry">
     <rect>
-     <x>660</x>
+     <x>665</x>
      <y>470</y>
      <width>71</width>
      <height>61</height>
@@ -262,7 +262,7 @@
   <widget class="QPushButton" name="action_04_btn">
    <property name="geometry">
     <rect>
-     <x>1004</x>
+     <x>1009</x>
      <y>470</y>
      <width>71</width>
      <height>61</height>
@@ -291,7 +291,7 @@
   <widget class="QPushButton" name="action_05_btn">
    <property name="geometry">
     <rect>
-     <x>1348</x>
+     <x>1356</x>
      <y>470</y>
      <width>71</width>
      <height>61</height>
@@ -692,7 +692,7 @@
   <widget class="QLabel" name="STEP_04_label">
    <property name="geometry">
     <rect>
-     <x>1094</x>
+     <x>1098</x>
      <y>460</y>
      <width>85</width>
      <height>85</height>
@@ -734,7 +734,7 @@
   <widget class="QLabel" name="STEP_05_label">
    <property name="geometry">
     <rect>
-     <x>1438</x>
+     <x>1447</x>
      <y>460</y>
      <width>85</width>
      <height>85</height>
@@ -824,7 +824,7 @@
   <widget class="QLabel" name="container_presence_5_label">
    <property name="geometry">
     <rect>
-     <x>1124</x>
+     <x>1128</x>
      <y>450</y>
      <width>24</width>
      <height>24</height>
@@ -840,7 +840,7 @@
   <widget class="QLabel" name="container_presence_7_label">
    <property name="geometry">
     <rect>
-     <x>1464</x>
+     <x>1473</x>
      <y>450</y>
      <width>24</width>
      <height>24</height>
@@ -1137,8 +1137,8 @@
     <rect>
      <x>20</x>
      <y>340</y>
-     <width>200</width>
-     <height>91</height>
+     <width>181</width>
+     <height>81</height>
     </rect>
    </property>
    <property name="text">
