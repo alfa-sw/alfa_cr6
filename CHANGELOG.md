@@ -1,6 +1,21 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.9 branch
+
+### 1.9.0
+ - PR#___ - issue RM#417 - added LED management (SET_ATTENTION_REQUEST_STATUS) for software error messages, insufficient pigment, and carousel move failures; refcount-based cross-task refill messages; in-transit jar labels with blinking error step
+ - PR#___ - claim RM#479 - shuttle barcode reader: validation and filter for spurious reads (evdev); dual barcode synchronization via asyncio.Event; fix state machine for dual-reader machines
+ - PR#___ - claim RM#289 - added snapshot of heads state on "waiting for dispense position to get available" and "Condition not valid while reading barcode" errors (diagnostics)
+ - PR#___ - claim RM#432 - added Axalta CCC XML parser
+ - PR#___ - issue RM#499 - hardened WebSocket server: input validation, structured error responses, parallel broadcast, stale client cleanup, ConnectionClosed logging
+ - PR#___ - refactored SettingsManager validation: single source of truth from JSON schema, fixed critical bug where except Exception swallowed jsonschema errors
+ - PR#___ - removed remote_ui feature; /settings route moved to alfa_CR6_flask/views.py
+ - PR#___ - issue RM#488 - async label printing via run_in_executor; fix corrupted PDF on Pillow 8.x; 300 DPI resolution
+ - PR#___ - preserve DONE/ERROR can state during carousel movement
+ - added Portuguese language
+ - added unit tests for WsMessageHandler, SettingsManager, and can status guard
+
 ## 1.8 branch
 
 ### 1.8.0
