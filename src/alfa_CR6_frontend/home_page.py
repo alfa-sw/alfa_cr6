@@ -17,21 +17,19 @@ import traceback
 import asyncio
 import json
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
-from alfa_CR6_backend.globals import (import_settings, get_res, tr_, TMP_PIGMENT_IMAGE, DEFAULT_DEBUG_PAGE_PWD)
-from alfa_CR6_backend.dymo_printer import dymo_print_pigment_label
+from alfa_CR6_backend.globals import (import_settings, get_res, tr_, DEFAULT_DEBUG_PAGE_PWD)
+from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels
 
 from alfa_CR6_frontend.pages import BaseStackedPage
 from alfa_CR6_frontend.debug_page import simulate_read_barcode
 
 
 g_settings = import_settings()
-
-import functools
 
 class PrintException(Exception):
     def __init__(self, message, payload):
@@ -46,45 +44,29 @@ class PrintLabelHelper:
         self.printables = printables
 
     async def print_labels(self):
-        loop = asyncio.get_running_loop()
         fake_print = os.getenv("FAKE_DYMO_PRINT", False) in ["1", "true"]
 
-        for printable in self.printables:
-            barcode_txt = printable.get('barcode_txt', '')
-            pigment_name = printable.get('pigment_name', '')
-            pipe_name = printable.get('pipe_name', '')
-            fake = printable.get('fake', False)
-            partial_func = functools.partial(
-                dymo_print_pigment_label,
-                barcode_txt,
-                pigment_name,
-                pipe_name,
-                fake_print
-            )
+        try:
+            ret = await async_dymo_print_pigment_labels(self.printables, fake=fake_print)
+            logging.debug(f"print_labels ret: {ret}")
 
-            try:
-                # Esegui la funzione sincrona in un executor
-                ret = await loop.run_in_executor(None, partial_func)
-                logging.debug(f"ret: {ret}")
+            if ret['result'] != 'OK':
+                raise PrintException("Printing failed", ret)
 
-                if ret['result'] != 'OK':
-                    raise PrintException("Printing failed", ret)
-                
-            except PrintException as pexc:
-                error_message = pexc.payload
-                logging.error(f"PrintException: {error_message}")
-                QApplication.instance().main_window.open_input_dialog(
-                    icon_name="SP_MessageBoxCritical",
-                    message=error_message,
-                    content=None)
-                return
+        except PrintException as pexc:
+            error_message = pexc.payload
+            logging.error(f"PrintException: {error_message}")
+            QApplication.instance().main_window.open_input_dialog(
+                icon_name="SP_MessageBoxCritical",
+                message=error_message,
+                content=None)
+            return
 
         msg_ = tr_("OK")
         QApplication.instance().main_window.open_input_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=msg_,
-            content=None,
-            bg_image=TMP_PIGMENT_IMAGE)
+            content=None)
 
     def run(self):
 
@@ -268,11 +250,14 @@ class RefillProcedureHelper:
                 ok_cb_args=(pigment_, pipe_),
                 choices=choices_)
         else:
+            def _cb_reset_refill_block():
+                QApplication.instance().barcode_read_blocked_on_refill = False
 
             self.parent.main_window.open_input_dialog(
                 icon_name="SP_MessageBoxCritical",
                 message=tr_("barcode mismatch <br/>{} != {}").format(barcode_, barcode_check),
-                content=None)
+                content=None,
+                ok_cb=_cb_reset_refill_block)
 
     async def _rotate_circuit_task(
             self, pigment_, pipe_, _default_qtity_units, barcode_,
@@ -395,9 +380,16 @@ class RefillProcedureHelper:
 
             else:
                 h_idx = int(self.machine_.index) + 1
+
+                def _cb_reset_refill_block():
+                    QApplication.instance().barcode_read_blocked_on_refill = False
+
+                QApplication.instance().main_window.hide_input_dialog()
                 QApplication.instance().main_window.open_alert_dialog(
                     (barcode_, str(h_idx), self.machine_.name),
-                    fmt="The code entered '{}' does not match any toner on HEAD {} ({})"
+                    fmt="The code entered '{}' does not match any toner on HEAD {} ({})",
+                    callback=_cb_reset_refill_block,
+                    show_cancel_btn=False
                 )
 
         except Exception as e:  # pylint: disable=broad-except
@@ -536,23 +528,51 @@ class RefillProcedureHelper:
 
 class HomePage(BaseStackedPage):
 
+    # in-transit labels: shown when adjacent photocells are simultaneously occupied
+    # subclasses declare = None for labels missing from their UI file
+    STEP_01_02_label = None
+
+    _blink_step_label = None
+    _blink_state = False
+    STEP_02_03_label = None
+    STEP_02_04_label = None  # four-heads only (skips HEAD B)
+    STEP_03_04_label = None
+    STEP_04_05_label = None
+    STEP_06_07_label = None
+    STEP_07_08_label = None
+    STEP_07_09_label = None  # four-heads only (skips HEAD E)
+    STEP_08_09_label = None
+    STEP_09_10_label = None
+    STEP_11_12_label = None
+
     def __init__(self, *args, **kwargs):  # pylint:disable=too-many-branches, too-many-statements
 
         super().__init__(*args, **kwargs)
 
         self.jar_pixmap_map = [
-            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
-            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
-            (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
-            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
-            (self.STEP_05_label, (("D", "LOAD_LIFTER_UP_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_UP",),
-            (self.STEP_06_label, (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_DOWN",),
-            (self.STEP_07_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
-            (self.STEP_08_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "E",),
-            (self.STEP_09_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "F",),
-            (self.STEP_10_label, (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
-            (self.STEP_11_label, (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
-            (self.STEP_12_label, (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
+            (self.STEP_01_label,    (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A", (("IN_A",), ("A",)),),
+            (self.STEP_02_label,    (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_02_03_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("B", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A", (("A",), ("B",)),),
+            (self.STEP_02_04_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A", (("A",), ("C",)),),
+            (self.STEP_03_label,    (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
+            (self.STEP_03_04_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "B", (("B",), ("C",)),),
+            (self.STEP_04_label,    (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_04_05_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL")), "C", (("C",), ("LIFTR_UP", "LIFTR_DOWN")),),
+            (self.STEP_05_label,    (("D", "LOAD_LIFTER_UP_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_UP",),
+            (self.STEP_06_label,    (("D", "LOAD_LIFTER_DOWN_PHOTOCELL"), ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTR_DOWN",),
+            (self.STEP_06_07_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"), ("D", "JAR_DISPENSING_POSITION_PHOTOCELL")), "LIFTR_DOWN", (("LIFTR_UP", "LIFTR_DOWN"), ("D",)),),
+            (self.STEP_07_label,    (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "D",),
+            (self.STEP_07_08_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("E", "JAR_DISPENSING_POSITION_PHOTOCELL")), "D", (("D",), ("E",)),),
+            (self.STEP_07_09_label, (("D", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_DISPENSING_POSITION_PHOTOCELL")), "D", (("D",), ("F",)),),
+            (self.STEP_08_label,    (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "E",),
+            (self.STEP_08_09_label, (("E", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_DISPENSING_POSITION_PHOTOCELL")), "E", (("E",), ("F",)),),
+            (self.STEP_09_label,    (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "F",),
+            (self.STEP_09_10_label, (("F", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL")), "F", (("F",), ("LIFTL_DOWN", "LIFTL_UP")),),
+            (self.STEP_10_label,    (("F", "UNLOAD_LIFTER_DOWN_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_DOWN",),
+            (self.STEP_11_label,    (("F", "UNLOAD_LIFTER_UP_PHOTOCELL"), ("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"),), "LIFTL_UP",),
+            (self.STEP_11_12_label, (("F", "JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL"), ("F", "JAR_OUTPUT_ROLLER_PHOTOCELL")), "LIFTL_UP", (("LIFTL_UP", "LIFTL_DOWN"), ("OUT",)),),
+            (self.STEP_12_label,    (("F", "JAR_OUTPUT_ROLLER_PHOTOCELL"),), "OUT",),
         ]
 
         self.running_jars_lbl.setStyleSheet("font-size: 15px")
@@ -842,13 +862,43 @@ class HomePage(BaseStackedPage):
                 list_.append(f"{_ : >4}")
         self.running_jars_lbl.setText("\n".join(list_))
 
-        for lbl, head_letters_bit_names, position in self.jar_pixmap_map:
-            if lbl:
-                self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position)
+        for entry in self.jar_pixmap_map:
+            lbl, head_letters_bit_names, position = entry[:3]
+            adjacent_positions = entry[3] if len(entry) > 3 else None
+            if lbl and lbl is not self._blink_step_label:
+                self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position,
+                                                adjacent_positions=adjacent_positions)
+
+    def start_step_blink(self, step_key):
+        lbl = getattr(self, f"STEP_{step_key}_label", None)
+        if lbl:
+            self._blink_step_label = lbl
+            self._blink_state = False
+            self._do_blink()
+
+    def stop_step_blink(self):
+        lbl = self._blink_step_label
+        self._blink_step_label = None
+        if lbl:
+            lbl.setStyleSheet("QLabel {}")
+            lbl.setText("")
+
+    def _do_blink(self):
+        if not self._blink_step_label:
+            return
+        self._blink_state = not self._blink_state
+        if self._blink_state:
+            _url = get_res("IMAGE", "jar-orange.png")
+            self._blink_step_label.setStyleSheet(
+                f'color:#000000; border-image:url("{_url}"); font-size: 15px')
+        else:
+            self._blink_step_label.setStyleSheet("QLabel {}")
+            self._blink_step_label.setText("")
+        QTimer.singleShot(500, self._do_blink)
 
     @staticmethod
     def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
-            lbl, head_letters_bit_names, position=None, icon=None):
+            lbl, head_letters_bit_names, position=None, icon=None, adjacent_positions=None):
 
         if lbl:
             def _get_bit(head_letter, bit_name):
@@ -863,8 +913,17 @@ class HomePage(BaseStackedPage):
                 ]
 
                 if icon is None:
-                    if false_condition:
-                        lbl.setStyleSheet("QLabel {{}}")
+                    hide = bool(false_condition)
+                    if not hide and adjacent_positions:
+                        # Adjacent photocells alone are ambiguous: they may belong
+                        # to different jars while jar_runners is still empty or
+                        # only partially populated. Keep middle labels hidden in
+                        # normal rendering and reserve them for explicit blink/error
+                        # states handled elsewhere.
+                        hide = True
+
+                    if hide:
+                        lbl.setStyleSheet("QLabel {}")
                         lbl.setText("")
                     else:
                         _text = ""
@@ -1136,6 +1195,9 @@ class HomePageSixHeads(HomePage):
     ui_file_name = "home_page_six_heads.ui"
     help_file_name = 'home_six_heads.html'
 
+    STEP_02_04_label = None  # four-heads only
+    STEP_07_09_label = None  # four-heads only
+
 
 class HomePageFourHeads(HomePage):
 
@@ -1147,6 +1209,11 @@ class HomePageFourHeads(HomePage):
 
     STEP_03_label = None
     STEP_08_label = None
+
+    STEP_02_03_label = None  # six-heads only (HEAD B not present)
+    STEP_03_04_label = None  # six-heads only
+    STEP_07_08_label = None  # six-heads only (HEAD E not present)
+    STEP_08_09_label = None  # six-heads only
 
     refill_3_lbl = None
     refill_4_lbl = None
@@ -1212,6 +1279,7 @@ class HomePageCRX60Heads(HomePage):
 
         self.jar_pixmap_map = [
             (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A", (("IN_A",), ("A",)),),
             (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
             (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
@@ -1274,6 +1342,7 @@ class HomePageCRX40Heads(HomePage):
 
         self.jar_pixmap_map = [
             (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A", (("IN_A",), ("A",)),),
             (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
             (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),

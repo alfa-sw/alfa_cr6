@@ -18,8 +18,6 @@ import logging
 
 import logging.handlers
 
-from jinja2 import Environment, FileSystemLoader
-
 import websockets  # pylint: disable=import-error
 
 from flask import Markup # pylint: disable=import-error
@@ -27,67 +25,15 @@ from flask import Markup # pylint: disable=import-error
 from alfa_CR6_backend.globals import (get_version, set_language, import_settings, get_application_instance, tr_, set_refill_popup_choices)
 from alfa_CR6_backend.settings_manager import SettingsManager
 
-here_ = os.path.dirname(os.path.abspath(__file__))
-pth_ = os.path.join(here_, "templates/")
-JINJA_ENVIRONMENT = Environment(loader=FileSystemLoader(pth_ ))
 
-class HomePage:
+async def _send_protocol_error(websocket, code):
+    answer = json.dumps({
+        'type': 'error',
+        'code': code,
+    })
+    await websocket.send(answer)
+    return answer
 
-    async def refresh_page(self, msg_dict, websocket, parent):
-
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-
-        template = JINJA_ENVIRONMENT.get_template("home_page.html")
-        html_ = template.render()
-        logging.warning(f"html_:{html_}.")
-
-        msg = json.dumps({
-            'type': 'html',
-            'target': 'home_page',
-            'value': html_,
-        })
-        await websocket.send(msg)
-
-    async def click(self, msg_dict, websocket, parent):
-
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-
-
-class MenuPage:
-
-    async def refresh_page(self, msg_dict, websocket, parent):
-
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-
-    async def click(self, msg_dict, websocket, parent):
-
-        logging.warning(f"self:{self}, msg_dict:{msg_dict}, websocket:{websocket}, parent:{parent}.")
-
-
-class RemoteUiMessageHandler: # pylint: disable=too-few-public-methods
-
-    pages = {
-        'home_page': HomePage(),
-        'menu_page': MenuPage(),
-    }
-
-    @classmethod
-    async def handle_msg(cls, msg, websocket, parent):
-
-        # ~ logging.warning(f"websocket:{websocket}, msg:{msg}.")
-        try:
-            msg_dict = json.loads(msg)
-            logging.warning(f"msg_dict:{msg_dict}.")
-            event = msg_dict.get('event')
-            page_id = msg_dict.get('page_id')
-
-            handler = getattr(cls.pages.get(page_id), event)
-            if handler:
-                ret = await handler(msg_dict, websocket, parent)
-                logging.warning(f"ret:{ret}.")
-
-        except Exception:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
 
 class WsMessageHandler: # pylint: disable=too-few-public-methods
 
@@ -106,32 +52,59 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
 
             cls.parent = parent
 
-            msg_dict = json.loads(msg)
+            try:
+                msg_dict = json.loads(msg)
+            except json.JSONDecodeError:
+                logging.warning("bad_request: invalid json payload")
+                answer = await _send_protocol_error(websocket, 'bad_request')
+                logging.warning(f"answer:{answer}")
+                return
+
+            if not isinstance(msg_dict, dict):
+                logging.warning(
+                    "bad_request: expected object payload, got:%s",
+                    type(msg_dict).__name__,
+                )
+                answer = await _send_protocol_error(websocket, 'bad_request')
+                logging.warning(f"answer:{answer}")
+                return
 
             if msg_dict.get("command"):
+                answer = None
+                command = msg_dict.get("command")
 
-                if hasattr(cls, msg_dict["command"]):
-                    _callable = getattr(cls, msg_dict["command"])
+                if not isinstance(command, str):
+                    logging.warning("bad_request: command is not a string")
+                    answer = await _send_protocol_error(websocket, 'bad_request')
+                    logging.warning(f"answer:{answer}")
+                    return
+
+                if hasattr(cls, command):
+                    _callable = getattr(cls, command)
                     answer = await _callable(msg_dict, websocket)
+                else:
+                    logging.warning("bad_request: unknown command:%s", command)
+                    answer = await _send_protocol_error(websocket, 'bad_request')
 
                 logging.warning(f"answer:{answer}")
 
             elif msg_dict.get("debug_command"):
+                logging.warning("bad_request: debug_command disabled")
+                answer = await _send_protocol_error(websocket, 'bad_request')
+                logging.warning(f"[debug_command] answer:{answer}")
 
-                try:
-                    cmd_ = msg_dict["debug_command"]
-                    ret = eval(cmd_)     # pylint: disable=eval-used
-                except Exception as e:   # pylint: disable=broad-except
-                    ret = str(e)
-                answer = json.dumps({
-                    'type': 'debug_answer',
-                    'value': html.escape(str(ret)),
-                })
-                await websocket.send(answer)
+            else:
+                logging.warning("bad_request: missing supported command field")
+                answer = await _send_protocol_error(websocket, 'bad_request')
                 logging.warning(f"answer:{answer}")
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+            try:
+                answer = await _send_protocol_error(websocket, 'internal_error')
+                logging.warning(f"answer:{answer}")
+            except Exception:  # pylint: disable=broad-except
+                logging.error("failed sending internal_error:\n%s", traceback.format_exc())
 
     @classmethod
     async def change_language(cls, msg_dict, websocket): # pylint: disable=unused-argument
@@ -323,10 +296,12 @@ class WsServer: # pylint: disable=too-many-instance-attributes
         self.parent = parent
         self.ws_host = ws_host
         self.ws_port = ws_port
-        asyncio.ensure_future(websockets.serve(self.new_client_handler, self.ws_host, self.ws_port))
+        asyncio.ensure_future(websockets.serve(
+            self.new_client_handler, self.ws_host, self.ws_port,
+            ping_interval=20, ping_timeout=10, close_timeout=5,
+            max_size=2**20))
 
-        self.ws_clients = []
-        self.remote_ui_clients = []
+        self.ws_clients = set()
 
         self.__version__ = get_version()
 
@@ -384,6 +359,16 @@ class WsServer: # pylint: disable=too-many-instance-attributes
 
         return Markup(html_)
 
+    async def _broadcast_raw(self, message):
+        async def _safe_send(client):
+            try:
+                await asyncio.wait_for(client.send(message), timeout=5)
+            except Exception:
+                self.ws_clients.discard(client)
+
+        if self.ws_clients:
+            await asyncio.gather(*[_safe_send(c) for c in set(self.ws_clients)])
+
     async def broadcast_msg(self, type_, msg):
 
         if self.ws_clients:
@@ -396,8 +381,7 @@ class WsServer: # pylint: disable=too-many-instance-attributes
             })
             # ~ logging.warning("message:{}.".format(message))
 
-            for client in self.ws_clients:
-                await client.send(message)
+            await self._broadcast_raw(message)
 
         return True
 
@@ -415,8 +399,7 @@ class WsServer: # pylint: disable=too-many-instance-attributes
                 'type': 'current_language_label',
                 'value': self.parent.settings.LANGUAGE,
             })
-            for client in self.ws_clients:
-                await client.send(msg_)
+            await self._broadcast_raw(msg_)
 
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
@@ -424,24 +407,18 @@ class WsServer: # pylint: disable=too-many-instance-attributes
     async def new_client_handler(self, websocket, path):
         try:
             logging.warning("appending websocket:{}, path:{}.".format(websocket, path))
-            if 'remote_ui' in path:
-                self.remote_ui_clients.append(websocket)
-                async for message in websocket:  # start listening for messages from ws client
-                    await RemoteUiMessageHandler.handle_msg(message, websocket, self.parent)
-            else:
-                self.ws_clients.append(websocket)
-                await self.__refresh_client_info()
-                async for message in websocket:  # start listening for messages from ws client
-                    await WsMessageHandler.handle_msg(message, websocket, self.parent)
+            self.ws_clients.add(websocket)
+            await self.__refresh_client_info()
+            async for message in websocket:  # start listening for messages from ws client
+                await WsMessageHandler.handle_msg(message, websocket, self.parent)
 
-        except websockets.exceptions.ConnectionClosedError:  # pylint: disable=broad-except
-            logging.warning("")
+        except websockets.exceptions.ConnectionClosed as e:  # pylint: disable=broad-except
+            logging.warning("websocket connection closed: %s, path:%s", e, path)
         except BaseException:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
         finally:
-            if websocket in self.ws_clients:
-                logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
-                self.ws_clients.remove(websocket)
+            logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
+            self.ws_clients.discard(websocket)
 
     def refresh_can_list(self):
 

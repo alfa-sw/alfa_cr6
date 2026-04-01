@@ -46,7 +46,7 @@ from PyQt5.QtWidgets import (
 )
 
 from alfa_CR6_backend.models import Order, Jar
-from alfa_CR6_backend.dymo_printer import dymo_print_jar, dymo_print_package_label
+from alfa_CR6_backend.dymo_printer import dymo_print_jar, dymo_print_package_label, async_dymo_print_jar, async_dymo_print_jars, async_dymo_print_package_label
 
 from alfa_CR6_backend.globals import get_res, tr_, import_settings
 
@@ -427,13 +427,7 @@ class EditDialog(BaseDialog):
 
             logging.warning(f"self.print_check_box.isChecked() :{self.print_check_box.isChecked() }")
             if self.print_check_box.isChecked():
-                for j in jars_to_print:
-                    # ~ b = str(j.barcode)
-                    # ~ logging.warning(f"b, j.extra_lines_to_print:{b, j.extra_lines_to_print}")
-                    # ~ response = dymo_print(b, *j.extra_lines_to_print)
-                    response = dymo_print_jar(j)
-                    logging.warning(f"response:{response}")
-                    time.sleep(.05)
+                asyncio.ensure_future(async_dymo_print_jars(jars_to_print))
 
         except BaseException as e:  # pylint: disable=broad-except
             db_session.rollback()
@@ -711,11 +705,11 @@ class InputDialog(BaseDialog):
     def close_actions(self):
         try:
             self.parent().toggle_keyboard(on_off=False)
-            QApplication.instance().barcode_read_blocked_on_refill = False
-
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+        finally:
+            QApplication.instance().barcode_read_blocked_on_refill = False
 
 
 class AliasDialog(BaseDialog):
@@ -1107,11 +1101,11 @@ class RefillDialog(BaseDialog):
     def close_actions(self):
         try:
             self.parent().toggle_keyboard(on_off=False)
-            QApplication.instance().barcode_read_blocked_on_refill = False
-
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+        finally:
+            QApplication.instance().barcode_read_blocked_on_refill = False
 
     def get_content_text(self):
 
@@ -1167,12 +1161,11 @@ class RefillDialog(BaseDialog):
                 self.__ok_cb = None
                 # ~ tmp__ok_cb(*tmp__args_)
                 asyncio.get_event_loop().call_later(.05, partial(tmp__ok_cb, *tmp__args_))
-    
-            QApplication.instance().barcode_read_blocked_on_refill = False
-
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+        finally:
+            QApplication.instance().barcode_read_blocked_on_refill = False
 
     def show_dialog(self,    # pylint: disable=too-many-arguments
             icon_name=None,
@@ -1287,34 +1280,37 @@ class PackageSizesDialog(BaseDialog):
 
     def _generate_barcode_label(self, package):
 
-        try:
+        async def _do_print():
+            result = {}
+            try:
+                result = await async_dymo_print_package_label(package, fake=False)
+                logging.warning(f"result :: {result}")
 
-            result = dymo_print_package_label(package, fake=False)
-            logging.warning(f"result :: {result}")
+                if result.get('result') == 'OK':
+                    return
 
-            if result.get('result') == 'OK':
-                return
+                error_msg = result.get('msg', "")
+                logging.error(error_msg)
+                QApplication.instance().main_window.open_alert_dialog(
+                    (),
+                    fmt=error_msg,
+                    show_cancel_btn=False
+                )
 
-            error_msg = result.get('msg', "")
-            logging.error(error_msg)
-            QApplication.instance().main_window.open_alert_dialog(
-                (),
-                fmt=error_msg,
-                show_cancel_btn=False
-            )
+            except Exception as e:
+                error_msg = [
+                    "[PackageSizesDialog]",
+                    "An unexpected error has been occurred"
+                ]
+                logging.error(traceback.format_exc())
+                QApplication.instance().main_window.open_alert_dialog(
+                    (),
+                    fmt=error_msg,
+                    traceback=result.get('msg', 'UNKNOWN ERROR'),
+                    show_cancel_btn=False
+                )
 
-        except Exception as e:
-            error_msg = [
-                "[PackageSizesDialog]",
-                "An unexpected error has been occurred"
-            ]
-            logging.error(traceback.format_exc())
-            QApplication.instance().main_window.open_alert_dialog(
-                (),
-                fmt=error_msg,
-                traceback=result.get('msg', 'UNKNOWN ERROR'),
-                show_cancel_btn=False
-            )
+        asyncio.ensure_future(_do_print())
 
     def __show_error_in_table(self, error_msg, font_size=18):
 

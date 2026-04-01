@@ -1069,6 +1069,195 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <widget class="QLabel" name="STEP_01_02_label">
+   <property name="geometry">
+    <rect>
+     <x>475</x>
+     <y>370</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_02_03_label">
+   <property name="geometry">
+    <rect>
+     <x>847</x>
+     <y>370</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_03_04_label">
+   <property name="geometry">
+    <rect>
+     <x>1235</x>
+     <y>370</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_04_05_label">
+   <property name="geometry">
+    <rect>
+     <x>1617</x>
+     <y>370</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_06_07_label">
+   <property name="geometry">
+    <rect>
+     <x>1615</x>
+     <y>740</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_07_08_label">
+   <property name="geometry">
+    <rect>
+     <x>1235</x>
+     <y>745</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_08_09_label">
+   <property name="geometry">
+    <rect>
+     <x>847</x>
+     <y>745</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_09_10_label">
+   <property name="geometry">
+    <rect>
+     <x>470</x>
+     <y>740</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
+  <widget class="QLabel" name="STEP_11_12_label">
+   <property name="geometry">
+    <rect>
+     <x>345</x>
+     <y>470</y>
+     <width>85</width>
+     <height>85</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>10</pointsize>
+    </font>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+   <property name="alignment">
+    <set>Qt::AlignCenter</set>
+   </property>
+  </widget>
   <widget class="QLabel" name="container_presence_1_label">
    <property name="geometry">
     <rect>
@@ -1666,10 +1855,19 @@ RECOVERY</string>
   <zorder>STEP_03_label</zorder>
   <zorder>STEP_02_label</zorder>
   <zorder>STEP_09_label</zorder>
+  <zorder>STEP_01_02_label</zorder>
+  <zorder>STEP_02_03_label</zorder>
+  <zorder>STEP_03_04_label</zorder>
+  <zorder>STEP_04_05_label</zorder>
+  <zorder>STEP_06_07_label</zorder>
+  <zorder>STEP_07_08_label</zorder>
+  <zorder>STEP_08_09_label</zorder>
+  <zorder>STEP_09_10_label</zorder>
   <zorder>STEP_01_label</zorder>
   <zorder>STEP_08_label</zorder>
   <zorder>STEP_11_label</zorder>
   <zorder>STEP_12_label</zorder>
+  <zorder>STEP_11_12_label</zorder>
   <zorder>container_presence_1_label</zorder>
   <zorder>container_presence_3_label</zorder>
   <zorder>container_presence_5_label</zorder>
@@ -1707,7 +1905,7 @@ RECOVERY</string>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="action_btn_group"/>
   <buttongroup name="service_btn_group"/>
+  <buttongroup name="action_btn_group"/>
  </buttongroups>
 </ui>

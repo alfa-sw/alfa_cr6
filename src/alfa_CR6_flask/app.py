@@ -24,7 +24,7 @@ from alfa_CR6_backend.globals import import_settings
 from alfa_CR6_backend.models import (Order, Jar, Event, Document, set_global_session, apply_table_alterations)
 from alfa_CR6_flask.admin_views import (AdminIndexView, OrderModelView, JarModelView, EventModelView, DocumentModelView)
 from alfa_CR6_flask.api import init_restless_api, init_restful_api
-from alfa_CR6_flask.remote_ui import init_remote_ui
+from alfa_CR6_flask.views import init_views
 
 SETTINGS = import_settings()
 
@@ -85,8 +85,7 @@ def main():
 
     init_restless_api(app, db)
     init_restful_api(app, db)
-
-    init_remote_ui(app, db)
+    init_views(app)
 
     HOST, PORT = '0.0.0.0', 8090
     logging.warning("start serving admin UI on http://{}:{}".format(HOST, PORT))
