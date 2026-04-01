@@ -1084,6 +1084,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             "A": "A",
             "B": "B",
             "C": "C",
+            "G": "G",
             "LIFTR_UP": "C",
             "LIFTR_DOWN": "C",
             "D": "D",
@@ -1312,8 +1313,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     ),
                     'C': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL' if self.machine_variant == 'CRX80' else 'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL',
+                        next_head_letter="G" if self.machine_variant == 'CRX80' else "C"
+                    ),
+                    'G': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_LOAD_LIFTER_ROLLER_PHOTOCELL',
-                        next_head_letter="C"
+                        next_head_letter="G"
                     ),
                     'LIFTR_UP': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
