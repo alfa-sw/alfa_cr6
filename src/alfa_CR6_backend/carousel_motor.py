@@ -345,9 +345,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_cr_linear_deliver_line_available(self, jar):
         """
-        Wait for CR linear (CRX40/CRX60) delivery line to be available.
+        Wait for CR linear (CRX40/CRX60/CRX80) delivery line to be available.
         """
-        C = self.get_machine_head_by_letter("C")
+        if self.machine_variant == 'CRX80':
+            C = self.get_machine_head_by_letter("G")
+        else:
+            C = self.get_machine_head_by_letter("C")
 
         while True:
             def condition():
