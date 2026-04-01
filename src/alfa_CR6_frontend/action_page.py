@@ -163,6 +163,20 @@ class ActionPage(BaseStackedPage):
         self.action_labels_layout.setSpacing(5)  # Riduce la spaziatura
         self.action_labels_layout.setContentsMargins(0, 0, 0, 0)  # Riduce i margini
 
+        self._status_G_label = None
+        if IN_DOCKER and MACHINE_VARIANT == 'CRX80':
+            self.status_D_label.hide()
+            self.status_E_label.hide()
+            self.status_F_label.hide()
+            self.horizontalLayoutWidget_2.hide()
+
+            self._status_G_label = QLabel(self)
+            self._status_G_label.setMinimumHeight(32)
+            self._status_G_label.setStyleSheet("background-color: #FFFFCC; border: 1px solid #999999; border-radius: 2px;")
+            self._status_G_label.setFrameShape(QLabel.Box)
+            self._status_G_label.setTextFormat(Qt.RichText)
+            self._status_G_label.setAlignment(Qt.AlignCenter)
+            self.horizontalLayout.addWidget(self._status_G_label)
 
         for b in action_item["buttons"]:
             i = QPushButton(tr_(b["text"]), self)
@@ -190,13 +204,24 @@ class ActionPage(BaseStackedPage):
                 getattr(lbl, "show_val")()
                 logging.warning(f"lbl:{lbl}")
 
-        for w, l in[(self.status_A_label, 'A'),
-                    (self.status_B_label, 'B'),
-                    (self.status_C_label, 'C'),
-                    (self.status_D_label, 'D'),
-                    (self.status_E_label, 'E'),
-                    (self.status_F_label, 'F')]:
+        if IN_DOCKER and MACHINE_VARIANT == 'CRX80':
+            head_status_list = [
+                (self.status_A_label, 'A'),
+                (self.status_B_label, 'B'),
+                (self.status_C_label, 'C'),
+                (self._status_G_label, 'G'),
+            ]
+        else:
+            head_status_list = [
+                (self.status_A_label, 'A'),
+                (self.status_B_label, 'B'),
+                (self.status_C_label, 'C'),
+                (self.status_D_label, 'D'),
+                (self.status_E_label, 'E'),
+                (self.status_F_label, 'F'),
+            ]
 
+        for w, l in head_status_list:
             if w:
                 self.__show_head_status(w, l)
 
