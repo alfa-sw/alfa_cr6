@@ -83,6 +83,7 @@ class OrderParser:       # pylint: disable=too-many-public-methods
     basf_2_pdf_headers = ["Base Amount", "Ingredients Kontrolle"]  # BASF Cosima
     carcolour_pdf_footer = 'PPG Industries, Inc. PPG CONFIDENTIAL INFORMATION'
     multichem_greenline_cloud_pdf_header = 'GreenLine (CP99)' # Multichem greenline cloud system
+    xrite_surquimica_pdf_header = "SurQuimica_"
 
     sw_txt_headers = [
         "Intelligent Colour Retrieval & Information Services",
@@ -240,6 +241,62 @@ weight:{RealWeight}
             })
 
         # ~ logging.warning(json.dumps(formulaRecipeItem, indent=2, ensure_ascii=False))
+
+        return properties
+
+    @classmethod
+    def parse_dupont_xml(cls, xml_as_dict):
+
+        properties = {
+            "meta": {},
+            "ingredients": [],
+            "extra_lines_to_print": [],
+        }
+
+        spoolfile = xml_as_dict["DuPont_Exchange_SpoolFile"]
+        form_data = spoolfile["FormData"]
+
+        # --- meta ---
+        file_id = spoolfile.get("@FileID", "")
+        mf_info = form_data.get("DatabaseItems", {}).get("MfInfo", {})
+        job_items = form_data.get("JobItems", {})
+
+        brand = mf_info.get("MfName", "") or ""
+        col_code = mf_info.get("ColCode", "") or ""
+        col_name = mf_info.get("ColName", "") or ""
+        volume_requested = job_items.get("@VolumeRequested", "") or ""
+        job_nr = job_items.get("@jobNr", "") or ""
+
+        properties["meta"] = {
+            "fileId": file_id,
+            "brand": brand,
+            "colorCode": col_code,
+            "colorName": col_name,
+            "volumeRequested": volume_requested,
+            "jobNr": job_nr,
+        }
+
+        # --- ingredients (from MixRec/Product) ---
+        mix_rec = form_data.get("MixRec", {})
+        products = mix_rec.get("Product", [])
+        if not isinstance(products, list):
+            products = [products]
+
+        for product in products:
+            abs_mass = product.get("AbsMass")
+            if abs_mass is None:
+                continue
+            properties["ingredients"].append({
+                "pigment_name": product.get("TintCode", ""),
+                "weight(g)": round(float(abs_mass), 5),
+                "description": product.get("TintName", "") or "",
+            })
+
+        # --- extra_lines_to_print ---
+        properties["extra_lines_to_print"].append(f'{brand}')
+        properties["extra_lines_to_print"].append(f'{col_code} - {col_name}')
+        if volume_requested:
+            properties["extra_lines_to_print"].append(f'Vol:{volume_requested}L')
 
         return properties
 
@@ -1424,6 +1481,74 @@ weight:{RealWeight}
 
         return props
 
+    @staticmethod
+    def parse_xrite_surquimica_pdf(original_lines):
+
+        properties = {
+            'meta': {},
+            'ingredients': [],
+            'extra_lines_to_print': []
+        }
+
+        lines = [l.strip() for l in original_lines if l.strip()]
+        in_ingredient_section = False
+
+        for idx, line in enumerate(lines):
+            line_clean = " ".join(line.split())
+
+            if line_clean.startswith("Standard Name:"):
+                properties['meta']['standard_name'] = line_clean.split(":", 1)[1].strip()
+
+            elif "Sample" in line and not in_ingredient_section:
+                parts = line.split()
+                if len(parts) >= 2:
+                    sample_name = parts[-1]
+                    properties['meta']['sample_name'] = sample_name
+
+            elif line_clean.startswith("Assortment:"):
+                properties['meta']['assortment'] = line_clean.split(":", 1)[1].strip()
+
+            elif line_clean.startswith("Substrate:"):
+                properties['meta']['substrate'] = line_clean.split(":", 1)[1].strip()
+
+            elif line_clean.startswith("Thickness:"):
+                properties['meta']['thickness'] = line_clean.split(":", 1)[1].strip()
+
+            elif line_clean.startswith("Can Size:"):
+                can_size = line_clean.split(":", 1)[1].strip()
+                properties['meta']['can_size'] = can_size
+
+            elif "Component" in line and "Recipe" in line and "Amount (g)" in line:
+                in_ingredient_section = True
+                continue
+
+            elif in_ingredient_section:
+                if line_clean.startswith("Total:"):
+                    break
+
+                parts = line_clean.split()
+                if len(parts) >= 3:
+                    try:
+                        component_code = parts[0]
+                        amount = float(parts[-2].replace(",", "."))
+                        ingredient = {"pigment_name": component_code, "weight(g)": round(amount, 4), "description": ""}
+                        properties['ingredients'].append(ingredient)
+                    except (ValueError, IndexError):
+                        continue
+
+        standard_name = properties['meta'].get('standard_name', '')
+        sample_name = properties['meta'].get('sample_name', '')
+        can_size = properties['meta'].get('can_size', '')
+        substrate = properties['meta'].get('substrate', '')
+
+        properties['extra_lines_to_print'] = [
+            f"{standard_name}",
+            f"{sample_name}",
+            f"{substrate} - {can_size}",
+        ]
+
+        return properties
+
     @classmethod
     def parse_pdf_order(cls, path_to_file, fixed_pitch=5):  # pylint: disable=too-many-branches, too-many-statements
 
@@ -1518,6 +1643,12 @@ weight:{RealWeight}
             if properties.get('meta'):
                 properties['meta']['header'] = cls.multichem_greenline_cloud_pdf_header
 
+        elif any(cls.xrite_surquimica_pdf_header in l for l in lines[:10]):
+            properties = cls.parse_xrite_surquimica_pdf(original_lines)
+
+            if properties.get('meta'):
+                properties['meta']['header'] = cls.xrite_surquimica_pdf_header
+
         cmd_ = f'rm -f "{path_to_txt_file}"'
         # ~ logging.warning(f"cmd_:{cmd_}")
         os.system(cmd_)
@@ -1598,6 +1729,10 @@ weight:{RealWeight}
                 properties = cls.parse_Besa_SINNEK_xml(xml_as_dict)
                 if properties.get('meta'):
                     properties['meta']['header'] = 'Besa_SINNEK_xml'
+            elif xml_as_dict.get("DuPont_Exchange_SpoolFile"):
+                properties = cls.parse_dupont_xml(xml_as_dict)
+                if properties.get('meta'):
+                    properties['meta']['header'] = 'dupont_xml'
             else:
                 raise Exception(f"unknown xml file:{path_to_file}")
 

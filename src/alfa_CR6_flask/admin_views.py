@@ -606,6 +606,7 @@ class AdminIndexView(flask_admin.AdminIndexView):
     def upload_formula_file(self):     # pylint: disable=no-self-use
         _msgs = []
         _status = HTTPStatus.BAD_REQUEST
+        _response_data = {}
         try:
             answer_type = request.form.get('answer_type')
             logging.warning(f":{answer_type}")
@@ -617,6 +618,19 @@ class AdminIndexView(flask_admin.AdminIndexView):
                     f.write(stream.read())
                 _status = HTTPStatus.OK
                 _msgs.append("formula file uploaded. {}".format(stream.filename))
+
+                # ~ if stream.filename.lower().endswith('.xml'):
+                # ~     try:
+                # ~         import xml.etree.ElementTree as ET
+                # ~         tree = ET.parse(pth_)
+                # ~         root = tree.getroot()
+                # ~         if root.tag == "DuPont_Exchange_SpoolFile":
+                # ~             file_id = root.get("FileID", "")
+                # ~             if file_id:
+                # ~                 _response_data['file_id'] = file_id
+                # ~     except Exception:  # pylint: disable=broad-except
+                # ~         logging.error(traceback.format_exc())
+
         except Exception as exc:  # pylint: disable=broad-except
             _msgs.append('Error trying to upload formula file: {}'.format(exc))
             logging.error(traceback.format_exc())
@@ -628,8 +642,9 @@ class AdminIndexView(flask_admin.AdminIndexView):
             logging.warning("_msgs:{}".format(_msgs))
 
         else:
+            _response_data['msg'] = _msgs
             ret = current_app.response_class(
-                json.dumps({'msg': _msgs}, ensure_ascii=False),
+                json.dumps(_response_data, ensure_ascii=False),
                 status=_status, content_type='application/json; charset=utf-8')
 
         logging.warning("ret:{}".format(ret))

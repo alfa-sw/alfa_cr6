@@ -62,6 +62,7 @@ LANGUAGE_MAP = {
     "norwegian": 'no',
     "arabic": 'ar',
     "thai": 'th',
+    "portuguese": 'pt',
 }
 
 _ALFA_SN = None
@@ -114,16 +115,7 @@ def set_language(lang):
         logging.error("unsupported language")
         return
 
-    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-        s = import_settings()
-        fn = s.USER_SETTINGS_JSON_FILE
-        us = s.USER_SETTINGS
-        us['LANGUAGE'] = lang
-        save_user_settings(fn, us)
-    else:
-        cmd_ = f"""sed -i 's/LANGUAGE.=.".."/LANGUAGE = "{lang}"/g' /opt/alfa_cr6/conf/app_settings.py"""
-        os.system(cmd_)
-
+    SettingsManager.set_updates({"LANGUAGE": lang})
     os.system("kill -9 {}".format(os.getpid()))
 
 def save_user_settings(filename, user_settings_dict):
@@ -137,17 +129,7 @@ def save_user_settings(filename, user_settings_dict):
 
 def set_refill_popup_choices(refill_choices):
 
-    if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-        s = import_settings()
-        fn = s.USER_SETTINGS_JSON_FILE
-        us = s.USER_SETTINGS
-        us['POPUP_REFILL_CHOICES'] = refill_choices
-        save_user_settings(fn, us)
-    else:
-        refill_choices_str = json.dumps(refill_choices)
-        cmd_ = f"""sed -i "s/^\(POPUP_REFILL_CHOICES\s*=\s*\).*/\\1{refill_choices_str}/" /opt/alfa_cr6/conf/app_settings.py"""
-        os.system(cmd_)
-
+    SettingsManager.set_updates({"POPUP_REFILL_CHOICES": refill_choices})
     os.system("kill -9 {}".format(os.getpid()))
 
 
@@ -383,15 +365,18 @@ def process_text(text):
     # for other RTL languages (e.g. Hebrew, Syriac, Thaana, etc.)
     return get_display(text)
 
-def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
+def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name, options=None, output_path=None):
 
-    options = _get_print_label_options()
+    if options is None:
+        options = _get_print_label_options()
+
+    _image_path = output_path or TMP_PIGMENT_IMAGE
 
     response = None
 
-    if not os.path.exists(TMP_PIGMENT_IMAGE):
-        with open(TMP_PIGMENT_IMAGE, 'w', encoding='UTF-8'):
-            logging.warning(f'empty file created at:{TMP_PIGMENT_IMAGE}')
+    if not os.path.exists(_image_path):
+        with open(_image_path, 'w', encoding='UTF-8'):
+            logging.warning(f'empty file created at:{_image_path}')
 
     options['module_height'] = 5
     if not barcode_txt:
@@ -405,34 +390,55 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name):
 
     printable_text = '\n'.join(lines_to_print)
 
-    with open(TMP_PIGMENT_IMAGE, 'wb') as file_:
+    with open(_image_path, 'wb') as file_:
         rotate = options.pop('rotate')
         EAN13(barcode_txt, writer=ImageWriter()).write(file_, options, printable_text)
 
-        response = TMP_PIGMENT_IMAGE
+        response = _image_path
 
     if response and rotate:
         from PIL import Image   # pylint: disable=import-outside-toplevel
-        Image.open(TMP_PIGMENT_IMAGE).rotate(rotate, expand=1).save(TMP_PIGMENT_IMAGE)
+        Image.open(_image_path).rotate(rotate, expand=1).save(_image_path)
 
     logging.warning('response: {}'.format(response))
 
     return response
 
-def create_printable_image_from_jar(jar, options=None):
+def extract_jar_print_data(jar):
 
-    recipe_barcode = str(jar.barcode)
+    return {
+        'barcode': str(jar.barcode),
+        'extra_lines_to_print': list(jar.extra_lines_to_print),
+        'unknown_pigments': dict(jar.unknown_pigments),
+        'not_dispensed_ingredients': dict(jar.not_dispensed_ingredients),
+    }
+
+
+def create_printable_image_from_jar(jar, options=None, output_path=None):
+
+    if isinstance(jar, dict):
+        recipe_barcode = jar['barcode']
+        extra_lines = jar['extra_lines_to_print']
+        unknown_pigments = jar['unknown_pigments']
+        not_dispensed = jar['not_dispensed_ingredients']
+    else:
+        recipe_barcode = str(jar.barcode)
+        extra_lines = jar.extra_lines_to_print
+        unknown_pigments = jar.unknown_pigments
+        not_dispensed = jar.not_dispensed_ingredients
 
     if options is None:
         options = _get_print_label_options()
 
+    _image_path = output_path or TMP_BARCODE_IMAGE
+
     response = None
 
-    if not os.path.exists(TMP_BARCODE_IMAGE):
-        with open(TMP_BARCODE_IMAGE, 'w', encoding='UTF-8'):
-            logging.warning(f'empty file created at:{TMP_BARCODE_IMAGE}')
+    if not os.path.exists(_image_path):
+        with open(_image_path, 'w', encoding='UTF-8'):
+            logging.warning(f'empty file created at:{_image_path}')
 
-    with open(TMP_BARCODE_IMAGE, 'wb') as file_:
+    with open(_image_path, 'wb') as file_:
         recipe_barcode_text = f'{recipe_barcode}'
 
         l_lenght = options.pop('line_lenght')
@@ -440,16 +446,16 @@ def create_printable_image_from_jar(jar, options=None):
         rotate = options.pop('rotate')
 
         lines_to_print = [recipe_barcode, ]
-        lines_to_print += [f"{l}"[:l_lenght] for l in jar.extra_lines_to_print]
+        lines_to_print += [f"{l}"[:l_lenght] for l in extra_lines]
         if options.get('print_missing_products'):
-            logging.warning(f'jar.unknown_pigments:{jar.unknown_pigments}')
-            if jar.unknown_pigments:
-                lines_to_print += [tr_("{} product(s) missing:").format(len(jar.unknown_pigments))]
-                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.unknown_pigments.items()]
+            logging.warning(f'unknown_pigments:{unknown_pigments}')
+            if unknown_pigments:
+                lines_to_print += [tr_("{} product(s) missing:").format(len(unknown_pigments))]
+                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in unknown_pigments.items()]
 
-            if jar.not_dispensed_ingredients:
-                lines_to_print += [tr_("{} product(s) not dispensed:").format(len(jar.not_dispensed_ingredients))]
-                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in jar.not_dispensed_ingredients.items()]
+            if not_dispensed:
+                lines_to_print += [tr_("{} product(s) not dispensed:").format(len(not_dispensed))]
+                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in not_dispensed.items()]
 
         if len(lines_to_print) > n_of_lines + 1:
             logging.warning(f"not enough space to print all lines")
@@ -463,11 +469,11 @@ def create_printable_image_from_jar(jar, options=None):
 
         EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
 
-        response = TMP_BARCODE_IMAGE
+        response = _image_path
 
     if response and rotate:
         from PIL import Image   # pylint: disable=import-outside-toplevel
-        Image.open(TMP_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_BARCODE_IMAGE)
+        Image.open(_image_path).rotate(rotate, expand=1).save(_image_path)
 
     logging.warning('response: {}'.format(response))
 
@@ -496,21 +502,22 @@ def create_printable_image_for_package(package):
             'module_height': 10.0,
             'font_size': 22,
         }
-        variant = os.getenv('MACHINE_VARIANT')
-        if variant not in ['CRX60', 'CRX40']:
-            options = {
-                'module_width': 0.08,
-                'module_height': 2.8,
-                'font_size': 14,
-            }
+        # variant = os.getenv('MACHINE_VARIANT')
+        # if variant not in ['CRX60', 'CRX40']:
+        #     options = {
+        #         'module_width': 0.08,
+        #         'module_height': 2.8,
+        #         'font_size': 14,
+        #     }
         rotate = 90
 
         with open(TMP_PACKAGE_BARCODE_IMAGE, 'wb') as file_:
             Code128(printable_text, writer=ImageWriter()).write(file_, options, printable_text)
             response = TMP_PACKAGE_BARCODE_IMAGE
-            if response:
-                from PIL import Image   # pylint: disable=import-outside-toplevel
-                Image.open(TMP_PACKAGE_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_PACKAGE_BARCODE_IMAGE)
+
+        if response:
+            from PIL import Image   # pylint: disable=import-outside-toplevel
+            Image.open(TMP_PACKAGE_BARCODE_IMAGE).rotate(rotate, expand=1).save(TMP_PACKAGE_BARCODE_IMAGE)
 
     except Exception as e:  # pylint: disable=broad-except
         logging.error(f'Error creating package barcode: {str(e)}')
@@ -534,39 +541,11 @@ def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp
         )
 
 def toggle_manual_barcode_read():
-    import re
 
-    path_app_settings = '/opt/alfa_cr6/conf/app_settings.py'
-    try:
+    current = SettingsManager.get_editable_settings().get('MANUAL_BARCODE_INPUT')
+    if current is None:
+        raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT'")
 
-        if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-            s = import_settings()
-            fn = s.USER_SETTINGS_JSON_FILE
-            us = s.USER_SETTINGS
-            if not "MANUAL_BARCODE_INPUT" in us:
-                raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT' ")
-            new_val = not us['MANUAL_BARCODE_INPUT']
-            us['MANUAL_BARCODE_INPUT'] = new_val
-            save_user_settings(fn, us)
-            return new_val
-
-        with open(path_app_settings, 'r') as f:
-            content = f.read()
-
-            match = re.search(r'^(MANUAL_BARCODE_INPUT\s*=\s*)(True|False)', content, re.MULTILINE)
-            if not match:
-                raise RuntimeError("Missing settings: 'MANUAL_BARCODE_INPUT' ")
-
-            prefix = match.group(1)
-            current_value = match.group(2)
-            new_value_bool = not (current_value == 'True')
-            new_line = prefix + ("True" if new_value_bool else "False")
-            content_new = re.sub(r'^(MANUAL_BARCODE_INPUT\s*=\s*)(True|False)', new_line, content, flags=re.MULTILINE)
-
-            with open(path_app_settings, 'w') as f:
-                f.write(content_new)
-
-            return new_value_bool
-
-    except Exception as e:
-        raise e
+    new_val = not current
+    SettingsManager.set_updates({"MANUAL_BARCODE_INPUT": new_val})
+    return new_val
