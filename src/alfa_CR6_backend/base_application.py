@@ -1479,9 +1479,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def _del_entering_jar(self, entering_jar, kode):
 
         logging.warning(f'kode --> {kode}')
-        if entering_jar.get('jar') and entering_jar["jar"].status not in ["ERROR", "DONE"]:
-            logging.warning(f'CHANGING STATUS OF JAF {kode}')
-            entering_jar["jar"].status = "NEW"
+        if entering_jar.get('jar'):
+            if entering_jar["jar"].status not in ["ERROR", "DONE"]:
+                logging.warning(f'CHANGING STATUS OF JAF {kode}')
+                entering_jar["jar"].status = "NEW"
             entering_jar["jar"].position = "_"
             entering_jar["jar"].machine_head = None
             self.db_session.commit()
@@ -1790,6 +1791,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                 if jar.status == "ERROR":
                     status = "ERROR"
+                elif jar.status == "DONE":
+                    status = "DONE"
 
                 jar.update_live(machine_head=machine_head, status=status, pos=pos, t0=time.time())
 
@@ -2059,4 +2062,3 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if not result:
             logging.warning("on_barcode_read failed, resetting ready_to_read_a_barcode state")
             self.ready_to_read_a_barcode = True
-
