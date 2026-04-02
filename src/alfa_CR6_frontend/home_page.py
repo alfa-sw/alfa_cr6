@@ -630,6 +630,8 @@ class HomePage(BaseStackedPage):
             self.reserve_5_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(4)
         if self.reserve_6_label:
             self.reserve_6_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(5)
+        if self.reserve_7_label:
+            self.reserve_7_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(6)
 
         if self.expiry_1_label:
             self.expiry_1_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(0)
@@ -643,6 +645,8 @@ class HomePage(BaseStackedPage):
             self.expiry_5_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(4)
         if self.expiry_6_label:
             self.expiry_6_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(5)
+        if self.expiry_7_label:
+            self.expiry_7_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(6)
 
         if self.refill_1_lbl:
             self.refill_1_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(0)
@@ -656,6 +660,8 @@ class HomePage(BaseStackedPage):
             self.refill_5_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(4)
         if self.refill_6_lbl:
             self.refill_6_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(5)
+        if self.refill_7_lbl:
+            self.refill_7_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(6)
 
         # self.printer_helper = PrinterHelper()
         # self.printer_helper.all_prints_finished.connect(self.on_all_prints_finished)
@@ -690,6 +696,7 @@ class HomePage(BaseStackedPage):
                 self.service_4_btn,
                 self.service_5_btn,
                 self.service_6_btn,
+                self.service_7_btn,
             ]
 
             map_ = dict(zip(service_btns, service_page_urls))
@@ -766,6 +773,7 @@ class HomePage(BaseStackedPage):
             self.expiry_4_label,
             self.expiry_5_label,
             self.expiry_6_label,
+            self.expiry_7_label,
         ]
 
         m = QApplication.instance().machine_head_dict.get(head_index)
@@ -796,6 +804,7 @@ class HomePage(BaseStackedPage):
             self.service_4_btn,
             self.service_5_btn,
             self.service_6_btn,
+            self.service_7_btn,
         ]
         if map_[head_index]:
             map_[head_index].setText(tr_(f"{status.get('status_level', 'NONE')}"))
@@ -807,6 +816,7 @@ class HomePage(BaseStackedPage):
             self.container_presence_4_label,
             self.container_presence_5_label,
             self.container_presence_6_label,
+            self.container_presence_7_label,
         ]
 
         if map_[head_index]:
@@ -833,6 +843,7 @@ class HomePage(BaseStackedPage):
             self.refill_4_lbl,
             self.refill_5_lbl,
             self.refill_6_lbl,
+            self.refill_7_lbl,
         ]
 
         for head_index, m in QApplication.instance().machine_head_dict.items():
@@ -966,6 +977,7 @@ class HomePage(BaseStackedPage):
             self.reserve_4_label,
             self.reserve_5_label,
             self.reserve_6_label,
+            self.reserve_7_label,
         ]
 
         if map_[head_index]:
@@ -1198,6 +1210,12 @@ class HomePageSixHeads(HomePage):
     STEP_02_04_label = None  # four-heads only
     STEP_07_09_label = None  # four-heads only
 
+    service_7_btn = None
+    refill_7_lbl = None
+    expiry_7_label = None
+    reserve_7_label = None
+    container_presence_7_label = None
+
 
 class HomePageFourHeads(HomePage):
 
@@ -1229,6 +1247,12 @@ class HomePageFourHeads(HomePage):
 
     container_presence_3_label = None
     container_presence_4_label = None
+
+    service_7_btn = None
+    refill_7_lbl = None
+    expiry_7_label = None
+    reserve_7_label = None
+    container_presence_7_label = None
 
 class HomePageCRX60Heads(HomePage):
 
@@ -1271,6 +1295,12 @@ class HomePageCRX60Heads(HomePage):
     container_presence_4_label = None
     container_presence_6_label = None
 
+    service_7_btn = None
+    refill_7_lbl = None
+    expiry_7_label = None
+    reserve_7_label = None
+    container_presence_7_label = None
+
     unload_lifter_down_label = None
     unload_lifter_up_label = None
 
@@ -1285,6 +1315,64 @@ class HomePageCRX60Heads(HomePage):
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
             (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
         ]
+
+class HomePageCRX80Heads(HomePage):
+
+    ui_file_name = "home_page_four_linear_heads.ui"
+    help_file_name = ''
+
+    action_07_btn = None
+    action_08_btn = None
+    action_09_btn = None
+    action_10_btn = None
+
+    STEP_07_label = None
+    STEP_08_label = None
+    STEP_09_label = None
+    STEP_10_label = None
+    STEP_11_label = None
+    STEP_12_label = None
+
+    refill_2_lbl = None
+    refill_4_lbl = None
+    refill_6_lbl = None
+
+    expiry_2_label = None
+    expiry_4_label = None
+    expiry_6_label = None
+
+    reserve_2_label = None
+    reserve_4_label = None
+    reserve_6_label = None
+
+    service_2_btn = None
+    service_4_btn = None
+    service_6_btn = None
+
+    container_presence_2_label = None
+    container_presence_4_label = None
+    container_presence_6_label = None
+
+    unload_lifter_down_label = None
+    unload_lifter_up_label = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.jar_pixmap_map = [
+            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A", (("IN_A",), ("A",)),),
+            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_02_03_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("B", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A", (("A",), ("B",)),),
+            (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
+            (self.STEP_03_04_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "B", (("B",), ("C",)),),
+            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_04_05_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("G", "JAR_DISPENSING_POSITION_PHOTOCELL")), "C", (("C",), ("G",)),),
+            (self.STEP_05_label, (("G", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "G",),
+            (self.STEP_05_06_label, (("G", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("G", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL")), "G", (("G",), ("OUT",)),),
+            (self.STEP_06_label, (("G", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
+        ]
+
 
 class HomePageCRX40Heads(HomePage):
 
@@ -1333,6 +1421,12 @@ class HomePageCRX40Heads(HomePage):
     container_presence_3_label = None
     container_presence_4_label = None
     container_presence_6_label = None
+
+    service_7_btn = None
+    refill_7_lbl = None
+    expiry_7_label = None
+    reserve_7_label = None
+    container_presence_7_label = None
 
     unload_lifter_down_label = None
     unload_lifter_up_label = None

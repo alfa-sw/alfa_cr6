@@ -511,7 +511,8 @@ class AdminIndexView(flask_admin.AdminIndexView):
             'current_language': SETTINGS.LANGUAGE,
             'language_map': LANGUAGE_MAP,
             'in_docker': os.getenv("IN_DOCKER", False) in ['1', 'true'],
-            'refill_choices': get_refill_choices()
+            'refill_choices': get_refill_choices(),
+            'machine_variant': os.getenv('MACHINE_VARIANT', '')
         }
 
         return self.render(template, **ctx)

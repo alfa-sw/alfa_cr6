@@ -168,7 +168,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
 
                 ordine_pos = [
                     "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
-                    "E", "D", "LIFTR_DOWN", "LIFTR_UP",
+                    "E", "D", "G", "LIFTR_DOWN", "LIFTR_UP",
                     "C", "B", "A", "IN_A", "IN"
                 ]
                 
@@ -444,7 +444,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         2: "B",
         3: "E",
         4: "C",
-        5: "D", }
+        5: "D",
+        6: "G", }
 
     n_of_active_heads = 0
 
@@ -877,7 +878,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if jar:
 
             variant = os.getenv('MACHINE_VARIANT')
-            if variant in ['CRX60', 'CRX40']:
+            if variant in ['CRX60', 'CRX40', 'CRX80']:
                 jar_size = self.shuttle_size_from_barcode_scanner
                 logging.debug("Using shuttle_size_from_barcode_scanner: %s", jar_size)
             else:
@@ -907,7 +908,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 package_size_list.sort()
                 logging.warning(f"jar_size:{jar_size}, package_size_list:{package_size_list}")
                 jar_volume = 0
-                if variant in ['CRX60', 'CRX40']:
+                if variant in ['CRX60', 'CRX40', 'CRX80']:
                     jar_volume = self.shuttle_size_from_barcode_scanner
                 else:
                     try:
@@ -978,7 +979,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             logging.debug(f"skipping barcode:{barcode}")
             self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
-        elif self._crx_ja_block_sequence_active and self.machine_variant in ['CRX60', 'CRX40']:
+        elif self._crx_ja_block_sequence_active and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']:
             self._crx_pending_barcode = str(barcode)
             return None
 
@@ -994,7 +995,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 A = self.get_machine_head_by_letter("A")
                 # ~ r = await A.wait_for_jar_photocells_status('JAR_INPUT_ROLLER_PHOTOCELL', on=True)
                 status_levels_ = ["STANDBY"]
-                if self.in_docker and self.machine_variant in ['CRX60', 'CRX40']:
+                if self.in_docker and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']:
                     status_levels_ = ["STANDBY", "JAR_POSITIONING", "DISPENSING"]
                 r = await A.wait_for_jar_photocells_and_status_lev(
                     "JAR_INPUT_ROLLER_PHOTOCELL", on=True,
@@ -1028,7 +1029,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             self.ready_to_read_a_barcode = True
                             return
 
-                        if self.machine_variant not in ['CRX60', 'CRX40']:
+                        if self.machine_variant not in ['CRX60', 'CRX40', 'CRX80']:
                             t = self.__jar_task(barcode)
                             self.__jar_runners[barcode] = {
                                 "task": asyncio.ensure_future(t),
@@ -1134,7 +1135,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 return None
 
             variant = os.getenv('MACHINE_VARIANT')
-            if variant in ['CRX60', 'CRX40']:
+            if variant in ['CRX60', 'CRX40', 'CRX80']:
                 return None
 
             logging.warning(f"[SHUTTLE] barcode :: '{barcode}'")
