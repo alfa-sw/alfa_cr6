@@ -29,7 +29,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     busy_head_A = False
     running_recovery_mode = False
 
-    machine_variant = os.getenv('MACHINE_VARIANT', None)
+    machine_variant = os.getenv('MACHINE_VARIANT', '')
     in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
     # True only for CR4/CR6 with fixed barcode
@@ -559,7 +559,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60 or 'C -> G' CRX80
 
-        machine_variant = os.getenv('MACHINE_VARIANT', None)
+        machine_variant = os.getenv('MACHINE_VARIANT', '')
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
         if in_docker and machine_variant == 'CRX80':
@@ -608,7 +608,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def move_05_06(self, jar=None):  # 'UP -> DOWN' or 'G -> OUT' CRX80
 
-        machine_variant = os.getenv('MACHINE_VARIANT', None)
+        machine_variant = os.getenv('MACHINE_VARIANT', '')
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
         if in_docker and machine_variant == 'CRX80':

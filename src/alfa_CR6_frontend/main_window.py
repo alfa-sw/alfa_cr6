@@ -46,7 +46,7 @@ from alfa_CR6_frontend.keyboard import Keyboard
 
 def get_action_page_list():
 
-    machine_variant = os.getenv('MACHINE_VARIANT', None)
+    machine_variant = os.getenv('MACHINE_VARIANT', '')
     in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
     def action01_buttons():
