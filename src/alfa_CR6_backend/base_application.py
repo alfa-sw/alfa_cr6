@@ -750,23 +750,37 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         msg_args = msg_args + (list(unknown_pigments.keys()),)
                         msg_.append("\nRemember to check the volume.\n")
 
-                    try:
-                        self.request_attention_leds(
-                            _refill_led_heads,
-                            _refill_led_token,
-                            reason=f"pigments to refill for barcode {barcode}",
+                    _settings = import_settings()
+                    skip_freeze = (
+                        bool(unknown_pigments)
+                        and not insufficient_pigments
+                        and getattr(_settings, 'SKIP_FREEZE_ON_UNKNOWN_PIGMENTS', False)
+                    )
+
+                    if skip_freeze:
+                        self.main_window.open_alert_dialog(
+                            msg_args,
+                            fmt=msg_,
+                            show_cancel_btn=False,
                         )
-                        await self.wait_for_carousel_not_frozen(
-                            True,
-                            message_args=msg_args,
-                            message_fmt=msg_
-                        )
-                    finally:
-                        self.release_attention_leds(
-                            _refill_led_heads,
-                            _refill_led_token,
-                            reason=f"pigments refilled for barcode {barcode}",
-                        )
+                    else:
+                        try:
+                            self.request_attention_leds(
+                                _refill_led_heads,
+                                _refill_led_token,
+                                reason=f"pigments to refill for barcode {barcode}",
+                            )
+                            await self.wait_for_carousel_not_frozen(
+                                True,
+                                message_args=msg_args,
+                                message_fmt=msg_
+                            )
+                        finally:
+                            self.release_attention_leds(
+                                _refill_led_heads,
+                                _refill_led_token,
+                                reason=f"pigments refilled for barcode {barcode}",
+                            )
 
                 else:
                     self.main_window.show_barcode(jar.barcode, is_ok=True)
