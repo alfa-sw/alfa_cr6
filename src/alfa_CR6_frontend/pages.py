@@ -196,9 +196,12 @@ class FileTableModel(BaseTableModel):
             self.results.append(item)
 
     def remove_file(self, file_name):  # pylint: disable=no-self-use
-        cmd_ = f'rm -f "{os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)}"'
-        logging.warning(f"cmd_:{cmd_}")
-        os.system(cmd_)
+        path_ = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
+        logging.warning(f"removing file: {path_}")
+        try:
+            os.remove(path_)
+        except OSError:
+            logging.error(traceback.format_exc())
 
     def data(self, index, role):
         # ~ logging.warning(f"index, role:{index, role}")
