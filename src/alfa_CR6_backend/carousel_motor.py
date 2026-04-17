@@ -801,6 +801,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if r:
             await F.crx_outputs_management(2, 4)
             r = await self.wait_for_condition(condition=None, timeout=7, show_alert=False)
+            await asyncio.sleep(4)
             await F.crx_outputs_management(2, 0)
         else:
             logging.warning("F output roller is busy.")
