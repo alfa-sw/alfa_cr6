@@ -1,0 +1,1603 @@
+{
+  "document": "Operator Manual CR6 - Alfa Colorpaint Dispenser",
+  "chapter": "8. TROUBLE SHOOTING",
+  "revision": "07",
+  "year": 2024,
+  "errors": {
+    "2": {
+      "error_message": "EEPROM_COLOR_CIRC_PARAM_CRC_FAULT",
+      "error_description": "Circuit parameter CRC fault",
+      "resolution": "Check for the absence of parameters in the case of MMT replacement. Load the bases/colorants circuit parameters onto the new MMT board"
+    },
+    "3": {
+      "error_message": "EEPROM_CALIB_CURVES_PARAM_CRC_FAULT",
+      "error_description": "Calibration curve parameter CRC fault",
+      "resolution": "Check for the absence of parameters in the case of MMT replacement. Load the calibration parameters onto the new MMT board"
+    },
+    "5": {
+      "error_message": "EEPROM_SLAVES_EN_PARAM_CRC_FAULT",
+      "error_description": "Slave configuration CRC fault",
+      "resolution": "Check for the absence of parameters in the case of MMT replacement. Load the SLAVE configurations onto the new MMT board"
+    },
+    "8": {
+      "error_message": "EEPROM_HUM_20_PARAM_CRC_FAULT",
+      "error_description": "Humidifier 2.0 parameter CRC fault",
+      "resolution": "Check for the absence of parameters in the case of MMT replacement. Load Humidifier 2.0 parameters onto the new MMT board"
+    },
+    "9": {
+      "error_message": "EEPROM_CIRCUIT_PUMP_TYPES_CRC_FAULT",
+      "error_description": "Pump type CRC fault for each circuit",
+      "resolution": "Check for the absence of parameters in the case of MMT replacement. Load the types of pumps onto the new MMT board"
+    },
+    "10": {
+      "error_message": "USER_INTERRUPT",
+      "error_description": "Machine operation Software interruption",
+      "resolution": "HALT has been pressed or ABORT has been sent"
+    },
+    "201": {
+      "error_message": "RESET_TIMEOUT",
+      "error_description": "RESET process time-out",
+      "resolution": "The RESET process was NOT completed within the maximum set time. Check for a mechanical jam in the dispenser and eliminate it if possible"
+    },
+    "202": {
+      "error_message": "TIMEOUT_SUPPLY_START",
+      "error_description": "Time-out at Dispensing start",
+      "resolution": "Dispensing did NOT start within the maximum set time. Check for a mechanical jam in the dispenser and eliminate it if possible"
+    },
+    "203": {
+      "error_message": "TIMEOUT_SUPPLY_FAILED",
+      "error_description": "Dispensing duration time-out",
+      "resolution": "Dispensing did not end within the maximum set time. The formula is too long, or check for a mechanical jam in the dispenser and eliminate it if possible"
+    },
+    "346": {
+      "error_message": "TINTING_PUMP_RESET_ERROR",
+      "error_description": "Tinting Pump reset procedure duration time-out",
+      "resolution": "Verify the integrity of the Pump motor, of connectors, the connection on the MMT board"
+    },
+    "347": {
+      "error_message": "TINTING_VALVE_RESET_ERROR",
+      "error_description": "Tinting Valve reset procedure duration time-out",
+      "resolution": "Verify the integrity of the Valve motor, of connectors, the connection on the MMT board"
+    },
+    "348": {
+      "error_message": "TINTING_TABLE_RESET_ERROR",
+      "error_description": "Tinting Table reset procedure duration time-out",
+      "resolution": "Verify the integrity of the Table motor, of connectors, the connection on the MMT board"
+    },
+    "359": {
+      "error_message": "C1_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "360": {
+      "error_message": "C2_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "361": {
+      "error_message": "C3_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "362": {
+      "error_message": "C4_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "363": {
+      "error_message": "C5_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "364": {
+      "error_message": "C6_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "365": {
+      "error_message": "C7_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "366": {
+      "error_message": "C8_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "367": {
+      "error_message": "C9_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "368": {
+      "error_message": "C10_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "369": {
+      "error_message": "C11_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "370": {
+      "error_message": "C12_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "371": {
+      "error_message": "C13_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "372": {
+      "error_message": "C14_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "373": {
+      "error_message": "C15_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "374": {
+      "error_message": "C16_DATA_SUPPLY_FAILED",
+      "error_description": "Invalid table parameters",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "409": {
+      "error_message": "C1_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 1 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "410": {
+      "error_message": "C2_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 2 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "411": {
+      "error_message": "C3_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 3 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "412": {
+      "error_message": "C4_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 4 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "413": {
+      "error_message": "C5_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 5 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "414": {
+      "error_message": "C6_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 6 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "415": {
+      "error_message": "C7_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 7 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "416": {
+      "error_message": "C8_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 8 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "417": {
+      "error_message": "C9_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 9 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "418": {
+      "error_message": "C10_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 10 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "419": {
+      "error_message": "C11_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 11 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "420": {
+      "error_message": "C12_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 12 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "421": {
+      "error_message": "C13_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 13 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "422": {
+      "error_message": "C14_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 14 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "423": {
+      "error_message": "C15_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 15 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "424": {
+      "error_message": "C16_SUPPLY_CALC_ERROR",
+      "error_description": "In CONTINUOUS dispensing the Number of steps of the 16 COLORANT to carry out is NOT a multiple of a whole stroke",
+      "resolution": "Check for consistency errors between the tables and the circuit installed on the machine. Verify the proper installation of the calibration tables in the Machine menu."
+    },
+    "451": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_0_ERROR",
+      "error_description": "0 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "452": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_1_ERROR",
+      "error_description": "1 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "453": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_2_ERROR",
+      "error_description": "2 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "454": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_3_ERROR",
+      "error_description": "3 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "455": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_4_ERROR",
+      "error_description": "4 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "456": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_5_ERROR",
+      "error_description": "5 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "457": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_6_ERROR",
+      "error_description": "6 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "458": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_7_ERROR",
+      "error_description": "7 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "459": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_8_ERROR",
+      "error_description": "8 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "460": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_9_ERROR",
+      "error_description": "9 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "461": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_10_ERROR",
+      "error_description": "10 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "462": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_11_ERROR",
+      "error_description": "11 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "463": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_12_ERROR",
+      "error_description": "12 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "464": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_13_ERROR",
+      "error_description": "13 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "465": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_14_ERROR",
+      "error_description": "14 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "466": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_15_ERROR",
+      "error_description": "15 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "467": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_16_ERROR",
+      "error_description": "16 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "468": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_17_ERROR",
+      "error_description": "17 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "469": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_18_ERROR",
+      "error_description": "18 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "470": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_19_ERROR",
+      "error_description": "19 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "471": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_20_ERROR",
+      "error_description": "20 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "472": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_21_ERROR",
+      "error_description": "21 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "473": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_22_ERROR",
+      "error_description": "22 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "474": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_23_ERROR",
+      "error_description": "23 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "475": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_24_ERROR",
+      "error_description": "24 (Base or Colorant) circuit must dispense but is erroneously Disabled",
+      "resolution": "Load the Slave configurations onto the new MMT board."
+    },
+    "534": {
+      "error_message": "TINTING_VALVE_HOME_POS_ERROR",
+      "error_description": "Error in the HOMING procedure of the Tinting Valve",
+      "resolution": "Verify the correct operation of the 2 photocells and the correct movement of the stepper"
+    },
+    "535": {
+      "error_message": "TINTING_TABLE_HOME_POS_ERROR",
+      "error_description": "Error in the HOMING procedure of the Tinting Turning Table",
+      "resolution": "Verify the correct operation of the photocell, that there is at least one flag on the table and the correct movement of the stepper"
+    },
+    "584": {
+      "error_message": "TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Engagement error of one of the 2 photocells during Valve HOMING",
+      "resolution": "Check operation of each Valve photocell, Valve stepper motor wiring and metal nameplate alignment"
+    },
+    "633": {
+      "error_message": "TINTING_PUMP_POS0_READ_LIGHT_ERROR",
+      "error_description": "Tinting Pump Home photocell NOT engaged at the end of pump step movement, or never engaged within an undefined time or number of steps, or NOT engaged during Tinting Table movement",
+      "resolution": "Check Home photocell and Stepper operation"
+    },
+    "634": {
+      "error_message": "TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Valve HOME photocell NOT engaged during Tinting Table movement or at the end of Homing procedure, or CLOSED valve during Dispensing",
+      "resolution": "Verify Valve and Stepper HOME photocell operation"
+    },
+    "733": {
+      "error_message": "TINTING_PUMP_OVERCURRENT_ERROR",
+      "error_description": "Overcurrent on a Tinting Pump stepper motor driver jumper",
+      "resolution": "Verify wirings and operation of Pump L6482H driver on MMT board"
+    },
+    "734": {
+      "error_message": "TINTING_VALVE_OVERCURRENT_ERROR",
+      "error_description": "Overcurrent on a Tinting Valve stepper motor driver jumper",
+      "resolution": "Verify wirings and operation of Valve L6482H driver on MMT board"
+    },
+    "735": {
+      "error_message": "TINTING_TABLE_OVERCURRENT_ERROR",
+      "error_description": "Overcurrent on a Tinting Table stepper motor driver jumper",
+      "resolution": "Verify wirings and operation of Table L6482H driver on MMT board"
+    },
+    "738": {
+      "error_message": "DOSING_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Current circulating in the Dosing Roller Conveyor is higher than the threshold set in the MMT board driver, or overtemperature detected on the driver",
+      "resolution": "Check the connection and wiring of the Dosing Roller Conveyor on the output reserved on MMT board"
+    },
+    "739": {
+      "error_message": "INPUT_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Current circulating in the Input Roller Conveyor is higher than the threshold set in the MMT board driver, or overtemperature detected on the driver",
+      "resolution": "Check the connection and wiring of the Input Roller Conveyor on the output reserved on MMT board"
+    },
+    "740": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Current circulating in the Unloading Roller Conveyor is higher than the threshold set in the MMT board driver, or overtemperature detected on the driver",
+      "resolution": "Check the connection and wiring of the Unloading Roller Conveyor on the output reserved on MMT board"
+    },
+    "792": {
+      "error_message": "TINTING_PUMP_SOFTWARE_ERROR",
+      "error_description": "Logic error in the Tinting Pump process statuses (including the Valve) or in the received formula parameters",
+      "resolution": "Check the sent formula parameters, if the problem persists request a Tinting Firmware update"
+    },
+    "793": {
+      "error_message": "TINTING_TABLE_SOFTWARE_ERROR",
+      "error_description": "Logic error in the Tinting Table process statuses",
+      "resolution": "Request a Tinting Firmware update"
+    },
+    "795": {
+      "error_message": "ROLLER_SOFTWARE_ERROR",
+      "error_description": "Logic error in the process statuses of the Roller Conveyors and Lifters",
+      "resolution": "Request a Firmware update"
+    },
+    "842": {
+      "error_message": "ROLLER_DRV_OVER_CURR_TEMP_ERROR",
+      "error_description": "Overcurrent or overtemperature in the driver that controls the Loading or Unloading Lifter or in the Loading Lifter Roller Conveyor of the MMT board",
+      "resolution": "Check the connection and wiring of the Loading or Unloading Lifter or Loading Lifter Roller Conveyor on the MMT board"
+    },
+    "896": {
+      "error_message": "HUMIDIFIER_20_PARAM_ERROR",
+      "error_description": "Error during machine RESET in parameter correctness check of Humidifier 2.0",
+      "resolution": "Check the correctness of parameters sent with DIAG_SETUP_HUMIDIFIER_TEMPERATURE_PROCESSES command."
+    },
+    "898": {
+      "error_message": "TEMPERATURE_ERROR",
+      "error_description": "Error in Temperature measurement",
+      "resolution": "Check connection of HUTTS Temperature Sensor housing board with MMT board. If the problem persists, replace the board and/or the connection cable"
+    },
+    "899": {
+      "error_message": "TEMPERATURE_TOO_LOW",
+      "error_description": "Temperature on board the machine too Low",
+      "resolution": "Check Heater operation"
+    },
+    "907": {
+      "error_message": "TINTING_TIMEOUT_TABLE_MOVE_ERROR",
+      "error_description": "Time-out expired during Table Homing, or in positioning to one circuit",
+      "resolution": "Verify Table stepper motor wirings, the Table characteristic parameters sent with the UPDATE_TINTING_TABLE_SETTINGS command, and operation of Table photocell"
+    },
+    "908": {
+      "error_message": "TINTING_TABLE_SEARCH_POSITION_REFERENCE_ERROR",
+      "error_description": "The reference mark found in the Table HOMING differs from the theoretical value set by a quantity in steps greater than the tolerance set",
+      "resolution": "Verify that there is a reference mark on the Table, that the Table characteristic parameters are correct and operation of Table photocell"
+    },
+    "909": {
+      "error_message": "TINTING_LACK_OF_CIRCUITS_POSITION_ERROR",
+      "error_description": "A circuit that needs to be cleaned is not enabled, or a circuit to be positioned is not present in the positional table",
+      "resolution": "Check that the circuit has been enabled and that a Self-learning has been correctly performed"
+    },
+    "911": {
+      "error_message": "TINTING_SELF_LEARNING_PROCEDURE_ERROR",
+      "error_description": "Tinting Table Self-Learning procedure error: at the start the Table is not on the Reference mark, or the Table photocell is not engaged, or the number of circuits found is > 16, or the number of circuits found in one rotation direction is different from the other",
+      "resolution": "A Reset must be successfully completed before performing Self Learning. Check Tinting Table photocell operation"
+    },
+    "912": {
+      "error_message": "TINTING_BAD_PUMP_PARAM_ERROR",
+      "error_description": "Tinting Pump characteristic parameters are incorrect",
+      "resolution": "Verify the set parameters and send the command to set the Pump parameters UPDATE_TINTING_PUMP_SETTINGS again"
+    },
+    "913": {
+      "error_message": "TINTING_BAD_TABLE_PARAM_ERROR",
+      "error_description": "Tinting Table characteristic parameters are incorrect",
+      "resolution": "Verify the set parameters and send the command to set the Table parameters UPDATE_TINTING_TABLE_SETTINGS again"
+    },
+    "914": {
+      "error_message": "EEPROM_PUMP_PARAM_CRC_FAULT",
+      "error_description": "Tinting Pump parameter CRC fault",
+      "resolution": "Possible absence of Pump parameters. In case of MM board replacement, load the Tinting Pump parameters with UPDATE_TINTING_PUMP_SETTINGS command"
+    },
+    "915": {
+      "error_message": "EEPROM_TABLE_PARAM_CRC_FAULT",
+      "error_description": "Tinting table parameter CRC fault",
+      "resolution": "Possible absence of Pump parameters. In case of MMT board replacement, load the Tinting Pump parameters with UPDATE_TINTING_TABLE_SETTINGS command"
+    },
+    "916": {
+      "error_message": "TINTING_BAD_PERIPH_PARAM_ERROR",
+      "error_description": "Incorrect parameters in peripheral setting command",
+      "resolution": "Verify the set parameters and send the command to set the Peripheral units again"
+    },
+    "917": {
+      "error_message": "EEPROM_CLEAN_PARAM_CRC_FAULT",
+      "error_description": "Tinting cleaning parameter CRC fault",
+      "resolution": "Possible absence of Brush parameters. In case of MMT board replacement, load the Brush parameters with UPDATE_TINTING_CLEANING_SETTINGS command"
+    },
+    "918": {
+      "error_message": "TINTING_PUMP_PHOTO_HOME_READ_DARK_ERROR_ST",
+      "error_description": "The Tinting Pump Home photocell is engaged while it should not be engaged during HOMING, or during Recirculation or Dispensing when the circuit is already engaged",
+      "resolution": "Verify Pump and Pump Stepper Home photocell operation"
+    },
+    "919": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Tinting Pump Coupling photocell is in a wrong state: engaged while it should not be engaged or vice-versa.",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "920": {
+      "error_message": "TINTING_TABLE_TEST_ERROR",
+      "error_description": "Tinting Table test failed: the starting position is NOT on the reference mark, or no circuit has been detected, or the number of detected circuits is > 16, or the position of at least one detected circuit in one direction differs from that in the opposite direction by a quantity in steps > than the set threshold, or the position of at least one detected circuit differs from that obtained in the Self-Learning by a quantity > than the set threshold, or the map of detected circuits differs from that configured by software",
+      "resolution": "Perform a Reset and try the Table Test again, verify the operation of the Tinting Table photocell, check the consistency between the circuits present on the Table and those configured in the software, try again to perform Self Learning, increase the tolerance on the positions of the Table by sending the Table Parameter configuration command again"
+    },
+    "922": {
+      "error_message": "TINTING_BASES_CARRIAGE_ERROR",
+      "error_description": "Product carriage off-position when the machine is NOT in Diagnostic mode",
+      "resolution": "Replace the carriage into its position. Verify carriage microswitch wiring on MMT board"
+    },
+    "923": {
+      "error_message": "TINTING_PANEL_TABLE_ERROR",
+      "error_description": "Open panel for Refill on the Tinting Table when the machine is NOT in Diagnostic mode, or it is in Diagnostic mode and you want to activate operations involving the movement of something that is NOT the Rotation of the Tinting Table",
+      "resolution": "Close the panel. Verify panel microswitch wiring on MMT board"
+    },
+    "924": {
+      "error_message": "TINTING_BRUSH_OPEN_LOAD_ERROR",
+      "error_description": "No load at output reserved to Brush of MMT board",
+      "resolution": "Check the connection and wiring of the Brush on the output reserved on MMT board"
+    },
+    "925": {
+      "error_message": "TINTING_BRUSH_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Current circulating in the Brush is higher than the threshold set in the MMT board driver, or overtemperature detected on the driver",
+      "resolution": "Check the connection and wiring of the brush on the output reserved on MMT board"
+    },
+    "930": {
+      "error_message": "TINTING_AIR_HEATER_OPEN_LOAD_ERROR",
+      "error_description": "No load at output reserved to Air Heater on MMT board",
+      "resolution": "Verify the connection and wiring of the Air Heater on the MMT board"
+    },
+    "931": {
+      "error_message": "TINTING_AIR_HEATER_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Current circulating in the Air Heater is higher than the threshold set in the MMT board driver, or overtemperature detected on the driver",
+      "resolution": "Verify the connections and wiring of the Air Heater on the MMT board"
+    },
+    "932": {
+      "error_message": "TINTING_GENERIC24V_OPEN_LOAD_ERROR_ST",
+      "error_description": "No load at output reserved to Brush Motor of MMT board",
+      "resolution": "Verify the connection and wiring of the Brush Motor on the MMT board"
+    },
+    "933": {
+      "error_message": "TINTING_GENERIC24V_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Current circulating in the Brush Motor is higher than the threshold set in the MMT board driver, or overtemperature detected on the driver",
+      "resolution": "Verify the connections and wiring of the Brush Motor on the MMT board"
+    },
+    "934": {
+      "error_message": "TINTING_PUMP_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Tinting Pump stepper motor controller internal overtemperature",
+      "resolution": "Shut off the machine, wait some minutes and turn in on again. If the problem persists, verify the electric connections with the Pump stepper motor. If the problem persists, replace the MMT board"
+    },
+    "935": {
+      "error_message": "TINTING_VALVE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Tinting Valve stepper motor controller internal overtemperature",
+      "resolution": "Shut off the machine, wait some minutes and turn in on again. If the problem persists, verify the electric connections with the Valve stepper motor. If the problem persists, replace the MMT board"
+    },
+    "936": {
+      "error_message": "TINTING_TABLE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Tinting Table stepper motor controller internal overtemperature",
+      "resolution": "Shut off the machine, wait some minutes and turn in on again. If the problem persists, verify the electric connections with the Table stepper motor. If the problem persists, replace the MMT board"
+    },
+    "937": {
+      "error_message": "TINTING_PUMP_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Tinting Pump stepper motor controller gate control voltage too low",
+      "resolution": "Verify the electric connections with the Pump stepper motor. If the problem persists, replace the MMT board"
+    },
+    "938": {
+      "error_message": "TINTING_VALVE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Tinting Valve stepper motor controller gate control voltage too low",
+      "resolution": "Verify the electric connections with the Valve stepper motor. If the problem persists, replace the MMT board"
+    },
+    "939": {
+      "error_message": "TINTING_TABLE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Tinting Table stepper motor controller gate control voltage too low",
+      "resolution": "Verify the electric connections with the Table stepper motor. If the problem persists, replace the MMT board"
+    },
+    "940": {
+      "error_message": "EEPROM_TINTING_COLORANTS_STEPS_POSITION_CRC_FAULT",
+      "error_description": "CRC fault of positional table of the circuits on the Tinting Table stored on the MMT board EEPROM",
+      "resolution": "Perform Tinting Table Self-Learning. If the problem persists, replace the MMT board"
+    },
+    "941": {
+      "error_message": "TINTING_TABLE_PHOTO_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Table photocell is not engaged when it should be engaged in various machine processes",
+      "resolution": "Verify Tinting Table Photocell operation"
+    },
+    "942": {
+      "error_message": "TINTING_TABLE_MOVE_ERROR",
+      "error_description": "Generic error in Tinting Table movement, or in Refill the Table moved without engaging any circuit",
+      "resolution": "Verify Tinting Table Photocell operation"
+    },
+    "943": {
+      "error_message": "TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before High Resolution Dosing",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "944": {
+      "error_message": "TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Valve HOMING the Open Valve photocell has not engaged, or in Recirculation, in Valve opening movement before refilling, it has not engaged, or during dosing it has not engaged",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "945": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump engagement photocell has not been engaged after movement for engagement of a circuit at the beginning of Recirculation or of a Dosing",
+      "resolution": "Check operation and wiring of the engagement photocell"
+    },
+    "946": {
+      "error_message": "TINTING_BRUSH_READ_LIGHT_ERROR",
+      "error_description": "The Brush HOME photocell is not engaged during movements for machine Reset, or during a Tinting Table movement, or during a Cleaning process",
+      "resolution": "Check operation of photocell, brush DC motor and the motor wiring on MMT board"
+    },
+    "947": {
+      "error_message": "TINTING_BAD_PARAM_CLEAN_ERROR",
+      "error_description": "The Cleaning process parameters are incorrect as found during machine Reset",
+      "resolution": "Check Cleaning process parameters and, if necessary, send them again with DIAG_COLORANT_ACTIVATION_CLEANING command"
+    },
+    "948": {
+      "error_message": "EEPROM_TEST_ERROR",
+      "error_description": "EEPROM operation test performed at Machine reset failed",
+      "resolution": "Try again and, if the problem persists, replace the MMT board"
+    },
+    "984": {
+      "error_message": "C1_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "985": {
+      "error_message": "C2_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "986": {
+      "error_message": "C3_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "987": {
+      "error_message": "C4_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "988": {
+      "error_message": "C5_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "989": {
+      "error_message": "C6_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "990": {
+      "error_message": "C7_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "991": {
+      "error_message": "C8_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "992": {
+      "error_message": "C9_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "993": {
+      "error_message": "C10_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "994": {
+      "error_message": "C11_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "995": {
+      "error_message": "C12_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "996": {
+      "error_message": "C13_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "997": {
+      "error_message": "C14_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "998": {
+      "error_message": "C15_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "999": {
+      "error_message": "C16_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1000": {
+      "error_message": "C17_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1001": {
+      "error_message": "C18_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1002": {
+      "error_message": "C19_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1003": {
+      "error_message": "C20_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1004": {
+      "error_message": "C21_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1005": {
+      "error_message": "C22_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1006": {
+      "error_message": "C23_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1007": {
+      "error_message": "C24_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "The circuits detected at the end of the Tinting Table Homing do not coincide with those found by the Self-Learning and stored in the MMT board EEPROM, or the positional tables of at least one circuit found in the two directions by the Self-Learning differ by a quantity in steps > of the tolerance set in the Table parameter configuration command, or the positional table of at least one circuit found by the Self-Learning differs from the theoretical value of a quantity in steps > of the tolerance set in the Table parameter configuration command, or incorrect matching between the positional table found in the Self-Learning and the colorant configuration set in the software",
+      "resolution": "Verify Tinting Table photocell operation. Repeat the Self-Learning procedure, verify that the circuits physically present on the Table coincide with those set in the software configuration page, increase the Tolerance on the positions of the circuits and postpone the Tinting Table parameter setting command"
+    },
+    "1035": {
+      "error_message": "ROLLER_TIMEOUT_MOVE_ERROR",
+      "error_description": "The movement of the Roller Conveyor or Lifter has not been performed within the specified Timeout",
+      "resolution": "Verify the operation of the photocell controlling the end of movement"
+    },
+    "1036": {
+      "error_message": "DOSING_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "No load on the output that controls the Dosing Roller Conveyor",
+      "resolution": "Verify the connection and wiring of the Dispensing Roller Conveyor Motor on the MMT board"
+    },
+    "1037": {
+      "error_message": "INPUT_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "No load on the output that controls the Input Roller Conveyor",
+      "resolution": "Verify the connection and wiring of the Input Roller Conveyor Motor on the MMT board"
+    },
+    "1038": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "No load on the output that controls the Unloading Lifter Roller Conveyor",
+      "resolution": "Verify the connection and wiring of the Unloading Lifter Roller Conveyor Motor on the MMT board"
+    },
+    "1040": {
+      "error_message": "C1_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C1",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1041": {
+      "error_message": "C2_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C2",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1042": {
+      "error_message": "C3_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C3",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1043": {
+      "error_message": "C4_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C4",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1044": {
+      "error_message": "C5_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C5",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1045": {
+      "error_message": "C6_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C6",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1046": {
+      "error_message": "C7_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C7",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1047": {
+      "error_message": "C8_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C8",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1048": {
+      "error_message": "C9_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C9",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1049": {
+      "error_message": "C10_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C10",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1050": {
+      "error_message": "C11_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C11",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1051": {
+      "error_message": "C12_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C12",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1052": {
+      "error_message": "C13_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C13",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1053": {
+      "error_message": "C14_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C14",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1054": {
+      "error_message": "C15_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C15",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1055": {
+      "error_message": "C16_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C16",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1056": {
+      "error_message": "C17_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C17",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1057": {
+      "error_message": "C18_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C18",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1058": {
+      "error_message": "C19_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C19",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1059": {
+      "error_message": "C20_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C20",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1060": {
+      "error_message": "C21_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C21",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1061": {
+      "error_message": "C22_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C22",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1062": {
+      "error_message": "C23_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C23",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1063": {
+      "error_message": "C24_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "The Open Valve photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C24",
+      "resolution": "Check operation of Open Valve photocell and its connection to the MMT board"
+    },
+    "1064": {
+      "error_message": "C1_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C1",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1065": {
+      "error_message": "C2_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C2",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1066": {
+      "error_message": "C3_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C3",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1067": {
+      "error_message": "C4_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C4",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1068": {
+      "error_message": "C5_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C5",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1069": {
+      "error_message": "C6_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C6",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1070": {
+      "error_message": "C7_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C7",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1071": {
+      "error_message": "C8_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C8",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1072": {
+      "error_message": "C9_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C9",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1073": {
+      "error_message": "C10_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C10",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1074": {
+      "error_message": "C11_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C11",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1075": {
+      "error_message": "C12_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C12",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1076": {
+      "error_message": "C13_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C13",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1077": {
+      "error_message": "C14_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C14",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1078": {
+      "error_message": "C15_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C15",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1079": {
+      "error_message": "C16_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C16",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1080": {
+      "error_message": "C17_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C17",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1081": {
+      "error_message": "C18_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C18",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1082": {
+      "error_message": "C19_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C19",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1083": {
+      "error_message": "C20_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C20",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1084": {
+      "error_message": "C21_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C21",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1085": {
+      "error_message": "C22_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C22",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1086": {
+      "error_message": "C23_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C23",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1087": {
+      "error_message": "C24_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "The valve HOME photocell is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C24",
+      "resolution": "Check operation of Valve HOME photocell and its connection to the MMT board"
+    },
+    "1088": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C1",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1089": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C2",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1090": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C3",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1091": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C4",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1092": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C5",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1093": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C6",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1094": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C7",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1095": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C8",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1096": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C9",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1097": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C10",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1098": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C11",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1099": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C12",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1100": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C13",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1101": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C14",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1102": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C15",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1103": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C16",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1104": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C17",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1105": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C18",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1106": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C19",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1107": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C20",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1108": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C21",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1109": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C22",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1110": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C23",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1111": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is not engaged when it should be engaged in Dosing and Recirculation processes that involve circuit C24",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1112": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C1",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1113": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C2",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1114": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C3",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1115": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C4",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1116": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C5",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1117": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C6",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1118": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C7",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1119": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C8",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1120": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C9",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1121": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C10",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1122": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C11",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1123": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C12",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1124": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C13",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1125": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C14",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1126": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C15",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1127": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C16",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1128": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C17",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1129": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C18",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1130": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C19",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1131": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C20",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1132": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C21",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1133": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C22",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1134": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C23",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1135": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "The Tinting Pump Coupling photocell is in a wrong status: it is engaged when it should not be engaged in Dosing and Recirculation processes that involve circuit C24",
+      "resolution": "Verify Pump and Pump Stepper coupling photocell operation. Verify the Pump characteristic parameters sent with the specific command"
+    },
+    "1136": {
+      "error_message": "C1_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 1 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1137": {
+      "error_message": "C2_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 2 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1138": {
+      "error_message": "C3_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 3 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1139": {
+      "error_message": "C4_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 4 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1140": {
+      "error_message": "C5_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 5 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1141": {
+      "error_message": "C6_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 6 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1142": {
+      "error_message": "C7_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 7 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1143": {
+      "error_message": "C8_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 8 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1144": {
+      "error_message": "C9_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 9 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1145": {
+      "error_message": "C10_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 10 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1146": {
+      "error_message": "C11_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 11 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1147": {
+      "error_message": "C12_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 12 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1148": {
+      "error_message": "C13_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 13 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1149": {
+      "error_message": "C14_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 14 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1150": {
+      "error_message": "C15_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 15 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1151": {
+      "error_message": "C16_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 16 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1152": {
+      "error_message": "C17_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 17 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1153": {
+      "error_message": "C18_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 18 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1154": {
+      "error_message": "C19_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 19 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1155": {
+      "error_message": "C20_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 20 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1156": {
+      "error_message": "C21_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 21 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1157": {
+      "error_message": "C22_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 22 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1158": {
+      "error_message": "C23_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 23 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1159": {
+      "error_message": "C24_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In Recirculation or Dosing processes that involve the 24 circuit, the Open Valve photocell is not engaged when it should be engaged",
+      "resolution": "Check operation of the Open Valve photocell and the Valve stepper motor wiring"
+    },
+    "1160": {
+      "error_message": "C1_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 1 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1161": {
+      "error_message": "C2_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 2 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1162": {
+      "error_message": "C3_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 3 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1163": {
+      "error_message": "C4_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 4 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1164": {
+      "error_message": "C5_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 5 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1165": {
+      "error_message": "C6_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 6 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1166": {
+      "error_message": "C7_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 7 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1167": {
+      "error_message": "C8_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 8 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1168": {
+      "error_message": "C9_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 9 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1169": {
+      "error_message": "C10_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 10 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1170": {
+      "error_message": "C11_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 11 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1171": {
+      "error_message": "C12_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 12 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1172": {
+      "error_message": "C13_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 13 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1173": {
+      "error_message": "C14_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 14 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1174": {
+      "error_message": "C15_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 15 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1175": {
+      "error_message": "C16_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 16 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1176": {
+      "error_message": "C17_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 17 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1177": {
+      "error_message": "C18_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 18 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1178": {
+      "error_message": "C19_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 19 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1179": {
+      "error_message": "C20_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 20 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1180": {
+      "error_message": "C21_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 21 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1181": {
+      "error_message": "C22_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 22 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1182": {
+      "error_message": "C23_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 23 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1183": {
+      "error_message": "C24_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valve closed before Dosing that involves the High Resolution 24 circuit",
+      "resolution": "Check operation of the 2 Valve photocells and the Valve stepper motor wiring"
+    },
+    "1184": {
+      "error_message": "C1_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 1 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 1 circuit engaged"
+    },
+    "1185": {
+      "error_message": "C2_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 2 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 2 circuit engaged"
+    },
+    "1186": {
+      "error_message": "C3_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 3 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 3 circuit engaged"
+    },
+    "1187": {
+      "error_message": "C4_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 4 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 4 circuit engaged"
+    },
+    "1188": {
+      "error_message": "C5_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 5 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 5 circuit engaged"
+    },
+    "1189": {
+      "error_message": "C6_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 6 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 6 circuit engaged"
+    },
+    "1190": {
+      "error_message": "C7_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 7 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 7 circuit engaged"
+    },
+    "1191": {
+      "error_message": "C8_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 8 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 8 circuit engaged"
+    },
+    "1192": {
+      "error_message": "C9_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 9 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 9 circuit engaged"
+    },
+    "1193": {
+      "error_message": "C10_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 10 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 10 circuit engaged"
+    },
+    "1194": {
+      "error_message": "C11_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 11 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 11 circuit engaged"
+    },
+    "1195": {
+      "error_message": "C12_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 12 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 12 circuit engaged"
+    },
+    "1196": {
+      "error_message": "C13_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 13 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 13 circuit engaged"
+    },
+    "1197": {
+      "error_message": "C14_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 14 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 14 circuit engaged"
+    },
+    "1198": {
+      "error_message": "C15_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 15 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 15 circuit engaged"
+    },
+    "1199": {
+      "error_message": "C16_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 16 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 16 circuit engaged"
+    },
+    "1200": {
+      "error_message": "C17_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 17 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 17 circuit engaged"
+    },
+    "1201": {
+      "error_message": "C18_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 18 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 18 circuit engaged"
+    },
+    "1202": {
+      "error_message": "C19_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 19 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 19 circuit engaged"
+    },
+    "1203": {
+      "error_message": "C20_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 20 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 20 circuit engaged"
+    },
+    "1204": {
+      "error_message": "C21_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 21 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 21 circuit engaged"
+    },
+    "1205": {
+      "error_message": "C22_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 22 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 22 circuit engaged"
+    },
+    "1206": {
+      "error_message": "C23_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 23 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 23 circuit engaged"
+    },
+    "1207": {
+      "error_message": "C24_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "The Tinting Table photocell is no longer engaged during a process in which Valve movement occurs when the 24 circuit is engaged",
+      "resolution": "Check positioning and hardness of the valve selector of the 24 circuit engaged"
+    }
+  }
+}

@@ -41,6 +41,7 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QDialogButtonBox,
     QTextBrowser,
+    QScrollArea,
     QSizePolicy,
     QLayout,
 )
@@ -62,6 +63,15 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             else:
                 b.setEnabled(flag_ok)
 
+    def setVisible(self, visible):
+        # Keep the dialog visible while the Info troubleshooting flow is active.
+        # Qt 5.12 hides the QMessageBox via a deferred event after the help
+        # button click instead of going through the virtual done() override,
+        # so blocking at setVisible() is the only reliable interception point.
+        if not visible and getattr(self, '_block_close', False):
+            return
+        super().setVisible(visible)
+
     def __init__(
             self, msg="", title="", parent=None, ok_callback=None,
             ok_callback_args=None, hp_callback=None
@@ -71,6 +81,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         self.ok_callback = ok_callback
         self.ok_callback_args = ok_callback_args
         self.hp_callback = hp_callback
+        self._block_close = False
 
         self.help_icon = QPixmap(get_res("IMAGE", "help.png"))
 
@@ -124,6 +135,10 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 btn_name = btn.objectName().lower()
                 logging.warning(f"btn_name:{btn_name}, btn:{btn}, btn.text():{btn.text()}")
 
+                if "help" not in btn_name:
+                    # Non-Info button: allow the dialog to close normally.
+                    self._block_close = False
+
                 if self.ok_callback and "ok" in btn_name:
                     if getattr(self, 'executing_callback', False):
                         return
@@ -133,7 +148,13 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                     self.ok_callback(*args_)
 
                 if self.hp_callback and "help" in btn_name:
-                    self.hp_callback()
+                    # Block the dialog from closing while the troubleshooting
+                    # browser is open. setVisible() override honours the flag.
+                    self._block_close = True
+                    try:
+                        self.hp_callback()
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(traceback.format_exc())
 
             self.buttonClicked.connect(on_button_clicked)
 
@@ -145,6 +166,56 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         self.setText(msg)
         self.setWindowTitle(title)
         self.show()
+
+
+class TroubleshootingDialog(QDialog):
+
+    FETCH_TIMEOUT = 2
+    FONT_SCALE = 1.5  # multiplier over Qt default font size (1.0 = 100%, 1.5 = 150%, ...)
+
+    def __init__(self, url, title=None, parent=None):
+
+        super().__init__(parent)
+
+        self.setWindowTitle(title or tr_('Troubleshooting'))
+        self.setModal(True)
+        self.setWindowModality(Qt.ApplicationModal)
+        self.resize(1400, 800)
+
+        html = self._fetch(url)
+
+        label = QLabel()
+        label.setTextFormat(Qt.RichText)
+        label.setWordWrap(True)
+        label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        font = label.font()
+        base_size = font.pointSizeF() if font.pointSizeF() > 0 else font.pixelSize()
+        font.setPointSizeF(base_size * self.FONT_SCALE)
+        label.setFont(font)
+        label.setText(html)
+
+        scroll = QScrollArea(self)
+        scroll.setWidget(label)
+        scroll.setWidgetResizable(True)
+
+        close_btn = QPushButton(tr_('  Close  '), self)
+        close_btn.setStyleSheet("QPushButton {font-size: 28px; padding: 10px;}")
+        close_btn.clicked.connect(self.accept)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(scroll, stretch=1)
+        layout.addWidget(close_btn)
+
+    @staticmethod
+    def _fetch(url):
+        import urllib.request  # pylint: disable=import-outside-toplevel
+        try:
+            with urllib.request.urlopen(url, timeout=TroubleshootingDialog.FETCH_TIMEOUT) as resp:
+                return resp.read().decode('utf-8')
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            return f"<p>{tr_('Error loading troubleshooting page.')}</p>"
 
 
 class BaseDialog(QFrame):

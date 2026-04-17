@@ -97,6 +97,11 @@ class SettingsManager:
                 'default': 0,
                 'description': 'Interval of time (in secs) to download lot lot specific info from KCC site. 0 means disabled; maximum value 4000',
             },
+            'TROUBLESHOOTING': {
+                'type': 'boolean',
+                'default': True,
+                'description': 'When enabled, the alarm popup shows an "Info" button that opens a web page with the error description and resolution.',
+            },
         },
     }
 
