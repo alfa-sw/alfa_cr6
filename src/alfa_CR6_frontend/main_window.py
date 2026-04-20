@@ -861,7 +861,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 hp_callback=hp_callback
             )
             if not show_cancel_btn:
-                _msgbox.enable_buttons(True, False, False)
+                _msgbox.enable_buttons(True, False, bool(hp_callback))
 
             if visibility > 1:
                 _msgbox.setStyleSheet("""QMessageBox {border: 10px solid #FF3333; background-color: #FFFF33;}""")

@@ -250,7 +250,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.app.main_window.open_frozen_dialog(
                 message_args=m_args, message_fmt=m_fmt,
                 force_explicit_restart=True, hp_callback=_cb,
-                localize_args=True
+                localize_args=True, show_cancel_btn=False
             )
 
             try:
