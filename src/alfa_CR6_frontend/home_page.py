@@ -190,7 +190,8 @@ class RefillProcedureHelper:
         t = self.__update_level_task(pigment_, pipe_, qtity_ml_, updated_spec_weight)
         asyncio.ensure_future(t)
 
-    def _cb_input_quantity(self, pigment_, pipe_, updated_spec_weight=None):
+    def _cb_input_quantity(self, pigment_, pipe_, updated_spec_weight=None, from_qrcode=False,
+                           lot_specific_weight=None, current_specific_weight=None):
 
         self.parent.main_window.toggle_keyboard(on_off=False)
 
@@ -211,6 +212,28 @@ class RefillProcedureHelper:
                 content=None,
                 ok_cb=self._cb_confirm_quantity,
                 ok_cb_args=(pigment_, pipe_, qtity_ml_, updated_spec_weight))
+        elif from_qrcode:
+            cap_ml_ = pipe_['maximum_level'] - pipe_['current_level']
+            cap_units_ = round(self.__qtity_from_ml(cap_ml_, pigment_['name']), 2)
+
+            cap_spec_weight = updated_spec_weight
+            if lot_specific_weight is not None and current_specific_weight is not None:
+                tot_vol_ = cap_ml_ + pipe_['current_level']
+                if tot_vol_ > 0:
+                    tot_weight_ = lot_specific_weight * cap_ml_ + current_specific_weight * pipe_['current_level']
+                    cap_spec_weight = tot_weight_ / tot_vol_
+
+            msg_ = ("QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>"
+                    "Refill will be capped to {} ({}). Confirm?")
+            msg_ = tr_(msg_).format(
+                qtity_units_, self.units_.lower(), pipe_['name'],
+                cap_units_, self.units_.lower())
+            self.parent.main_window.open_input_dialog(
+                icon_name="SP_MessageBoxWarning",
+                message=msg_,
+                content=None,
+                ok_cb=self._cb_confirm_quantity,
+                ok_cb_args=(pigment_, pipe_, cap_ml_, cap_spec_weight))
         else:
             msg_ = """refilling with {} ({}) would exceed maximum level! Aborting."""
             msg_ = tr_(msg_).format(qtity_units_, self.units_.lower())
@@ -312,7 +335,10 @@ class RefillProcedureHelper:
                 message=msg_,
                 unit=self.units_,
                 ok_cb=self._cb_input_quantity,
-                ok_cb_args=(pigment_, pipe_, qrcode_refill_infos.get("new_specific_weight")),
+                ok_cb_args=(pigment_, pipe_,
+                            qrcode_refill_infos.get("new_specific_weight"), True,
+                            qrcode_refill_infos.get("lot_specific_weight"),
+                            qrcode_refill_infos.get("current_specific_weight")),
                 choices=choices_)
 
     def _cb_input_barcode(self, barcode_):
@@ -500,6 +526,8 @@ class RefillProcedureHelper:
                 qrcode_refill = {
                     "qty": product_quantity,
                     "new_specific_weight": new_specific_weight,
+                    "lot_specific_weight": lot_specific_weight,
+                    "current_specific_weight": specific_weight,
                 }
 
                 t = self._rotate_circuit_task(
@@ -509,7 +537,7 @@ class RefillProcedureHelper:
 
         except Exception as e:
             logging.error(traceback.format_exc())
-            decode_KCC_qrcode
+            # decode_KCC_qrcode  # leftover from commit 610dc1f2, raises NameError
             self.parent.main_window.open_alert_dialog(
                 args=(),
                 fmt="DECODE KCC QRCODE EXCEPTION",
