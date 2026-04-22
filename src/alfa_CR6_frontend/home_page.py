@@ -202,7 +202,17 @@ class RefillProcedureHelper:
         logging.warning("maximum_level:{}, current_level:{}, qtity_ml_:{}, qtity_units_:{}".format(
             pipe_['maximum_level'], pipe_['current_level'], qtity_ml_, qtity_units_))
 
+        def _recompute_spec_weight(refill_ml):
+            if lot_specific_weight is None or current_specific_weight is None:
+                return updated_spec_weight
+            tot_vol = refill_ml + pipe_['current_level']
+            if tot_vol <= 0:
+                return updated_spec_weight
+            tot_weight = lot_specific_weight * refill_ml + current_specific_weight * pipe_['current_level']
+            return tot_weight / tot_vol
+
         if pipe_['maximum_level'] >= (pipe_['current_level'] + qtity_ml_) * 0.98:
+            spec_weight_ = _recompute_spec_weight(qtity_ml_)
             msg_ = """please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?."""
             msg_ = tr_(msg_).format(pipe_['name'], qtity_units_, self.units_.lower(), pigment_['name'])
 
@@ -211,17 +221,11 @@ class RefillProcedureHelper:
                 message=msg_,
                 content=None,
                 ok_cb=self._cb_confirm_quantity,
-                ok_cb_args=(pigment_, pipe_, qtity_ml_, updated_spec_weight))
+                ok_cb_args=(pigment_, pipe_, qtity_ml_, spec_weight_))
         elif from_qrcode:
             cap_ml_ = pipe_['maximum_level'] - pipe_['current_level']
             cap_units_ = round(self.__qtity_from_ml(cap_ml_, pigment_['name']), 2)
-
-            cap_spec_weight = updated_spec_weight
-            if lot_specific_weight is not None and current_specific_weight is not None:
-                tot_vol_ = cap_ml_ + pipe_['current_level']
-                if tot_vol_ > 0:
-                    tot_weight_ = lot_specific_weight * cap_ml_ + current_specific_weight * pipe_['current_level']
-                    cap_spec_weight = tot_weight_ / tot_vol_
+            cap_spec_weight = _recompute_spec_weight(cap_ml_)
 
             msg_ = ("QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>"
                     "Refill will be capped to {} ({}). Confirm?")
