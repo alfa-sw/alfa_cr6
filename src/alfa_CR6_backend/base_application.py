@@ -1234,6 +1234,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         elif msg_dict.get("type") == "expired_products":
             self.main_window.home_page.update_expired_products(head_index)
 
+        elif msg_dict.get("type") == "table_belt_health":
+            self.main_window.home_page.update_table_belt_health(head_index)
+
     def get_version(self):
 
         if not self.__version:

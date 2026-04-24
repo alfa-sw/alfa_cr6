@@ -566,6 +566,9 @@ class HomePage(BaseStackedPage):
 
     _blink_step_label = None
     _blink_state = False
+
+    _belt_blink_timer = None
+    _belt_blink_state = False
     STEP_02_03_label = None
     STEP_02_04_label = None  # four-heads only (skips HEAD B)
     STEP_03_04_label = None
@@ -624,6 +627,11 @@ class HomePage(BaseStackedPage):
 
         self.reserve_movie = QMovie(get_res("IMAGE", "riserva.gif"))
         self.expiry_movie = QMovie(get_res("IMAGE", "expiry.gif"))
+
+        self._blinking_belt_indexes = set()
+        for lbl in self._belt_label_map():
+            if lbl:
+                lbl.setVisible(False)
 
         if self.STEP_01_label:
             self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
@@ -824,6 +832,69 @@ class HomePage(BaseStackedPage):
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
+
+    def _belt_label_map(self):
+        return [
+            self.belt_label_1,
+            self.belt_label_2,
+            self.belt_label_3,
+            self.belt_label_4,
+            self.belt_label_5,
+            self.belt_label_6,
+            self.belt_label_7,
+        ]
+
+    def update_table_belt_health(self, head_index):
+
+        map_ = self._belt_label_map()
+        m = QApplication.instance().machine_head_dict.get(head_index)
+        try:
+            lbl = map_[head_index]
+            if not (m and lbl):
+                return
+
+            msg = m.table_belt_health_msg if isinstance(m.table_belt_health_msg, dict) else {}
+            status = msg.get('status')
+
+            if status and status != 'ok':
+                self._blinking_belt_indexes.add(head_index)
+                lbl.setVisible(True)
+                self._start_belt_blink()
+            else:
+                self._blinking_belt_indexes.discard(head_index)
+                lbl.setVisible(False)
+                if not self._blinking_belt_indexes:
+                    self._stop_belt_blink()
+
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
+    def _start_belt_blink(self):
+        if self._belt_blink_timer is None:
+            self._belt_blink_timer = QTimer(self)
+            self._belt_blink_timer.timeout.connect(self._do_belt_blink)
+        if not self._belt_blink_timer.isActive():
+            self._belt_blink_state = True
+            self._belt_blink_timer.start(500)
+
+    def _stop_belt_blink(self):
+        if self._belt_blink_timer is not None:
+            self._belt_blink_timer.stop()
+            self._belt_blink_timer.deleteLater()
+            self._belt_blink_timer = None
+        self._belt_blink_state = False
+
+    def _do_belt_blink(self):
+        if not self._blinking_belt_indexes:
+            self._stop_belt_blink()
+            return
+        self._belt_blink_state = not self._belt_blink_state
+        visible = self._belt_blink_state
+        map_ = self._belt_label_map()
+        for idx in self._blinking_belt_indexes:
+            lbl = map_[idx]
+            if lbl:
+                lbl.setVisible(visible)
 
     def update_service_btns__presences_and_lifters(self, head_index):
 
@@ -1248,6 +1319,8 @@ class HomePageSixHeads(HomePage):
     reserve_7_label = None
     container_presence_7_label = None
 
+    belt_label_7 = None
+
 
 class HomePageFourHeads(HomePage):
 
@@ -1285,6 +1358,10 @@ class HomePageFourHeads(HomePage):
     expiry_7_label = None
     reserve_7_label = None
     container_presence_7_label = None
+
+    belt_label_3 = None
+    belt_label_4 = None
+    belt_label_7 = None
 
 class HomePageCRX60Heads(HomePage):
 
@@ -1332,6 +1409,11 @@ class HomePageCRX60Heads(HomePage):
     expiry_7_label = None
     reserve_7_label = None
     container_presence_7_label = None
+
+    belt_label_2 = None
+    belt_label_4 = None
+    belt_label_6 = None
+    belt_label_7 = None
 
     unload_lifter_down_label = None
     unload_lifter_up_label = None
@@ -1384,6 +1466,10 @@ class HomePageCRX80Heads(HomePage):
     container_presence_2_label = None
     container_presence_4_label = None
     container_presence_6_label = None
+
+    belt_label_1 = None
+    belt_label_2 = None
+    belt_label_3 = None
 
     unload_lifter_down_label = None
     unload_lifter_up_label = None
@@ -1459,6 +1545,12 @@ class HomePageCRX40Heads(HomePage):
     expiry_7_label = None
     reserve_7_label = None
     container_presence_7_label = None
+
+    belt_label_2 = None
+    belt_label_3 = None
+    belt_label_4 = None
+    belt_label_6 = None
+    belt_label_7 = None
 
     unload_lifter_down_label = None
     unload_lifter_up_label = None

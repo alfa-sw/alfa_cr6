@@ -815,6 +815,44 @@ RECOVERY</string>
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <widget class="QLabel" name="belt_label_1">
+   <property name="geometry">
+    <rect>
+     <x>570</x>
+     <y>310</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_5">
+   <property name="geometry">
+    <rect>
+     <x>1044</x>
+     <y>310</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_5_btn</zorder>
@@ -850,11 +888,13 @@ RECOVERY</string>
   <zorder>fw_align_ko_lbl</zorder>
   <zorder>STEP_02_04_label</zorder>
   <zorder>STEP_04_05_label</zorder>
+  <zorder>belt_label_1</zorder>
+  <zorder>belt_label_5</zorder>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
+  <buttongroup name="service_btn_group"/>
  </buttongroups>
 </ui>

@@ -1213,6 +1213,82 @@ RECOVERY</string>
     </size>
    </property>
   </widget>
+  <widget class="QLabel" name="belt_label_1">
+   <property name="geometry">
+    <rect>
+     <x>296</x>
+     <y>380</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_3">
+   <property name="geometry">
+    <rect>
+     <x>640</x>
+     <y>380</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_5">
+   <property name="geometry">
+    <rect>
+     <x>986</x>
+     <y>380</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_7">
+   <property name="geometry">
+    <rect>
+     <x>1330</x>
+     <y>380</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_3_btn</zorder>
@@ -1266,6 +1342,10 @@ RECOVERY</string>
   <zorder>recovery_info_btn</zorder>
   <zorder>recovery_btn</zorder>
   <zorder>fw_align_ko_lbl</zorder>
+  <zorder>belt_label_1</zorder>
+  <zorder>belt_label_3</zorder>
+  <zorder>belt_label_5</zorder>
+  <zorder>belt_label_7</zorder>
  </widget>
  <resources/>
  <connections/>

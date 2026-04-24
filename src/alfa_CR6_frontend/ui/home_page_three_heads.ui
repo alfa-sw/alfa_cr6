@@ -1014,6 +1014,63 @@ RECOVERY</string>
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <widget class="QLabel" name="belt_label_1">
+   <property name="geometry">
+    <rect>
+     <x>370</x>
+     <y>360</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_3">
+   <property name="geometry">
+    <rect>
+     <x>820</x>
+     <y>360</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_5">
+   <property name="geometry">
+    <rect>
+     <x>1270</x>
+     <y>360</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_3_btn</zorder>
@@ -1058,11 +1115,14 @@ RECOVERY</string>
   <zorder>STEP_02_03_label</zorder>
   <zorder>STEP_03_04_label</zorder>
   <zorder>STEP_04_05_label</zorder>
+  <zorder>belt_label_1</zorder>
+  <zorder>belt_label_3</zorder>
+  <zorder>belt_label_5</zorder>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
+  <buttongroup name="service_btn_group"/>
  </buttongroups>
 </ui>

@@ -59,6 +59,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.cntr = 0
         self.time_stamp = 0
         self.expired_products = None
+        self.table_belt_health_msg = None
 
         self.owned_barcodes = []
 
@@ -406,6 +407,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 expired_products = msg_dict.get("value")
                 if self.expired_products != expired_products:
                     self.expired_products = expired_products
+                else:
+                    propagate_to_ws_msg_handler = False
+
+            elif msg_type == "table_belt_health":
+                value = msg_dict.get("value")
+                if self.table_belt_health_msg != value:
+                    self.table_belt_health_msg = value
                 else:
                     propagate_to_ws_msg_handler = False
 
