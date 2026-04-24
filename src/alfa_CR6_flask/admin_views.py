@@ -42,6 +42,7 @@ def _load_troubleshooting_json(lang):
         mod = importlib.import_module('alfa_CR6_backend.lang.troubleshooting')
         ts_dir = os.path.dirname(os.path.abspath(mod.__file__))
         path = os.path.join(ts_dir, f"{lang}.json")
+        logging.warning(f"lang: {lang} - path: {path}")
         if not os.path.exists(path):
             return None
         with open(path, 'r', encoding='utf-8') as f:
@@ -902,14 +903,29 @@ class AdminIndexView(flask_admin.AdminIndexView):
         fallback = _load_troubleshooting_json('en') or {}
 
         code_key = str(error_code)
-        entry = data.get('errors', {}).get(code_key) or fallback.get('errors', {}).get(code_key)
+        _entry = data.get('errors', {}).get(code_key)
+        _fallback_entry = fallback.get('errors', {}).get(code_key)
+        logging.warning(f"_entry: {_entry}")
+        logging.warning(f"_fallback_entry: {_fallback_entry}")
+        entry = _entry or _fallback_entry
         meta = {k: data.get(k) or fallback.get(k) for k in ('document', 'chapter', 'revision', 'year')}
+
+        labels = data.get('localized_labels', {}) or {}
+        labels_fallback = fallback.get('localized_labels', {}) or {}
+
+        def tr_local(lemma):
+            for key in (lemma, lemma.rstrip(':').strip()):
+                if key in labels:
+                    return labels[key]
+                if key in labels_fallback:
+                    return labels_fallback[key]
+            return tr_(lemma)
 
         ctx = {
             'error_code': error_code,
             'entry': entry,
             'meta': meta,
-            'tr_': tr_,
+            'tr_': tr_local,
         }
 
         html_ = self.render(template, **ctx)

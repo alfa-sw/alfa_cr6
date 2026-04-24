@@ -3,6 +3,13 @@
   "chapter": "8. TROUBLE SHOOTING",
   "revision": "07",
   "year": 2024,
+  "localized_labels": {
+    "trouble_shooting": "التشخيص",
+    "error_code": "رمز الخطأ التشغيلي",
+    "error_message": "الخطأ التشغيلي المكتشف",
+    "error_description": "وصف الخطأ التشغيلي",
+    "resolution": "حل المشكلة التشغيلية"
+  },
   "errors": {
     "2": {
       "error_message": "_ﺧطﺄCRC _ﻓﻲ ﺑﺎراﻣﺗر_داﺋرة_اﻟﻠون_ﻟذاﻛرة EEPROM",

@@ -3,6 +3,13 @@
   "chapter": "8. TROUBLE SHOOTING",
   "revision": "07",
   "year": 2024,
+  "localized_labels": {
+  "trouble_shooting": "DIAGNOSE",
+    "error_code": "Foutcode",
+    "error_message": "Fout gedetecteerd",
+    "error_description": "Foutbeschrijving",
+    "resolution": "Oplossing probleem"
+  },
   "errors": {
     "2": {
       "error_message": "EEPROM_COLOR_CIRC_PARAM_CRC_FAULT",

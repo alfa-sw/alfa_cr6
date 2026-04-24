@@ -8,25 +8,21 @@
 
 {% if entry %}
     <div style="border-bottom: 2px solid #333333; padding-bottom: 10px; margin-bottom: 20px;">
-        <h1 style="margin: 0;">
-            {{ tr_('Troubleshooting') }}
-            <span style="color: #000000; padding: 2px 10px; margin-left: 8px;">
-                {{ tr_('code') }} {{ error_code }}
-            </span>
-        </h1>
-        {% if entry.error_message %}
-            <div style="font-family: monospace; color: #666666; margin-top: 6px;">{{ entry.error_message }}</div>
-        {% endif %}
+        <h1 style="margin: 0;">{{ tr_('trouble_shooting') }}</h1>
+        <h2 style="margin: 8px 0 0 0;">
+            <span style="color: #000000;">{{ tr_('error_code:') }} {{ error_code }}</span>
+        </h2>
+        <h2 style="color: #000000; text-transform: uppercase; margin: 6px 0 0 0;">{{ tr_(entry.error_message) }}</h2>
     </div>
 
     <table width="100%" cellpadding="16" cellspacing="12" border="0" style="table-layout: fixed;">
         <tr valign="top">
             <td width="50%" bgcolor="#FFFFFF" style="border: 1px solid #DDDDDD;">
-                <h2 style="color: #000000; margin-top: 0;">{{ tr_('Error description') }}</h2>
+                <h2 style="color: #000000; margin-top: 0;">{{ tr_('error_description') }}</h2>
                 <p style="color: #000000;">{{ entry.error_description }}</p>
             </td>
             <td width="50%" bgcolor="#FFFFFF" style="border: 1px solid #DDDDDD;">
-                <h2 style="color: #000000; margin-top: 0;">{{ tr_('Resolution') }}</h2>
+                <h2 style="color: #000000; margin-top: 0;">{{ tr_('resolution') }}</h2>
                 <p style="color: #000000;">{{ entry.resolution }}</p>
             </td>
         </tr>
