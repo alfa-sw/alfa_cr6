@@ -138,7 +138,8 @@ class RefillProcedureHelper:
             channel="machine")
         asyncio.ensure_future(t)
 
-    async def __update_level_task(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None):
+    async def __update_level_task(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None,
+                                  qr_code_info=None):
 
         def _cb_on_refill(answer):
             logging.warning(f"answer:{answer}.")
@@ -163,6 +164,8 @@ class RefillProcedureHelper:
         params_ = {'items': [{'name': pipe_['name'], 'qtity': qtity_ml_}]}
         if updated_spec_weight:
             params_['items'][0]['specific_weight'] = updated_spec_weight
+        if qr_code_info:
+            params_['items'][0]['QR_code_info'] = qr_code_info
         await self.machine_.send_command(cmd_name="REFILL", params=params_, type_="macro", callback_on_macro_answer=_cb_on_refill)
 
         await self.machine_.update_tintometer_data()
@@ -185,13 +188,16 @@ class RefillProcedureHelper:
             description=rfll_msg
         )
 
-    def _cb_confirm_quantity(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None):
+    def _cb_confirm_quantity(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None,
+                             qr_code_info=None):
 
-        t = self.__update_level_task(pigment_, pipe_, qtity_ml_, updated_spec_weight)
+        t = self.__update_level_task(pigment_, pipe_, qtity_ml_, updated_spec_weight,
+                                     qr_code_info=qr_code_info)
         asyncio.ensure_future(t)
 
     def _cb_input_quantity(self, pigment_, pipe_, updated_spec_weight=None, from_qrcode=False,
-                           lot_specific_weight=None, current_specific_weight=None):
+                           lot_specific_weight=None, current_specific_weight=None,
+                           qr_code_info=None):
 
         self.parent.main_window.toggle_keyboard(on_off=False)
 
@@ -211,6 +217,13 @@ class RefillProcedureHelper:
             tot_weight = lot_specific_weight * refill_ml + current_specific_weight * pipe_['current_level']
             return tot_weight / tot_vol
 
+        def _qr_info_with(spec_weight):
+            if qr_code_info is None:
+                return None
+            info = dict(qr_code_info)
+            info["specific_weight"] = spec_weight
+            return info
+
         if pipe_['maximum_level'] >= (pipe_['current_level'] + qtity_ml_) * 0.98:
             spec_weight_ = _recompute_spec_weight(qtity_ml_)
             msg_ = """please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?."""
@@ -221,7 +234,7 @@ class RefillProcedureHelper:
                 message=msg_,
                 content=None,
                 ok_cb=self._cb_confirm_quantity,
-                ok_cb_args=(pigment_, pipe_, qtity_ml_, spec_weight_))
+                ok_cb_args=(pigment_, pipe_, qtity_ml_, spec_weight_, _qr_info_with(spec_weight_)))
         elif from_qrcode:
             cap_ml_ = pipe_['maximum_level'] - pipe_['current_level']
             cap_units_ = round(self.__qtity_from_ml(cap_ml_, pigment_['name']), 2)
@@ -237,7 +250,7 @@ class RefillProcedureHelper:
                 message=msg_,
                 content=None,
                 ok_cb=self._cb_confirm_quantity,
-                ok_cb_args=(pigment_, pipe_, cap_ml_, cap_spec_weight))
+                ok_cb_args=(pigment_, pipe_, cap_ml_, cap_spec_weight, _qr_info_with(cap_spec_weight)))
         else:
             msg_ = """refilling with {} ({}) would exceed maximum level! Aborting."""
             msg_ = tr_(msg_).format(qtity_units_, self.units_.lower())
@@ -342,7 +355,8 @@ class RefillProcedureHelper:
                 ok_cb_args=(pigment_, pipe_,
                             qrcode_refill_infos.get("new_specific_weight"), True,
                             qrcode_refill_infos.get("lot_specific_weight"),
-                            qrcode_refill_infos.get("current_specific_weight")),
+                            qrcode_refill_infos.get("current_specific_weight"),
+                            qrcode_refill_infos.get("qr_code_info")),
                 choices=choices_)
 
     def _cb_input_barcode(self, barcode_):
@@ -443,101 +457,74 @@ class RefillProcedureHelper:
         else:
             self._cb_input_barcode(input)
 
-    async def _check_and_decode_KCC_qrcode_string(self, input): # pylint: disable=too-many-statements
+    async def _check_and_decode_KCC_qrcode_string(self, input):
         """
-        memo per refill
-        refillParams['specific_weight'] = QRCodeNewSpecificWeight
+        Delegates QR decoding and validation to the head's device endpoint
+        (apiV1/ad_hoc, action=check_and_decode_KCC_qrcode_string), which is the
+        single source of truth for KCC lot data and specific weight calculation.
         """
-        import json # pylint: disable=import-outside-toplevel
 
         try:
-            toks = input.split('$')
-            logging.warning(f"toks: {toks}")
-            sub_toks = toks[1].split('|') if len(toks) == 2 else toks[0].split('|')
-            offset = 1 if len(sub_toks) > 10 else 0
-
-            product_code = sub_toks[offset]
-            lot_number = sub_toks[offset + 1]
-            product_quantity = int(sub_toks[offset + 5])
-            production_date = sub_toks[offset + 9][:8]
-            kcc_qrcode_decoded_info = {
-                'product_code': product_code,
-                'lot_number': lot_number,
-                'product_quantity': product_quantity,
-                'production_date': production_date,
+            data = {
+                "action": "check_and_decode_KCC_qrcode_string",
+                "params": {"qrcode_string": input},
             }
-            logging.warning(f"kcc_qrcode_decoded_info: {kcc_qrcode_decoded_info}")
+            device_resp = await self.machine_.call_api_rest(
+                "apiV1/ad_hoc", "POST", data, timeout=10)
 
-            pigment_name = ""
-            lot_specific_weight = -1
-            KCC_lot_specific_info = {}
-            try:
-                path_kcc_lot_specific_info = "/opt/alfa_cr6/tmp/KCC_lot_specific_info.json"
-                with open(path_kcc_lot_specific_info, encoding="UTF-8") as f:
-                    KCC_lot_specific_info = json.load(f)
+            # The device endpoint wraps the JSON payload in flask Markup, so the
+            # response comes back as a JSON-encoded string and needs a second parse.
+            if isinstance(device_resp, str):
+                import json as _json  # pylint: disable=import-outside-toplevel
+                device_resp = _json.loads(device_resp)
 
-                def _check(item):
-                    return item.get("FIELD3") == product_code and item.get("FIELD4") == lot_number
-
-                for item in filter(_check, KCC_lot_specific_info):
-                    pigment_name = item.get("FIELD2", '')
-                    lot_specific_weight = float(item.get("FIELD5", -1))
-                    break
-            except Exception as e:
-                logging.error(traceback.format_exc())
-                args, fmt = ('KCC_lot_specific_weight.json', ), "Unexpected error retrieving info from file '{}'"
+            if not device_resp or device_resp.get("result") != "OK":
+                err_msg = (device_resp or {}).get("error", "unknown error")
+                args, fmt = (err_msg,), "KCC QR decode failed: {}"
                 self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                 return
 
-            logging.warning(f"pigment_name --> {pigment_name}")
-            logging.warning(f"lot_specific_weight --> {lot_specific_weight}")
-            if not pigment_name or lot_specific_weight < 0:
-                logging.error(f"record not found or incomplete for product code:{product_code}, lot number:{lot_number}")
-                args, fmt = (product_code, lot_number), "record not found or incomplete for product code: {}, lot number:{}"
+            pigment_name = device_resp["pigment_name"]
+            pipe_name = device_resp["pipe_name"]
+            product_quantity = device_resp["product_quantity"]
+            lot_specific_weight = device_resp["lot_specific_weight"]
+            current_specific_weight = device_resp["current_specific_weight"]
+            new_specific_weight = device_resp["specific_weight"]
+
+            _pipe = None
+            _pigment = None
+            for p in self.machine_.pigment_list:
+                if p.get("name") == pigment_name:
+                    _pigment = p.copy()
+                    pipes = _pigment.pop("pipes", None) or []
+                    for pipe in pipes:
+                        if pipe.get("name") == pipe_name:
+                            _pipe = pipe
+                            break
+                    if not _pipe and pipes:
+                        _pipe = pipes[0]
+                    break
+
+            if not _pipe:
+                args, fmt = (pigment_name,), "pipe with pigment:{} not found."
                 self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                return
 
-            else:
-                _pipe = None
-                _pigment = None
-                for p in self.machine_.pigment_list:
-                    if p.get("name") == pigment_name:
-                        _pigment = p.copy()
-                        _pipe = _pigment.pop('pipes', None)
-                        break
+            _default_qtity_ml = _pipe["maximum_level"] - _pipe["current_level"]
+            _default_qtity_units = round(self.__qtity_from_ml(_default_qtity_ml, _pigment["name"]), 2)
 
-                if not _pipe:
-                    logging.error(f"pipe with pigment:{pigment_name} not found.")
-                    args, fmt = (pigment_name), "pipe with pigment:{} not found."
-                    self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                    return
+            qrcode_refill = {
+                "qty": product_quantity,
+                "new_specific_weight": new_specific_weight,
+                "lot_specific_weight": lot_specific_weight,
+                "current_specific_weight": current_specific_weight,
+                "qr_code_info": device_resp,
+            }
 
-                _pipe = _pipe[0]
-                specific_weight = _pipe["effective_specific_weight"]
-                if specific_weight < 0.001 and _pigment:
-                    specific_weight = _pigment["specific_weight"]
-                if specific_weight < 0.001:
-                    specific_weight = 1.
-                tot_volume = product_quantity + _pipe["current_level"]
-                tot_weight = lot_specific_weight * product_quantity + specific_weight * _pipe["current_level"]
-                new_specific_weight = tot_weight / tot_volume
-
-                logging.warning(f"tot_volume: {tot_volume} - tot_weight: {tot_weight} - new_specific_weight: {new_specific_weight}")
-
-                _default_qtity_ml = _pipe['maximum_level'] - _pipe['current_level']
-                _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, _pigment['name'])
-                _default_qtity_units = round(_default_qtity_units, 2)
-
-                qrcode_refill = {
-                    "qty": product_quantity,
-                    "new_specific_weight": new_specific_weight,
-                    "lot_specific_weight": lot_specific_weight,
-                    "current_specific_weight": specific_weight,
-                }
-
-                t = self._rotate_circuit_task(
-                    _pigment, _pipe, _default_qtity_units, input,
-                    skip_verify=True, qrcode_refill_infos=qrcode_refill)
-                asyncio.ensure_future(t)
+            t = self._rotate_circuit_task(
+                _pigment, _pipe, _default_qtity_units, input,
+                skip_verify=True, qrcode_refill_infos=qrcode_refill)
+            asyncio.ensure_future(t)
 
         except Exception as e:
             logging.error(traceback.format_exc())
