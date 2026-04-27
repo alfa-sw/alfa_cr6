@@ -98,41 +98,35 @@ class FilteredOrders(Resource):  # pylint: disable=too-few-public-methods
 class HeadStatusApi(Resource):  # pylint: disable=too-few-public-methods
 
     def get(self, head_id):
+        key = f"device:machine:status@5{head_id}"
 
-        def get_head_status_via_redis(head_id):
-            status = {}
-            ret = REDIS_BUS.get(f"device:machine:status@5{head_id}")
-            if ret:
-                ret = ret.decode()
-                status = json.loads(ret)
-            return status
+        ret = REDIS_BUS.get(key)
 
-        if head_id < 0 or head_id > 6:
-            response = {
-                "status": "error",
-                "message": "Invalid head_id. Must be between 0 and 6.",
-                "data": None
-            }
-            return Response(json.dumps(response, indent=4), mimetype="application/json", status=400)
-
-        status = get_head_status_via_redis(head_id)
-
-        if not status:
+        if ret is None:
             response = {
                 "status": "error",
                 "message": f"Head {head_id} not available",
                 "data": None
             }
-            response_json = json.dumps(response, indent=4)
-            return Response(response_json, mimetype="application/json", status=404)
+            return Response(
+                json.dumps(response, indent=4),
+                mimetype="application/json",
+                status=404
+            )
+
+        status = json.loads(ret.decode())
 
         response = {
             "status": "success",
             "message": "",
             "data": status
         }
-        response_json = json.dumps(response, indent=4)
-        return Response(response_json, mimetype="application/json", status=200)
+
+        return Response(
+            json.dumps(response, indent=4),
+            mimetype="application/json",
+            status=200
+        )
 
     def post(self, head_id):
         return Response(json.dumps({"message": "Method Not Allowed"}), mimetype="application/json", status=405)
