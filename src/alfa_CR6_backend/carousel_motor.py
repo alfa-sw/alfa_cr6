@@ -1006,22 +1006,24 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     if "move_01_02" in _tag:
 
                         self.main_window.start_step_blink(_step_key)
-                        while True:
-                            await self.wait_for_carousel_not_frozen(
-                                True,
-                                message_args=(barcode_, f"\n{_tag}\n"),
-                                message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
-                                visibility=2,
-                                show_cancel_btn=False,
-                                error_head=_error_head,
-                                dest_head=_dst_head
-                            )
-                            if not _error_head or (
-                                not _error_head.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False) and
-                                not _error_head.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', False)
-                            ):
-                                break
-                        self.main_window.stop_step_blink()
+                        try:
+                            while True:
+                                await self.wait_for_carousel_not_frozen(
+                                    True,
+                                    message_args=(barcode_, f"\n{_tag}\n"),
+                                    message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
+                                    visibility=2,
+                                    show_cancel_btn=False,
+                                    error_head=_error_head,
+                                    dest_head=_dst_head
+                                )
+                                if not _error_head or (
+                                    not _error_head.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False) and
+                                    not _error_head.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', False)
+                                ):
+                                    break
+                        finally:
+                            self.main_window.stop_step_blink()
 
                         self.delete_entering_jar()
 
@@ -1049,14 +1051,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     )
                     if not _is_too_many_jars:
                         self.main_window.start_step_blink(_step_key)
-                    await self.wait_for_carousel_not_frozen(
-                        True,
-                        message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
-                        message_fmt=msg_,
-                        error_head=_error_head,
-                        dest_head=_dst_head
-                    )
-                    self.main_window.stop_step_blink()
+                    try:
+                        await self.wait_for_carousel_not_frozen(
+                            True,
+                            message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
+                            message_fmt=msg_,
+                            error_head=_error_head,
+                            dest_head=_dst_head
+                        )
+                    finally:
+                        self.main_window.stop_step_blink()
 
                 else:
                     break

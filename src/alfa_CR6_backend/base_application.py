@@ -1515,6 +1515,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         r = entering_jar["task"].cancel()
         logging.warning(f"cancelled. r:{r}")
 
+        self.main_window.stop_step_blink()
+
         logging.warning(f"deleting:{entering_jar}")
         del entering_jar
         logging.warning(f"deleted:{kode}")
@@ -1560,6 +1562,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 logging.warning(f'cancelling:{j["task"]}')
                 r = j["task"].cancel()
                 logging.warning(f"cancelled. r:{r}")
+
+                self.main_window.stop_step_blink()
 
                 logging.warning(f"deleting:{j}")
                 del j
