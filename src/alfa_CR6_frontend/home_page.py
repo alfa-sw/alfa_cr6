@@ -1454,9 +1454,9 @@ class HomePageCRX80Heads(HomePage):
     container_presence_4_label = None
     container_presence_6_label = None
 
-    belt_label_1 = None
     belt_label_2 = None
-    belt_label_3 = None
+    belt_label_4 = None
+    belt_label_6 = None
 
     unload_lifter_down_label = None
     unload_lifter_up_label = None
