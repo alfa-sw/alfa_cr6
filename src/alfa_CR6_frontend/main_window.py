@@ -186,7 +186,7 @@ def get_action_page_list():
         if in_docker and machine_variant in ['CRX60', 'CRX40']:
             buttons += [
                 {"text": tr_("Start output roller CW"), "action_args": ("single_move", "C", [1, 1])},
-                {"text": tr_("Stop  output roller"), "action_args": ("single_move", "C", [1, 0])},
+                {"text": tr_("Stop output roller"), "action_args": ("single_move", "C", [1, 0])},
             ]
 
         return buttons
@@ -218,7 +218,7 @@ def get_action_page_list():
         if in_docker and machine_variant == 'CRX80':
             buttons = [
                 {"text": tr_("Start output roller CW"), "action_args": ("single_move", "G", [1, 1])},
-                {"text": tr_("Stop  output roller"), "action_args": ("single_move", "G", [1, 0])},
+                {"text": tr_("Stop output roller"), "action_args": ("single_move", "G", [1, 0])},
             ]
         else:
             buttons = [
@@ -310,7 +310,7 @@ def get_action_page_list():
     def action10_buttons():
         return [
             {"text": tr_("Start output roller CCW"), "action_args": ("single_move", "F", [2, 4])},
-            {"text": tr_("Stop  output roller"), "action_args": ("single_move", "F", [2, 0])},
+            {"text": tr_("Stop output roller"), "action_args": ("single_move", "F", [2, 0])},
             {"text": tr_("Start output roller CCW to photocell dark"), "action_args": ("single_move", "F", [2, 5])},
             {"text": tr_("Start output roller CCW to photocell light"), "action_args": ("single_move", "F", [2, 6])},
             {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},

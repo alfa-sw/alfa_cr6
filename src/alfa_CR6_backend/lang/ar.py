@@ -39,7 +39,7 @@ D = {
     "Stop  input roller": "إيقاف بكرة الإدخال",
     "Stop  lifter roller": "إيقاف بكرة الرافعة",
     "Stop  lifter": "إيقاف الرافعة",
-    "Stop  output roller": "إيقاف بكرة الإخراج",
+    "Stop output roller": "إيقاف بكرة الإخراج",
     "Stop dispensing roller": "إيقاف بكرة الخلط والتوزيع",
     "Too many files saved and not used. Please delete unused files.": "هناك عدد مفرط من الملفات المحفوظة وغير المستخدمة. يُرجى حذف الملفات غير المستخدمة.",
     "[{}] Files:  search by file name": "[{}] ملفات: بحث باسم الملف",
@@ -254,6 +254,17 @@ D = {
     "Below is the list of pending orders:": "فيما يلي قائمة الطلبات المعلّقة:",
     "OK": "موافق",
     "Delete": "حذف",
+    "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
+    "Troubleshooting": "Troubleshooting",
+    "  Close  ": "  Close  ",
+    "Error loading troubleshooting page.": "Error loading troubleshooting page.",
+    "troubleshooting instructions are missing for error:{}": "troubleshooting instructions are missing for error:{}",
+    "error_code:": "error_code:",
+    "action 04 (head 5 or C)": "action 04 (head 5 or C)",
+    "action 05 (head 5 or C)": "action 05 (head 5 or C)",
+    "action 05 (head 7 or G)": "action 05 (head 7 or G)",
+    "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
+    "Start output roller CW": "Start output roller CW",
 }
 
 D.update(error_ar.D)

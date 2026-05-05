@@ -38,7 +38,7 @@ D = {
     "Stop  input roller": "Detener transportador de rodillos de entrada",
     "Stop  lifter roller": "Detener transportador de rodillos del elevador",
     "Stop  lifter": "Detener elevador",
-    "Stop  output roller": "Detener transportador de rodillos de salida",
+    "Stop output roller": "Detener transportador de rodillos de salida",
     "Stop dispensing roller": "Detener transportador de rodillos de dosificación",
     "Too many files saved and not used. Please delete unused files.": "Tiene demasiados archivos guardados sin utilizar. Elimine los archivos que no utilice.",
     "[{}] Files:  search by file name": "[{}] Archivo:  buscar por nombre",
@@ -250,6 +250,17 @@ D = {
     "OK": "OK",
     "Delete": "Eliminar",
 
+    "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
+    "Troubleshooting": "Troubleshooting",
+    "  Close  ": "  Close  ",
+    "Error loading troubleshooting page.": "Error loading troubleshooting page.",
+    "troubleshooting instructions are missing for error:{}": "troubleshooting instructions are missing for error:{}",
+    "error_code:": "error_code:",
+    "action 04 (head 5 or C)": "action 04 (head 5 or C)",
+    "action 05 (head 5 or C)": "action 05 (head 5 or C)",
+    "action 05 (head 7 or G)": "action 05 (head 7 or G)",
+    "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
+    "Start output roller CW": "Start output roller CW",
 }
 
 
