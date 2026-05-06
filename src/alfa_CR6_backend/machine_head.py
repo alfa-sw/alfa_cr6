@@ -736,6 +736,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 cancelled = False
                 engaged_circuits_ = []
                 disp_type_map = {1: "order", 2: "purge"}
+                dispense_timeout = 60 * 18
                 try:
                     while step < 2:
                         disp_type = None
@@ -756,7 +757,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 r = await self.send_command(
                                     cmd_name="PURGE", type_="macro", params=pars)
 
-                                timeout_ = 60 * 12
                                 step = 2
 
                                 disp_type = disp_type_map.get(2)
@@ -769,7 +769,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                                     r = await self.send_command(
                                         cmd_name="DISPENSE_FORMULA", type_="macro", params=_splitted_pars)
-                                    timeout_ = 60 * 12
                                     disp_type = disp_type_map.get(1)
                                 else:
                                     continue
@@ -791,7 +790,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                         return self.status["status_level"] in ['ALARM', 'RESET']
 
                                     r = await self.wait_for_status_level(
-                                        ["STANDBY"], timeout=timeout_, show_alert=False, break_condition=break_condition)
+                                        ["STANDBY"], timeout=dispense_timeout, show_alert=False, break_condition=break_condition)
 
                                     engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
                                     self._current_runner['running_engaged_circuits'] = None
