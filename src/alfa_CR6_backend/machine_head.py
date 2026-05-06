@@ -736,7 +736,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 cancelled = False
                 engaged_circuits_ = []
                 disp_type_map = {1: "order", 2: "purge"}
-                dispense_timeout = 60 * 18
+                dispense_timeout = 60 * 24
                 try:
                     while step < 2:
                         disp_type = None
