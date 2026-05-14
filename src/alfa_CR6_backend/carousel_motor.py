@@ -29,7 +29,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
     busy_head_A = False
     running_recovery_mode = False
 
-    machine_variant = os.getenv('MACHINE_VARIANT', None)
+    machine_variant = os.getenv('MACHINE_VARIANT', '')
     in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
     # True only for CR4/CR6 with fixed barcode
@@ -60,6 +60,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         "move_08_09": "F",   # E -> F
         "move_07_09": "F",   # D -> F
     }
+    if machine_variant == 'CRX80':
+        MOVE_DEST_LED_HEAD_MAP["move_04_05"] = "G"  # C -> G
 
     """
      'CRX_OUTPUTS_MANAGEMENT': {'MAB_code': 122, 'visibility': 2,     #  CRX_OUTPUTS_MANAGEMENT  = 122,
@@ -343,9 +345,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_cr_linear_deliver_line_available(self, jar):
         """
-        Wait for CR linear (CRX40/CRX60) delivery line to be available.
+        Wait for CR linear (CRX40/CRX60/CRX80) delivery line to be available.
         """
-        C = self.get_machine_head_by_letter("C")
+        if self.machine_variant == 'CRX80':
+            C = self.get_machine_head_by_letter("G")
+        else:
+            C = self.get_machine_head_by_letter("C")
 
         while True:
             def condition():
@@ -434,7 +439,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             return flag
 
         if (self.in_docker
-            and self.machine_variant in ['CRX60', 'CRX40']
+            and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']
         ):
             r = True
             if A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False):
@@ -452,7 +457,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         if (A.jar_photocells_status.get("JAR_INPUT_ROLLER_PHOTOCELL", False)
             and self.in_docker
-            and self.machine_variant in ['CRX60', 'CRX40']
+            and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']
         ):
             await self._handle_crx_barcode_input()
 
@@ -552,10 +557,14 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         return await self.move_from_to(jar, "A", "C", show_alert=False)
 
-    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60
+    async def move_04_05(self, jar=None):  # 'C -> UP' or 'C -> OUT' CRX40/CRX60 or 'C -> G' CRX80
 
-        machine_variant = os.getenv('MACHINE_VARIANT', None)
+        machine_variant = os.getenv('MACHINE_VARIANT', '')
         in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
+        if in_docker and machine_variant == 'CRX80':
+            return await self.move_from_to(jar, "C", "G", show_alert=False)
+
         C = self.get_machine_head_by_letter("C")
         r = True
 
@@ -590,14 +599,42 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 await C.crx_outputs_management(1, 0)
 
                 if r:
-                    if self.in_docker and self.machine_variant in ['CRX60', 'CRX40']:
+                    if self.in_docker and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']:
                         self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="_")
                     else:
                         self.update_jar_position(jar=jar, pos="LIFTR_UP")
 
         return r
 
-    async def move_05_06(self, jar=None):  # 'UP -> DOWN'
+    async def move_05_06(self, jar=None):  # 'UP -> DOWN' or 'G -> OUT' CRX80
+
+        machine_variant = os.getenv('MACHINE_VARIANT', '')
+        in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
+
+        if in_docker and machine_variant == 'CRX80':
+            D = self.get_machine_head_by_letter("G")
+            await self.wait_for_cr_linear_deliver_line_available(jar)
+
+            def condition():
+                flag = not D.status.get('crx_outputs_status', 0x0) & 0x01
+                flag = flag and not D.status.get('crx_outputs_status', 0x0) & 0x02
+                flag = flag and not D.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', True)
+                return flag
+
+            r = await self.wait_for_condition(
+                condition, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
+                extra_info=tr_('waiting for load_lifter roller available and stopped.'))
+            if r:
+                await D.crx_outputs_management(0, 1)
+                await D.crx_outputs_management(1, 2)
+                r = await D.wait_for_jar_photocells_status(
+                    "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", on=True,
+                    timeout=17, show_alert=False)
+                await D.crx_outputs_management(0, 0)
+                await D.crx_outputs_management(1, 0)
+                if r:
+                    self.update_jar_position(jar=jar, machine_head=None, status="DONE", pos="_")
+            return r
 
         D = self.get_machine_head_by_letter("D")
 
@@ -764,6 +801,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if r:
             await F.crx_outputs_management(2, 4)
             r = await self.wait_for_condition(condition=None, timeout=7, show_alert=False)
+            await asyncio.sleep(4)
             await F.crx_outputs_management(2, 0)
         else:
             logging.warning("F output roller is busy.")
@@ -897,6 +935,18 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             self.move_04_05,
         ]
 
+        sequence_crx80 = [
+            self.move_01_02,
+            partial(self.dispense_step, "A"),
+            self.move_02_03,
+            partial(self.dispense_step, "B"),
+            self.move_03_04,
+            partial(self.dispense_step, "C"),
+            self.move_04_05,
+            partial(self.dispense_step, "G"),
+            self.move_05_06,
+        ]
+
         sequence_crx40 = [
             self.move_01_02,
             partial(self.dispense_step, "A"),
@@ -908,7 +958,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if n_of_heads == 6:
             sequence = sequence_6
         elif n_of_heads == 4:
-            sequence = sequence_4
+            if self.machine_variant == 'CRX80':
+                sequence = sequence_crx80
+            else:
+                sequence = sequence_4
         elif n_of_heads == 3:
             sequence = sequence_crx60
         elif n_of_heads == 2:
@@ -953,22 +1006,24 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     if "move_01_02" in _tag:
 
                         self.main_window.start_step_blink(_step_key)
-                        while True:
-                            await self.wait_for_carousel_not_frozen(
-                                True,
-                                message_args=(barcode_, f"\n{_tag}\n"),
-                                message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
-                                visibility=2,
-                                show_cancel_btn=False,
-                                error_head=_error_head,
-                                dest_head=_dst_head
-                            )
-                            if not _error_head or (
-                                not _error_head.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False) and
-                                not _error_head.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', False)
-                            ):
-                                break
-                        self.main_window.stop_step_blink()
+                        try:
+                            while True:
+                                await self.wait_for_carousel_not_frozen(
+                                    True,
+                                    message_args=(barcode_, f"\n{_tag}\n"),
+                                    message_fmt='barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!',
+                                    visibility=2,
+                                    show_cancel_btn=False,
+                                    error_head=_error_head,
+                                    dest_head=_dst_head
+                                )
+                                if not _error_head or (
+                                    not _error_head.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False) and
+                                    not _error_head.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', False)
+                                ):
+                                    break
+                        finally:
+                            self.main_window.stop_step_blink()
 
                         self.delete_entering_jar()
 
@@ -996,14 +1051,16 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     )
                     if not _is_too_many_jars:
                         self.main_window.start_step_blink(_step_key)
-                    await self.wait_for_carousel_not_frozen(
-                        True,
-                        message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
-                        message_fmt=msg_,
-                        error_head=_error_head,
-                        dest_head=_dst_head
-                    )
-                    self.main_window.stop_step_blink()
+                    try:
+                        await self.wait_for_carousel_not_frozen(
+                            True,
+                            message_args=(barcode_, f"\n{_tag}\n", str(retry_counter),),
+                            message_fmt=msg_,
+                            error_head=_error_head,
+                            dest_head=_dst_head
+                        )
+                    finally:
+                        self.main_window.stop_step_blink()
 
                 else:
                     break
@@ -1016,7 +1073,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 dest_head=_dst_head
             )
 
-        if self.machine_variant not in ['CRX60', 'CRX40']:
+        if self.machine_variant not in ['CRX60', 'CRX40', 'CRX80']:
             await self.wait_for_jar_delivery(jar)
 
         return r
@@ -1032,6 +1089,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             "A": "A",
             "B": "B",
             "C": "C",
+            "G": "G",
             "LIFTR_UP": "C",
             "LIFTR_DOWN": "C",
             "D": "D",
@@ -1066,7 +1124,22 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             recovery_actions['LIFTL_DOWN'] = full_steps[15:]
             recovery_actions['LIFTL_UP'] = full_steps[16:]
 
-        if self.n_of_active_heads == 4:
+        if self.n_of_active_heads == 4 and self.machine_variant == 'CRX80':
+
+            full_steps = [
+                "move_01_02", "dispense_step", "move_02_03",
+                "dispense_step", "move_03_04", "dispense_step",
+                "move_04_05", "dispense_step", "move_05_06",
+            ]
+
+            recovery_actions['IN'] = full_steps[:]
+            recovery_actions['IN_A'] = full_steps[:]
+            recovery_actions['A'] = full_steps[1:]
+            recovery_actions['B'] = full_steps[3:]
+            recovery_actions['C'] = full_steps[5:]
+            recovery_actions['G'] = full_steps[7:]
+
+        elif self.n_of_active_heads == 4:
 
             full_steps = [
                 "move_01_02", "dispense_step", "move_02_04", "dispense_step", "move_04_05",
@@ -1236,7 +1309,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     'A': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
-                        next_head_letter=("C" if self.n_of_active_heads in (2,4) else "B")
+                        next_head_letter=("B" if self.machine_variant == 'CRX80' else "C" if self.n_of_active_heads in (2,4) else "B")
                     ),
                     'B': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
@@ -1245,8 +1318,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     ),
                     'C': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
+                        next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL' if self.machine_variant == 'CRX80' else 'JAR_LOAD_LIFTER_ROLLER_PHOTOCELL',
+                        next_head_letter="G" if self.machine_variant == 'CRX80' else "C"
+                    ),
+                    'G': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
+                        jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_LOAD_LIFTER_ROLLER_PHOTOCELL',
-                        next_head_letter="C"
+                        next_head_letter="G"
                     ),
                     'LIFTR_UP': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
@@ -1265,7 +1343,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     'D': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         next_position_sensor='JAR_DISPENSING_POSITION_PHOTOCELL',
-                        next_head_letter=("F" if self.n_of_active_heads == 4 else "E")
+                        next_head_letter=("G" if self.machine_variant == 'CRX80' else "F" if self.n_of_active_heads == 4 else "E")
                     ),
                     'E': lambda jv, jar_recovery_actions, current_head, _jar: determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,

@@ -38,7 +38,7 @@ from alfa_CR6_frontend.pages import (
 
 from alfa_CR6_frontend.action_page import ActionPage
 from alfa_CR6_frontend.browser_page import BrowserPage
-from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads, HomePageCRX60Heads, HomePageCRX40Heads)
+from alfa_CR6_frontend.home_page import (HomePageSixHeads, HomePageFourHeads, HomePageCRX60Heads, HomePageCRX80Heads, HomePageCRX40Heads)
 
 
 from alfa_CR6_frontend.keyboard import Keyboard
@@ -46,7 +46,7 @@ from alfa_CR6_frontend.keyboard import Keyboard
 
 def get_action_page_list():
 
-    machine_variant = os.getenv('MACHINE_VARIANT', None)
+    machine_variant = os.getenv('MACHINE_VARIANT', '')
     in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
 
     def action01_buttons():
@@ -132,6 +132,8 @@ def get_action_page_list():
                 {"text": tr_("move 05 06 ('UP -> DOWN')"), "action_args": ("move_05_06",)},
                 {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)},
             ]
+        elif in_docker and machine_variant == 'CRX80':
+            buttons.append({"text": tr_("move 04 05 ('C -> G')"), "action_args": ("move_04_05",)})
         else:
             buttons.append({"text": tr_("move 04 05 ('C -> OUT')"), "action_args": ("move_04_05",)})
         return buttons
@@ -173,15 +175,35 @@ def get_action_page_list():
                 {"text": tr_("move 06 07 ('DOWN -> D')"), "action_args": ("move_06_07",)},
             ]
 
-        if in_docker and 'CRX' in machine_variant:
+        if in_docker and machine_variant == 'CRX80':
+            buttons += [
+                {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "G", [0, 1])},
+                {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "G", [0, 0])},
+                {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "G", [0, 2])},
+                {"text": tr_("move 05 06 ('G -> OUT')"), "action_args": ("move_05_06",)},
+            ]
+
+        if in_docker and machine_variant in ['CRX60', 'CRX40']:
             buttons += [
                 {"text": tr_("Start output roller CW"), "action_args": ("single_move", "C", [1, 1])},
-                {"text": tr_("Stop  output roller"), "action_args": ("single_move", "C", [1, 0])},
+                {"text": tr_("Stop output roller"), "action_args": ("single_move", "C", [1, 0])},
             ]
 
         return buttons
 
     def action05_labels(machine_variant):
+        if in_docker and machine_variant == 'CRX80':
+            return [
+                ("G", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
+                ("G", "THOR BRUSH_PHOTOCELL", tr_("BRUSH PHOTOCELL")),
+                ("G", "THOR TABLE_PHOTOCELL", tr_("ROTATING TABLE PHOTOCELL")),
+                ("G", "THOR PUMP HOME_PHOTOCELL - MIXER HOME PHOTOCELL", tr_("PUMP MOTOR HOME PHOTOCELL")),
+                ("G", "THOR PUMP COUPLING_PHOTOCELL - MIXER JAR PHOTOCELL", tr_("PUMP MOTOR INGR PHOTOCELL")),
+                ("G", "THOR VALVE_OPEN_PHOTOCELL", tr_("VALVE PHOTOCELL LEFT")),
+                ("G", "THOR VALVE_PHOTOCELL - MIXER DOOR OPEN PHOTOCELL", tr_("VALVE PHOTOCELL RIGHT")),
+                ("G", "panel_table_status", tr_("PANEL TABLE STATUS")),
+                ("G", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("ROLLER PHOTOCELL")),
+            ]
         labels = [
             ("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("LIFTER ROLLER PHOTOCELL" if machine_variant in ['CR4', 'CR6'] else "ROLLER PHOTOCELL")),
         ]
@@ -193,13 +215,24 @@ def get_action_page_list():
         return labels
 
     def action06_buttons():
-        return [
-            {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "D", [0, 1])},
-            {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "D", [0, 0])},
-            {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "D", [0, 2])},
-        ]
+        if in_docker and machine_variant == 'CRX80':
+            buttons = [
+                {"text": tr_("Start output roller CW"), "action_args": ("single_move", "G", [1, 1])},
+                {"text": tr_("Stop output roller"), "action_args": ("single_move", "G", [1, 0])},
+            ]
+        else:
+            buttons = [
+                {"text": tr_("Start dispensing roller"), "action_args": ("single_move", "D", [0, 1])},
+                {"text": tr_("Stop dispensing roller"), "action_args": ("single_move", "D", [0, 0])},
+                {"text": tr_("Start dispensing roller to photocell"), "action_args": ("single_move", "D", [0, 2])},
+            ]
+        return buttons
 
     def action06_labels():
+        if in_docker and machine_variant == 'CRX80':
+            return [
+                ("G", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL", tr_("ROLLER PHOTOCELL")),
+            ]
         return [
             ("D", "JAR_DISPENSING_POSITION_PHOTOCELL", tr_("DISPENSING POSITION PHOTOCELL")),
             ("D", "container_presence", tr_("CAN PRESENCE")),
@@ -277,7 +310,7 @@ def get_action_page_list():
     def action10_buttons():
         return [
             {"text": tr_("Start output roller CCW"), "action_args": ("single_move", "F", [2, 4])},
-            {"text": tr_("Stop  output roller"), "action_args": ("single_move", "F", [2, 0])},
+            {"text": tr_("Stop output roller"), "action_args": ("single_move", "F", [2, 0])},
             {"text": tr_("Start output roller CCW to photocell dark"), "action_args": ("single_move", "F", [2, 5])},
             {"text": tr_("Start output roller CCW to photocell light"), "action_args": ("single_move", "F", [2, 6])},
             {"text": tr_("move 11 12 ('UP -> OUT')"), "action_args": ("move_11_12",)},
@@ -306,17 +339,18 @@ def get_action_page_list():
             "labels_args": action03_labels(machine_variant),
         },
         {
-            "title": tr_("action 04 (head 5, 6 or C, D)"),
+            "title": tr_("action 04 (head 5 or C)") if 'CRX' in machine_variant else tr_("action 04 (head 5, 6 or C, D)"),
             "buttons": action04_buttons(machine_variant),
             "labels_args": action04_labels(machine_variant),
         },
         {
-            "title": tr_("action 05 (head 5, 6 or C, D)"),
+            "title": tr_("action 05 (head 7 or G)") if machine_variant == 'CRX80' else tr_("action 05 (head 5 or C)") if 'CRX' in machine_variant else tr_("action 05 (head 5, 6 or C, D)"),
+
             "buttons": action05_buttons(machine_variant),
             "labels_args": action05_labels(machine_variant),
         },
         {
-            "title": tr_("action 06 (head 6 or D)"),
+            "title": tr_("action 06 (head 7 or G - output)") if machine_variant == 'CRX80' else tr_("action 06 (head 6 or D)"),
             "buttons": action06_buttons(),
             "labels_args": action06_labels(),
         },
@@ -395,8 +429,12 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_6_small.png"))
 
         elif QApplication.instance().n_of_active_heads == 4:
-            self.home_page = HomePageFourHeads(parent=self)
-            home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_4_small.png"))
+            if os.getenv('MACHINE_VARIANT', None) == 'CRX80':
+                self.home_page = HomePageCRX80Heads(parent=self)
+                home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_CRX80_small.png"))
+            else:
+                self.home_page = HomePageFourHeads(parent=self)
+                home_btn_pixmap = QPixmap(get_res("IMAGE", "sinottico_4_small.png"))
 
         elif QApplication.instance().n_of_active_heads == 3:
             self.home_page = HomePageCRX60Heads(parent=self)
@@ -496,7 +534,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 {"text": tr_("move 07 08 ('D -> E')"), "action_args": ("move_07_08",)})
             action_page_list_[6]["buttons"].append(
                 {"text": tr_("move 08 09 ('E -> F')"), "action_args": ("move_08_09",)})
-        else:
+        elif os.getenv('MACHINE_VARIANT', None) != 'CRX80':
             action_page_list_[5]["buttons"].append(
                 {"text": tr_("move 07 09 ('D -> F')"), "action_args": ("move_07_09",)})
 
@@ -823,7 +861,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 hp_callback=hp_callback
             )
             if not show_cancel_btn:
-                _msgbox.enable_buttons(True, False, False)
+                _msgbox.enable_buttons(True, False, bool(hp_callback))
 
             if visibility > 1:
                 _msgbox.setStyleSheet("""QMessageBox {border: 10px solid #FF3333; background-color: #FFFF33;}""")

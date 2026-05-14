@@ -1,0 +1,1610 @@
+{
+  "document": "Operator Manual CR6 - Alfa Colorpaint Dispenser",
+  "chapter": "8. TROUBLE SHOOTING",
+  "revision": "07",
+  "year": 2024,
+  "localized_labels": {
+    "trouble_shooting": "DIAGNOSTICA",
+    "error_code": "Codice errore",
+    "error_message": "Errore rilevato",
+    "error_description": "Descrizione errore",
+    "resolution": "Risoluzione del problema"
+  },
+  "errors": {
+    "2": {
+      "error_message": "EEPROM_COLOR_CIRC_PARAM_CRC_FAULT",
+      "error_description": "Fallimento CRC parametri circuiti",
+      "resolution": "Verificare l’assenza parametri in caso di sostituzione MMT. Caricare i parametri dei circuiti basi/coloranti sulla nuova scheda MMT"
+    },
+    "3": {
+      "error_message": "EEPROM_CALIB_CURVES_PARAM_CRC_FAULT",
+      "error_description": "Fallimento CRC parametri curve di calibrazione",
+      "resolution": "Verificare l’assenza parametri in caso di sostituzione MMT. Caricare i parametri di calibrazione sulla nuova scheda MMT"
+    },
+    "5": {
+      "error_message": "EEPROM_SLAVES_EN_PARAM_CRC_FAULT",
+      "error_description": "Fallimento CRC abilitazioni slave",
+      "resolution": "Verificare l’assenza parametri in caso di sostituzione MMT. Caricare le abilitazioni SLAVE sulla nuova scheda MMT"
+    },
+    "8": {
+      "error_message": "EEPROM_HUM_20_PARAM_CRC_FAULT",
+      "error_description": "Fallimento CRC parametri Umidificatore 2.0",
+      "resolution": "Verificare l’assenza parametri in caso di sostituzione MMT. Caricare i parametri dell’Umidificatore 2.0 sulla nuova scheda MMT"
+    },
+    "9": {
+      "error_message": "EEPROM_CIRCUIT_PUMP_TYPES_CRC_FAULT",
+      "error_description": "Fallimento CRC tipologia di Pompa per ciascun circuito",
+      "resolution": "Verificare l’assenza parametri in caso di sostituzione MMT. Caricare le tipologie di pompe sulla nuova scheda MMT"
+    },
+    "10": {
+      "error_message": "USER_INTERRUPT",
+      "error_description": "Interruzione Software funzionamento macchina",
+      "resolution": "E’ stato premuto il pulsante di HALT, oppure inviato il comando ABORT"
+    },
+    "201": {
+      "error_message": "RESET_TIMEOUT",
+      "error_description": "Timeout nel processo di RESET",
+      "resolution": "Il processo di RESET NON si è completato entro il tempo massimo previsto. Verificare la presenza di un inceppamento meccanico nel dispensatore, ed eventualmente rimuoverlo"
+    },
+    "202": {
+      "error_message": "TIMEOUT_SUPPLY_START",
+      "error_description": "Timeout all’inizio della Dispensazione",
+      "resolution": "La dispensazione NON è partita entro il tempo massimo previsto. Verificare la presenza di un inceppamento meccanico nel dispensatore, ed eventualmente rimuoverlo"
+    },
+    "203": {
+      "error_message": "TIMEOUT_SUPPLY_FAILED",
+      "error_description": "Timeout durata Dispensazione",
+      "resolution": "La dispensazione non è terminata entro il tempo massimo previsto. La formula è troppo lunga, oppure verificare la presenza di un inceppamento meccanico nel dispensatore, ed eventualmente rimuoverlo"
+    },
+    "346": {
+      "error_message": "TINTING_PUMP_RESET_ERROR",
+      "error_description": "Timeout durata procedura di reset della Pompa Tinting",
+      "resolution": "Verificare l’integrità del motore della Pompa, dei connettori, le connessioni sulla scheda MMT"
+    },
+    "347": {
+      "error_message": "TINTING_VALVE_RESET_ERROR",
+      "error_description": "Timeout durata procedura di reset della Valvola Tinting",
+      "resolution": "Verificare l’integrità del motore della Valvola, dei connettori, le connessioni sulla scheda MMT"
+    },
+    "348": {
+      "error_message": "TINTING_TABLE_RESET_ERROR",
+      "error_description": "Timeout durata procedura di reset della Tavola Tinting",
+      "resolution": "Verificare l’integrità del motore della Tavola, dei connettori, le connessioni sulla scheda MMT"
+    },
+    "359": {
+      "error_message": "C1_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "360": {
+      "error_message": "C2_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "361": {
+      "error_message": "C3_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "362": {
+      "error_message": "C4_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "363": {
+      "error_message": "C5_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "364": {
+      "error_message": "C6_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "365": {
+      "error_message": "C7_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "366": {
+      "error_message": "C8_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "367": {
+      "error_message": "C9_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "368": {
+      "error_message": "C10_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "369": {
+      "error_message": "C11_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "370": {
+      "error_message": "C12_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "371": {
+      "error_message": "C13_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "372": {
+      "error_message": "C14_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "373": {
+      "error_message": "C15_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "374": {
+      "error_message": "C16_DATA_SUPPLY_FAILED",
+      "error_description": "Parametri tabelle non validi",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "409": {
+      "error_message": "C1_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C1 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "410": {
+      "error_message": "C2_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C2 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "411": {
+      "error_message": "C3_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C3 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "412": {
+      "error_message": "C4_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C4 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "413": {
+      "error_message": "C5_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C5 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "414": {
+      "error_message": "C6_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C6 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "415": {
+      "error_message": "C7_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C7 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "416": {
+      "error_message": "C8_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C8 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "417": {
+      "error_message": "C9_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C9 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "418": {
+      "error_message": "C10_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C10 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "419": {
+      "error_message": "C11_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C11 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "420": {
+      "error_message": "C12_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C12 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "421": {
+      "error_message": "C13_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C13 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "422": {
+      "error_message": "C14_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C14 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "423": {
+      "error_message": "C15_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C15 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "424": {
+      "error_message": "C16_SUPPLY_CALC_ERROR",
+      "error_description": "In dispensazione CONTINUOUS il Numero di passi da effettuare del COLORANTE C16 NON è un multiplo di una corsa intera",
+      "resolution": "Verificare la presenza di un errore di corrispondenza tra tabelle e circuiti installati sulla macchina. Verificare la corretta installazione delle tabelle di calibrazione nel menu Machine."
+    },
+    "451": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_0_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C0 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "452": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_1_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C1 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "453": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_2_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C2 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "454": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_3_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C3 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "455": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_4_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C4 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "456": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_5_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C5 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "457": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_6_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C6 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "458": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_7_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C7 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "459": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_8_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C8 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "460": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_9_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C9 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "461": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_10_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C10 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "462": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_11_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C11 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "463": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_12_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C12 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "464": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_13_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C13 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "465": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_14_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C14 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "466": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_15_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C15 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "467": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_16_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C16 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "468": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_17_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C17 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "469": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_18_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C18 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "470": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_19_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C19 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "471": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_20_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C20 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "472": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_21_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C21 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "473": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_22_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C22 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "474": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_23_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C23 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "475": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_24_ERROR",
+      "error_description": "Il circuito (Base o Colorante) C24 deve dispensare, ma è erroneamente Disabilitato",
+      "resolution": "Caricare le abilitazioni Slave sulla nuova scheda MMT."
+    },
+    "534": {
+      "error_message": "TINTING_VALVE_HOME_POS_ERROR",
+      "error_description": "Errore nella procedura di HOMING della Valvola Tinting",
+      "resolution": "Verificare il corretto funzionamento delle 2 fotocellule e la corretta movimentazione dello stepper"
+    },
+    "535": {
+      "error_message": "TINTING_TABLE_HOME_POS_ERROR",
+      "error_description": "Errore nella procedura di HOMING della Tavola rotante Tinting",
+      "resolution": "Verificare il corretto funzionamento della fotocellula, la presenza di almeno una bandierina sulla tavola, e la corretta movimentazione dello stepper"
+    },
+    "584": {
+      "error_message": "TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Errore di oscuramento di una delle 2 fotocellula durante l’HOMING della Valvola",
+      "resolution": "Verificare il funzionamento di ciascuna fotocellula della Valvola, il cablaggio del motore stepper della Valvola e l’allineamento della targhetta metallica"
+    },
+    "633": {
+      "error_message": "TINTING_PUMP_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotocellula di Home della Pompa Tinting NON oscurata al termine di una movimentazione in passi della pompa, oppure mai oscurata entro un tempo o un numero di passi definito, oppure NON oscurata durante la movimentazione della Tavola Tinting",
+      "resolution": "Verificare il funzionamento della fotocellula di Home e dello Stepper"
+    },
+    "634": {
+      "error_message": "TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotocellula di HOME della Valvola NON oscurata durante la movimentazione della Tavola Tinting, oppure al termine della procedura di Homing, oppure Valvola NON aperta durante una Erogazione",
+      "resolution": "Verificare il funzionamento della fotocellula di HOME della Valvola e dello Stepper"
+    },
+    "733": {
+      "error_message": "TINTING_PUMP_OVERCURRENT_ERROR",
+      "error_description": "Corrente troppo elevata su un ponte del driver del motore stepper della Pompa Tinting",
+      "resolution": "Verificare i cablaggi, il funzionamento del driver L6482H della Pompa sulla scheda MMT"
+    },
+    "734": {
+      "error_message": "TINTING_VALVE_OVERCURRENT_ERROR",
+      "error_description": "Corrente troppo elevata su un ponte del driver del motore stepper della Valvola Tinting",
+      "resolution": "Verificare i cablaggi, il funzionamento del driver L6482H della Valvola sulla scheda MMT"
+    },
+    "735": {
+      "error_message": "TINTING_TABLE_OVERCURRENT_ERROR",
+      "error_description": "Corrente troppo elevata su un ponte del driver del motore stepper della Tavola Tinting",
+      "resolution": "Verificare i cablaggi, il funzionamento del driver L6482H della Tavola sulla scheda MMT"
+    },
+    "738": {
+      "error_message": "DOSING_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Corrente circolante sulla Rulliera di Dosaggio superiore alla soglia impostata nel driver della scheda MMT, oppure temperatura rilevata sullo stesso driver troppo elevata",
+      "resolution": "Controllare la connessione e il cablaggio della Rulliera di Dosaggio sull’uscita riservata nella scheda MMT"
+    },
+    "739": {
+      "error_message": "INPUT_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Corrente circolante sulla Rulliera di Ingresso superiore alla soglia impostata nel driver della scheda MMT, oppure temperatura rilevata sullo stesso driver troppo elevata",
+      "resolution": "Controllare la connessione e il cablaggio della Rulliera di Ingresso sull’uscita riservata nella scheda MMT"
+    },
+    "740": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Corrente circolante sulla Rulliera di Scarico superiore alla soglia impostata nel driver della scheda MMT, oppure temperatura rilevata sullo stesso driver troppo elevata",
+      "resolution": "Controllare la connessione e il cablaggio della Rulliera di Scarico sull’uscita riservata nella scheda MMT"
+    },
+    "792": {
+      "error_message": "TINTING_PUMP_SOFTWARE_ERROR",
+      "error_description": "Errore logico negli stati dei processi della Pompa Tinting (inclusa la Valvola), oppure nei parametri della formula ricevuta",
+      "resolution": "Controllare i parametri della formula inviata, se il problema persiste richiedere un aggiornamento Firmware Tinting"
+    },
+    "793": {
+      "error_message": "TINTING_TABLE_SOFTWARE_ERROR",
+      "error_description": "Errore logico negli stati dei processi della Tavola Tinting",
+      "resolution": "Richiedere un aggiornamento Firmware Tinting"
+    },
+    "795": {
+      "error_message": "ROLLER_SOFTWARE_ERROR",
+      "error_description": "Errore logico negli stati dei processi che coinvolgono le Rulliere e gli Ascensori",
+      "resolution": "Richiedere un aggiornamento Firmware"
+    },
+    "842": {
+      "error_message": "ROLLER_DRV_OVER_CURR_TEMP_ERROR",
+      "error_description": "Corrente o Temperatura troppo elevata sul driver che controlla l’Ascensore di Carico, o Scarico, o sulla Rulliera dell’Ascensore di Carico, della scheda MMT",
+      "resolution": "Controllare la connessione e il cablaggio dell’Ascensore di Carico, o Scarico, o sulla Rulliera dell’Ascensore di Carico nella scheda MMT"
+    },
+    "896": {
+      "error_message": "HUMIDIFIER_20_PARAM_ERROR",
+      "error_description": "Errore durante il RESET macchina nel controllo di correttezza dei parametri dell’Umidificatore 2.0",
+      "resolution": "Controllare la correttezza dei parametri inviati con il comando “DIAG_SETUP_HUMIDIFIER_TEMPERA TURE_PROCESSES”."
+    },
+    "898": {
+      "error_message": "TEMPERATURE_ERROR",
+      "error_description": "Errore nella misura della Temperatura",
+      "resolution": "Controllare la connessione della scheda di alloggiamento del Sensore di Temperatura HUTTS con la scheda MMT. Se il problema persiste sostituire la scheda e/o il cavo di connessione"
+    },
+    "899": {
+      "error_message": "TEMPERATURE_TOO_LOW",
+      "error_description": "Temperatura a bodo macchina troppo Bassa",
+      "resolution": "Verificare il funzionamento del Riscaldatore"
+    },
+    "907": {
+      "error_message": "TINTING_TIMEOUT_TABLE_MOVE_ERROR",
+      "error_description": "Timeout scaduto durante l’Homing della Tavola, oppure nel posizionamento ad un circuito",
+      "resolution": "Verificare i cablaggi del motore stepper della Tavola, i parametri caratteristici della Tavola inviati con il comando “UPDATE_TINTING_TABLE_SETTINGS”, ed il funzionamento della fotocellula della Tavola"
+    },
+    "908": {
+      "error_message": "TINTING_TABLE_SEARCH_POSITION_REFERENCE_ERROR",
+      "error_description": "La tacca di riferimento trovata nell’HOMING della Tavola differisce dal valore teorico impostato di una quantità in passi superiore alla tolleranza impostata",
+      "resolution": "Verificare la presenza della tacca di riferimento sulla Tavola, verificare la correttezza di parametri caratteristici della Tavola ed il funzionamento della fotocellula della Tavola"
+    },
+    "909": {
+      "error_message": "TINTING_LACK_OF_CIRCUITS_POSITION_ERROR",
+      "error_description": "Un circuito che necessita di essere pulito non è abilitato, oppure un circuito che occorre posizionare non è presente nella tabella posizionale",
+      "resolution": "Controllare che il circuito sia stato abilitato e che sia stato effettuato correttamente un Autoriconoscimento"
+    },
+    "911": {
+      "error_message": "TINTING_SELF_LEARNING_PROCEDURE_ERROR",
+      "error_description": "Errore nella procedura di Autoriconoscimento della Tavola Tinting: alla partenza la Tavola non è sul Riferimento, oppure la fotocellula della Tavola non è oscurata, oppure il numero di circuiti trovati è > di 16, oppure il numero di circuiti trovati in un verso di rotazione è diverso dall’altro",
+      "resolution": "Prima di effettuare l’Autoriconoscimento occorre avere terminato con successo un Reset. Controllare il funzionamento della fotocellula della Tavola Tinting"
+    },
+    "912": {
+      "error_message": "TINTING_BAD_PUMP_PARAM_ERROR",
+      "error_description": "Parametri caratteristici della Pompa Tinting non corretti",
+      "resolution": "Verificare i parametri impostati ed inviare nuovamente il comando di impostazione dei parametri della Pompa “UPDATE_TINTING_PUMP_SETTINGS”"
+    },
+    "913": {
+      "error_message": "TINTING_BAD_TABLE_PARAM_ERROR",
+      "error_description": "Parametri caratteristici della Tavola Tinting non corretti",
+      "resolution": "Verificare i parametri impostati ed inviare nuovamente il comando di impostazione dei parametri della Tavola “UPDATE_TINTING_TABLE_SETTINGS”"
+    },
+    "914": {
+      "error_message": "EEPROM_PUMP_PARAM_CRC_FAULT",
+      "error_description": "Fallimento CRC parametri pompa Tinting",
+      "resolution": "Probabile assenza dei parametri della Pompa. In caso di sostituzione della scheda MM caricare i parametri della Pompa Tinting con il comando “UPDATE_TINTING_PUMP_SETTINGS”"
+    },
+    "915": {
+      "error_message": "EEPROM_TABLE_PARAM_CRC_FAULT",
+      "error_description": "Fallimento CRC parametri tavola Tinting",
+      "resolution": "Probabile assenza dei parametri della Pompa. In caso di sostituzione della scheda MMT caricare i parametri della Pompa Tinting con il comando “UPDATE_TINTING_TABLE_SETTINGS”"
+    },
+    "916": {
+      "error_message": "TINTING_BAD_PERIPH_PARAM_ERROR",
+      "error_description": "Parametri nel comando di impostazione periferiche non corretti",
+      "resolution": "Verificare i parametri impostati ed inviare nuovamente il comando di impostazione Periferiche"
+    },
+    "917": {
+      "error_message": "EEPROM_CLEAN_PARAM_CRC_FAULT",
+      "error_description": "Fallimento CRC parametri pulizia Tinting",
+      "resolution": "Probabile assenza dei parametri della Spazzola. In caso di sostituzione della scheda MMT caricare i parametri della Spazzola con il comando “UPDATE_TINTING_CLEANING_SETTI NGS”"
+    },
+    "918": {
+      "error_message": "TINTING_PUMP_PHOTO_HOME_READ_DARK_ERROR_ST",
+      "error_description": "La fotocellula di Home della Pompa Tinting è coperta quando avrebbe dovuto essere scoperta durante l’HOMING, oppure durante il Ricircolo o l’Erogazione quando il circuito è già ingaggiato",
+      "resolution": "Verificare il funzionamento della fotocellula di Home della Pompa e dello Stepper della Pompa"
+    },
+    "919": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta o viceversa",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "920": {
+      "error_message": "TINTING_TABLE_TEST_ERROR",
+      "error_description": "Test della Tavola Tinting fallito: la posizione di partenza NON è sul riferimento, oppure non è stato rilevato nessun circuito, oppure il numero di circuiti rilevati è > 16, oppure la posizione di almeno un circuito rilevato in una direzione differisce da quella nella direzione opposta di una quantità in passi > della soglia impostata, oppure la posizione di almeno un circuito rilevato differisce da quella ottenuta nell’Autoriconoscimento di una quantità > della soglia impostata, oppure la mappa dei circuiti rilevati differisce da quella configurata via software",
+      "resolution": "Effettuare un Reset e riprovare il Test della Tavola, verificare il funzionamento della fotocellula della Tavola Tinting, verificare la coerenza tra i circuiti presenti sulla Tavola e quelli configurati nel software, provare ad effettuare nuovamente l’Autoriconoscimento, aumentare la tolleranza sulle posizioni della Tavola inviando nuovamente il comando di configurazione Parametri Tavola"
+    },
+    "922": {
+      "error_message": "TINTING_BASES_CARRIAGE_ERROR",
+      "error_description": "Carrello Basi fuori sede quando la macchina NON si trova in modalità Diagnostica",
+      "resolution": "Riposizionare il carrello in sede. Verificare il cablaggio del microswitch del carrello sulla scheda MMT"
+    },
+    "923": {
+      "error_message": "TINTING_PANEL_TABLE_ERROR",
+      "error_description": "Pannello aperto per Refill sulla Tavola Tinting quando la macchina NON si trova in modalità Diagnostica, oppure lo è e si vogliono attivare operazioni che implicano la movimentazione di qualcosa che NON è la Rotazione della Tavola Tinting",
+      "resolution": "Chiudere il pannello. Verificare il cablaggio del microswitch del pannello sulla scheda MMT"
+    },
+    "924": {
+      "error_message": "TINTING_BRUSH_OPEN_LOAD_ERROR",
+      "error_description": "Carico assente sull’uscita riservata alla Spazzola della scheda MMT",
+      "resolution": "Controllare la connessione e il cablaggio della Spazzola sull’uscita riservata nella scheda MMT"
+    },
+    "925": {
+      "error_message": "TINTING_BRUSH_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Corrente circolante sulla Spazzola superiore alla soglia impostata nel driver della scheda MMT, oppure temperatura rilevata sullo stesso driver troppo elevata",
+      "resolution": "Controllare la connessione e il cablaggio della spazzola sull’uscita riservata nella scheda MMT"
+    },
+    "930": {
+      "error_message": "TINTING_AIR_HEATER_OPEN_LOAD_ERROR",
+      "error_description": "Carico assente sull’uscita riservata al Riscaldatore dell’Aria della scheda MMT",
+      "resolution": "Verificare la connessione e il cablaggio del Riscaldatore dell’Aria sulla scheda MMT"
+    },
+    "931": {
+      "error_message": "TINTING_AIR_HEATER_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Corrente circolante sul Riscaldatore dell’Aria superiore alla soglia impostata nel driver della scheda MMT, oppure temperatura rilevata sullo stesso driver troppo elevata",
+      "resolution": "Verificare le connessioni e il cablaggio del Riscaldatore dell’Aria sulla scheda MMT"
+    },
+    "932": {
+      "error_message": "TINTING_GENERIC24V_OPEN_LOAD_ERROR_ST",
+      "error_description": "Carico assente sull’uscita riservata al Motore della Spazzola della scheda MMT",
+      "resolution": "Verificare la connessione e il cablaggio del Motore della Spazzola sulla scheda MMT"
+    },
+    "933": {
+      "error_message": "TINTING_GENERIC24V_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Corrente circolante sul Motore della Spazzola superiore alla soglia impostata nel driver della scheda MMT, oppure temperatura rilevata sullo stesso driver troppo elevata",
+      "resolution": "Verificare le connessioni e il cablaggio del Motore della Spazzola sulla scheda MMT"
+    },
+    "934": {
+      "error_message": "TINTING_PUMP_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Temperatura interna del controller del motore stepper della Pompa Tinting troppo elevata",
+      "resolution": "Spegnere la macchina, attendere alcuni minuti e riaccenderla. Se il problema persiste verificare le connessioni elettriche con il motore stepper della Pompa. Se il problema persiste cambiare la scheda MMT"
+    },
+    "935": {
+      "error_message": "TINTING_VALVE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Temperatura interna del controller del motore stepper della Valvola Tinting troppo elevata",
+      "resolution": "Spegnere la macchina, attendere alcuni minuti e riaccenderla. Se il problema persiste verificare le connessioni elettriche con il motore stepper della Valvola. Se il problema persiste cambiare la scheda MMT"
+    },
+    "936": {
+      "error_message": "TINTING_TABLE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Temperatura interna del controller del motore stepper della Tavola Tinting troppo elevata",
+      "resolution": "Spegnere la macchina, attendere alcuni minuti e riaccenderla. Se il problema persiste verificare le connessioni elettriche con il motore stepper della Tavola. Se il problema persiste cambiare la scheda MMT"
+    },
+    "937": {
+      "error_message": "TINTING_PUMP_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Tensione di pilotaggio del gate del controller del motore stepper della Pompa Tinting troppo bassa",
+      "resolution": "Verificare le connessioni elettriche con il motore stepper della Pompa. Se il problema persiste cambiare la scheda MMT"
+    },
+    "938": {
+      "error_message": "TINTING_VALVE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Tensione di pilotaggio del gate del controller del motore stepper della Valvola Tinting troppo bassa",
+      "resolution": "Verificare le connessioni elettriche con il motore stepper della Valvola. Se il problema persiste cambiare la scheda MMT"
+    },
+    "939": {
+      "error_message": "TINTING_TABLE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Tensione di pilotaggio del gate del controller del motore stepper della Tavola Tinting troppo bassa",
+      "resolution": "Verificare le connessioni elettriche con il motore stepper della Tavola. Se il problema persiste cambiare la scheda MMT"
+    },
+    "940": {
+      "error_message": "EEPROM_TINTING_COLORANTS_STEPS_POSITION_CRC_FAULT",
+      "error_description": "Fallimento CRC della tabella posizionale dei circuiti sulla Tavola Tinting memorizzata sulla EEPROM della scheda MMT",
+      "resolution": "Effettuare l’Autoriconoscimento della Tavola Tinting. Se il problema persiste cambiare la scheda MMT"
+    },
+    "941": {
+      "error_message": "TINTING_TABLE_PHOTO_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è oscurata quando dovrebbe esserlo in vari processi macchina",
+      "resolution": "Verificare il funzionamento della Fotocellula della Tavola Tinting"
+    },
+    "942": {
+      "error_message": "TINTING_TABLE_MOVE_ERROR",
+      "error_description": "Errore generico nella movimentazione della Tavola Tinting, oppure nel Refill la Tavola si è spostata senza ingaggiare alcun circuito",
+      "resolution": "Verificare il funzionamento della Fotocellula della Tavola Tinting"
+    },
+    "943": {
+      "error_message": "TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "944": {
+      "error_message": "TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nell’HOMING della Valvola la fotocellula di Valvola Aperta non si è oscurata, oppure nel Ricircolo nel movimento di apertura Valvola prima della ricarica essa non si è oscurata, oppure durante il dosaggio non si è oscurata",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "945": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di ingaggio Pompa Tinting non è stata oscurata dopo la movimentazione finalizzata all’ingaggio di un circuito all’inizio del Ricircolo o di un Dosaggio",
+      "resolution": "Controllare il funzionamento della fotocellula di ingaggio, e il suo cablaggio"
+    },
+    "946": {
+      "error_message": "TINTING_BRUSH_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della Spazzola non è oscurata durante le movimentazioni al Reset macchina, o durante una movimentazione della Tavola Tinting, o durante un processo di Pulizia",
+      "resolution": "Controllare il funzionamento della fotocellula, del motore DC della spazzola e il cablaggio del motore sulla scheda MMT"
+    },
+    "947": {
+      "error_message": "TINTING_BAD_PARAM_CLEAN_ERROR",
+      "error_description": "I parametri del processo di Pulizia non sono corretti come risulta durante il Reset macchina",
+      "resolution": "Controllare i parametri del processo di Pulizia, ed eventualmente inviarli nuovamente con il comando “DIAG_COLORANT_ACTIVATION_CLE ANING”"
+    },
+    "948": {
+      "error_message": "EEPROM_TEST_ERROR",
+      "error_description": "Fallimento del test di funzionamento della EEPROM effettuato al Reset Macchina",
+      "resolution": "Riprovare e se il problema si dovesse presentare ancora sostituire la scheda MMT"
+    },
+    "984": {
+      "error_message": "C1_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "985": {
+      "error_message": "C2_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "986": {
+      "error_message": "C3_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "987": {
+      "error_message": "C4_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "988": {
+      "error_message": "C5_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "989": {
+      "error_message": "C6_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "990": {
+      "error_message": "C7_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "991": {
+      "error_message": "C8_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "992": {
+      "error_message": "C9_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "993": {
+      "error_message": "C10_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "994": {
+      "error_message": "C11_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "995": {
+      "error_message": "C12_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "996": {
+      "error_message": "C13_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "997": {
+      "error_message": "C14_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "998": {
+      "error_message": "C15_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "999": {
+      "error_message": "C16_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1000": {
+      "error_message": "C17_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1001": {
+      "error_message": "C18_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1002": {
+      "error_message": "C19_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1003": {
+      "error_message": "C20_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1004": {
+      "error_message": "C21_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1005": {
+      "error_message": "C22_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1006": {
+      "error_message": "C23_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1007": {
+      "error_message": "C24_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "I circuiti rilevati al termine dell’Homing della Tavola Tinting non coincidono con quelli trovati dall’Autoriconoscimento e memorizzati nell’EEPROM della scheda MMT, oppure le tabelle posizionali di almeno un circuito trovate nelle due direzione dall’Autoriconoscimento differiscono di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure la tabella posizionale di almeno un circuito trovata dall’Autoriconoscimento differisce dal valore teorico di una quantità in passi > della tolleranza impostata nel comando di configurazione parametri Tavola, oppure errato matching tra la tabella posizionale trovata nell’Autoriconoscimento e la configurazione dei coloranti impostata nel software",
+      "resolution": "Controllare il funzionamento della fotocellula della Tavola Tinting. Ripetere l’Autoriconoscimento, verificare che i circuiti fisicamente presenti sulla Tavola coincidano con quelli impostati nella pagina di configurazione software, aumentare la Tolleranza sulle posizioni dei circuiti e rimandare il comando di impostazione parametri Tavola Tinting"
+    },
+    "1035": {
+      "error_message": "ROLLER_TIMEOUT_MOVE_ERROR",
+      "error_description": "Movimentazione Rulliera o Ascensore non avvenuta entro il Timeout previsto",
+      "resolution": "Verificare il funzionamento della fotocellula che controlla la fine della movimentazione"
+    },
+    "1036": {
+      "error_message": "DOSING_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Carico assente sull’uscita che pilota la Rulliera di Dispensazione",
+      "resolution": "Verificare la connessione e il cablaggio del Motore della Rulliera di Dispensazione sulla scheda MMT"
+    },
+    "1037": {
+      "error_message": "INPUT_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Carico assente sull’uscita che pilota la Rulliera di Ingresso",
+      "resolution": "Verificare la connessione e il cablaggio del Motore della Rulliera di Ingresso sulla scheda MMT"
+    },
+    "1038": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Carico assente sull’uscita che pilota la Rulliera dell’Ascensore di Scarico",
+      "resolution": "Verificare la connessione e il cablaggio del Motore della Rulliera dell’Ascensore di Scarico sulla scheda MMT"
+    },
+    "1040": {
+      "error_message": "C1_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C1",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1041": {
+      "error_message": "C2_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C2",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1042": {
+      "error_message": "C3_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C3",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1043": {
+      "error_message": "C4_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C4",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1044": {
+      "error_message": "C5_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C5",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1045": {
+      "error_message": "C6_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C6",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1046": {
+      "error_message": "C7_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C7",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1047": {
+      "error_message": "C8_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C8",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1048": {
+      "error_message": "C9_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C9",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1049": {
+      "error_message": "C10_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C10",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1050": {
+      "error_message": "C11_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C11",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1051": {
+      "error_message": "C12_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C12",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1052": {
+      "error_message": "C13_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C13",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1053": {
+      "error_message": "C14_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C14",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1054": {
+      "error_message": "C15_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C15",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1055": {
+      "error_message": "C16_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C16",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1056": {
+      "error_message": "C17_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C17",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1057": {
+      "error_message": "C18_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C18",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1058": {
+      "error_message": "C19_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C19",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1059": {
+      "error_message": "C20_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C20",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1060": {
+      "error_message": "C21_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C21",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1061": {
+      "error_message": "C22_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C22",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1062": {
+      "error_message": "C23_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C23",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1063": {
+      "error_message": "C24_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "La fotocellula di Valvola Aperta non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C24",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e la sua connessione con la scheda MMT"
+    },
+    "1064": {
+      "error_message": "C1_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C1",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1065": {
+      "error_message": "C2_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C2",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1066": {
+      "error_message": "C3_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C3",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1067": {
+      "error_message": "C4_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C4",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1068": {
+      "error_message": "C5_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C5",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1069": {
+      "error_message": "C6_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C6",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1070": {
+      "error_message": "C7_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C7",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1071": {
+      "error_message": "C8_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C8",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1072": {
+      "error_message": "C9_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C9",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1073": {
+      "error_message": "C10_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C10",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1074": {
+      "error_message": "C11_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C11",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1075": {
+      "error_message": "C12_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C12",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1076": {
+      "error_message": "C13_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C13",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1077": {
+      "error_message": "C14_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C14",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1078": {
+      "error_message": "C15_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C15",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1079": {
+      "error_message": "C16_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C16",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1080": {
+      "error_message": "C17_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C17",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1081": {
+      "error_message": "C18_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C18",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1082": {
+      "error_message": "C19_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C19",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1083": {
+      "error_message": "C20_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C20",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1084": {
+      "error_message": "C21_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C21",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1085": {
+      "error_message": "C22_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C22",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1086": {
+      "error_message": "C23_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C23",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1087": {
+      "error_message": "C24_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di HOME della valvola non risulta oscurata quando avrebbe dovuto nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C24",
+      "resolution": "Controllare il funzionamento della fotocellula di HOME della Valvola e la sua connessione con la scheda MMT"
+    },
+    "1088": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C1",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1089": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C2",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1090": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C3",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1091": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C4",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1092": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C5",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1093": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C6",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1094": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C7",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1095": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C8",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1096": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C9",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1097": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C10",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1098": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C11",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1099": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C12",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1100": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C13",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1101": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C14",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1102": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C15",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1103": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C16",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1104": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C17",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1105": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C18",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1106": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C19",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1107": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C20",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1108": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C21",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1109": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C22",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1110": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C23",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1111": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: scoperta quando dovrebbe essere coperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C24",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1112": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C1",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1113": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C2",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1114": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C3",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1115": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C4",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1116": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C5",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1117": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C6",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1118": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C7",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1119": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C8",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1120": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C9",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1121": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C10",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1122": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C11",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1123": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C12",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1124": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C13",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1125": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C14",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1126": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C15",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1127": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C16",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1128": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C17",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1129": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C18",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1130": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C19",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1131": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C20",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1132": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C21",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1133": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C22",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1134": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C23",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1135": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "La fotocellula di Accoppiamento della Pompa Tinting è in uno stato errato: coperta quando dovrebbe essere scoperta nei processi di Dosaggio e Ricircolo che coinvolgono il circuito C24",
+      "resolution": "Verificare il funzionamento della fotocellula di Accoppiamento della Pompa e dello Stepper della Pompa. Verificare i parametri caratteristici della Pompa inviati con il comando specifico"
+    },
+    "1136": {
+      "error_message": "C1_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C1 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1137": {
+      "error_message": "C2_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C2 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1138": {
+      "error_message": "C3_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C3 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1139": {
+      "error_message": "C4_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C4 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1140": {
+      "error_message": "C5_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C5 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1141": {
+      "error_message": "C6_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C6 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1142": {
+      "error_message": "C7_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C7 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1143": {
+      "error_message": "C8_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C8 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1144": {
+      "error_message": "C9_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C9 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1145": {
+      "error_message": "C10_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C10 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1146": {
+      "error_message": "C11_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C11 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1147": {
+      "error_message": "C12_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C12 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1148": {
+      "error_message": "C13_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C13 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1149": {
+      "error_message": "C14_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C14 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1150": {
+      "error_message": "C15_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C15 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1151": {
+      "error_message": "C16_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C16 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1152": {
+      "error_message": "C17_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C17 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1153": {
+      "error_message": "C18_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C18 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1154": {
+      "error_message": "C19_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C19 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1155": {
+      "error_message": "C20_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C20 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1156": {
+      "error_message": "C21_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C21 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1157": {
+      "error_message": "C22_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C22 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1158": {
+      "error_message": "C23_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C23 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1159": {
+      "error_message": "C24_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Nei processi di Ricircolo o di Dosaggio che coinvolgono il circuito C24 la fotocellula di Valvola Aperta non si è oscurata quando avrebbe dovuto",
+      "resolution": "Controllare il funzionamento della fotocellula di Valvola Aperta e il cablaggio del motore stepper della Valvola"
+    },
+    "1160": {
+      "error_message": "C1_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C1 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1161": {
+      "error_message": "C2_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C2 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1162": {
+      "error_message": "C3_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C3 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1163": {
+      "error_message": "C4_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C4 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1164": {
+      "error_message": "C5_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C5 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1165": {
+      "error_message": "C6_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C6 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1166": {
+      "error_message": "C7_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C7 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1167": {
+      "error_message": "C8_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C8 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1168": {
+      "error_message": "C9_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C9 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1169": {
+      "error_message": "C10_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C10 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1170": {
+      "error_message": "C11_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C11 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1171": {
+      "error_message": "C12_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C12 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1172": {
+      "error_message": "C13_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C13 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1173": {
+      "error_message": "C14_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C14 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1174": {
+      "error_message": "C15_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C15 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1175": {
+      "error_message": "C16_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C16 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1176": {
+      "error_message": "C17_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C17 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1177": {
+      "error_message": "C18_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C18 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1178": {
+      "error_message": "C19_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C19 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1179": {
+      "error_message": "C20_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C20 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1180": {
+      "error_message": "C21_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C21 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1181": {
+      "error_message": "C22_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C22 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1182": {
+      "error_message": "C23_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C23 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1183": {
+      "error_message": "C24_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Valvola non aperta prima del Dosaggio che coinvolge il circuito C24 in Alta risoluzione",
+      "resolution": "Controllare il funzionamento delle 2 fotocellule della Valvola e il cablaggio del motore stepper della Valvola"
+    },
+    "1184": {
+      "error_message": "C1_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C1",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C1 ingaggiato"
+    },
+    "1185": {
+      "error_message": "C2_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C2",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C2 ingaggiato"
+    },
+    "1186": {
+      "error_message": "C3_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C3",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C3 ingaggiato"
+    },
+    "1187": {
+      "error_message": "C4_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C4",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C4 ingaggiato"
+    },
+    "1188": {
+      "error_message": "C5_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C5",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C5 ingaggiato"
+    },
+    "1189": {
+      "error_message": "C6_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C6",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C6 ingaggiato"
+    },
+    "1190": {
+      "error_message": "C7_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C7",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C7 ingaggiato"
+    },
+    "1191": {
+      "error_message": "C8_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C8",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C8 ingaggiato"
+    },
+    "1192": {
+      "error_message": "C9_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C9",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C9 ingaggiato"
+    },
+    "1193": {
+      "error_message": "C10_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C10",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C10 ingaggiato"
+    },
+    "1194": {
+      "error_message": "C11_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C11",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C11 ingaggiato"
+    },
+    "1195": {
+      "error_message": "C12_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C12",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C12 ingaggiato"
+    },
+    "1196": {
+      "error_message": "C13_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C13",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C13 ingaggiato"
+    },
+    "1197": {
+      "error_message": "C14_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C14",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C14 ingaggiato"
+    },
+    "1198": {
+      "error_message": "C15_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C15",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C15 ingaggiato"
+    },
+    "1199": {
+      "error_message": "C16_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C16",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C16 ingaggiato"
+    },
+    "1200": {
+      "error_message": "C17_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C17",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C17 ingaggiato"
+    },
+    "1201": {
+      "error_message": "C18_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C18",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C18 ingaggiato"
+    },
+    "1202": {
+      "error_message": "C19_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C19",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C19 ingaggiato"
+    },
+    "1203": {
+      "error_message": "C20_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C20",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C20 ingaggiato"
+    },
+    "1204": {
+      "error_message": "C21_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C21",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C21 ingaggiato"
+    },
+    "1205": {
+      "error_message": "C22_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C22",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C22 ingaggiato"
+    },
+    "1206": {
+      "error_message": "C23_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C23",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C23 ingaggiato"
+    },
+    "1207": {
+      "error_message": "C24_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "La fotocellula della Tavola Tinting non è più oscurata durante un processo in cui avviene la movimentazione della Valvola quando è ingaggiato il circuito C24",
+      "resolution": "Controllare il posizionamento e la durezza del selettore della valvola del circuito C24 ingaggiato"
+    }
+  }
+}

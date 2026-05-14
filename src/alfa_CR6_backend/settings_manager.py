@@ -72,6 +72,11 @@ class SettingsManager:
                 'default': False,
                 'description': 'Enables manual entry of an order barcode in case the roller input barcode scanner is not working.',
             },
+            'SKIP_FREEZE_ON_UNKNOWN_PIGMENTS': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'When enabled, jars with only unknown pigments (to be added by hand) show an alert but do not freeze the carousel. Does not apply if insufficient pigments are also present.',
+            },
             'POPUP_REFILL_CHOICES': {
                 'type': 'array',
                 'minItems': 2,
@@ -91,6 +96,11 @@ class SettingsManager:
                 'maximum': 4000,
                 'default': 0,
                 'description': 'Interval of time (in secs) to download lot lot specific info from KCC site. 0 means disabled; maximum value 4000',
+            },
+            'TROUBLESHOOTING': {
+                'type': 'boolean',
+                'default': True,
+                'description': 'When enabled, the alarm popup shows an "Info" button that opens a web page with the error description and resolution.',
             },
         },
     }

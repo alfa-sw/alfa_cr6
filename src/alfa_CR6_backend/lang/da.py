@@ -39,7 +39,7 @@ D = {
     "Stop  input roller": "Stop indføringsvalse",
     "Stop  lifter roller": "Stop løftervalse",
     "Stop  lifter": "Stop løfter",
-    "Stop  output roller": "Stop udføringsvalse",
+    "Stop output roller": "Stop udføringsvalse",
     "Stop dispensing roller": "Stop doseringsvalse",
     "Too many files saved and not used. Please delete unused files.": "For mange filer, der er gemt og ikke brugt. Slet ubrugte filer.",
     "[{}] Files:  search by file name": "[{}] Filer: Søg efter filnavn",
@@ -255,6 +255,17 @@ D = {
     "OK": "OK",
     "Delete": "Slet",
 
+    "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
+    "Troubleshooting": "Troubleshooting",
+    "  Close  ": "  Close  ",
+    "Error loading troubleshooting page.": "Error loading troubleshooting page.",
+    "troubleshooting instructions are missing for error:{}": "troubleshooting instructions are missing for error:{}",
+    "error_code:": "error_code:",
+    "action 04 (head 5 or C)": "action 04 (head 5 or C)",
+    "action 05 (head 5 or C)": "action 05 (head 5 or C)",
+    "action 05 (head 7 or G)": "action 05 (head 7 or G)",
+    "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
+    "Start output roller CW": "Start output roller CW",
 }
 
 

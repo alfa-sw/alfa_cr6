@@ -59,6 +59,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.cntr = 0
         self.time_stamp = 0
         self.expired_products = None
+        self.table_belt_health_msg = None
 
         self.owned_barcodes = []
 
@@ -233,27 +234,24 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             logging.error(m_fmt.format(*m_args))
 
-            here = os.path.dirname(os.path.abspath(__file__))
-            dir_path = os.path.join(
-                here,
-                "..",
-                "alfa_CR6_flask",
-                "static",
-                "troubleshooting",
-                f"Errore.{status.get('error_code')}")
-
-            # ~ if os.path.exists(dir_path) and self.app.settings.TROUBLESHOOTING:
-            if os.path.exists(dir_path) and hasattr(self.app.settings, "TROUBLESHOOTING") and self.app.settings.TROUBLESHOOTING:
+            error_code = status.get("error_code")
+            if getattr(self.app.settings, "TROUBLESHOOTING", True) and error_code is not None:
                 def _cb():
-                    url = "http://127.0.0.1:8090/troubleshooting/{}".format(status.get("error_code"))
-                    self.app.main_window.browser_page.open_page(url=url)
+                    from alfa_CR6_frontend.dialogs import TroubleshootingDialog
+                    url = "http://127.0.0.1:8090/troubleshooting/{}".format(error_code)
+                    dlg = TroubleshootingDialog(
+                        url=url,
+                        title=f"Troubleshooting - Error {error_code}",
+                        parent=self.app.main_window,
+                    )
+                    dlg.exec_()
             else:
                 _cb = None
 
             self.app.main_window.open_frozen_dialog(
                 message_args=m_args, message_fmt=m_fmt,
                 force_explicit_restart=True, hp_callback=_cb,
-                localize_args=True
+                localize_args=True, show_cancel_btn=False
             )
 
             try:
@@ -409,6 +407,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 expired_products = msg_dict.get("value")
                 if self.expired_products != expired_products:
                     self.expired_products = expired_products
+                else:
+                    propagate_to_ws_msg_handler = False
+
+            elif msg_type == "table_belt_health":
+                value = msg_dict.get("value")
+                if self.table_belt_health_msg != value:
+                    self.table_belt_health_msg = value
                 else:
                     propagate_to_ws_msg_handler = False
 
@@ -731,6 +736,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 cancelled = False
                 engaged_circuits_ = []
                 disp_type_map = {1: "order", 2: "purge"}
+                dispense_timeout = 60 * 24
                 try:
                     while step < 2:
                         disp_type = None
@@ -751,7 +757,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                 r = await self.send_command(
                                     cmd_name="PURGE", type_="macro", params=pars)
 
-                                timeout_ = 60 * 12
                                 step = 2
 
                                 disp_type = disp_type_map.get(2)
@@ -764,7 +769,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                                     r = await self.send_command(
                                         cmd_name="DISPENSE_FORMULA", type_="macro", params=_splitted_pars)
-                                    timeout_ = 60 * 12
                                     disp_type = disp_type_map.get(1)
                                 else:
                                     continue
@@ -786,7 +790,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                         return self.status["status_level"] in ['ALARM', 'RESET']
 
                                     r = await self.wait_for_status_level(
-                                        ["STANDBY"], timeout=timeout_, show_alert=False, break_condition=break_condition)
+                                        ["STANDBY"], timeout=dispense_timeout, show_alert=False, break_condition=break_condition)
 
                                     engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
                                     self._current_runner['running_engaged_circuits'] = None

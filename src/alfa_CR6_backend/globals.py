@@ -496,7 +496,7 @@ def create_printable_image_for_package(package):
 
         # barcode CODE128
         options = {
-            'module_width': 0.2,
+            'module_width': 0.19,
             # 'module_height': 15.0,
             # 'quiet_zone': 6.5,
             'module_height': 10.0,

@@ -49,13 +49,31 @@
 	</table>
 
 	<table>
+		{% if machine_variant == 'CRX80' %}
+		<tr>
+			{% for i in ('A', 'B', 'C', 'G') %}
+			<th>
+				<span class="label label-info" style="padding:6px;">{{ i }}</span>
+				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info"
+							onclick="ask_platform_info('{{ i }}');"></span>
+				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs"
+							onclick="ask_temperature_logs('{{ i }}');"></span>
+			</th>
+			{% endfor %}
+		</tr>
+		<tr>
+			{% for i in (0, 2, 4, 6) %}
+			<td><div class="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
+			{% endfor %}
+		</tr>
+		{% else %}
 		<tr>
 			{% for i in ('A', 'B', 'C') %}
 			<th>
 				<span class="label label-info" style="padding:6px;">{{ i }}</span>
-				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info" 
+				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info"
 							onclick="ask_platform_info('{{ i }}');"></span>
-				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs" 
+				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs"
 							onclick="ask_temperature_logs('{{ i }}');"></span>
 			</th>
 			{% endfor %}
@@ -70,9 +88,9 @@
 			{% for i in ('F', 'E', 'D') %}
 			<th>
 				<span class="label label-info" style="padding:6px;">{{ i }}</span>
-				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info" 
+				<span class="glyphicon glyphicon-info-sign button-tool" title="push button to get platform info"
 							onclick="ask_platform_info('{{ i }}');"></span>
-				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs" 
+				<span class="glyphicon glyphicon-stats button-tool" title="push button to get temperature logs"
 							onclick="ask_temperature_logs('{{ i }}');"></span>
 			</th>
 			{% endfor %}
@@ -82,6 +100,7 @@
 			<td><div class ="scrollable" id="device:machine:status_{{ i }}"> {{ i }} </div> </td>
 			{% endfor %}
 		</tr>
+		{% endif %}
 
 	</table>
 </div>

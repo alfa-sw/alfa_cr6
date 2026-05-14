@@ -1435,6 +1435,82 @@
     <set>Qt::AlignCenter</set>
    </property>
   </widget>
+  <widget class="QLabel" name="belt_label_1">
+   <property name="geometry">
+    <rect>
+     <x>725</x>
+     <y>275</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_5">
+   <property name="geometry">
+    <rect>
+     <x>1120</x>
+     <y>280</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_2">
+   <property name="geometry">
+    <rect>
+     <x>730</x>
+     <y>640</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_6">
+   <property name="geometry">
+    <rect>
+     <x>1120</x>
+     <y>640</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_6_btn</zorder>
@@ -1498,11 +1574,15 @@
   <zorder>STEP_06_07_label</zorder>
   <zorder>STEP_07_09_label</zorder>
   <zorder>STEP_09_10_label</zorder>
+  <zorder>belt_label_1</zorder>
+  <zorder>belt_label_5</zorder>
+  <zorder>belt_label_2</zorder>
+  <zorder>belt_label_6</zorder>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
+  <buttongroup name="service_btn_group"/>
  </buttongroups>
 </ui>

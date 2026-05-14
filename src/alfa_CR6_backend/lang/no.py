@@ -38,7 +38,7 @@ D = {
     "Stop  input roller": "Stopp inngangsrullen",
     "Stop  lifter roller": "Stopp løfterulle",
     "Stop  lifter": "Stopp løfter",
-    "Stop  output roller": "Stopp utgangsrulle",
+    "Stop output roller": "Stopp utgangsrulle",
     "Stop dispensing roller": "Stopp doseringsrulle",
     "Too many files saved and not used. Please delete unused files.": "For mange ubrukte lagrede filer. Slett ubrukte filer.",
     "[{}] Files:  search by file name": "[{}] Filer: søk etter filnavn",
@@ -254,6 +254,17 @@ D = {
     "OK": "OK",
     "Delete": "Slett",
 
+    "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
+    "Troubleshooting": "Troubleshooting",
+    "  Close  ": "  Close  ",
+    "Error loading troubleshooting page.": "Error loading troubleshooting page.",
+    "troubleshooting instructions are missing for error:{}": "troubleshooting instructions are missing for error:{}",
+    "error_code:": "error_code:",
+    "action 04 (head 5 or C)": "action 04 (head 5 or C)",
+    "action 05 (head 5 or C)": "action 05 (head 5 or C)",
+    "action 05 (head 7 or G)": "action 05 (head 7 or G)",
+    "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
+    "Start output roller CW": "Start output roller CW",
 }
 
 D.update(error_no.D)

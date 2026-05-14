@@ -1,0 +1,1610 @@
+{
+  "document": "Operator Manual CR6 - Alfa Colorpaint Dispenser",
+  "chapter": "8. TROUBLE SHOOTING",
+  "revision": "07",
+  "year": 2024,
+  "localized_labels": {
+  "trouble_shooting": "DIAGNOSE",
+    "error_code": "Foutcode",
+    "error_message": "Fout gedetecteerd",
+    "error_description": "Foutbeschrijving",
+    "resolution": "Oplossing probleem"
+  },
+  "errors": {
+    "2": {
+      "error_message": "EEPROM_COLOR_CIRC_PARAM_CRC_FAULT",
+      "error_description": "CRC-fout circuitparameters",
+      "resolution": "Controleer op ontbrekende parameters bij het vervangen van MMT. Laad de parameters van het basis-/kleurencircuit op de nieuwe MMT-kaart"
+    },
+    "3": {
+      "error_message": "EEPROM_CALIB_CURVES_PARAM_CRC_FAULT",
+      "error_description": "CRC-fout kalibratiecurveparameters",
+      "resolution": "Controleer op ontbrekende parameters bij het vervangen van MMT. Laad kalibratieparameters op de nieuwe MMT- kaart."
+    },
+    "5": {
+      "error_message": "EEPROM_SLAVES_EN_PARAM_CRC_FAULT",
+      "error_description": "CRC-fout slave inschakelen",
+      "resolution": "Controleer op ontbrekende parameters bij het vervangen van MMT. Laad SLAVE- autorisaties op de nieuwe MMT-kaart"
+    },
+    "8": {
+      "error_message": "EEPROM_HUM_20_PARAM_CRC_FAULT",
+      "error_description": "CRC-fout parameters bevochtiger 2.0",
+      "resolution": "Controleer op ontbrekende parameters bij het vervangen van MMT. Laad parameters voor bevochtiger 2.0 op de nieuwe MMT-kaart"
+    },
+    "9": {
+      "error_message": "EEPROM_CIRCUIT_PUMP_TYPES_CRC_FAULT",
+      "error_description": "CRC-fout pomptype voor elk circuit",
+      "resolution": "Controleer op ontbrekende parameters bij het vervangen van MMT. Laad de pomptypen op de nieuwe MMT-kaart"
+    },
+    "10": {
+      "error_message": "USER_INTERRUPT",
+      "error_description": "Softwareonderbreking machinewerking",
+      "resolution": "HALT-knop werd ingedrukt of ABORT- commando verzonden"
+    },
+    "201": {
+      "error_message": "RESET_TIMEOUT",
+      "error_description": "Time-out in RESET-proces",
+      "resolution": "De RESET-procedure werd NIET voltooid binnen de maximaal toegestane tijd. Controleer het doseersysteem op een mechanische blokkering en verwijder deze indien nodig"
+    },
+    "202": {
+      "error_message": "TIMEOUT_SUPPLY_START",
+      "error_description": "Time-out bij begin dosering",
+      "resolution": "De dosering is NIET gestart binnen de maximaal toegestane tijd. Controleer het doseersysteem op een mechanische blokkering en verwijder deze indien nodig"
+    },
+    "203": {
+      "error_message": "TIMEOUT_SUPPLY_FAILED",
+      "error_description": "Time-out duur dosering",
+      "resolution": "De dosering is niet binnen de maximale tijd voltooid. De formule is te lang of controleer op een mechanische storing in het doseersysteem en verwijder deze indien nodig"
+    },
+    "346": {
+      "error_message": "TINTING_PUMP_RESET_ERROR",
+      "error_description": "Time-out duur van de resetprocedure van de Tinting pomp",
+      "resolution": "Controleer de integriteit van de pompmotor, de connectoren, de aansluitingen op de MMT-kaart"
+    },
+    "347": {
+      "error_message": "TINTING_VALVE_RESET_ERROR",
+      "error_description": "Time-out duur van de resetprocedure voor de Tinting klep",
+      "resolution": "Controleer de integriteit van de klepmotor, de connectoren, de aansluitingen op de MMT-kaart"
+    },
+    "348": {
+      "error_message": "TINTING_TABLE_RESET_ERROR",
+      "error_description": "Time-outduur van de resetprocedure voor de Tinting tafel",
+      "resolution": "Controleer de integriteit van de tafelmotor, de connectoren, de aansluitingen op de MMT-kaart"
+    },
+    "359": {
+      "error_message": "C1_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "360": {
+      "error_message": "C2_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "361": {
+      "error_message": "C3_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "362": {
+      "error_message": "C4_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "363": {
+      "error_message": "C5_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "364": {
+      "error_message": "C6_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "365": {
+      "error_message": "C7_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "366": {
+      "error_message": "C8_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "367": {
+      "error_message": "C9_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "368": {
+      "error_message": "C10_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "369": {
+      "error_message": "C11_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "370": {
+      "error_message": "C12_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "371": {
+      "error_message": "C13_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "372": {
+      "error_message": "C14_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "373": {
+      "error_message": "C15_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "374": {
+      "error_message": "C16_DATA_SUPPLY_FAILED",
+      "error_description": "Ongeldige tabelparameters",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "409": {
+      "error_message": "C1_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C1 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "410": {
+      "error_message": "C2_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C2 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "411": {
+      "error_message": "C3_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C3 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "412": {
+      "error_message": "C4_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C4 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "413": {
+      "error_message": "C5_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C5 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "414": {
+      "error_message": "C6_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C6 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "415": {
+      "error_message": "C7_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C7 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "416": {
+      "error_message": "C8_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C8 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "417": {
+      "error_message": "C9_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C9 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "418": {
+      "error_message": "C10_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C10 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "419": {
+      "error_message": "C11_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C11 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "420": {
+      "error_message": "C12_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C12 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "421": {
+      "error_message": "C13_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C13 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "422": {
+      "error_message": "C14_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C14 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "423": {
+      "error_message": "C15_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C15 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "424": {
+      "error_message": "C16_SUPPLY_CALC_ERROR",
+      "error_description": "Bij CONTINUOUS dosering is het aantal te maken stappen van de KLEUR C16 GEEN veelvoud van een hele slag.",
+      "resolution": "Controleer of er een discrepantie is tussen de tabellen en de circuits die op de machine zijn geïnstalleerd. Controleer de correcte installatie van de kalibratietabellen in het menu Machine."
+    },
+    "451": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_0_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C0 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "452": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_1_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C1 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "453": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_2_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C2 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "454": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_3_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C3 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "455": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_4_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C4 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "456": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_5_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C5 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "457": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_6_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C6 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "458": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_7_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C7 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "459": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_8_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C8 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "460": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_9_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C9 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "461": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_10_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C10 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "462": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_11_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C11 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "463": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_12_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C12 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "464": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_13_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C13 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "465": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_14_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C14 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "466": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_15_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C15 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "467": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_16_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C16 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "468": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_17_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C17 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "469": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_18_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C18 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "470": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_19_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C19 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "471": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_20_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C20 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "472": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_21_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C21 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "473": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_22_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C22 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "474": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_23_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C23 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "475": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_24_ERROR",
+      "error_description": "Circuit (Basis of Kleurstof) C24 zou moeten doseren, maar is foutief uitgeschakeld",
+      "resolution": "Slave-autorisaties laden op de nieuwe MMT-kaart."
+    },
+    "534": {
+      "error_message": "TINTING_VALVE_HOME_POS_ERROR",
+      "error_description": "Fout in de HOMING-procedure van de Tinting-klep",
+      "resolution": "Controleer de correcte werking van de 2 fotocellen en de correcte beweging van de stepper"
+    },
+    "535": {
+      "error_message": "TINTING_TABLE_HOME_POS_ERROR",
+      "error_description": "Fout in de HOMING procedure van de Tinting-draaitafel",
+      "resolution": "Controleer de correcte werking van de fotocel, de aanwezigheid van ten minste één vlag op de tafel en de correcte beweging van de stepper."
+    },
+    "584": {
+      "error_message": "TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Verduisteringsfout van een van de 2 fotocellen tijdens de HOMING van de klep",
+      "resolution": "Controleer de werking van elke fotocel van de klep, de bedrading van de stappenmotor van de klep en de uitlijning van de metalen plaat"
+    },
+    "633": {
+      "error_message": "TINTING_PUMP_POS0_READ_LIGHT_ERROR",
+      "error_description": "De Home-fotocel van de Tinting- pomp is NIET verduisterd aan het einde van een stapbeweging van de pomp, of is nooit verduisterd binnen een bepaalde tijd of een bepaald aantal stappen, of is NIET verduisterd tijdens de beweging van de Tinting-tafel",
+      "resolution": "Controleer de werking van de HOME- fotocel en de Stepper"
+    },
+    "634": {
+      "error_message": "TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is NIET verduisterd tijdens de beweging van de Tinting-tafel of aan het einde van de Homing- procedure, of de klep is NIET open tijdens een dosering.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de Stepper"
+    },
+    "733": {
+      "error_message": "TINTING_PUMP_OVERCURRENT_ERROR",
+      "error_description": "Stroom te hoog op een brug van de driver van de stappenmotor van de Tinting Pomp",
+      "resolution": "Controleer de bedrading en de werking van de L6482H pompdriver op de MMT- kaart"
+    },
+    "734": {
+      "error_message": "TINTING_VALVE_OVERCURRENT_ERROR",
+      "error_description": "Te hoge stroom op een brug van de driver van de stappenmotor van de Tinting klep",
+      "resolution": "Controleer de bedrading en de werking van de L6482H klepdriver op de MMT- kaart"
+    },
+    "735": {
+      "error_message": "TINTING_TABLE_OVERCURRENT_ERROR",
+      "error_description": "Te hoge stroom op een brug van de driver van de stappenmotor van de Tinting tafel",
+      "resolution": "Controleer de bedrading en de werking van de L6482H driver van de tafel op de MMT-kaart"
+    },
+    "738": {
+      "error_message": "DOSING_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "De stroom die circuleert op de doseerrollen is hoger dan de drempel die is ingesteld in de driver van de MMT-kaart, of de temperatuur die wordt gedetecteerd op dezelfde driver is te hoog.",
+      "resolution": "Controleer de aansluiting en bedrading van de doseerrollen op de voorbehouden uitgang op de MMT-kaart"
+    },
+    "739": {
+      "error_message": "INPUT_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "De circulatiestroom op de invoerrollen is hoger dan de drempel die is ingesteld in de driver van de MMT-kaart, of de temperatuur die is gedetecteerd op dezelfde driver is te hoog",
+      "resolution": "Controleer de aansluiting en bedrading van de invoerrollen op de gereserveerde uitgang op de MMT-kaart"
+    },
+    "740": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Circulatiestroom op de uitlaatrollen is hoger dan de drempel die is ingesteld in de MMT-kaartdriver, of de temperatuur die is gedetecteerd op dezelfde driver is te hoog",
+      "resolution": "Controleer de aansluiting en bedrading van de uitlaatrollen op de voorbehouden uitgang op de MMT-kaart"
+    },
+    "792": {
+      "error_message": "TINTING_PUMP_SOFTWARE_ERROR",
+      "error_description": "Logische fout in de toestanden van de processen van de Tinting pomp (inclusief de klep), of in de parameters van de ontvangen formule",
+      "resolution": "Controleer de parameters van de verzonden formule, als het probleem aanhoudt vraag dan een Tinting Firmware update aan."
+    },
+    "793": {
+      "error_message": "TINTING_TABLE_SOFTWARE_ERROR",
+      "error_description": "Logische fout in de processtatus van de Tinting tafel",
+      "resolution": "Vraag een update aan voor Firmware Tinting"
+    },
+    "795": {
+      "error_message": "ROLLER_SOFTWARE_ERROR",
+      "error_description": "Logische fout in de status van de processen met betrekking tot rollenbanen en liften",
+      "resolution": "Vraag een update van de firmware aan"
+    },
+    "842": {
+      "error_message": "ROLLER_DRV_OVER_CURR_TEMP_ERROR",
+      "error_description": "Stroom of temperatuur te hoog op de driver die de hef- of losinstallatie bestuurt, of op de rollenbaan van de hefinstallatie van de MMT-kaart.",
+      "resolution": "Controleer de aansluiting en bedrading van de hef- of losinstallatie of op de rollenbaan van de hefinstallatie op de MMT-kaart."
+    },
+    "896": {
+      "error_message": "HUMIDIFIER_20_PARAM_ERROR",
+      "error_description": "Fout tijdens de RESET van de machine bij het controleren van de juistheid van de parameters van de bevochtiger 2.0",
+      "resolution": "Controleer de juistheid van de parameters die zijn verzonden met het commando \"DIAG_SETUP_HUMIDIFIER_TEMPERA TURE_PROCESSES\"."
+    },
+    "898": {
+      "error_message": "TEMPERATURE_ERROR",
+      "error_description": "Fout temperatuurmeting",
+      "resolution": "Controleer de aansluiting van de printplaat van de HUTTS temperatuursensorbehuizing met de MMT-kaart. Als het probleem aanhoudt, vervang dan de printplaat en/of de verbindingskabel"
+    },
+    "899": {
+      "error_message": "TEMPERATURE_TOO_LOW",
+      "error_description": "Temperatuur op machinebasis te laag",
+      "resolution": "Controleer de werking van de verwarming"
+    },
+    "907": {
+      "error_message": "TINTING_TIMEOUT_TABLE_MOVE_ERROR",
+      "error_description": "Time-out verstreken tijdens het homing van de kaart of tijdens het positioneren naar een circuit",
+      "resolution": "Controleer de bedrading van de stappenmotor van de tafel, de karakteristieke parameters van de tafel die worden verzonden met het commando \"UPDATE_TINTING_TABLE_SETTINGS \" en de werking van de fotocel van de tafel."
+    },
+    "908": {
+      "error_message": "TINTING_TABLE_SEARCH_POSITION_REFERENCE_ERROR",
+      "error_description": "Het referentiemerk dat in de HOMING van de tafel wordt gevonden, verschilt van de ingestelde theoretische waarde met een hoeveelheid in stappen die groter is dan de ingestelde tolerantie.",
+      "resolution": "Controleer de aanwezigheid van het referentiemerk op de tafel, controleer de juistheid van de karakteristieke parameters van de tafel en de werking van de fotocel van de tafel."
+    },
+    "909": {
+      "error_message": "TINTING_LACK_OF_CIRCUITS_POSITION_ERROR",
+      "error_description": "Een circuit dat gereinigd moet worden is niet ingeschakeld of een circuit dat gepositioneerd moet worden is niet aanwezig in de positietabel.",
+      "resolution": "Controleer of het circuit is vrijgegeven en of een Autorun correct is uitgevoerd."
+    },
+    "911": {
+      "error_message": "TINTING_SELF_LEARNING_PROCEDURE_ERROR",
+      "error_description": "Fout in de zelfherkenningsprocedure van de Tinting tafel: bij het opstarten staat de tabel niet op de referentie, of de fotocel van de tafel is niet afgedekt, of het aantal gevonden circuits is > 16, of het aantal gevonden circuits in de ene draairichting is anders dan in de andere.",
+      "resolution": "Voordat u de zelfherkenning uitvoert, moet u een reset hebben voltooid. Controleer de werking van de fotocel van de Tinting tafel"
+    },
+    "912": {
+      "error_message": "TINTING_BAD_PUMP_PARAM_ERROR",
+      "error_description": "Onjuiste parameters van de Tinting pomp",
+      "resolution": "Controleer de ingestelde parameters en verstuur het instellingscommando voor de pompparameters \"UPDATE_TINTING_PUMP_SETTINGS\" opnieuw."
+    },
+    "913": {
+      "error_message": "TINTING_BAD_TABLE_PARAM_ERROR",
+      "error_description": "Karakteristieke parameters van de Tinting tafel onjuist",
+      "resolution": "Controleer de ingestelde parameters en verzend de parameterinstellingsopdracht voor de tafel opnieuw \"UPDATE_TINTING_TABLE_SETTINGS\"."
+    },
+    "914": {
+      "error_message": "EEPROM_PUMP_PARAM_CRC_FAULT",
+      "error_description": "CRC-fout parameters Tinting pomp",
+      "resolution": "Mogelijk ontbrekende pompparameters. Laad in het geval van vervanging van de MM-printplaat de parameters van de Tinting pomp met de opdracht \"UPDATE_TINTING_PUMP_SETTINGS\"."
+    },
+    "915": {
+      "error_message": "EEPROM_TABLE_PARAM_CRC_FAULT",
+      "error_description": "CRC-fout parameters Tinting tafel",
+      "resolution": "Mogelijk ontbrekende pompparameters. Laad in het geval van vervanging van de MMT-kaart de parameters van de Tinting pomp met de opdracht \"UPDATE_TINTING_TABLE_SETTINGS\"."
+    },
+    "916": {
+      "error_message": "TINTING_BAD_PERIPH_PARAM_ERROR",
+      "error_description": "Parameters in commando voor instelling randapparatuur niet juist",
+      "resolution": "Controleer de ingestelde parameters en verzend nogmaals het instellingscommando voor randapparatuur."
+    },
+    "917": {
+      "error_message": "EEPROM_CLEAN_PARAM_CRC_FAULT",
+      "error_description": "CRC-fout parameters reiniging Tinting",
+      "resolution": "Mogelijk ontbrekende borstelparameters. Laad bij vervanging van de MMT-kaart de borstelparameters met het commando \"UPDATE_TINTING_CLEANING_SETTINGS"
+    },
+    "918": {
+      "error_message": "TINTING_PUMP_PHOTO_HOME_READ_DARK_ERROR_ST",
+      "error_description": "De Home-fotocel van de Tinting pomp is bedekt wanneer deze onbedekt had moeten zijn tijdens HOMING, of tijdens Recirculatie of Dosering wanneer het circuit al ingeschakeld is.",
+      "resolution": "Controleer de werking van de Home- fotocel van de pomp en de pompsturing"
+    },
+    "919": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp staat in een verkeerde stand: afgedekt terwijl hij niet afgedekt zou moeten zijn of omgekeerd.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "920": {
+      "error_message": "TINTING_TABLE_TEST_ERROR",
+      "error_description": "Tinting tafel test is mislukt: de startpositie is NIET op het referentiepunt, of er zijn geen circuits gedetecteerd, of het aantal gedetecteerde circuits is > 16, of de positie van ten minste één gedetecteerd circuit in één richting verschilt van die in de tegenovergestelde richting met een hoeveelheid in stappen > van de ingestelde drempel, of de positie van ten minste één gedetecteerd circuit verschilt van die verkregen in de Autorun met een hoeveelheid > van de ingestelde drempel, of de kaart van gedetecteerde circuits verschilt van die geconfigureerd via software.",
+      "resolution": "Voer een reset uit en probeer de Tafeltest opnieuw, controleer de werking van de fotocel van de Tinting tafel, controleer de samenhang tussen de circuits op de tafel en de circuits die in de software zijn geconfigureerd, probeer de autodetectie opnieuw uit te voeren, verhoog de tolerantie op de tafelposities door opnieuw het configuratiecommando Tafelparameters te verzenden."
+    },
+    "922": {
+      "error_message": "TINTING_BASES_CARRIAGE_ERROR",
+      "error_description": "Slede basissen niet op hun plaats wanneer de machine NIET in de Diagnosemodus staat",
+      "resolution": "Plaats de slede opnieuw op zijn plaats. Controleer de bedrading van de microschakelaar van de slede op de MMT-kaart"
+    },
+    "923": {
+      "error_message": "TINTING_PANEL_TABLE_ERROR",
+      "error_description": "Open het paneel voor bijvullen op de Tinting tafel wanneer de machine NIET in de Diagnosemodus staat, of wel staat en u bewerkingen wilt activeren waarbij iets moet worden verplaatst dat NIET de rotatie van de Tinting tafel is",
+      "resolution": "Sluit het paneel. Controleer de bedrading van de microschakelaar van het paneel op de MMT-kaart."
+    },
+    "924": {
+      "error_message": "TINTING_BRUSH_OPEN_LOAD_ERROR",
+      "error_description": "Geen belasting op de uitgang die is gereserveerd voor de borstel op de MMT-kaart",
+      "resolution": "Controleer de aansluiting en bedrading van de borstel op de voorbehouden uitgang op de MMT-kaart"
+    },
+    "925": {
+      "error_message": "TINTING_BRUSH_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Stroom die circuleert op de borstel is hoger dan de drempel die is ingesteld op de driver van de MMT-kaart, of de temperatuur die wordt gedetecteerd op dezelfde driver is te hoog.",
+      "resolution": "Controleer de aansluiting en bedrading van de borstel op de voorbehouden uitgang op de MMT-kaart"
+    },
+    "930": {
+      "error_message": "TINTING_AIR_HEATER_OPEN_LOAD_ERROR",
+      "error_description": "Geen belasting op de uitgang die is voorbehouden voor de luchtverwarmer op de MMT- kaart",
+      "resolution": "Controleer de aansluiting en bedrading van de luchtverwarmer op de MMT-kaart"
+    },
+    "931": {
+      "error_message": "TINTING_AIR_HEATER_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Circulatiestroom op de luchtverwarmer hoger dan de drempel die is ingesteld op de driver van de MMT-kaart, of temperatuur die is gedetecteerd op dezelfde driver te hoog",
+      "resolution": "Controleer de aansluitingen en bedrading van de luchtverwarmer op de MMT-kaart"
+    },
+    "932": {
+      "error_message": "TINTING_GENERIC24V_OPEN_LOAD_ERROR_ST",
+      "error_description": "Geen belasting op de uitgang die is gereserveerd voor de borstelmotor op de MMT-kaart",
+      "resolution": "Controleer de aansluiting en bedrading van de borstelmotor op de MMT-kaart"
+    },
+    "933": {
+      "error_message": "TINTING_GENERIC24V_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Circulatiestroom op de borstelmotor hoger dan de drempel die is ingesteld op de driver van de MMT-kaart, of temperatuur gedetecteerd op dezelfde driver te hoog",
+      "resolution": "Controleer de aansluitingen en bedrading van de borstelmotor op de MMT-kaart"
+    },
+    "934": {
+      "error_message": "TINTING_PUMP_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Interne temperatuur stappenmotorregelaar Tinting pomp te hoog",
+      "resolution": "Schakel het apparaat uit, wacht een paar minuten en schakel het weer in. Als het probleem aanhoudt, controleer dan de elektrische aansluitingen op de stappenmotor van de pomp. Als het probleem aanhoudt, vervang dan de MMT-kaart"
+    },
+    "935": {
+      "error_message": "TINTING_VALVE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Interne temperatuur van de stappenmotorregelaar Tinting klep te hoog",
+      "resolution": "Schakel het apparaat uit, wacht een paar minuten en schakel het weer in. Als het probleem aanhoudt, controleer dan de elektrische aansluitingen op de stappenmotor van de klep. Als het probleem aanhoudt, vervang dan de MMT-kaart"
+    },
+    "936": {
+      "error_message": "TINTING_TABLE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Interne temperatuur van de regelaar van de stappenmotor van de Tinting tafel te hoog",
+      "resolution": "Schakel het apparaat uit, wacht een paar minuten en schakel het weer in. Als het probleem aanhoudt, controleer dan de elektrische aansluitingen op de stappenmotor van de tafel. Als het probleem aanhoudt, vervang dan de MMT-kaart"
+    },
+    "937": {
+      "error_message": "TINTING_PUMP_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "De ingangsspanning van de gate van de stappenmotorregelaar van de Tinting pomp is te laag",
+      "resolution": "Controleer de elektrische verbindingen met de stappenmotor van de pomp. Als het probleem aanhoudt, vervang dan de MMT-kaart"
+    },
+    "938": {
+      "error_message": "TINTING_VALVE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "De ingangsspanning van de gate van de stappenmotorregelaar van de Tinting klep is te laag",
+      "resolution": "Controleer de elektrische verbindingen met de stappenmotor van de klep. Als het probleem aanhoudt, vervang dan de MMT-kaart"
+    },
+    "939": {
+      "error_message": "TINTING_TABLE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "De ingangsspanning van de gate van de stappenmotorregelaar van de Tinting tafel is te laag",
+      "resolution": "Controleer de elektrische verbindingen met de stappenmotor van de tafel. Als het probleem aanhoudt, vervang dan de MMT-kaart"
+    },
+    "940": {
+      "error_message": "EEPROM_TINTING_COLORANTS_STEPS_POSITION_CRC_FAULT",
+      "error_description": "CRC-fout van de positietabel van het circuit op de Tinting tafel die is opgeslagen op de EEPROM van de MMT-kaart",
+      "resolution": "Voer de automatische herkenning van de Tinting tafel uit. Als het probleem aanhoudt, vervang dan de MMT-kaart"
+    },
+    "941": {
+      "error_message": "TINTING_TABLE_PHOTO_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de Tinting tafel is niet afgedekt wanneer dit wel het geval zou moeten zijn bij diverse machineprocessen.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel"
+    },
+    "942": {
+      "error_message": "TINTING_TABLE_MOVE_ERROR",
+      "error_description": "Generieke fout in de beweging van de Tinting tafel, of in het bijvullen van de tafel verplaatst zonder een circuit in te schakelen",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel"
+    },
+    "943": {
+      "error_message": "TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering in hoge resolutie",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "944": {
+      "error_message": "TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij HOMING van de klep is de fotocel van Klep open niet afgedekt, of bij Recirculatie bij beweging van klep openen voor bijvullen is deze niet afgedekt, of tijdens doseren is deze niet afgedekt.",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "945": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel voor het inschakelen van de pomp is niet afgedekt na een beweging om een circuit in te schakelen aan het begin van de recirculatie of dosering.",
+      "resolution": "Controleer de werking van de fotocel voor het inschakelen en de bedrading ervan."
+    },
+    "946": {
+      "error_message": "TINTING_BRUSH_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de borstel is niet afgedekt tijdens bewegingen bij het resetten van de machine, tijdens een beweging van de Tinting tafel of tijdens een reiniging.",
+      "resolution": "Controleer de werking van de fotocel, de gelijkstroommotor van de borstel en de bedrading van de motor op de MMT-kaart"
+    },
+    "947": {
+      "error_message": "TINTING_BAD_PARAM_CLEAN_ERROR",
+      "error_description": "De parameters van het reinigingsproces zijn niet correct zoals getoond tijdens de reset van de machine",
+      "resolution": "Controleer de parameters van het reinigingsproces en verstuur ze indien nodig opnieuw met het commando \"DIAG_COLORANT_ACTIVATION_CLE ANING"
+    },
+    "948": {
+      "error_message": "EEPROM_TEST_ERROR",
+      "error_description": "Fout bij de EEPROM-functietest tijdens het resetten van de machine",
+      "resolution": "Probeer het opnieuw en als het probleem zich nog steeds voordoet, vervang dan de MMT-kaart."
+    },
+    "984": {
+      "error_message": "C1_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "985": {
+      "error_message": "C2_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "986": {
+      "error_message": "C3_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "987": {
+      "error_message": "C4_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "988": {
+      "error_message": "C5_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "989": {
+      "error_message": "C6_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "990": {
+      "error_message": "C7_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "991": {
+      "error_message": "C8_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "992": {
+      "error_message": "C9_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "993": {
+      "error_message": "C10_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "994": {
+      "error_message": "C11_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "995": {
+      "error_message": "C12_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "996": {
+      "error_message": "C13_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "997": {
+      "error_message": "C14_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "998": {
+      "error_message": "C15_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "999": {
+      "error_message": "C16_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1000": {
+      "error_message": "C17_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1001": {
+      "error_message": "C18_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1002": {
+      "error_message": "C19_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1003": {
+      "error_message": "C20_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1004": {
+      "error_message": "C21_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1005": {
+      "error_message": "C22_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1006": {
+      "error_message": "C23_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1007": {
+      "error_message": "C24_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "De circuits die aan het einde van de homing van de Tinting tafel worden gedetecteerd, komen niet overeen met de circuits die door de bevestiging zijn gevonden en in de EEPROM van de MMT-kaart zijn opgeslagen, of de positietabellen van ten minste één circuit die door de bevestiging in de twee richtingen zijn gevonden, verschillen van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die in het commando tafelparameterconfiguratie is ingesteld, of de positietabel van ten minste één circuit die door de bevestiging is gevonden, verschilt van de theoretische waarde met een hoeveelheid in stappen > van de tolerantie die is ingesteld in het commando tafelparameterconfiguratie, of er is een onjuiste overeenkomst tussen de positietabel die in de bevestiging is gevonden en de kleurstofconfiguratie die in de software is ingesteld.",
+      "resolution": "Controleer de werking van de fotocel van de Tinting tafel. Herhaal de zelfherkenning, controleer of de circuits die fysiek op de tafel aanwezig zijn, overeenkomen met de circuits die in de configuratiepagina van de software zijn ingesteld, verhoog de tolerantie op de circuitposities en stuur het commando voor het instellen van de parameter van de Tinting tafel terug."
+    },
+    "1035": {
+      "error_message": "ROLLER_TIMEOUT_MOVE_ERROR",
+      "error_description": "De rollenbaan of de liftbeweging heeft niet binnen de ingestelde time-out plaatsgevonden.",
+      "resolution": "Controleer de werking van de fotocel die het einde van de beweging controleert."
+    },
+    "1036": {
+      "error_message": "DOSING_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Geen belasting op de uitgang die de doseerrollen aandrijft",
+      "resolution": "Controleer de aansluiting en bedrading van de motor van de doseerrollen op de MMT-kaart"
+    },
+    "1037": {
+      "error_message": "INPUT_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Geen belasting op de uitgang die de invoerrollen aandrijft",
+      "resolution": "Controleer de aansluiting en bedrading van de motor van de invoerrollen op de MMT-kaart"
+    },
+    "1038": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Geen belasting op de uitgang die de rollenbaan van de loslift aandrijft",
+      "resolution": "Controleer de aansluiting en bedrading van de motor van de rollenbaan van de loslift op de MMT-kaart"
+    },
+    "1040": {
+      "error_message": "C1_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C1.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1041": {
+      "error_message": "C2_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C2.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1042": {
+      "error_message": "C3_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C3.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1043": {
+      "error_message": "C4_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C4.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1044": {
+      "error_message": "C5_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C5.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1045": {
+      "error_message": "C6_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C6.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1046": {
+      "error_message": "C7_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C7.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1047": {
+      "error_message": "C8_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C8.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1048": {
+      "error_message": "C9_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C9.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1049": {
+      "error_message": "C10_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C10.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1050": {
+      "error_message": "C11_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C11.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1051": {
+      "error_message": "C12_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C12.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1052": {
+      "error_message": "C13_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C13.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1053": {
+      "error_message": "C14_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C14.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1054": {
+      "error_message": "C15_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C15.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1055": {
+      "error_message": "C16_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C16.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1056": {
+      "error_message": "C17_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C17.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1057": {
+      "error_message": "C18_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C18.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1058": {
+      "error_message": "C19_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C19.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1059": {
+      "error_message": "C20_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C20.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1060": {
+      "error_message": "C21_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C21.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1061": {
+      "error_message": "C22_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C22.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1062": {
+      "error_message": "C23_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C23.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1063": {
+      "error_message": "C24_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "De fotocel van de open klep is niet gedimd terwijl dat wel had zou moeten in de doseer- en recirculatieprocessen met circuit C24.",
+      "resolution": "Controleer de werking van de fotocel voor de open klep en de aansluiting op de MMT-kaart"
+    },
+    "1064": {
+      "error_message": "C1_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C1.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1065": {
+      "error_message": "C2_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C2.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1066": {
+      "error_message": "C3_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C3.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1067": {
+      "error_message": "C4_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C4.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1068": {
+      "error_message": "C5_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C5.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1069": {
+      "error_message": "C6_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C6.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1070": {
+      "error_message": "C7_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C7.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1071": {
+      "error_message": "C8_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C8.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1072": {
+      "error_message": "C9_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C9.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1073": {
+      "error_message": "C10_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C10.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1074": {
+      "error_message": "C11_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C11.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1075": {
+      "error_message": "C12_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C12.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1076": {
+      "error_message": "C13_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C13.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1077": {
+      "error_message": "C14_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C14.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1078": {
+      "error_message": "C15_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C15.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1079": {
+      "error_message": "C16_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C16.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1080": {
+      "error_message": "C17_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C17.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1081": {
+      "error_message": "C18_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C18.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1082": {
+      "error_message": "C19_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C19.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1083": {
+      "error_message": "C20_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C20.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1084": {
+      "error_message": "C21_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C21.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1085": {
+      "error_message": "C22_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C22.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1086": {
+      "error_message": "C23_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C23.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1087": {
+      "error_message": "C24_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "De HOME-fotocel van de klep is niet gedimd terwijl dat wel zou moeten bij de doseer- en recirculatieprocessen met circuit C24.",
+      "resolution": "Controleer de werking van de HOME fotocel van de klep en de aansluiting op de MMT-kaart"
+    },
+    "1088": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C1 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1089": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C2 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1090": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C3 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1091": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C4 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1092": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C5 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1093": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C6 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1094": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C7 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1095": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C8 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1096": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C9 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1097": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C10 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1098": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C11 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1099": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C12 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1100": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C13 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1101": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C14 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1102": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C15 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1103": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C16 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1104": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C17 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1105": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C18 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1106": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C19 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1107": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C20 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1108": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C21 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1109": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C22 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1110": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C23 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1111": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: onbedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen waarbij circuit C24 betrokken is.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1112": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C1.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1113": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C2.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1114": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C3.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1115": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C4.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1116": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C5.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1117": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C6.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1118": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C7.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1119": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C8.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1120": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C9.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1121": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C10.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1122": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C11.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1123": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C12.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1124": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C13.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1125": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C14.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1126": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C15.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1127": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C16.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1128": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C17.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1129": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C18.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1130": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C19.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1131": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C20.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1132": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C21.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1133": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C22.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1134": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C23.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1135": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "De fotocel van de koppeling van de Tinting pomp bevindt zich in een onjuiste toestand: bedekt terwijl hij bedekt zou moeten zijn in de doseer- en recirculatieprocessen met circuit C24.",
+      "resolution": "Controleer de werking van de fotocel van de koppeling van de Tinting pomp en de pompsturing. Controleer de karakteristieke parameters van de pomp die worden verzonden met het specifieke commando"
+    },
+    "1136": {
+      "error_message": "C1_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C1 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1137": {
+      "error_message": "C2_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C2 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1138": {
+      "error_message": "C3_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C3 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1139": {
+      "error_message": "C4_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C4 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1140": {
+      "error_message": "C5_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C5 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1141": {
+      "error_message": "C6_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C6 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1142": {
+      "error_message": "C7_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C7 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1143": {
+      "error_message": "C8_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C8 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1144": {
+      "error_message": "C9_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C9 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1145": {
+      "error_message": "C10_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C10 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1146": {
+      "error_message": "C11_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C11 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1147": {
+      "error_message": "C12_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C12 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1148": {
+      "error_message": "C13_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C13 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1149": {
+      "error_message": "C14_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C14 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1150": {
+      "error_message": "C15_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C15 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1151": {
+      "error_message": "C16_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C16 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1152": {
+      "error_message": "C17_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C17 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1153": {
+      "error_message": "C18_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C18 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1154": {
+      "error_message": "C19_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C19 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1155": {
+      "error_message": "C20_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C20 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1156": {
+      "error_message": "C21_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C21 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1157": {
+      "error_message": "C22_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C22 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1158": {
+      "error_message": "C23_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C23 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1159": {
+      "error_message": "C24_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Bij recirculatie- of doseerprocessen met circuit C24 heeft de fotocel van de open klep niet gedimd terwijl dat wel had gemoeten.",
+      "resolution": "Controleer de werking van de fotocel van de open klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1160": {
+      "error_message": "C1_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C1 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1161": {
+      "error_message": "C2_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C2 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1162": {
+      "error_message": "C3_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C3 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1163": {
+      "error_message": "C4_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C4 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1164": {
+      "error_message": "C5_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C5 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1165": {
+      "error_message": "C6_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C6 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1166": {
+      "error_message": "C7_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C7 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1167": {
+      "error_message": "C8_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C8 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1168": {
+      "error_message": "C9_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C9 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1169": {
+      "error_message": "C10_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C10 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1170": {
+      "error_message": "C11_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C11 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1171": {
+      "error_message": "C12_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C12 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1172": {
+      "error_message": "C13_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C13 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1173": {
+      "error_message": "C14_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C14 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1174": {
+      "error_message": "C15_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C15 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1175": {
+      "error_message": "C16_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C16 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1176": {
+      "error_message": "C17_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C17 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1177": {
+      "error_message": "C18_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C18 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1178": {
+      "error_message": "C19_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C19 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1179": {
+      "error_message": "C20_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C20 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1180": {
+      "error_message": "C21_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C21 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1181": {
+      "error_message": "C22_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C22 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1182": {
+      "error_message": "C23_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C23 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1183": {
+      "error_message": "C24_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Klep niet open voor dosering waarbij circuit C24 in hoge resolutie betrokken is",
+      "resolution": "Controleer de werking van de 2 fotocellen van de klep en de bedrading van de stappenmotor van de klep"
+    },
+    "1184": {
+      "error_message": "C1_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C1 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C1"
+    },
+    "1185": {
+      "error_message": "C2_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C2 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C2"
+    },
+    "1186": {
+      "error_message": "C3_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C3 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C3"
+    },
+    "1187": {
+      "error_message": "C4_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C4 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C4"
+    },
+    "1188": {
+      "error_message": "C5_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C5 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C5"
+    },
+    "1189": {
+      "error_message": "C6_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C6 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C6"
+    },
+    "1190": {
+      "error_message": "C7_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C7 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C7"
+    },
+    "1191": {
+      "error_message": "C8_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C8 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C8"
+    },
+    "1192": {
+      "error_message": "C9_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C9 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C9"
+    },
+    "1193": {
+      "error_message": "C10_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C10 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C10"
+    },
+    "1194": {
+      "error_message": "C11_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C11 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C11"
+    },
+    "1195": {
+      "error_message": "C12_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C12 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C12"
+    },
+    "1196": {
+      "error_message": "C13_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C13 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C13"
+    },
+    "1197": {
+      "error_message": "C14_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C14 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C14"
+    },
+    "1198": {
+      "error_message": "C15_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C15 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C15"
+    },
+    "1199": {
+      "error_message": "C16_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C16 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C16"
+    },
+    "1200": {
+      "error_message": "C17_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C17 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C17"
+    },
+    "1201": {
+      "error_message": "C18_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C18 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C18"
+    },
+    "1202": {
+      "error_message": "C19_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C19 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C19"
+    },
+    "1203": {
+      "error_message": "C20_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C20 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C20"
+    },
+    "1204": {
+      "error_message": "C21_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C21 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C21"
+    },
+    "1205": {
+      "error_message": "C22_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C22 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C22"
+    },
+    "1206": {
+      "error_message": "C23_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C23 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C23"
+    },
+    "1207": {
+      "error_message": "C24_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "De fotocel van de Tinting tafel wordt niet langer verduisterd tijdens een proces waarbij de klep beweegt wanneer circuit C24 is ingeschakeld.",
+      "resolution": "Controleer de positie en hardheid van de klepkeuzeschakelaar van ingeschakeld circuit C24"
+    }
+  }
+}
