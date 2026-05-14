@@ -39,7 +39,7 @@ D = {
     "Stop  input roller": "หยุดลูกกลิ้งขาเข้า",
     "Stop  lifter roller": "หยุดลูกกลิ้งตัวยก",
     "Stop  lifter": "หยุดตัวยก",
-    "Stop  output roller": "หยุดลูกกลิ้งขาออก",
+    "Stop output roller": "หยุดลูกกลิ้งขาออก",
     "Stop dispensing roller": "หยุดลูกกลิ้งการจ่าย",
     "Too many files saved and not used. Please delete unused files.": "มีไฟล์ที่บันทึกไว้และไม่ได้ใช้งานมากเกินไป โปรดลบไฟล์ที่ไม่ได้ใช้งาน",
     "[{}] Files:  search by file name": "[{}] ไฟล์: ค้นหาตามชื่อไฟล์",
@@ -255,6 +255,16 @@ D = {
     "OK": "ตกลง",
     "Delete": "ลบ",
 
+    "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
+    "Troubleshooting": "Troubleshooting",
+    "  Close  ": "  Close  ",
+    "Error loading troubleshooting page.": "Error loading troubleshooting page.",
+    "troubleshooting instructions are missing for error:{}": "troubleshooting instructions are missing for error:{}",
+    "error_code:": "error_code:",
+    "action 04 (head 5 or C)": "action 04 (head 5 or C)",
+    "action 05 (head 5 or C)": "action 05 (head 5 or C)",
+    "action 05 (head 7 or G)": "action 05 (head 7 or G)",
+    "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
 }
 
 D.update(error_th.D)

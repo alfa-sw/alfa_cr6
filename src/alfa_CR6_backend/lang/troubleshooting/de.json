@@ -1,0 +1,1610 @@
+{
+  "document": "Operator Manual CR6 - Alfa Colorpaint Dispenser",
+  "chapter": "8. TROUBLE SHOOTING",
+  "revision": "07",
+  "year": 2024,
+  "localized_labels": {
+    "trouble_shooting": "DIAGNOSE",
+    "error_code": "Fehlercode",
+    "error_message": "Erfasster Fehler",
+    "error_description": "Fehlerbeschreibung",
+    "resolution": "Lösung des Problems"
+  },
+  "errors": {
+    "2": {
+      "error_message": "EEPROM_COLOR_CIRC_PARAM_CRC_FAULT",
+      "error_description": "Fehler CRC Kreislaufparameter",
+      "resolution": "Das Fehlen von Parametern bei einem Austausch der MMT überprüfen Die Parameter der Grundfarben- /Farbstoffkreisläufe auf die neue MMT- Platine laden"
+    },
+    "3": {
+      "error_message": "EEPROM_CALIB_CURVES_PARAM_CRC_FAULT",
+      "error_description": "Fehler CRC Parameter Kalibrierkurven",
+      "resolution": "Das Fehlen von Parametern bei einem Austausch der MMT überprüfen Die Kalibrierparameter auf die neue MMT- Platine laden"
+    },
+    "5": {
+      "error_message": "EEPROM_SLAVES_EN_PARAM_CRC_FAULT",
+      "error_description": "CRC-Fehler Slave-Freigaben",
+      "resolution": "Das Fehlen von Parametern bei einem Austausch der MMT überprüfen Die SLAVE-Freigaben auf die neue MMT- Platine laden"
+    },
+    "8": {
+      "error_message": "EEPROM_HUM_20_PARAM_CRC_FAULT",
+      "error_description": "Fehler CRC Parameter Befeuchter 2.0",
+      "resolution": "Das Fehlen von Parametern bei einem Austausch der MMT überprüfen Die Parameter des Befeuchters 2.0 auf die neue MMT-Platine laden"
+    },
+    "9": {
+      "error_message": "EEPROM_CIRCUIT_PUMP_TYPES_CRC_FAULT",
+      "error_description": "Fehler CRC Pumpentyp für jeden Kreislauf",
+      "resolution": "Das Fehlen von Parametern bei einem Austausch der MMT überprüfen Die Pumpentypen auf die neue MMT-Platine laden"
+    },
+    "10": {
+      "error_message": "USER_INTERRUPT",
+      "error_description": "Software-Unterbrechung Maschinenbetrieb",
+      "resolution": "Die Taste HALT wurde gedrückt oder es wurde der Steuerbefehl ABORT gegeben"
+    },
+    "201": {
+      "error_message": "RESET_TIMEOUT",
+      "error_description": "Timeout im RESET-Vorgang",
+      "resolution": "Der RESET-Vorgang wurde NICHT innerhalb der maximal zulässigen Zeit abgeschlossen Den Dosierer auf mechanische Verklemmungen hin überprüfen und diese gegebenenfalls entfernen"
+    },
+    "202": {
+      "error_message": "TIMEOUT_SUPPLY_START",
+      "error_description": "Timeout zu Beginn der Ausgabe",
+      "resolution": "Die Ausgabe wurde NICHT innerhalb der maximal zulässigen Zeit gestartet Den Dosierer auf mechanische Verklemmungen hin überprüfen und diese gegebenenfalls entfernen"
+    },
+    "203": {
+      "error_message": "TIMEOUT_SUPPLY_FAILED",
+      "error_description": "Timeout Dosierdauer",
+      "resolution": "Die Ausgabe wurde nicht innerhalb der maximal zulässigen Zeit abgeschlossen Die Rezeptur ist zu lang, oder prüfen, ob es sich um einen mechanischen Stau im Dosierer handelt, und diesen gegebenenfalls entfernen"
+    },
+    "346": {
+      "error_message": "TINTING_PUMP_RESET_ERROR",
+      "error_description": "Timeout Dauer des Reset- Verfahrens der Tinting Pumpe",
+      "resolution": "Den Motor der Pumpe, die Steckverbinder und die Anschlüsse an der MMT-Platine auf Beschädigungen überprüfen"
+    },
+    "347": {
+      "error_message": "TINTING_VALVE_RESET_ERROR",
+      "error_description": "Timeout Dauer des Reset- Verfahrens des Tinting Ventils",
+      "resolution": "Den Motor des Ventils, die Steckverbinder und die Anschlüsse an der MMT-Platine auf Beschädigungen überprüfen"
+    },
+    "348": {
+      "error_message": "TINTING_TABLE_RESET_ERROR",
+      "error_description": "Timeout Dauer des Reset- Verfahrens des Tinting Tischs",
+      "resolution": "Den Motor des Tischs, die Steckverbinder und die Anschlüsse an der MMT-Platine auf Beschädigungen überprüfen"
+    },
+    "359": {
+      "error_message": "C1_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "360": {
+      "error_message": "C2_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "361": {
+      "error_message": "C3_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "362": {
+      "error_message": "C4_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "363": {
+      "error_message": "C5_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "364": {
+      "error_message": "C6_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "365": {
+      "error_message": "C7_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "366": {
+      "error_message": "C8_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "367": {
+      "error_message": "C9_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "368": {
+      "error_message": "C10_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "369": {
+      "error_message": "C11_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "370": {
+      "error_message": "C12_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "371": {
+      "error_message": "C13_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "372": {
+      "error_message": "C14_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "373": {
+      "error_message": "C15_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "374": {
+      "error_message": "C16_DATA_SUPPLY_FAILED",
+      "error_description": "Tabellenparameter ungültig",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "409": {
+      "error_message": "C1_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C1auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "410": {
+      "error_message": "C2_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C2auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "411": {
+      "error_message": "C3_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C3auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "412": {
+      "error_message": "C4_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C4auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "413": {
+      "error_message": "C5_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C5auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "414": {
+      "error_message": "C6_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C6auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "415": {
+      "error_message": "C7_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C7auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "416": {
+      "error_message": "C8_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C8auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "417": {
+      "error_message": "C9_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C9auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "418": {
+      "error_message": "C10_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C10auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "419": {
+      "error_message": "C11_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C11auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "420": {
+      "error_message": "C12_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C12auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "421": {
+      "error_message": "C13_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C13auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "422": {
+      "error_message": "C14_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C14auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "423": {
+      "error_message": "C15_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C15auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "424": {
+      "error_message": "C16_SUPPLY_CALC_ERROR",
+      "error_description": "Im Dosiermodus CONTINUOUS entspricht die Anzahl der vom FARBSTOFF C16auszuführenden Schritte NICHT dem Vielfachen eines ganzen Hubs.",
+      "resolution": "Prüfen, ob es einen Fehler in der Übereinstimmung zwischen den auf der Maschine installierten Tabellen und Schaltkreisen gibt Die korrekte Installation der Kalibriertabellen im Maschinenmenü prüfen"
+    },
+    "451": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_0_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C0muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "452": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_1_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C1muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "453": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_2_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C2muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "454": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_3_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C3muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "455": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_4_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C4muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "456": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_5_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C5muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "457": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_6_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C6muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "458": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_7_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C7muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "459": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_8_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C8muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "460": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_9_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C9muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "461": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_10_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C10muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "462": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_11_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C11muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "463": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_12_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C12muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "464": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_13_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C13muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "465": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_14_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C14muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "466": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_15_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C15muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "467": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_16_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C16muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "468": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_17_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C17muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "469": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_18_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C18muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "470": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_19_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C19muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "471": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_20_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C20muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "472": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_21_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C21muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "473": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_22_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C22muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "474": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_23_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C23muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "475": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_24_ERROR",
+      "error_description": "Der Kreislauf (Grundfarbe oder Farbstoff) C24muss dosieren, ist aber fälschlicherweise Gesperrt",
+      "resolution": "Die Freigaben Slave auf die neue MMT- Platine laden"
+    },
+    "534": {
+      "error_message": "TINTING_VALVE_HOME_POS_ERROR",
+      "error_description": "Fehler beim HOMING-Verfahren des Tinting Ventils",
+      "resolution": "Die korrekte Funktionsweise der 2 Fotozellen und die korrekte Bewegung des Schrittmotors überprüfen"
+    },
+    "535": {
+      "error_message": "TINTING_TABLE_HOME_POS_ERROR",
+      "error_description": "Fehler beim HOMING-Verfahren des Tinting Drehtischs",
+      "resolution": "Die korrekte Funktionsweise der Fotozelle, das Vorhandensein mindestens einer Markierung am Tisch und die korrekte Bewegung des Schrittmotors überprüfen"
+    },
+    "584": {
+      "error_message": "TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fehler bei der Verdunkelung einer der 2 Fotozellen während des HOMING des Ventils",
+      "resolution": "Die korrekte Funktionsweise jeder Fotozelle des Ventils, die Verkabelung des Schrittmotors des Ventils und die Ausrichtung des Metallschilds überprüfen"
+    },
+    "633": {
+      "error_message": "TINTING_PUMP_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die Home-Fotozelle der Tinting Pumpe wird am Ende einer Bewegung der Pumpenschritte NICHT oder innerhalb einer festgelegten Zeit oder der vorgegebenen Schritte nie verdunkelt, oder während der Bewegung des Tinting Tischs NICHT verdunkelt",
+      "resolution": "Die Funktionstüchtigkeit der Home- Fotozelle und des Schrittmotors überprüfen"
+    },
+    "634": {
+      "error_message": "TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils wird während der Bewegung des Tinting Tischs oder am Ende des Homing-Verfahrens NICHT verdunkelt oder das Ventil wird während einer Dosierung NICHT geöffnet",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und des Schrittmotors überprüfen"
+    },
+    "733": {
+      "error_message": "TINTING_PUMP_OVERCURRENT_ERROR",
+      "error_description": "Zu hoher Strom einer Brücke des Drivers des Schrittmotors der Tinting Pumpe",
+      "resolution": "Die Verkabelungen, den Betrieb des Drivers L6482H der Pumpe an der MMT- Platine überprüfen"
+    },
+    "734": {
+      "error_message": "TINTING_VALVE_OVERCURRENT_ERROR",
+      "error_description": "Zu hoher Strom einer Brücke des Drivers des Schrittmotors des Tinting Ventils",
+      "resolution": "Die Verkabelungen, den Betrieb des Drivers L6482H des Ventils an der MMT- Platine überprüfen"
+    },
+    "735": {
+      "error_message": "TINTING_TABLE_OVERCURRENT_ERROR",
+      "error_description": "Zu hoher Strom einer Brücke des Drivers des Schrittmotors des Tinting Tischs",
+      "resolution": "Die Verkabelungen, den Betrieb des Drivers L6482H des Tischs an der MMT- Platine überprüfen"
+    },
+    "738": {
+      "error_message": "DOSING_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Der in der Dosierrollenbahn laufende Strom liegt über den im Driver der MMT-Platine eingestellten Schwellenwert oder die an diesem Driver erfasste Temperatur ist zu hoch",
+      "resolution": "Überprüfen Sie den Anschluss und die Verdrahtung der Dosierrollenbahn am reservierten Ausgang in der MMT-Platine"
+    },
+    "739": {
+      "error_message": "INPUT_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Der in der Einlaufrollenbahn laufende Strom liegt über den im Driver der MMT-Platine eingestellten Schwellenwert oder die an diesem Driver erfasste Temperatur ist zu hoch",
+      "resolution": "Überprüfen Sie den Anschluss und die Verdrahtung der Einlaufrollenbahn am reservierten Ausgang in der MMT-Platine"
+    },
+    "740": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Der in der Auslaufrollenbahn laufende Strom liegt über den im Driver der MMT-Platine eingestellten Schwellenwert oder die an diesem Driver erfasste Temperatur ist zu hoch",
+      "resolution": "Überprüfen Sie den Anschluss und die Verdrahtung der Auslaufrollenbahn am reservierten Ausgang in der MMT-Platine"
+    },
+    "792": {
+      "error_message": "TINTING_PUMP_SOFTWARE_ERROR",
+      "error_description": "Logischer Fehler in den Prozesszuständen der Tinting- Pumpe (einschließlich Ventil), oder in den empfangenen Formelparametern",
+      "resolution": "Die Parameter der gesendeten Formel kontrollieren und wenn das Problem weiterhin vorliegt eine Aktualisierung der Tinting Firmware anfordern"
+    },
+    "793": {
+      "error_message": "TINTING_TABLE_SOFTWARE_ERROR",
+      "error_description": "Logischer Fehler in den Prozesszuständen des Tinting Tischs",
+      "resolution": "Eine Aktualisierung der Tinting Firmware anfordern"
+    },
+    "795": {
+      "error_message": "ROLLER_SOFTWARE_ERROR",
+      "error_description": "Logischer Fehler in den Prozesszuständen, die die Rollenbahnen und Heber umfassen",
+      "resolution": "Eine Aktualisierung der Firmware anfordern"
+    },
+    "842": {
+      "error_message": "ROLLER_DRV_OVER_CURR_TEMP_ERROR",
+      "error_description": "Zu hoher Strom oder zu hohe Temperatur am Driver, der den Lade- oder Abladeheber steuert, oder an der Rollenbahn des Ladehebers auf der MMT- Platine",
+      "resolution": "Den Anschluss und die Verkabelung des Lade- oder Abladehebers oder der Rollenbahn des Ladehebers auf der MMT-Platine kontrollieren"
+    },
+    "896": {
+      "error_message": "HUMIDIFIER_20_PARAM_ERROR",
+      "error_description": "Fehler während des RESET der Maschine bei der Überprüfung der Korrektheit der Parameter des Befeuchters 2.0",
+      "resolution": "Die Korrektheit der Parameter kontrollieren, die mit dem Steuerbefehl „DIAG_SETUP_HUMIDIFIER_TEMPERA TURE_PROCESSES” übermittelt wurden"
+    },
+    "898": {
+      "error_message": "TEMPERATURE_ERROR",
+      "error_description": "Fehler bei der Temperaturmessung",
+      "resolution": "Überprüfen Sie die Verbindung der HUTTS Temperatursensor- Gehäuseplatine mit der MMT-Platine Sollte das Problem weiterhin vorliegen, die Platine und/oder das Anschlusskabel ersetzen"
+    },
+    "899": {
+      "error_message": "TEMPERATURE_TOO_LOW",
+      "error_description": "Die Temperatur in der Maschine ist zu Niedrig",
+      "resolution": "Die Funktionstüchtigkeit des Heizgeräts überprüfen"
+    },
+    "907": {
+      "error_message": "TINTING_TIMEOUT_TABLE_MOVE_ERROR",
+      "error_description": "Timeout während des Homing des Tischs oder bei der Positionierung an einem Kreislauf abgelaufen",
+      "resolution": "Die Verkabelungen des Schrittmotors überprüfen, die charakteristischen Parameter des Tischs, die mit dem Steuerbefehl „UPDATE_TINTING_TABLE_SETTINGS” übermittelt wurden sowie die Funktionstüchtigkeit der Fotozelle des Tischs überprüfen"
+    },
+    "908": {
+      "error_message": "TINTING_TABLE_SEARCH_POSITION_REFERENCE_ERROR",
+      "error_description": "Die beim HOMING des Tischs gefundene Bezugsmarke weicht vom eingestellten theoretischen Wert um einen Schrittwert ab, der größer als die eingestellte Toleranz ist",
+      "resolution": "Das Vorhandensein der Bezugsmarkierung am Tisch, die Korrektheit der charakteristischen Parameter des Tischs und die Funktionstüchtigkeit der Fotozelle des Tischs überprüfen"
+    },
+    "909": {
+      "error_message": "TINTING_LACK_OF_CIRCUITS_POSITION_ERROR",
+      "error_description": "Ein Kreislauf, der gereinigt werden muss, ist nicht freigeschaltet oder ein Kreislauf, der positioniert werden soll, ist in nicht der Positioniertabelle angegeben",
+      "resolution": "Kontrollieren, dass der Kreislauf freigeschaltet ist und das Selbstlernverfahren korrekt durchgeführt wurde"
+    },
+    "911": {
+      "error_message": "TINTING_SELF_LEARNING_PROCEDURE_ERROR",
+      "error_description": "Fehler im Selbstlernverfahren des Tinting Tisches: Beim Starten befindet sich der Tisch nicht an der Bezugsmarkierung oder die Fotozelle des Tischs ist nicht verdunkelt oder die Anzahl der gefundenen Kreisläufe ist > 16 oder die Anzahl der in einer Drehrichtung gefundenen Kreisläufe ist anders als die der in die andere Richtung laufenden",
+      "resolution": "Bevor ein Selbstlernverfahren durchgeführt werden kann, muss ein erfolgreiches Reset beendet worden sein Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren"
+    },
+    "912": {
+      "error_message": "TINTING_BAD_PUMP_PARAM_ERROR",
+      "error_description": "Charakteristische Parameter der Tinting Pumpe nicht korrekt",
+      "resolution": "Die eingegebenen Parameter überprüfen und erneut den Steuerbefehl „UPDATE_TINTING_PUMP_SETTINGS” für die Eingabe der Pumpenparameter geben"
+    },
+    "913": {
+      "error_message": "TINTING_BAD_TABLE_PARAM_ERROR",
+      "error_description": "Charakteristische Parameter des Tinting Tischs nicht korrekt",
+      "resolution": "Die eingegebenen Parameter überprüfen und erneut den Steuerbefehl „UPDATE_TINTING_TABLE_SETTINGS” für die Eingabe der Parameter des Tischs geben"
+    },
+    "914": {
+      "error_message": "EEPROM_PUMP_PARAM_CRC_FAULT",
+      "error_description": "Fehler CRC Parameter Tinting Pumpe",
+      "resolution": "Mögliches Fehlen der Parameter der Pumpe Bei Austausch der MMT-Platine die Parameter der Tinting Pumpe anhand des Steuerbefehls „UPDATE_TINTING_PUMP_SETTINGS” laden"
+    },
+    "915": {
+      "error_message": "EEPROM_TABLE_PARAM_CRC_FAULT",
+      "error_description": "Fehler CRC Parameter Tinting Tisch",
+      "resolution": "Mögliches Fehlen der Parameter der Pumpe Bei einem Austausch der MMT- Platine die Parameter der Tinting Pumpe anhand des Steuerbefehls „UPDATE_TINTING_PUMP_SETTINGS” laden"
+    },
+    "916": {
+      "error_message": "TINTING_BAD_PERIPH_PARAM_ERROR",
+      "error_description": "Falsche Parameter im Steuerbefehl für die Einstellung der Peripherien",
+      "resolution": "Die eingegebenen Parameter überprüfen und erneut den Steuerbefehl für die Einstellung der Peripherien geben"
+    },
+    "917": {
+      "error_message": "EEPROM_CLEAN_PARAM_CRC_FAULT",
+      "error_description": "Fehler CRC Reinigungsparameter Tinting",
+      "resolution": "Mögliches Fehlen der Parameter der Bürste Bei einem Austausch der MMT- Platine die Parameter der Tinting Bürste anhand des Steuerbefehls „UPDATE_TINTING_CLEANING_SETTI NGS” laden"
+    },
+    "918": {
+      "error_message": "TINTING_PUMP_PHOTO_HOME_READ_DARK_ERROR_ST",
+      "error_description": "Die Home-Fotozelle der Tinting Pumpe ist verdeckt, obwohl sie während dem HOMING oder dem Umlauf- oder Dosierverfahren bei eingekoppeltem Kreislauf freiliegen müsste",
+      "resolution": "Die Funktionstüchtigkeit der Home- Fotozelle der Pumpe und des Schrittmotors überprüfen"
+    },
+    "919": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: verdunkelt, wenn sie frei liegen sollte und umgekehrt",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "920": {
+      "error_message": "TINTING_TABLE_TEST_ERROR",
+      "error_description": "Der Test der Tinting Tischs ist fehlgeschlagen: Die Startposition liegt NICHT auf der Referenz, oder es wurden keine Stromkreise erkannt, oder die Anzahl der erkannten Kreisläufe ist > 16, oder die Position mindestens eines erkannten Kreislaufs in einer Richtung weicht von der in der entgegengesetzten Richtung um einen Betrag in Schritten > als der eingestellte Schwellenwert ab, oder die Position mindestens eines erkannten Kreislaufs weicht von der bei der Autodetektion erhaltenen Position um einen Betrag > als der eingestellte Schwellenwert ab, oder die Karte der erkannten Kreisläufe weicht von der per Software konfigurierten ab",
+      "resolution": "Ein Reset vornehmen und den Test des Tischs wiederholen, die Funktion der Fotozelle des Tinting Tischs überprüfen, die Übereinstimmung zwischen den am Tisch vorhandenen Kreisläufe mit den in der Software konfigurierten Kreisläufen überprüfen, erneut versuchen, das Selbstlernverfahren durchzuführen, die Toleranz der Tischpositionen erhöhen, indem der Konfigurationsbefehl der Tischparameter erneut gegeben wird"
+    },
+    "922": {
+      "error_message": "TINTING_BASES_CARRIAGE_ERROR",
+      "error_description": "Schubfach der Grundfarben befindet sich nicht an seinem Platz, wenn sich die Maschine NICHT im Diagnosemodus befindet",
+      "resolution": "Das Schubfach wieder in seiner Aufnahme anordnen Die Verkabelung des Mikroschalters des Schubfachs an der MMT-Platine überprüfen"
+    },
+    "923": {
+      "error_message": "TINTING_PANEL_TABLE_ERROR",
+      "error_description": "Paneel zum Nachfüllen auf dem Färbetisch ist offen, wenn sich das Gerät NICHT im Diagnosemodus befindet oder wenn Sie Vorgänge aktivieren möchten, bei denen etwas bewegt werden muss, das NICHT die Rotation des Färbetisches ist",
+      "resolution": "Das Paneel schließen Die Verkabelung des Mikroschalters des Paneels an der MMT-Platine überprüfen"
+    },
+    "924": {
+      "error_message": "TINTING_BRUSH_OPEN_LOAD_ERROR",
+      "error_description": "Keine Last am Bürstenausgang der MMT-Platine",
+      "resolution": "Den Anschluss und die Verkabelung des Bürstenausgangs an der MMT-Platine kontrollieren"
+    },
+    "925": {
+      "error_message": "TINTING_BRUSH_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Der in der Bürste laufende Strom liegt über den im Driver der MMT-Platine eingestellten Schwellenwert oder die an diesem Driver erfasste Temperatur ist zu hoch",
+      "resolution": "Den Anschluss und die Verkabelung des Bürstenausgangs an der MMT-Platine kontrollieren"
+    },
+    "930": {
+      "error_message": "TINTING_AIR_HEATER_OPEN_LOAD_ERROR",
+      "error_description": "Keine Last am Ausgangs des Lufterhitzers der MMT-Platine vorhanden",
+      "resolution": "Den Anschluss und die Verkabelung des Lufterhitzers an der MMT-Platine überprüfen"
+    },
+    "931": {
+      "error_message": "TINTING_AIR_HEATER_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Der im Lufterhitzer laufende Strom liegt über den im Driver der MMT-Platine eingestellten Schwellenwert oder die an diesem Driver erfasste Temperatur ist zu hoch",
+      "resolution": "Die Anschlüsse und die Verkabelung des Lufterhitzers an der MMT-Platine überprüfen"
+    },
+    "932": {
+      "error_message": "TINTING_GENERIC24V_OPEN_LOAD_ERROR_ST",
+      "error_description": "Keine Last am Ausgang des Bürstenmotors der MMT-Platine",
+      "resolution": "Den Anschluss und die Verkabelung des Motors der Bürste an der MMT-Platine überprüfen"
+    },
+    "933": {
+      "error_message": "TINTING_GENERIC24V_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Der im Motor der Bürste laufende Strom liegt über den im Driver der MMT-Platine eingestellten Schwellenwert oder die an diesem Driver erfasste Temperatur ist zu hoch",
+      "resolution": "Die Anschlüsse und die Verkabelung des Motors der Bürste an der MMT-Platine überprüfen"
+    },
+    "934": {
+      "error_message": "TINTING_PUMP_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Zu hohe Innentemperatur des Steuergeräts des Schrittmotors der Tinting Pumpe",
+      "resolution": "Die Maschine ausschalten, einige Minuten warten, dann wieder einschalten Sollte das Problem weiterhin vorliegen, die elektrischen Verbindungen mit dem Schrittmotor der Pumpe überprüfen Sollte das Problem weiterhin vorliegen, die MMT-Platine wechseln"
+    },
+    "935": {
+      "error_message": "TINTING_VALVE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Innentemperatur der Schrittmotorsteuerung des Tintingventils zu hoch",
+      "resolution": "Die Maschine ausschalten, einige Minuten warten, dann wieder einschalten Sollte das Problem weiterhin vorliegen, die elektrischen Verbindungen mit dem Schrittmotor des Ventils überprüfen Sollte das Problem weiterhin vorliegen, die MMT-Platine wechseln"
+    },
+    "936": {
+      "error_message": "TINTING_TABLE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Zu hohe Innentemperatur des Steuergeräts des Schrittmotors des Tinting Tischs",
+      "resolution": "Die Maschine ausschalten, einige Minuten warten, dann wieder einschalten Sollte das Problem weiterhin vorliegen, die elektrischen Verbindungen mit dem Schrittmotor des Tischs überprüfen Sollte das Problem weiterhin vorliegen, die MMT-Platine wechseln"
+    },
+    "937": {
+      "error_message": "TINTING_PUMP_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Zu niedrige Ansteuerungsspannung des Steuergeräts des Schrittmotors der Tinting Pumpe",
+      "resolution": "Die elektrischen Verbindungen mit dem Schrittmotor der Pumpe überprüfen Sollte das Problem weiterhin vorliegen, die MMT-Platine wechseln"
+    },
+    "938": {
+      "error_message": "TINTING_VALVE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Zu niedrige Ansteuerungsspannung des Steuergeräts des Schrittmotors des Tinting Ventils",
+      "resolution": "Die elektrischen Verbindungen mit dem Schrittmotor des Ventils überprüfen Sollte das Problem weiterhin vorliegen, die MMT-Platine wechseln"
+    },
+    "939": {
+      "error_message": "TINTING_TABLE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Zu niedrige Ansteuerungsspannung des Steuergeräts des Schrittmotors des Tinting Tischs",
+      "resolution": "Die elektrischen Verbindungen mit dem Schrittmotor des Tischs überprüfen Sollte das Problem weiterhin vorliegen, die MMT-Platine wechseln"
+    },
+    "940": {
+      "error_message": "EEPROM_TINTING_COLORANTS_STEPS_POSITION_CRC_FAULT",
+      "error_description": "CRC-Fehler der Positionstabelle der Kreisläufe auf der im EEPROM der MMT-Platine gespeicherten Tinting Tabelle",
+      "resolution": "Selbsterkennung des Tinting Tisches durchführen Sollte das Problem weiterhin vorliegen, die MMT-Platine wechseln"
+    },
+    "941": {
+      "error_message": "TINTING_TABLE_PHOTO_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs ist nicht verdunkelt, obwohl sie dies in verschiedenen Maschinenprozessen sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs überprüfen"
+    },
+    "942": {
+      "error_message": "TINTING_TABLE_MOVE_ERROR",
+      "error_description": "Allgemeiner Fehler im Bewegungsablauf des Tinting Tischs oder der Tisch ist beim Refill weitergerückt, ohne irgendeinen Kreislauf anzukoppeln",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs überprüfen"
+    },
+    "943": {
+      "error_message": "TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung in Hoher Auflösung nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "944": {
+      "error_message": "TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle für das Erfassen von „Ventil Offen“wurde beim HOMING des Ventils oder im Rückführungssystem bei der Öffnungsbewegung des Ventils vor dem Nachfüllen oder während der Dosierung nicht verdunkelt",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "945": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle zum Einschalten der Tinting-Pumpe wurde nicht verdeckt, nachdem die Bewegung zum Einschalten eines Kreislaufs zu Beginn der Umwälzung oder Dosierung ausgeführt wurde",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle der Ankopplung und ihrer Verkabelung überprüfen"
+    },
+    "946": {
+      "error_message": "TINTING_BRUSH_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle der Bürste wird bei den Bewegungsabläufen für das Reset der Maschine oder bei einer Bewegung des Tinting Tischs oder beim Reinigungsvorgang nicht verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle, des DC-Motors der Bürste und die Verkabelung des Schrittmotors an der MMT-Platine kontrollieren"
+    },
+    "947": {
+      "error_message": "TINTING_BAD_PARAM_CLEAN_ERROR",
+      "error_description": "Wie beim Reset der Maschine festgestellt, sind die Parameter des Reinigungsablaufs nicht korrekt",
+      "resolution": "Die Parameter des Betriebsvorgangs „Reinigen“kontrollieren und sie ggf. erneut mit dem Steuerbefehl „DIAG_COLORANT_ACTIVATION_CLE ANING” übermitteln"
+    },
+    "948": {
+      "error_message": "EEPROM_TEST_ERROR",
+      "error_description": "Funktionstest des EEPROM bei „Reset Maschine“fehlgeschlagen",
+      "resolution": "Erneut versuchen und, wenn das Problem erneut auftreten sollte, die MMT- Platine ersetzen"
+    },
+    "984": {
+      "error_message": "C1_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "985": {
+      "error_message": "C2_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "986": {
+      "error_message": "C3_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "987": {
+      "error_message": "C4_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "988": {
+      "error_message": "C5_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "989": {
+      "error_message": "C6_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "990": {
+      "error_message": "C7_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "991": {
+      "error_message": "C8_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "992": {
+      "error_message": "C9_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "993": {
+      "error_message": "C10_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "994": {
+      "error_message": "C11_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "995": {
+      "error_message": "C12_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "996": {
+      "error_message": "C13_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "997": {
+      "error_message": "C14_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "998": {
+      "error_message": "C15_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "999": {
+      "error_message": "C16_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1000": {
+      "error_message": "C17_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1001": {
+      "error_message": "C18_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1002": {
+      "error_message": "C19_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1003": {
+      "error_message": "C20_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1004": {
+      "error_message": "C21_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1005": {
+      "error_message": "C22_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1006": {
+      "error_message": "C23_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1007": {
+      "error_message": "C24_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Die am Ende der Referenzfahrt gefundenen Kreisläufe stimmen nicht mit denen überein, die durch die Quittierung gefunden und im EEPROM der MMT- Platine gespeichert wurden, oder die Positionstabellen mindestens eines durch die Quittierung in den beiden Richtungen gefundenen Kreislaufs weichen vom theoretischen Wert um eine Größe in Schritten > der im Parameterkonfigurationsbefehl Tabelle eingestellten Toleranz ab, oder die Positionstabelle mindestens eines Kreislaufs, der durch die Quittierung gefunden wurde, weicht vom theoretischen Wert um einen Betrag in Schritten > der im Konfigurationsbefehl Tabellenparameter eingestellten Toleranz ab, oder eine falsche Übereinstimmung zwischen der in der Quittierung gefundenen Positionstabelle und der in der Software eingestellten Farbstoffkonfiguration",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle des Tinting Tischs kontrollieren Wiederholen Sie die Selbsterfassung, prüfen Sie, ob die physisch in der Tabelle vorhandenen Schaltkreise mit denen übereinstimmen, die in der Software- Konfigurationsseite eingestellt wurden, erhöhen Sie die Toleranz für die Kreislaufpositionen und geben Sie den Befehl zur Einstellung der Parameter der Farbtabelle zurück"
+    },
+    "1035": {
+      "error_message": "ROLLER_TIMEOUT_MOVE_ERROR",
+      "error_description": "Bewegung der Rollenbahn oder des Hebers nicht innerhalb der vorgesehenen Zeit des Timeout erfolgt",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle überprüfen, die das Ende des Bewegungsablaufs kontrolliert"
+    },
+    "1036": {
+      "error_message": "DOSING_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Keine Last am Ausgang, der die Dosierrollenbahn ansteuert",
+      "resolution": "Den Anschluss und die Verkabelung des Motors der Dosierrollenbahn an der MMT-Platine überprüfen"
+    },
+    "1037": {
+      "error_message": "INPUT_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Keine Last am Ausgang, der die Einlaufrollenbahn ansteuert",
+      "resolution": "Den Anschluss und die Verkabelung des Motors der Einlaufrollenbahn an der MMT-Platine überprüfen"
+    },
+    "1038": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Keine Last am Ausgang, der die Rollenbahn des Abladehebers ansteuert",
+      "resolution": "Den Anschluss und die Verkabelung des Motors der Rollenbahn des Abladehebers an der MMT-Platine überprüfen"
+    },
+    "1040": {
+      "error_message": "C1_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C1” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1041": {
+      "error_message": "C2_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C2” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1042": {
+      "error_message": "C3_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C3” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1043": {
+      "error_message": "C4_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C4” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1044": {
+      "error_message": "C5_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C5” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1045": {
+      "error_message": "C6_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C6” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1046": {
+      "error_message": "C7_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C7” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1047": {
+      "error_message": "C8_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C8” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1048": {
+      "error_message": "C9_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C9” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1049": {
+      "error_message": "C10_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C10” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1050": {
+      "error_message": "C11_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C11” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1051": {
+      "error_message": "C12_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C12” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1052": {
+      "error_message": "C13_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C13” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1053": {
+      "error_message": "C14_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C14” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1054": {
+      "error_message": "C15_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C15” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1055": {
+      "error_message": "C16_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C16” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1056": {
+      "error_message": "C17_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C17” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1057": {
+      "error_message": "C18_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C18” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1058": {
+      "error_message": "C19_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C19” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1059": {
+      "error_message": "C20_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C20” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1060": {
+      "error_message": "C21_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C21” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1061": {
+      "error_message": "C22_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C22” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1062": {
+      "error_message": "C23_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C23” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1063": {
+      "error_message": "C24_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Die Fotozelle „Ventil Offen“ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C24” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Fotozelle „Ventil Offen“und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1064": {
+      "error_message": "C1_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C1” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1065": {
+      "error_message": "C2_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C2” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1066": {
+      "error_message": "C3_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C3” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1067": {
+      "error_message": "C4_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C4” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1068": {
+      "error_message": "C5_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C5” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1069": {
+      "error_message": "C6_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C6” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1070": {
+      "error_message": "C7_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C7” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1071": {
+      "error_message": "C8_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C8” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1072": {
+      "error_message": "C9_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C9” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1073": {
+      "error_message": "C10_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C10” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1074": {
+      "error_message": "C11_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C11” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1075": {
+      "error_message": "C12_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C12” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1076": {
+      "error_message": "C13_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C13” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1077": {
+      "error_message": "C14_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C14” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1078": {
+      "error_message": "C15_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C15” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1079": {
+      "error_message": "C16_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C16” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1080": {
+      "error_message": "C17_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C17” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1081": {
+      "error_message": "C18_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C18” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1082": {
+      "error_message": "C19_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C19” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1083": {
+      "error_message": "C20_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C20” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1084": {
+      "error_message": "C21_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C21” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1085": {
+      "error_message": "C22_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C22” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1086": {
+      "error_message": "C23_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C23” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1087": {
+      "error_message": "C24_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Die HOME-Fotozelle des Ventils ist nicht verdunkelt, obwohl sie dies in den Dosier- und Umwälzprozessen, die den Kreislauf „C24” betreffen, sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der HOME- Fotozelle des Ventils und ihre Verbindung mit der MMT-Platine kontrollieren"
+    },
+    "1088": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C1” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1089": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C2” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1090": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C3” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1091": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C4” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1092": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C5” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1093": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C6” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1094": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C7” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1095": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C8” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1096": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C9” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1097": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C10” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1098": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C11” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1099": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C12” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1100": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C13” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1101": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C14” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1102": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C15” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1103": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C16” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1104": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C17” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1105": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C18” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1106": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C19” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1107": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C20” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1108": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C21” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1109": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C22” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1110": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C23” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1111": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Die Fotozelle „Ankopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie liegt frei, obwohl sie in den Dosier- und Rückführungsprozessen, die den Kreislauf „C24” betreffen, verdunkelt sein sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1112": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C1” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1113": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C2” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1114": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C3” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1115": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C4” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1116": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C5” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1117": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C6” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1118": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C7” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1119": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C8” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1120": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C9” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1121": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C10” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1122": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C11” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1123": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C12” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1124": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C13” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1125": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C14” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1126": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C15” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1127": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C16” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1128": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C17” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1129": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C18” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1130": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C19” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1131": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C20” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1132": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C21” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1133": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C22” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1134": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C23” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1135": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Die Fotozelle „Kopplung der Tinting Pumpe“befindet sich in einem falschen Status: sie ist verdunkelt, obwohl sie in den Dosier- und Umwälzprozessen, die den Kreislauf „C24” betreffen, frei liegen sollte",
+      "resolution": "Die Funktionstüchtigkeit der Ankopplung- Fotozelle der Pumpe und des Schrittmotors überprüfen. Die mit dem spezifischen Steuerbefehl übermittelten charakteristischen Parameter der Pumpe überprüfen"
+    },
+    "1136": {
+      "error_message": "C1_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C1” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1137": {
+      "error_message": "C2_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C2” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1138": {
+      "error_message": "C3_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C3” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1139": {
+      "error_message": "C4_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C4” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1140": {
+      "error_message": "C5_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C5” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1141": {
+      "error_message": "C6_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C6” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1142": {
+      "error_message": "C7_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C7” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1143": {
+      "error_message": "C8_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C8” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1144": {
+      "error_message": "C9_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C9” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1145": {
+      "error_message": "C10_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C10” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1146": {
+      "error_message": "C11_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C11” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1147": {
+      "error_message": "C12_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C12” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1148": {
+      "error_message": "C13_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C13” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1149": {
+      "error_message": "C14_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C14” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1150": {
+      "error_message": "C15_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C15” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1151": {
+      "error_message": "C16_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C16” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1152": {
+      "error_message": "C17_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C17” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1153": {
+      "error_message": "C18_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C18” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1154": {
+      "error_message": "C19_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C19” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1155": {
+      "error_message": "C20_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C20” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1156": {
+      "error_message": "C21_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C21” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1157": {
+      "error_message": "C22_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C22” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1158": {
+      "error_message": "C23_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C23” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1159": {
+      "error_message": "C24_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "In den Umwälz- und Dosierprozessen, die den Kreislauf „C24” betreffen, wurde die Fotozelle „Ventil Offen“nicht wie vorgesehen verdunkelt",
+      "resolution": "Die Funktionsweise der Fotozelle „Ventil Offen“und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1160": {
+      "error_message": "C1_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C1in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1161": {
+      "error_message": "C2_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C2in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1162": {
+      "error_message": "C3_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C3in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1163": {
+      "error_message": "C4_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C4in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1164": {
+      "error_message": "C5_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C5in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1165": {
+      "error_message": "C6_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C6in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1166": {
+      "error_message": "C7_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C7in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1167": {
+      "error_message": "C8_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C8in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1168": {
+      "error_message": "C9_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C9in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1169": {
+      "error_message": "C10_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C10in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1170": {
+      "error_message": "C11_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C11in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1171": {
+      "error_message": "C12_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C12in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1172": {
+      "error_message": "C13_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C13in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1173": {
+      "error_message": "C14_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C14in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1174": {
+      "error_message": "C15_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C15in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1175": {
+      "error_message": "C16_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C16in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1176": {
+      "error_message": "C17_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C17in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1177": {
+      "error_message": "C18_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C18in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1178": {
+      "error_message": "C19_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C19in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1179": {
+      "error_message": "C20_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C20in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1180": {
+      "error_message": "C21_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C21in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1181": {
+      "error_message": "C22_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C22in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1182": {
+      "error_message": "C23_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C23in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1183": {
+      "error_message": "C24_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Ventil vor der Dosierung, die den Kreislauf C24in Hoher Auflösung umfasst, nicht offen",
+      "resolution": "Die Funktionsweise der 2 Fotozellen des Ventils und die Verkabelung des Schrittmotors des Ventils kontrollieren"
+    },
+    "1184": {
+      "error_message": "C1_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C1” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C1-Kreises"
+    },
+    "1185": {
+      "error_message": "C2_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C2” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C2-Kreises"
+    },
+    "1186": {
+      "error_message": "C3_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C3” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C3-Kreises"
+    },
+    "1187": {
+      "error_message": "C4_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C4” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C4-Kreises"
+    },
+    "1188": {
+      "error_message": "C5_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C5” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C5-Kreises"
+    },
+    "1189": {
+      "error_message": "C6_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C6” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C6-Kreises"
+    },
+    "1190": {
+      "error_message": "C7_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C7” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C7-Kreises"
+    },
+    "1191": {
+      "error_message": "C8_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C8” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C8-Kreises"
+    },
+    "1192": {
+      "error_message": "C9_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C9” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C9-Kreises"
+    },
+    "1193": {
+      "error_message": "C10_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C10” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C10-Kreises"
+    },
+    "1194": {
+      "error_message": "C11_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C11” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C11-Kreises"
+    },
+    "1195": {
+      "error_message": "C12_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C12” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C12-Kreises"
+    },
+    "1196": {
+      "error_message": "C13_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C13” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C13-Kreises"
+    },
+    "1197": {
+      "error_message": "C14_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C14” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C14-Kreises"
+    },
+    "1198": {
+      "error_message": "C15_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C15” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C15-Kreises"
+    },
+    "1199": {
+      "error_message": "C16_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C16” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C16-Kreises"
+    },
+    "1200": {
+      "error_message": "C17_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C17” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C17-Kreises"
+    },
+    "1201": {
+      "error_message": "C18_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C18” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C18-Kreises"
+    },
+    "1202": {
+      "error_message": "C19_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C19” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C19-Kreises"
+    },
+    "1203": {
+      "error_message": "C20_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C20” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C20-Kreises"
+    },
+    "1204": {
+      "error_message": "C21_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C21” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C21-Kreises"
+    },
+    "1205": {
+      "error_message": "C22_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C22” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C22-Kreises"
+    },
+    "1206": {
+      "error_message": "C23_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C23” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C23-Kreises"
+    },
+    "1207": {
+      "error_message": "C24_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Die Fotozelle des Tinting Tischs wird während eines Prozesses, bei dem das Ventil bewegt wird, wenn der Kreislauf „C24” angekoppelt ist, nicht mehr verdunkelt",
+      "resolution": "Überprüfen Sie die Positionierung und die Härte des Ventilwahlschalters des geschalteten C24-Kreises"
+    }
+  }
+}

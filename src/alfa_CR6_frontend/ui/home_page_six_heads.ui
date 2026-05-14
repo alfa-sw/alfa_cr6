@@ -1820,6 +1820,120 @@ RECOVERY</string>
     </size>
    </property>
   </widget>
+  <widget class="QLabel" name="belt_label_1">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>280</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_3">
+   <property name="geometry">
+    <rect>
+     <x>920</x>
+     <y>280</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_2">
+   <property name="geometry">
+    <rect>
+     <x>530</x>
+     <y>650</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_4">
+   <property name="geometry">
+    <rect>
+     <x>920</x>
+     <y>650</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_6">
+   <property name="geometry">
+    <rect>
+     <x>1310</x>
+     <y>650</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
+  <widget class="QLabel" name="belt_label_5">
+   <property name="geometry">
+    <rect>
+     <x>1310</x>
+     <y>280</y>
+     <width>121</width>
+     <height>111</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap>../images/timing-belt.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
+   </property>
+  </widget>
   <zorder>sinottico</zorder>
   <zorder>service_1_btn</zorder>
   <zorder>service_3_btn</zorder>
@@ -1901,11 +2015,17 @@ RECOVERY</string>
   <zorder>recovery_info_btn</zorder>
   <zorder>recovery_btn</zorder>
   <zorder>fw_align_ko_lbl</zorder>
+  <zorder>belt_label_1</zorder>
+  <zorder>belt_label_3</zorder>
+  <zorder>belt_label_2</zorder>
+  <zorder>belt_label_4</zorder>
+  <zorder>belt_label_6</zorder>
+  <zorder>belt_label_5</zorder>
  </widget>
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="service_btn_group"/>
   <buttongroup name="action_btn_group"/>
+  <buttongroup name="service_btn_group"/>
  </buttongroups>
 </ui>

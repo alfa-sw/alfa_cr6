@@ -138,7 +138,8 @@ class RefillProcedureHelper:
             channel="machine")
         asyncio.ensure_future(t)
 
-    async def __update_level_task(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None):
+    async def __update_level_task(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None,
+                                  qr_code_info=None):
 
         def _cb_on_refill(answer):
             logging.warning(f"answer:{answer}.")
@@ -163,6 +164,8 @@ class RefillProcedureHelper:
         params_ = {'items': [{'name': pipe_['name'], 'qtity': qtity_ml_}]}
         if updated_spec_weight:
             params_['items'][0]['specific_weight'] = updated_spec_weight
+        if qr_code_info:
+            params_['items'][0]['QR_code_info'] = qr_code_info
         await self.machine_.send_command(cmd_name="REFILL", params=params_, type_="macro", callback_on_macro_answer=_cb_on_refill)
 
         await self.machine_.update_tintometer_data()
@@ -185,12 +188,16 @@ class RefillProcedureHelper:
             description=rfll_msg
         )
 
-    def _cb_confirm_quantity(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None):
+    def _cb_confirm_quantity(self, pigment_, pipe_, qtity_ml_, updated_spec_weight=None,
+                             qr_code_info=None):
 
-        t = self.__update_level_task(pigment_, pipe_, qtity_ml_, updated_spec_weight)
+        t = self.__update_level_task(pigment_, pipe_, qtity_ml_, updated_spec_weight,
+                                     qr_code_info=qr_code_info)
         asyncio.ensure_future(t)
 
-    def _cb_input_quantity(self, pigment_, pipe_, updated_spec_weight=None):
+    def _cb_input_quantity(self, pigment_, pipe_, updated_spec_weight=None, from_qrcode=False,
+                           lot_specific_weight=None, current_specific_weight=None,
+                           qr_code_info=None):
 
         self.parent.main_window.toggle_keyboard(on_off=False)
 
@@ -201,7 +208,24 @@ class RefillProcedureHelper:
         logging.warning("maximum_level:{}, current_level:{}, qtity_ml_:{}, qtity_units_:{}".format(
             pipe_['maximum_level'], pipe_['current_level'], qtity_ml_, qtity_units_))
 
+        def _recompute_spec_weight(refill_ml):
+            if lot_specific_weight is None or current_specific_weight is None:
+                return updated_spec_weight
+            tot_vol = refill_ml + pipe_['current_level']
+            if tot_vol <= 0:
+                return updated_spec_weight
+            tot_weight = lot_specific_weight * refill_ml + current_specific_weight * pipe_['current_level']
+            return tot_weight / tot_vol
+
+        def _qr_info_with(spec_weight):
+            if qr_code_info is None:
+                return None
+            info = dict(qr_code_info)
+            info["specific_weight"] = spec_weight
+            return info
+
         if pipe_['maximum_level'] >= (pipe_['current_level'] + qtity_ml_) * 0.98:
+            spec_weight_ = _recompute_spec_weight(qtity_ml_)
             msg_ = """please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?."""
             msg_ = tr_(msg_).format(pipe_['name'], qtity_units_, self.units_.lower(), pigment_['name'])
 
@@ -210,7 +234,23 @@ class RefillProcedureHelper:
                 message=msg_,
                 content=None,
                 ok_cb=self._cb_confirm_quantity,
-                ok_cb_args=(pigment_, pipe_, qtity_ml_, updated_spec_weight))
+                ok_cb_args=(pigment_, pipe_, qtity_ml_, spec_weight_, _qr_info_with(spec_weight_)))
+        elif from_qrcode:
+            cap_ml_ = pipe_['maximum_level'] - pipe_['current_level']
+            cap_units_ = round(self.__qtity_from_ml(cap_ml_, pigment_['name']), 2)
+            cap_spec_weight = _recompute_spec_weight(cap_ml_)
+
+            msg_ = ("QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>"
+                    "Refill will be capped to {} ({}). Confirm?")
+            msg_ = tr_(msg_).format(
+                qtity_units_, self.units_.lower(), pipe_['name'],
+                cap_units_, self.units_.lower())
+            self.parent.main_window.open_input_dialog(
+                icon_name="SP_MessageBoxWarning",
+                message=msg_,
+                content=None,
+                ok_cb=self._cb_confirm_quantity,
+                ok_cb_args=(pigment_, pipe_, cap_ml_, cap_spec_weight, _qr_info_with(cap_spec_weight)))
         else:
             msg_ = """refilling with {} ({}) would exceed maximum level! Aborting."""
             msg_ = tr_(msg_).format(qtity_units_, self.units_.lower())
@@ -312,7 +352,11 @@ class RefillProcedureHelper:
                 message=msg_,
                 unit=self.units_,
                 ok_cb=self._cb_input_quantity,
-                ok_cb_args=(pigment_, pipe_, qrcode_refill_infos.get("new_specific_weight")),
+                ok_cb_args=(pigment_, pipe_,
+                            qrcode_refill_infos.get("new_specific_weight"), True,
+                            qrcode_refill_infos.get("lot_specific_weight"),
+                            qrcode_refill_infos.get("current_specific_weight"),
+                            qrcode_refill_infos.get("qr_code_info")),
                 choices=choices_)
 
     def _cb_input_barcode(self, barcode_):
@@ -413,103 +457,78 @@ class RefillProcedureHelper:
         else:
             self._cb_input_barcode(input)
 
-    async def _check_and_decode_KCC_qrcode_string(self, input): # pylint: disable=too-many-statements
+    async def _check_and_decode_KCC_qrcode_string(self, input):
         """
-        memo per refill
-        refillParams['specific_weight'] = QRCodeNewSpecificWeight
+        Delegates QR decoding and validation to the head's device endpoint
+        (apiV1/ad_hoc, action=check_and_decode_KCC_qrcode_string), which is the
+        single source of truth for KCC lot data and specific weight calculation.
         """
-        import json # pylint: disable=import-outside-toplevel
 
         try:
-            toks = input.split('$')
-            logging.warning(f"toks: {toks}")
-            sub_toks = toks[1].split('|') if len(toks) == 2 else toks[0].split('|')
-            offset = 1 if len(sub_toks) > 10 else 0
-
-            product_code = sub_toks[offset]
-            lot_number = sub_toks[offset + 1]
-            product_quantity = int(sub_toks[offset + 5])
-            production_date = sub_toks[offset + 9][:8]
-            kcc_qrcode_decoded_info = {
-                'product_code': product_code,
-                'lot_number': lot_number,
-                'product_quantity': product_quantity,
-                'production_date': production_date,
+            data = {
+                "action": "check_and_decode_KCC_qrcode_string",
+                "params": {"qrcode_string": input},
             }
-            logging.warning(f"kcc_qrcode_decoded_info: {kcc_qrcode_decoded_info}")
+            device_resp = await self.machine_.call_api_rest(
+                "apiV1/ad_hoc", "POST", data, timeout=10)
 
-            pigment_name = ""
-            lot_specific_weight = -1
-            KCC_lot_specific_info = {}
-            try:
-                path_kcc_lot_specific_info = "/opt/alfa_cr6/tmp/KCC_lot_specific_info.json"
-                with open(path_kcc_lot_specific_info, encoding="UTF-8") as f:
-                    KCC_lot_specific_info = json.load(f)
+            # The device endpoint wraps the JSON payload in flask Markup, so the
+            # response comes back as a JSON-encoded string and needs a second parse.
+            if isinstance(device_resp, str):
+                import json as _json  # pylint: disable=import-outside-toplevel
+                device_resp = _json.loads(device_resp)
 
-                def _check(item):
-                    return item.get("FIELD3") == product_code and item.get("FIELD4") == lot_number
-
-                for item in filter(_check, KCC_lot_specific_info):
-                    pigment_name = item.get("FIELD2", '')
-                    lot_specific_weight = float(item.get("FIELD5", -1))
-                    break
-            except Exception as e:
-                logging.error(traceback.format_exc())
-                args, fmt = ('KCC_lot_specific_weight.json', ), "Unexpected error retrieving info from file '{}'"
+            if not device_resp or device_resp.get("result") != "OK":
+                err_msg = (device_resp or {}).get("error", "unknown error")
+                args, fmt = (err_msg,), "KCC QR decode failed: {}"
                 self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
                 return
 
-            logging.warning(f"pigment_name --> {pigment_name}")
-            logging.warning(f"lot_specific_weight --> {lot_specific_weight}")
-            if not pigment_name or lot_specific_weight < 0:
-                logging.error(f"record not found or incomplete for product code:{product_code}, lot number:{lot_number}")
-                args, fmt = (product_code, lot_number), "record not found or incomplete for product code: {}, lot number:{}"
+            pigment_name = device_resp["pigment_name"]
+            pipe_name = device_resp["pipe_name"]
+            product_quantity = device_resp["product_quantity"]
+            lot_specific_weight = device_resp["lot_specific_weight"]
+            current_specific_weight = device_resp["current_specific_weight"]
+            new_specific_weight = device_resp["specific_weight"]
+
+            _pipe = None
+            _pigment = None
+            for p in self.machine_.pigment_list:
+                if p.get("name") == pigment_name:
+                    _pigment = p.copy()
+                    pipes = _pigment.pop("pipes", None) or []
+                    for pipe in pipes:
+                        if pipe.get("name") == pipe_name:
+                            _pipe = pipe
+                            break
+                    if not _pipe and pipes:
+                        _pipe = pipes[0]
+                    break
+
+            if not _pipe:
+                args, fmt = (pigment_name,), "pipe with pigment:{} not found."
                 self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                return
 
-            else:
-                _pipe = None
-                _pigment = None
-                for p in self.machine_.pigment_list:
-                    if p.get("name") == pigment_name:
-                        _pigment = p.copy()
-                        _pipe = _pigment.pop('pipes', None)
-                        break
+            _default_qtity_ml = _pipe["maximum_level"] - _pipe["current_level"]
+            _default_qtity_units = round(self.__qtity_from_ml(_default_qtity_ml, _pigment["name"]), 2)
 
-                if not _pipe:
-                    logging.error(f"pipe with pigment:{pigment_name} not found.")
-                    args, fmt = (pigment_name), "pipe with pigment:{} not found."
-                    self.parent.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                    return
+            qrcode_refill = {
+                "qty": product_quantity,
+                "new_specific_weight": new_specific_weight,
+                "lot_specific_weight": lot_specific_weight,
+                "current_specific_weight": current_specific_weight,
+                "qr_code_info": device_resp,
+            }
 
-                _pipe = _pipe[0]
-                specific_weight = _pipe["effective_specific_weight"]
-                if specific_weight < 0.001 and _pigment:
-                    specific_weight = _pigment["specific_weight"]
-                if specific_weight < 0.001:
-                    specific_weight = 1.
-                tot_volume = product_quantity + _pipe["current_level"]
-                tot_weight = lot_specific_weight * product_quantity + specific_weight * _pipe["current_level"]
-                new_specific_weight = tot_weight / tot_volume
-
-                logging.warning(f"tot_volume: {tot_volume} - tot_weight: {tot_weight} - new_specific_weight: {new_specific_weight}")
-
-                _default_qtity_ml = _pipe['maximum_level'] - _pipe['current_level']
-                _default_qtity_units = self.__qtity_from_ml(_default_qtity_ml, _pigment['name'])
-                _default_qtity_units = round(_default_qtity_units, 2)
-
-                qrcode_refill = {
-                    "qty": product_quantity,
-                    "new_specific_weight": new_specific_weight,
-                }
-
-                t = self._rotate_circuit_task(
-                    _pigment, _pipe, _default_qtity_units, input,
-                    skip_verify=True, qrcode_refill_infos=qrcode_refill)
-                asyncio.ensure_future(t)
+            t = self._rotate_circuit_task(
+                _pigment, _pipe, _default_qtity_units, input,
+                skip_verify=True, qrcode_refill_infos=qrcode_refill)
+            asyncio.ensure_future(t)
 
         except Exception as e:
             logging.error(traceback.format_exc())
-            decode_KCC_qrcode
+            # decode_KCC_qrcode  # leftover from commit 610dc1f2, raises NameError
             self.parent.main_window.open_alert_dialog(
                 args=(),
                 fmt="DECODE KCC QRCODE EXCEPTION",
@@ -534,6 +553,9 @@ class HomePage(BaseStackedPage):
 
     _blink_step_label = None
     _blink_state = False
+
+    _belt_blink_timer = None
+    _belt_blink_state = False
     STEP_02_03_label = None
     STEP_02_04_label = None  # four-heads only (skips HEAD B)
     STEP_03_04_label = None
@@ -593,6 +615,11 @@ class HomePage(BaseStackedPage):
         self.reserve_movie = QMovie(get_res("IMAGE", "riserva.gif"))
         self.expiry_movie = QMovie(get_res("IMAGE", "expiry.gif"))
 
+        self._blinking_belt_indexes = set()
+        for lbl in self._belt_label_map():
+            if lbl:
+                lbl.setVisible(False)
+
         if self.STEP_01_label:
             self.STEP_01_label.mouseReleaseEvent = lambda event: self.step_label_clicked("IN")
         if self.STEP_02_label:
@@ -630,6 +657,8 @@ class HomePage(BaseStackedPage):
             self.reserve_5_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(4)
         if self.reserve_6_label:
             self.reserve_6_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(5)
+        if self.reserve_7_label:
+            self.reserve_7_label.mouseReleaseEvent = lambda event: self.reserve_label_clicked(6)
 
         if self.expiry_1_label:
             self.expiry_1_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(0)
@@ -643,6 +672,8 @@ class HomePage(BaseStackedPage):
             self.expiry_5_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(4)
         if self.expiry_6_label:
             self.expiry_6_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(5)
+        if self.expiry_7_label:
+            self.expiry_7_label.mouseReleaseEvent = lambda event: self.expiry_label_clicked(6)
 
         if self.refill_1_lbl:
             self.refill_1_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(0)
@@ -656,6 +687,8 @@ class HomePage(BaseStackedPage):
             self.refill_5_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(4)
         if self.refill_6_lbl:
             self.refill_6_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(5)
+        if self.refill_7_lbl:
+            self.refill_7_lbl.mouseReleaseEvent = lambda event: self.refill_lbl_clicked(6)
 
         # self.printer_helper = PrinterHelper()
         # self.printer_helper.all_prints_finished.connect(self.on_all_prints_finished)
@@ -690,6 +723,7 @@ class HomePage(BaseStackedPage):
                 self.service_4_btn,
                 self.service_5_btn,
                 self.service_6_btn,
+                self.service_7_btn,
             ]
 
             map_ = dict(zip(service_btns, service_page_urls))
@@ -766,6 +800,7 @@ class HomePage(BaseStackedPage):
             self.expiry_4_label,
             self.expiry_5_label,
             self.expiry_6_label,
+            self.expiry_7_label,
         ]
 
         m = QApplication.instance().machine_head_dict.get(head_index)
@@ -785,6 +820,69 @@ class HomePage(BaseStackedPage):
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
+    def _belt_label_map(self):
+        return [
+            self.belt_label_1,
+            self.belt_label_2,
+            self.belt_label_3,
+            self.belt_label_4,
+            self.belt_label_5,
+            self.belt_label_6,
+            self.belt_label_7,
+        ]
+
+    def update_table_belt_health(self, head_index):
+
+        map_ = self._belt_label_map()
+        m = QApplication.instance().machine_head_dict.get(head_index)
+        try:
+            lbl = map_[head_index]
+            if not (m and lbl):
+                return
+
+            msg = m.table_belt_health_msg if isinstance(m.table_belt_health_msg, dict) else {}
+            status = msg.get('status')
+
+            if status and status != 'ok':
+                self._blinking_belt_indexes.add(head_index)
+                lbl.setVisible(True)
+                self._start_belt_blink()
+            else:
+                self._blinking_belt_indexes.discard(head_index)
+                lbl.setVisible(False)
+                if not self._blinking_belt_indexes:
+                    self._stop_belt_blink()
+
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
+    def _start_belt_blink(self):
+        if self._belt_blink_timer is None:
+            self._belt_blink_timer = QTimer(self)
+            self._belt_blink_timer.timeout.connect(self._do_belt_blink)
+        if not self._belt_blink_timer.isActive():
+            self._belt_blink_state = True
+            self._belt_blink_timer.start(500)
+
+    def _stop_belt_blink(self):
+        if self._belt_blink_timer is not None:
+            self._belt_blink_timer.stop()
+            self._belt_blink_timer.deleteLater()
+            self._belt_blink_timer = None
+        self._belt_blink_state = False
+
+    def _do_belt_blink(self):
+        if not self._blinking_belt_indexes:
+            self._stop_belt_blink()
+            return
+        self._belt_blink_state = not self._belt_blink_state
+        visible = self._belt_blink_state
+        map_ = self._belt_label_map()
+        for idx in self._blinking_belt_indexes:
+            lbl = map_[idx]
+            if lbl:
+                lbl.setVisible(visible)
+
     def update_service_btns__presences_and_lifters(self, head_index):
 
         status = QApplication.instance().machine_head_dict[head_index].status
@@ -796,6 +894,7 @@ class HomePage(BaseStackedPage):
             self.service_4_btn,
             self.service_5_btn,
             self.service_6_btn,
+            self.service_7_btn,
         ]
         if map_[head_index]:
             map_[head_index].setText(tr_(f"{status.get('status_level', 'NONE')}"))
@@ -807,6 +906,7 @@ class HomePage(BaseStackedPage):
             self.container_presence_4_label,
             self.container_presence_5_label,
             self.container_presence_6_label,
+            self.container_presence_7_label,
         ]
 
         if map_[head_index]:
@@ -833,6 +933,7 @@ class HomePage(BaseStackedPage):
             self.refill_4_lbl,
             self.refill_5_lbl,
             self.refill_6_lbl,
+            self.refill_7_lbl,
         ]
 
         for head_index, m in QApplication.instance().machine_head_dict.items():
@@ -966,6 +1067,7 @@ class HomePage(BaseStackedPage):
             self.reserve_4_label,
             self.reserve_5_label,
             self.reserve_6_label,
+            self.reserve_7_label,
         ]
 
         if map_[head_index]:
@@ -1198,6 +1300,14 @@ class HomePageSixHeads(HomePage):
     STEP_02_04_label = None  # four-heads only
     STEP_07_09_label = None  # four-heads only
 
+    service_7_btn = None
+    refill_7_lbl = None
+    expiry_7_label = None
+    reserve_7_label = None
+    container_presence_7_label = None
+
+    belt_label_7 = None
+
 
 class HomePageFourHeads(HomePage):
 
@@ -1229,6 +1339,16 @@ class HomePageFourHeads(HomePage):
 
     container_presence_3_label = None
     container_presence_4_label = None
+
+    service_7_btn = None
+    refill_7_lbl = None
+    expiry_7_label = None
+    reserve_7_label = None
+    container_presence_7_label = None
+
+    belt_label_3 = None
+    belt_label_4 = None
+    belt_label_7 = None
 
 class HomePageCRX60Heads(HomePage):
 
@@ -1271,6 +1391,17 @@ class HomePageCRX60Heads(HomePage):
     container_presence_4_label = None
     container_presence_6_label = None
 
+    service_7_btn = None
+    refill_7_lbl = None
+    expiry_7_label = None
+    reserve_7_label = None
+    container_presence_7_label = None
+
+    belt_label_2 = None
+    belt_label_4 = None
+    belt_label_6 = None
+    belt_label_7 = None
+
     unload_lifter_down_label = None
     unload_lifter_up_label = None
 
@@ -1285,6 +1416,68 @@ class HomePageCRX60Heads(HomePage):
             (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
             (self.STEP_05_label, (("C", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
         ]
+
+class HomePageCRX80Heads(HomePage):
+
+    ui_file_name = "home_page_four_linear_heads.ui"
+    help_file_name = ''
+
+    action_07_btn = None
+    action_08_btn = None
+    action_09_btn = None
+    action_10_btn = None
+
+    STEP_07_label = None
+    STEP_08_label = None
+    STEP_09_label = None
+    STEP_10_label = None
+    STEP_11_label = None
+    STEP_12_label = None
+
+    refill_2_lbl = None
+    refill_4_lbl = None
+    refill_6_lbl = None
+
+    expiry_2_label = None
+    expiry_4_label = None
+    expiry_6_label = None
+
+    reserve_2_label = None
+    reserve_4_label = None
+    reserve_6_label = None
+
+    service_2_btn = None
+    service_4_btn = None
+    service_6_btn = None
+
+    container_presence_2_label = None
+    container_presence_4_label = None
+    container_presence_6_label = None
+
+    belt_label_2 = None
+    belt_label_4 = None
+    belt_label_6 = None
+
+    unload_lifter_down_label = None
+    unload_lifter_up_label = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.jar_pixmap_map = [
+            (self.STEP_01_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
+            (self.STEP_01_02_label, (("A", "JAR_INPUT_ROLLER_PHOTOCELL"), ("A", "JAR_DISPENSING_POSITION_PHOTOCELL")), "IN_A", (("IN_A",), ("A",)),),
+            (self.STEP_02_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "A",),
+            (self.STEP_02_03_label, (("A", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("B", "JAR_DISPENSING_POSITION_PHOTOCELL")), "A", (("A",), ("B",)),),
+            (self.STEP_03_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "B",),
+            (self.STEP_03_04_label, (("B", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("C", "JAR_DISPENSING_POSITION_PHOTOCELL")), "B", (("B",), ("C",)),),
+            (self.STEP_04_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "C",),
+            (self.STEP_04_05_label, (("C", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("G", "JAR_DISPENSING_POSITION_PHOTOCELL")), "C", (("C",), ("G",)),),
+            (self.STEP_05_label, (("G", "JAR_DISPENSING_POSITION_PHOTOCELL"),), "G",),
+            (self.STEP_05_06_label, (("G", "JAR_DISPENSING_POSITION_PHOTOCELL"), ("G", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL")), "G", (("G",), ("OUT",)),),
+            (self.STEP_06_label, (("G", "JAR_LOAD_LIFTER_ROLLER_PHOTOCELL"),), "OUT",),
+        ]
+
 
 class HomePageCRX40Heads(HomePage):
 
@@ -1333,6 +1526,18 @@ class HomePageCRX40Heads(HomePage):
     container_presence_3_label = None
     container_presence_4_label = None
     container_presence_6_label = None
+
+    service_7_btn = None
+    refill_7_lbl = None
+    expiry_7_label = None
+    reserve_7_label = None
+    container_presence_7_label = None
+
+    belt_label_2 = None
+    belt_label_3 = None
+    belt_label_4 = None
+    belt_label_6 = None
+    belt_label_7 = None
 
     unload_lifter_down_label = None
     unload_lifter_up_label = None

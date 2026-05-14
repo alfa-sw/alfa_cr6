@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ tr_('Troubleshooting') }} — {{ error_code }}</title>
+    <meta charset="UTF-8">
+</head>
+<body style="font-family: sans-serif; padding: 20px; background-color: #FAFAFA;">
+
+{% if entry %}
+    <div style="border-bottom: 2px solid #333333; padding-bottom: 10px; margin-bottom: 20px;">
+        <h1 style="margin: 0;">{{ tr_('trouble_shooting') }}</h1>
+        <h2 style="margin: 8px 0 0 0;">
+            <span style="color: #000000;">{{ tr_('error_code:') }} {{ error_code }}</span>
+        </h2>
+        <h2 style="color: #000000; text-transform: uppercase; margin: 6px 0 0 0;">{{ tr_(entry.error_message) }}</h2>
+    </div>
+
+    <table width="100%" cellpadding="16" cellspacing="12" border="0" style="table-layout: fixed;">
+        <tr valign="top">
+            <td width="50%" bgcolor="#FFFFFF" style="border: 1px solid #DDDDDD;">
+                <h2 style="color: #000000; margin-top: 0;">{{ tr_('error_description') }}</h2>
+                <p style="color: #000000;">{{ entry.error_description }}</p>
+            </td>
+            <td width="50%" bgcolor="#FFFFFF" style="border: 1px solid #DDDDDD;">
+                <h2 style="color: #000000; margin-top: 0;">{{ tr_('resolution') }}</h2>
+                <p style="color: #000000;">{{ entry.resolution }}</p>
+            </td>
+        </tr>
+    </table>
+{% else %}
+    <div style="text-align: center; padding: 40px; color: #999999;">
+        {{ tr_('troubleshooting instructions are missing for error:{}').format(error_code) }}
+    </div>
+{% endif %}
+
+{% if meta and meta.revision %}
+    <p style="margin-top: 30px; padding-top: 10px; border-top: 1px solid #CCCCCC; color: #777777; font-size: 80%; text-align: right;">
+        rev. {{ meta.revision }}
+    </p>
+{% endif %}
+
+</body>
+</html>

@@ -186,11 +186,18 @@ class DebugPage:
                 ("read\nbarcode", "simulate a bar code read"),
                 ("open order\ndialog", "**"),
                 ("view\norders", ""),
-                ("download KCC\nSpecific\nGravity file", "download KCC file with specific gravity lot info"),
+            ]
+
+        _settings = QApplication.instance().settings
+        if getattr(_settings, "DOWNLOAD_KCC_LOT_STEP", 0) > 0:
+            third_row_btns.append(
+                ("download KCC\nSpecific\nGravity file", "download KCC file with specific gravity lot info"))
+
+        third_row_btns.extend([
                 ("clear list\nrecovery mode", ""),
                 ("enable/disable\nbarcode reader", ""),
                 ("show\npackage sizes", "show all package sizes from API"),
-            ]
+            ])
 
         for i, n in enumerate(third_row_btns):
 

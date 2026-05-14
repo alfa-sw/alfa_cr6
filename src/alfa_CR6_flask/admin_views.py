@@ -14,6 +14,7 @@ import datetime
 import traceback
 import subprocess
 import csv
+import importlib
 
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -34,6 +35,22 @@ from alfa_CR6_backend.order_parser import OrderParser
 from alfa_CR6_backend.sw_xml_can_output import SwXmlCanOutput
 
 SETTINGS = import_settings()
+
+
+def _load_troubleshooting_json(lang):
+    try:
+        mod = importlib.import_module('alfa_CR6_backend.lang.troubleshooting')
+        ts_dir = os.path.dirname(os.path.abspath(mod.__file__))
+        path = os.path.join(ts_dir, f"{lang}.json")
+        logging.warning(f"lang: {lang} - path: {path}")
+        if not os.path.exists(path):
+            return None
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:  # pylint: disable=broad-except
+        logging.error(traceback.format_exc())
+        return None
+
 
 def scrambler(path: str, mode: ["obfuscate", "unobfuscate"]):
     try:
@@ -511,7 +528,8 @@ class AdminIndexView(flask_admin.AdminIndexView):
             'current_language': SETTINGS.LANGUAGE,
             'language_map': LANGUAGE_MAP,
             'in_docker': os.getenv("IN_DOCKER", False) in ['1', 'true'],
-            'refill_choices': get_refill_choices()
+            'refill_choices': get_refill_choices(),
+            'machine_variant': os.getenv('MACHINE_VARIANT', '')
         }
 
         return self.render(template, **ctx)
@@ -876,27 +894,39 @@ class AdminIndexView(flask_admin.AdminIndexView):
     @flask_admin.expose("/troubleshooting/<error_code>")
     def troubleshooting(self, error_code):
 
-        template = "/troubleshooting.html"
+        template = "/troubleshooting2.html"
 
-        here = os.path.dirname(os.path.abspath(__file__))
-        dir_path = os.path.join(here, "static", "troubleshooting", f"Errore.{error_code}")
+        settings_ = import_settings()
+        lang = getattr(settings_, 'LANGUAGE', 'en')
 
-        if os.path.exists(dir_path):
-            dir_list = sorted(os.listdir(dir_path))
+        data = _load_troubleshooting_json(lang) or {}
+        fallback = _load_troubleshooting_json('en') or {}
 
-            image_file_list = [f"/static/troubleshooting/Errore.{error_code}/{f}" for f in dir_list]
+        code_key = str(error_code)
+        _entry = data.get('errors', {}).get(code_key)
+        _fallback_entry = fallback.get('errors', {}).get(code_key)
+        logging.warning(f"_entry: {_entry}")
+        logging.warning(f"_fallback_entry: {_fallback_entry}")
+        entry = _entry or _fallback_entry
+        meta = {k: data.get(k) or fallback.get(k) for k in ('document', 'chapter', 'revision', 'year')}
 
-            ctx = {
-                'error_code': error_code,
-                'image_file_list': image_file_list,
-                'header': tr_('Error:{}').format(error_code),
-            }
+        labels = data.get('localized_labels', {}) or {}
+        labels_fallback = fallback.get('localized_labels', {}) or {}
 
-        else:
+        def tr_local(lemma):
+            for key in (lemma, lemma.rstrip(':').strip()):
+                if key in labels:
+                    return labels[key]
+                if key in labels_fallback:
+                    return labels_fallback[key]
+            return tr_(lemma)
 
-            ctx = {
-                'error_directory_not_found': tr_('troubleshooting instructions are missing for error:{}').format(error_code),
-            }
+        ctx = {
+            'error_code': error_code,
+            'entry': entry,
+            'meta': meta,
+            'tr_': tr_local,
+        }
 
         html_ = self.render(template, **ctx)
 

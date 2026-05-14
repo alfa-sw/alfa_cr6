@@ -67,7 +67,7 @@ def main():
             ('alfa_CR6_backend/schemas', list(glob.glob('src/alfa_CR6_backend/schemas/*'))),
             ('alfa_CR6_flask/static/images', list(glob.glob('src/alfa_CR6_flask/static/images/*'))),
             ('alfa_CR6_flask/static/settings', list(glob.glob('src/alfa_CR6_flask/static/settings/*'))),
-('alfa_CR6_flask/static/troubleshooting/Errore.*', list(glob.glob('src/alfa_CR6_flask/static/troubleshooting/Errore.*/*'))),
+            ('alfa_CR6_flask/static/troubleshooting/Errore.*', list(glob.glob('src/alfa_CR6_flask/static/troubleshooting/Errore.*/*'))),
             ('alfa_CR6_flask/templates', list(glob.glob('src/alfa_CR6_flask/templates/*.html'))),
             ('alfa_CR6_flask/templates/admin', list(glob.glob('src/alfa_CR6_flask/templates/admin/*.html'))),
             ('alfa_CR6_frontend/help', list(glob.glob('src/alfa_CR6_frontend/help/*'))),
@@ -76,6 +76,9 @@ def main():
             ('alfa_CR6_frontend/ui', list(glob.glob('src/alfa_CR6_frontend/ui/*'))),
             ('alfa_CR6_test/fixtures', list(glob.glob('src/alfa_CR6_test/fixtures/*'))),
         ],
+        package_data={
+            'alfa_CR6_backend.lang.troubleshooting': ['*.json'],
+        },  
         include_package_data=True,
         scripts=[
             'bin/alfa_CR6',

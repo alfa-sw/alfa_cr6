@@ -39,7 +39,7 @@ D = {
     "Stop  input roller": "Stop Eingangsrollenbahn",
     "Stop  lifter roller": "Stop Rollenbahn Hebevorrichtung",
     "Stop  lifter": "Stop Hebevorrichtung",
-    "Stop  output roller": "Stop Ausgangsrollenbahn",
+    "Stop output roller": "Stop Ausgangsrollenbahn",
     "Stop dispensing roller": "Stop Rollenbahn Dosierung",
     "Too many files saved and not used. Please delete unused files.": "Zu viele Dateien und nicht verwendet. Bitte die nicht verwendeten Dateien entfernen.",
     "[{}] Files:  search by file name": "[{}] Datei:  Suchen nach Name",
@@ -251,6 +251,17 @@ D = {
     "OK": "OK",
     "Delete": "Löschen",
 
+    "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
+    "Troubleshooting": "Troubleshooting",
+    "  Close  ": "  Close  ",
+    "Error loading troubleshooting page.": "Error loading troubleshooting page.",
+    "troubleshooting instructions are missing for error:{}": "troubleshooting instructions are missing for error:{}",
+    "error_code:": "error_code:",
+    "action 04 (head 5 or C)": "action 04 (head 5 or C)",
+    "action 05 (head 5 or C)": "action 05 (head 5 or C)",
+    "action 05 (head 7 or G)": "action 05 (head 7 or G)",
+    "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
+    "Start output roller CW": "Start output roller CW",
 }
 
 

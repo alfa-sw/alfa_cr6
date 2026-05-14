@@ -1,0 +1,1610 @@
+{
+  "document": "Operator Manual CR6 - Alfa Colorpaint Dispenser",
+  "chapter": "8. TROUBLE SHOOTING",
+  "revision": "07",
+  "year": 2024,
+  "localized_labels": {
+    "trouble_shooting": "DIAGNOSTYKA",
+    "error_code": "Kod błędu",
+    "error_message": "Wykryty błąd",
+    "error_description": "Opis błędu",
+    "resolution": "Rozwiązywanie problemu"
+  },
+  "errors": {
+    "2": {
+      "error_message": "EEPROM_COLOR_CIRC_PARAM_CRC_FAULT",
+      "error_description": "Błąd CRC parametrów obwodu",
+      "resolution": "Sprawdzić, czy nie wystąpił brak parametrów w przypadku wymiany MMT. Załadować parametry obwodu baz/barwników na nową płytę MMT"
+    },
+    "3": {
+      "error_message": "EEPROM_CALIB_CURVES_PARAM_CRC_FAULT",
+      "error_description": "Błąd CRC parametrów krzywej kalibracji",
+      "resolution": "Sprawdzić, czy nie wystąpił brak parametrów w przypadku wymiany MMT. Załadować parametry kalibracji na nową płytę MMT"
+    },
+    "5": {
+      "error_message": "EEPROM_SLAVES_EN_PARAM_CRC_FAULT",
+      "error_description": "Błąd CRC aktywacji urządzenia podległego",
+      "resolution": "Sprawdzić, czy nie wystąpił brak parametrów w przypadku wymiany MMT. Załadować parametry aktywacji urządzenia PODLEGŁEGO na nową płytę MMT"
+    },
+    "8": {
+      "error_message": "EEPROM_HUM_20_PARAM_CRC_FAULT",
+      "error_description": "Błąd CRC parametrów nawilżacza 2.0",
+      "resolution": "Sprawdzić, czy nie wystąpił brak parametrów w przypadku wymiany MMT. Załadować parametry nawilżacza 2.0 na nową płytę MMT"
+    },
+    "9": {
+      "error_message": "EEPROM_CIRCUIT_PUMP_TYPES_CRC_FAULT",
+      "error_description": "Błąd CRC typu pompy dla każdego obwodu",
+      "resolution": "Sprawdzić, czy nie wystąpił brak parametrów w przypadku wymiany MMT. Załadować parametry typów pomp na nową płytę MMT"
+    },
+    "10": {
+      "error_message": "USER_INTERRUPT",
+      "error_description": "Przerwanie pracy oprogramowania funkcjonalnego maszyny",
+      "resolution": "Naciśnięto przycisk HALT [ZATRZYMAJ] lub wysłano polecenie ABORT [PRZERWIJ]."
+    },
+    "201": {
+      "error_message": "RESET_TIMEOUT",
+      "error_description": "Przekroczenie limitu czasu RESETOWANIA",
+      "resolution": "Proces RESETU NIE został zakończony w maksymalnym dozwolonym czasie. Sprawdzić, czy w dozowniku nie doszło do blokady mechanicznej i w razie potrzeby usunąć ją."
+    },
+    "202": {
+      "error_message": "TIMEOUT_SUPPLY_START",
+      "error_description": "Przekroczenie limitu czasu rozpoczęcia dozowania",
+      "resolution": "Dozowanie NIE zostało rozpoczęte w maksymalnym dozwolonym czasie. Sprawdzić, czy w dozowniku nie doszło do blokady mechanicznej i w razie potrzeby usunąć ją."
+    },
+    "203": {
+      "error_message": "TIMEOUT_SUPPLY_FAILED",
+      "error_description": "Przekroczenie limitu czasu dozowania",
+      "resolution": "Dozowanie nie zostało zakończone w maksymalnym dozwolonym czasie. Formulacja jest zbyt długa, ewentualnie sprawdzić, czy w dozowniku nie doszło do blokady mechanicznej i w razie potrzeby usunąć ją"
+    },
+    "346": {
+      "error_message": "TINTING_PUMP_RESET_ERROR",
+      "error_description": "Przekroczenie limitu czasu procedury resetowania pompy Tinting",
+      "resolution": "Sprawdzić integralność silnika pompy, złącz, połączeń na karcie MMT"
+    },
+    "347": {
+      "error_message": "TINTING_VALVE_RESET_ERROR",
+      "error_description": "Przekroczenie limitu czasu procedury resetowania zaworu Tinting",
+      "resolution": "Sprawdzić integralność silnika zaworu, złącz, połączeń na karcie MMT."
+    },
+    "348": {
+      "error_message": "TINTING_TABLE_RESET_ERROR",
+      "error_description": "Przekroczenie limitu czasu procedury resetowania stołu Tinting",
+      "resolution": "Sprawdzić integralność silnika stołu, złącz, połączeń na karcie MMT"
+    },
+    "359": {
+      "error_message": "C1_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "360": {
+      "error_message": "C2_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "361": {
+      "error_message": "C3_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "362": {
+      "error_message": "C4_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "363": {
+      "error_message": "C5_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "364": {
+      "error_message": "C6_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "365": {
+      "error_message": "C7_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "366": {
+      "error_message": "C8_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "367": {
+      "error_message": "C9_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "368": {
+      "error_message": "C10_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "369": {
+      "error_message": "C11_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "370": {
+      "error_message": "C12_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "371": {
+      "error_message": "C13_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "372": {
+      "error_message": "C14_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "373": {
+      "error_message": "C15_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "374": {
+      "error_message": "C16_DATA_SUPPLY_FAILED",
+      "error_description": "Nieprawidłowe parametry tabeli",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "409": {
+      "error_message": "C1_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C1” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "410": {
+      "error_message": "C2_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C2” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "411": {
+      "error_message": "C3_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C3” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "412": {
+      "error_message": "C4_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C4” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "413": {
+      "error_message": "C5_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C5” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "414": {
+      "error_message": "C6_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C6” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "415": {
+      "error_message": "C7_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C7” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "416": {
+      "error_message": "C8_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C8” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "417": {
+      "error_message": "C9_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C9” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "418": {
+      "error_message": "C10_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C10” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "419": {
+      "error_message": "C11_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C11” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "420": {
+      "error_message": "C12_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C12” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "421": {
+      "error_message": "C13_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C13” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "422": {
+      "error_message": "C14_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C14” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "423": {
+      "error_message": "C15_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C15” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "424": {
+      "error_message": "C16_SUPPLY_CALC_ERROR",
+      "error_description": "W dozowaniu CIĄGŁYM liczba kroków do wykonania KOLORU „C16” NIE jest wielokrotnością pełnego skoku",
+      "resolution": "Sprawdzić, czy nie ma niezgodności między tabelami i obwodami zainstalowanymi w maszynie. Sprawdzić poprawność instalacji tabel kalibracyjnych w menu maszyny."
+    },
+    "451": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_0_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C0” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "452": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_1_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C1” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "453": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_2_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C2” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "454": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_3_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C3” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "455": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_4_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C4” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "456": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_5_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C5” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "457": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_6_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C6” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "458": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_7_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C7” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "459": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_8_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C8” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "460": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_9_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C9” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "461": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_10_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C10” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "462": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_11_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C11” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "463": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_12_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C12” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "464": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_13_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C13” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "465": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_14_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C14” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "466": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_15_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C15” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "467": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_16_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C16” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "468": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_17_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C17” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "469": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_18_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C18” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "470": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_19_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C19” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "471": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_20_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C20” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "472": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_21_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C21” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "473": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_22_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C22” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "474": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_23_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C23” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "475": {
+      "error_message": "DISABLED_REQUIRED_CIRCUIT_24_ERROR",
+      "error_description": "Obwód (bazy lub barwnika) „C24” powinien dozować, ale jest nieprawidłowo wyłączony.",
+      "resolution": "Załadować parametry aktywacji urządzenia podległego na nową płytę MMT."
+    },
+    "534": {
+      "error_message": "TINTING_VALVE_HOME_POS_ERROR",
+      "error_description": "Błąd procedury ZEROWANIA zaworu Tinting",
+      "resolution": "Sprawdzić prawidłowe działanie 2 fotokomórek i prawidłowy ruch silnika krokowego."
+    },
+    "535": {
+      "error_message": "TINTING_TABLE_HOME_POS_ERROR",
+      "error_description": "Błąd procedury ZEROWANIA stołu obrotowego Tinting",
+      "resolution": "Sprawdzić prawidłowe działanie fotokomórki, obecność co najmniej jednej chorągiewki na stole i prawidłowy ruch silnika krokowego"
+    },
+    "584": {
+      "error_message": "TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Błąd zasłonięcia jednej z 2 fotokomórek podczas ZEROWANIA zaworu",
+      "resolution": "Sprawdź działanie każdej fotokomórki zaworu, okablowanie silnika krokowego zaworu i wyosiowanie metalowej płytki"
+    },
+    "633": {
+      "error_message": "TINTING_PUMP_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka zerowania pompy Tinting NIE jest zasłonięta pod koniec ruchu krokowego pompy lub nigdy nie jest zasłonięta w określonym czasie lub liczbie kroków, lub NIE jest zasłonięta podczas ruchu stołu Tinting",
+      "resolution": "Sprawdzić działanie fotokomórki naprowadzania i silnika krokowego"
+    },
+    "634": {
+      "error_message": "TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu NIE jest zasłonięta podczas ruchu stołu Tinting lub na końcu procedury zerowania, lub zawór NIE jest otwarty podczas dozowania",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA i zaworu silnika krokowego"
+    },
+    "733": {
+      "error_message": "TINTING_PUMP_OVERCURRENT_ERROR",
+      "error_description": "Zbyt wysoki prąd na mostku sterownika silnika krokowego pompy Tinting",
+      "resolution": "Sprawdzić okablowanie, działanie sterownika L6482H pompy na karcie MMT"
+    },
+    "734": {
+      "error_message": "TINTING_VALVE_OVERCURRENT_ERROR",
+      "error_description": "Zbyt wysoki prąd na mostku sterownika silnika krokowego zaworu Tinting",
+      "resolution": "Sprawdzić okablowanie, działanie sterownika L6482H zaworu na płycie MMT"
+    },
+    "735": {
+      "error_message": "TINTING_TABLE_OVERCURRENT_ERROR",
+      "error_description": "Zbyt wysoki prąd na mostku sterownika silnika krokowego stołu Tinting",
+      "resolution": "Sprawdzić okablowanie, działanie sterownika L6482H stołu na karcie MMT"
+    },
+    "738": {
+      "error_message": "DOSING_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Prąd krążący w na przenośniku rolkowym dozowania jest wyższy niż próg ustawiony w sterowniku na płycie MMT lub zbyt wysoka temperatura wykryta w tymże sterowniku.",
+      "resolution": "Sprawdzić połączenie i okablowanie przenośnika rolkowego dozowania na zarezerwowanym wyjściu na karcie MMT."
+    },
+    "739": {
+      "error_message": "INPUT_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Prąd krążący w na wlotowym przenośniku rolkowym jest wyższy niż próg ustawiony w sterowniku na płycie MMT lub zbyt wysoka temperatura wykryta w tymże sterowniku.",
+      "resolution": "Sprawdzić połączenie i okablowanie wlotowego przenośnika rolkowego na zarezerwowanym wyjściu na karcie MMT."
+    },
+    "740": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OVERCURRENT_ERROR",
+      "error_description": "Prąd krążący w na wylotowym przenośniku rolkowym jest wyższy niż próg ustawiony w sterowniku na płycie MMT lub zbyt wysoka temperatura wykryta w tymże sterowniku.",
+      "resolution": "Sprawdzić połączenie i okablowanie wylotowego przenośnika rolkowego na zarezerwowanym wyjściu na karcie MMT."
+    },
+    "792": {
+      "error_message": "TINTING_PUMP_SOFTWARE_ERROR",
+      "error_description": "Błąd logiczny w stanach procesu pompy Tinting (w tym zaworu) lub w otrzymanych parametrach formulacji",
+      "resolution": "Sprawdzić parametry wysłanej formulacji, jeśli problem nadal występuje, poprosić o aktualizację oprogramowania układowego systemu Tinting."
+    },
+    "793": {
+      "error_message": "TINTING_TABLE_SOFTWARE_ERROR",
+      "error_description": "Błąd logiczny w stanach procesu stołu Tinting",
+      "resolution": "Poprosić o aktualizację oprogramowania układowego systemu Tinting"
+    },
+    "795": {
+      "error_message": "ROLLER_SOFTWARE_ERROR",
+      "error_description": "Błąd logiczny w stanach procesów obejmujących przenośniki rolkowe i podnośniki",
+      "resolution": "Poprosić o aktualizację oprogramowania układowego"
+    },
+    "842": {
+      "error_message": "ROLLER_DRV_OVER_CURR_TEMP_ERROR",
+      "error_description": "Zbyt wysoki prąd lub temperatura w sterowniku kontrolującym podnośnik załadunku lub rozładunku albo na przenośniku rolkowym podnośnika załadunkowego na płycie MMT.",
+      "resolution": "Sprawdzić połączenia i okablowanie podnośnika załadunku lub rozładunku albo na przenośniku rolkowym podnośnika załadunkowego na płycie MMT."
+    },
+    "896": {
+      "error_message": "HUMIDIFIER_20_PARAM_ERROR",
+      "error_description": "Błąd podczas RESETU maszyny w trakcie sprawdzania poprawności parametrów nawilżacza 2.0",
+      "resolution": "Sprawdzić poprawność parametrów wysłanych za pomocą polecenia „DIAG_SETUP_HUMIDIFIER_TEMPERA TURE_PROCESSES”."
+    },
+    "898": {
+      "error_message": "TEMPERATURE_ERROR",
+      "error_description": "Błąd pomiaru temperatury",
+      "resolution": "Sprawdzić połączenie płytki obudowy czujnika temperatury HUTTS z płytką MMT. Jeśli problem nadal występuje, wymienić płytkę i/lub kabel połączeniowy"
+    },
+    "899": {
+      "error_message": "TEMPERATURE_TOO_LOW",
+      "error_description": "Zbyt niska temperatura w podstawie maszyny",
+      "resolution": "Sprawdzić działanie podgrzewacza"
+    },
+    "907": {
+      "error_message": "TINTING_TIMEOUT_TABLE_MOVE_ERROR",
+      "error_description": "Upłynął limit czasu podczas zerowania stołu lub podczas pozycjonowania do obwodu",
+      "resolution": "Sprawdzić okablowanie silnika krokowego stołu, parametry charakterystyki stołu wysłane za pomocą polecenia „UPDATE_TINTING_TABLE_SETTINGS” i działanie fotokomórki stołu"
+    },
+    "908": {
+      "error_message": "TINTING_TABLE_SEARCH_POSITION_REFERENCE_ERROR",
+      "error_description": "Znacznik referencyjny znaleziony w ZEROWANIU stołu różni się od ustawionej wartości teoretycznej o wartość większą niż ustawiona tolerancja.",
+      "resolution": "Sprawdzić obecność znacznika referencyjnego na stole, zweryfikować poprawność parametrów charakterystyki stołu i działanie fotokomórki stołu"
+    },
+    "909": {
+      "error_message": "TINTING_LACK_OF_CIRCUITS_POSITION_ERROR",
+      "error_description": "Obwód wymagający czyszczenia nie jest włączony lub obwód wymagający pozycjonowania nie jest obecny w tabeli pozycji",
+      "resolution": "Sprawdzić, czy obwód został włączony i czy automatyczne rozpoznawanie zostało przeprowadzone prawidłowo"
+    },
+    "911": {
+      "error_message": "TINTING_SELF_LEARNING_PROCEDURE_ERROR",
+      "error_description": "Błąd w procedurze automatycznego rozpoznawania stołu Tinting: podczas uruchamiania stół nie znajduje się w pozycji odniesienia, lub fotokomórka stołu nie jest zasłonięta, lub liczba znalezionych obwodów jest większa niż 16, lub liczba obwodów znalezionych w jednym kierunku obrotu jest inna niż w drugim.",
+      "resolution": "Przed przeprowadzeniem automatycznego rozpoznawania należy pomyślnie wykonać reset. Sprawdzić działanie fotokomórki stołu Tinting"
+    },
+    "912": {
+      "error_message": "TINTING_BAD_PUMP_PARAM_ERROR",
+      "error_description": "Nieprawidłowe parametry charakterystyki pompy Tinting",
+      "resolution": "Sprawdzić ustawione parametry i ponownie wysłać polecenie ustawienia parametrów pompy „UPDATE_TINTING_PUMP_SETTINGS”."
+    },
+    "913": {
+      "error_message": "TINTING_BAD_TABLE_PARAM_ERROR",
+      "error_description": "Nieprawidłowe parametry charakterystyki stołu Tinting",
+      "resolution": "Sprawdzić ustawione parametry i ponownie wysłać polecenie ustawienia parametrów stołu „UPDATE_TINTING_TABLE_SETTINGS”."
+    },
+    "914": {
+      "error_message": "EEPROM_PUMP_PARAM_CRC_FAULT",
+      "error_description": "Błąd CRC parametrów pompy Tinting",
+      "resolution": "Prawdopodobny brak parametrów pompy. Podczas wymiany karty MM należy załadować parametry pompy Tinting za pomocą polecenia „UPDATE_TINTING_PUMP_SETTINGS”"
+    },
+    "915": {
+      "error_message": "EEPROM_TABLE_PARAM_CRC_FAULT",
+      "error_description": "Błąd CRC parametrów stołu Tinting",
+      "resolution": "Prawdopodobny brak parametrów pompy. Podczas wymiany karty MMT należy załadować parametry pompy Tinting za pomocą polecenia „UPDATE_TINTING_TABLE_SETTINGS”"
+    },
+    "916": {
+      "error_message": "TINTING_BAD_PERIPH_PARAM_ERROR",
+      "error_description": "Parametry w poleceniu ustawień urządzeń peryferyjnych są nieprawidłowe",
+      "resolution": "Sprawdzić ustawione parametry i ponownie wysłać polecenie ustawienia urządzeń peryferyjnych"
+    },
+    "917": {
+      "error_message": "EEPROM_CLEAN_PARAM_CRC_FAULT",
+      "error_description": "Błąd CRC parametrów czyszczenia systemu Tinting",
+      "resolution": "Prawdopodobny brak parametrów szczotki. Podczas wymiany karty MMT należy załadować parametry szczotki barwiącej za pomocą polecenia „UPDATE_TINTING_TABLE_SETTINGS”"
+    },
+    "918": {
+      "error_message": "TINTING_PUMP_PHOTO_HOME_READ_DARK_ERROR_ST",
+      "error_description": "Fotokomórka zerowania pompy Tinting jest zasłonięta, gdy powinna być odsłonięta podczas ZEROWANIA lub podczas recyrkulacji lub dozowania, gdy obwód jest już włączony",
+      "resolution": "Sprawdzić działanie fotokomórki Zerowania i pompy silnika krokowego"
+    },
+    "919": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: zakryta, gdy powinna być odkryta lub odwrotnie.",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "920": {
+      "error_message": "TINTING_TABLE_TEST_ERROR",
+      "error_description": "Test stołu Tinting nie powiódł się: pozycja początkowa NIE znajduje się w punkcie odniesienia, lub nie wykryto żadnych obwodów, lub liczba wykrytych obwodów wynosi > 16, lub pozycja co najmniej jednego wykrytego obwodu w jednym kierunku różni się od pozycji w przeciwnym kierunku o wartość w krokach > ustawionego progu, lub pozycja co najmniej jednego wykrytego obwodu różni się od pozycji uzyskanej w funkcji automatycznego rozpoznania o wartość > ustawionego progu, lub mapa wykrytych obwodów różni się od mapy skonfigurowanej za pomocą oprogramowania",
+      "resolution": "Wykonać Reset i ponowić próbę stołu, sprawdzić działanie fotokomórki stołu Tinting, sprawdzić spójność między obwodami obecnymi w stole i obwodami skonfigurowanymi w oprogramowaniu, spróbować ponownie wykonać automatyczne rozpoznanie, zwiększyć tolerancję pozycji stołu poprzez ponowne wysłanie polecenia konfiguracji parametrów stołu"
+    },
+    "922": {
+      "error_message": "TINTING_BASES_CARRIAGE_ERROR",
+      "error_description": "Wózek baz nie na swoim miejscu, gdy maszyna NIE jest w trybie diagnostycznym",
+      "resolution": "Przesunąć wózek na miejsce. Sprawdzić okablowanie mikroprzełącznika wózka na płycie MMT"
+    },
+    "923": {
+      "error_message": "TINTING_PANEL_TABLE_ERROR",
+      "error_description": "Otwarty panel uzupełniania na stole Tinting, gdy maszyna NIE jest w trybie diagnostycznym lub jest w trybie diagnostycznym i chce się aktywować operacje, które wymagają wykonania ruchu, który NIE jest obrotem stołu Tinting",
+      "resolution": "Zamknąć panel. Sprawdzić okablowanie mikroprzełącznika panelu na płycie MMT"
+    },
+    "924": {
+      "error_message": "TINTING_BRUSH_OPEN_LOAD_ERROR",
+      "error_description": "Brak obciążenia na wyjściu zarezerwowanym dla szczotki na płycie MMT",
+      "resolution": "Sprawdzić połączenie i okablowanie szczotki na zarezerwowanym wyjściu na karcie MMT"
+    },
+    "925": {
+      "error_message": "TINTING_BRUSH_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Prąd krążący w na szczotce jest wyższy niż próg ustawiony w sterowniku na płycie MMT lub zbyt wysoka temperatura wykryta w tymże sterowniku",
+      "resolution": "Sprawdzić połączenie i okablowanie szczotki na zarezerwowanym wyjściu na karcie MMT."
+    },
+    "930": {
+      "error_message": "TINTING_AIR_HEATER_OPEN_LOAD_ERROR",
+      "error_description": "Brak obciążenia na wyjściu zarezerwowanym dla podgrzewacza powietrza na płycie MMT",
+      "resolution": "Sprawdzić połączenie i okablowanie podgrzewacza powietrza na płycie MMT"
+    },
+    "931": {
+      "error_message": "TINTING_AIR_HEATER_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Prąd krążący w na podgrzewaczu powietrza jest wyższy niż próg ustawiony w sterowniku na płycie MMT lub zbyt wysoka temperatura wykryta w tymże sterowniku",
+      "resolution": "Sprawdzić połączenia i okablowanie podgrzewacza powietrza na płycie MMT."
+    },
+    "932": {
+      "error_message": "TINTING_GENERIC24V_OPEN_LOAD_ERROR_ST",
+      "error_description": "Brak obciążenia na wyjściu zarezerwowanym dla silnika szczotki na płycie MMT",
+      "resolution": "Sprawdzić połączenie i okablowanie silnika szczotki na płycie MMT"
+    },
+    "933": {
+      "error_message": "TINTING_GENERIC24V_OVERCURRENT_THERMAL_ERROR",
+      "error_description": "Prąd krążący w na silniku szczotki jest wyższy niż próg ustawiony w sterowniku na płycie MMT lub zbyt wysoka temperatura wykryta w tymże sterowniku",
+      "resolution": "Sprawdzić połączenia i okablowanie silnika szczotki na płycie MMT"
+    },
+    "934": {
+      "error_message": "TINTING_PUMP_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Zbyt wysoka temperatura wewnętrzna sterownika silnika krokowego pompy Tinting",
+      "resolution": "Wyłączyć maszynę, odczekać kilka minut i włączyć ją ponownie. Jeśli problem nie ustąpi, sprawdzić połączenia elektryczne z silnikiem krokowym pompy. Jeśli problem nie ustąpi, wymienić płytkę MMT"
+    },
+    "935": {
+      "error_message": "TINTING_VALVE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Zbyt wysoka temperatura wewnętrzna sterownika silnika krokowego zaworuTinting",
+      "resolution": "Wyłączyć maszynę, odczekać kilka minut i włączyć ją ponownie. Jeśli problem nie ustąpi, sprawdzić połączenia elektryczne z silnikiem krokowym zaworu. Jeśli problem nie ustąpi, wymienić płytkę MMT"
+    },
+    "936": {
+      "error_message": "TINTING_TABLE_MOTOR_THERMAL_SHUTDOWN_ERROR",
+      "error_description": "Zbyt wysoka temperatura wewnętrzna sterownika silnika krokowego stołu Tinting",
+      "resolution": "Wyłączyć maszynę, odczekać kilka minut i włączyć ją ponownie. Jeśli problem nie ustąpi, sprawdzić połączenia elektryczne z silnikiem krokowym stołu. Jeśli problem nie ustąpi, wymienić płytkę MMT"
+    },
+    "937": {
+      "error_message": "TINTING_PUMP_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Zbyt niskie napięcie bramki sterownika silnika krokowego pompy Tinting",
+      "resolution": "Sprawdzić połączenia elektryczne z silnikiem krokowym pompy. Jeśli problem nie ustąpi, wymienić płytkę MMT"
+    },
+    "938": {
+      "error_message": "TINTING_VALVE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Zbyt niskie napięcie bramki sterownika silnika krokowego zaworu Tinting",
+      "resolution": "Sprawdzić połączenia elektryczne z silnikiem krokowym zaworu. Jeśli problem nie ustąpi, wymienić płytkę MMT"
+    },
+    "939": {
+      "error_message": "TINTING_TABLE_MOTOR_UNDER_VOLTAGE_ERROR",
+      "error_description": "Zbyt niskie napięcie bramki sterownika silnika krokowego stołu Tinting",
+      "resolution": "Sprawdzić połączenia elektryczne z silnikiem krokowym stołu. Jeśli problem nie ustąpi, wymienić płytkę MMT"
+    },
+    "940": {
+      "error_message": "EEPROM_TINTING_COLORANTS_STEPS_POSITION_CRC_FAULT",
+      "error_description": "Błąd CRC tabeli pozycji obwodów w stole Tinting zapisanej w pamięci EEPROM płyty MMT.",
+      "resolution": "Wykonać automatyczne rozpoznawanie stołu Tinting. Jeśli problem nie ustąpi, wymienić płytkę MMT"
+    },
+    "941": {
+      "error_message": "TINTING_TABLE_PHOTO_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest zasłonięta, kiedy powinna być zasłonięta w poszczególnych procesach maszyny",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting"
+    },
+    "942": {
+      "error_message": "TINTING_TABLE_MOVE_ERROR",
+      "error_description": "Ogólny błąd w obsłudze stołu Tinting lub podczas uzupełniania stół przesunął się bez włączania jakichkolwiek obwodów",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting"
+    },
+    "943": {
+      "error_message": "TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "944": {
+      "error_message": "TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "Podczas ZEROWANIA zaworu fotokomórka Otwartego Zaworu nie została zasłonięta lub nie zasłoniła się podczas recyrkulacji podczas ruchu otwierania zaworu przed uzupełnieniem lub nie zasłoniła się podczas dozowania",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "945": {
+      "error_message": "TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka załączająca pompę Tinting nie została zasłonięta po wykonaniu ruchu w celu załączenia obwodu na początku recyrkulacji lub dozowania",
+      "resolution": "Sprawdzić działanie fotokomórki załączającej i jej okablowanie."
+    },
+    "946": {
+      "error_message": "TINTING_BRUSH_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA szczotki nie jest zasłonięta podczas ruchów resetowania maszyny, podczas ruchu stołu Tinting lub podczas procesu czyszczenia",
+      "resolution": "Sprawdzić działanie fotokomórki, silnika DC szczotki i okablowania silnika na płycie MMT"
+    },
+    "947": {
+      "error_message": "TINTING_BAD_PARAM_CLEAN_ERROR",
+      "error_description": "Parametry procesu czyszczenia nie są prawidłowe, jak okazuje się podczas resetowania maszyny",
+      "resolution": "Sprawdzić parametry procesu czyszczenia i w razie potrzeby wysłać je ponownie za pomocą polecenia „DIAG_COLORANT_ACTIVATION_CLE ANING”."
+    },
+    "948": {
+      "error_message": "EEPROM_TEST_ERROR",
+      "error_description": "Niepowodzenie testu funkcji EEPROM przeprowadzonego podczas resetowania maszyny",
+      "resolution": "Spróbować ponownie i jeśli problem nadal występuje, wymienić płytę MMT"
+    },
+    "984": {
+      "error_message": "C1_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "985": {
+      "error_message": "C2_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "986": {
+      "error_message": "C3_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "987": {
+      "error_message": "C4_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "988": {
+      "error_message": "C5_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "989": {
+      "error_message": "C6_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "990": {
+      "error_message": "C7_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "991": {
+      "error_message": "C8_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "992": {
+      "error_message": "C9_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "993": {
+      "error_message": "C10_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "994": {
+      "error_message": "C11_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "995": {
+      "error_message": "C12_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "996": {
+      "error_message": "C13_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "997": {
+      "error_message": "C14_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "998": {
+      "error_message": "C15_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "999": {
+      "error_message": "C16_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1000": {
+      "error_message": "C17_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1001": {
+      "error_message": "C18_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1002": {
+      "error_message": "C19_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1003": {
+      "error_message": "C20_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1004": {
+      "error_message": "C21_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1005": {
+      "error_message": "C22_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1006": {
+      "error_message": "C23_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1007": {
+      "error_message": "C24_TURN_TABLE_MISCMATCH_POSITION_ERROR",
+      "error_description": "Obwody wykryte na końcu zerowania stołu Tinting nie pasują do tych znalezionych przez automatyczne rozpoznawanie i zapisanych w EEPROM płyty MMT, lub tabele pozycji co najmniej jednego obwodu znalezionego w dwóch kierunkach przez automatyczne rozpoznawanie różnią się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu, lub tabela pozycji co najmniej jednego obwodu znaleziona w przez automatyczne rozpoznawanie różni się od wartości teoretycznej o wartość w krokach > tolerancji ustawionej w poleceniu konfiguracji parametrów stołu lub nieprawidłowe dopasowanie tabeli pozycji znalezionej przez automatyczne rozpoznawanie i konfiguracji barwnika ustawionej w oprogramowaniu",
+      "resolution": "Sprawdzić działanie fotokomórki stołu Tinting. Powtórzyć automatyczne rozpoznawanie, sprawdzić, czy obwody fizycznie obecne na stole są zgodne z obwodami ustawionymi na stronie konfiguracji oprogramowania, zwiększyć tolerancję dla pozycji obwodów i wysłać ponownie polecenie konfiguracji parametrów stołu Tinting"
+    },
+    "1035": {
+      "error_message": "ROLLER_TIMEOUT_MOVE_ERROR",
+      "error_description": "Ruch przenośnika rolkowego lub podnośnika nie został zakończony przed upływem limitu czasu",
+      "resolution": "Sprawdzić działanie fotokomórki kontrolującej koniec ruchu"
+    },
+    "1036": {
+      "error_message": "DOSING_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Brak obciążenia na wyjściu sterującym przenośnikiem rolkowym dozowania",
+      "resolution": "Sprawdzić połączenie i okablowanie silnika przenośnika rolkowego dozowania na płycie MMT"
+    },
+    "1037": {
+      "error_message": "INPUT_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Brak obciążenia na wyjściu sterującym wlotowym przenośnikiem rolkowym",
+      "resolution": "Sprawdzić połączenie i okablowanie silnika wlotowego przenośnika rolkowego na płycie MMT"
+    },
+    "1038": {
+      "error_message": "UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR",
+      "error_description": "Brak obciążenia na wyjściu sterującym przenośnikiem rolkowym podnośnika rozładunkowego",
+      "resolution": "Sprawdzić połączenie i okablowanie silnika przenośnika rolkowego podnośnika rozładunkowego na płycie MMT"
+    },
+    "1040": {
+      "error_message": "C1_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C1”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1041": {
+      "error_message": "C2_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C2”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1042": {
+      "error_message": "C3_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C3”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1043": {
+      "error_message": "C4_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C4”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1044": {
+      "error_message": "C5_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C5”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1045": {
+      "error_message": "C6_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C6”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1046": {
+      "error_message": "C7_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C7”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1047": {
+      "error_message": "C8_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C8”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1048": {
+      "error_message": "C9_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C9”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1049": {
+      "error_message": "C10_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C10”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1050": {
+      "error_message": "C11_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C11”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1051": {
+      "error_message": "C12_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C12”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1052": {
+      "error_message": "C13_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C13”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1053": {
+      "error_message": "C14_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C14”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1054": {
+      "error_message": "C15_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C15”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1055": {
+      "error_message": "C16_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C16”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1056": {
+      "error_message": "C17_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C17”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1057": {
+      "error_message": "C18_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C18”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1058": {
+      "error_message": "C19_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C19”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1059": {
+      "error_message": "C20_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C20”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1060": {
+      "error_message": "C21_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C21”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1061": {
+      "error_message": "C22_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C22”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1062": {
+      "error_message": "C23_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C23”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1063": {
+      "error_message": "C24_TINTING_VALVE_HOME_BACK_ERROR",
+      "error_description": "Fotokomórka otwartego zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C24”.",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i jej połączenie z płytą MMT"
+    },
+    "1064": {
+      "error_message": "C1_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C1”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1065": {
+      "error_message": "C2_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C2”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1066": {
+      "error_message": "C3_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C3”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1067": {
+      "error_message": "C4_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C4”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1068": {
+      "error_message": "C5_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C5”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1069": {
+      "error_message": "C6_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C6”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1070": {
+      "error_message": "C7_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C7”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1071": {
+      "error_message": "C8_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C8”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1072": {
+      "error_message": "C9_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C9”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1073": {
+      "error_message": "C10_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C10”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1074": {
+      "error_message": "C11_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C11”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1075": {
+      "error_message": "C12_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C12”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1076": {
+      "error_message": "C13_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C13”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1077": {
+      "error_message": "C14_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C14”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1078": {
+      "error_message": "C15_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C15”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1079": {
+      "error_message": "C16_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C16”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1080": {
+      "error_message": "C17_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C17”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1081": {
+      "error_message": "C18_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C18”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1082": {
+      "error_message": "C19_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C19”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1083": {
+      "error_message": "C20_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C20”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1084": {
+      "error_message": "C21_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C21”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1085": {
+      "error_message": "C22_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C22”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1086": {
+      "error_message": "C23_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C23”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1087": {
+      "error_message": "C24_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka ZEROWANIA zaworu nie jest zasłonięta, kiedy powinna być zasłonięta w procesach dozowania i recyrkulacji z udziałem obwodu „C24”.",
+      "resolution": "Sprawdzić działanie fotokomórki ZEROWANIA zaworu i jej połączenie z płytą MMT"
+    },
+    "1088": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C1”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1089": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C2”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1090": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C3”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1091": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C4”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1092": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C5”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1093": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C6”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1094": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C7”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1095": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C8”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1096": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C9”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1097": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C10”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1098": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C11”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1099": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C12”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1100": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C13”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1101": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C14”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1102": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C15”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1103": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C16”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1104": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C17”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1105": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C18”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1106": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C19”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1107": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C20”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1108": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C21”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1109": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C22”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1110": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C23”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1111": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_LIGHT_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, kiedy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C24”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1112": {
+      "error_message": "C1_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C1”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1113": {
+      "error_message": "C2_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C2”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1114": {
+      "error_message": "C3_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C3”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1115": {
+      "error_message": "C4_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C4”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1116": {
+      "error_message": "C5_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C5”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1117": {
+      "error_message": "C6_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C6”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1118": {
+      "error_message": "C7_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C7”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1119": {
+      "error_message": "C8_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C8”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1120": {
+      "error_message": "C9_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C9”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1121": {
+      "error_message": "C10_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C10”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1122": {
+      "error_message": "C11_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C11”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1123": {
+      "error_message": "C12_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C12”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1124": {
+      "error_message": "C13_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C13”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1125": {
+      "error_message": "C14_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C14”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1126": {
+      "error_message": "C15_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C15”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1127": {
+      "error_message": "C16_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C16”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1128": {
+      "error_message": "C17_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C17”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1129": {
+      "error_message": "C18_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C18”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1130": {
+      "error_message": "C19_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C19”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1131": {
+      "error_message": "C20_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C20”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1132": {
+      "error_message": "C21_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C21”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1133": {
+      "error_message": "C22_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C22”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1134": {
+      "error_message": "C23_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C23”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1135": {
+      "error_message": "C24_TINTING_PUMP_PHOTO_INGR_READ_DARK_ERROR",
+      "error_description": "Fotokomórka sprzężenia pompy Tinting jest w nieprawidłowym stanie: jest zakryta, gdy powinna być odkryta w procesach dozowania i recyrkulacji z udziałem obwodu „C24”",
+      "resolution": "Sprawdzić działanie fotokomórki sprzężenia pompy i silnika krokowego pompy. Sprawdzić parametry charakterystyki pompy wysłane za pomocą określonego polecenia"
+    },
+    "1136": {
+      "error_message": "C1_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C1” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1137": {
+      "error_message": "C2_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C2” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1138": {
+      "error_message": "C3_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C3” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1139": {
+      "error_message": "C4_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C4” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1140": {
+      "error_message": "C5_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C5” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1141": {
+      "error_message": "C6_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C6” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1142": {
+      "error_message": "C7_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C7” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1143": {
+      "error_message": "C8_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C8” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1144": {
+      "error_message": "C9_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C9” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1145": {
+      "error_message": "C10_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C10” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1146": {
+      "error_message": "C11_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C11” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1147": {
+      "error_message": "C12_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C12” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1148": {
+      "error_message": "C13_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C13” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1149": {
+      "error_message": "C14_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C14” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1150": {
+      "error_message": "C15_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C15” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1151": {
+      "error_message": "C16_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C16” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1152": {
+      "error_message": "C17_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C17” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1153": {
+      "error_message": "C18_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C18” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1154": {
+      "error_message": "C19_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C19” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1155": {
+      "error_message": "C20_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C20” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1156": {
+      "error_message": "C21_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C21” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1157": {
+      "error_message": "C22_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C22” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1158": {
+      "error_message": "C23_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C23” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1159": {
+      "error_message": "C24_TINTING_VALVE_2_READ_LIGHT_ERROR",
+      "error_description": "W procesach recyrkulacji lub dozowania z udziałem obwodu „C24” fotokomórka otwartego zaworu nie została zasłonięta, kiedy powinna",
+      "resolution": "Sprawdzić działanie fotokomórki otwartego zaworu i okablowanie silnika krokowego zaworu"
+    },
+    "1160": {
+      "error_message": "C1_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C1” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1161": {
+      "error_message": "C2_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C2” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1162": {
+      "error_message": "C3_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C3” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1163": {
+      "error_message": "C4_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C4” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1164": {
+      "error_message": "C5_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C5” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1165": {
+      "error_message": "C6_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C6” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1166": {
+      "error_message": "C7_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C7” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1167": {
+      "error_message": "C8_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C8” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1168": {
+      "error_message": "C9_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C9” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1169": {
+      "error_message": "C10_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C10” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1170": {
+      "error_message": "C11_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C11” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1171": {
+      "error_message": "C12_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C12” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1172": {
+      "error_message": "C13_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C13” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1173": {
+      "error_message": "C14_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C14” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1174": {
+      "error_message": "C15_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C15” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1175": {
+      "error_message": "C16_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C16” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1176": {
+      "error_message": "C17_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C17” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1177": {
+      "error_message": "C18_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C18” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1178": {
+      "error_message": "C19_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C19” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1179": {
+      "error_message": "C20_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C20” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1180": {
+      "error_message": "C21_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C21” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1181": {
+      "error_message": "C22_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C22” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1182": {
+      "error_message": "C23_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C23” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1183": {
+      "error_message": "C24_TINTING_VALVE_2_READ_DARK_ERROR",
+      "error_description": "Zawór nie otwiera się przed dozowaniem z udziałem obwodu „C24” w wysokiej rozdzielczości",
+      "resolution": "Sprawdzić działanie 2 fotokomórek zaworu i okablowanie silnika krokowego zaworu."
+    },
+    "1184": {
+      "error_message": "C1_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C1”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C1”"
+    },
+    "1185": {
+      "error_message": "C2_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C2”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C2”"
+    },
+    "1186": {
+      "error_message": "C3_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C3”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C3”"
+    },
+    "1187": {
+      "error_message": "C4_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C4”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C4”"
+    },
+    "1188": {
+      "error_message": "C5_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C5”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C5”"
+    },
+    "1189": {
+      "error_message": "C6_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C6”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C6”"
+    },
+    "1190": {
+      "error_message": "C7_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C7”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C7”"
+    },
+    "1191": {
+      "error_message": "C8_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C8”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C8”"
+    },
+    "1192": {
+      "error_message": "C9_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C9”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C9”"
+    },
+    "1193": {
+      "error_message": "C10_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C10”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C10”"
+    },
+    "1194": {
+      "error_message": "C11_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C11”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C11”"
+    },
+    "1195": {
+      "error_message": "C12_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C12”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C12”"
+    },
+    "1196": {
+      "error_message": "C13_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C13”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C13”"
+    },
+    "1197": {
+      "error_message": "C14_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C14”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C14”"
+    },
+    "1198": {
+      "error_message": "C15_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C15”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C15”"
+    },
+    "1199": {
+      "error_message": "C16_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C16”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C16”"
+    },
+    "1200": {
+      "error_message": "C17_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C17”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C17”"
+    },
+    "1201": {
+      "error_message": "C18_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C18”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C18”"
+    },
+    "1202": {
+      "error_message": "C19_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C19”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C19”"
+    },
+    "1203": {
+      "error_message": "C20_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C20”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C20”"
+    },
+    "1204": {
+      "error_message": "C21_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C21”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C21”"
+    },
+    "1205": {
+      "error_message": "C22_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C22”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C22”"
+    },
+    "1206": {
+      "error_message": "C23_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C23”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C23”"
+    },
+    "1207": {
+      "error_message": "C24_TINTING_TABLE_VALVE_MOVE_ERROR",
+      "error_description": "Fotokomórka stołu Tinting nie jest już zasłonięta podczas procesu, w którym ruch zaworu ma miejsce, gdy włączony jest obwód „C24”",
+      "resolution": "Sprawdzić ustawienie i twardość przełącznika zaworu włączonego obwodu „C24”"
+    }
+  }
+}
