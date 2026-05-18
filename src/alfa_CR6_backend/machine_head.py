@@ -376,7 +376,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 if status:
                     diff = await self.update_status(status)
                     if diff:
-                        logging.info(f"{self.name} diff:{ diff }")
+                        logging.info("%s diff:%s", self.name, diff)
 
             elif msg_type == "answer":
                 answer = msg_dict.get("value")
@@ -651,7 +651,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if (p_type == 'colorant' and step == 0) or (p_type != 'colorant' and step != 0):
                 pars_copy_["ingredients"].pop(pig_name)
 
-        logging.info(f"step:{step}, ingredients:{json.dumps(pars_copy_['ingredients'])}")
+        if logging.getLogger().isEnabledFor(logging.INFO):
+            logging.info("step:%s, ingredients:%s", step, json.dumps(pars_copy_['ingredients']))
 
         return pars_copy_
 

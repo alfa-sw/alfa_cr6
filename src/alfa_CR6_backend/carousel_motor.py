@@ -883,7 +883,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             else:
                 r = await m.do_dispense(jar, self.restore_machine_helper)
                 logging.warning(f"{m.name}, j:{jar}.")
-                logging.debug(f"jar.json_properties:{jar.json_properties}.")
+                logging.debug("jar.json_properties:%s.", jar.json_properties)
 
         return r
 
@@ -1194,14 +1194,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             return
 
         jars_to_restore = await self.restore_machine_helper.async_read_data()
-        logging.debug(f'jars_to_restore --> {dict(jars_to_restore)}')
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.debug('jars_to_restore --> %s', dict(jars_to_restore))
 
         if self.carousel_frozen:
             self.freeze_carousel(False)
 
         for j_code, jv in jars_to_restore.items():
             logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
-            logging.debug(f"jv: {jv}")
+            logging.debug("jv: %s", jv)
             self.running_recovery_mode = True
 
             try:
@@ -1436,7 +1437,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 jar_dispensation_info = data.get(j_code, {}).get("dispensation", None)
                 jar_last_pos = data.get(j_code, {}).get('pos')
                 pos_ = deduced_position[0] if count == 0 else jar_last_pos
-                logging.debug(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {pos_}")
+                logging.debug("jar infos -> dispensation: %s - pos: %s", jar_dispensation_info, pos_)
                 carousel_action = partial(self.dispense_step, pos_)
 
             _src_letter = self.MOVE_SOURCE_HEAD_MAP.get(r_ac)

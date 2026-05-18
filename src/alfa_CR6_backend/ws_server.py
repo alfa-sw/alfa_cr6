@@ -310,8 +310,8 @@ class WsServer: # pylint: disable=too-many-instance-attributes
         html_ = ""
         html_ += '<div>'
 
-        logging.debug(f"self:{self} type_:{type_}")
-        logging.debug(f" msg:{msg}")
+        logging.debug("self:%s type_:%s", self, type_)
+        logging.debug(" msg:%s", msg)
 
         if type_ == "live_can_list" and isinstance(msg, list):
             for i in msg:

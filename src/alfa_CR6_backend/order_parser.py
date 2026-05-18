@@ -468,7 +468,7 @@ weight:{RealWeight}
 
                 properties["extra_lines_to_print"] = printable_extra_lines
 
-        logging.info(f"properties:{properties}")
+        logging.info("properties:%s", properties)
         return properties
 
     @staticmethod
@@ -1229,7 +1229,7 @@ weight:{RealWeight}
                     "description": description
                 }
 
-            logging.debug(f"l:{l}, ingredient:{ingredient}")
+            logging.debug("l:%s, ingredient:%s", l, ingredient)
 
             return ingredient
 
@@ -1817,7 +1817,7 @@ weight:{RealWeight}
             properties_list = [properties, ]
 
         except Exception as e:           # pylint: disable=broad-except
-            logging.info(traceback.format_exc())
+            logging.info("parse_ini_order failed, falling back to json/xml/pdf", exc_info=True)
             try:
 
                 properties = self.parse_json_order(path_to_file)

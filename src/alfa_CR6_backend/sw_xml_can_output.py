@@ -405,7 +405,8 @@ def main():
     metadata = sqlalchemy.MetaData()  # extracting the metadata
     jar_table = sqlalchemy.Table('jar', metadata, autoload=True, autoload_with=engine)  # Table object
     order_table = sqlalchemy.Table('order', metadata, autoload=True, autoload_with=engine)  # Table object
-    logging.info(f"jar_table.columns.keys:{jar_table.columns.keys()}")
+    if logging.getLogger().isEnabledFor(logging.INFO):
+        logging.info("jar_table.columns.keys:%s", jar_table.columns.keys())
 
     # ~ query = jar_table.select().where(jar_table.columns.Major.in_(['English','Math']))
     q = jar_table.select().where(jar_table.columns.status.in_(['DONE'])).limit(10)

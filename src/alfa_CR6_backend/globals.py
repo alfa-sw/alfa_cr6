@@ -226,7 +226,7 @@ def get_encoding(path_to_file, key=None):
         encoding_ = mime_encoding
 
     except Exception:   # pylint: disable=broad-except
-        logging.warning(traceback.format_exc())
+        logging.warning("failed to detect file encoding with file command", exc_info=True)
 
         encodings = [
             'ascii',
@@ -248,9 +248,9 @@ def get_encoding(path_to_file, key=None):
                     assert key is None or key in fd.read()
                     fd.seek(0)
             except (UnicodeDecodeError, UnicodeError):
-                logging.info(f"skip e:{e}")
+                logging.info("skip e:%s", e)
             except Exception:   # pylint: disable=broad-except
-                logging.warning(traceback.format_exc())
+                logging.warning("failed to try encoding %s", e, exc_info=True)
             else:
                 logging.warning(f"path_to_file:{path_to_file}, e:{e}")
                 encoding_ = e
@@ -268,7 +268,7 @@ def _get_page_label():
         obtain page size from lpoptions' field _PageLabel """
 
     cmd_ = f"lpoptions"
-    logging.info(f'cmd_ : {cmd_}')
+    logging.info('cmd_ : %s', cmd_)
     ret = subprocess.run(
         cmd_.split(),
         check=False,
@@ -529,11 +529,12 @@ def create_printable_image_for_package(package):
 
 def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp_type):
     if restore_helper:
-        logging.debug(f"disp_type -> {disp_type}")
+        logging.debug("disp_type -> %s", disp_type)
         if disp_type in (None, "purge"):
             return
 
-        logging.debug(f">>> storing {_pos} - {_disp} for {_jar.barcode}")
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.debug(">>> storing %s - %s for %s", _pos, _disp, _jar.barcode)
         restore_helper.store_jar_data(
             jar=_jar,
             pos=_pos,

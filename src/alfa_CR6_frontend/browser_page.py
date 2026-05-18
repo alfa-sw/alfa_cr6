@@ -158,7 +158,7 @@ class SingleWebEnginePage(QWebEnginePage):
 
     @classmethod
     def javaScriptConsoleMessage(cls, *args):
-        logging.debug(f"args:{args}.")
+        logging.debug("args:%s.", args)
 
     def acceptNavigationRequest(self, url, _type, isMainFrame):
 
@@ -175,7 +175,7 @@ class SingleWebEnginePage(QWebEnginePage):
         """
         QStringList QWebEnginePage::chooseFiles(QWebEnginePage::FileSelectionMode mode, const QStringList &oldFiles, const QStringList &acceptedMimeTypes)
         """
-        logging.debug(f"{self} {mode} {oldFiles} {acceptedMimeTypes}")
+        logging.debug("%s %s %s %s", self, mode, oldFiles, acceptedMimeTypes)
         logging.warning("chooseFiles Disabled.")
         return []
 
@@ -218,7 +218,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                 try:
                     SINGLE_POPUP_WIN.profile.downloadRequested.disconnect()
                 except Exception:  # pylint: disable=broad-except
-                    logging.warning(traceback.format_exc())
+                    logging.warning("failed to disconnect previous downloadRequested handler", exc_info=True)
 
                 SINGLE_POPUP_WIN.profile.downloadRequested.connect(self.on_downloadRequested)
 
@@ -226,7 +226,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
             SINGLE_POPUP_WIN.child_view.show()
 
         except Exception:  # pylint: disable=broad-except
-            logging.warning(traceback.format_exc())
+            logging.warning("failed to create popup window", exc_info=True)
 
         logging.warning(
             f"_type:{_type}, _view:{SINGLE_POPUP_WIN.child_view}, _page:{SINGLE_POPUP_WIN.child_page}.")
@@ -246,7 +246,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                 SINGLE_POPUP_WIN.child_view.setUrl(url)
                 SINGLE_POPUP_WIN.child_view.show()
             else:
-                logging.info(f"SINGLE_POPUP_WIN:{SINGLE_POPUP_WIN}")
+                logging.info("SINGLE_POPUP_WIN:%s", SINGLE_POPUP_WIN)
 
         return False
 
@@ -266,7 +266,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                     try:
                         self.current_download.stateChanged.disconnect()
                     except Exception:  # pylint: disable=broad-except
-                        logging.warning(traceback.format_exc())
+                        logging.warning("failed to disconnect download stateChanged handler", exc_info=True)
                     self.current_download = None
 
                     # ~ SINGLE_POPUP_WIN.parent.reset_view()

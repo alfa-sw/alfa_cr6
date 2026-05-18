@@ -230,7 +230,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
                     val = v
                 data_dict_cpy[k] = val
             except Exception:  # pylint: disable=broad-except
-                logging.warning(traceback.format_exc())
+                logging.warning("failed to prepare field %s for %s", k, cls, exc_info=True)
 
         obj = cls(**data_dict_cpy)
 
@@ -570,13 +570,13 @@ def apply_table_alterations(engine):
                     updater()
             except OperationalError as e:  # pylint: disable=broad-except
                 if "duplicate column name" in str(e):
-                    logging.info(f"Error executing stmt:{stmt}, e:{e}")
+                    logging.info("Error executing stmt:%s, e:%s", stmt, e)
                 else:
-                    logging.warning(traceback.format_exc())
+                    logging.error("Error executing stmt:%s", stmt, exc_info=True)
             except Exception:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
+                logging.error("unexpected error executing stmt:%s", stmt, exc_info=True)
     except Exception:  # pylint: disable=broad-except
-        logging.error(traceback.format_exc())
+        logging.error("failed to apply table alterations", exc_info=True)
 
     logging.warning(f"successfully_executed({len(successfully_executed)}):{successfully_executed}")
 
@@ -635,7 +635,8 @@ class dbEventManager:
                     # ~ event.listen(m, 'before_update', self.receive_before_update)
                     if m.row_count_limt > 0:
                         event.listen(m, 'before_insert', self.receive_before_insert)
-                        logging.info("m:{}, type(m):{}".format(m, type(m)))
+                        if logging.getLogger().isEnabledFor(logging.INFO):
+                            logging.info("m:%s, type(m):%s", m, type(m))
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(e)
 

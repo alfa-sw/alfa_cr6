@@ -164,7 +164,8 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         try:
             with open(self.json_file_path, 'r') as file:
                 data = json.load(file)
-                logging.debug(f'>>> data: {dict(data)}')
+                if logging.getLogger().isEnabledFor(logging.DEBUG):
+                    logging.debug('>>> data: %s', dict(data))
 
                 ordine_pos = [
                     "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
@@ -269,7 +270,7 @@ class RedisOrderPublisher:
             "redis://localhost")
         cmd_channel = self.redis.pubsub(ignore_subscribe_messages=True)
         cmd_channel.subscribe(self.ch_name)
-        logging.info(f"Subscribed to channel: {self.ch_name}")
+        logging.info("Subscribed to channel: %s", self.ch_name)
 
     def publish_messages(self, data_message):
         if not self.redis:
@@ -346,7 +347,7 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
             logging.warning(f"format mismatch! buffer:{buffer}")
         else:
             t = time.time()
-            logging.debug(f"buffer:{buffer}")
+            logging.debug("buffer:%s", buffer)
             if self.last_read_event_buffer == buffer and t - self.last_read_event_time < 5.0:
                 # filter out reading events with the same value, in the time interval of 5 sec
                 pass
@@ -552,7 +553,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 asyncio.get_event_loop().run_until_complete(_coro(t))
                 # ~ asyncio.get_event_loop().run_until_complete(t.cancel())
             except asyncio.CancelledError:
-                logging.info(f"{ t } has been canceled now.")
+                logging.info("%s has been canceled now.", t)
 
         self.__runners = []
         self.__jar_runners = {}
@@ -991,7 +992,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if not barcode or (not self.ready_to_read_a_barcode and not self._crx_ja_block_sequence_active):
 
-            logging.debug(f"skipping barcode:{barcode}")
+            logging.debug("skipping barcode:%s", barcode)
             self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
         elif self._crx_ja_block_sequence_active and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']:
             self._crx_pending_barcode = str(barcode)
@@ -1429,8 +1430,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def handle_exception(self, e):  # pylint:  disable=no-self-use
 
-        if "CancelledError" in traceback.format_exc():
-            logging.warning(traceback.format_exc())
+        if isinstance(e, asyncio.CancelledError):
+            logging.warning("application task cancelled", exc_info=True)
             raise  # pylint:  disable=misplaced-bare-raise
 
         self.main_window.open_alert_dialog(f"{e}", title="ERROR", visibility=0)
@@ -1940,7 +1941,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if ll_pigmnt in insuff_pigmts:
                     info_insuff_pigmts.append((ll_pigmnt, m.name))
 
-        logging.debug(f'>>>> info_insuff_pigmts: {info_insuff_pigmts}')
+        logging.debug('>>>> info_insuff_pigmts: %s', info_insuff_pigmts)
         return info_insuff_pigmts
 
     def get_restorable_jars_for_recovery_mode(self):

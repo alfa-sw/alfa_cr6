@@ -48,7 +48,7 @@ class PrintLabelHelper:
 
         try:
             ret = await async_dymo_print_pigment_labels(self.printables, fake=fake_print)
-            logging.debug(f"print_labels ret: {ret}")
+            logging.debug("print_labels ret: %s", ret)
 
             if ret['result'] != 'OK':
                 raise PrintException("Printing failed", ret)
@@ -729,7 +729,7 @@ class HomePage(BaseStackedPage):
             map_ = dict(zip(service_btns, service_page_urls))
 
             head_index = service_btns.index(btn) - 1
-            logging.debug(f"btn_name:{btn_name}, map_[btn]:{map_[btn]}, map_:{map_}, head_index:{head_index}")
+            logging.debug("btn_name:%s, map_[btn]:%s, map_:%s, head_index:%s", btn_name, map_[btn], map_, head_index)
 
             self.main_window.browser_page.open_page(map_[btn], head_index=head_index)
 
@@ -1205,7 +1205,7 @@ class HomePage(BaseStackedPage):
                 printables.pop("Print All")
                 sorted_printables = {k: printables[k] for k in sorted(printables)}
                 labels = list(sorted_printables.values())
-            logging.debug(f"labels -> {labels}")
+            logging.debug("labels -> %s", labels)
 
             print_helper = PrintLabelHelper(parent=self, printables=labels)
             print_helper.run()

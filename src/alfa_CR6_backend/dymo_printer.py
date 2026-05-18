@@ -61,7 +61,7 @@ def _dymo_print_tmp_image(_printable_image_pth, fake=False):
 
 def dymo_print_jar(jar):
 
-    logging.debug(f'jar: {jar}')
+    logging.debug('jar: %s', jar)
 
     ret = {}
     try:
@@ -166,18 +166,18 @@ def _generate_and_print_jars(jar_data_list):
                 logging.error(traceback.format_exc())
 
         t1 = time.monotonic()
-        logging.debug(f"[print_batch] {len(image_paths)} images generated in {t1-t0:.3f}s")
+        logging.debug("[print_batch] %d images generated in %.3fs", len(image_paths), t1 - t0)
 
         if not image_paths:
             return {'result': 'NOK', 'msg': 'No images generated'}
 
         _images_to_pdf(image_paths, pdf_path)
         t2 = time.monotonic()
-        logging.debug(f"[print_batch] pdf created in {t2-t1:.3f}s")
+        logging.debug("[print_batch] pdf created in %.3fs", t2 - t1)
 
         ret = _dymo_print_pdf(pdf_path)
         t3 = time.monotonic()
-        logging.debug(f"[print_batch] print submitted in {t3-t2:.3f}s, total {t3-t0:.3f}s")
+        logging.debug("[print_batch] print submitted in %.3fs, total %.3fs", t3 - t2, t3 - t0)
         return ret
 
     finally:
@@ -212,7 +212,7 @@ def _generate_and_print_pigment_labels(printables, fake=False):
                 logging.error(traceback.format_exc())
 
         t1 = time.monotonic()
-        logging.debug(f"[print_pigment_batch] {len(image_paths)} images generated in {t1-t0:.3f}s")
+        logging.debug("[print_pigment_batch] %d images generated in %.3fs", len(image_paths), t1 - t0)
 
         if not image_paths:
             return {'result': 'NOK', 'msg': 'No images generated'}
@@ -222,11 +222,11 @@ def _generate_and_print_pigment_labels(printables, fake=False):
 
         _images_to_pdf(image_paths, pdf_path)
         t2 = time.monotonic()
-        logging.debug(f"[print_pigment_batch] pdf created in {t2-t1:.3f}s")
+        logging.debug("[print_pigment_batch] pdf created in %.3fs", t2 - t1)
 
         ret = _dymo_print_pdf(pdf_path)
         t3 = time.monotonic()
-        logging.debug(f"[print_pigment_batch] print submitted in {t3-t2:.3f}s, total {t3-t0:.3f}s")
+        logging.debug("[print_pigment_batch] print submitted in %.3fs, total %.3fs", t3 - t2, t3 - t0)
         return ret
 
     finally:

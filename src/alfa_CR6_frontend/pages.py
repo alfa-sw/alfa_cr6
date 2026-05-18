@@ -131,11 +131,11 @@ class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-a
         self.main_window = QApplication.instance().main_window
 
     def rowCount(self, parent=None):
-        logging.debug(f"parent:{parent}")
+        logging.debug("parent:%s", parent)
         return len(self.results)
 
     def columnCount(self, parent):
-        logging.debug(f"parent:{parent}")
+        logging.debug("parent:%s", parent)
         ret = 0
         if self.results:
             ret = len(self.results[0])
@@ -264,7 +264,8 @@ class OrderTableModel(BaseTableModel):
         else:
             self.results = [["", "", "", "", ""]]
 
-        logging.info(f"dt:{time.time() - t0}")
+        if logging.getLogger().isEnabledFor(logging.INFO):
+            logging.info("dt:%s", time.time() - t0)
 
     def __init__(self, parent, *args):
 
@@ -438,7 +439,7 @@ class JarTableModel(BaseTableModel):
             # ~ datum = index.data()
             datum = self.results[index.row()][index.column()]
 
-            logging.debug(f"datum:{datum}")
+            logging.debug("datum:%s", datum)
 
             if "DONE" in datum[0]:
                 if "!" in datum[1]:
@@ -599,7 +600,8 @@ class OrderPage(BaseStackedPage):
                 tr_("[{}] Orders: search by order nr.").format(
                     self.order_model.rowCount()))
 
-        logging.info(f"dt:{time.time() - t}")
+        if logging.getLogger().isEnabledFor(logging.INFO):
+            logging.info("dt:%s", time.time() - t)
 
     def populate_jar_table(self):
 
@@ -613,7 +615,8 @@ class OrderPage(BaseStackedPage):
                 logging.error(traceback.format_exc())
             self.search_jar_box.setTitle(tr_("[{}] Jars:   search by status").format(self.jar_model.rowCount()))
 
-        logging.info(f"dt:{time.time() - t}")
+        if logging.getLogger().isEnabledFor(logging.INFO):
+            logging.info("dt:%s", time.time() - t)
 
     def populate_file_table(self):
 
@@ -627,7 +630,8 @@ class OrderPage(BaseStackedPage):
                 logging.error(traceback.format_exc())
             self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(self.file_model.rowCount()))
 
-        logging.info(f"dt:{time.time() - t}")
+        if logging.getLogger().isEnabledFor(logging.INFO):
+            logging.info("dt:%s", time.time() - t)
 
     def __hide_toggle_view_buttons(self):
 
@@ -1015,4 +1019,3 @@ class OrderPage(BaseStackedPage):
 
         show_order_clone = getattr(g_settings, "ENABLE_BTN_ORDER_CLONE", True)
         self.clone_order_btn.setEnabled(show_order_clone)
-

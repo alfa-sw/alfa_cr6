@@ -213,7 +213,8 @@ class MachineHeadMockup:
                     ret = f"{x}"
                 return ret
                     
-            logging.info("{}:{}, params:{}.".format(self.index, self.letter, {k: fmt(v) for k, v in params.items()}))
+            if logging.getLogger().isEnabledFor(logging.INFO):
+                logging.info("%s:%s, params:%s.", self.index, self.letter, {k: fmt(v) for k, v in params.items()})
             self.status.update(params)
             await self.dump_status()
         except:
@@ -261,7 +262,7 @@ class MachineHeadMockup:
 
     async def handle_command(self, msg_out_dict):  # pylint: disable=too-many-branches,too-many-statements
 
-        logging.info("{} {}, {}".format(self.index, self.letter, msg_out_dict))
+        logging.info("%s %s, %s", self.index, self.letter, msg_out_dict)
 
         if msg_out_dict["command"] == "ENTER_DIAGNOSTIC":
             await self.do_move(duration=0.5, tgt_level="DIAGNOSTIC")
@@ -688,7 +689,7 @@ class MachineHeadMockupFile(MachineHeadMockup):
             # ~ inotify.add_watch(filepth,  Mask.CREATE)
             t0 = 0
             async for event in inotify:
-                logging.debug(f"event:{event}")
+                logging.debug("event:%s", event)
                 if time.time() - t0 > 0.010:
                     t0 = time.time()
                     try:
