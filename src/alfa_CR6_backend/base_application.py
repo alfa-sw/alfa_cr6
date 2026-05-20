@@ -1166,9 +1166,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self._shuttle_last_read_time = t_now
 
             # --- format validation ---
-            if not re.match(r'^\d{2,4}\s(ml|gr|fl[\s_]?oz)$', barcode, re.IGNORECASE):
-                logging.warning(f"[SHUTTLE] invalid format, discarded: '{barcode}'")
-                return None
+            # 20/05/2026 - we decided to comment out the format filtering, accepting possible
+            # spurious reads: the real check now is the package-existence lookup below
+            # if not re.match(r'^\d{2,4}\s(ml|gr|fl[\s_]?oz)$', barcode, re.IGNORECASE):
+            #     logging.warning(f"[SHUTTLE] invalid format, discarded: '{barcode}'")
+            #     return None
 
             A = self.get_machine_head_by_letter("A")
             try:
