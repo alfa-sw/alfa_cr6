@@ -361,3 +361,7 @@ class SettingsManager:
         else:
             SettingsManager._set_settings_on_host(safe_updates)
 
+        from alfa_CR6_backend.globals import (  # pylint: disable=import-outside-toplevel
+            invalidate_settings_cache,
+        )
+        invalidate_settings_cache()

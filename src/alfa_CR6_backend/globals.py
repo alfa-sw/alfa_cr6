@@ -68,6 +68,7 @@ LANGUAGE_MAP = {
 _ALFA_SN = None
 
 DEFAULT_DEBUG_PAGE_PWD = 'alfa'
+_SETTINGS_CACHE = None
 
 
 def get_application_instance():
@@ -133,11 +134,47 @@ def set_refill_popup_choices(refill_choices):
     os.system("kill -9 {}".format(os.getpid()))
 
 
+def _load_app_settings_module():
+
+    conf_path_already_present = CONF_PATH in sys.path
+    if not conf_path_already_present:
+        sys.path.append(CONF_PATH)
+
+    try:
+        return importlib.import_module("app_settings")
+    finally:
+        if not conf_path_already_present:
+            sys.path.remove(CONF_PATH)
+
+
+def _ensure_runtime_dirs(app_settings):
+
+    for pth in (app_settings.LOGS_PATH,
+                app_settings.TMP_PATH,
+                app_settings.DATA_PATH,
+                app_settings.CUSTOM_PATH,
+                app_settings.WEBENGINE_DOWNLOAD_PATH,
+                app_settings.WEBENGINE_CACHE_PATH):
+
+        if not os.path.exists(pth):
+            os.makedirs(pth)
+
+
+def invalidate_settings_cache():
+
+    global _SETTINGS_CACHE  # pylint: disable=global-statement
+
+    _SETTINGS_CACHE = None
+
+
 def import_settings(set_missing_app_settings=False):
 
-    sys.path.append(CONF_PATH)
-    import app_settings  # pylint: disable=import-error,import-outside-toplevel
-    sys.path.remove(CONF_PATH)
+    global _SETTINGS_CACHE  # pylint: disable=global-statement
+
+    if _SETTINGS_CACHE is not None and not set_missing_app_settings:
+        return _SETTINGS_CACHE
+
+    app_settings = _load_app_settings_module()
     
     env_in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
     if env_in_docker:
@@ -165,15 +202,10 @@ def import_settings(set_missing_app_settings=False):
     if not env_in_docker and set_missing_app_settings:
         SettingsManager.ensure_missing_defaults()
 
-    for pth in (app_settings.LOGS_PATH,
-                app_settings.TMP_PATH,
-                app_settings.DATA_PATH,
-                app_settings.CUSTOM_PATH,
-                app_settings.WEBENGINE_DOWNLOAD_PATH,
-                app_settings.WEBENGINE_CACHE_PATH):
-
-        if not os.path.exists(pth):
-            os.makedirs(pth)
+    # Cold concurrent calls can rebuild twice; importlib returns the same module
+    # object and directory creation is idempotent, so no lock is needed here.
+    _ensure_runtime_dirs(app_settings)
+    _SETTINGS_CACHE = app_settings
 
     return app_settings
 
