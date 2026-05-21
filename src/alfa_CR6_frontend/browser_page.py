@@ -367,8 +367,14 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         self.loading = tr_("loading:")
         self.loaded = tr_("loaded:")
 
-        url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
-        self.q_url = QUrl(url)
+        # NOTE: vestigial loading splash. start_page.html (and images/hourglass.gif)
+        # was meant as a "loading... please wait" placeholder, but it is never loaded:
+        # self.q_url is overwritten by open_page() before any setUrl() in the normal
+        # flow, and no setUrl(self.q_url) exists. Kept commented pending the decision
+        # to remove the assets or restore the splash behavior.
+        # url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
+        # self.q_url = QUrl(url)
+        self.q_url = QUrl()
         self.webengine_view = None
 
         self.current_head_index = None
