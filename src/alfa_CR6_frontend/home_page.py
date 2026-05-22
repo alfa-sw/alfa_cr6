@@ -954,15 +954,17 @@ class HomePage(BaseStackedPage):
 
         runners = QApplication.instance().get_jar_runners()
 
-        # Leva 3 (§3.4): indici precostruiti UNA volta per flush, così
-        # __set_pixmap_by_photocells fa lookup O(1) invece di ricostruire
-        # get_jar_runners e scandire le teste per ogni label.
-        # Costo della cascata: O(N*H + N*R) -> O(N + H + R).
+        # Indici costruiti UNA sola volta per aggiornamento, cosi'
+        # __set_pixmap_by_photocells fa lookup O(1) invece di ricostruire la lista
+        # dei jar e scandire le teste per ogni etichetta:
+        #   position_to_jar: posizione -> jar in lavorazione in quella posizione
+        #   letter_to_head : lettera testa ("A".."F") -> oggetto MachineHead
         position_to_jar = {}
         for j in runners.values():
             jar = j.get('jar')
             if jar is not None and jar.position:
-                position_to_jar.setdefault(jar.position, jar)  # first-wins, come il vecchio break
+                # se due jar avessero la stessa posizione, vince il primo
+                position_to_jar.setdefault(jar.position, jar)
         letter_to_head = {
             m.name[0]: m
             for m in QApplication.instance().machine_head_dict.values()
@@ -1002,6 +1004,10 @@ class HomePage(BaseStackedPage):
         if lbl:
             lbl.setStyleSheet("QLabel {}")
             lbl.setText("")
+            # Il lampeggio ha impostato lo stile direttamente, scavalcando la
+            # cache visuale: azzera la chiave-cache cosi' la label viene
+            # ridisegnata al prossimo aggiornamento (altrimenti verrebbe saltata).
+            lbl._alfa_visual_key = None
 
     def _do_blink(self):
         if not self._blink_step_label:
@@ -1017,14 +1023,27 @@ class HomePage(BaseStackedPage):
         QTimer.singleShot(500, self._do_blink)
 
     @staticmethod
+    def _apply_label_visual(lbl, key, apply_fn):
+        # Applica stile/immagine a una label solo se sono cambiati rispetto
+        # all'ultima volta. 'key' descrive lo stato visuale desiderato; se coincide
+        # con quello gia' applicato (memorizzato in lbl._alfa_visual_key) non si fa
+        # nulla, evitando setStyleSheet/setText/setPixmap ripetuti e costosi.
+        # 'apply_fn' deve produrre esattamente il visual descritto da 'key'.
+        if getattr(lbl, "_alfa_visual_key", None) == key:
+            return
+        apply_fn()
+        lbl._alfa_visual_key = key
+
+    @staticmethod
     def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
             lbl, head_letters_bit_names, position=None, icon=None, adjacent_positions=None,
             position_to_jar=None, letter_to_head=None):
 
-        # Leva 3 (§3.4): se position_to_jar/letter_to_head sono forniti (dal
-        # flush di update_jar_pixmaps), i lookup sono O(1). I caller che NON li
-        # passano (es. i lifter in update_service_btns) ricadono sui metodi
-        # originali: poche label, costo trascurabile.
+        # Se position_to_jar/letter_to_head sono forniti (li passa
+        # update_jar_pixmaps, che li costruisce una volta sola), i lookup sono
+        # O(1). I chiamanti che non li passano (es. i lifter in
+        # update_service_btns) usano i metodi originali: poche label, costo
+        # trascurabile.
         if lbl:
             def _get_bit(head_letter, bit_name):
                 if letter_to_head is not None:
@@ -1051,8 +1070,9 @@ class HomePage(BaseStackedPage):
                         hide = True
 
                     if hide:
-                        lbl.setStyleSheet("QLabel {}")
-                        lbl.setText("")
+                        HomePage._apply_label_visual(
+                            lbl, ("hidden",),
+                            lambda: (lbl.setStyleSheet("QLabel {}"), lbl.setText("")))
                     else:
                         _text = ""
                         _status = ""
@@ -1072,20 +1092,29 @@ class HomePage(BaseStackedPage):
                                     break
 
                         if _status == "ERROR":
-                            _img_url = get_res("IMAGE", "jar-red.png")
+                            _img_name = "jar-red.png"
+                        elif _text:
+                            _img_name = "jar-green.png"
                         else:
-                            if _text:
-                                _img_url = get_res("IMAGE", "jar-green.png")
-                            else:
-                                _img_url = get_res("IMAGE", "jar-gray.png")
+                            _img_name = "jar-gray.png"
 
-                        lbl.setStyleSheet(
-                            'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
-                        lbl.setText(_text)
+                        def _apply_jar():
+                            _img_url = get_res("IMAGE", _img_name)
+                            lbl.setStyleSheet(
+                                'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
+                            lbl.setText(_text)
+
+                        # La chiave usa il NOME dell'immagine (non il path risolto):
+                        # cosi' quando nulla e' cambiato non si chiama nemmeno get_res().
+                        HomePage._apply_label_visual(lbl, ("jar", _img_name, _text), _apply_jar)
                 else:
-                    size = [0, 0] if false_condition else [32, 32]
-                    pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
-                    lbl.setPixmap(pixmap)
+                    size = (0, 0) if false_condition else (32, 32)
+
+                    def _apply_icon():
+                        pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
+                        lbl.setPixmap(pixmap)
+
+                    HomePage._apply_label_visual(lbl, ("icon", id(icon), size), _apply_icon)
 
                 lbl.show()
 

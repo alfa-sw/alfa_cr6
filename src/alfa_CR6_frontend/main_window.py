@@ -395,10 +395,13 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.settings = import_settings()
 
-        # --- UI repaint coalescing -------------------------------------
-        # Disaccoppia il rate di repaint dal rate dei messaggi di stato:
-        # update_status_data marca "dirty" e schedula UN flush per intervallo,
-        # invece di ripingere la cascata UI ad ogni messaggio firmware.
+        # --- Aggiornamento UI a frequenza limitata ----------------------------
+        # I messaggi di stato dalle teste possono arrivare molto fitti. Invece di
+        # ridisegnare l'interfaccia a ogni messaggio (operazione costosa),
+        # update_status_data() segna quali teste sono cambiate ("dirty") e
+        # programma un singolo aggiornamento ogni _status_repaint_interval_ms.
+        # Cosi' l'interfaccia si aggiorna al massimo ~10 volte al secondo, a
+        # prescindere da quanti messaggi arrivano.
         self._dirty_status_heads = set()
         self._status_repaint_timer = QTimer(self)
         self._status_repaint_timer.setSingleShot(True)
@@ -591,15 +594,16 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         return self.stacked_widget
 
     def open_home_page(self):
-        # Percorso unico per tornare alla home (menu e action page), così il
-        # refresh forzato dopo il coalescing avviene in entrambi i casi.
+        # Punto unico per tornare alla home (usato sia dal menu sia dalle action
+        # page): mostra la home e ne forza subito l'aggiornamento (vedi sotto).
         self.home_page.open_page()
         self._refresh_home_status_now()
 
     def _refresh_home_status_now(self):
-        # La home può essere rimasta nascosta mentre gli status arrivavano: col
-        # coalescing gli update vengono saltati se la home non è visibile. Al
-        # rientro forza un refresh completo usando lo stato corrente delle teste.
+        # Mentre la home non e' visibile i suoi aggiornamenti vengono saltati,
+        # quindi puo' restare indietro rispetto allo stato reale delle teste. Al
+        # rientro la si forza a ridisegnarsi subito, marcando come "da aggiornare"
+        # tutte le teste presenti.
         app = QApplication.instance()
         self._dirty_status_heads.update(
             head_index
@@ -756,9 +760,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def update_status_data(self, head_index, _=None):
 
-        # Coalescing (§3.4): registra la testa "dirty" e schedula UN flush per
-        # intervallo. Il repaint vero avviene in _flush_status_repaint, limitato
-        # a ~1 ogni _status_repaint_interval_ms a prescindere dal rate dei status.
+        # Non ridisegna subito: segna la testa come "da aggiornare" e programma un
+        # singolo aggiornamento. Il ridisegno effettivo avviene in
+        # _flush_status_repaint, al massimo una volta ogni _status_repaint_interval_ms.
         self._dirty_status_heads.add(head_index)
         if not self._status_repaint_timer.isActive():
             self._status_repaint_timer.start(self._status_repaint_interval_ms)
