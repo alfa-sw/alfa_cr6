@@ -952,8 +952,25 @@ class HomePage(BaseStackedPage):
 
     def update_jar_pixmaps(self):
 
+        runners = QApplication.instance().get_jar_runners()
+
+        # Leva 3 (§3.4): indici precostruiti UNA volta per flush, così
+        # __set_pixmap_by_photocells fa lookup O(1) invece di ricostruire
+        # get_jar_runners e scandire le teste per ogni label.
+        # Costo della cascata: O(N*H + N*R) -> O(N + H + R).
+        position_to_jar = {}
+        for j in runners.values():
+            jar = j.get('jar')
+            if jar is not None and jar.position:
+                position_to_jar.setdefault(jar.position, jar)  # first-wins, come il vecchio break
+        letter_to_head = {
+            m.name[0]: m
+            for m in QApplication.instance().machine_head_dict.values()
+            if m
+        }
+
         list_ = []
-        for k, j in QApplication.instance().get_jar_runners().items():
+        for k, j in runners.items():
             if j['jar'].position:
                 if j['jar'].status == 'ERROR':
                     _color = "#990000"
@@ -968,7 +985,9 @@ class HomePage(BaseStackedPage):
             adjacent_positions = entry[3] if len(entry) > 3 else None
             if lbl and lbl is not self._blink_step_label:
                 self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position,
-                                                adjacent_positions=adjacent_positions)
+                                                adjacent_positions=adjacent_positions,
+                                                position_to_jar=position_to_jar,
+                                                letter_to_head=letter_to_head)
 
     def start_step_blink(self, step_key):
         lbl = getattr(self, f"STEP_{step_key}_label", None)
@@ -999,11 +1018,19 @@ class HomePage(BaseStackedPage):
 
     @staticmethod
     def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
-            lbl, head_letters_bit_names, position=None, icon=None, adjacent_positions=None):
+            lbl, head_letters_bit_names, position=None, icon=None, adjacent_positions=None,
+            position_to_jar=None, letter_to_head=None):
 
+        # Leva 3 (§3.4): se position_to_jar/letter_to_head sono forniti (dal
+        # flush di update_jar_pixmaps), i lookup sono O(1). I caller che NON li
+        # passano (es. i lifter in update_service_btns) ricadono sui metodi
+        # originali: poche label, costo trascurabile.
         if lbl:
             def _get_bit(head_letter, bit_name):
-                m = QApplication.instance().get_machine_head_by_letter(head_letter)
+                if letter_to_head is not None:
+                    m = letter_to_head.get(head_letter)
+                else:
+                    m = QApplication.instance().get_machine_head_by_letter(head_letter)
                 ret = m.jar_photocells_status.get(bit_name) if m else None
                 return ret
 
@@ -1029,13 +1056,20 @@ class HomePage(BaseStackedPage):
                     else:
                         _text = ""
                         _status = ""
-                        for j in QApplication.instance().get_jar_runners().values():
-                            pos = j["jar"].position
-                            if pos == position:
-                                _status = j["jar"].status
-                                _bc = str(j["jar"].barcode)
+                        if position_to_jar is not None:
+                            jar = position_to_jar.get(position)
+                            if jar is not None:
+                                _status = jar.status
+                                _bc = str(jar.barcode)
                                 _text = _bc[-6:-3] + "\n" + _bc[-3:]
-                                break
+                        else:
+                            for j in QApplication.instance().get_jar_runners().values():
+                                pos = j["jar"].position
+                                if pos == position:
+                                    _status = j["jar"].status
+                                    _bc = str(j["jar"].barcode)
+                                    _text = _bc[-6:-3] + "\n" + _bc[-3:]
+                                    break
 
                         if _status == "ERROR":
                             _img_url = get_res("IMAGE", "jar-red.png")
