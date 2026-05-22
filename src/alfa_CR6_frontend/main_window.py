@@ -17,7 +17,7 @@ import os
 from typing import List, Union
 
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QTimer
 from PyQt5.QtGui import QPixmap, QIcon, QMovie
 from PyQt5.QtWidgets import QApplication, QMainWindow
 
@@ -395,6 +395,18 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
         self.settings = import_settings()
 
+        # --- UI repaint coalescing -------------------------------------
+        # Disaccoppia il rate di repaint dal rate dei messaggi di stato:
+        # update_status_data marca "dirty" e schedula UN flush per intervallo,
+        # invece di ripingere la cascata UI ad ogni messaggio firmware.
+        self._dirty_status_heads = set()
+        self._status_repaint_timer = QTimer(self)
+        self._status_repaint_timer.setSingleShot(True)
+        self._status_repaint_timer.timeout.connect(self._flush_status_repaint)
+        self._status_repaint_interval_ms = int(
+            getattr(self.settings, "UI_REFRESH_INTERVAL_MS", 100))  # circa 10 Hz
+        # ----------------------------------------------------------------------
+
         self.setStyleSheet("""
                 QWidget {font-size: 24px; font-family:Dejavu;}
                 QPushButton {background-color: #F3F3F3F3; border: 1px solid #999999; border-radius: 4px;}
@@ -578,6 +590,24 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def get_stacked_widget(self):
         return self.stacked_widget
 
+    def open_home_page(self):
+        # Percorso unico per tornare alla home (menu e action page), così il
+        # refresh forzato dopo il coalescing avviene in entrambi i casi.
+        self.home_page.open_page()
+        self._refresh_home_status_now()
+
+    def _refresh_home_status_now(self):
+        # La home può essere rimasta nascosta mentre gli status arrivavano: col
+        # coalescing gli update vengono saltati se la home non è visibile. Al
+        # rientro forza un refresh completo usando lo stato corrente delle teste.
+        app = QApplication.instance()
+        self._dirty_status_heads.update(
+            head_index
+            for head_index, machine_head in app.machine_head_dict.items()
+            if machine_head
+        )
+        self._flush_status_repaint()
+
     def on_menu_line_edit_return_pressed(self):
 
         logging.warning("")
@@ -619,7 +649,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
             elif "home" in btn_name:
                 self.toggle_keyboard(on_off=False)
-                self.home_page.open_page()
+                self.open_home_page()
 
             elif "order" in btn_name:
                 self.toggle_keyboard(on_off=False)
@@ -726,13 +756,35 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
     def update_status_data(self, head_index, _=None):
 
-        try:
-            self.debug_page.update_status()
+        # Coalescing (§3.4): registra la testa "dirty" e schedula UN flush per
+        # intervallo. Il repaint vero avviene in _flush_status_repaint, limitato
+        # a ~1 ogni _status_repaint_interval_ms a prescindere dal rate dei status.
+        self._dirty_status_heads.add(head_index)
+        if not self._status_repaint_timer.isActive():
+            self._status_repaint_timer.start(self._status_repaint_interval_ms)
 
-            self.home_page.update_service_btns__presences_and_lifters(head_index)
-            self.home_page.update_tank_pixmaps()
-            self.home_page.update_jar_pixmaps()
-            self.__update_action_pages()
+    def _flush_status_repaint(self):
+
+        heads = self._dirty_status_heads
+        self._dirty_status_heads = set()
+        if not heads:
+            # niente di "dirty": può capitare se un flush diretto (es. ingresso
+            # home) ha già svuotato il set prima che il timer scattasse. Evita
+            # un repaint a vuoto.
+            return
+        try:
+            self.debug_page.update_status()  # self-guarded (isVisible)
+
+            # Le update_* della home sono costose: eseguile solo se la home è la
+            # pagina visibile (in un QStackedWidget isVisible() è True solo per la
+            # pagina corrente). Altrimenti il repaint sarebbe invisibile e sprecato.
+            if self.home_page.isVisible():
+                for head_index in heads:
+                    self.home_page.update_service_btns__presences_and_lifters(head_index)
+                self.home_page.update_tank_pixmaps()
+                self.home_page.update_jar_pixmaps()
+
+            self.__update_action_pages()  # self-guarded (isVisible per frame)
 
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())

@@ -103,7 +103,7 @@ class ActionPage(BaseStackedPage):
     def __do_action(self, condition, args):
         logging.warning(f"condition:{condition}, args:{args}")
         if args[0] == 'open_home_page':
-            self.parent().setCurrentWidget(self.main_window.home_page)
+            self.main_window.open_home_page()
         else:
             try:
                 if not self.__check_conditions(args):
