@@ -1229,7 +1229,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         res = True
                     return res
 
-                def determine_recovery_actions(
+                async def determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         jar_recovery_position=None,
                         curr_position_senson="JAR_DISPENSING_POSITION_PHOTOCELL",
@@ -1245,7 +1245,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         if curr_head_jar_sts is not None:
                             break
                         else:
-                            time.sleep(delay)
+                            await asyncio.sleep(delay)
 
                     if curr_head_jar_sts is None:
                         raise RuntimeError("[Recovery Mode] Timeout retrieving machine status! Retry again...")
@@ -1374,7 +1374,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     )
                 }
 
-                jar_recovery_actions, deduced_position = determine_actions_map[last_jar_known_pos](jv, jar_recovery_actions, current_head, _jar)
+                jar_recovery_actions, deduced_position = await determine_actions_map[last_jar_known_pos](
+                    jv, jar_recovery_actions, current_head, _jar
+                )
 
                 logging.warning(f"jar_recovery_actions --> {jar_recovery_actions}")
                 
