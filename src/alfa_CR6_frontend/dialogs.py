@@ -23,7 +23,7 @@ from functools import partial
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
-    Qt, QSize, QItemSelectionModel)
+    Qt, QSize, QItemSelectionModel, QTimer)
 
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
@@ -77,7 +77,13 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             ok_callback_args=None, hp_callback=None
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
-        self.setAttribute(Qt.WA_DeleteOnClose)
+        # NB: deliberately NO WA_DeleteOnClose here. It would conflict with
+        # the `_block_close` mechanism used during the Info/troubleshooting
+        # flow (nested exec_): Qt emits a synthetic Close/deferred-delete on
+        # the parent dialog when the nested modal exits, which would destroy
+        # the modal while the user is still expected to see it. Instead we
+        # schedule deleteLater explicitly when the user presses OK/Cancel
+        # below (see _cleanup_on_close_button).
 
         self.ok_callback = ok_callback
         self.ok_callback_args = ok_callback_args
@@ -131,6 +137,15 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             b.setIcon(icon_)
             b.resize(300, 80)
 
+        # Always schedule deleteLater when the dialog is closed via OK/Cancel
+        # so the C++ object does not leak as a child of MainWindow.
+        # Use a 0-ms QTimer so the deletion happens after QMessageBox has
+        # finished its own done() handling.
+        def _cleanup_on_close_button(btn):
+            if "help" not in btn.objectName().lower():
+                QTimer.singleShot(0, self.deleteLater)
+        self.buttonClicked.connect(_cleanup_on_close_button)
+
         if self.ok_callback or self.hp_callback:
             def on_button_clicked(btn):
                 btn_name = btn.objectName().lower()
@@ -151,6 +166,11 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 if self.hp_callback and "help" in btn_name:
                     # Block the dialog from closing while the troubleshooting
                     # browser is open. setVisible() override honours the flag.
+                    # NB: _block_close is left True after hp_callback returns
+                    # so any deferred setVisible(False) emitted by Qt while
+                    # tearing down the nested exec_() does not hide this
+                    # dialog. It will be reset to False when the user finally
+                    # clicks OK/Cancel (handled above).
                     self._block_close = True
                     try:
                         self.hp_callback()
