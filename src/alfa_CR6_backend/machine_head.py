@@ -334,7 +334,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             # ~ self.app.handle_exception(e)
             logging.debug(e)
 
-        diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
+        if logging.getLogger().isEnabledFor(logging.INFO):
+            diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
+        else:
+            diff = None
 
         self.status = status
 
