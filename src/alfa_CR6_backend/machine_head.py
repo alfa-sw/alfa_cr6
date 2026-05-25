@@ -245,7 +245,6 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         parent=self.app.main_window,
                     )
                     dlg.exec_()
-                    dlg.deleteLater()
             else:
                 _cb = None
 
