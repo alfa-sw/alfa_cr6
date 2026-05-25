@@ -596,6 +596,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def open_home_page(self):
         # Punto unico per tornare alla home (usato sia dal menu sia dalle action
         # page): mostra la home e ne forza subito l'aggiornamento (vedi sotto).
+        if self.browser_page is not None:
+            self.browser_page.release_local_ws()
         self.home_page.open_page()
         self._refresh_home_status_now()
 

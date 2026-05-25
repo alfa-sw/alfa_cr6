@@ -485,6 +485,19 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         if self._webengine_page:
             del self._webengine_page
 
+    def release_local_ws(self):
+        # Local-loopback pages (admin / settings via :8090) open a WS toward
+        # :13000 and keep it alive even when BrowserPage is hidden, inflating
+        # ws_clients and feeding the §3.7 fan-out. External URLs are left
+        # intact to preserve customer-page session state.
+        if self.webengine_view is None or self.q_url is None:
+            return
+        host = self.q_url.host()
+        if host in ("127.0.0.1", "localhost") and self.q_url.toString() != "about:blank":
+            blank = QUrl("about:blank")
+            self.webengine_view.setUrl(blank)
+            self.q_url = blank
+
     def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL, head_index=None):
 
         _popup_web_engine_page = hasattr(
