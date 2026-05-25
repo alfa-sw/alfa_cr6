@@ -77,6 +77,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             ok_callback_args=None, hp_callback=None
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.ok_callback = ok_callback
         self.ok_callback_args = ok_callback_args
@@ -176,6 +177,7 @@ class TroubleshootingDialog(QDialog):
     def __init__(self, url, title=None, parent=None):
 
         super().__init__(parent)
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.setWindowTitle(title or tr_('Troubleshooting'))
         self.setModal(True)
@@ -969,6 +971,7 @@ class AliasDialog(BaseDialog):
 class RecoveryInfoDialog(QDialog):
     def __init__(self, parent=None, recovery_items=[], lbl_text=None, app_frozen=False, bottom_lbl_text=[]):
         super(RecoveryInfoDialog, self).__init__(parent)
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.setWindowTitle("Recovery Information")
         self.setModal(True)
         self.setMinimumWidth(520)
