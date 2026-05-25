@@ -839,31 +839,33 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 json_properties = json.loads(jar.json_properties)
                 insufficient_pigments = list(json_properties.get("insufficient_pigments", {}).keys())
 
-                if insufficient_pigments:
-                    m_args = (jar.barcode, insufficient_pigments, cntr, nof_retry, )
-                    msg_ = ['Missing material for barcode {}.\n please refill pigments:{}. ({}/{})']
-                    if cntr == nof_retry:
-                        msg_.append("\nOtherwise the can's status will be marked as ERROR.")
-                    logging.warning("".join(msg_))
-                    _refill_led_token = ("dispense_step_refill", jar.barcode, m.name, cntr)
-                    _refill_led_heads = [h for h in self.machine_head_dict.values() if h]
-                    try:
-                        self.request_attention_leds(
-                            _refill_led_heads,
-                            _refill_led_token,
-                            reason=f"missing material for barcode {jar.barcode}",
-                        )
-                        r = await self.wait_for_carousel_not_frozen(
-                            True,
-                            message_args=m_args,
-                            message_fmt=msg_
-                        )
-                    finally:
-                        self.release_attention_leds(
-                            _refill_led_heads,
-                            _refill_led_token,
-                            reason=f"missing material resolved for barcode {jar.barcode}",
-                        )
+                if not insufficient_pigments:
+                    break
+
+                m_args = (jar.barcode, insufficient_pigments, cntr, nof_retry, )
+                msg_ = ['Missing material for barcode {}.\n please refill pigments:{}. ({}/{})']
+                if cntr == nof_retry:
+                    msg_.append("\nOtherwise the can's status will be marked as ERROR.")
+                logging.warning("".join(msg_))
+                _refill_led_token = ("dispense_step_refill", jar.barcode, m.name, cntr)
+                _refill_led_heads = [h for h in self.machine_head_dict.values() if h]
+                try:
+                    self.request_attention_leds(
+                        _refill_led_heads,
+                        _refill_led_token,
+                        reason=f"missing material for barcode {jar.barcode}",
+                    )
+                    r = await self.wait_for_carousel_not_frozen(
+                        True,
+                        message_args=m_args,
+                        message_fmt=msg_
+                    )
+                finally:
+                    self.release_attention_leds(
+                        _refill_led_heads,
+                        _refill_led_token,
+                        reason=f"missing material resolved for barcode {jar.barcode}",
+                    )
 
             await m.update_tintometer_data()
             self.update_jar_properties(jar)
