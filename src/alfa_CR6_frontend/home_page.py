@@ -604,6 +604,13 @@ class HomePage(BaseStackedPage):
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
             )
 
+            # Prevent stray ENTER (e.g. trailing newline from a barcode gun whose
+            # device isn't grabbed by evdev) from "clicking" the focused action
+            # button — observed firing move_00_01 unintentionally.
+            b.setAutoDefault(False)
+            b.setDefault(False)
+            b.setFocusPolicy(Qt.NoFocus)
+
             if "recovery_btn" in b.objectName():
                 b.setStyleSheet(
                     """QPushButton { background-color: #00FFFFFF; color: #47AE4B; border: 2px solid #000000; font-size: 20px; text-align: center;}"""
