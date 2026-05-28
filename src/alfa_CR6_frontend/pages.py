@@ -369,7 +369,7 @@ class JarTableModel(BaseTableModel):
                     r = [o.status, ""]
                 return r
 
-            self.results = [["", "", _fmt_status(o), o.barcode] for o in query_.all()]
+            # self.results = [["", "", _fmt_status(o), o.barcode] for o in query_.all()]
             self.results = []
             for o in query_.all():
                 item = ["", "", "", ""]
