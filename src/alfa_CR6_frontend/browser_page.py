@@ -486,14 +486,39 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             del self._webengine_page
 
     def release_local_ws(self):
-        # Local-loopback pages (admin / settings via :8090) open a WS toward
-        # :13000 and keep it alive even when BrowserPage is hidden, inflating
-        # ws_clients and feeding the §3.7 fan-out. External URLs are left
-        # intact to preserve customer-page session state.
+        # Quando si lascia la pagina browser, libera le risorse della pagina
+        # corrente (DOM, JS, WebSocket aperti dalla pagina) navigando a
+        # about:blank. Vengono blankate:
+        #   - pagine local-loopback (127.0.0.1 / localhost): app interna,
+        #     admin, settings, manuale; tipicamente aprono un WS verso il
+        #     nostro WsServer e lo terrebbero vivo da nascoste, inflazionando
+        #     i client (ghost WS);
+        #   - pagine sulle teste (host in MACHINE_HEAD_IPADD_PORTS_LIST):
+        #     service page delle teste, che aprono WS verso la testa e
+        #     continuerebbero a ricevere/processare dati anche da nascoste.
+        # Viene preservata SOLO l'URL cliente (WEBENGINE_CUSTOMER_URL): tipico
+        # sito esterno per cui ha valore mantenere lo stato di sessione.
         if self.webengine_view is None or self.q_url is None:
             return
+        if self.q_url.toString() == "about:blank":
+            return
         host = self.q_url.host()
-        if host in ("127.0.0.1", "localhost") and self.q_url.toString() != "about:blank":
+        if not host:
+            return
+
+        # Host del WEBENGINE_CUSTOMER_URL: NON va blankato (sessione preservata).
+        customer_url = getattr(g_settings, "WEBENGINE_CUSTOMER_URL", "") or ""
+        customer_host = QUrl(customer_url).host() if customer_url else ""
+        if customer_host and host == customer_host:
+            return
+
+        # Host delle teste configurate.
+        head_ips = set()
+        for entry in getattr(g_settings, "MACHINE_HEAD_IPADD_PORTS_LIST", []) or []:
+            if entry:
+                head_ips.add(entry[0])
+
+        if host in ("127.0.0.1", "localhost") or host in head_ips:
             blank = QUrl("about:blank")
             self.webengine_view.setUrl(blank)
             self.q_url = blank
