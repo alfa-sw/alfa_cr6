@@ -1318,6 +1318,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         for j in range(1, n_of_jars + 1):
                             jar = Jar(order=order, index=j, size=0)
                             self.db_session.add(jar)
+                        order.update_status()
+                        order.update_deleted()
                         self.db_session.commit()
 
                 except Exception as e:  # pylint: disable=broad-except

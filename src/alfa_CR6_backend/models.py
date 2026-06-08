@@ -441,26 +441,22 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
     @property
     def status(self):
 
-        ret = None
         if hasattr(self, 'inner_status'):
-            if self.inner_status is None:
-                self.update_status(global_session)
-            ret = self.inner_status
-        else:
-            ret = self.update_status()
-        return ret
+            if self.inner_status is not None:
+                return self.inner_status
+            return self._calculate_status()
+
+        return self._calculate_status()
 
     @property
     def deleted(self):
 
-        ret = None
         if hasattr(self, 'is_deleted'):
-            if self.is_deleted is None:
-                self.update_deleted(global_session)
-            ret = self.is_deleted
-        else:
-            ret = self.update_deleted()
-        return ret
+            if self.is_deleted is not None:
+                return self.is_deleted
+            return self._calculate_deleted()
+
+        return self._calculate_deleted()
 
     def update_file_name(self, session=None):
 
@@ -470,12 +466,16 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
             if session:
                 session.commit()
 
-    def update_deleted(self, session=None):
+    def _calculate_deleted(self):
 
         flag = (not self.jars) or [j for j in self.jars if j.position != "DELETED"]
-        ret = '' if flag else 'yes'
+        return '' if flag else 'yes'
 
-        logging.warning(f"flag:{flag}, ret:{ret}")
+    def update_deleted(self, session=None):
+
+        ret = self._calculate_deleted()
+
+        logging.warning(f"ret:{ret}")
 
         if hasattr(self, 'is_deleted'):
             self.is_deleted = ret
@@ -486,7 +486,7 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         return ret
 
-    def update_status(self, session=None):
+    def _calculate_status(self):
 
         sts_ = "NEW"
 
@@ -505,6 +505,12 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
             sts_ = "PARTIAL"
         elif not counters.get("NEW") and counters.get("DONE"):
             sts_ = "DONE"
+
+        return sts_
+
+    def update_status(self, session=None):
+
+        sts_ = self._calculate_status()
 
         if hasattr(self, 'inner_status'):
             self.inner_status = sts_

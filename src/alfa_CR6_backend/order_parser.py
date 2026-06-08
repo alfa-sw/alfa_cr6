@@ -630,14 +630,32 @@ weight:{RealWeight}
             if not l:
                 continue
 
-            if not second_coat and ('SECOND' in l and 'COAT' in l):
-                is_double_coat = True
-                double_coat_tag = 'FIRST COAT'
+            upper_line = l.upper()
+            is_second_coat_marker = 'SECOND' in upper_line and 'COAT' in upper_line
+
+            if second_coat:
+                if is_second_coat_marker:
+                    second_coat = False
+                    double_coat_tag = 'SECOND COAT'
+                    section = 0
+                    section_cntr = 0
+                    continue
+
+                if section_separator in l:
+                    section = max(section, 1)
+                    section_cntr = 0
+                    continue
+
+                if section == 0:
+                    toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                    if len(toks) == 2:
+                        meta[toks[0]] = toks[1]
                 continue
 
-            if second_coat and ('SECOND' in l and 'COAT' in l):
-                second_coat = False
-                double_coat_tag = 'SECOND COAT'
+            if is_second_coat_marker:
+                is_double_coat = True
+                double_coat_tag = 'FIRST COAT'
+                break
 
             if section_separator in l:
                 if not second_coat:
@@ -650,6 +668,9 @@ weight:{RealWeight}
                         meta[toks[0]] = toks[1]
                 elif section == 1:
                     toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                    if len(toks) < 2:
+                        section_cntr += 1
+                        continue
                     description = toks[0]
                     sub_toks = []
                     for t in toks[1].split("      "):
