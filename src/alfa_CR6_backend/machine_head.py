@@ -960,42 +960,128 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
+    @staticmethod
+    def __safe_getattr(obj, name, default=None):
+        try:
+            return getattr(obj, name, default)
+        except Exception:  # pylint: disable=broad-except
+            return default
+
+    @classmethod
+    def __json_safe(cls, value):
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        name = cls.__safe_getattr(value, "name")
+        if name:
+            return name
+        return str(value)
+
+    @classmethod
+    def __close_frame_info(cls, close_frame):
+        if close_frame is None:
+            return None
+        return {
+            "code": cls.__safe_getattr(close_frame, "code"),
+            "reason": cls.__safe_getattr(close_frame, "reason"),
+        }
+
+    @classmethod
+    def __websocket_close_info(cls, websocket):
+        if websocket is None:
+            return {}
+
+        return {
+            "websocket_state": cls.__json_safe(cls.__safe_getattr(websocket, "state")),
+            "websocket_open": cls.__json_safe(cls.__safe_getattr(websocket, "open")),
+            "websocket_closed": cls.__json_safe(cls.__safe_getattr(websocket, "closed")),
+            "websocket_close_code": cls.__safe_getattr(websocket, "close_code"),
+            "websocket_close_reason": cls.__safe_getattr(websocket, "close_reason"),
+            "websocket_close_rcvd": cls.__close_frame_info(cls.__safe_getattr(websocket, "close_rcvd")),
+            "websocket_close_sent": cls.__close_frame_info(cls.__safe_getattr(websocket, "close_sent")),
+            "websocket_close_rcvd_then_sent": cls.__json_safe(
+                cls.__safe_getattr(websocket, "close_rcvd_then_sent")
+            ),
+        }
+
+    @classmethod
+    def __connection_closed_info(cls, exc):
+        rcvd = cls.__safe_getattr(exc, "rcvd")
+        sent = cls.__safe_getattr(exc, "sent")
+        rcvd_frame = cls.__close_frame_info(rcvd)
+        sent_frame = cls.__close_frame_info(sent)
+
+        close_code = rcvd_frame["code"] if rcvd_frame else cls.__safe_getattr(exc, "code")
+        close_reason = rcvd_frame["reason"] if rcvd_frame else cls.__safe_getattr(exc, "reason")
+        if close_code is None:
+            close_code = 1006
+        if close_reason is None and rcvd_frame is None:
+            close_reason = "abnormal closure (no close frame received)"
+
+        return {
+            "close_code": close_code,
+            "close_reason": close_reason,
+            "close_rcvd": rcvd_frame,
+            "close_sent": sent_frame,
+            "close_rcvd_then_sent": cls.__json_safe(cls.__safe_getattr(exc, "rcvd_then_sent")),
+        }
+
+    def __exception_log_extra(self, exc, websocket=None):
+        extra = {
+            "exception_type": type(exc).__name__,
+            "error": str(exc),
+            "status": self.status,
+            "photocells_status": self.photocells_status,
+            "jar_photocells_status": self.jar_photocells_status,
+            "ws_id": getattr(self, '_MachineHead__ws_id', None),
+            "traceback": traceback.format_exc(),
+        }
+        extra.update(self.__websocket_close_info(websocket))
+        if isinstance(exc, websockets.exceptions.ConnectionClosed):
+            extra.update(self.__connection_closed_info(exc))
+        return extra
+
     async def run(self):
         t = self.__watch_dog_task()
         asyncio.ensure_future(t)
 
         ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
         while True:
+            ws_body_exception_id = None
             try:
-                async with websockets.connect(ws_url, timeout=40) as websocket:
+                async with websockets.connect(ws_url, close_timeout=40) as websocket:
                     self.websocket = websocket
                     self.__ws_id = str(id(websocket))
                     self.__log_document("WS_CONNECTED", {"ws_id": self.__ws_id})
-                    while True:
-                        await self.handle_ws_recv()
+                    try:
+                        while True:
+                            await self.handle_ws_recv()
+                    except asyncio.CancelledError:
+                        raise
+                    except websockets.exceptions.ConnectionClosed:
+                        raise
+                    except Exception as e:  # pylint: disable=broad-except
+                        ws_body_exception_id = id(e)
+                        logging.error(f"{self.name} e:{e}")
+                        logging.error(traceback.format_exc())
+                        extra = self.__exception_log_extra(e, websocket)
+                        extra["phase"] = "websocket message loop"
+                        self.__log_document("WS_EXCP", extra)
+                        raise
+            except asyncio.CancelledError:
+                raise
             except (OSError, ConnectionRefusedError,
                     websockets.exceptions.ConnectionClosed) as e:
                 logging.error(f"{self.name} e:{e}")
-                _rcvd = getattr(e, 'rcvd', None)
-                extra = {
-                    "exception_type": type(e).__name__,
-                    "error": str(e),
-                    "close_code": _rcvd.code if _rcvd else (1006 if isinstance(e, websockets.exceptions.ConnectionClosed) else None),
-                    "close_reason": _rcvd.reason if _rcvd else ("abnormal closure (no close frame received)" if isinstance(e, websockets.exceptions.ConnectionClosed) else None),
-                    "description": "TCP connection failure (ECONNREFUSED) - no service listening on target port" if isinstance(e, ConnectionRefusedError) else None,
-                    "status": self.status,
-                    "photocells_status": self.photocells_status,
-                    "jar_photocells_status": self.jar_photocells_status,
-                    "ws_id": getattr(self, '_MachineHead__ws_id', None),
-                    "traceback": traceback.format_exc()
-                }
+                extra = self.__exception_log_extra(e)
+                extra["description"] = "TCP connection failure (ECONNREFUSED) - no service listening on target port" if isinstance(e, ConnectionRefusedError) else None
                 self.__log_document("WS_CLOSED", extra)
                 # self.__reset_state()
                 await asyncio.sleep(5)
             except Exception as e:  # pylint: disable=broad-except
-                logging.error(f"{self.name} e:{e}")
-                logging.error(traceback.format_exc())
-                self.__log_document("WS_EXCP", {"exception_type": type(e).__name__, "error": str(e)})
+                if ws_body_exception_id != id(e):
+                    logging.error(f"{self.name} e:{e}")
+                    logging.error(traceback.format_exc())
+                    self.__log_document("WS_EXCP", self.__exception_log_extra(e))
                 # self.__reset_state()
                 await asyncio.sleep(2)
         logging.warning(" *** exiting *** ")
