@@ -593,13 +593,20 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def get_stacked_widget(self):
         return self.stacked_widget
 
+    def _after_browser_blank(self, callback):
+        if self.browser_page is not None and self.stacked_widget.currentWidget() == self.browser_page:
+            self.browser_page.blank_webengine_view(callback)
+        else:
+            callback()
+
     def open_home_page(self):
         # Punto unico per tornare alla home (usato sia dal menu sia dalle action
         # page): mostra la home e ne forza subito l'aggiornamento (vedi sotto).
-        if self.browser_page is not None:
-            self.browser_page.release_local_ws()
-        self.home_page.open_page()
-        self._refresh_home_status_now()
+        def _open_home_page():
+            self.home_page.open_page()
+            self._refresh_home_status_now()
+
+        self._after_browser_blank(_open_home_page)
 
     def _refresh_home_status_now(self):
         # Mentre la home non e' visibile i suoi aggiornamenti vengono saltati,
@@ -659,7 +666,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
             elif "order" in btn_name:
                 self.toggle_keyboard(on_off=False)
-                self.order_page.open_page()
+                self._after_browser_blank(self.order_page.open_page)
 
             elif "debug_page" in btn_name:
 
@@ -673,8 +680,11 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
 
                         pwd_ = self.input_dialog.content_container.toPlainText()
                         if pwd_ == debug_page_pwd:
-                            self.stacked_widget.setCurrentWidget(self.debug_page.main_frame)
-                            self.toggle_keyboard(on_off=False)
+                            def _open_debug_page():
+                                self.stacked_widget.setCurrentWidget(self.debug_page.main_frame)
+                                self.toggle_keyboard(on_off=False)
+
+                            self._after_browser_blank(_open_debug_page)
 
                     msg_ = tr_("please, enter service password")
                     self.open_input_dialog(message=msg_,  content="", ok_cb=ok_cb_)

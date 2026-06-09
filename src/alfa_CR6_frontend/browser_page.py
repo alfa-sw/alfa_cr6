@@ -18,7 +18,7 @@ import time
 from types import SimpleNamespace
 
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.Qt import QUrl
 from PyQt5.QtWebEngineWidgets import (
     QWebEngineView,
@@ -485,16 +485,46 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         if self._webengine_page:
             del self._webengine_page
 
-    def blank_webengine_view(self):
+    def blank_webengine_view(self, callback=None, timeout_ms=500):
         # Quando si lascia la pagina browser, libera sempre le risorse della
         # pagina corrente (DOM, JS, WebSocket aperti dalla pagina) navigando a
         # about:blank. Il prossimo open_page() ricarichera' l'URL richiesto.
         if self.webengine_view is None:
+            if callback:
+                QTimer.singleShot(0, callback)
             return
         if self.webengine_view.url().toString() == "about:blank":
             self.q_url = QUrl("about:blank")
+            if callback:
+                QTimer.singleShot(0, callback)
             return
+
         blank = QUrl("about:blank")
+
+        if callback:
+            view = self.webengine_view
+            completed = {"done": False}
+
+            def _finish():
+                if completed["done"]:
+                    return
+                completed["done"] = True
+                try:
+                    view.loadFinished.disconnect(_on_load_finished)
+                except Exception:  # pylint: disable=broad-except
+                    pass
+                callback()
+
+            def _on_load_finished(_ok=False):
+                try:
+                    if view.url().toString() == "about:blank":
+                        _finish()
+                except Exception:  # pylint: disable=broad-except
+                    _finish()
+
+            view.loadFinished.connect(_on_load_finished)
+            QTimer.singleShot(timeout_ms, _finish)
+
         self.webengine_view.setUrl(blank)
         self.q_url = blank
 
