@@ -485,43 +485,25 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         if self._webengine_page:
             del self._webengine_page
 
+    def blank_webengine_view(self):
+        # Quando si lascia la pagina browser, libera sempre le risorse della
+        # pagina corrente (DOM, JS, WebSocket aperti dalla pagina) navigando a
+        # about:blank. Il prossimo open_page() ricarichera' l'URL richiesto.
+        if self.webengine_view is None:
+            return
+        if self.webengine_view.url().toString() == "about:blank":
+            self.q_url = QUrl("about:blank")
+            return
+        blank = QUrl("about:blank")
+        self.webengine_view.setUrl(blank)
+        self.q_url = blank
+
     def release_local_ws(self):
-        # Quando si lascia la pagina browser, libera le risorse della pagina
-        # corrente (DOM, JS, WebSocket aperti dalla pagina) navigando a
-        # about:blank. Vengono blankate:
-        #   - pagine local-loopback (127.0.0.1 / localhost): app interna,
-        #     admin, settings, manuale; tipicamente aprono un WS verso il
-        #     nostro WsServer e lo terrebbero vivo da nascoste, inflazionando
-        #     i client (ghost WS);
-        #   - pagine sulle teste (host in MACHINE_HEAD_IPADD_PORTS_LIST):
-        #     service page delle teste, che aprono WS verso la testa e
-        #     continuerebbero a ricevere/processare dati anche da nascoste.
-        # Viene preservata SOLO l'URL cliente (WEBENGINE_CUSTOMER_URL): tipico
-        # sito esterno per cui ha valore mantenere lo stato di sessione.
-        if self.webengine_view is None or self.q_url is None:
-            return
-        if self.q_url.toString() == "about:blank":
-            return
-        host = self.q_url.host()
-        if not host:
-            return
+        self.blank_webengine_view()
 
-        # Host del WEBENGINE_CUSTOMER_URL: NON va blankato (sessione preservata).
-        customer_url = getattr(g_settings, "WEBENGINE_CUSTOMER_URL", "") or ""
-        customer_host = QUrl(customer_url).host() if customer_url else ""
-        if customer_host and host == customer_host:
-            return
-
-        # Host delle teste configurate.
-        head_ips = set()
-        for entry in getattr(g_settings, "MACHINE_HEAD_IPADD_PORTS_LIST", []) or []:
-            if entry:
-                head_ips.add(entry[0])
-
-        if host in ("127.0.0.1", "localhost") or host in head_ips:
-            blank = QUrl("about:blank")
-            self.webengine_view.setUrl(blank)
-            self.q_url = blank
+    def hideEvent(self, event):  # pylint: disable=invalid-name
+        self.blank_webengine_view()
+        super().hideEvent(event)
 
     def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL, head_index=None):
 
