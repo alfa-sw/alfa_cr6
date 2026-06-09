@@ -163,7 +163,7 @@ class SingleWebEnginePage(QWebEnginePage):
     def acceptNavigationRequest(self, url, _type, isMainFrame):
 
         # ~ logging.warning(f"url:{url}, _type:{_type}, isMainFrame:{isMainFrame}.")
-        logging.warning(f"self:{self}.")
+        logging.debug(f"self:{self}.")
         # ~ if g_settings.WEBENGINE_CUSTOMER_URL not in f"{url}":
         # ~ if QApplication.instance().main_window.open_alert_dialog:
         # ~ args_ = f"BEWARE:\n{g_settings.WEBENGINE_CUSTOMER_URL}\n not in \n{url}"
@@ -297,7 +297,7 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
 
     def reset_view(self):
 
-        logging.warning(f"self.q_url:{self.q_url}.")
+        logging.debug(f"self.q_url:{self.q_url}.")
 
         self.webengine_view = QWebEngineView(self)
 
@@ -376,6 +376,9 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         # self.q_url = QUrl(url)
         self.q_url = QUrl()
         self.webengine_view = None
+        self.__load_started_at = None
+        self.__load_started_url = ""
+        self.__load_requested_url = ""
 
         self.current_head_index = None
         if self.refill_label:
@@ -391,6 +394,8 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
     def __on_load_start(self):
         self.__load_progress = 0
         url_ = self.webengine_view.url().toString()
+        self.__load_started_at = time.monotonic()
+        self.__load_started_url = url_
         self.url_lbl.setText('<div style="font-size: 10pt; background-color: #EEEEFF;">{} {} ({})</div>'.format(
             self.start_load, url_, self.__load_progress))
 
@@ -400,8 +405,14 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         self.url_lbl.setText('<div style="font-size: 10pt; background-color: #DDEEFF;">{} {} ... ({})</div>'.format(
             self.loading, url_, "*" * (self.__load_progress % 10)))
 
-    def __on_load_finish(self):
+    def __on_load_finish(self, ok=True):
         url_ = self.webengine_view.url().toString()
+        elapsed_ms = None
+        if self.__load_started_at is not None:
+            elapsed_ms = int((time.monotonic() - self.__load_started_at) * 1000)
+        logging.warning(
+            "webengine load finished ok:%s elapsed_ms:%s requested:%s started:%s final:%s",
+            ok, elapsed_ms, self.__load_requested_url, self.__load_started_url, url_)
         self.url_lbl.setText(
             '<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
 
@@ -544,10 +555,11 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             self.reset_view()
             time.sleep(.05)
 
-        logging.warning(f"url:{url}.")
+        logging.debug(f"url:{url}.")
         if url:
             q_url = QUrl(url)
             self.q_url = q_url
+            self.__load_requested_url = q_url.toString()
             self.webengine_view.setUrl(q_url)
             self.parent().setCurrentWidget(self)
 

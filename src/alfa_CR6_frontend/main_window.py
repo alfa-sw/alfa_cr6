@@ -594,7 +594,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         return self.stacked_widget
 
     def _after_browser_blank(self, callback):
-        if self.browser_page is not None and self.stacked_widget.currentWidget() == self.browser_page:
+        current_widget = self.stacked_widget.currentWidget()
+        if self.browser_page is not None and current_widget == self.browser_page:
             self.browser_page.blank_webengine_view(callback)
         else:
             callback()
