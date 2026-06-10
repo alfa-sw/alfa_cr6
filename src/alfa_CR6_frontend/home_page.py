@@ -16,6 +16,7 @@ import logging
 import traceback
 import asyncio
 import json
+import time
 
 from PyQt5.QtCore import Qt, QTimer
 
@@ -711,13 +712,17 @@ class HomePage(BaseStackedPage):
 
     def on_service_btn_group_clicked(self, btn):
 
+        # timestamp del CLICK: misura la latenza reale click -> pagina caricata
+        # (passato a open_page, loggato in browser_page.__on_load_finish)
+        _clicked_at = time.monotonic()
         btn_name = btn.objectName()
 
         try:
-            service_page_urls = ["http://127.0.0.1:8080/service_page/", ]
+            service_page_query = "?light_service_page=1"
+            service_page_urls = [f"http://127.0.0.1:8080/service_page/{service_page_query}", ]
             for i in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST:
                 if i:
-                    url = "http://{}:{}/service_page/".format(i[0], i[2])
+                    url = "http://{}:{}/service_page/{}".format(i[0], i[2], service_page_query)
                 else:
                     url = None
                 service_page_urls.append(url)
@@ -738,7 +743,7 @@ class HomePage(BaseStackedPage):
             head_index = service_btns.index(btn) - 1
             logging.debug("btn_name:%s, map_[btn]:%s, map_:%s, head_index:%s", btn_name, map_[btn], map_, head_index)
 
-            self.main_window.browser_page.open_page(map_[btn], head_index=head_index)
+            self.main_window.browser_page.open_page(map_[btn], head_index=head_index, requested_at=_clicked_at)
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
