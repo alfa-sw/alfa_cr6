@@ -8,6 +8,7 @@
 
 
 import os
+import sys
 import logging
 import asyncio
 import json
@@ -53,6 +54,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.mockup_files_path = mockup_files_path
 
         self.websocket = None
+        self.__ws_id = None
+        self.__last_recv_msg = None
+        self.__msg_excp_cntr = 0
         self.last_answer = None
         self.cmd_answers = []
         self.callback_on_macro_answer = None
@@ -358,16 +362,38 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return diff
 
-    async def handle_ws_recv(self):     # pylint: disable=too-many-branches
+    async def handle_ws_recv(self):
 
-        propagate_to_ws_msg_handler = True
         msg = None
         try:
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
         except asyncio.TimeoutError:
             logging.warning(f"{self.name} time out while waiting in websocket.recv.")
 
+        if msg is not None:
+            self.__last_recv_msg = msg
+
         self.cntr += 1
+
+        try:
+            await self.__process_ws_msg(msg)
+        except websockets.exceptions.ConnectionClosed:
+            raise
+        except Exception as e:  # pylint: disable=broad-except
+            # a faulty message must not tear down the websocket:
+            # log, record the first occurrences, keep the connection alive
+            logging.error(f"{self.name} e:{e}")
+            logging.error(traceback.format_exc())
+            self.__msg_excp_cntr += 1
+            if self.__msg_excp_cntr <= 3:
+                extra = self.__exception_log_extra(e, self.websocket)
+                extra["phase"] = "message processing (recovered)"
+                extra["msg_excp_cntr"] = self.__msg_excp_cntr
+                self.__log_document("WS_MSG_EXCP", extra)
+
+    async def __process_ws_msg(self, msg):     # pylint: disable=too-many-branches
+
+        propagate_to_ws_msg_handler = True
 
         if msg:
             msg_dict = dict(json.loads(msg))
@@ -599,6 +625,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     self.callback_on_macro_answer = callback_on_macro_answer
                     ret = True
 
+        except websockets.exceptions.ConnectionClosed as e:
+            # expected during connection teardown (the race window past the
+            # "if self.websocket" guard): record it, do not bother the operator
+            logging.error(f"{self.name} send_command cmd:{cmd_name} on closed websocket, e:{e}")
+            extra = self.__exception_log_extra(e, self.websocket)
+            extra["phase"] = "send_command"
+            extra["cmd_name"] = cmd_name
+            extra["cmd_type"] = type_
+            self.__log_document("WS_SEND_FAIL", extra)
+            ret = None
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
             ret = None
@@ -1025,6 +1061,18 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             "close_rcvd_then_sent": cls.__json_safe(cls.__safe_getattr(exc, "rcvd_then_sent")),
         }
 
+    @staticmethod
+    def __printable_msg(msg, limit=2000):
+        if msg is None:
+            return None
+        if isinstance(msg, bytes):
+            msg = msg.decode("utf-8", errors="replace")
+        if not isinstance(msg, str):
+            msg = str(msg)
+        if len(msg) > limit:
+            msg = msg[:limit] + "...[truncated]"
+        return msg
+
     def __exception_log_extra(self, exc, websocket=None):
         extra = {
             "exception_type": type(exc).__name__,
@@ -1032,7 +1080,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             "status": self.status,
             "photocells_status": self.photocells_status,
             "jar_photocells_status": self.jar_photocells_status,
-            "ws_id": getattr(self, '_MachineHead__ws_id', None),
+            "ws_id": self.__ws_id,
+            "recv_cntr": self.cntr,
+            "last_recv_msg": self.__printable_msg(self.__last_recv_msg),
             "traceback": traceback.format_exc(),
         }
         extra.update(self.__websocket_close_info(websocket))
@@ -1048,9 +1098,14 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         while True:
             ws_body_exception_id = None
             try:
-                async with websockets.connect(ws_url, close_timeout=40) as websocket:
+                # close_timeout low on purpose: on loopback a healthy peer answers the
+                # close handshake in ms; a mute peer will never answer and each extra
+                # second extends the window in which self.websocket points to a dead socket
+                websocket = await websockets.connect(ws_url, close_timeout=5)
+                try:
                     self.websocket = websocket
                     self.__ws_id = str(id(websocket))
+                    self.__msg_excp_cntr = 0
                     self.__log_document("WS_CONNECTED", {"ws_id": self.__ws_id})
                     try:
                         while True:
@@ -1067,6 +1122,26 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         extra["phase"] = "websocket message loop"
                         self.__log_document("WS_EXCP", extra)
                         raise
+                finally:
+                    # equivalent to the async-with __aexit__ (close()), but timed and
+                    # logged: WS_CTX_EXIT records who triggered the local close (the
+                    # "sent 1000") and whether the peer ever answered the handshake
+                    exit_trigger = sys.exc_info()[1]
+                    close_t0 = time.time()
+                    try:
+                        await websocket.close()
+                    finally:
+                        # fast-fail for send_command during the reconnect window,
+                        # instead of raising on a dead socket
+                        self.websocket = None
+                        extra = self.__websocket_close_info(websocket)
+                        extra.update({
+                            "ws_id": self.__ws_id,
+                            "close_duration": round(time.time() - close_t0, 3),
+                            "exit_trigger": type(exit_trigger).__name__ if exit_trigger is not None else None,
+                            "exit_trigger_error": str(exit_trigger) if exit_trigger is not None else None,
+                        })
+                        self.__log_document("WS_CTX_EXIT", extra)
             except asyncio.CancelledError:
                 raise
             except (OSError, ConnectionRefusedError,
