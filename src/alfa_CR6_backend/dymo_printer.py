@@ -18,7 +18,7 @@ import logging
 import subprocess
 import os
 
-from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment,create_printable_image_for_package,extract_jar_print_data,_get_print_label_options)
+from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment,create_printable_image_for_package,create_printable_image_for_low_pigments,extract_jar_print_data,_get_print_label_options)
 
 def _exec_cmd(command, shell=False):
 
@@ -242,6 +242,56 @@ async def async_dymo_print_pigment_labels(printables, fake=False):
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
         None, functools.partial(_generate_and_print_pigment_labels, printables, fake=fake))
+
+
+def _generate_and_print_low_pigment_labels(per_head_list, fake=False):
+    # per_head_list: list of {'head_name': str, 'low_pipes': [(pipe, pigment), ...]}.
+    # Produces one label per head (multi-page PDF), each listing that head's low pipes.
+
+    t0 = time.monotonic()
+    image_paths = []
+    fd_pdf, pdf_path = tempfile.mkstemp(suffix='.pdf', dir='/opt/alfa_cr6/tmp/')
+    os.close(fd_pdf)
+    try:
+        options = _get_print_label_options()
+        for entry in per_head_list:
+            fd, tmp_file = tempfile.mkstemp(suffix='.png', dir='/opt/alfa_cr6/tmp/')
+            os.close(fd)
+            try:
+                _path = create_printable_image_for_low_pigments(
+                    entry.get('head_name', ''),
+                    entry.get('low_pipes', []),
+                    options=dict(options),
+                    output_path=tmp_file)
+                if _path:
+                    image_paths.append(_path)
+            except Exception:   # pylint: disable=broad-except
+                logging.error(traceback.format_exc())
+
+        if not image_paths:
+            return {'result': 'NOK', 'msg': 'No images generated'}
+
+        if fake:
+            return {'result': 'OK', 'msg': 'Dry run, not printed'}
+
+        _images_to_pdf(image_paths, pdf_path)
+        ret = _dymo_print_pdf(pdf_path)
+        logging.debug("[print_low_pigments] %d labels, total %.3fs", len(image_paths), time.monotonic() - t0)
+        return ret
+
+    finally:
+        for p in image_paths + [pdf_path]:
+            try:
+                os.unlink(p)
+            except OSError:
+                pass
+
+
+async def async_dymo_print_low_pigment_labels(per_head_list, fake=False):
+
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(
+        None, functools.partial(_generate_and_print_low_pigment_labels, per_head_list, fake=fake))
 
 
 async def async_dymo_print_package_label(package, fake=False):

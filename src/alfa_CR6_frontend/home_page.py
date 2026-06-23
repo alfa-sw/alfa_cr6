@@ -24,7 +24,7 @@ from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
 from alfa_CR6_backend.globals import (import_settings, get_res, tr_, DEFAULT_DEBUG_PAGE_PWD)
-from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels
+from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels, async_dymo_print_low_pigment_labels
 
 from alfa_CR6_frontend.pages import BaseStackedPage
 from alfa_CR6_frontend.debug_page import simulate_read_barcode
@@ -77,6 +77,59 @@ class PrintLabelHelper:
                 message="Missing printables ...")
             return
 
+        t = self.print_labels()
+        asyncio.ensure_future(t)
+
+
+class LowPigmentsPrintHelper:
+
+    def __init__(self, parent=None):
+        self.parent = parent
+
+    @staticmethod
+    def collect_low_pigment_heads():
+        # All heads currently in 'Low Pigments' state, with their low pipes.
+        app = QApplication.instance()
+        per_head = []
+        for m in app.machine_head_dict.values():
+            if m and m.low_level_pipes:
+                per_head.append({'head_name': m.name, 'low_pipes': list(m.low_level_pipes)})
+        return per_head
+
+    async def print_labels(self):
+        fake_print = os.getenv("FAKE_DYMO_PRINT", False) in ["1", "true"]
+
+        per_head = self.collect_low_pigment_heads()
+        if not per_head:
+            # Defensive only: the reserve label is shown (hence clickable) just
+            # while a head has low_level_pipes, so reaching here with nothing to
+            # print would require all heads to clear between click and run.
+            logging.warning("print Low Pigments label: no head in low-level state, nothing to print")
+            return
+
+        try:
+            ret = await async_dymo_print_low_pigment_labels(per_head, fake=fake_print)
+            logging.debug("print_low_pigment_labels ret: %s", ret)
+
+            if ret['result'] != 'OK':
+                raise PrintException("Printing failed", ret)
+
+        except PrintException as pexc:
+            error_message = pexc.payload
+            logging.error(f"PrintException: {error_message}")
+            QApplication.instance().main_window.open_input_dialog(
+                icon_name="SP_MessageBoxCritical",
+                message=error_message,
+                content=None)
+            return
+
+        msg_ = tr_("OK")
+        QApplication.instance().main_window.open_input_dialog(
+            icon_name="SP_MessageBoxQuestion",
+            message=msg_,
+            content=None)
+
+    def run(self):
         t = self.print_labels()
         asyncio.ensure_future(t)
 
@@ -1210,7 +1263,8 @@ class HomePage(BaseStackedPage):
         if m.low_level_pipes:
             QApplication.instance().main_window.open_alert_dialog(
                 (m.name, m.low_level_pipes),
-                fmt="{} Please, Check Pipe Levels: low_level_pipes:{}"
+                fmt="{} Please, Check Pipe Levels: low_level_pipes:{}",
+                print_callback=lambda: LowPigmentsPrintHelper().run(),
             )
 
     @staticmethod

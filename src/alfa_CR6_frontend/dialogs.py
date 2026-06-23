@@ -74,7 +74,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
     def __init__(
             self, msg="", title="", parent=None, ok_callback=None,
-            ok_callback_args=None, hp_callback=None
+            ok_callback_args=None, hp_callback=None, print_callback=None
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
         # NB: deliberately NO WA_DeleteOnClose here. It would conflict with
@@ -88,6 +88,8 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         self.ok_callback = ok_callback
         self.ok_callback_args = ok_callback_args
         self.hp_callback = hp_callback
+        self.print_callback = print_callback
+        self.print_button = None
         self._block_close = False
 
         self.help_icon = QPixmap(get_res("IMAGE", "help.png"))
@@ -137,6 +139,16 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             b.setIcon(icon_)
             b.resize(300, 80)
 
+        # Optional extra "Print" button. Added AFTER the index-based styling
+        # loop above so it does not perturb the Cancel/Info/OK naming logic.
+        # Gated behind print_callback => no behaviour change for existing callers.
+        if self.print_callback:
+            self.print_button = self.addButton(tr_(' Print '), QMessageBox.ActionRole)
+            self.print_button.setObjectName('print')
+            self.print_button.setIcon(QIcon(QPixmap(get_res("IMAGE", "barcode_C128.png"))))
+            self.print_button.setStyleSheet("""QWidget {font-size: 48px; font-family:Monospace;}""")
+            self.print_button.resize(300, 80)
+
         # Always schedule deleteLater when the dialog is closed via OK/Cancel
         # so the C++ object does not leak as a child of MainWindow.
         # Use a 0-ms QTimer so the deletion happens after QMessageBox has
@@ -146,7 +158,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 QTimer.singleShot(0, self.deleteLater)
         self.buttonClicked.connect(_cleanup_on_close_button)
 
-        if self.ok_callback or self.hp_callback:
+        if self.ok_callback or self.hp_callback or self.print_callback:
             def on_button_clicked(btn):
                 btn_name = btn.objectName().lower()
                 logging.warning(f"btn_name:{btn_name}, btn:{btn}, btn.text():{btn.text()}")
@@ -154,6 +166,12 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 if "help" not in btn_name:
                     # Non-Info button: allow the dialog to close normally.
                     self._block_close = False
+
+                if self.print_callback and "print" in btn_name:
+                    try:
+                        self.print_callback()
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(traceback.format_exc())
 
                 if self.ok_callback and "ok" in btn_name:
                     if getattr(self, 'executing_callback', False):

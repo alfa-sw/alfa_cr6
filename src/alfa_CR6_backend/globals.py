@@ -437,6 +437,53 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name, opt
 
     return response
 
+def create_printable_image_for_low_pigments(head_name, low_pipes, options=None, output_path=None):
+    # One DYMO label summarising the low-level pipes of a single machine head.
+    # head_name : str       -- machine head name (used as label title)
+    # low_pipes : iterable  -- list of (pipe_name, pigment_name) tuples
+
+    if options is None:
+        options = _get_print_label_options()
+
+    _image_path = output_path or TMP_PIGMENT_IMAGE
+
+    response = None
+
+    if not os.path.exists(_image_path):
+        with open(_image_path, 'w', encoding='UTF-8'):
+            logging.warning(f'empty file created at:{_image_path}')
+
+    # No barcode on this label: keep the same EAN13 text-rendering path used
+    # for pigment labels, but suppress the bars by zeroing their height.
+    options['module_height'] = 0
+    barcode_txt = 12 * '0'
+
+    line_lenght = options.pop('line_lenght')
+    # One title line for the head plus one line per low pipe. We deliberately
+    # render every low pipe (no n_of_lines pad/truncate): the whole point of
+    # the label is to list all of the head's low pigments.
+    options.pop('n_of_lines', None)
+
+    lines_to_print = [tr_("LOW LVL PIGMENTS"), tr_("HEAD {}").format(head_name)]
+    lines_to_print += [f"{pipe_name}: {pigment_name}"[:line_lenght]
+                       for pipe_name, pigment_name in low_pipes]
+
+    printable_text = '\n'.join(lines_to_print)
+
+    with open(_image_path, 'wb') as file_:
+        rotate = options.pop('rotate')
+        EAN13(barcode_txt, writer=ImageWriter()).write(file_, options, printable_text)
+
+        response = _image_path
+
+    if response and rotate:
+        from PIL import Image   # pylint: disable=import-outside-toplevel
+        Image.open(_image_path).rotate(rotate, expand=1).save(_image_path)
+
+    logging.warning('response: {}'.format(response))
+
+    return response
+
 def extract_jar_print_data(jar):
 
     return {
