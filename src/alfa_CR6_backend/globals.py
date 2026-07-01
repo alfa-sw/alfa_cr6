@@ -437,52 +437,98 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name, opt
 
     return response
 
+_DEFAULT_LABEL_FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+
 def create_printable_image_for_low_pigments(head_name, low_pipes, options=None, output_path=None):
-    # One DYMO label summarising the low-level pipes of a single machine head.
+    # One DYMO label listing a head's low-level pipes as upright text running down
+    # the LONG (portrait) side of the label.
+    #
     # head_name : str       -- machine head name (used as label title)
     # low_pipes : iterable  -- list of (pipe_name, pigment_name) tuples
+    #
+    # We render the text directly with PIL instead of (ab)using the EAN13 writer
+    # with a suppressed barcode. The barcode-driven layout pinned the image width
+    # to the (fixed) barcode footprint, so the raw image flipped orientation with
+    # the number of pipes -- landscape for few pipes, portrait for many -- and no
+    # single rotation printed on the long side for every pipe count. Drawing onto
+    # a portrait canvas matched to the label's aspect ratio prints along the long
+    # side for any number of pipes, with an auto-fitted font.
+    from PIL import Image, ImageDraw, ImageFont   # pylint: disable=import-outside-toplevel
 
     if options is None:
         options = _get_print_label_options()
 
     _image_path = output_path or TMP_PIGMENT_IMAGE
 
-    response = None
+    # Order pipes by circuit name (C01, C02, ... C16). Names are zero-padded, so a
+    # plain lexicographic sort yields the natural circuit order regardless of the
+    # order the API/enumeration returned them in.
+    sorted_pipes = sorted(low_pipes, key=lambda item: item[0])
 
-    if not os.path.exists(_image_path):
-        with open(_image_path, 'w', encoding='UTF-8'):
-            logging.warning(f'empty file created at:{_image_path}')
+    line_lenght = options.get('line_lenght', 50)
+    header_lines = [tr_("LOW LVL PIGMENTS"), tr_("HEAD {}").format(head_name)]
+    body_lines = [f"{pipe_name}: {pigment_name}"[:line_lenght]
+                  for pipe_name, pigment_name in sorted_pipes]
+    lines = [process_text(line) for line in header_lines + body_lines]
 
-    # No barcode on this label: keep the same EAN13 text-rendering path used
-    # for pigment labels, but suppress the bars by zeroing their height.
-    options['module_height'] = 0
-    barcode_txt = 12 * '0'
+    # Portrait canvas matched to the DYMO label aspect ratio (54 x 70 mm). Pixels
+    # are derived from dpi for a crisp raster; the exact physical size is handled
+    # downstream by 'lp -o fit-to-page', which scales this portrait image onto the
+    # portrait label so the list runs along the long side.
+    dpi = int(options.get('dpi', 240) or 240)
+    canvas_w = max(200, int(round(dpi * 2.13)))          # ~54 mm at the given dpi
+    canvas_h = int(round(canvas_w * 70.0 / 54.02))       # label is 54 x 70 mm
+    margin = int(round(canvas_w * 0.06))
+    avail_w = canvas_w - 2 * margin
+    avail_h = canvas_h - 2 * margin
 
-    line_lenght = options.pop('line_lenght')
-    # One title line for the head plus one line per low pipe. We deliberately
-    # render every low pipe (no n_of_lines pad/truncate): the whole point of
-    # the label is to list all of the head's low pigments.
-    options.pop('n_of_lines', None)
+    font_path = options.get('font_path') or _DEFAULT_LABEL_FONT
 
-    lines_to_print = [tr_("LOW LVL PIGMENTS"), tr_("HEAD {}").format(head_name)]
-    lines_to_print += [f"{pipe_name}: {pigment_name}"[:line_lenght]
-                       for pipe_name, pigment_name in low_pipes]
+    def _load_font(size):
+        try:
+            return ImageFont.truetype(font_path, size)
+        except Exception:   # pylint: disable=broad-except
+            return ImageFont.load_default()
 
-    printable_text = '\n'.join(lines_to_print)
+    probe = ImageDraw.Draw(Image.new('L', (canvas_w, canvas_h), 255))
 
-    with open(_image_path, 'wb') as file_:
-        rotate = options.pop('rotate')
-        EAN13(barcode_txt, writer=ImageWriter()).write(file_, options, printable_text)
+    def _text_wh(text, font):
+        try:
+            left, top, right, bottom = probe.textbbox((0, 0), text, font=font)
+            return right - left, bottom - top
+        except AttributeError:      # Pillow < 8 has no textbbox
+            return probe.textsize(text, font=font)
 
-        response = _image_path
+    # Largest font size at which every line fits the width AND all lines fit the
+    # height. Dimensions grow monotonically with size, so we can stop at the first
+    # size that no longer fits.
+    best_size = 8
+    for size in range(8, 121):
+        font = _load_font(size)
+        widths_ok = all(_text_wh(line, font)[0] <= avail_w for line in lines)
+        step = int(round(_text_wh("Ag", font)[1] * 1.18))
+        if widths_ok and step * len(lines) <= avail_h:
+            best_size = size
+        else:
+            break
 
-    if response and rotate:
-        from PIL import Image   # pylint: disable=import-outside-toplevel
-        Image.open(_image_path).rotate(rotate, expand=1).save(_image_path)
+    font = _load_font(best_size)
+    step = int(round(_text_wh("Ag", font)[1] * 1.18))
+    total_h = step * len(lines)
 
-    logging.warning('response: {}'.format(response))
+    image = Image.new('L', (canvas_w, canvas_h), 255)
+    draw = ImageDraw.Draw(image)
+    y = max(margin, (canvas_h - total_h) // 2)
+    for line in lines:
+        width, _h = _text_wh(line, font)
+        draw.text(((canvas_w - width) // 2, y), line, fill=0, font=font)
+        y += step
 
-    return response
+    image.save(_image_path)
+    logging.warning('low_pigments label: %s (%dx%d, font %d, %d lines)',
+                    _image_path, canvas_w, canvas_h, best_size, len(lines))
+
+    return _image_path
 
 def extract_jar_print_data(jar):
 
