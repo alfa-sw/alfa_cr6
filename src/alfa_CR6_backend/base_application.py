@@ -808,6 +808,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.handle_exception(e)
             logging.error(traceback.format_exc())
 
+    def __on_modal_freeze_msgbox_destroyed(self, *_args):
+        self.__modal_freeze_msgbox = None
+
+    def __enable_freeze_msgbox_buttons(self, flag_ok, flag_esc):
+        # deferred (call_later) counterpart of enable_buttons: goes through
+        # self.__modal_freeze_msgbox instead of capturing the bound method,
+        # so a box destroyed in the meantime is a no-op, not a RuntimeError.
+        if self.__modal_freeze_msgbox:
+            self.__modal_freeze_msgbox.enable_buttons(flag_ok, flag_esc)
+
     def __check_jars_to_freeze(self):
 
         _tasks_to_freeze = []
@@ -845,14 +855,23 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     msg += "\n{}".format([k for t, k in _tasks_to_freeze])
 
                     if not self.__modal_freeze_msgbox:
-                        self.__modal_freeze_msgbox = ModalMessageBox(parent=self.main_window, msg=msg, title="ALERT")
+                        # auto_delete=False: this box is cached and reused across
+                        # freeze cycles, it must survive the OK/Cancel clicks.
+                        self.__modal_freeze_msgbox = ModalMessageBox(
+                            parent=self.main_window, msg=msg, title="ALERT", auto_delete=False)
                         self.__modal_freeze_msgbox.move(self.__modal_freeze_msgbox.geometry().x(), 20)
+                        # belt and braces: if anything ever destroys the C++ side,
+                        # drop the reference so the box is recreated instead of
+                        # raising RuntimeError on the dead sip wrapper.
+                        self.__modal_freeze_msgbox.destroyed.connect(
+                            self.__on_modal_freeze_msgbox_destroyed)
                     else:
                         self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
                         self.__modal_freeze_msgbox.show()
                     self.__modal_freeze_msgbox.enable_buttons(False, False)
 
-                    asyncio.get_event_loop().call_later(10, partial(self.__modal_freeze_msgbox.enable_buttons, False, True))
+                    asyncio.get_event_loop().call_later(
+                        10, partial(self.__enable_freeze_msgbox_buttons, False, True))
 
                 else:
                     if self.__modal_freeze_msgbox:

@@ -33,7 +33,7 @@ Run from the project root with the project venv (needs PyQt5 + redis etc.).
             /opt/alfa_cr6/venv/bin/python3 -m unittest \
             src/alfa_CR6_test/test_dialog_leak.py -v
 
-The three tests are complementary:
+The tests are complementary:
   * test_dialogs_accumulate_without_deleteonclose -> documents the CURRENT leak
     (after N open+close, N boxes are still allocated under the parent).
   * test_deleteonclose_releases_dialogs -> shows the TARGET behaviour: with
@@ -47,6 +47,14 @@ The three tests are complementary:
     triggers. It drives the actual MainWindow methods, clicking OK to run the
     real freeze_carousel(False) callback: since b313570/0ce0944 the click
     schedules deleteLater, so the boxes must be released, not retained.
+  * test_default_box_is_deleted_after_button_click /
+    test_cached_freeze_msgbox_survives_button_click -> regression pair for the
+    freeze-carousel crash: the leak fix deleteLater also killed the one box
+    that BaseApplication caches and reuses (__modal_freeze_msgbox), leaving a
+    dead sip wrapper that made freeze_carousel(False) raise RuntimeError
+    inside a Qt slot (process abort). auto_delete=False must keep that box
+    alive and reusable across clicks, while the one-shot default still
+    self-destructs.
 """
 
 import os
@@ -61,6 +69,11 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
+
+try:
+    from PyQt5 import sip
+except ImportError:  # older PyQt5 packaging (e.g. distro 5.12) ships it standalone
+    import sip
 
 from alfa_CR6_backend.globals import import_settings
 from alfa_CR6_frontend.dialogs import ModalMessageBox
@@ -296,6 +309,66 @@ class DialogLeakTest(unittest.TestCase):
         )
         # proof the real ok_callback wiring ran: every OK -> freeze_carousel(False)
         self.assertEqual(self.app.freeze_calls, [False] * N_DIALOGS)
+
+    @staticmethod
+    def _click_ok(box):
+        ok_btn = next(b for b in box.buttons() if b.objectName().lower() == "ok")
+        ok_btn.click()
+
+    def test_default_box_is_deleted_after_button_click(self):
+        """One-shot boxes (auto_delete default True) die on the first OK click.
+
+        This is the leak fix itself, observed at sip level: it is also the
+        very behaviour that must NOT apply to the cached freeze msgbox (see
+        the companion test below).
+        """
+        parent = QWidget()
+        box = ModalMessageBox(parent=parent, msg="one-shot alarm", title="ALERT")
+        self._click_ok(box)
+        drain_deferred_deletes(self.app)
+        self.assertTrue(
+            sip.isdeleted(box),
+            "default (auto_delete=True) boxes must self-destruct on OK",
+        )
+
+    def test_cached_freeze_msgbox_survives_button_click(self):
+        """Regression for the freeze-carousel crash (dev 1.11.0.dev4 field log).
+
+        BaseApplication.__check_jars_to_freeze caches ONE ModalMessageBox and
+        reuses it (setText/show/enable_buttons) across freeze cycles. With the
+        leak-fix deleteLater, the operator's first OK/Cancel click destroyed
+        the C++ object behind the cached reference: every later access raised
+        'wrapped C/C++ object ... has been deleted', and freeze_carousel(False)
+        (the OK callback of the 'carousel is paused' dialog) re-raised it
+        inside a Qt slot, aborting the process.
+
+        With auto_delete=False the box must survive the click and stay fully
+        reusable, exactly as __check_jars_to_freeze uses it.
+        """
+        parent = QWidget()
+        box = ModalMessageBox(
+            parent=parent, msg="all operations are paused", title="ALERT",
+            auto_delete=False,
+        )
+        self._click_ok(box)
+        drain_deferred_deletes(self.app)
+
+        self.assertFalse(
+            sip.isdeleted(box),
+            "auto_delete=False box must survive the OK click (cached reuse)",
+        )
+
+        # reuse it exactly as __check_jars_to_freeze / freeze_carousel do:
+        # none of these may raise RuntimeError on a dead wrapper
+        box.setText("\n\nplease, wait while finishing all pending operations ...\n\n")
+        box.show()
+        box.enable_buttons(False, False)
+        box.enable_buttons(True, True)
+        box.close()
+
+        # caller owns the lifecycle: explicit teardown keeps the test clean
+        box.deleteLater()
+        drain_deferred_deletes(self.app)
 
 
 def _delta(now, then):

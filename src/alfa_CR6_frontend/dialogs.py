@@ -74,7 +74,8 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
     def __init__(
             self, msg="", title="", parent=None, ok_callback=None,
-            ok_callback_args=None, hp_callback=None, print_callback=None
+            ok_callback_args=None, hp_callback=None, print_callback=None,
+            auto_delete=True,
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
         # NB: deliberately NO WA_DeleteOnClose here. It would conflict with
@@ -84,6 +85,11 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         # the modal while the user is still expected to see it. Instead we
         # schedule deleteLater explicitly when the user presses OK/Cancel
         # below (see _cleanup_on_close_button).
+        #
+        # auto_delete=False opts out of that deleteLater entirely: it is for
+        # long-lived boxes that the caller caches and reuses across show()
+        # cycles (e.g. BaseApplication.__modal_freeze_msgbox). The caller
+        # then owns the lifecycle.
 
         self.ok_callback = ok_callback
         self.ok_callback_args = ok_callback_args
@@ -149,14 +155,17 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             self.print_button.setStyleSheet("""QWidget {font-size: 48px; font-family:Monospace;}""")
             self.print_button.resize(300, 80)
 
-        # Always schedule deleteLater when the dialog is closed via OK/Cancel
-        # so the C++ object does not leak as a child of MainWindow.
+        # Schedule deleteLater when the dialog is closed via OK/Cancel so the
+        # C++ object does not leak as a child of MainWindow.
         # Use a 0-ms QTimer so the deletion happens after QMessageBox has
         # finished its own done() handling.
-        def _cleanup_on_close_button(btn):
-            if "help" not in btn.objectName().lower():
-                QTimer.singleShot(0, self.deleteLater)
-        self.buttonClicked.connect(_cleanup_on_close_button)
+        # Skipped when auto_delete=False (cached, reusable boxes): deleting
+        # those on the first click leaves the caller with a dead sip wrapper.
+        if auto_delete:
+            def _cleanup_on_close_button(btn):
+                if "help" not in btn.objectName().lower():
+                    QTimer.singleShot(0, self.deleteLater)
+            self.buttonClicked.connect(_cleanup_on_close_button)
 
         if self.ok_callback or self.hp_callback or self.print_callback:
             def on_button_clicked(btn):
