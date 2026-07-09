@@ -39,6 +39,7 @@ from alfa_CR6_backend.globals import (
 
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.order_parser import OrderParser
+from alfa_CR6_backend.sound_player import play_refill_alarm, stop_refill_alarm
 from alfa_CR6_backend.ws_server import WsServer
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 from alfa_CR6_frontend.dialogs import ModalMessageBox
@@ -480,6 +481,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         self.__modal_freeze_msgbox = None
         # Attention LEDs are shared across concurrent jar tasks and freeze flows.
         self._attention_led_requests = {}
+        # Token dei refill in attesa di operatore: il suono di notifica parte
+        # col primo e si spegne al rilascio dell'ultimo (o al timeout del setting).
+        self._refill_alarm_tokens = set()
 
         self.chromium_wrapper = None
         self.restore_machine_helper = None
@@ -1679,10 +1683,20 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def request_attention_leds(self, heads, token, reason=None):
         for head in heads:
             self.request_attention_led(head, token, reason=reason)
+        # notifica acustica refill: stessa semantica dei led di attenzione
+        # (usata solo dai due flussi refill: check all'ingresso e dispense_step);
+        # ogni nuovo token ri-arma anche il timeout del setting
+        if heads:
+            self._refill_alarm_tokens.add(token)
+            play_refill_alarm()
 
     def release_attention_leds(self, heads, token, reason=None):
         for head in heads:
             self.release_attention_led(head, token, reason=reason)
+        if token in self._refill_alarm_tokens:
+            self._refill_alarm_tokens.discard(token)
+            if not self._refill_alarm_tokens:
+                stop_refill_alarm()
 
     async def wait_for_carousel_not_frozen(
             self, freeze=False, message_args=(), message_fmt=None,

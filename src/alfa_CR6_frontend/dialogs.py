@@ -75,7 +75,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
     def __init__(
             self, msg="", title="", parent=None, ok_callback=None,
             ok_callback_args=None, hp_callback=None, print_callback=None,
-            auto_delete=True,
+            auto_delete=True, cancel_callback=None,
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
         # NB: deliberately NO WA_DeleteOnClose here. It would conflict with
@@ -95,6 +95,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
         self.ok_callback_args = ok_callback_args
         self.hp_callback = hp_callback
         self.print_callback = print_callback
+        self.cancel_callback = cancel_callback
         self.print_button = None
         self._block_close = False
 
@@ -167,7 +168,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                     QTimer.singleShot(0, self.deleteLater)
             self.buttonClicked.connect(_cleanup_on_close_button)
 
-        if self.ok_callback or self.hp_callback or self.print_callback:
+        if self.ok_callback or self.hp_callback or self.print_callback or self.cancel_callback:
             def on_button_clicked(btn):
                 btn_name = btn.objectName().lower()
                 logging.warning(f"btn_name:{btn_name}, btn:{btn}, btn.text():{btn.text()}")
@@ -179,6 +180,15 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 if self.print_callback and "print" in btn_name:
                     try:
                         self.print_callback()
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(traceback.format_exc())
+
+                if self.cancel_callback and "esc" in btn_name:
+                    # il Cancel e' comunque una presa visione dell'operatore:
+                    # chi apre il dialog puo' agganciarci una reazione (es.
+                    # silenziare la notifica sonora refill lasciando il freeze)
+                    try:
+                        self.cancel_callback()
                     except Exception:  # pylint: disable=broad-except
                         logging.error(traceback.format_exc())
 

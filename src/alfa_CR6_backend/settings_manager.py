@@ -102,6 +102,25 @@ class SettingsManager:
                 'default': True,
                 'description': 'When enabled, the alarm popup shows an "Info" button that opens a web page with the error description and resolution.',
             },
+            'REFILL_ALARM_NOTIFICATION': {
+                'type': 'object',
+                'docker_only': True,
+                'properties': {
+                    'enabled': {'type': 'boolean'},
+                    'sound': {'type': 'string', 'enum': ['fast_beep', 'slow_beep']},
+                    'timeout': {'type': 'integer', 'minimum': 10, 'maximum': 120},
+                    'sound_level': {'type': 'string', 'enum': ['auto', '100%', '75%', '50%']},
+                },
+                'required': ['enabled', 'sound', 'timeout'],
+                'additionalProperties': False,
+                'default': {'enabled': False, 'sound': 'fast_beep', 'timeout': 30, 'sound_level': 'auto'},
+                'description': 'Refill alarm notification played on the monitor speakers (snowball machines only). '
+                               'sound: "fast_beep" (200ms beep / 300ms pause) or "slow_beep" (800ms beep / 1200ms pause); '
+                               'timeout: seconds (10-120) after which the sound stops by itself; '
+                               'sound_level: monitor speaker volume applied right before the alarm ("auto" = leave as is) - '
+                               'percent options are selectable only when the connected monitor supports DDC/CI.',
+                'ui_error': 'Error: expected {"enabled": true|false, "sound": "fast_beep"|"slow_beep", "timeout": 10..120, "sound_level": "auto"|"100%"|"75%"|"50%"}',
+            },
         },
     }
 
@@ -245,7 +264,11 @@ class SettingsManager:
 
         properties = SettingsManager.SCHEMA.get('properties', {})
         editable_keys = set(properties.keys())
-        visible_keys = {k for k, spec in properties.items() if spec.get('ui_show', True)}
+        visible_keys = {
+            k for k, spec in properties.items()
+            if spec.get('ui_show', True)
+            and (SettingsManager._in_docker() or not spec.get('docker_only'))
+        }
 
         if hasattr(s, "USER_SETTINGS") and isinstance(getattr(s, "USER_SETTINGS"), dict):
             source = dict(getattr(s, "USER_SETTINGS"))
@@ -303,6 +326,12 @@ class SettingsManager:
                 except (json.JSONDecodeError, TypeError):
                     pass
 
+            elif expected_type == 'object' and isinstance(val, str):
+                try:
+                    val = json.loads(val)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
             normalized[key] = val
 
         return normalized
@@ -350,7 +379,13 @@ class SettingsManager:
         if SettingsManager._in_docker():
             SettingsManager._update_settings_in_docker(defaults, "align")
         else:
-            SettingsManager._update_settings_legacy(defaults, "align")
+            # i setting docker_only (es. REFILL_ALARM_NOTIFICATION) non hanno
+            # senso sulle macchine host/legacy: non vanno aggiunti al loro conf
+            host_defaults = {
+                k: v for k, v in defaults.items()
+                if not SettingsManager.SCHEMA['properties'][k].get('docker_only')
+            }
+            SettingsManager._update_settings_legacy(host_defaults, "align")
 
     @staticmethod
     def set_updates(updates: dict):

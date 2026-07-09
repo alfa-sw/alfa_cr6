@@ -179,6 +179,70 @@
               tdVal.appendChild(desc);
             }
             tdVal.appendChild(errBox);
+          } else if (schema[k] && schema[k].type === 'object' && schema[k].properties) {
+            // setting strutturato (es. REFILL_ALARM_NOTIFICATION): un controllo
+            // per campo invece del JSON grezzo, per azzerare gli errori di battitura
+            const spec = schema[k];
+            const wrap = document.createElement('div');
+            const objVal = (v && typeof v === 'object') ? v : {};
+            for (const subKey of Object.keys(spec.properties)) {
+              const subSpec = spec.properties[subKey] || {};
+              const row = document.createElement('div');
+              row.style.margin = '3px 0';
+              const lbl = document.createElement('label');
+              lbl.style.marginRight = '8px';
+              lbl.textContent = subKey + ':';
+              let ctrl;
+              if (subSpec.type === 'boolean') {
+                ctrl = document.createElement('input');
+                ctrl.type = 'checkbox';
+                ctrl.checked = !!objVal[subKey];
+              } else if (Array.isArray(subSpec.enum)) {
+                ctrl = document.createElement('select');
+                subSpec.enum.forEach(optVal => {
+                  const opt = document.createElement('option');
+                  opt.value = optVal;
+                  opt.textContent = optVal;
+                  if (objVal[subKey] === optVal) opt.selected = true;
+                  ctrl.appendChild(opt);
+                });
+              } else if (subSpec.type === 'integer' || subSpec.type === 'number') {
+                ctrl = document.createElement('input');
+                ctrl.type = 'number';
+                ctrl.value = objVal[subKey] !== undefined ? String(objVal[subKey]) : '';
+                if (subSpec.minimum !== undefined) ctrl.min = String(subSpec.minimum);
+                if (subSpec.maximum !== undefined) ctrl.max = String(subSpec.maximum);
+                if (subSpec.type === 'integer') ctrl.step = '1';
+                ctrl.addEventListener('input', () => {
+                  const num = Number(ctrl.value);
+                  let bad = ctrl.value === '' || Number.isNaN(num);
+                  if (!bad && subSpec.minimum !== undefined && num < subSpec.minimum) bad = true;
+                  if (!bad && subSpec.maximum !== undefined && num > subSpec.maximum) bad = true;
+                  if (!bad && subSpec.type === 'integer' && !Number.isInteger(num)) bad = true;
+                  ctrl.classList.toggle('is-invalid', bad);
+                  const tr2 = ctrl.closest('tr');
+                  if (tr2) tr2.classList.toggle('row-invalid', bad);
+                  errBox.textContent = bad ? (spec.ui_error || 'Valore non valido') : '';
+                  errBox.style.display = bad ? '' : 'none';
+                });
+              } else {
+                ctrl = document.createElement('input');
+                ctrl.type = 'text';
+                ctrl.value = objVal[subKey] !== undefined ? String(objVal[subKey]) : '';
+              }
+              ctrl.className = (ctrl.className ? ctrl.className + ' ' : '') + 'obj-field';
+              ctrl.dataset.key = k;
+              ctrl.dataset.sub = subKey;
+              row.appendChild(lbl);
+              row.appendChild(ctrl);
+              wrap.appendChild(row);
+            }
+            tdVal.appendChild(wrap);
+            if (spec.description) {
+              desc.textContent = spec.description;
+              tdVal.appendChild(desc);
+            }
+            tdVal.appendChild(errBox);
           } else {
             const input = document.createElement('input');
             input.type = 'text';
@@ -206,8 +270,8 @@
       function saveSettings() {
         if (!__g_ws_client || __g_ws_client.readyState !== 1) return;
 
-        const textInputs = document.querySelectorAll('#settings_tbody input[type="text"]');
-        const numberInputs = document.querySelectorAll('#settings_tbody input[type="number"]');
+        const textInputs = document.querySelectorAll('#settings_tbody input[type="text"]:not(.obj-field)');
+        const numberInputs = document.querySelectorAll('#settings_tbody input[type="number"]:not(.obj-field)');
         const schema = window.currentSchema || {};
         const updates = {};
 
@@ -280,6 +344,27 @@
         document.querySelectorAll('#settings_tbody input.bool-ck[data-value="true"]').forEach(cbTrue => {
           const key = cbTrue.dataset.key;
           updates[key] = !!cbTrue.checked;
+        });
+
+        // ricompone i setting strutturati (type object) dai loro sotto-controlli;
+        // la validazione dei valori la fa l'Ajv full-schema qui sotto
+        document.querySelectorAll('#settings_tbody .obj-field').forEach(el => {
+          const parentKey = el.dataset.key;
+          const subKey = el.dataset.sub;
+          if (!parentKey || !subKey) return;
+          if (!updates[parentKey] || typeof updates[parentKey] !== 'object') updates[parentKey] = {};
+          let val;
+          if (el.type === 'checkbox') {
+            val = el.checked;
+          } else if (el.tagName === 'SELECT') {
+            val = el.value;
+          } else if (el.type === 'number') {
+            const num = Number(el.value);
+            val = (el.value === '' || Number.isNaN(num)) ? el.value : num;  // stringa vuota: la boccia Ajv
+          } else {
+            val = el.value;
+          }
+          updates[parentKey][subKey] = val;
         });
 
         let finalInvalid = false;

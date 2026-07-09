@@ -24,6 +24,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from alfa_CR6_backend.globals import (
     get_res, tr_, KEYBOARD_PATH, import_settings, set_language, LANGUAGE_MAP, DEFAULT_DEBUG_PAGE_PWD)
 from alfa_CR6_backend.base_application import BarCodeReader
+from alfa_CR6_backend.sound_player import stop_refill_alarm
 from alfa_CR6_frontend.dialogs import (
     ModalMessageBox,
     EditDialog,
@@ -885,7 +886,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             self, args, title="ALERT", fmt=None,
             callback=None, cb_args=None, hp_callback=None,
             visibility=1, show_cancel_btn=True, traceback=None,
-            localize_args=False, extra_properties=None, print_callback=None
+            localize_args=False, extra_properties=None, print_callback=None,
+            cancel_callback=None
     ):
         # msg  -> localized msg for UI
         # msg_ -> non localized msg (eng) for db event
@@ -927,7 +929,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             _msgbox = ModalMessageBox(
                 parent=self, msg=msg, title=title,
                 ok_callback=callback, ok_callback_args=cb_args,
-                hp_callback=hp_callback, print_callback=print_callback
+                hp_callback=hp_callback, print_callback=print_callback,
+                cancel_callback=cancel_callback
             )
             if not show_cancel_btn:
                 _msgbox.enable_buttons(True, False, bool(hp_callback))
@@ -985,7 +988,11 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             visibility=visibility,
             show_cancel_btn=show_cancel_btn,
             localize_args=localize_args,
-            extra_properties=extra_properties
+            extra_properties=extra_properties,
+            # anche il Cancel (dialog chiuso, carosello ANCORA congelato) e'
+            # una presa visione: la notifica sonora refill va silenziata subito,
+            # non lasciata suonare fino al timeout del setting
+            cancel_callback=stop_refill_alarm
         )
 
     def open_recovery_dialog(self, recovery_items, lbl_text=None, bottom_lbl_text=None):
