@@ -154,18 +154,20 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
             properties = SettingsManager.SCHEMA.get('properties', {})
             visible_schema = {k: v for k, v in properties.items() if v.get('ui_show', True) and k in data}
 
-            # sound_level: le opzioni percentuali (volume monitor via DDC/CI)
-            # sono selezionabili solo se l'host ha rilevato un monitor
-            # comandabile; altrimenti la UI vede il solo 'auto'.
+            # sound_level: PER ORA la UI espone il solo 'auto' su OGNI monitor.
+            # Le opzioni percentuali (volume monitor via DDC/CI) sono rimandate:
+            # l'impostazione del volume alto e' sicura solo con alimentatore
+            # dedicato del monitor (senza PSU il drive alto fa collassare lo
+            # scaler - misurato), quindi verranno riabilitate quando il
+            # requisito PSU sara' gestito. Il volume di sicurezza lo applica gia'
+            # la policy host per-monitor (0x000F -> 40 via DDC).
             # Copia profonda per non mutare lo SCHEMA di classe.
             if 'REFILL_ALARM_NOTIFICATION' in visible_schema:
                 import copy  # pylint: disable=import-outside-toplevel
-                from alfa_CR6_backend.sound_player import monitor_supports_ddc  # pylint: disable=import-outside-toplevel
-                if not monitor_supports_ddc():
-                    spec_ = copy.deepcopy(visible_schema['REFILL_ALARM_NOTIFICATION'])
-                    if 'sound_level' in spec_.get('properties', {}):
-                        spec_['properties']['sound_level']['enum'] = ['auto']
-                    visible_schema['REFILL_ALARM_NOTIFICATION'] = spec_
+                spec_ = copy.deepcopy(visible_schema['REFILL_ALARM_NOTIFICATION'])
+                if 'sound_level' in spec_.get('properties', {}):
+                    spec_['properties']['sound_level']['enum'] = ['auto']
+                visible_schema['REFILL_ALARM_NOTIFICATION'] = spec_
 
             answer = json.dumps({
                 'type': 'ask_settings_json',

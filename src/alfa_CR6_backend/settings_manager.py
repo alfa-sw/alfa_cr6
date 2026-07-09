@@ -117,8 +117,10 @@ class SettingsManager:
                 'description': 'Refill alarm notification played on the monitor speakers (snowball machines only). '
                                'sound: "fast_beep" (200ms beep / 300ms pause) or "slow_beep" (800ms beep / 1200ms pause); '
                                'timeout: seconds (10-120) after which the sound stops by itself; '
-                               'sound_level: monitor speaker volume applied right before the alarm ("auto" = leave as is) - '
-                               'percent options are selectable only when the connected monitor supports DDC/CI.',
+                               'sound_level: for now only "auto" is offered (the host already drives a safe per-monitor '
+                               'volume: QinHeng/0x000F units to 40% via DDC/CI). The percent options are deferred: raising '
+                               'the volume is safe only with the monitor dedicated power supply, so they will be re-enabled '
+                               'once the PSU requirement is handled.',
                 'ui_error': 'Error: expected {"enabled": true|false, "sound": "fast_beep"|"slow_beep", "timeout": 10..120, "sound_level": "auto"|"100%"|"75%"|"50%"}',
             },
         },
