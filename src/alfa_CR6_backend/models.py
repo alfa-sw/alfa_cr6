@@ -26,6 +26,7 @@ from sqlalchemy import (      # pylint: disable=import-error
     BigInteger,
     DateTime,
     ForeignKey,
+    Index,
     UniqueConstraint,
     event,
     # ~ select,
@@ -282,6 +283,9 @@ class Event(Base, BaseModel):  # pylint: disable=too-few-public-methods
 class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "jar"
+    __table_args__ = (
+        Index("ix_jar_order_id_index", "order_id", "index"),
+    )
 
     row_count_limt = 25 * 1000
 
@@ -563,6 +567,7 @@ def apply_table_alterations(engine):
         ('ALTER TABLE "order" ADD COLUMN reserved VARCHAR;', None),
         ('ALTER TABLE "order" ADD COLUMN inner_status VARCHAR;', None),
         ('ALTER TABLE "order" ADD COLUMN file_name VARCHAR;', update_order_file_names),
+        ('CREATE INDEX IF NOT EXISTS ix_jar_order_id_index ON "jar" (order_id, "index");', None),
     ]
 
     successfully_executed = []
