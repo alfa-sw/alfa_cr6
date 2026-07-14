@@ -29,3 +29,6 @@ __*__
 
 venv/
 dev.sh
+
+doc/analisi/
+.codex
