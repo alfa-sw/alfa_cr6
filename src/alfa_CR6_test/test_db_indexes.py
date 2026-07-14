@@ -8,6 +8,12 @@ from alfa_CR6_backend.models import Base, Jar, apply_table_alterations
 
 
 JAR_LOOKUP_INDEX = "ix_jar_order_id_index"
+CLEANUP_INDEXES = {
+    "document": "ix_document_date_created_id",
+    "event": "ix_event_date_created_id",
+    "jar": "ix_jar_date_created_id",
+    "order": "ix_order_date_created_id",
+}
 
 
 class DatabaseIndexTests(unittest.TestCase):
@@ -60,6 +66,24 @@ class DatabaseIndexTests(unittest.TestCase):
             ), {"order_id": "order-id", "jar_index": 1}).fetchall()
 
         self.assertIn(JAR_LOOKUP_INDEX, " ".join(str(row) for row in plan))
+
+    def test_existing_database_gets_cleanup_indexes(self):
+        Base.metadata.create_all(self.engine)
+
+        apply_table_alterations(self.engine)
+        apply_table_alterations(self.engine)
+
+        for table_name, index_name in CLEANUP_INDEXES.items():
+            matching_indexes = [
+                item for item in inspect(self.engine).get_indexes(table_name)
+                if item["name"] == index_name
+            ]
+            self.assertEqual(1, len(matching_indexes), table_name)
+            self.assertEqual(
+                ["date_created", "id"],
+                matching_indexes[0]["column_names"],
+                table_name,
+            )
 
 
 if __name__ == "__main__":

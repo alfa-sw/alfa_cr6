@@ -15,9 +15,11 @@ import json
 import logging
 import redis
 import re
+import threading
 
 import logging.handlers
 
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from collections import OrderedDict
 
@@ -28,7 +30,12 @@ from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
 import aiohttp  # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Order, Jar, Event, Document, decompile_barcode
+from alfa_CR6_backend.models import (
+    DATABASE_CLEANUP_MODELS, Order, Jar, Event, Document,
+    decompile_barcode)
+from alfa_CR6_backend.database_cleanup import (
+    cleanup_pending_database, detect_pending_tables,
+    seconds_until_next_local_midnight)
 from alfa_CR6_backend.globals import (
     UI_PATH,
     KEYBOARD_PATH,
@@ -440,6 +447,10 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
 class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
 
+    DATABASE_CLEANUP_BATCH_SIZE = 250
+    DATABASE_CLEANUP_RETRY_SECONDS = 10
+    DATABASE_CLEANUP_CLOCK_CHECK_SECONDS = 60 * 60
+
     MACHINE_HEAD_INDEX_TO_NAME_MAP = {
         0: "A",
         1: "F",
@@ -479,6 +490,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.__tasks_to_freeze = 0
         self.__modal_freeze_msgbox = None
+        self._database_cleanup_future = None
+        self._database_cleanup_executor = None
+        self._database_cleanup_cancel_event = threading.Event()
         # Attention LEDs are shared across concurrent jar tasks and freeze flows.
         self._attention_led_requests = {}
         # Token dei refill in attesa di operatore: il suono di notifica parte
@@ -501,6 +515,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             from alfa_CR6_backend.models import init_models  # pylint: disable=import-outside-toplevel
 
             self.db_session = init_models(self.settings.SQLITE_CONNECT_STRING)
+            self._database_cleanup_executor = ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix="database-cleanup")
 
         self.__init_tasks()
 
@@ -515,6 +531,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def __init_tasks(self):
 
         self.__tasks = [self.__create_inner_loop_task()]
+
+        if self._database_cleanup_executor:
+            self.__tasks.append(self.__database_cleanup_scheduler())
 
         if hasattr(self.settings, 'CHROMIUM_WRAPPER') and self.settings.CHROMIUM_WRAPPER:
             t = self.__create_chromium_wrapper_task()
@@ -540,6 +559,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def __close_tasks(self,):
 
+        self._database_cleanup_cancel_event.set()
+
         for m in self.machine_head_dict.values():
             if m:
                 try:
@@ -561,6 +582,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.__runners = []
         self.__jar_runners = {}
+
+        if self._database_cleanup_executor:
+            self._database_cleanup_executor.shutdown(wait=True)
+            self._database_cleanup_executor = None
 
     async def _create_restore_machine_helper_task(self):
         try:
@@ -695,6 +720,139 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             pass
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
+
+    def _database_cleanup_can_start(self):
+        return (
+            not self.__jar_runners
+            and not getattr(self, "running_recovery_mode", False)
+        )
+
+    def _register_jar_runner(self, barcode, runner):
+        self._database_cleanup_cancel_event.set()
+        self.__jar_runners[barcode] = runner
+
+    async def _wait_for_database_cleanup_date_change(self, last_check_date):
+        logged_next_run = None
+        while self.run_flag:
+            current_date = time.strftime("%Y-%m-%d", time.localtime())
+            if current_date != last_check_date:
+                return True
+
+            delay = seconds_until_next_local_midnight()
+            next_run = time.strftime(
+                "%Y-%m-%d %H:%M:%S %Z",
+                time.localtime(time.time() + delay))
+            if next_run != logged_next_run:
+                logging.warning(
+                    "next database cleanup scheduled at %s", next_run)
+                logged_next_run = next_run
+
+            await asyncio.sleep(max(
+                1.0,
+                min(delay, self.DATABASE_CLEANUP_CLOCK_CHECK_SECONDS),
+            ))
+
+        return False
+
+    async def __database_cleanup_scheduler(self):
+        try:
+            last_check_date = None
+            while self.run_flag:
+                if last_check_date is None:
+                    logging.warning(
+                        "starting database cleanup catch-up check")
+                else:
+                    date_changed = await self._wait_for_database_cleanup_date_change(
+                        last_check_date)
+                    if not date_changed:
+                        break
+                    logging.warning(
+                        "local date changed; starting database cleanup check")
+
+                pending_limits = None
+                waiting_for_machine = False
+                while self.run_flag:
+                    if not self._database_cleanup_can_start():
+                        if not waiting_for_machine:
+                            logging.warning(
+                                "database cleanup waiting for jar "
+                                "runners/recovery to stop")
+                            waiting_for_machine = True
+                        await asyncio.sleep(self.DATABASE_CLEANUP_RETRY_SECONDS)
+                        continue
+
+                    waiting_for_machine = False
+                    if pending_limits is None:
+                        table_limits = {
+                            model_class.__tablename__: model_class.row_count_limt
+                            for model_class in DATABASE_CLEANUP_MODELS
+                        }
+                        detector = partial(
+                            detect_pending_tables,
+                            self.settings.SQLITE_CONNECT_STRING,
+                            table_limits,
+                        )
+                        try:
+                            pending_limits = await asyncio.get_event_loop().run_in_executor(
+                                self._database_cleanup_executor, detector)
+                        except Exception:  # pylint: disable=broad-except
+                            logging.error(
+                                "database cleanup detection failed; retrying",
+                                exc_info=True)
+                            await asyncio.sleep(
+                                self.DATABASE_CLEANUP_RETRY_SECONDS)
+                            continue
+                        if not pending_limits:
+                            logging.info(
+                                "database cleanup: no tables pending")
+                            break
+                        # Re-evaluate machine activity after the database read:
+                        # a jar runner may have started while counting rows.
+                        continue
+
+                    self._database_cleanup_cancel_event.clear()
+                    worker = partial(
+                        cleanup_pending_database,
+                        self.settings.SQLITE_CONNECT_STRING,
+                        pending_limits,
+                        self._database_cleanup_cancel_event,
+                        self.DATABASE_CLEANUP_BATCH_SIZE,
+                    )
+                    self._database_cleanup_future = asyncio.get_event_loop().run_in_executor(
+                        self._database_cleanup_executor, worker)
+                    logging.warning(
+                        "started database cleanup: %s",
+                        sorted(pending_limits))
+                    try:
+                        result = await self._database_cleanup_future
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(
+                            "database cleanup failed; retrying", exc_info=True)
+                        await asyncio.sleep(
+                            self.DATABASE_CLEANUP_RETRY_SECONDS)
+                        continue
+                    finally:
+                        self._database_cleanup_future = None
+
+                    for table_name in result["completed_tables"]:
+                        pending_limits.pop(table_name, None)
+                    logging.warning("database cleanup result: %s", result)
+
+                    if pending_limits:
+                        logging.info(
+                            "database cleanup yielded; retrying when "
+                            "the machine is stopped")
+                        await asyncio.sleep(self.DATABASE_CLEANUP_RETRY_SECONDS)
+                    else:
+                        break
+
+                if self.run_flag:
+                    last_check_date = time.strftime(
+                        "%Y-%m-%d", time.localtime())
+        except asyncio.CancelledError:
+            self._database_cleanup_cancel_event.set()
+        except Exception:  # pylint: disable=broad-except
+            logging.error("database cleanup scheduler failed", exc_info=True)
 
     async def __create_machine_task(self, head_index, ip_add, ws_port, http_port):
 
@@ -847,6 +1005,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 _flag = _flag and _task not in _tasks_to_freeze
                 if _flag:
                     _tasks_to_freeze.append((_task, k))
+
+            if (self._database_cleanup_future
+                    and not self._database_cleanup_future.done()
+                    and not self._database_cleanup_can_start()):
+                self._database_cleanup_cancel_event.set()
 
             n = len(_tasks_to_freeze)
             if self.__tasks_to_freeze != n:
@@ -1069,10 +1232,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                         if self.machine_variant not in ['CRX60', 'CRX40', 'CRX80']:
                             t = self.__jar_task(barcode)
-                            self.__jar_runners[barcode] = {
+                            self._register_jar_runner(barcode, {
                                 "task": asyncio.ensure_future(t),
                                 "frozen": True
-                            }
+                            })
 
                             self.main_window.show_barcode(barcode, is_ok=True)
                             logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
@@ -1102,10 +1265,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                                         elif not ja and jin:
                                             bc = self._crx_pending_barcode or barcode
                                             t = self.__jar_task(bc)
-                                            self.__jar_runners[bc] = {
+                                            self._register_jar_runner(bc, {
                                                 "task": asyncio.ensure_future(t),
                                                 "frozen": True
-                                            }
+                                            })
                                             self.main_window.show_barcode(bc, is_ok=True)
                                             logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
                                             ret = bc
@@ -1128,10 +1291,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             elif not ja and jin:
                                 bc = self._crx_pending_barcode or barcode
                                 t = self.__jar_task(bc)
-                                self.__jar_runners[bc] = {
+                                self._register_jar_runner(bc, {
                                     "task": asyncio.ensure_future(t),
                                     "frozen": True
-                                }
+                                })
                                 self.main_window.show_barcode(bc, is_ok=True)
                                 logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
                                 ret = bc

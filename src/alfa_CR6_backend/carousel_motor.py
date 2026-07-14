@@ -1383,11 +1383,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 _task = asyncio.create_task(
                     self.run_recovery_actions(j_code, _jar, jar_recovery_actions, parametri_movimenti, deduced_position)
                 )
-                # __jar_runners attributo 'name mangled'
-                self._BaseApplication__jar_runners[j_code] = {
+                self._register_jar_runner(j_code, {
                     "jar": _jar,
                     "freeze": False,
-                    "task": _task}
+                    "task": _task})
 
                 await _task
 
