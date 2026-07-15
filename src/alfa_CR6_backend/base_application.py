@@ -51,6 +51,12 @@ from alfa_CR6_backend.ws_server import WsServer
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 from alfa_CR6_frontend.dialogs import ModalMessageBox
 
+
+# Temporarily disabled: do not show the modal while active jar runners reach
+# their next wait point after the carousel has been frozen.
+SHOW_PENDING_OPERATIONS_MODAL = False
+
+
 def get_dict_diff(dict1, dict2):
     set1 = set(dict1.items())
     set2 = set(dict2.items())
@@ -1017,42 +1023,45 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 # ~ logging.warning(f'__tasks_to_freeze:{self.__tasks_to_freeze}'
                 # ~ f', {[(t.get_name(), k) for t, k in _tasks_to_freeze]}')
 
-                if self.__tasks_to_freeze:
-                    msg = tr_("please, wait while finishing all pending operations ...")
-                    msg += "\n{}".format([k for t, k in _tasks_to_freeze])
+                if SHOW_PENDING_OPERATIONS_MODAL:
+                    if self.__tasks_to_freeze:
+                        msg = tr_("please, wait while finishing all pending operations ...")
+                        msg += "\n{}".format([k for t, k in _tasks_to_freeze])
 
-                    if not self.__modal_freeze_msgbox:
-                        # auto_delete=False: this box is cached and reused across
-                        # freeze cycles, it must survive the OK/Cancel clicks.
-                        self.__modal_freeze_msgbox = ModalMessageBox(
-                            parent=self.main_window, msg=msg, title="ALERT", auto_delete=False)
-                        self.__modal_freeze_msgbox.move(self.__modal_freeze_msgbox.geometry().x(), 20)
-                        # belt and braces: if anything ever destroys the C++ side,
-                        # drop the reference so the box is recreated instead of
-                        # raising RuntimeError on the dead sip wrapper.
-                        self.__modal_freeze_msgbox.destroyed.connect(
-                            self.__on_modal_freeze_msgbox_destroyed)
+                        if not self.__modal_freeze_msgbox:
+                            # auto_delete=False: this box is cached and reused across
+                            # freeze cycles, it must survive the OK/Cancel clicks.
+                            self.__modal_freeze_msgbox = ModalMessageBox(
+                                parent=self.main_window, msg=msg, title="ALERT", auto_delete=False)
+                            self.__modal_freeze_msgbox.move(self.__modal_freeze_msgbox.geometry().x(), 20)
+                            # belt and braces: if anything ever destroys the C++ side,
+                            # drop the reference so the box is recreated instead of
+                            # raising RuntimeError on the dead sip wrapper.
+                            self.__modal_freeze_msgbox.destroyed.connect(
+                                self.__on_modal_freeze_msgbox_destroyed)
+                        else:
+                            self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
+                            self.__modal_freeze_msgbox.show()
+                        self.__modal_freeze_msgbox.enable_buttons(False, False)
+
+                        asyncio.get_event_loop().call_later(
+                            10, partial(self.__enable_freeze_msgbox_buttons, False, True))
+
                     else:
-                        self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
-                        self.__modal_freeze_msgbox.show()
-                    self.__modal_freeze_msgbox.enable_buttons(False, False)
-
-                    asyncio.get_event_loop().call_later(
-                        10, partial(self.__enable_freeze_msgbox_buttons, False, True))
-
-                else:
-                    if self.__modal_freeze_msgbox:
-                        msg = "\n\n{}\n\n".format(tr_("all operations are paused"))
-                        self.__modal_freeze_msgbox.setText(msg)
-                logging.warning(
-                    f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
+                        if self.__modal_freeze_msgbox:
+                            msg = "\n\n{}\n\n".format(tr_("all operations are paused"))
+                            self.__modal_freeze_msgbox.setText(msg)
+                    logging.warning(
+                        f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
             logging.error(traceback.format_exc())
 
         finally:
-            if not _tasks_to_freeze and self.__modal_freeze_msgbox:
+            if (SHOW_PENDING_OPERATIONS_MODAL
+                    and not _tasks_to_freeze
+                    and self.__modal_freeze_msgbox):
                 self.__modal_freeze_msgbox.enable_buttons(True, True)
                 self.__modal_freeze_msgbox.close()
 
