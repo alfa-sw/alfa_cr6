@@ -36,6 +36,14 @@ g_settings = import_settings()
 
 WEBENGINEVIEW_GEOMETRY = (8, 28, 1904, 960)
 
+SUSPEND_PAGE_WS_SCRIPT = """
+    (function () {
+        if (typeof window.alfaSuspendWS !== "function") { return false; }
+        window.alfaSuspendWS();
+        return true;
+    })();
+"""
+
 SINGLE_POPUP_WIN = SimpleNamespace(
     child_view=None,
     child_page=None,
@@ -727,31 +735,69 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         if self._webengine_page:
             del self._webengine_page
 
+    def _should_blank_without_ws_hook(self, view):
+        """Return True for internal pages whose resources must not stay active."""
+        try:
+            host = view.url().host()
+        except Exception:  # pylint: disable=broad-except
+            return False
+        if not host:
+            return False
+
+        head_hosts = {
+            entry[0]
+            for entry in (getattr(g_settings, "MACHINE_HEAD_IPADD_PORTS_LIST", []) or [])
+            if entry
+        }
+        return host in ("127.0.0.1", "localhost", "::1") or host in head_hosts
+
+    def _blank_internal_page_without_hook(self, view, expected_url):
+        # runJavaScript e' asincrono: al ritorno si blanka solo se siamo ancora
+        # sulla stessa pagina e questa e' effettivamente nascosta.
+        if (view is not self.webengine_view or self.isVisible()
+                or view.url().toString() != expected_url
+                or not self._should_blank_without_ws_hook(view)):
+            return
+        blank = QUrl("about:blank")
+        view.setUrl(blank)
+        self.q_url = blank
+
     def blank_webengine_view(self, callback=None, timeout_ms=500):  # pylint: disable=unused-argument
-        # NB: non blanka piu' (view residente). La pagina resta residente con DOM/render
-        # gia' costruiti; chiudiamo solo il WebSocket della pagina (alfaSuspendWS) cosi'
-        # non alimenta il fan-out mentre e' nascosta. Il prossimo open_page() riusa la
-        # pagina residente (stesso URL) o ricarica (URL diverso).
-        # `callback`/`timeout_ms` mantenuti per compatibilita' coi chiamanti (main_window).
+        # Preferisce il contratto cooperativo alfaSuspendWS, che conserva DOM e
+        # render. Se una pagina INTERNA non espone l'hook (versione devices meno
+        # recente, admin/settings locali), torna ad about:blank per non lasciare
+        # WebSocket o timer fantasma. Le pagine cliente esterne restano residenti.
         self._suspend_page_ws()
         if callback:
             QTimer.singleShot(0, callback)
 
     def _suspend_page_ws(self):
-        # Chiude il WebSocket della pagina corrente (se la pagina espone alfaSuspendWS)
-        # senza toccare il DOM: la view resta residente.
+        # Chiude il WebSocket della pagina corrente tramite alfaSuspendWS. Il
+        # risultato booleano consente il fallback per le pagine interne senza hook.
         view = self.webengine_view
-        if view is not None and view.page() is not None:
-            try:
-                view.page().runJavaScript("if (window.alfaSuspendWS) { window.alfaSuspendWS(); }")
-            except Exception:  # pylint: disable=broad-except
-                logging.warning("failed to suspend page websocket", exc_info=True)
+        if view is None or view.page() is None:
+            return
+
+        expected_url = view.url().toString()
+
+        def _on_suspend_result(hook_available):
+            if not hook_available:
+                self._blank_internal_page_without_hook(view, expected_url)
+
+        try:
+            view.page().runJavaScript(
+                SUSPEND_PAGE_WS_SCRIPT,
+                _on_suspend_result)
+        except Exception:  # pylint: disable=broad-except
+            logging.warning("failed to suspend page websocket", exc_info=True)
+            self._blank_internal_page_without_hook(view, expected_url)
 
     def _resume_page_ws(self):
         view = self.webengine_view
         if view is not None and view.page() is not None:
             try:
-                view.page().runJavaScript("if (window.alfaResumeWS) { window.alfaResumeWS(); }")
+                view.page().runJavaScript(
+                    "if (window.alfaResumeWS) { window.alfaResumeWS(); }")
             except Exception:  # pylint: disable=broad-except
                 logging.warning("failed to resume page websocket", exc_info=True)
 
