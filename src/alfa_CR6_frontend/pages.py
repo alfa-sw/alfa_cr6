@@ -108,6 +108,58 @@ if hasattr(g_settings, 'ORDER_PAGE_COLUMNS_ORDERS'):
     ORDER_PAGE_COLUMNS_ORDERS.update(g_settings.ORDER_PAGE_COLUMNS_ORDERS)
 
 
+ORDER_PAGE_FIXED_COLUMN_WIDTHS = {
+    "delete": 56,
+    "edit": 56,
+    "view": 96,
+    "status": 120,
+    "create order": 140,
+}
+
+
+class _OrderPageIcons:  # pylint: disable=too-many-instance-attributes
+
+    def __init__(self, parent):
+
+        self.gray = QPixmap(get_res("IMAGE", "gray.png")).scaled(32, 32, Qt.KeepAspectRatio)
+        self.green = QPixmap(get_res("IMAGE", "green.png")).scaled(32, 32, Qt.KeepAspectRatio)
+        self.red = QPixmap(get_res("IMAGE", "red.png")).scaled(32, 32, Qt.KeepAspectRatio)
+        self.yellow = QPixmap(get_res("IMAGE", "yellow.png")).scaled(32, 32, Qt.KeepAspectRatio)
+        self.orange = QPixmap(get_res("IMAGE", "orange.png")).scaled(32, 32, Qt.KeepAspectRatio)
+        self.blue = QPixmap(get_res("IMAGE", "blue.png")).scaled(32, 32, Qt.KeepAspectRatio)
+        self.add = QPixmap(get_res("IMAGE", "add.png")).scaled(48, 48, Qt.KeepAspectRatio)
+        self.edit = QPixmap(get_res("IMAGE", "edit.png")).scaled(32, 32, Qt.KeepAspectRatio)
+        self.barcode = QPixmap(get_res("IMAGE", "barcode_C128.png")).scaled(80, 160, Qt.KeepAspectRatio)
+
+        style = parent.style()
+        self.delete = style.standardIcon(QStyle.SP_BrowserStop)
+        self.file_view = style.standardIcon(QStyle.SP_FileDialogInfoView)
+        self.file_create_order = style.standardIcon(QStyle.SP_FileDialogDetailedView)
+
+
+def _get_order_page_icons(parent):
+
+    icons = getattr(parent, "order_page_icons", None)
+    if icons is None:
+        icons = _OrderPageIcons(parent)
+        parent.order_page_icons = icons
+    return icons
+
+
+def _configure_order_table_header(table_view, columns):
+
+    header = table_view.horizontalHeader()
+    header.setStretchLastSection(False)
+
+    for section, column_name in enumerate(columns):
+        width = ORDER_PAGE_FIXED_COLUMN_WIDTHS.get(column_name)
+        if width is None:
+            header.setSectionResizeMode(section, QHeaderView.Stretch)
+        else:
+            header.setSectionResizeMode(section, QHeaderView.Fixed)
+            header.resizeSection(section, width)
+
+
 class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-attributes
 
     page_limit = 20
@@ -115,31 +167,37 @@ class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-a
     def __init__(self, parent, *args):
 
         super().__init__(parent, *args)
-        self.gray_icon = QPixmap(get_res("IMAGE", "gray.png"))
-        self.green_icon = QPixmap(get_res("IMAGE", "green.png"))
-        self.red_icon = QPixmap(get_res("IMAGE", "red.png"))
-        self.yellow_icon = QPixmap(get_res("IMAGE", "yellow.png"))
-        self.orange_icon = QPixmap(get_res("IMAGE", "orange.png"))
-        self.blue_icon = QPixmap(get_res("IMAGE", "blue.png"))
-        self.add_icon = QPixmap(get_res("IMAGE", "add.png"))
-        self.edit_icon = QPixmap(get_res("IMAGE", "edit.png"))
-        self.barcode_C128_icon = QPixmap(get_res("IMAGE", "barcode_C128.png"))
+        icons = _get_order_page_icons(parent)
+        self.gray_icon = icons.gray
+        self.green_icon = icons.green
+        self.red_icon = icons.red
+        self.yellow_icon = icons.yellow
+        self.orange_icon = icons.orange
+        self.blue_icon = icons.blue
+        self.add_icon = icons.add
+        self.edit_icon = icons.edit
+        self.barcode_C128_icon = icons.barcode
+        self.delete_icon = icons.delete
+        self.file_view_icon = icons.file_view
+        self.file_create_order_icon = icons.file_create_order
 
         # ~ self.item_font = QFont('Times sans-serif', 32)
-        self.results = [[]]
+        self.header = []
+        self.results = []
 
         self.main_window = QApplication.instance().main_window
 
     def rowCount(self, parent=None):
         logging.debug("parent:%s", parent)
+        if parent is not None and parent.isValid():
+            return 0
         return len(self.results)
 
-    def columnCount(self, parent):
+    def columnCount(self, parent=None):
         logging.debug("parent:%s", parent)
-        ret = 0
-        if self.results:
-            ret = len(self.results[0])
-        return ret
+        if parent is not None and parent.isValid():
+            return 0
+        return len(self.header)
 
     def data(self, index, role):
         # ~ logging.warning(f"index, role:{index, role}")
@@ -148,7 +206,7 @@ class BaseTableModel(QAbstractTableModel):  # pylint:disable=too-many-instance-a
         ret = QVariant()
         if role == Qt.DecorationRole and index.column() == 0:
             # ~ ret = "#FF6633"
-            ret = self.new_icon.scaled(48, 48, Qt.KeepAspectRatio)
+            ret = self.add_icon
         # ~ elif role == Qt.SizeHintRole:
         # ~ ret = 32
         # ~ elif role == Qt.FontRole:
@@ -209,15 +267,11 @@ class FileTableModel(BaseTableModel):
             return None
         ret = QVariant()
         if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['file'].index('delete'):
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
+            ret = self.delete_icon
         elif role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['file'].index('view'):
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
+            ret = self.file_view_icon
         elif role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['file'].index('create order'):
-            ret = (
-                self.parent()
-                .style()
-                .standardIcon(getattr(QStyle, "SP_FileDialogDetailedView"))
-            )
+            ret = self.file_create_order_icon
         elif role == Qt.DisplayRole:
             ret = self.results[index.row()][index.column()]
         return ret
@@ -262,7 +316,7 @@ class OrderTableModel(BaseTableModel):
                 item[ORDER_PAGE_COLUMNS_ORDERS['order'].index("file name")] = o.file_name
                 self.results.append(item)
         else:
-            self.results = [["", "", "", "", ""]]
+            self.results = []
 
         if logging.getLogger().isEnabledFor(logging.INFO):
             logging.info("dt:%s", time.time() - t0)
@@ -301,22 +355,22 @@ class OrderTableModel(BaseTableModel):
             return None
         ret = QVariant()
         if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['order'].index("delete"):
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
+            ret = self.delete_icon
         elif role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['order'].index("edit"):
-            ret = self.edit_icon.scaled(32, 32, Qt.KeepAspectRatio)
+            ret = self.edit_icon
         if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['order'].index("status"):
             # ~ datum = str(index.data()).upper()
             datum = self.results[index.row()][index.column()]
             if "DONE" in datum:
-                ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                ret = self.gray_icon
             elif "ERR" in datum:
-                ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                ret = self.red_icon
             elif "PARTIAL" in datum:
-                ret = self.blue_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                ret = self.blue_icon
             elif "PROGRESS" in datum:
-                ret = self.yellow_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                ret = self.yellow_icon
             else:
-                ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                ret = self.green_icon
 
         elif role == Qt.DisplayRole:
             ret = tr_(self.results[index.row()][index.column()])
@@ -380,7 +434,7 @@ class JarTableModel(BaseTableModel):
             self.results.sort(key=lambda x: x[3], reverse=True)
 
         else:
-            self.results = [[]]
+            self.results = []
 
     def __init__(self, parent, *args):
 
@@ -430,10 +484,10 @@ class JarTableModel(BaseTableModel):
             return None
         ret = QVariant()
         if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['can'].index("delete"):
-            ret = self.parent().style().standardIcon(getattr(QStyle, "SP_BrowserStop"))
+            ret = self.delete_icon
         elif role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['can'].index("view"):
             # ~ ret = self.parent().style().standardIcon(getattr(QStyle, "SP_FileDialogInfoView"))
-            ret = self.barcode_C128_icon.scaled(80, 160, Qt.KeepAspectRatio)
+            ret = self.barcode_C128_icon
 
         if role == Qt.DecorationRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['order'].index("status"):
             # ~ datum = index.data()
@@ -443,15 +497,15 @@ class JarTableModel(BaseTableModel):
 
             if "DONE" in datum[0]:
                 if "!" in datum[1]:
-                    ret = self.orange_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                    ret = self.orange_icon
                 else:
-                    ret = self.gray_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                    ret = self.gray_icon
             elif "ERR" in datum[0]:
-                ret = self.red_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                ret = self.red_icon
             elif "PROGRESS" in datum[0]:
-                ret = self.yellow_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                ret = self.yellow_icon
             else:
-                ret = self.green_icon.scaled(32, 32, Qt.KeepAspectRatio)
+                ret = self.green_icon
 
         elif role == Qt.DisplayRole and index.column() == ORDER_PAGE_COLUMNS_ORDERS['can'].index("status"):
             datum = self.results[index.row()][index.column()]
@@ -541,10 +595,6 @@ class OrderPage(BaseStackedPage):
         self.order_table_view.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 36px; }")
         self.file_table_view.horizontalScrollBar().setStyleSheet("QScrollBar:horizontal { height: 36px; }")
 
-        self.jar_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.order_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        self.file_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-
         self.order_table_view.clicked.connect(self.__on_order_table_clicked)
         self.jar_table_view.clicked.connect(self.__on_jar_table_clicked)
         self.file_table_view.clicked.connect(self.__on_file_table_clicked)
@@ -593,6 +643,9 @@ class OrderPage(BaseStackedPage):
             try:
                 self.order_model = OrderTableModel(self)
                 self.order_table_view.setModel(self.order_model)
+                _configure_order_table_header(
+                    self.order_table_view,
+                    ORDER_PAGE_COLUMNS_ORDERS['order'])
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
 
@@ -611,6 +664,9 @@ class OrderPage(BaseStackedPage):
             try:
                 self.jar_model = JarTableModel(self)
                 self.jar_table_view.setModel(self.jar_model)
+                _configure_order_table_header(
+                    self.jar_table_view,
+                    ORDER_PAGE_COLUMNS_ORDERS['can'])
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
             self.search_jar_box.setTitle(tr_("[{}] Jars:   search by status").format(self.jar_model.rowCount()))
@@ -626,6 +682,9 @@ class OrderPage(BaseStackedPage):
             try:
                 self.file_model = FileTableModel(self, g_settings.WEBENGINE_DOWNLOAD_PATH)
                 self.file_table_view.setModel(self.file_model)
+                _configure_order_table_header(
+                    self.file_table_view,
+                    ORDER_PAGE_COLUMNS_ORDERS['file'])
             except Exception:  # pylint: disable=broad-except
                 logging.error(traceback.format_exc())
             self.search_file_box.setTitle(tr_("[{}] Files:  search by file name").format(self.file_model.rowCount()))
