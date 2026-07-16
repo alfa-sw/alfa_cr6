@@ -127,7 +127,7 @@ class BrowserPageHarness:
     def isVisible(self):  # pylint: disable=invalid-name
         return self.visible
 
-    def _BrowserPage__log_page_performance(self, _url):
+    def _BrowserPage__log_page_performance(self, _url, *_timings):
         pass
 
 

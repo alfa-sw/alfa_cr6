@@ -444,17 +444,18 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             click_to_loadfinish_ms = int((now - self.__open_requested_at) * 1000)
             if self.__load_started_at is not None:
                 click_to_loadstart_ms = int((self.__load_started_at - self.__open_requested_at) * 1000)
-        # TODO - uncomment for debug
-        # logging.warning(
-        #     "webengine load finished ok:%s elapsed_ms:%s click_to_loadstart_ms:%s "
-        #     "click_to_loadfinish_ms:%s requested:%s started:%s final:%s",
-        #     ok, elapsed_ms, click_to_loadstart_ms, click_to_loadfinish_ms,
-        #     self.__load_requested_url, self.__load_started_url, url_)
+        if getattr(g_settings, 'WEBENGINE_PERF_LOG', False):
+            logging.warning(
+                "webengine load finished ok:%s elapsed_ms:%s click_to_loadstart_ms:%s "
+                "click_to_loadfinish_ms:%s requested:%s started:%s final:%s",
+                ok, elapsed_ms, click_to_loadstart_ms, click_to_loadfinish_ms,
+                self.__load_requested_url, self.__load_started_url, url_)
         if consume_click:
             self.__open_requested_at = None
         self.url_lbl.setText(
             '<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
-        self.__log_page_performance(url_)
+        self.__log_page_performance(
+            url_, click_to_loadstart_ms, click_to_loadfinish_ms)
         # il load puo' completarsi quando l'operatore ha gia' lasciato la BrowserPage:
         # il documento appena nato apre il suo WS e visibilitychange non scatta
         # (pagina NATA nascosta) -> va risospeso qui, altrimenti il WS resta aperto
@@ -462,7 +463,9 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         if not self.isVisible():
             self._suspend_page_ws()
 
-    def __log_page_performance(self, url_):
+    def __log_page_performance(
+            self, url_, click_to_loadstart_ms=None,
+            click_to_loadfinish_ms=None):
         # Strumentazione opzionale: di default OFF (zero costo, niente spam a WARNING
         # in produzione dove LOG_LEVEL=WARNING). Per profilare sulla macchina reale
         # impostare WEBENGINE_PERF_LOG = True nel conf attivo.
@@ -587,20 +590,56 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
 
             nav = data.get("navigation") or {}
             paint = data.get("paint") or {}
+            response_end_ms = nav.get("responseEnd")
+            dom_interactive_ms = nav.get("domInteractive")
+            load_event_ms = nav.get("loadEventEnd")
+            first_paint_ms = paint.get("firstPaint")
+            first_contentful_paint_ms = paint.get("firstContentfulPaint")
+
+            parse_blocking_ms = None
+            if (response_end_ms is not None
+                    and dom_interactive_ms is not None):
+                parse_blocking_ms = max(
+                    0, dom_interactive_ms - response_end_ms)
+
+            dom_to_load_ms = None
+            if (dom_interactive_ms is not None
+                    and load_event_ms is not None):
+                dom_to_load_ms = max(
+                    0, load_event_ms - dom_interactive_ms)
+
+            click_to_first_paint_ms = None
+            click_to_fcp_ms = None
+            if click_to_loadstart_ms is not None:
+                if first_paint_ms is not None:
+                    click_to_first_paint_ms = (
+                        click_to_loadstart_ms + first_paint_ms)
+                if first_contentful_paint_ms is not None:
+                    click_to_fcp_ms = (
+                        click_to_loadstart_ms
+                        + first_contentful_paint_ms)
+
             logging.warning(
                 "webengine perf navigation final:%s duration_ms:%s response_end_ms:%s "
                 "dom_interactive_ms:%s dom_content_loaded_ms:%s load_event_ms:%s "
                 "first_paint_ms:%s first_contentful_paint_ms:%s script_run_at_ms:%s "
-                "resources:%s transfer:%s encoded:%s decoded:%s",
+                "parse_blocking_ms:%s dom_to_load_ms:%s "
+                "click_to_first_paint_ms:%s click_to_fcp_ms:%s "
+                "click_to_loadfinish_ms:%s resources:%s transfer:%s encoded:%s decoded:%s",
                 url_,
                 nav.get("duration"),
-                nav.get("responseEnd"),
-                nav.get("domInteractive"),
+                response_end_ms,
+                dom_interactive_ms,
                 nav.get("domContentLoadedEventEnd"),
-                nav.get("loadEventEnd"),
-                paint.get("firstPaint"),
-                paint.get("firstContentfulPaint"),
+                load_event_ms,
+                first_paint_ms,
+                first_contentful_paint_ms,
                 data.get("scriptRunAt"),
+                parse_blocking_ms,
+                dom_to_load_ms,
+                click_to_first_paint_ms,
+                click_to_fcp_ms,
+                click_to_loadfinish_ms,
                 data.get("resourceCount"),
                 nav.get("transferSize"),
                 nav.get("encodedBodySize"),
