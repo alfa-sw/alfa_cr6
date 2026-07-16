@@ -327,6 +327,19 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
 
         self.webengine_view.show()
 
+    def _warm_up_webengine_view(self):
+        """Create the Chromium view early without loading application pages."""
+        if self.webengine_view is not None:
+            return
+
+        try:
+            self.reset_view()
+            blank = QUrl("about:blank")
+            self.q_url = blank
+            self.webengine_view.setUrl(blank)
+        except Exception:  # pylint: disable=broad-except
+            logging.warning("failed to warm up webengine view", exc_info=True)
+
     def _setup_devtools_splitter(self):
 
         try:
@@ -402,6 +415,10 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             self.refill_label.mouseReleaseEvent = lambda event: self.main_window.home_page.refill_lbl_clicked(self.current_head_index)
         if self.print_label:
             self.print_label.mouseReleaseEvent = lambda event: self.main_window.home_page.print_label_clicked(self.current_head_index)
+
+        # Completa l'inizializzazione di Chromium appena parte l'event loop,
+        # senza ritardare la costruzione della finestra e senza contattare le teste.
+        QTimer.singleShot(0, self._warm_up_webengine_view)
 
     def __on_click_url_label(self):
         if SINGLE_POPUP_WIN.child_view:

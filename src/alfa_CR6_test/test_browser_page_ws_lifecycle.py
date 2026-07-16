@@ -131,6 +131,22 @@ class BrowserPageHarness:
         pass
 
 
+class BrowserPageWarmUpHarness:
+
+    _warm_up_webengine_view = BrowserPage._warm_up_webengine_view
+
+    def __init__(self, existing_url=None):
+        self.q_url = QUrl()
+        self.webengine_view = None
+        self.reset_count = 0
+        if existing_url is not None:
+            self.webengine_view = FakeWebEngineView(existing_url, None)
+
+    def reset_view(self):
+        self.reset_count += 1
+        self.webengine_view = FakeWebEngineView("", None)
+
+
 class BrowserPageWebSocketLifecycleTest(unittest.TestCase):
 
     def test_suspend_suspend_resume_resume_is_idempotent(self):
@@ -219,6 +235,24 @@ class BrowserPageWebSocketLifecycleTest(unittest.TestCase):
                 self.assertNotEqual(
                     browser.webengine_view.url().toString(),
                     "about:blank")
+
+    def test_warm_up_creates_view_and_loads_about_blank(self):
+        browser = BrowserPageWarmUpHarness()
+
+        browser._warm_up_webengine_view()
+
+        self.assertEqual(browser.reset_count, 1)
+        self.assertEqual(browser.q_url.toString(), "about:blank")
+        self.assertEqual(browser.webengine_view.url().toString(), "about:blank")
+
+    def test_warm_up_does_not_replace_page_already_opened(self):
+        url = "http://127.0.0.1:8081/service_page/"
+        browser = BrowserPageWarmUpHarness(existing_url=url)
+
+        browser._warm_up_webengine_view()
+
+        self.assertEqual(browser.reset_count, 0)
+        self.assertEqual(browser.webengine_view.url().toString(), url)
 
 
 if __name__ == "__main__":
