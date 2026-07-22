@@ -884,6 +884,10 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 r = True
             else:
                 r = await m.do_dispense(jar, self.restore_machine_helper)
+                # The device updates pipe levels while dispensing. Refresh the
+                # CR6-side cache afterwards so low-level JSON files and the
+                # reserve icon reflect the quantities just dispensed.
+                await m.update_tintometer_data()
                 logging.warning(f"{m.name}, j:{jar}.")
                 logging.debug("jar.json_properties:%s.", jar.json_properties)
 
