@@ -32,6 +32,9 @@ from alfa_CR6_frontend.debug_page import simulate_read_barcode
 
 g_settings = import_settings()
 
+LINER_REMINDER_MESSAGE = "Please ensure a PPS liner is placed inside the shuttle"
+
+
 class PrintException(Exception):
     def __init__(self, message, payload):
         super().__init__(message)
@@ -806,11 +809,7 @@ class HomePage(BaseStackedPage):
         btn_name = btn.objectName()
         try:
             if "feed" in btn_name:
-                if hasattr(g_settings, 'SIMULATE_READ_BARCODE') and getattr(g_settings, 'SIMULATE_READ_BARCODE'):
-                    allowed_jar_statuses = g_settings.SIMULATE_READ_BARCODE.get("allowed_jar_statuses", ("NEW", "DONE"))
-                    simulate_read_barcode(allowed_jar_statuses)
-                else:
-                    QApplication.instance().run_a_coroutine_helper("move_00_01")
+                self._on_feed_jar_clicked()
 
             elif "deliver" in btn_name:
                 QApplication.instance().run_a_coroutine_helper("move_12_00")
@@ -855,6 +854,28 @@ class HomePage(BaseStackedPage):
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
+
+    def _on_feed_jar_clicked(self):
+        self._start_feed_jar()
+
+        if getattr(g_settings, 'REMINDER_LINER', False):
+            self.main_window.open_alert_dialog(
+                (),
+                fmt=LINER_REMINDER_MESSAGE,
+                title="REMINDER",
+                show_cancel_btn=True,
+                show_ok_btn=False,
+            )
+
+    @staticmethod
+    def _start_feed_jar():
+        if (hasattr(g_settings, 'SIMULATE_READ_BARCODE')
+                and getattr(g_settings, 'SIMULATE_READ_BARCODE')):
+            allowed_jar_statuses = g_settings.SIMULATE_READ_BARCODE.get(
+                "allowed_jar_statuses", ("NEW", "DONE"))
+            simulate_read_barcode(allowed_jar_statuses)
+        else:
+            QApplication.instance().run_a_coroutine_helper("move_00_01")
 
     def update_expired_products(self, head_index):
 

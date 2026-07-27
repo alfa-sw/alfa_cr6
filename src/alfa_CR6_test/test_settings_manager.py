@@ -85,6 +85,17 @@ class TestValidateUpdates:
         result = SettingsManager._validate_updates({"ENABLE_BTN_ORDER_NEW": "true"})
         assert result["ENABLE_BTN_ORDER_NEW"] is True
 
+    def test_reminder_liner_defaults_to_false(self):
+        assert SettingsManager.DEFAULTS["REMINDER_LINER"] is False
+
+    def test_reminder_liner_is_docker_only(self):
+        spec = SettingsManager.SCHEMA["properties"]["REMINDER_LINER"]
+        assert spec["docker_only"] is True
+
+    def test_valid_reminder_liner(self):
+        result = SettingsManager._validate_updates({"REMINDER_LINER": "true"})
+        assert result["REMINDER_LINER"] is True
+
     def test_valid_load_lifter_timeout(self):
         result = SettingsManager._validate_updates({"LOAD_LIFTER_IS_UP_LONG_TIMEOUT": 45.0})
         assert result["LOAD_LIFTER_IS_UP_LONG_TIMEOUT"] == 45.0

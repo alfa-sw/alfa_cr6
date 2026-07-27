@@ -72,6 +72,12 @@ class SettingsManager:
                 'default': False,
                 'description': 'Enables manual entry of an order barcode in case the roller input barcode scanner is not working.',
             },
+            'REMINDER_LINER': {
+                'type': 'boolean',
+                'default': False,
+                'docker_only': True,
+                'description': 'When enabled, shows a PPS liner reminder while the shuttle starts feeding a jar.',
+            },
             'SKIP_FREEZE_ON_UNKNOWN_PIGMENTS': {
                 'type': 'boolean',
                 'default': False,

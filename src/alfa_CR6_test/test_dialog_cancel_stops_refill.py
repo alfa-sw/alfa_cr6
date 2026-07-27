@@ -118,6 +118,23 @@ class TestCancelCallback(unittest.TestCase):
         finally:
             main_window_module.stop_refill_alarm = orig
 
+    def test_cancel_only_dialog_has_no_ok_button(self):
+
+        parent = QWidget()
+        box = ModalMessageBox(
+            parent=parent,
+            msg="liner reminder",
+            title="REMINDER",
+            show_ok_btn=False,
+        )
+
+        self.assertIsNotNone(_btn(box, 'esc'))
+        self.assertFalse(any(
+            button.objectName() == 'ok'
+            for button in box.buttons()
+        ))
+        _btn(box, 'esc').click()
+
 
 if __name__ == '__main__':
     unittest.main()

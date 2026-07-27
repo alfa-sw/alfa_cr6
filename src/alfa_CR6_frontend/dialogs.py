@@ -75,7 +75,7 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
     def __init__(
             self, msg="", title="", parent=None, ok_callback=None,
             ok_callback_args=None, hp_callback=None, print_callback=None,
-            auto_delete=True, cancel_callback=None,
+            auto_delete=True, cancel_callback=None, show_ok_btn=True,
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
         # NB: deliberately NO WA_DeleteOnClose here. It would conflict with
@@ -120,7 +120,9 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         self.setWindowModality(2)
 
-        if self.hp_callback:
+        if not show_ok_btn:
+            self.setStandardButtons(QMessageBox.Cancel)
+        elif self.hp_callback:
             self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Help | QMessageBox.Ok)
         else:
             self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
