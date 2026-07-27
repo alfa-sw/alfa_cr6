@@ -887,7 +887,8 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             callback=None, cb_args=None, hp_callback=None,
             visibility=1, show_cancel_btn=True, traceback=None,
             localize_args=False, extra_properties=None, print_callback=None,
-            cancel_callback=None, show_ok_btn=True
+            cancel_callback=None, show_ok_btn=True, image_name=None,
+            ok_only=False, width_scale=None, bold_message=False
     ):
         # msg  -> localized msg for UI
         # msg_ -> non localized msg (eng) for db event
@@ -932,6 +933,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 hp_callback=hp_callback, print_callback=print_callback,
                 cancel_callback=cancel_callback,
                 show_ok_btn=show_ok_btn,
+                image_name=image_name,
+                ok_only=ok_only,
+                width_scale=width_scale,
+                bold_message=bold_message,
             )
             if not show_cancel_btn:
                 _msgbox.enable_buttons(True, False, bool(hp_callback))

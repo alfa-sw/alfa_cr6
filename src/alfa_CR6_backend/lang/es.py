@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "MICROINTERRUPTOR 2",
     "OUTPUT ROLLER PHOTOCELL": "FOTOCÉLULA TRANSPORTADOR DE RODILLOS DE SALIDA",
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Asegúrese de que haya un liner colocado en el PPS",
     "STEP {} +": "POSICIÓN {} +",
     "STEP {} -": "POSICIÓN {} -",
     "Start  input roller": "Iniciar transportador de rodillos de entrada",

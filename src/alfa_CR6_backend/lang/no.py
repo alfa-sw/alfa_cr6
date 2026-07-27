@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "MIKROBRYTER 2",
     "OUTPUT ROLLER PHOTOCELL": "FOTOCELLE FOR UTGANGSRULLE", 
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Kontroller at en liner er plassert i PPS",
     "STEP {} +": "TRINN {} +",
     "STEP {} -": "TRINN {} -",
     "Start  input roller": "Start inngangsrulle",

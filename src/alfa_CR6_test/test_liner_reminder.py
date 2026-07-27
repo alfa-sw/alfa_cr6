@@ -62,7 +62,7 @@ class LinerReminderTest(unittest.TestCase):
         self.assertEqual(self.application.commands, ["move_00_01"])
         self.assertEqual(page.main_window.alerts, [])
 
-    def test_enabled_setting_starts_feed_and_shows_cancel_only_popup(self):
+    def test_enabled_setting_starts_feed_and_shows_wide_ok_only_popup(self):
         page = _HomePageHarness()
         settings = SimpleNamespace(REMINDER_LINER=True)
 
@@ -76,8 +76,12 @@ class LinerReminderTest(unittest.TestCase):
             self.assertEqual(args, ())
             self.assertEqual(options["fmt"], home_page.LINER_REMINDER_MESSAGE)
             self.assertEqual(options["title"], "REMINDER")
-            self.assertTrue(options["show_cancel_btn"])
-            self.assertFalse(options["show_ok_btn"])
+            self.assertFalse(options["show_cancel_btn"])
+            self.assertTrue(options["show_ok_btn"])
+            self.assertEqual(options["image_name"], "reminder_pps_liner.png")
+            self.assertTrue(options["ok_only"])
+            self.assertEqual(options["width_scale"], 1.5)
+            self.assertTrue(options["bold_message"])
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "마이크로스위치 2",
     "OUTPUT ROLLER PHOTOCELL": "배출구 롤러 감지 센서",
     "OK": " 확인",
+    "Please ensure a PPS liner is placed": "PPS 안에 라이너가 장착되어 있는지 확인하십시오",
     "STEP {} +": "단계{}+",
     "STEP {} -": "단계{}-",
     "Start  input roller": "투입구 컨베이어를 구동",

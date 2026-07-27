@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "ไมโครสวิตช์ 2",
     "OUTPUT ROLLER PHOTOCELL": "โฟโต้เซลล์ลูกกลิ้งขาออก",
     "OK": "ตกลง",
+    "Please ensure a PPS liner is placed": "โปรดตรวจสอบว่าได้ใส่ไลเนอร์ไว้ใน PPS แล้ว",
     "STEP {} +": "ขั้นตอน {} +",
     "STEP {} -": "ขั้นตอน {} -",
     "Start  input roller": "เริ่มลูกกลิ้งขาเข้า",

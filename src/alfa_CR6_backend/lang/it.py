@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "MICROSWITCH 2",
     "OUTPUT ROLLER PHOTOCELL": "FOTOCELLULA RULLIERA D'USCITA",
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Assicurarsi che sia presente un liner nel PPS",
     "STEP {} +": "POSIZIONE {} +",
     "STEP {} -": "POSIZIONE {} -",
     "Start  input roller": "Start rulliera d'ingresso",

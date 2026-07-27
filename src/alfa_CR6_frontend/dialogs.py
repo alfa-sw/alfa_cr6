@@ -10,6 +10,7 @@
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
+import html
 import logging
 import json
 import time
@@ -44,6 +45,7 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QLayout,
+    QSpacerItem,
 )
 
 from alfa_CR6_backend.models import Order, Jar
@@ -55,10 +57,11 @@ from alfa_CR6_backend.globals import get_res, tr_, import_settings
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
 
     def enable_buttons(self, flag_ok, flag_esc, flag_hp=True):
-        for i, b in enumerate(self.buttons()):
-            if i == 0:
+        for b in self.buttons():
+            standard_button = self.standardButton(b)
+            if standard_button == QMessageBox.Cancel:
                 b.setEnabled(flag_esc)
-            elif i == 1 and len(self.buttons()) == 3:
+            elif standard_button == QMessageBox.Help:
                 b.setEnabled(flag_hp)
             else:
                 b.setEnabled(flag_ok)
@@ -76,6 +79,8 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             self, msg="", title="", parent=None, ok_callback=None,
             ok_callback_args=None, hp_callback=None, print_callback=None,
             auto_delete=True, cancel_callback=None, show_ok_btn=True,
+            image_name=None, ok_only=False, width_scale=None,
+            bold_message=False,
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
         # NB: deliberately NO WA_DeleteOnClose here. It would conflict with
@@ -120,7 +125,9 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         self.setWindowModality(2)
 
-        if not show_ok_btn:
+        if ok_only:
+            self.setStandardButtons(QMessageBox.Ok)
+        elif not show_ok_btn:
             self.setStandardButtons(QMessageBox.Cancel)
         elif self.hp_callback:
             self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Help | QMessageBox.Ok)
@@ -130,12 +137,13 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         self.resize(800, 400)
 
-        for i, b in enumerate(self.buttons()):
-            if i == 0:
+        for b in self.buttons():
+            standard_button = self.standardButton(b)
+            if standard_button == QMessageBox.Cancel:
                 b.setObjectName('esc')
                 b.setText(tr_(' Cancel '))
                 icon_ = self.parent().style().standardIcon(getattr(QStyle, "SP_MessageBoxCritical"))
-            elif i == 1 and len(self.buttons()) == 3:
+            elif standard_button == QMessageBox.Help:
                 b.setObjectName('help')
                 b.setText(tr_(' Info '))
                 icon_ = QIcon(self.help_icon)
@@ -220,12 +228,44 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         # ~ t = time.asctime()
         t = time.strftime("%Y-%m-%d %H:%M:%S (%Z)")
-        msg = "[{}]: {}\n\n{}\n\n".format(t, title, msg)
+        if bold_message:
+            msg = "[{}]: {}<br><br><b>{}</b><br><br>".format(
+                t, html.escape(title), html.escape(msg),
+            )
+            self.setTextFormat(Qt.RichText)
+        else:
+            msg = "[{}]: {}\n\n{}\n\n".format(t, title, msg)
 
-        self.setIcon(QMessageBox.Information)
+        if image_name:
+            image = QPixmap(get_res("IMAGE", image_name))
+            if image.isNull():
+                logging.warning("Unable to load dialog image: %s", image_name)
+                self.setIcon(QMessageBox.Information)
+            else:
+                self.setIconPixmap(image.scaled(
+                    QSize(300, 360),
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation,
+                ))
+        else:
+            self.setIcon(QMessageBox.Information)
         self.setText(msg)
         self.setWindowTitle(title)
         self.show()
+
+        if width_scale:
+            desired_width = round(self.width() * width_scale)
+            margins = self.layout().contentsMargins()
+            spacer_width = desired_width - margins.left() - margins.right()
+            self.layout().addItem(
+                QSpacerItem(
+                    spacer_width, 0,
+                    QSizePolicy.Minimum,
+                    QSizePolicy.Expanding,
+                ),
+                self.layout().rowCount(), 0, 1, self.layout().columnCount(),
+            )
+            self.adjustSize()
 
 
 class TroubleshootingDialog(QDialog):

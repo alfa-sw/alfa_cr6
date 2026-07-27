@@ -32,7 +32,7 @@ from alfa_CR6_frontend.debug_page import simulate_read_barcode
 
 g_settings = import_settings()
 
-LINER_REMINDER_MESSAGE = "Please ensure a PPS liner is placed inside the shuttle"
+LINER_REMINDER_MESSAGE = "Please ensure a PPS liner is placed"
 
 
 class PrintException(Exception):
@@ -863,8 +863,12 @@ class HomePage(BaseStackedPage):
                 (),
                 fmt=LINER_REMINDER_MESSAGE,
                 title="REMINDER",
-                show_cancel_btn=True,
-                show_ok_btn=False,
+                show_cancel_btn=False,
+                show_ok_btn=True,
+                image_name="reminder_pps_liner.png",
+                ok_only=True,
+                width_scale=1.5,
+                bold_message=True,
             )
 
     @staticmethod

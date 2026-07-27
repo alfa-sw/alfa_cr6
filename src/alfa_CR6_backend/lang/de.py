@@ -20,6 +20,7 @@ D = {
     "MICROSWITCH 2": "MIKROSCHALTER 2",
     "OUTPUT ROLLER PHOTOCELL": "FOTOZELLE DER AUSGANGSROLLENBAHN",
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Bitte stellen Sie sicher, dass ein Liner im PPS eingesetzt ist",
     "STEP {} +": "POSITION {} +",
     "STEP {} -": "POSITION {} -",
     "Start  input roller": "Start Eingangsrollenbahn",

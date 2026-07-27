@@ -20,6 +20,7 @@ D = {
     "MICROSWITCH 2": "MIKROKYTKIN 2",
     "OUTPUT ROLLER PHOTOCELL": "ULOSSYÖTTÖRULLAN VALOKENNO",
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Varmista, että PPS:ssä on liner paikallaan",
     "STEP {} +": "ASKEL {} +",
     "STEP {}-": "ASKEL {} -",
     "Start input roller": "Käynnistä sisäänsyöttörulla",

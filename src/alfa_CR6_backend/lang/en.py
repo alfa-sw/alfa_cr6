@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "MICROSWITCH 2",
     "OUTPUT ROLLER PHOTOCELL": "OUTPUT ROLLER PHOTOCELL",
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Please ensure a PPS liner is placed",
     "STEP {} +": "STEP {} +",
     "STEP {} -": "STEP {} -",
     "Start  input roller": "Start input roller",

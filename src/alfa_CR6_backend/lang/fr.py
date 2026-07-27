@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "MICRORUPTEUR 2",
     "OUTPUT ROLLER PHOTOCELL": "PHOTOCELLULE CONVOYEUR DE SORTIE",
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Veuillez vous assurer qu’un liner est placé dans le PPS",
     "STEP {} +": "POSITION {} +",
     "STEP {} -": "POSITION {} -",
     "Start  input roller": "Start convoyeur d'entrée",

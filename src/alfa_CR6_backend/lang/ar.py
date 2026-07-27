@@ -20,6 +20,7 @@ D = {
     "MICROSWITCH 2": "المفتاح الدقيق 2",
     "OUTPUT ROLLER PHOTOCELL": "الخلية الضوئية لبكرة الإخراج",
     "OK": "موافق",
+    "Please ensure a PPS liner is placed": "يرجى التأكد من وجود بطانة داخل PPS",
     "STEP {} +": "الخطوة {} +",
     "STEP {} -": "الخطوة {} -",
     "Start  input roller": "بدء تشغيل بكرة الإدخال",

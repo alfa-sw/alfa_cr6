@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "MIKROPRZEŁĄCZNIK 2",
     "OUTPUT ROLLER PHOTOCELL": "ROLKA WYJŚCIOWA FOTOKOMÓRKI",
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Upewnij się, że liner jest umieszczony w PPS",
     "STEP {} +": "KROK {} +",
     "STEP {} -": "KROK {} -",
     "Start  input roller": "Uruchom rolkę wejściową",
