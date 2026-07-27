@@ -189,6 +189,13 @@ def import_settings(set_missing_app_settings=False):
             user_settings_dict = app_settings.DEFAULT_USER_SETTINGS
             save_user_settings(fn, user_settings_dict)
 
+        if SettingsManager.migrate_user_settings(user_settings_dict):
+            logging.warning(
+                "migrated deprecated user settings: %s",
+                SettingsManager.SETTING_RENAMES,
+            )
+            save_user_settings(fn, user_settings_dict)
+
         for el_name, value in user_settings_dict.items():
             app_settings.__dict__[el_name] = value
         

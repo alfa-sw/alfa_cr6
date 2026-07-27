@@ -55,6 +55,40 @@ class TestNormalizeUpdates:
 
 
 # ---------------------------------------------------------------------------
+# persisted settings migrations
+# ---------------------------------------------------------------------------
+
+class TestMigrateUserSettings:
+
+    def test_renames_legacy_reminder_liner(self):
+        settings = {"REMINDER_LINER": True}
+
+        changed = SettingsManager.migrate_user_settings(settings)
+
+        assert changed is True
+        assert settings == {"REMINDER_PPS_LINER": True}
+
+    def test_current_name_takes_precedence(self):
+        settings = {
+            "REMINDER_LINER": True,
+            "REMINDER_PPS_LINER": False,
+        }
+
+        changed = SettingsManager.migrate_user_settings(settings)
+
+        assert changed is True
+        assert settings == {"REMINDER_PPS_LINER": False}
+
+    def test_no_legacy_name_is_unchanged(self):
+        settings = {"REMINDER_PPS_LINER": False}
+
+        changed = SettingsManager.migrate_user_settings(settings)
+
+        assert changed is False
+        assert settings == {"REMINDER_PPS_LINER": False}
+
+
+# ---------------------------------------------------------------------------
 # _validate_updates (orchestrator)
 # ---------------------------------------------------------------------------
 
@@ -85,16 +119,16 @@ class TestValidateUpdates:
         result = SettingsManager._validate_updates({"ENABLE_BTN_ORDER_NEW": "true"})
         assert result["ENABLE_BTN_ORDER_NEW"] is True
 
-    def test_reminder_liner_defaults_to_false(self):
-        assert SettingsManager.DEFAULTS["REMINDER_LINER"] is False
+    def test_reminder_pps_liner_defaults_to_false(self):
+        assert SettingsManager.DEFAULTS["REMINDER_PPS_LINER"] is False
 
-    def test_reminder_liner_is_docker_only(self):
-        spec = SettingsManager.SCHEMA["properties"]["REMINDER_LINER"]
+    def test_reminder_pps_liner_is_docker_only(self):
+        spec = SettingsManager.SCHEMA["properties"]["REMINDER_PPS_LINER"]
         assert spec["docker_only"] is True
 
-    def test_valid_reminder_liner(self):
-        result = SettingsManager._validate_updates({"REMINDER_LINER": "true"})
-        assert result["REMINDER_LINER"] is True
+    def test_valid_reminder_pps_liner(self):
+        result = SettingsManager._validate_updates({"REMINDER_PPS_LINER": "true"})
+        assert result["REMINDER_PPS_LINER"] is True
 
     def test_valid_load_lifter_timeout(self):
         result = SettingsManager._validate_updates({"LOAD_LIFTER_IS_UP_LONG_TIMEOUT": 45.0})

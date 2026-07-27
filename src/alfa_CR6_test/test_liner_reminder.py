@@ -53,7 +53,7 @@ class LinerReminderTest(unittest.TestCase):
 
     def test_disabled_setting_starts_feed_without_popup(self):
         page = _HomePageHarness()
-        settings = SimpleNamespace(REMINDER_LINER=False)
+        settings = SimpleNamespace(REMINDER_PPS_LINER=False)
 
         with patch.object(home_page, "g_settings", settings), \
                 patch.object(home_page, "QApplication", _FakeQApplication):
@@ -64,7 +64,7 @@ class LinerReminderTest(unittest.TestCase):
 
     def test_enabled_setting_starts_feed_and_shows_wide_ok_only_popup(self):
         page = _HomePageHarness()
-        settings = SimpleNamespace(REMINDER_LINER=True)
+        settings = SimpleNamespace(REMINDER_PPS_LINER=True)
 
         with patch.object(home_page, "g_settings", settings), \
                 patch.object(home_page, "QApplication", _FakeQApplication):

@@ -42,7 +42,7 @@ DEFAULT_USER_SETTINGS = {
    "DOWNLOAD_KCC_LOT_STEP": 1200,
    "WEBENGINE_CUSTOMER_URL": "http://alfadispenser.com/",
    "LANGUAGE": "it",
-   "REMINDER_LINER": False,
+   "REMINDER_PPS_LINER": False,
    "POPUP_REFILL_CHOICES": [500, 1000],
    "REFILL_ALARM_NOTIFICATION": {"enabled": False, "sound": "fast_beep", "timeout": 30},
 }

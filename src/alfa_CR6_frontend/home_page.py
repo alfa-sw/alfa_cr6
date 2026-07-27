@@ -858,7 +858,7 @@ class HomePage(BaseStackedPage):
     def _on_feed_jar_clicked(self):
         self._start_feed_jar()
 
-        if getattr(g_settings, 'REMINDER_LINER', False):
+        if getattr(g_settings, 'REMINDER_PPS_LINER', False):
             self.main_window.open_alert_dialog(
                 (),
                 fmt=LINER_REMINDER_MESSAGE,

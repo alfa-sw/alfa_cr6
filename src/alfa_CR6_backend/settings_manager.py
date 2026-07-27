@@ -15,6 +15,10 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 
 class SettingsManager:
 
+    SETTING_RENAMES = {
+        'REMINDER_LINER': 'REMINDER_PPS_LINER',
+    }
+
     SCHEMA = {
         '$schema': 'http://json-schema.org/draft-06/schema#',
         'type': 'object',
@@ -72,7 +76,7 @@ class SettingsManager:
                 'default': False,
                 'description': 'Enables manual entry of an order barcode in case the roller input barcode scanner is not working.',
             },
-            'REMINDER_LINER': {
+            'REMINDER_PPS_LINER': {
                 'type': 'boolean',
                 'default': False,
                 'docker_only': True,
@@ -151,6 +155,23 @@ class SettingsManager:
         except:
             logging.error("unable to save user settings")
             traceback.print_exc(file=sys.stderr)
+
+    @staticmethod
+    def migrate_user_settings(user_settings: dict) -> bool:
+        """Rename deprecated persisted settings in place.
+
+        If both names are present, the current name takes precedence.
+        Returns True when at least one deprecated key was removed.
+        """
+        changed = False
+        for old_name, new_name in SettingsManager.SETTING_RENAMES.items():
+            if old_name not in user_settings:
+                continue
+            if new_name not in user_settings:
+                user_settings[new_name] = user_settings[old_name]
+            del user_settings[old_name]
+            changed = True
+        return changed
 
     @staticmethod
     def _update_settings_in_docker(
