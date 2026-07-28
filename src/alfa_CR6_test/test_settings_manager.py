@@ -7,8 +7,12 @@ Run with:
     python -m pytest src/alfa_CR6_test/test_settings_manager.py -v
 """
 
+import sys
+import types
+
 import pytest
 
+from alfa_CR6_backend import settings_manager
 from alfa_CR6_backend.settings_manager import SettingsManager
 
 
@@ -86,6 +90,44 @@ class TestMigrateUserSettings:
 
         assert changed is False
         assert settings == {"REMINDER_PPS_LINER": False}
+
+
+# ---------------------------------------------------------------------------
+# legacy persistence
+# ---------------------------------------------------------------------------
+
+class TestUpdateSettingsLegacy:
+
+    def test_set_updates_saves_url_with_full_legacy_ui_payload(
+        self, tmp_path, monkeypatch
+    ):
+        app_settings = tmp_path / "app_settings.py"
+        app_settings.write_text(
+            'WEBENGINE_CUSTOMER_URL = "http://old.example/"\n'
+            'DOWNLOAD_KCC_LOT_STEP = 60 * 60\n'
+            'FORCE_ORDER_JAR_TO_ONE = False\n',
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(settings_manager, "CONF_PATH", str(tmp_path))
+        monkeypatch.setattr(SettingsManager, "_in_docker", staticmethod(lambda: False))
+
+        cache_invalidated = []
+        globals_stub = types.ModuleType("alfa_CR6_backend.globals")
+        globals_stub.invalidate_settings_cache = lambda: cache_invalidated.append(True)
+        monkeypatch.setitem(sys.modules, "alfa_CR6_backend.globals", globals_stub)
+
+        SettingsManager.set_updates({
+            "WEBENGINE_CUSTOMER_URL": "https://new.example/orders",
+            "DOWNLOAD_KCC_LOT_STEP": 3600,
+            "FORCE_ORDER_JAR_TO_ONE": True,
+        })
+
+        assert app_settings.read_text(encoding="utf-8") == (
+            "WEBENGINE_CUSTOMER_URL = 'https://new.example/orders'\n"
+            "DOWNLOAD_KCC_LOT_STEP = 3600\n"
+            "FORCE_ORDER_JAR_TO_ONE = True\n"
+        )
+        assert cache_invalidated == [True]
 
 
 # ---------------------------------------------------------------------------

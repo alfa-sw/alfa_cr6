@@ -219,9 +219,9 @@ class SettingsManager:
         mode: Literal["align", "overwrite"] = "overwrite",
     ) -> bool:
 
-        path_app_settings = "/opt/alfa_cr6/conf/app_settings.py"
+        path_app_settings = os.path.join(CONF_PATH, "app_settings.py")
         if not os.path.exists(path_app_settings):
-            raise RuntimeError("Missing app_settings.py file in path '/opt/alfa_cr6/conf/'")
+            raise RuntimeError(f"Missing app_settings.py file in path {CONF_PATH!r}")
 
         with open(path_app_settings, "r", encoding="utf-8") as f:
             content = f.read()
@@ -257,8 +257,16 @@ class SettingsManager:
             if m:
                 current_val_txt = m.group(2).strip()
                 if current_val_txt != new_val:
-                    replacement = rf'\1{new_val}'
-                    content = re.sub(pattern, replacement, content, count=1, flags=re.MULTILINE)
+                    # A replacement string such as ``\1`` + ``3600`` is parsed
+                    # by re.sub as a (non-existent) group reference ``\13600``.
+                    # A callable also keeps backslashes in string values literal.
+                    content = re.sub(
+                        pattern,
+                        lambda match, value=new_val: match.group(1) + value,
+                        content,
+                        count=1,
+                        flags=re.MULTILINE,
+                    )
                     logging.warning("host: update %r: %s -> %s", k, current_val_txt, new_val)
                     changed = True
             else:
