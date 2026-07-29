@@ -204,6 +204,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "โปรดยืนยันการพิมพ์ฉลาก<br>{} {} {}",
     "please, choose a circuit to print the corresponding label.": "โปรดเลือกวงจรเพื่อพิมพ์ฉลากที่สอดคล้องกัน",
+    "LOW LVL PIGMENTS": "เม็ดสีระดับต่ำ",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "หัว A ตรวจพบกระป๋องเร็วเกินไป นำกระป๋องทั้งหมดออกจากลูกกลิ้งขาเข้าและจากหัว A!",
     "{} product(s) not dispensed:": "{} ผลิตภัณฑ์ที่ไม่ได้จ่าย:",

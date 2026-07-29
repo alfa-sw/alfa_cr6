@@ -204,6 +204,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "يُرجى تأكيد طباعة الملصق<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "يُرجى اختيار دائرة لطباعة الملصق المقابل.",
+    "LOW LVL PIGMENTS": "أصباغ منخفضة المستوى",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "اكتشف الرأس A عبوةً بسرعة فرطة. قم بإزالة جميع العبوات من بكرة الإدخال ومن الرأس A!",
     "{} product(s) not dispensed:": "لم يتم خلط وتوزيع {} منتج(منتجات):",

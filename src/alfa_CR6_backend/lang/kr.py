@@ -209,6 +209,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "라벨 인쇄 확인<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "레이블을 인쇄할 회로를 선택합니다.",
+    "LOW LVL PIGMENTS": "잔량 부족 조색제",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!",
     "{} product(s) not dispensed:": "{} product(s) not dispensed:",

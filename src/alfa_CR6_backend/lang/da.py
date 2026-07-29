@@ -203,6 +203,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "bekræft udskrivning af mærkat<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "vælg et kredsløb for at udskrive den tilhørende mærkat.",
+    "LOW LVL PIGMENTS": "PIGMENTER MED LAVT NIVEAU",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "Hovedet A registrerede en dåse for hurtigt. Fjern alle dåser fra indføringsvalsen og fra HOVED A!",
     "{} product(s) not dispensed:": "{} produkter ikke doseret:",

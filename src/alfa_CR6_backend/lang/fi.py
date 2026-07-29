@@ -203,6 +203,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "vahvista tulostustarra<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "valitse piiri tulostaaksesi vastaava etiketti.",
+    "LOW LVL PIGMENTS": "ALHAISEN TASON PIGMENTIT",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "Pää A havaitsi tölkin liian nopeasti. Poista kaikki tölkit sisäänsyöttörullaltaja PÄÄ A:sta!",
     "{} product(s) not dispensed:": "{} tuotetta/tuotteita ei annosteltu.",

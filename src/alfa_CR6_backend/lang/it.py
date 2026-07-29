@@ -206,6 +206,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "Confermare la stampa dell'etichetta<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "prego, scegliere un circuito per stampare l'etichetta corrispondente.",
+    "LOW LVL PIGMENTS": "PASTE A BASSO LIVELLO",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "La TESTA A ha ha rilevato un barattolo troppo rapidamente. Rimuovere tutti i barattoli dalla rulliera d'ingresso e dalla TESTA A!",
     "{} product(s) not dispensed:": "{} prodotto/i non dispensato/i:",

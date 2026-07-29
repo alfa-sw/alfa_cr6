@@ -195,6 +195,7 @@ D = {
     "please, enter service password": "podaj hasło serwisowe",
     "please, confirm printing label<br>{} {} {}.": "Potwierdź wydruk etykiety<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "wybierz pozycję, aby wydrukować pasującą etykietę.",
+    "LOW LVL PIGMENTS": "PIGMENTY O NISKIM POZIOMIE",
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "Segment A zbyt szybko wykrył pojemnik. Zdejmij wszystkie pojemniki z rolki wejściowej i z segmentu A!",
     "{} product(s) not dispensed:": "{} produkty, których nie nalano:",
     "Jar is not in the roller dispensing position.": "Pojemnik nie znajduje się na pozycji dozowania.",
