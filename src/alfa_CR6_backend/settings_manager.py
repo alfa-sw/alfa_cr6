@@ -311,6 +311,15 @@ class SettingsManager:
         else:
             source = {k: getattr(s, k) for k in editable_keys if hasattr(s, k)}
 
+        # On legacy hosts, ensure_missing_defaults() may add a newly introduced
+        # setting to app_settings.py after that module has already been imported.
+        # Expose its schema default immediately instead of requiring a second
+        # application restart before the Settings page can render it.
+        for key in visible_keys:
+            spec = properties[key]
+            if key not in source and 'default' in spec:
+                source[key] = spec['default']
+
         filtered = {k: v for k, v in source.items() if k in editable_keys and k in visible_keys}
 
         return filtered

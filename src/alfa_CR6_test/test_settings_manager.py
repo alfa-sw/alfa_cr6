@@ -98,9 +98,10 @@ class TestMigrateUserSettings:
 
 class TestEditableSettings:
 
-    def test_reminder_pps_liner_is_visible_on_legacy_host(self, monkeypatch):
+    def test_new_default_is_visible_on_legacy_host_without_second_restart(
+        self, monkeypatch
+    ):
         app_settings = types.ModuleType("app_settings")
-        app_settings.REMINDER_PPS_LINER = False
 
         monkeypatch.setitem(sys.modules, "app_settings", app_settings)
         monkeypatch.setattr(SettingsManager, "_in_docker", staticmethod(lambda: False))
@@ -108,6 +109,7 @@ class TestEditableSettings:
         editable = SettingsManager.get_editable_settings()
 
         assert editable["REMINDER_PPS_LINER"] is False
+        assert "REFILL_ALARM_NOTIFICATION" not in editable
 
 
 # ---------------------------------------------------------------------------
