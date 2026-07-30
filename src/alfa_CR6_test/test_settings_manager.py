@@ -93,6 +93,24 @@ class TestMigrateUserSettings:
 
 
 # ---------------------------------------------------------------------------
+# editable settings visibility
+# ---------------------------------------------------------------------------
+
+class TestEditableSettings:
+
+    def test_reminder_pps_liner_is_visible_on_legacy_host(self, monkeypatch):
+        app_settings = types.ModuleType("app_settings")
+        app_settings.REMINDER_PPS_LINER = False
+
+        monkeypatch.setitem(sys.modules, "app_settings", app_settings)
+        monkeypatch.setattr(SettingsManager, "_in_docker", staticmethod(lambda: False))
+
+        editable = SettingsManager.get_editable_settings()
+
+        assert editable["REMINDER_PPS_LINER"] is False
+
+
+# ---------------------------------------------------------------------------
 # legacy persistence
 # ---------------------------------------------------------------------------
 
@@ -164,9 +182,9 @@ class TestValidateUpdates:
     def test_reminder_pps_liner_defaults_to_false(self):
         assert SettingsManager.DEFAULTS["REMINDER_PPS_LINER"] is False
 
-    def test_reminder_pps_liner_is_docker_only(self):
+    def test_reminder_pps_liner_is_available_on_all_machines(self):
         spec = SettingsManager.SCHEMA["properties"]["REMINDER_PPS_LINER"]
-        assert spec["docker_only"] is True
+        assert spec.get("docker_only", False) is False
 
     def test_valid_reminder_pps_liner(self):
         result = SettingsManager._validate_updates({"REMINDER_PPS_LINER": "true"})
