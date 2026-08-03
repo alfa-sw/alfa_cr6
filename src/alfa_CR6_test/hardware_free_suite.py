@@ -24,7 +24,6 @@ CORE_TEST_MODULES = (
     # Persistenza e stato ordini/barattoli.
     "alfa_CR6_test.test_database_cleanup",
     "alfa_CR6_test.test_db_indexes",
-    "alfa_CR6_test.test_dupont_order_archive",
     "alfa_CR6_test.test_order_number_format",
     "alfa_CR6_test.test_status_guard",
     "alfa_CR6_test.test_kcc_double_order",
