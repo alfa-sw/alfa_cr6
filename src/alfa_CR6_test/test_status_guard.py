@@ -321,6 +321,7 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
+            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 
@@ -344,6 +345,7 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
+            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 
@@ -362,6 +364,7 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
+            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 
