@@ -81,10 +81,15 @@ def generate_order_nr():
 
     date_number = (
         today.year % 100 * 10000 + today.month * 100 + today.day) * 1000 * 1000
+    next_date_number = date_number + 1000 * 1000
 
     order = (
         global_session.query(Order)
-        .filter(Order.order_nr > date_number)
+        .filter(
+            Order.order_nr > date_number,
+            Order.order_nr < next_date_number,
+            Order.order_nr % 1000 == 0,
+        )
         .order_by(Order.order_nr.desc())
         .first()
     )
@@ -92,6 +97,9 @@ def generate_order_nr():
         new_number = order.order_nr + 1000
     else:
         new_number = date_number + 1000
+
+    if new_number >= next_date_number:
+        raise RuntimeError("daily order number sequence exhausted")
 
     order_nr = int(new_number)
 
