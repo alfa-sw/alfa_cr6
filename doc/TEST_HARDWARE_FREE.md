@@ -168,9 +168,13 @@ dal backend.
 | Restart con movimento pendente | il comando di avvio del rullo sorgente non riceve risposta; non e' noto se sia arrivato al controller | stop esplicito di entrambi i rulli, errore mostrato all'operatore, retry sulla connessione sana e ordine completato senza doppia dosata |
 | NACK dal controller | l'avvio del rullo destinazione riceve `status_code=254` e non produce telemetria di movimento | timeout accelerato, stop di entrambi i rulli, un solo retry esplicito e ordine completato senza ridispensare A |
 | Risposta persa dopo l'esecuzione | il controller avvia il rullo sorgente e pubblica l'uscita attiva, ma l'answer si perde durante il restart | la telemetria conferma il comando; il movimento continua senza dialogo e senza ripetere l'avvio |
+| Stop perso con uscita attiva | il primo comando OFF non raggiunge il controller e il bit dell'uscita resta ON | il timer non viene cancellato senza telemetria OFF; il vero watchdog ritenta sulla nuova connessione, arresta il rullo e l'ordine prosegue senza intervento operatore |
 
 I timeout forzati sono limitati alle attese esatte coinvolte nel fault; polling,
 movimenti e dispensazioni successivi mantengono i tempi scalati dell'emulatore.
+Nel caso watchdog soltanto il timeout dell'uscita B viene ridotto a 50 ms; il
+ciclo di supervisione produttivo conserva il proprio polling reale di un
+secondo.
 Risposte duplicate e fuori ordine restano nei test mirati di `send_command`,
 perche' a livello E2E non aggiungerebbero un diverso esito di sistema.
 

@@ -283,6 +283,14 @@ class _InProcessWebSocket:
             await self._record_fault(behavior, outgoing, restart=True)
             return
 
+        if behavior == "restart_with_pending_stop":
+            # Il bit dell'uscita resta attivo: il primo stop non raggiunge il
+            # controller e deve essere ritentato dal watchdog sulla nuova
+            # connessione.
+            self._forced_wait_timeouts.extend((30.0, 7.3))
+            await self._record_fault(behavior, outgoing, restart=True)
+            return
+
         if behavior == "negative_answer":
             await self._deliver_answer(
                 outgoing,
@@ -324,6 +332,7 @@ class _E2EMachineHead(MachineHead):
         self.status = {"crx_outputs_status": 0}
         self._rest_pigments = [copy.deepcopy(pigment)]
         self.fail_next_transfer = False
+        self.output_timeout_overrides = {}
         self.websocket = _InProcessWebSocket(self, physics)
         physics.receiver = self
 
@@ -339,6 +348,8 @@ class _E2EMachineHead(MachineHead):
                     self.name
                 )
             )
+        if output_action and output_number in self.output_timeout_overrides:
+            timeout = self.output_timeout_overrides[output_number]
         return await super().crx_outputs_management(
             output_number, output_action, timeout=timeout, silent=silent
         )
@@ -588,7 +599,15 @@ class _OrderBarcodeDispenseE2EMixin:
                 for head in self.app.machine_head_dict.values()
             }
             statuses = {
-                head.name: head.status.get("status_level")
+                head.name: {
+                    "status_level": head.status.get("status_level"),
+                    "crx_outputs_status": head.status.get(
+                        "crx_outputs_status", 0
+                    ),
+                    "inner_outputs": copy.deepcopy(
+                        head._MachineHead__crx_inner_status
+                    ),
+                }
                 for head in self.app.machine_head_dict.values()
             }
             self.fail(
@@ -1218,6 +1237,67 @@ class TestCR6OrderBarcodeDispenseE2E(
         self.assertEqual(
             [event["behavior"] for event in head_a.websocket.fault_events],
             ["restart_after_execution_before_answer"],
+        )
+        self.assertEqual(self.app.main_window.frozen_dialogs, [])
+        self.assertTrue(self.app.ready_to_read_a_barcode)
+        self._assert_runtime_invariants()
+
+    def test_lost_stop_is_retried_by_real_watchdog(self):
+        head_b = self.app.get_machine_head_by_letter("B")
+        head_b.output_timeout_overrides[0] = 0.05
+        head_b.websocket.fault_policy.append({
+            "command": "CRX_OUTPUTS_MANAGEMENT",
+            "params": {"Output_Number": 0, "Output_Action": 0},
+            "behavior": "restart_with_pending_stop",
+        })
+
+        async def run_with_watchdog_after_fault():
+            e2e_task = asyncio.ensure_future(self._run_e2e())
+            while not head_b.websocket.fault_events:
+                if e2e_task.done():
+                    return await e2e_task
+                await asyncio.sleep(0)
+
+            watchdog_task = asyncio.ensure_future(
+                head_b._MachineHead__watch_dog_task()
+            )
+            try:
+                return await e2e_task
+            finally:
+                if watchdog_task.done() and not watchdog_task.cancelled():
+                    exception = watchdog_task.exception()
+                    if exception is not None:
+                        self.exceptions.append(exception)
+                watchdog_task.cancel()
+                await asyncio.gather(
+                    watchdog_task, return_exceptions=True
+                )
+
+        order, jar, _reader, _barcode = self._run(
+            run_with_watchdog_after_fault()
+        )
+
+        output_actions = [
+            command["params"]["Output_Action"]
+            for command in head_b.websocket.sent
+            if command["command"] == "CRX_OUTPUTS_MANAGEMENT"
+            and command["params"]["Output_Number"] == 0
+        ]
+        inner = head_b._MachineHead__crx_inner_status[0]
+        self.assertEqual(jar.status, "DONE")
+        self.assertEqual(jar.position, "_")
+        self.assertEqual(order.status, "DONE")
+        self.assertEqual(output_actions, [2, 0, 0, 1, 0])
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(self._dispense_command_count("B"), 1)
+        self.assertEqual(head_b.websocket.connection_generation, 2)
+        self.assertEqual(
+            [event["behavior"] for event in head_b.websocket.fault_events],
+            ["restart_with_pending_stop"],
+        )
+        self.assertEqual(
+            {key: inner[key] for key in ("value", "timeout", "t0")},
+            {"value": 0, "timeout": 0, "t0": 0},
         )
         self.assertEqual(self.app.main_window.frozen_dialogs, [])
         self.assertTrue(self.app.ready_to_read_a_barcode)
