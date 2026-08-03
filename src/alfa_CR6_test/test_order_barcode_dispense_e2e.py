@@ -189,12 +189,32 @@ class _InProcessWebSocket:
         self.physics = physics
         self.sent = []
         self._last_command_task = None
+        self.fault_policy = []
+        self.fault_events = []
+        self.connection_generation = 1
+        self._forced_wait_timeouts = []
 
-    async def send(self, payload):
-        message = json.loads(payload)
-        outgoing = copy.deepcopy(message["msg_out_dict"])
-        self.sent.append(outgoing)
+    def _consume_fault(self, outgoing):
+        for index, fault in enumerate(self.fault_policy):
+            if fault.get("command") != outgoing["command"]:
+                continue
+            expected_params = fault.get("params", {})
+            actual_params = outgoing.get("params", {})
+            if any(
+                    actual_params.get(key) != value
+                    for key, value in expected_params.items()):
+                continue
+            return self.fault_policy.pop(index)
+        return None
 
+    def consume_forced_wait_timeout(self, timeout):
+        for index, expected in enumerate(self._forced_wait_timeouts):
+            if abs(float(timeout) - expected) < 0.001:
+                self._forced_wait_timeouts.pop(index)
+                return True
+        return False
+
+    async def _deliver_answer(self, outgoing):
         answer = {
             "status_code": 0,
             "error": "no error",
@@ -206,6 +226,48 @@ class _InProcessWebSocket:
             "type": "answer",
             "value": answer,
         }))
+
+    async def _record_restart(self, behavior, outgoing):
+        previous_generation = self.connection_generation
+        self.connection_generation += 1
+        self.fault_events.append({
+            "behavior": behavior,
+            "command": copy.deepcopy(outgoing),
+            "from_generation": previous_generation,
+            "to_generation": self.connection_generation,
+        })
+        await asyncio.sleep(0)
+
+    async def send(self, payload):
+        message = json.loads(payload)
+        outgoing = copy.deepcopy(message["msg_out_dict"])
+        self.sent.append(outgoing)
+        fault = self._consume_fault(outgoing)
+        behavior = fault and fault.get("behavior")
+
+        if behavior == "disconnect_after_ack":
+            await self._deliver_answer(outgoing)
+            # La macro e' stata accettata dal trasporto ma il nuovo canale non
+            # riceve la transizione DISPENSING. Accelera soltanto quel timeout
+            # software; i tempi fisici degli altri comandi restano reali.
+            self._forced_wait_timeouts.append(41.0)
+            await self._record_restart(behavior, outgoing)
+            return
+
+        if behavior == "restart_with_pending_request":
+            # Il frame e' partito, ma la connessione cade prima dell'answer.
+            # Il comando e la successiva attesa dell'uscita falliscono in modo
+            # deterministico; il retry usera' la nuova generazione sana.
+            self._forced_wait_timeouts.extend((30.0, 7.3))
+            await self._record_restart(behavior, outgoing)
+            return
+
+        if behavior:
+            raise AssertionError(
+                "unsupported E2E protocol fault: {}".format(behavior)
+            )
+
+        await self._deliver_answer(outgoing)
 
         previous_task = self._last_command_task
 
@@ -343,6 +405,7 @@ class _OrderBarcodeDispenseE2EMixin:
         self.app.redis_publisher = _RedisPublisher()
         self.app.restore_machine_helper = None
         self.app.ready_to_read_a_barcode = True
+        self.app.running_recovery_mode = False
         self.app.barcode_read_blocked_on_refill = False
         self.app.carousel_frozen = False
         self.app.busy_head_A = False
@@ -395,6 +458,25 @@ class _OrderBarcodeDispenseE2EMixin:
             head = _E2EMachineHead(index, self.app, physics, pigment)
             self.physics.append(physics)
             self.app.machine_head_dict[index] = head
+
+        async def fault_aware_wait_for_condition(
+                app, condition, timeout, show_alert=True, extra_info="",
+                stability_count=3, step=0.01, callback=None,
+                break_condition=None):
+            for head in app.machine_head_dict.values():
+                if head.websocket.consume_forced_wait_timeout(timeout):
+                    await asyncio.sleep(0)
+                    return None
+            return await CarouselMotor.wait_for_condition(
+                app, condition, timeout, show_alert=show_alert,
+                extra_info=extra_info, stability_count=stability_count,
+                step=step, callback=callback,
+                break_condition=break_condition,
+            )
+
+        self.app.wait_for_condition = types.MethodType(
+            fault_aware_wait_for_condition, self.app
+        )
 
         self.loop.run_until_complete(self._publish_initial_states())
 
@@ -494,6 +576,8 @@ class _OrderBarcodeDispenseE2EMixin:
                     [frame.f_code.co_name for frame in runner_task.get_stack()],
                 )
             )
+
+        self.app._BaseApplication__check_jars_to_freeze()
 
         return reader
 
@@ -782,9 +866,22 @@ class _OrderBarcodeDispenseE2EMixin:
             for command in head.websocket.sent
         )
 
-    def _assert_recovery_invariants(
-            self, raw_recovery_data, recovery_completed=True,
-            allow_ambiguous_physics=False):
+    def _assert_runtime_invariants(self, allow_ambiguous_physics=False):
+        async def wait_for_auto_stopped_outputs():
+            return await CarouselMotor.wait_for_condition(
+                self.app,
+                lambda: all(
+                    physics.status.get("crx_outputs_status", 0) == 0
+                    for physics in self.physics
+                ),
+                timeout=0.5, show_alert=False, stability_count=1, step=0.01,
+            )
+
+        self.assertTrue(
+            self._run(wait_for_auto_stopped_outputs()),
+            "l'emulatore non ha auto-arrestato tutte le uscite",
+        )
+
         occupancy_mask = (
             INPUT_ROLLER_MASK
             | LOAD_LIFTER_ROLLER_MASK
@@ -809,6 +906,14 @@ class _OrderBarcodeDispenseE2EMixin:
             self.assertTrue(command_task is None or command_task.done())
 
         self.assertEqual(self.app._BaseApplication__jar_runners, {})
+        self.assertEqual(self.exceptions, [])
+
+    def _assert_recovery_invariants(
+            self, raw_recovery_data, recovery_completed=True,
+            allow_ambiguous_physics=False):
+        self._assert_runtime_invariants(
+            allow_ambiguous_physics=allow_ambiguous_physics
+        )
         self.assertFalse(self.app.running_recovery_mode)
         self.assertEqual(
             self.app.ready_to_read_a_barcode, recovery_completed
@@ -960,6 +1065,71 @@ class TestCR6OrderBarcodeDispenseE2E(
             physical_position="ambiguous",
             expected_alert_text="Ambiguous jar position",
         )
+
+    def test_disconnect_after_macro_ack_fails_order_without_hanging(self):
+        head_a = self.app.get_machine_head_by_letter("A")
+        head_a.websocket.fault_policy.append({
+            "command": "DISPENSE_FORMULA",
+            "behavior": "disconnect_after_ack",
+        })
+        self.app.main_window.on_frozen_dialog = (
+            lambda: self.loop.call_later(
+                0.01, self.app.freeze_carousel, False
+            )
+        )
+
+        order, jar, _reader, _barcode = self._run(self._run_e2e())
+
+        properties = json.loads(jar.json_properties)
+        outcomes = dict(properties["dispensation_outcomes"])
+        self.assertEqual(jar.status, "ERROR")
+        self.assertEqual(jar.position, "_")
+        self.assertEqual(order.status, "ERROR")
+        self.assertIn(
+            "failure waiting for dispensation to start", outcomes["A"]
+        )
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(head_a.websocket.connection_generation, 2)
+        self.assertEqual(
+            [event["behavior"] for event in head_a.websocket.fault_events],
+            ["disconnect_after_ack"],
+        )
+        self.assertGreaterEqual(len(self.app.main_window.frozen_dialogs), 1)
+        self.assertTrue(self.app.ready_to_read_a_barcode)
+        self._assert_runtime_invariants()
+
+    def test_restart_with_pending_movement_retries_on_new_connection(self):
+        head_a = self.app.get_machine_head_by_letter("A")
+        head_a.websocket.fault_policy.append({
+            "command": "CRX_OUTPUTS_MANAGEMENT",
+            "params": {"Output_Number": 0, "Output_Action": 1},
+            "behavior": "restart_with_pending_request",
+        })
+        self.app.main_window.on_frozen_dialog = (
+            lambda: self.loop.call_later(
+                0.01, self.app.freeze_carousel, False
+            )
+        )
+
+        order, jar, _reader, _barcode = self._run(self._run_e2e())
+
+        properties = json.loads(jar.json_properties)
+        self.assertEqual(jar.status, "DONE")
+        self.assertEqual(jar.position, "_")
+        self.assertEqual(order.status, "DONE")
+        self.assertEqual(
+            properties["visited_head_names"],
+            list(self.spec["carousel_order"]),
+        )
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(head_a.websocket.connection_generation, 2)
+        self.assertEqual(
+            [event["behavior"] for event in head_a.websocket.fault_events],
+            ["restart_with_pending_request"],
+        )
+        self.assertGreaterEqual(len(self.app.main_window.frozen_dialogs), 1)
+        self.assertTrue(self.app.ready_to_read_a_barcode)
+        self._assert_runtime_invariants()
 
 
 class TestCRX60OrderBarcodeDispenseE2E(

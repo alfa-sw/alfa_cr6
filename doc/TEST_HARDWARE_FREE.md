@@ -153,6 +153,24 @@ ma serializza i comandi diretti alla stessa testa. In questo modo ON/OFF e
 macro non possono sovrapporsi in un ordine fisicamente irrealistico; teste
 diverse restano indipendenti.
 
+### Guasti di protocollo nel flusso E2E
+
+La fault policy del websocket in-process e' dichiarativa e one-shot: seleziona
+comando e, se necessario, parametri, quindi il retry successivo attraversa una
+nuova generazione logica di connessione sana. Non simula handshake o pacchetti
+TCP; verifica la degradazione dell'intero ordine quando il trasporto presenta
+gli stessi esiti osservabili dal backend.
+
+| Scenario | Esito del trasporto | Risultato verificato |
+|---|---|---|
+| Disconnessione dopo ACK della macro | `DISPENSE_FORMULA` e' confermato, ma sulla nuova connessione non arriva la transizione `DISPENSING` | timeout accelerato, jar/ordine `ERROR`, nessuna ridispensazione, runner concluso e attuatori a riposo |
+| Restart con movimento pendente | il comando di avvio del rullo sorgente non riceve risposta; non e' noto se sia arrivato al controller | stop esplicito di entrambi i rulli, errore mostrato all'operatore, retry sulla connessione sana e ordine completato senza doppia dosata |
+
+I timeout forzati sono limitati alle attese esatte coinvolte nel fault; polling,
+movimenti e dispensazioni successivi mantengono i tempi scalati dell'emulatore.
+Risposte duplicate e fuori ordine restano nei test mirati di `send_command`,
+perche' a livello E2E non aggiungerebbero un diverso esito di sistema.
+
 ## Collaudi che restano sulla macchina reale
 
 La suite non puo' certificare:
