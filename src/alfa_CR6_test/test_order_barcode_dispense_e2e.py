@@ -214,10 +214,11 @@ class _InProcessWebSocket:
                 return True
         return False
 
-    async def _deliver_answer(self, outgoing):
+    async def _deliver_answer(
+            self, outgoing, status_code=0, error="no error"):
         answer = {
-            "status_code": 0,
-            "error": "no error",
+            "status_code": status_code,
+            "error": error,
             "reply_to": None,
             "ref_id": len(self.sent),
             "command": outgoing["command"] + "_END",
@@ -227,15 +228,35 @@ class _InProcessWebSocket:
             "value": answer,
         }))
 
-    async def _record_restart(self, behavior, outgoing):
+    async def _record_fault(self, behavior, outgoing, restart=False):
         previous_generation = self.connection_generation
-        self.connection_generation += 1
+        if restart:
+            self.connection_generation += 1
         self.fault_events.append({
             "behavior": behavior,
             "command": copy.deepcopy(outgoing),
             "from_generation": previous_generation,
             "to_generation": self.connection_generation,
         })
+        await asyncio.sleep(0)
+
+    async def _queue_controller_execution(self, outgoing):
+        previous_task = self._last_command_task
+
+        async def execute_in_controller_order():
+            # Il websocket conferma subito la ricezione, mentre il controller
+            # fisico serializza i comandi della stessa testa. Avviare una task
+            # indipendente per ogni comando permetteva invece a ON/OFF e macro
+            # di sovrapporsi in un ordine impossibile sulla macchina reale.
+            if previous_task is not None:
+                await previous_task
+            await self.physics.handle_command(outgoing)
+
+        self._last_command_task = asyncio.ensure_future(
+            execute_in_controller_order()
+        )
+        # Pubblica lo stato iniziale prima che il chiamante inizi ad attendere
+        # la relativa transizione.
         await asyncio.sleep(0)
 
     async def send(self, payload):
@@ -251,7 +272,7 @@ class _InProcessWebSocket:
             # riceve la transizione DISPENSING. Accelera soltanto quel timeout
             # software; i tempi fisici degli altri comandi restano reali.
             self._forced_wait_timeouts.append(41.0)
-            await self._record_restart(behavior, outgoing)
+            await self._record_fault(behavior, outgoing, restart=True)
             return
 
         if behavior == "restart_with_pending_request":
@@ -259,7 +280,26 @@ class _InProcessWebSocket:
             # Il comando e la successiva attesa dell'uscita falliscono in modo
             # deterministico; il retry usera' la nuova generazione sana.
             self._forced_wait_timeouts.extend((30.0, 7.3))
-            await self._record_restart(behavior, outgoing)
+            await self._record_fault(behavior, outgoing, restart=True)
+            return
+
+        if behavior == "negative_answer":
+            await self._deliver_answer(
+                outgoing,
+                status_code=fault.get("status_code", 254),
+                error=fault.get("error", "controller rejected command"),
+            )
+            self._forced_wait_timeouts.extend((30.0, 7.3))
+            await self._record_fault(behavior, outgoing)
+            return
+
+        if behavior == "restart_after_execution_before_answer":
+            # Il controller esegue il frame e pubblica la nuova telemetria, ma
+            # la risposta si perde. L'uscita osservata deve poter confermare
+            # il comando senza ripeterlo.
+            await self._queue_controller_execution(outgoing)
+            self._forced_wait_timeouts.append(30.0)
+            await self._record_fault(behavior, outgoing, restart=True)
             return
 
         if behavior:
@@ -268,24 +308,7 @@ class _InProcessWebSocket:
             )
 
         await self._deliver_answer(outgoing)
-
-        previous_task = self._last_command_task
-
-        async def execute_in_controller_order():
-            # Il websocket conferma subito la ricezione, mentre il controller
-            # fisico serializza i comandi della stessa testa. Avviare una task
-            # indipendente per ogni comando permetteva invece a ON/OFF e macro
-            # di sovrapporsi in un ordine impossibile sulla macchina reale.
-            if previous_task is not None:
-                await previous_task
-            await self.physics.handle_command(outgoing)
-
-        self._last_command_task = asyncio.ensure_future(
-            execute_in_controller_order()
-        )
-        # Consente all'emulatore di pubblicare lo stato iniziale del comando
-        # prima che il chiamante inizi ad attendere la relativa transizione.
-        await asyncio.sleep(0)
+        await self._queue_controller_execution(outgoing)
 
 
 class _E2EMachineHead(MachineHead):
@@ -1128,6 +1151,75 @@ class TestCR6OrderBarcodeDispenseE2E(
             ["restart_with_pending_request"],
         )
         self.assertGreaterEqual(len(self.app.main_window.frozen_dialogs), 1)
+        self.assertTrue(self.app.ready_to_read_a_barcode)
+        self._assert_runtime_invariants()
+
+    def test_destination_movement_nack_stops_and_retries_safely(self):
+        head_b = self.app.get_machine_head_by_letter("B")
+        head_b.websocket.fault_policy.append({
+            "command": "CRX_OUTPUTS_MANAGEMENT",
+            "params": {"Output_Number": 0, "Output_Action": 2},
+            "behavior": "negative_answer",
+            "status_code": 254,
+            "error": "time expired in waiting for reply in bus cache",
+        })
+        self.app.main_window.on_frozen_dialog = (
+            lambda: self.loop.call_later(
+                0.01, self.app.freeze_carousel, False
+            )
+        )
+
+        order, jar, _reader, _barcode = self._run(self._run_e2e())
+
+        destination_starts = [
+            command for command in head_b.websocket.sent
+            if command["command"] == "CRX_OUTPUTS_MANAGEMENT"
+            and command["params"] == {
+                "Output_Number": 0, "Output_Action": 2
+            }
+        ]
+        self.assertEqual(jar.status, "DONE")
+        self.assertEqual(jar.position, "_")
+        self.assertEqual(order.status, "DONE")
+        self.assertEqual(len(destination_starts), 2)
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(head_b.websocket.connection_generation, 1)
+        self.assertEqual(
+            [event["behavior"] for event in head_b.websocket.fault_events],
+            ["negative_answer"],
+        )
+        self.assertGreaterEqual(len(self.app.main_window.frozen_dialogs), 1)
+        self.assertTrue(self.app.ready_to_read_a_barcode)
+        self._assert_runtime_invariants()
+
+    def test_lost_movement_answer_uses_telemetry_without_retry(self):
+        head_a = self.app.get_machine_head_by_letter("A")
+        head_a.websocket.fault_policy.append({
+            "command": "CRX_OUTPUTS_MANAGEMENT",
+            "params": {"Output_Number": 0, "Output_Action": 1},
+            "behavior": "restart_after_execution_before_answer",
+        })
+
+        order, jar, _reader, _barcode = self._run(self._run_e2e())
+
+        source_starts = [
+            command for command in head_a.websocket.sent
+            if command["command"] == "CRX_OUTPUTS_MANAGEMENT"
+            and command["params"] == {
+                "Output_Number": 0, "Output_Action": 1
+            }
+        ]
+        self.assertEqual(jar.status, "DONE")
+        self.assertEqual(jar.position, "_")
+        self.assertEqual(order.status, "DONE")
+        self.assertEqual(len(source_starts), 1)
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(head_a.websocket.connection_generation, 2)
+        self.assertEqual(
+            [event["behavior"] for event in head_a.websocket.fault_events],
+            ["restart_after_execution_before_answer"],
+        )
+        self.assertEqual(self.app.main_window.frozen_dialogs, [])
         self.assertTrue(self.app.ready_to_read_a_barcode)
         self._assert_runtime_invariants()
 

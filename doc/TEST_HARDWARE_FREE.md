@@ -156,15 +156,18 @@ diverse restano indipendenti.
 ### Guasti di protocollo nel flusso E2E
 
 La fault policy del websocket in-process e' dichiarativa e one-shot: seleziona
-comando e, se necessario, parametri, quindi il retry successivo attraversa una
-nuova generazione logica di connessione sana. Non simula handshake o pacchetti
-TCP; verifica la degradazione dell'intero ordine quando il trasporto presenta
-gli stessi esiti osservabili dal backend.
+comando e, se necessario, parametri. I fault di disconnessione incrementano la
+generazione logica della connessione; un NACK lascia invece il retry sullo
+stesso canale. Non simula handshake o pacchetti TCP; verifica la degradazione
+dell'intero ordine quando il trasporto presenta gli stessi esiti osservabili
+dal backend.
 
 | Scenario | Esito del trasporto | Risultato verificato |
 |---|---|---|
 | Disconnessione dopo ACK della macro | `DISPENSE_FORMULA` e' confermato, ma sulla nuova connessione non arriva la transizione `DISPENSING` | timeout accelerato, jar/ordine `ERROR`, nessuna ridispensazione, runner concluso e attuatori a riposo |
 | Restart con movimento pendente | il comando di avvio del rullo sorgente non riceve risposta; non e' noto se sia arrivato al controller | stop esplicito di entrambi i rulli, errore mostrato all'operatore, retry sulla connessione sana e ordine completato senza doppia dosata |
+| NACK dal controller | l'avvio del rullo destinazione riceve `status_code=254` e non produce telemetria di movimento | timeout accelerato, stop di entrambi i rulli, un solo retry esplicito e ordine completato senza ridispensare A |
+| Risposta persa dopo l'esecuzione | il controller avvia il rullo sorgente e pubblica l'uscita attiva, ma l'answer si perde durante il restart | la telemetria conferma il comando; il movimento continua senza dialogo e senza ripetere l'avvio |
 
 I timeout forzati sono limitati alle attese esatte coinvolte nel fault; polling,
 movimenti e dispensazioni successivi mantengono i tempi scalati dell'emulatore.
