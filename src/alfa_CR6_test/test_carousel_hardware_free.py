@@ -189,6 +189,67 @@ class TestCarouselTransfers(unittest.TestCase):
         self.assertEqual(self.head_b.status["crx_outputs_status"], 0)
         self.assertEqual(self.position_updates, [])
 
+    def test_source_start_failure_stops_both_and_skips_destination_start(self):
+        jar = FakeJar(position="A")
+        self._install_availability_check()
+
+        async def fail_source_start(
+                output_number, output_action, timeout=30, silent=True):
+            self.head_a.command_log.append(
+                (output_number, output_action, timeout, silent)
+            )
+            return output_action == 0
+
+        self.head_a.crx_outputs_management = fail_source_start
+
+        result = self._run(
+            CarouselMotor.move_from_to(self.carousel, jar, "A", "B")
+        )
+
+        self.assertFalse(result)
+        self.assertEqual(
+            [(number, action) for number, action, _timeout, _silent
+             in self.head_a.command_log],
+            [(0, 1), (0, 0)],
+        )
+        self.assertEqual(
+            [(number, action) for number, action, _timeout, _silent
+             in self.head_b.command_log],
+            [(0, 0)],
+        )
+        self.assertEqual(self.position_updates, [])
+
+    def test_destination_start_failure_stops_both_without_waiting_sensor(self):
+        jar = FakeJar(position="A")
+        self._install_availability_check()
+
+        async def fail_destination_start(
+                output_number, output_action, timeout=30, silent=True):
+            self.head_b.command_log.append(
+                (output_number, output_action, timeout, silent)
+            )
+            return output_action == 0
+
+        self.head_b.crx_outputs_management = fail_destination_start
+
+        result = self._run(
+            CarouselMotor.move_from_to(self.carousel, jar, "A", "B")
+        )
+
+        self.assertFalse(result)
+        self.assertEqual(
+            [(number, action) for number, action, _timeout, _silent
+             in self.head_a.command_log],
+            [(0, 1), (0, 0)],
+        )
+        self.assertEqual(
+            [(number, action) for number, action, _timeout, _silent
+             in self.head_b.command_log],
+            [(0, 2), (0, 0)],
+        )
+        self.assertEqual(self.head_b.wait_log, [])
+        self.assertEqual(self.position_updates, [])
+
     def test_panel_interlock_prevents_any_motor_command(self):
         jar = FakeJar(position="A")
         self.head_b.status["panel_table_status"] = True
