@@ -1091,8 +1091,50 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         return extra
 
     async def run(self):
-        t = self.__watch_dog_task()
-        asyncio.ensure_future(t)
+        watchdog_task = asyncio.ensure_future(self.__watch_dog_task())
+        websocket_task = asyncio.ensure_future(self.__run_ws_loop())
+        supervised_tasks = (
+            ("watchdog", watchdog_task),
+            ("websocket", websocket_task),
+        )
+        try:
+            done, _pending = await asyncio.wait(
+                [task for _label, task in supervised_tasks],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            # Entrambi i task sono progettati per essere permanenti. Se uno
+            # termina, anche normalmente, la testa non puo' proseguire con
+            # meta' del proprio runtime attivo.
+            for label, task in supervised_tasks:
+                if task not in done:
+                    continue
+                if task.cancelled():
+                    raise RuntimeError(
+                        "{} task cancelled unexpectedly".format(label)
+                    )
+                try:
+                    task.result()
+                except Exception:  # pylint: disable=broad-except
+                    logging.error(
+                        "%s %s task failed",
+                        getattr(self, "name", "MachineHead"), label,
+                        exc_info=True,
+                    )
+                    raise
+                raise RuntimeError(
+                    "{} task terminated unexpectedly".format(label)
+                )
+        finally:
+            for _label, task in supervised_tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(
+                *(task for _label, task in supervised_tasks),
+                return_exceptions=True,
+            )
+
+    async def __run_ws_loop(self):
 
         ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
         while True:

@@ -870,8 +870,20 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             ws_msg_handler=self.on_head_msg_received)
 
         self.machine_head_dict[head_index] = m
-        await m.run()
-        logging.warning(f" *** terminating machine: {m} *** ")
+        while True:
+            try:
+                await m.run()
+                logging.error(
+                    "machine task terminated unexpectedly: %s; restarting", m
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception:  # pylint: disable=broad-except
+                logging.error(
+                    "machine task failed: %s; restarting", m,
+                    exc_info=True,
+                )
+            await asyncio.sleep(1)
 
     async def __create_ws_server_task(self, ws_server_addr, ws_server_port):
 
