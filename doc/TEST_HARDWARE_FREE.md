@@ -108,6 +108,46 @@ stato volatile (sessione e jar runner). Su CR4/CR6 la recovery termina con la
 latta `DONE/OUT`, pronta per il ritiro dell'operatore; su CRX60/80 termina in
 `DONE/_`, perche' il percorso lineare non ha il rullo di consegna classico.
 
+### Politica di recovery durante una dispensazione
+
+La sicurezza prevale sulla ripresa automatica. Il controller non espone uno
+storico durable e idempotente delle macro: dopo un riavvio il backend non puo'
+dedurre dal solo stato corrente se un comando confermato via websocket abbia
+gia' erogato materiale. Un caso ambiguo non deve quindi essere
+ridispensato automaticamente.
+
+| Punto di interruzione | Marcatore durable osservabile | Informazione disponibile al riavvio | Esito prescritto |
+|---|---|---|---|
+| Prima di raggiungere una testa | nessuno; la prossima azione e' un movimento | nessun comando di dispensazione puo' essere partito in quella posizione | riprendere il movimento se le fotocellule identificano una sola posizione |
+| Prima dell'invio di `DISPENSE_FORMULA` | nessuno; la prossima azione e' `dispense_step` | indistinguibile dalla finestra successiva | marcare jar/ordine `ERROR`, non dispensare, consentire solo l'espulsione da una posizione fisica non ambigua |
+| Dopo ACK, prima di osservare `DISPENSING` | nessuno | il comando puo' essere stato accettato senza una prova durable dell'erogazione | stesso esito fail-closed: `ERROR`, mai ridispensare |
+| Dopo aver osservato `DISPENSING` | `ongoing` | l'erogazione e' iniziata, ma quantita' e completamento sono ignoti | `ERROR`, mai ridispensare |
+| Guasto o allarme durante la macro | `dispensation_failure` | erogazione parziale possibile | `ERROR`, mai ridispensare |
+| Dopo `STANDBY`, prima del salvataggio finale | `ongoing` | il completamento osservato era soltanto volatile | `ERROR`, mai ridispensare |
+| Dopo il salvataggio finale | `done` | completamento durable della testa corrente | saltare quella dispensazione e riprendere dalla fase successiva |
+
+Un futuro marcatore write-ahead `pending`, scritto prima dell'invio, rende
+esplicita la finestra ambigua ma non basta a renderla ripetibile: fino a quando
+controller e backend non condividono una chiave idempotente o uno storico
+interrogabile, anche `pending` deve terminare in `ERROR` senza ridispensazione.
+
+Gli scenari di fault condividono questi invarianti, verificati in un solo
+helper della suite:
+
+- nessuna testa riceve due macro di dispensazione per lo stesso passaggio;
+- al termine non restano uscite macchina o task ordine/comando attive;
+- ogni record grezzo di `running_jars.json` identifica un jar DB con posizione
+  compatibile; i terminali rimossi automaticamente non restano nel file,
+  mentre un `ERROR` bloccato per intervento manuale conserva il record;
+- una latta non occupa contemporaneamente piu' sensori di posizione;
+- al termine di un recovery automatico blocchi UI e recovery sono chiusi e la
+  lettura barcode e' riabilitata; un'ambiguita' fisica mantiene invece il
+  blocco fino all'intervento dell'operatore.
+
+La matrice completa dei marker viene eseguita su CR6. Le altre varianti
+mantengono lo smoke `done -> ripresa senza ridispensazione`, che attraversa le
+diverse topologie di uscita senza moltiplicare il runtime del gate per-commit.
+
 Il websocket controllato restituisce subito l'ACK come il controller reale,
 ma serializza i comandi diretti alla stessa testa. In questo modo ON/OFF e
 macro non possono sovrapporsi in un ordine fisicamente irrealistico; teste

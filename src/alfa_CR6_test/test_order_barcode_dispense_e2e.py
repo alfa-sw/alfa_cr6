@@ -42,7 +42,9 @@ from alfa_CR6_backend.models import Jar, compile_barcode, init_models
 from alfa_CR6_test.emulator import (
     DISPENSING_POSITION_MASK,
     INPUT_ROLLER_MASK,
+    LOAD_LIFTER_ROLLER_MASK,
     OUTPUT_ROLLER_MASK,
+    UNLOAD_LIFTER_ROLLER_MASK,
     MachineHeadMockup,
 )
 
@@ -639,7 +641,9 @@ class _OrderBarcodeDispenseE2EMixin:
         helper.parent = app
         return helper
 
-    async def _run_recovery_after_shutdown(self):
+    async def _run_recovery_after_shutdown(
+            self, dispensation_state="done", dispense_before_shutdown=True,
+            physical_position="current"):
         order, jar = self._create_order_and_jar()
         jar_id = jar.id
         helper_path = os.path.join(self.temp_dir.name, "running_jars.json")
@@ -668,11 +672,45 @@ class _OrderBarcodeDispenseE2EMixin:
             "frozen": False,
             "running_engaged_circuits": [],
         }
-        dispensed = await self.app.dispense_step("A", jar)
-        self.assertTrue(dispensed)
+        if dispense_before_shutdown:
+            dispensed = await self.app.dispense_step("A", jar)
+            self.assertTrue(dispensed)
+
+        # Permette di riprodurre i soli dati durable disponibili nei diversi
+        # punti di interruzione. In particolare ``None`` rappresenta sia il
+        # crash prima dell'invio sia quello dopo l'ACK ma prima di DISPENSING:
+        # al riavvio i due casi sono intenzionalmente indistinguibili.
+        helper.store_jar_data(
+            jar, "A", dispensation=dispensation_state
+        )
         persisted_before_shutdown = dict(helper.read_data())[jar.barcode]
         self.assertEqual(persisted_before_shutdown["pos"], "A")
-        self.assertEqual(persisted_before_shutdown["dispensation"], "done")
+        self.assertEqual(
+            persisted_before_shutdown["dispensation"], dispensation_state
+        )
+
+        if physical_position not in ("current", "next", "missing", "ambiguous"):
+            raise ValueError(
+                "unsupported recovery physical position: {}".format(
+                    physical_position
+                )
+            )
+        next_head_name = self.spec["carousel_order"][1]
+        physics_next = next(
+            item for item in self.physics if item.letter == next_head_name
+        )
+        for physics, occupied in (
+                (physics_a, physical_position in ("current", "ambiguous")),
+                (physics_next, physical_position in ("next", "ambiguous"))):
+            sensor_mask = physics.status["jar_photocells_status"]
+            if occupied:
+                sensor_mask |= DISPENSING_POSITION_MASK
+            else:
+                sensor_mask &= ~DISPENSING_POSITION_MASK
+            await physics.update_status({
+                "container_presence": occupied,
+                "jar_photocells_status": sensor_mask,
+            })
 
         # Confine di spegnimento: vengono persi runner e sessione, mentre DB,
         # running_jars.json e fotocellule della macchina restano persistenti.
@@ -715,12 +753,128 @@ class _OrderBarcodeDispenseE2EMixin:
             reaper_task.cancel()
             await asyncio.gather(reaper_task, return_exceptions=True)
 
+        controller_tasks = [
+            head.websocket._last_command_task
+            for head in self.app.machine_head_dict.values()
+            if head.websocket._last_command_task is not None
+        ]
+        if controller_tasks:
+            await asyncio.gather(*controller_tasks, return_exceptions=True)
+
         recovered_jar = self.session.query(Jar).filter(Jar.id == jar_id).one()
         self.session.refresh(recovered_jar)
         self.session.refresh(recovered_jar.order)
         with open(helper_path, "r", encoding="utf-8") as stream:
             raw_recovery_data = json.load(stream)
         return recovered_jar.order, recovered_jar, raw_recovery_data
+
+    def _dispense_command_count(self, head_name):
+        head = self.app.get_machine_head_by_letter(head_name)
+        return sum(
+            command["command"] == "DISPENSE_FORMULA"
+            for command in head.websocket.sent
+        )
+
+    def _movement_command_count(self):
+        return sum(
+            command["command"] == "CRX_OUTPUTS_MANAGEMENT"
+            for head in self.app.machine_head_dict.values()
+            for command in head.websocket.sent
+        )
+
+    def _assert_recovery_invariants(
+            self, raw_recovery_data, recovery_completed=True,
+            allow_ambiguous_physics=False):
+        occupancy_mask = (
+            INPUT_ROLLER_MASK
+            | LOAD_LIFTER_ROLLER_MASK
+            | OUTPUT_ROLLER_MASK
+            | UNLOAD_LIFTER_ROLLER_MASK
+            | DISPENSING_POSITION_MASK
+        )
+        occupied_positions = 0
+        for physics in self.physics:
+            self.assertEqual(physics.status.get("crx_outputs_status", 0), 0)
+            occupied_mask = (
+                physics.status.get("jar_photocells_status", 0)
+                & occupancy_mask
+            )
+            occupied_positions += bin(occupied_mask).count("1")
+        if not allow_ambiguous_physics:
+            self.assertLessEqual(occupied_positions, 1)
+
+        for head in self.app.machine_head_dict.values():
+            self.assertLessEqual(self._dispense_command_count(head.name), 1)
+            command_task = head.websocket._last_command_task
+            self.assertTrue(command_task is None or command_task.done())
+
+        self.assertEqual(self.app._BaseApplication__jar_runners, {})
+        self.assertFalse(self.app.running_recovery_mode)
+        self.assertEqual(
+            self.app.ready_to_read_a_barcode, recovery_completed
+        )
+
+        jars_by_barcode = {
+            db_jar.barcode: db_jar
+            for db_jar in self.session.query(Jar).all()
+        }
+        for barcode, recovery_data in raw_recovery_data.items():
+            self.assertIn(barcode, jars_by_barcode)
+            db_jar = jars_by_barcode[barcode]
+            if recovery_completed:
+                self.assertNotIn(db_jar.status, ("DONE", "ERROR"))
+            else:
+                self.assertEqual(db_jar.status, "ERROR")
+            self.assertEqual(recovery_data.get("pos"), db_jar.position)
+        for barcode, db_jar in jars_by_barcode.items():
+            if db_jar.status == "DONE" or (
+                    recovery_completed and db_jar.status == "ERROR"):
+                self.assertNotIn(barcode, raw_recovery_data)
+
+    def _assert_failed_closed_recovery(
+            self, dispensation_state, dispense_before_shutdown,
+            expected_a_dispenses):
+        order, jar, raw_recovery_data = self._run(
+            self._run_recovery_after_shutdown(
+                dispensation_state=dispensation_state,
+                dispense_before_shutdown=dispense_before_shutdown,
+            )
+        )
+
+        self.assertEqual(jar.status, "ERROR")
+        self.assertEqual(jar.position, "OUT")
+        self.assertEqual(order.status, "ERROR")
+        self.assertEqual(
+            self._dispense_command_count("A"), expected_a_dispenses
+        )
+        self.assertEqual(raw_recovery_data, {})
+        self._assert_recovery_invariants(raw_recovery_data)
+
+    def _assert_recovery_blocked_by_physical_state(
+            self, physical_position, expected_alert_text):
+        order, jar, raw_recovery_data = self._run(
+            self._run_recovery_after_shutdown(
+                dispensation_state="done",
+                dispense_before_shutdown=True,
+                physical_position=physical_position,
+            )
+        )
+
+        self.assertEqual(jar.status, "ERROR")
+        self.assertEqual(jar.position, "A")
+        self.assertEqual(order.status, "ERROR")
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(self._movement_command_count(), 0)
+        self.assertIn(jar.barcode, raw_recovery_data)
+        self.assertTrue(any(
+            expected_alert_text in kwargs.get("fmt", "")
+            for _args, kwargs in self.app.main_window.alerts
+        ))
+        self._assert_recovery_invariants(
+            raw_recovery_data,
+            recovery_completed=False,
+            allow_ambiguous_physics=physical_position == "ambiguous",
+        )
 
     def test_recovery_after_shutdown_resumes_without_redispensing(self):
         order, jar, raw_recovery_data = self._run(
@@ -740,8 +894,7 @@ class _OrderBarcodeDispenseE2EMixin:
             properties["visited_head_names"].count("A"), 1
         )
         self.assertEqual(raw_recovery_data, {})
-        self.assertFalse(self.app.running_recovery_mode)
-        self.assertTrue(self.app.ready_to_read_a_barcode)
+        self._assert_recovery_invariants(raw_recovery_data)
 
 
 class TestCR4OrderBarcodeDispenseE2E(
@@ -752,6 +905,61 @@ class TestCR4OrderBarcodeDispenseE2E(
 class TestCR6OrderBarcodeDispenseE2E(
         _OrderBarcodeDispenseE2EMixin, unittest.TestCase):
     VARIANT = "CR6"
+
+    def test_recovery_without_durable_dispense_marker_fails_closed(self):
+        self._assert_failed_closed_recovery(
+            dispensation_state=None,
+            dispense_before_shutdown=False,
+            expected_a_dispenses=0,
+        )
+
+    def test_recovery_during_dispense_fails_closed_without_repeating_it(self):
+        self._assert_failed_closed_recovery(
+            dispensation_state="ongoing",
+            dispense_before_shutdown=True,
+            expected_a_dispenses=1,
+        )
+
+    def test_recovery_after_dispense_failure_does_not_repeat_it(self):
+        self._assert_failed_closed_recovery(
+            dispensation_state="dispensation_failure",
+            dispense_before_shutdown=True,
+            expected_a_dispenses=1,
+        )
+
+    def test_recovery_deduces_jar_on_next_head(self):
+        order, jar, raw_recovery_data = self._run(
+            self._run_recovery_after_shutdown(
+                dispensation_state="done",
+                dispense_before_shutdown=True,
+                physical_position="next",
+            )
+        )
+
+        properties = json.loads(jar.json_properties)
+        self.assertEqual(jar.status, "DONE")
+        self.assertEqual(jar.position, "OUT")
+        self.assertEqual(order.status, "DONE")
+        self.assertEqual(
+            properties["visited_head_names"],
+            list(self.spec["carousel_order"]),
+        )
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(self._dispense_command_count("B"), 1)
+        self.assertEqual(raw_recovery_data, {})
+        self._assert_recovery_invariants(raw_recovery_data)
+
+    def test_recovery_blocks_when_jar_is_missing_from_both_heads(self):
+        self._assert_recovery_blocked_by_physical_state(
+            physical_position="missing",
+            expected_alert_text="Jar not detected",
+        )
+
+    def test_recovery_blocks_on_ambiguous_double_occupancy(self):
+        self._assert_recovery_blocked_by_physical_state(
+            physical_position="ambiguous",
+            expected_alert_text="Ambiguous jar position",
+        )
 
 
 class TestCRX60OrderBarcodeDispenseE2E(

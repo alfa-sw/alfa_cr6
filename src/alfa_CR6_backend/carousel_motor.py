@@ -1224,14 +1224,42 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 head_letter = heads_map[last_jar_known_pos]
                 current_head = self.get_machine_head_by_letter(head_letter)
 
-                def skip_condition(jv, _jar):
-                    res = False
-                    if jv.get("dispensation") in ("ongoing", "dispensation_failure"):
-                        _jar.status = "ERROR"
-                        _jar.description = "Uncompleted Jar Order from previous machine shutdown"
-                        self.db_session.commit()
-                        res = True
-                    return res
+                def mark_recovery_error(_jar, description):
+                    _jar.status = "ERROR"
+                    _jar.description = description
+                    _jar.order.update_status()
+                    self.db_session.commit()
+
+                def evaluate_dispense_recovery(jv, actions, _jar):
+                    dispensation = jv.get("dispensation")
+                    first_action_is_dispense = bool(
+                        actions and actions[0] == "dispense_step"
+                    )
+                    ambiguous_unmarked_dispense = (
+                        dispensation is None and first_action_is_dispense
+                    )
+                    incomplete_or_unknown = dispensation not in (None, "done")
+
+                    if ambiguous_unmarked_dispense or incomplete_or_unknown:
+                        mark_recovery_error(
+                            _jar,
+                            "Uncompleted or ambiguous Jar Order from previous "
+                            "machine shutdown"
+                        )
+
+                    # Si salta una sola azione soltanto quando essa e'
+                    # effettivamente la dispensazione della posizione
+                    # persistita. Se la prima azione e' un movimento, il jar
+                    # ERROR puo' ancora essere espulso in modo controllato.
+                    return first_action_is_dispense and (
+                        dispensation == "done"
+                        or ambiguous_unmarked_dispense
+                        or incomplete_or_unknown
+                    )
+
+                skip_current_dispense = evaluate_dispense_recovery(
+                    jv, jar_recovery_actions, _jar
+                )
 
                 async def determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
@@ -1267,11 +1295,36 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             next_position_sensor
                         )
 
-                    if curr_head_jar_engagged_photocell:
+                    # Il confronto e' valido soltanto fra due sensori che
+                    # rilevano realmente il jar. I finecorsa dei lifter
+                    # possono essere attivi insieme a un sensore jar senza
+                    # rappresentare una doppia occupazione.
+                    next_sensor_tracks_jar = (
+                        next_position_sensor
+                        and next_position_sensor.startswith("JAR_")
+                    )
+                    if next_sensor_tracks_jar:
                         if (
-                            skip_condition(jv, _jar)
-                            or jv.get("dispensation") == "done"
-                        ):
+                                curr_head_jar_engagged_photocell
+                                and next_photocell_status):
+                            message = (
+                                "[Recovery Mode] Ambiguous jar position: "
+                                "both current and next sensors are occupied"
+                            )
+                            mark_recovery_error(_jar, message)
+                            raise RuntimeError(message)
+                        if (
+                                not curr_head_jar_engagged_photocell
+                                and not next_photocell_status):
+                            message = (
+                                "[Recovery Mode] Jar not detected in either "
+                                "the current or next position"
+                            )
+                            mark_recovery_error(_jar, message)
+                            raise RuntimeError(message)
+
+                    if curr_head_jar_engagged_photocell:
+                        if skip_current_dispense:
                             return jar_recovery_actions[1:], current_head.name
 
                         # special checks
