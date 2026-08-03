@@ -133,13 +133,11 @@ class _InProcessPhysics(MachineHeadMockup):
     def __init__(self, index, time_scale):
         self.receiver = None
         self._pickup_scheduled = False
-        self.fail_next_dispensing_transfer = False
         self.fail_next_dispense = False
         super().__init__(index, time_scale=time_scale)
 
     async def handle_command(self, msg_out_dict):
         command = msg_out_dict["command"]
-        params = msg_out_dict.get("params", {})
         if (
                 self.fail_next_dispense
                 and command == "DISPENSE_FORMULA"):
@@ -151,15 +149,6 @@ class _InProcessPhysics(MachineHeadMockup):
                 "error_code": 9901,
                 "error_message": "E2E_EMULATED_DISPENSE_FAILURE",
             })
-            return
-        if (
-                self.fail_next_dispensing_transfer
-                and command == "CRX_OUTPUTS_MANAGEMENT"
-                and int(params.get("Output_Number", -1)) == 0
-                and int(params.get("Output_Action", -1)) == 1):
-            self.fail_next_dispensing_transfer = False
-            # L'eccezione del controller viene sollevata dal MachineHead
-            # adattato; il modello fisico non deve produrre il fronte sensore.
             return
         await super().handle_command(msg_out_dict)
 
@@ -197,7 +186,7 @@ class _InProcessWebSocket:
         self.head = head
         self.physics = physics
         self.sent = []
-        self.command_tasks = []
+        self._last_command_task = None
 
     async def send(self, payload):
         message = json.loads(payload)
@@ -216,7 +205,7 @@ class _InProcessWebSocket:
             "value": answer,
         }))
 
-        previous_task = self.command_tasks[-1] if self.command_tasks else None
+        previous_task = self._last_command_task
 
         async def execute_in_controller_order():
             # Il websocket conferma subito la ricezione, mentre il controller
@@ -227,8 +216,9 @@ class _InProcessWebSocket:
                 await previous_task
             await self.physics.handle_command(outgoing)
 
-        task = asyncio.ensure_future(execute_in_controller_order())
-        self.command_tasks.append(task)
+        self._last_command_task = asyncio.ensure_future(
+            execute_in_controller_order()
+        )
         # Consente all'emulatore di pubblicare lo stato iniziale del comando
         # prima che il chiamante inizi ad attendere la relativa transizione.
         await asyncio.sleep(0)
