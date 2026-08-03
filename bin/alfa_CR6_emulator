@@ -2,4 +2,4 @@
 
 from alfa_CR6_test.emulator import main
 
-main()
+raise SystemExit(main())

@@ -14,6 +14,7 @@ import logging
 import traceback
 import asyncio
 import json
+import argparse
 
 from datetime import datetime
 
@@ -32,6 +33,7 @@ ID_MAP = [
     ("127.0.0.1", 11004, 8084),
     ("127.0.0.1", 11005, 8085),
     ("127.0.0.1", 11006, 8086),
+    ("127.0.0.1", 11007, 8087),
     # ~ "192.168.15.156",
     # ~ "192.168.15.19",
     # ~ "192.168.15.60",
@@ -39,6 +41,15 @@ ID_MAP = [
     # ~ "192.168.15.62",
     # ~ "192.168.15.170",
 ]
+
+HEAD_INDEX_TO_LETTER = ("A", "F", "B", "E", "C", "D", "G")
+VARIANT_HEAD_INDICES = {
+    "CR4": (0, 1, 4, 5),
+    "CR6": (0, 1, 2, 3, 4, 5),
+    "CRX40": (0, 4),
+    "CRX60": (0, 2, 4),
+    "CRX80": (0, 2, 4, 6),
+}
 
 
 """
@@ -99,10 +110,15 @@ DISPENSING_POSITION_MASK = 0x0100
 
 class MachineHeadMockup:
 
-    def __init__(self, index):
+    def __init__(self, index, time_scale=1.0):
+
+        time_scale = float(time_scale)
+        if time_scale <= 0:
+            raise ValueError("time_scale must be greater than zero")
+        self.time_scale = time_scale
 
         self.index = index
-        self.letter = ["A", "F", "B", "E", "C", "D"][index]
+        self.letter = HEAD_INDEX_TO_LETTER[index]
 
         self.pending_stop = False
 
@@ -171,7 +187,7 @@ class MachineHeadMockup:
                     "params": {"Output_Number": 1, "Output_Action": 0}
                 }
                 asyncio.ensure_future(self.handle_command(msg_out_dict))
-            asyncio.get_event_loop().call_later(3, _start_load_liftr_up)
+            self._machine_call_later(3, _start_load_liftr_up)
 
         elif self.letter == "F":
             def _start_unload_liftr_down():
@@ -186,7 +202,7 @@ class MachineHeadMockup:
                 }
                 asyncio.ensure_future(self.handle_command(msg_out_dict))
 
-            asyncio.get_event_loop().call_later(5, _start_unload_liftr_down)
+            self._machine_call_later(5, _start_unload_liftr_down)
 
         if self.index == 5:
             self.status["jar_photocells_status"] = 0x0010  # set load_lifter_up_pc
@@ -194,6 +210,16 @@ class MachineHeadMockup:
             self.status["jar_photocells_status"] = 0x0020  # set load_lifter_down_pc
         else:
             self.status["jar_photocells_status"] = 0x0000  # set load_lifter_up_pc
+
+    async def _machine_sleep(self, seconds):
+        """Attende un tempo fisico simulato, scalabile nei test E2E."""
+        await asyncio.sleep(seconds * self.time_scale)
+
+    def _machine_call_later(self, seconds, callback, *args):
+        """Pianifica una transizione fisica usando la scala dell'emulatore."""
+        return asyncio.get_event_loop().call_later(
+            seconds * self.time_scale, callback, *args
+        )
 
     def delayed_stop(self):
         if self.pending_stop:
@@ -225,7 +251,7 @@ class MachineHeadMockup:
         logging.warning("{} - mask:0x{:04X}, , set_or_reset:{}, , duration:{}, , tgt_level:{}".format(self.letter,
                                                                                                       mask, set_or_reset, duration, tgt_level))
 
-        await asyncio.sleep(duration)
+        await self._machine_sleep(duration)
         pars = {"status_level": tgt_level}
         if mask != EMPTY_MASK:
             if set_or_reset == "set":
@@ -292,23 +318,32 @@ class MachineHeadMockup:
                     pars = {"circuit_engaged": p[0]}
                     logging.warning(f"pars:{pars}")
                     await self.update_status(params=pars)
-                    await asyncio.sleep(2)
+                    await self._machine_sleep(2)
 
                     pars = {"circuit_engaged": 0}
                     logging.warning(f"pars:{pars}")
                     await self.update_status(params=pars)
-                    await asyncio.sleep(2)
-
-            asyncio.ensure_future(simulate_circuit_engagement())
+                    await self._machine_sleep(2)
 
             await self.do_move(duration=0.5, tgt_level="DISPENSING")
 
+            # Un circuito puo' risultare impegnato soltanto dopo che la macro
+            # ha portato la testa in DISPENSING. Pubblicarlo prima introduceva
+            # una race nell'emulatore: il backend ignorava correttamente quel
+            # fronte perche' ricevuto ancora in STANDBY/JAR_POSITIONING.
+            circuit_task = asyncio.ensure_future(simulate_circuit_engagement())
+
             if 'failure' in sys.argv:
-                await asyncio.sleep(3)
+                await self._machine_sleep(3)
                 await self.update_status(
                     params={"status_level": "ALARM", "error_code": 0xFF, "error_message": "******",})
             else:
-                await self.do_move(duration=1.0 + 4 * len(pipes_), tgt_level="STANDBY")
+                # Tutti i fronti di circuito fanno parte della macro e devono
+                # precedere lo STANDBY conclusivo. L'attesa esplicita elimina
+                # la race tra l'ultimo circuito=0 e il ritorno a riposo senza
+                # cambiare la durata simulata totale (4 s per tubo + 1 s).
+                await circuit_task
+                await self.do_move(duration=1.0, tgt_level="STANDBY")
 
         elif msg_out_dict["command"] == "RESET":
 
@@ -433,7 +468,9 @@ class MachineHeadMockup:
 
             # ~ logging.warning("{} {}, crx_outputs_status:{}".format(self.index, self.letter, self.status["crx_outputs_status"]))
 
-            asyncio.get_event_loop().call_later(2.0, self.do_move_by_crx_outputs, *[output_number, output_action])
+            self._machine_call_later(
+                2.0, self.do_move_by_crx_outputs, output_number, output_action
+            )
 
 
     def do_move_by_crx_outputs(self, output_number, output_action):  # pylint: disable=too-many-branches,too-many-statements
@@ -500,7 +537,7 @@ class MachineHeadMockup:
             elif self.letter == 'B':
                 pass
 
-            elif self.letter == 'C':
+            elif self.letter in ('C', 'G'):
                 if output_number == 1:
                     if output_action in (1, 4):
                         pars["jar_photocells_status"] = self.status["jar_photocells_status"] ^ LOAD_LIFTER_ROLLER_MASK
@@ -574,7 +611,7 @@ class MachineHeadMockup:
 
 
 class MachineHeadMockupWsSocket(MachineHeadMockup):
-    def __init__(self, index):
+    def __init__(self, index, time_scale=1.0):
 
         self.index = index
 
@@ -586,9 +623,9 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
         self.ws_clients = []
         self.timer_step = 1
 
-        asyncio.ensure_future(self._time_notifier())
+        super().__init__(index, time_scale=time_scale)
 
-        super().__init__(index)
+        asyncio.ensure_future(self._time_notifier())
 
     async def _time_notifier(self):
 
@@ -656,7 +693,9 @@ class MachineHeadMockupWsSocket(MachineHeadMockup):
 
 
 class MachineHeadMockupFile(MachineHeadMockup):
-    def __init__(self, index):
+    def __init__(self, index, time_scale=1.0):
+
+        self.index = index
 
         pth = os.path.join(DATA_ROOT, "machine_status_{}.json".format(self.index))
         with open(pth) as f:
@@ -666,7 +705,7 @@ class MachineHeadMockupFile(MachineHeadMockup):
         with open(filepth, "w") as f:
             json.dump({}, f)
 
-        super().__init__(index)
+        super().__init__(index, time_scale=time_scale)
         self.update_status(
             {"status_level": "IDLE", "jar_photocells_status": 0x0000}
         )  # reset all pc
@@ -702,9 +741,15 @@ class MachineHeadMockupFile(MachineHeadMockup):
                         logging.error(traceback.format_exc())
 
 
-def create_and_run_tasks():
+def create_and_run_tasks(time_scale=1.0, machine_variant="CR6"):
 
-    machine_heads = [MachineHeadMockupWsSocket(i) for i in range(6)]
+    head_indices = VARIANT_HEAD_INDICES.get(
+        str(machine_variant).upper(), VARIANT_HEAD_INDICES["CR6"]
+    )
+    machine_heads = [
+        MachineHeadMockupWsSocket(i, time_scale=time_scale)
+        for i in head_indices
+    ]
     tasks = [m.command_watcher() for m in machine_heads]
     # ~ asyncio.ensure_future(t)
 
@@ -714,7 +759,47 @@ def create_and_run_tasks():
     return tasks
 
 
-def main(log_level):
+def _positive_time_scale(value):
+    value = float(value)
+    if value <= 0:
+        raise argparse.ArgumentTypeError("time scale must be greater than zero")
+    return value
+
+
+def parse_options(args=None):
+    parser = argparse.ArgumentParser(description="alfa CR6 machine emulator")
+    parser.add_argument(
+        "--time-scale",
+        type=_positive_time_scale,
+        default=1.0,
+        help="scala dei soli tempi fisici simulati (default: 1.0)",
+    )
+    parser.add_argument(
+        "--machine-variant",
+        choices=tuple(VARIANT_HEAD_INDICES),
+        default=os.getenv("MACHINE_VARIANT", "CR6").upper(),
+        help="teste da emulare (default: MACHINE_VARIANT oppure CR6)",
+    )
+    # Mantiene compatibili i flag storici failure/fail_on_transfer/buffer_full.
+    options, _unknown = parser.parse_known_args(args)
+    return options
+
+
+def main(log_level=logging.WARNING, time_scale=None, args=None, machine_variant=None):
+
+    options = parse_options(args)
+    if time_scale is None:
+        time_scale = options.time_scale
+    else:
+        time_scale = _positive_time_scale(time_scale)
+    if machine_variant is None:
+        machine_variant = options.machine_variant
+    else:
+        machine_variant = str(machine_variant).upper()
+        if machine_variant not in VARIANT_HEAD_INDICES:
+            raise ValueError("unsupported machine variant: {}".format(
+                machine_variant
+            ))
 
     fmt_ = (
         "[%(asctime)s]%(levelname)s %(funcName)s() %(filename)s:%(lineno)d %(message)s"
@@ -724,7 +809,9 @@ def main(log_level):
     loop = asyncio.get_event_loop()
     tasks = []
     try:
-        tasks = create_and_run_tasks()
+        tasks = create_and_run_tasks(
+            time_scale=time_scale, machine_variant=machine_variant
+        )
         for t in tasks:
             asyncio.ensure_future(t)
         asyncio.get_event_loop().run_forever()
@@ -736,5 +823,5 @@ def main(log_level):
         loop.call_later(1, loop.stop)
         loop.run_until_complete(loop.shutdown_asyncgens())
 
-
-main(log_level=logging.WARNING)
+if __name__ == "__main__":
+    main()
