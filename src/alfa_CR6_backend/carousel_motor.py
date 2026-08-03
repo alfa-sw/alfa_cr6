@@ -1470,7 +1470,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             error_head=_error_head
                         )
                     else:
-                        if "move_11_12" in r_ac:
+                        # Ogni lista di recovery e' un suffisso del percorso
+                        # completo e termina con l'uscita fisica. CR4/CR6
+                        # arrivano qui tramite move_11_12; CRX60/80 terminano
+                        # invece con move_04_05/move_05_06. Limitarsi al nome
+                        # classico lasciava quindi in running_jars.json record
+                        # ormai DONE con posizione "_" sulle varianti CRX.
+                        if count == len(jar_recovery_actions) - 1:
                             await self.restore_machine_helper.async_remove_jar_data(j_code)
                             event_args = {
                                 "name": "MACHINE RECOVERY",

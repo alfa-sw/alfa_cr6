@@ -174,10 +174,17 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         with open(self.json_file_path, 'w') as file:
             json.dump(data, file)
 
-    def read_data(self):
+    def _read_unfiltered_data(self):
         try:
             with open(self.json_file_path, 'r') as file:
-                data = json.load(file)
+                return json.load(file)
+        except FileNotFoundError:
+            return {}
+
+    def read_data(self):
+        try:
+            data = self._read_unfiltered_data()
+            if data:
                 if logging.getLogger().isEnabledFor(logging.DEBUG):
                     logging.debug('>>> data: %s', dict(data))
 
@@ -195,6 +202,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
                 sorted_data = OrderedDict(sorted_items) 
                 
                 return sorted_data
+            return OrderedDict()
         except FileNotFoundError:
             return {}
 
@@ -235,20 +243,15 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         await loop.run_in_executor(None, self.write_data, new_data)
 
     async def async_remove_jar_data(self, jcode):
-
-        data = await self.async_read_data()
-
-        if jcode not in data:
-            logging.error(f'Jar code {jcode} not found in data.')
-            return
-
-        logging.warning(f'Removing Recovery data for jar {jcode}')
-        del data[jcode]
-
-        await self.async_write_data(data)
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self.remove_jar_data, jcode)
 
     def remove_jar_data(self, jcode):
-        data = dict(self.read_data())
+        # La vista pubblica ``read_data`` esclude intenzionalmente le
+        # posizioni non recuperabili (per esempio "_"). La rimozione deve
+        # invece operare sul JSON grezzo, altrimenti proprio quei record non
+        # possono piu' essere cancellati.
+        data = dict(self._read_unfiltered_data())
 
         if jcode not in data:
             logging.error(f'Jar code {jcode} not found in data.')
@@ -995,6 +998,12 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if jar:
                 jar.status = "ERROR"
                 jar.description = traceback.format_exc()
+                # ``jar.status`` viene assegnato direttamente per conservare
+                # posizione e testa del punto di guasto. Manteniamo pero'
+                # sincronizzato anche lo stato materializzato dell'ordine:
+                # senza questo passaggio una latta ERROR lasciava l'ordine in
+                # PROGRESS fino a un successivo aggiornamento accidentale.
+                jar.order.update_status()
                 self.db_session.commit()
 
             self.handle_exception(e)

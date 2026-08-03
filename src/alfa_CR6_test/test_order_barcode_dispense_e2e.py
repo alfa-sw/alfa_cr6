@@ -1,0 +1,778 @@
+# coding: utf-8
+
+"""E2E hardware-free: creazione ordine, barcode, carosello e dispensazione.
+
+Il test attraversa il percorso produttivo a partire da ``_do_create_order`` e
+da una lettura del vero ``BarCodeReader``. La lettura avvia il vero jar task,
+che usa lookup SQLite, validazione del volume, ``execute_carousel_steps``,
+``dispense_step`` e ``MachineHead.do_dispense`` sulle matrici CR4, CR6, CRX60
+e CRX80.
+
+Il confine sostituito e' soltanto quello fisico: un websocket in-process passa
+i comandi del vero ``MachineHead.send_command`` a ``MachineHeadMockup``. Le
+transizioni di fotocellule, rulli, lifter e stato DISPENSING/STANDBY sono quindi
+quelle dell'emulatore di progetto, accelerate con ``time_scale=0.05``. Anche
+il REST tintometro e' deterministico e in memoria.
+
+Il ritiro finale dal rullo di uscita di CR4/CR6 rappresenta l'unica azione
+dell'operatore simulata esplicitamente; CRX60/80 usano il percorso lineare.
+"""
+
+import asyncio
+import copy
+import json
+import os
+import tempfile
+import threading
+import types
+import unittest
+from unittest import mock
+
+import alfa_CR6_backend.machine_head as machine_head_module
+import alfa_CR6_backend.models as models_module
+import alfa_CR6_test.emulator as emulator_module
+from alfa_CR6_backend.base_application import (
+    BarCodeReader,
+    BaseApplication,
+    RestoreMachineHelper,
+)
+from alfa_CR6_backend.carousel_motor import CarouselMotor
+from alfa_CR6_backend.machine_head import MachineHead
+from alfa_CR6_backend.models import Jar, compile_barcode, init_models
+from alfa_CR6_test.emulator import (
+    DISPENSING_POSITION_MASK,
+    INPUT_ROLLER_MASK,
+    OUTPUT_ROLLER_MASK,
+    MachineHeadMockup,
+)
+
+
+class _Page:
+
+    def __init__(self):
+        self.update_calls = 0
+
+    def update_status(self):
+        self.update_calls += 1
+
+    def update_jar_pixmaps(self):
+        self.update_calls += 1
+
+
+class _MainWindow:
+
+    def __init__(self):
+        self.alerts = []
+        self.barcodes = []
+        self.status_updates = []
+        self.frozen_dialogs = []
+        self.recovery_mode_updates = []
+        self.on_frozen_dialog = None
+        self.home_page = _Page()
+        self.debug_page = _Page()
+
+    def open_alert_dialog(self, *args, **kwargs):
+        self.alerts.append((args, kwargs))
+
+    def show_barcode(self, barcode, is_ok):
+        self.barcodes.append((barcode, is_ok))
+
+    def update_status_data(self, index, status):
+        self.status_updates.append((index, copy.deepcopy(status)))
+
+    def open_frozen_dialog(self, *args, **kwargs):
+        self.frozen_dialogs.append((args, kwargs))
+        if self.on_frozen_dialog:
+            self.on_frozen_dialog()
+
+    def show_carousel_recovery_mode(self, flag):
+        self.recovery_mode_updates.append(flag)
+
+    @staticmethod
+    def show_reserve(_index, _flag):
+        return None
+
+    @staticmethod
+    def show_carousel_frozen(_flag):
+        return None
+
+    @staticmethod
+    def start_step_blink(_step):
+        return None
+
+    @staticmethod
+    def stop_step_blink():
+        return None
+
+
+class _WsServer:
+
+    def __init__(self):
+        self.refresh_calls = 0
+
+    def refresh_can_list(self):
+        self.refresh_calls += 1
+
+    @staticmethod
+    async def broadcast_msg(_channel, _message):
+        return True
+
+
+class _RedisPublisher:
+
+    def __init__(self):
+        self.messages = []
+
+    def publish_messages(self, message):
+        self.messages.append(copy.deepcopy(message))
+
+
+class _InProcessPhysics(MachineHeadMockup):
+    """Emulatore fisico che inoltra ogni stato al vero MachineHead."""
+
+    def __init__(self, index, time_scale):
+        self.receiver = None
+        self._pickup_scheduled = False
+        self.fail_next_dispensing_transfer = False
+        self.fail_next_dispense = False
+        super().__init__(index, time_scale=time_scale)
+
+    async def handle_command(self, msg_out_dict):
+        command = msg_out_dict["command"]
+        params = msg_out_dict.get("params", {})
+        if (
+                self.fail_next_dispense
+                and command == "DISPENSE_FORMULA"):
+            self.fail_next_dispense = False
+            await self.do_move(duration=0.5, tgt_level="DISPENSING")
+            await self._machine_sleep(1.0)
+            await self.update_status({
+                "status_level": "ALARM",
+                "error_code": 9901,
+                "error_message": "E2E_EMULATED_DISPENSE_FAILURE",
+            })
+            return
+        if (
+                self.fail_next_dispensing_transfer
+                and command == "CRX_OUTPUTS_MANAGEMENT"
+                and int(params.get("Output_Number", -1)) == 0
+                and int(params.get("Output_Action", -1)) == 1):
+            self.fail_next_dispensing_transfer = False
+            # L'eccezione del controller viene sollevata dal MachineHead
+            # adattato; il modello fisico non deve produrre il fronte sensore.
+            return
+        await super().handle_command(msg_out_dict)
+
+    async def dump_status(self):
+        if self.receiver is not None:
+            await self.receiver.update_status(copy.deepcopy(self.status))
+
+        # Il flusso reale termina quando l'operatore preleva la latta. Lascia
+        # visibile il fronte ON abbastanza a lungo per move_11_12, poi simula
+        # il prelievo e il conseguente fronte OFF atteso da wait_for_delivery.
+        output_occupied = bool(
+            self.letter == "F"
+            and self.status.get("jar_photocells_status", 0)
+            & OUTPUT_ROLLER_MASK
+        )
+        if output_occupied and not self._pickup_scheduled:
+            self._pickup_scheduled = True
+            asyncio.get_event_loop().call_later(
+                0.1, lambda: asyncio.ensure_future(self._simulate_pickup())
+            )
+
+    async def _simulate_pickup(self):
+        await self.update_status({
+            "jar_photocells_status": (
+                self.status["jar_photocells_status"]
+                & ~OUTPUT_ROLLER_MASK
+            )
+        })
+
+
+class _InProcessWebSocket:
+    """Trasporto controllato; mantiene reale MachineHead.send_command()."""
+
+    def __init__(self, head, physics):
+        self.head = head
+        self.physics = physics
+        self.sent = []
+        self.command_tasks = []
+
+    async def send(self, payload):
+        message = json.loads(payload)
+        outgoing = copy.deepcopy(message["msg_out_dict"])
+        self.sent.append(outgoing)
+
+        answer = {
+            "status_code": 0,
+            "error": "no error",
+            "reply_to": None,
+            "ref_id": len(self.sent),
+            "command": outgoing["command"] + "_END",
+        }
+        await self.head._MachineHead__process_ws_msg(json.dumps({
+            "type": "answer",
+            "value": answer,
+        }))
+
+        previous_task = self.command_tasks[-1] if self.command_tasks else None
+
+        async def execute_in_controller_order():
+            # Il websocket conferma subito la ricezione, mentre il controller
+            # fisico serializza i comandi della stessa testa. Avviare una task
+            # indipendente per ogni comando permetteva invece a ON/OFF e macro
+            # di sovrapporsi in un ordine impossibile sulla macchina reale.
+            if previous_task is not None:
+                await previous_task
+            await self.physics.handle_command(outgoing)
+
+        task = asyncio.ensure_future(execute_in_controller_order())
+        self.command_tasks.append(task)
+        # Consente all'emulatore di pubblicare lo stato iniziale del comando
+        # prima che il chiamante inizi ad attendere la relativa transizione.
+        await asyncio.sleep(0)
+
+
+class _E2EMachineHead(MachineHead):
+
+    def __init__(self, index, app, physics, pigment):
+        with mock.patch.object(
+                machine_head_module, "get_application_instance",
+                return_value=app):
+            super().__init__(index, "127.0.0.1", 11001 + index, 8081 + index)
+        # update_status legge la precedente maschera delle uscite per rilevare
+        # i fronti. Sulla macchina esiste gia' un payload iniziale; nel test
+        # evitiamo quindi il solo stato transitorio completamente vuoto.
+        self.status = {"crx_outputs_status": 0}
+        self._rest_pigments = [copy.deepcopy(pigment)]
+        self.fail_next_transfer = False
+        self.websocket = _InProcessWebSocket(self, physics)
+        physics.receiver = self
+
+    async def crx_outputs_management(
+            self, output_number, output_action, timeout=30, silent=True):
+        if (
+                self.fail_next_transfer
+                and output_number == 0
+                and output_action == 1):
+            self.fail_next_transfer = False
+            raise RuntimeError(
+                "E2E emulated movement controller failure on head {}".format(
+                    self.name
+                )
+            )
+        return await super().crx_outputs_management(
+            output_number, output_action, timeout=timeout, silent=silent
+        )
+
+    async def call_api_rest(  # pylint: disable=too-many-arguments
+            self, path, method, data, timeout=40, expected_ret_type="json"):
+        del method, timeout, expected_ret_type
+        if path == "apiV1/config":
+            return {"objects": []}
+        if path == "apiV1/pigment":
+            return {"objects": copy.deepcopy(self._rest_pigments)}
+        if path == "apiV1/package":
+            return {"objects": [{"name": "500 ml", "size": 500}]}
+        if path == "apiV1/ad_hoc":
+            return {
+                "result": "OK",
+                "pipe_formula": copy.deepcopy(
+                    data.get("params", {}).get("ingredients", {})
+                ),
+            }
+        raise AssertionError("REST E2E non previsto: {}".format(path))
+
+
+class _OrderBarcodeDispenseE2EMixin:
+
+    VARIANT_SPECS = {
+        "CR6": {
+            "variant": "CR6",
+            "in_docker": False,
+            "heads": ((0, "A"), (1, "F"), (2, "B"),
+                      (3, "E"), (4, "C"), (5, "D")),
+            "carousel_order": ("A", "B", "C", "D", "E", "F"),
+            "minimum_movements": 21,
+        },
+        "CR4": {
+            "variant": "CR4",
+            "in_docker": False,
+            "heads": ((0, "A"), (1, "F"), (4, "C"), (5, "D")),
+            "carousel_order": ("A", "C", "D", "F"),
+            "minimum_movements": 16,
+        },
+        "CRX60": {
+            "variant": "CRX60",
+            "in_docker": True,
+            "heads": ((0, "A"), (2, "B"), (4, "C")),
+            "carousel_order": ("A", "B", "C"),
+            "minimum_movements": 8,
+        },
+        "CRX80": {
+            "variant": "CRX80",
+            "in_docker": True,
+            "heads": ((0, "A"), (2, "B"), (4, "C"), (6, "G")),
+            "carousel_order": ("A", "B", "C", "G"),
+            "minimum_movements": 10,
+        },
+    }
+    PHASE_TIMEOUT = 30
+    # Sotto 0.05 i fronti brevi di uscita o circuito possono sovrapporsi ai
+    # tre campioni stabili (10 ms ciascuno) del polling produttivo.
+    TIME_SCALE = 0.05
+
+    def setUp(self):
+        self.spec = self.VARIANT_SPECS[self.VARIANT]
+        self.head_names = tuple(name for _index, name in self.spec["heads"])
+        self.environment_patch = mock.patch.dict(os.environ, {
+            "MACHINE_VARIANT": self.spec["variant"],
+            "IN_DOCKER": "1" if self.spec["in_docker"] else "0",
+        })
+        self.environment_patch.start()
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.temp_dir = tempfile.TemporaryDirectory(prefix="alfa_e2e_")
+        self.db_path = os.path.join(self.temp_dir.name, "e2e.sqlite")
+        self.session = init_models("sqlite:///" + self.db_path)
+        self.exceptions = []
+        self.physics = []
+
+        self.app = CarouselMotor.__new__(CarouselMotor)
+        self.app.settings = types.SimpleNamespace(
+            TMP_PATH=self.temp_dir.name,
+            TROUBLESHOOTING=False,
+        )
+        self.app.db_session = self.session
+        self.app.machine_head_dict = {}
+        self.app.main_window = _MainWindow()
+        self.app.ws_server = _WsServer()
+        self.app.redis_publisher = _RedisPublisher()
+        self.app.restore_machine_helper = None
+        self.app.ready_to_read_a_barcode = True
+        self.app.barcode_read_blocked_on_refill = False
+        self.app.carousel_frozen = False
+        self.app.busy_head_A = False
+        self.app.double_can_alert = False
+        self.app.timer_01_02 = 0
+        self.app.machine_variant = self.spec["variant"]
+        self.app.in_docker = self.spec["in_docker"]
+        self.app.n_of_active_heads = len(self.spec["heads"])
+        self.app.MOVE_DEST_LED_HEAD_MAP = dict(
+            CarouselMotor.MOVE_DEST_LED_HEAD_MAP
+        )
+        if self.spec["variant"] == "CRX80":
+            self.app.MOVE_DEST_LED_HEAD_MAP["move_04_05"] = "G"
+        self.app.id_bc_shuttle = "DISABLED"
+        # La taglia puo' arrivare dal secondo lettore anche su CR6; evita di
+        # introdurre nel test il debounce dei microswitch, gia' coperto a parte.
+        self.app.shuttle_size_from_barcode_scanner = 500
+        self.app._shuttle_size_ready_evt = asyncio.Event()
+        self.app._crx_ja_block_sequence_active = False
+        self.app._crx_pending_barcode = None
+        self.app._database_cleanup_cancel_event = threading.Event()
+        self.app._database_cleanup_future = None
+        self.app._attention_led_requests = {}
+        self.app._refill_alarm_tokens = set()
+        self.app._BaseApplication__jar_runners = {}
+        self.app._BaseApplication__tasks_to_freeze = 0
+        self.app._BaseApplication__modal_freeze_msgbox = None
+        self.app.handle_exception = self.exceptions.append
+
+        self.emulator_data_patch = mock.patch.object(
+            emulator_module, "DATA_ROOT", self.temp_dir.name + os.sep
+        )
+        self.emulator_data_patch.start()
+        self.models_app_patch = mock.patch.object(
+            models_module, "get_application_instance", return_value=self.app
+        )
+        self.models_app_patch.start()
+
+        for index, name in self.spec["heads"]:
+            pigment = self._pigment_for(name)
+            with open(
+                    os.path.join(self.temp_dir.name, name + "_pigment_list.json"),
+                    "w", encoding="utf-8") as stream:
+                json.dump([pigment], stream)
+
+            physics = _InProcessPhysics(index, self.TIME_SCALE)
+            physics.status["panel_table_status"] = False
+            if name == "A":
+                physics.status["jar_photocells_status"] |= INPUT_ROLLER_MASK
+            head = _E2EMachineHead(index, self.app, physics, pigment)
+            self.physics.append(physics)
+            self.app.machine_head_dict[index] = head
+
+        self.loop.run_until_complete(self._publish_initial_states())
+
+    def tearDown(self):
+        pending = [task for task in asyncio.all_tasks(self.loop) if not task.done()]
+        for task in pending:
+            task.cancel()
+        if pending:
+            self.loop.run_until_complete(
+                asyncio.gather(*pending, return_exceptions=True)
+            )
+        self.session.close()
+        self.models_app_patch.stop()
+        self.emulator_data_patch.stop()
+        self.environment_patch.stop()
+        self.loop.close()
+        self.temp_dir.cleanup()
+
+    @staticmethod
+    def _pigment_for(head_name):
+        return {
+            "name": "PIG_{}".format(head_name),
+            "type": "colorant",
+            "specific_weight": 1.0,
+            "pipes": [{
+                # B01 ha circuit_id 0, valore usato anche per "disimpegnato".
+                # B02 consente di verificare i fronti 1 -> 0 della telemetria.
+                "name": "B02",
+                "enabled": True,
+                "sync": True,
+                "current_level": 500.0,
+                "minimum_level": 0.0,
+                "reserve_level": 25.0,
+                "effective_specific_weight": 1.0,
+            }],
+        }
+
+    async def _publish_initial_states(self):
+        for physics in self.physics:
+            await physics.dump_status()
+        for head in self.app.machine_head_dict.values():
+            await head.update_tintometer_data()
+
+    def _run(self, coroutine):
+        return self.loop.run_until_complete(coroutine)
+
+    def _create_order_and_jar(self):
+        properties = {
+            "meta": {"file name": "e2e-hardware-free"},
+            "ingredients": [
+                {"pigment_name": "PIG_{}".format(name), "weight(g)": 5.0}
+                for name in self.head_names
+            ],
+        }
+        order = BaseApplication._do_create_order(
+            self.app, properties, "E2E ordine-barcode-dispensazione", 1
+        )
+        if order is None:
+            self.fail("fase ordine: _do_create_order non ha creato l'ordine")
+
+        jar = self.session.query(Jar).filter(Jar.order_id == order.id).one()
+        return order, jar
+
+    async def _scan_and_wait(self, barcode):
+        reader = BarCodeReader(
+            self.app.on_barcode_read,
+            identification_string="E2E",
+            exception_handler=self.exceptions.append,
+            manual_input=True,
+        )
+        await reader.manual_read(barcode)
+
+        runners = self.app._BaseApplication__jar_runners
+        if barcode not in runners:
+            self.fail("fase barcode: la lettura non ha creato il jar runner")
+
+        try:
+            await asyncio.wait_for(
+                asyncio.shield(runners[barcode]["task"]),
+                timeout=self.PHASE_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            runner_task = runners[barcode]["task"]
+            commands = {
+                head.name: [entry["command"] for entry in head.websocket.sent]
+                for head in self.app.machine_head_dict.values()
+            }
+            statuses = {
+                head.name: head.status.get("status_level")
+                for head in self.app.machine_head_dict.values()
+            }
+            self.fail(
+                "fase carosello/dispensazione in timeout; "
+                "comandi={}, stati={}, stack={}".format(
+                    commands,
+                    statuses,
+                    [frame.f_code.co_name for frame in runner_task.get_stack()],
+                )
+            )
+
+        return reader
+
+    async def _run_e2e(self):
+        order, jar = self._create_order_and_jar()
+        reader = await self._scan_and_wait(jar.barcode)
+        self.session.refresh(jar)
+        self.session.refresh(order)
+        return order, jar, reader, jar.barcode
+
+    def _assert_complete_variant(self):
+        order, jar, reader, barcode = self._run(self._run_e2e())
+
+        properties = json.loads(jar.json_properties)
+        macro_heads = []
+        movement_commands = 0
+        for head in self.app.machine_head_dict.values():
+            commands = head.websocket.sent
+            if any(item["command"] == "DISPENSE_FORMULA" for item in commands):
+                macro_heads.append(head.name)
+            movement_commands += sum(
+                item["command"] == "CRX_OUTPUTS_MANAGEMENT"
+                for item in commands
+            )
+
+        self.assertEqual(reader.last_read_event_buffer, barcode)
+        self.assertEqual(jar.status, "DONE")
+        self.assertEqual(jar.position, "_")
+        self.assertEqual(order.status, "DONE")
+        self.assertEqual(
+            properties["visited_head_names"],
+            list(self.spec["carousel_order"]),
+        )
+        self.assertEqual(
+            set(properties["dispensed_quantities_gr"]),
+            {"PIG_{}".format(name) for name in self.head_names},
+        )
+        self.assertEqual(properties["ingredient_volume_map"], {})
+        self.assertEqual(properties["remaining_volume"], 0)
+        self.assertEqual(
+            set(properties["effective_engaged_circuits"]),
+            set(self.head_names),
+        )
+        for name in self.head_names:
+            engaged = properties["effective_engaged_circuits"][name]
+            self.assertEqual(
+                list(engaged.values()),
+                [["B02", "PIG_{}".format(name)]],
+            )
+        self.assertEqual(set(macro_heads), set(self.head_names))
+        self.assertGreaterEqual(
+            movement_commands, self.spec["minimum_movements"]
+        )
+        self.assertTrue(any(
+            message.get("status") == "DONE"
+            for message in self.app.redis_publisher.messages
+        ))
+        self.assertEqual(self.app.main_window.alerts, [])
+        self.assertEqual(self.exceptions, [])
+
+    def test_complete_order_barcode_and_dispense(self):
+        self._assert_complete_variant()
+
+    def test_missing_barcode_does_not_start_machine(self):
+        order, jar = self._create_order_and_jar()
+        missing_barcode = compile_barcode(order.order_nr + 1000, 1)
+
+        reader = self._run(self._scan_and_wait(missing_barcode))
+
+        self.session.refresh(jar)
+        self.session.refresh(order)
+        sent_commands = [
+            command
+            for head in self.app.machine_head_dict.values()
+            for command in head.websocket.sent
+        ]
+        self.assertEqual(reader.last_read_event_buffer, missing_barcode)
+        self.assertEqual(jar.status, "NEW")
+        self.assertEqual(order.status, "NEW")
+        self.assertEqual(sent_commands, [])
+        self.assertTrue(any(
+            "not found" in kwargs.get("fmt", "")
+            for _args, kwargs in self.app.main_window.alerts
+        ))
+        self.assertEqual(self.exceptions, [])
+
+    def test_movement_controller_error_marks_order_error(self):
+        head_a = self.app.get_machine_head_by_letter("A")
+        head_a.fail_next_transfer = True
+
+        order, jar, _reader, _barcode = self._run(self._run_e2e())
+
+        properties = json.loads(jar.json_properties)
+        macro_heads = {
+            head.name
+            for head in self.app.machine_head_dict.values()
+            if any(
+                command["command"] == "DISPENSE_FORMULA"
+                for command in head.websocket.sent
+            )
+        }
+        self.assertEqual(jar.status, "ERROR")
+        self.assertEqual(jar.position, "A")
+        self.assertEqual(order.status, "ERROR")
+        self.assertEqual(properties["visited_head_names"], ["A"])
+        self.assertEqual(macro_heads, {"A"})
+        self.assertTrue(any(
+            isinstance(exc, RuntimeError)
+            and "movement controller failure" in str(exc)
+            for exc in self.exceptions
+        ))
+
+    def test_dispense_alarm_marks_order_error_and_ejects_jar(self):
+        physics_a = next(item for item in self.physics if item.letter == "A")
+        physics_a.fail_next_dispense = True
+        self.app.main_window.on_frozen_dialog = (
+            lambda: self.loop.call_later(
+                0.01, self.app.freeze_carousel, False
+            )
+        )
+
+        order, jar, _reader, _barcode = self._run(self._run_e2e())
+
+        properties = json.loads(jar.json_properties)
+        macro_heads = {
+            head.name
+            for head in self.app.machine_head_dict.values()
+            if any(
+                command["command"] == "DISPENSE_FORMULA"
+                for command in head.websocket.sent
+            )
+        }
+        outcomes = dict(properties["dispensation_outcomes"])
+        self.assertEqual(jar.status, "ERROR")
+        self.assertEqual(jar.position, "_")
+        self.assertEqual(order.status, "ERROR")
+        self.assertEqual(macro_heads, {"A"})
+        self.assertIn("failure during dispensation", outcomes["A"])
+        self.assertGreaterEqual(len(self.app.main_window.frozen_dialogs), 1)
+
+    @staticmethod
+    def _new_restore_helper(app, json_file_path):
+        helper = object.__new__(RestoreMachineHelper)
+        helper.json_file_path = json_file_path
+        helper.parent = app
+        return helper
+
+    async def _run_recovery_after_shutdown(self):
+        order, jar = self._create_order_and_jar()
+        jar_id = jar.id
+        helper_path = os.path.join(self.temp_dir.name, "running_jars.json")
+        helper = self._new_restore_helper(self.app, helper_path)
+        helper.write_data({})
+        self.app.restore_machine_helper = helper
+        self.app.update_jar_properties(jar)
+
+        head_a = self.app.get_machine_head_by_letter("A")
+        physics_a = next(item for item in self.physics if item.letter == "A")
+        a_sensor_mask = (
+            physics_a.status["jar_photocells_status"]
+            & ~INPUT_ROLLER_MASK
+        ) | DISPENSING_POSITION_MASK
+        await physics_a.update_status({
+            "status_level": "STANDBY",
+            "container_presence": True,
+            "jar_photocells_status": a_sensor_mask,
+        })
+        self.app.update_jar_position(
+            jar=jar, machine_head=head_a, status="PROGRESS", pos="A"
+        )
+        self.app._BaseApplication__jar_runners[jar.barcode] = {
+            "jar": jar,
+            "task": asyncio.current_task(),
+            "frozen": False,
+            "running_engaged_circuits": [],
+        }
+        dispensed = await self.app.dispense_step("A", jar)
+        self.assertTrue(dispensed)
+        persisted_before_shutdown = dict(helper.read_data())[jar.barcode]
+        self.assertEqual(persisted_before_shutdown["pos"], "A")
+        self.assertEqual(persisted_before_shutdown["dispensation"], "done")
+
+        # Confine di spegnimento: vengono persi runner e sessione, mentre DB,
+        # running_jars.json e fotocellule della macchina restano persistenti.
+        self.app._BaseApplication__jar_runners = {}
+        for head in self.app.machine_head_dict.values():
+            head._current_runner = None
+        self.session.close()
+        self.session = init_models("sqlite:///" + self.db_path)
+        self.app.db_session = self.session
+        restarted_helper = self._new_restore_helper(self.app, helper_path)
+        self.app.restore_machine_helper = restarted_helper
+        self.app.running_recovery_mode = False
+        self.app.ready_to_read_a_barcode = False
+
+        async def accelerated_recovery_actions(
+                app, j_code, recovery_jar, actions, movement_params,
+                deduced_position, sleeptime=1):
+            del sleeptime
+            return await CarouselMotor.run_recovery_actions(
+                app, j_code, recovery_jar, actions, movement_params,
+                deduced_position, sleeptime=0
+            )
+
+        self.app.run_recovery_actions = types.MethodType(
+            accelerated_recovery_actions, self.app
+        )
+        recovery_task = asyncio.create_task(self.app.machine_recovery())
+
+        async def reap_completed_runners():
+            while not recovery_task.done():
+                self.app._BaseApplication__check_jars_to_freeze()
+                await asyncio.sleep(0.01)
+
+        reaper_task = asyncio.create_task(reap_completed_runners())
+        try:
+            await asyncio.wait_for(
+                asyncio.shield(recovery_task), timeout=self.PHASE_TIMEOUT
+            )
+        finally:
+            reaper_task.cancel()
+            await asyncio.gather(reaper_task, return_exceptions=True)
+
+        recovered_jar = self.session.query(Jar).filter(Jar.id == jar_id).one()
+        self.session.refresh(recovered_jar)
+        self.session.refresh(recovered_jar.order)
+        with open(helper_path, "r", encoding="utf-8") as stream:
+            raw_recovery_data = json.load(stream)
+        return recovered_jar.order, recovered_jar, raw_recovery_data
+
+    def test_recovery_after_shutdown_resumes_without_redispensing(self):
+        order, jar, raw_recovery_data = self._run(
+            self._run_recovery_after_shutdown()
+        )
+
+        properties = json.loads(jar.json_properties)
+        self.assertEqual(jar.status, "DONE")
+        expected_position = "_" if self.spec["in_docker"] else "OUT"
+        self.assertEqual(jar.position, expected_position)
+        self.assertEqual(order.status, "DONE")
+        self.assertEqual(
+            properties["visited_head_names"],
+            list(self.spec["carousel_order"]),
+        )
+        self.assertEqual(
+            properties["visited_head_names"].count("A"), 1
+        )
+        self.assertEqual(raw_recovery_data, {})
+        self.assertFalse(self.app.running_recovery_mode)
+        self.assertTrue(self.app.ready_to_read_a_barcode)
+
+
+class TestCR4OrderBarcodeDispenseE2E(
+        _OrderBarcodeDispenseE2EMixin, unittest.TestCase):
+    VARIANT = "CR4"
+
+
+class TestCR6OrderBarcodeDispenseE2E(
+        _OrderBarcodeDispenseE2EMixin, unittest.TestCase):
+    VARIANT = "CR6"
+
+
+class TestCRX60OrderBarcodeDispenseE2E(
+        _OrderBarcodeDispenseE2EMixin, unittest.TestCase):
+    VARIANT = "CRX60"
+
+
+class TestCRX80OrderBarcodeDispenseE2E(
+        _OrderBarcodeDispenseE2EMixin, unittest.TestCase):
+    VARIANT = "CRX80"
+
+
+if __name__ == "__main__":
+    unittest.main()
