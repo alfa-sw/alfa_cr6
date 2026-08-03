@@ -182,29 +182,27 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
             return {}
 
     def read_data(self):
-        try:
-            data = self._read_unfiltered_data()
-            if data:
-                if logging.getLogger().isEnabledFor(logging.DEBUG):
-                    logging.debug('>>> data: %s', dict(data))
-
-                ordine_pos = [
-                    "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
-                    "E", "D", "G", "LIFTR_DOWN", "LIFTR_UP",
-                    "C", "B", "A", "IN_A", "IN"
-                ]
-                
-                def get_position_index(item):
-                    return ordine_pos.index(item[1]["pos"])
-
-                valid_items = [(k, v) for k, v in data.items() if v.get("pos") is not None and v.get("pos") in ordine_pos]
-                sorted_items = sorted(valid_items, key=get_position_index)
-                sorted_data = OrderedDict(sorted_items) 
-                
-                return sorted_data
+        data = self._read_unfiltered_data()
+        if not data:
             return OrderedDict()
-        except FileNotFoundError:
-            return {}
+
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.debug('>>> data: %s', dict(data))
+
+        ordine_pos = [
+            "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
+            "E", "D", "G", "LIFTR_DOWN", "LIFTR_UP",
+            "C", "B", "A", "IN_A", "IN"
+        ]
+
+        def get_position_index(item):
+            return ordine_pos.index(item[1]["pos"])
+
+        valid_items = [
+            (key, value) for key, value in data.items()
+            if value.get("pos") in ordine_pos
+        ]
+        return OrderedDict(sorted(valid_items, key=get_position_index))
 
     def update_jar_data_position(self, jcode, updated_pos):
         jdata = dict(self.read_data())
@@ -235,8 +233,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
 
     async def async_read_data(self):
         loop = asyncio.get_running_loop()
-        data = await loop.run_in_executor(None, self.read_data)
-        return data
+        return await loop.run_in_executor(None, self.read_data)
 
     async def async_write_data(self, new_data):
         loop = asyncio.get_running_loop()
