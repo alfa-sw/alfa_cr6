@@ -357,7 +357,9 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     async def __on_buffer_read(self, buffer):
         ret = None
-        if not self._accept_any_len and len(buffer) != self.BARCODE_LEN:
+        if not isinstance(buffer, str):
+            logging.warning("format mismatch! barcode is not text: %r", buffer)
+        elif not self._accept_any_len and len(buffer) != self.BARCODE_LEN:
             logging.warning(f"format mismatch! buffer:{buffer}")
         else:
             t = time.time()
@@ -410,7 +412,6 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                         if getattr(_settings, 'MANUAL_BARCODE_INPUT', False):
                             continue
                         if keyEvent.keycode == "KEY_ENTER":
-                            buffer = buffer[:self.BARCODE_LEN]
                             await self.__on_buffer_read(buffer)
                             buffer = ""
                         else:
@@ -442,13 +443,24 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     @staticmethod
     def is_valid_alfa_barcode(buffer):
-        YEARS = [
-            "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
-            "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"
-        ]
+        if not isinstance(buffer, str):
+            return False
+        if not re.fullmatch(r"[0-9]{12}", buffer):
+            return False
 
-        check =  buffer[:2] in YEARS and int(buffer[2]) <= 1
-        return check
+        year = int(buffer[:2])
+        if not 20 <= year <= 40:
+            return False
+
+        # Il formato generato da compile_barcode e' YYMMDD + progressivo
+        # ordine (3 cifre) + indice jar (3 cifre). Il DB resta autorevole per
+        # progressivo e indice, mentre qui scartiamo rumore e date impossibili.
+        try:
+            time.strptime(buffer[:6], "%y%m%d")
+        except ValueError:
+            return False
+
+        return True
 
 
 class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
@@ -1358,19 +1370,19 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             variant = os.getenv('MACHINE_VARIANT')
             if variant in ['CRX60', 'CRX40', 'CRX80']:
+                # TODO - shutdown the BarCodeReader instance (eg device ungrab)
                 return None
 
             logging.warning(f"[SHUTTLE] barcode :: '{barcode}'")
 
             # --- dedup ---
+            key = barcode.lower().rstrip()
             t_now = time.time()
             _last_buf = getattr(self, '_shuttle_last_read_buffer', '')
             _last_t = getattr(self, '_shuttle_last_read_time', 0)
-            if barcode == _last_buf and t_now - _last_t < 5.0:
-                logging.warning(f"[SHUTTLE] DEDUP filter: '{barcode}' dt={t_now - _last_t:.3f}s")
+            if key == _last_buf and t_now - _last_t < 5.0:
+                logging.warning(f"[SHUTTLE] DEDUP filter: '{key}' dt={t_now - _last_t:.3f}s")
                 return None
-            self._shuttle_last_read_buffer = barcode
-            self._shuttle_last_read_time = t_now
 
             # --- format validation ---
             # 20/05/2026 - we decided to comment out the format filtering, accepting possible
@@ -1384,14 +1396,23 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
                 if not ret or ret.get("objects") is None:
                     logging.error("SECOND READER: cannot retrieve packages data")
+                    # Non lasciare valida una misura proveniente da una lettura
+                    # precedente quando la testa non e' in grado di confermare
+                    # il nuovo barcode shuttle.
+                    self.shuttle_size_from_barcode_scanner = False
+                    self._shuttle_size_ready_evt.clear()
                     return None
                 packages = ret.get("objects", [])
                 size_map = {p.get("name", "").lower().rstrip(): p.get("size") for p in packages if p.get("name") and p.get("size")}
-                key = barcode.lower().rstrip()
                 if key in size_map:
                     self.shuttle_size_from_barcode_scanner = size_map[key]
                     logging.warning(f"SECOND READER: shuttle '{key}' -> size {size_map[key]}")
                     self._shuttle_size_ready_evt.set()
+                    # Una lettura entra nella finestra di deduplica soltanto
+                    # dopo che la testa ha confermato il package. Errori REST
+                    # e package ignoti restano quindi immediatamente ritentabili.
+                    self._shuttle_last_read_buffer = key
+                    self._shuttle_last_read_time = t_now
                     # Feedback to UI
                     # self.main_window.show_barcode(f"SHUTTLE: {key} -> {size_map[key]}", is_ok=True)
                     # return key
@@ -2216,7 +2237,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         shuttle_barcode = ""
         formula_barcode = ""
 
-        async def validate_shuttle(barcode: str) -> (bool, str):
+        async def validate_shuttle(barcode: str):
             logging.warning(f"barcode: {barcode}")
             barcode_match = BARCODE_NEW_PATTERN.match(barcode)
             if not barcode_match:
@@ -2241,7 +2262,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             except Exception as e:
                 logging.error(f"An unexpected error has been occurred: {e}")
-                return False, "An unexpected error has been occurred."
+                return False, "An unexpected error has been occurred.", ""
 
         def on_shuttle_ok():
             nonlocal shuttle_barcode
@@ -2254,7 +2275,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             raw = self.main_window.input_dialog.get_content_text()
             formula_barcode = "".join(raw.split())
             formula_event.set()
-            formula_barcode = formula_barcode[:12]
             logging.warning(f"Formula barcode received: {formula_barcode}")
 
         while True:
@@ -2286,14 +2306,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             )
             await formula_event.wait()
 
-            if formula_barcode.isdigit():
+            if BarCodeReader.is_valid_alfa_barcode(formula_barcode):
                 self.main_window.hide_input_dialog()
                 break
 
-            logging.warning(f"Invalid formula barcode: {formula_barcode} (non è solo numeri)")
+            logging.warning(f"Invalid formula barcode: {formula_barcode}")
             self.main_window.hide_input_dialog()
             self.main_window.open_alert_dialog(
-                (formula_barcode),
+                (formula_barcode,),
                 fmt="Invalid order barcode: {}",
                 title="ERROR ORDER BARCODE"
             )
