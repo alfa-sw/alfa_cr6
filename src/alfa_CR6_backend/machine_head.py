@@ -297,7 +297,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.handle_dispensing_photocell_transition(new_flag)
 
         try:
-            crx_outputs_status = self.status.get('crx_outputs_status')
+            crx_outputs_status = status.get('crx_outputs_status', 0x0)
             for output_number in range(4):
                 mask_ = 0x1 << output_number
                 if not int(crx_outputs_status) & mask_:
@@ -531,12 +531,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             # ~ logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_},   LOCKED")
 
             if ret:
+                previous_stop_state = None
+                if output_action == 0:
+                    previous_stop_state = {
+                        key: self.__crx_inner_status[output_number][key]
+                        for key in ('value', 'timeout', 't0')
+                    }
 
                 try:
-                    if output_action == 0:
-                        self.__crx_inner_status[output_number]['timeout'] = 0
-                        self.__crx_inner_status[output_number]['t0'] = 0
-                    elif timeout:
+                    if output_action and timeout:
                         self.__crx_inner_status[output_number]['timeout'] = timeout
                         self.__crx_inner_status[output_number]['t0'] = time.time()
 
@@ -562,6 +565,20 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 except Exception as e:  # pylint: disable=broad-except
                     self.app.handle_exception(e)
+                finally:
+                    if output_action == 0:
+                        output_is_stopped = not (
+                            self.status.get('crx_outputs_status', 0x0)
+                            & mask_
+                        )
+                        if output_is_stopped:
+                            self.__crx_inner_status[output_number].update({
+                                'value': 0, 'timeout': 0, 't0': 0,
+                            })
+                        else:
+                            self.__crx_inner_status[output_number].update(
+                                previous_stop_state
+                            )
 
             self.__crx_inner_status[output_number]['locked'] = False
             # ~ logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_}, UNLOCKED")

@@ -250,6 +250,47 @@ class TestMachineHeadHardwareFree(unittest.TestCase):
         self.assertEqual(inner["t0"], 0)
         self.assertFalse(inner["locked"])
 
+    def test_unconfirmed_stop_preserves_watchdog_state_for_retry(self):
+        self.head.status = {"crx_outputs_status": 0x04}
+        inner = self.head._MachineHead__crx_inner_status[2]
+        inner.update({"value": 4, "timeout": 5, "t0": 100})
+        self.head.send_command = mock.AsyncMock(return_value=None)
+
+        stopped = self._run(
+            self.head.crx_outputs_management(2, 0, timeout=0)
+        )
+
+        self.assertFalse(stopped)
+        self.assertEqual(inner["value"], 4)
+        self.assertEqual(inner["timeout"], 5)
+        self.assertEqual(inner["t0"], 100)
+        self.assertFalse(inner["locked"])
+
+    def test_output_telemetry_clears_watchdog_only_on_off_state(self):
+        status = {
+            "status_level": "JAR_POSITIONING",
+            "photocells_status": 0,
+            "jar_photocells_status": 0,
+            "crx_outputs_status": 0x04,
+        }
+        self.head.status = dict(status, crx_outputs_status=0)
+        inner = self.head._MachineHead__crx_inner_status[2]
+        inner.update({"value": 4, "timeout": 5, "t0": 100})
+
+        self._run(self.head.update_status(dict(status)))
+
+        self.assertEqual(inner["value"], 4)
+        self.assertEqual(inner["timeout"], 5)
+        self.assertEqual(inner["t0"], 100)
+
+        self._run(self.head.update_status(
+            dict(status, crx_outputs_status=0)
+        ))
+
+        self.assertEqual(inner["value"], 0)
+        self.assertEqual(inner["timeout"], 0)
+        self.assertEqual(inner["t0"], 0)
+
     def test_watchdog_stops_an_output_after_its_timeout(self):
         inner_status = self.head._MachineHead__crx_inner_status
         inner_status[2].update({"value": 4, "timeout": 5, "t0": 100})
