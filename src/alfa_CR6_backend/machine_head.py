@@ -872,7 +872,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         logging.warning(f"waiting for head {self.name} to finish dispensing before cleanup")
                         try:
                             await asyncio.shield(
-                                self.wait_for_status_level(["STANDBY"], timeout=timeout_, show_alert=False))
+                                self.wait_for_status_level(
+                                    ["STANDBY"], timeout=dispense_timeout,
+                                    show_alert=False
+                                )
+                            )
                             outcome_ += tr_('success (step:{}) ').format(step)
                             result_ = 'OK'
                         except asyncio.CancelledError:

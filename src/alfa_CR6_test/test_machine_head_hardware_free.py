@@ -3,6 +3,7 @@
 """Logica testa CR6 provata senza REST server, websocket, pompe o sensori."""
 
 import asyncio
+import json
 import tempfile
 import types
 import unittest
@@ -103,6 +104,74 @@ class TestMachineHeadHardwareFree(unittest.TestCase):
         self.assertEqual(
             params["ingredients"], {"BASE": 10, "RED": 2, "ADDITIVE": 1}
         )
+
+    def test_cancellation_during_dispense_waits_for_safe_standby(self):
+        self.head.pigment_list = [{
+            "name": "RED",
+            "type": "colorant",
+            "specific_weight": 1.0,
+            "pipes": [{
+                "name": "C01",
+                "enabled": True,
+                "effective_specific_weight": 1.0,
+            }],
+        }]
+        self.head.status = {
+            "status_level": "STANDBY",
+            "container_presence": True,
+        }
+        self.head.jar_photocells_status = {
+            "JAR_DISPENSING_POSITION_PHOTOCELL": True,
+        }
+        self.head.call_api_rest = mock.AsyncMock(return_value={
+            "result": "OK",
+            "pipe_formula": {"RED": 1.0},
+        })
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.app.update_jar_properties = mock.Mock()
+
+        jar = types.SimpleNamespace(
+            barcode="260803001001",
+            order=types.SimpleNamespace(description=""),
+            json_properties=json.dumps({}),
+            get_ingredients_for_machine=mock.Mock(
+                return_value={"RED": 1.0}
+            ),
+            get_not_dispensed_ingredients=mock.Mock(return_value={}),
+            update_live=mock.Mock(),
+        )
+        runner = {"running_engaged_circuits": []}
+        self.app._BaseApplication__jar_runners = {jar.barcode: runner}
+
+        dispensing_wait_started = asyncio.Event()
+        standby_waits = []
+
+        async def wait_for_status(levels, **_kwargs):
+            if levels == ["DISPENSING"]:
+                self.head.status["status_level"] = "DISPENSING"
+                return True
+            self.assertEqual(levels, ["STANDBY"])
+            standby_waits.append(True)
+            if len(standby_waits) == 1:
+                dispensing_wait_started.set()
+                await asyncio.Future()
+            self.head.status["status_level"] = "STANDBY"
+            return True
+
+        self.head.wait_for_status_level = wait_for_status
+
+        async def cancel_while_dispensing():
+            task = asyncio.create_task(self.head.do_dispense(jar))
+            await dispensing_wait_started.wait()
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+
+        self._run(cancel_while_dispensing())
+
+        self.assertEqual(len(standby_waits), 2)
+        self.assertEqual(self.head.status["status_level"], "STANDBY")
+        self.assertIsNone(runner["running_engaged_circuits"])
 
     def test_tintometer_refresh_filters_disabled_pipes_and_reports_reserve(self):
         pigments = [{
