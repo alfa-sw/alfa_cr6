@@ -631,6 +631,13 @@ class _OrderBarcodeDispenseE2EMixin:
         return order, jar, reader, jar.barcode
 
     def _assert_complete_variant(self):
+        helper_path = os.path.join(
+            self.temp_dir.name, "normal-flow-running-jars.json"
+        )
+        helper = self._new_restore_helper(self.app, helper_path)
+        helper.write_data({})
+        self.app.restore_machine_helper = helper
+
         order, jar, reader, barcode = self._run(self._run_e2e())
 
         properties = json.loads(jar.json_properties)
@@ -679,6 +686,10 @@ class _OrderBarcodeDispenseE2EMixin:
         ))
         self.assertEqual(self.app.main_window.alerts, [])
         self.assertEqual(self.exceptions, [])
+        self.assertEqual(
+            helper._read_unfiltered_data(), {},
+            "il flusso normale ha lasciato record morti in running_jars.json",
+        )
 
     def test_complete_order_barcode_and_dispense(self):
         self._assert_complete_variant()
@@ -909,21 +920,6 @@ class _OrderBarcodeDispenseE2EMixin:
         )
 
     def _assert_runtime_invariants(self, allow_ambiguous_physics=False):
-        async def wait_for_auto_stopped_outputs():
-            return await CarouselMotor.wait_for_condition(
-                self.app,
-                lambda: all(
-                    physics.status.get("crx_outputs_status", 0) == 0
-                    for physics in self.physics
-                ),
-                timeout=0.5, show_alert=False, stability_count=1, step=0.01,
-            )
-
-        self.assertTrue(
-            self._run(wait_for_auto_stopped_outputs()),
-            "l'emulatore non ha auto-arrestato tutte le uscite",
-        )
-
         occupancy_mask = (
             INPUT_ROLLER_MASK
             | LOAD_LIFTER_ROLLER_MASK
@@ -931,16 +927,53 @@ class _OrderBarcodeDispenseE2EMixin:
             | UNLOAD_LIFTER_ROLLER_MASK
             | DISPENSING_POSITION_MASK
         )
-        occupied_positions = 0
+
+        def occupied_position_count():
+            return sum(
+                bin(
+                    physics.status.get("jar_photocells_status", 0)
+                    & occupancy_mask
+                ).count("1")
+                for physics in self.physics
+            )
+
+        async def wait_for_quiescent_runtime():
+            def runtime_is_quiescent():
+                outputs_stopped = all(
+                    physics.status.get("crx_outputs_status", 0) == 0
+                    for physics in self.physics
+                )
+                controllers_idle = all(
+                    head.websocket._last_command_task is None
+                    or head.websocket._last_command_task.done()
+                    for head in self.app.machine_head_dict.values()
+                )
+                occupancy_valid = (
+                    allow_ambiguous_physics
+                    or occupied_position_count() <= 1
+                )
+                return outputs_stopped and controllers_idle and occupancy_valid
+
+            return await CarouselMotor.wait_for_condition(
+                self.app,
+                runtime_is_quiescent,
+                # Il fake applica le transizioni delle fotocellule 100 ms dopo
+                # il comando. I 15 campioni impediscono di accettare come
+                # finale la finestra in cui le uscite sono gia' ferme ma un
+                # callback fisico e' ancora schedulato.
+                timeout=0.75, show_alert=False,
+                stability_count=15, step=0.01,
+            )
+
+        self.assertTrue(
+            self._run(wait_for_quiescent_runtime()),
+            "l'emulatore non ha raggiunto uno stato fisico quiescente",
+        )
+
         for physics in self.physics:
             self.assertEqual(physics.status.get("crx_outputs_status", 0), 0)
-            occupied_mask = (
-                physics.status.get("jar_photocells_status", 0)
-                & occupancy_mask
-            )
-            occupied_positions += bin(occupied_mask).count("1")
         if not allow_ambiguous_physics:
-            self.assertLessEqual(occupied_positions, 1)
+            self.assertLessEqual(occupied_position_count(), 1)
 
         for head in self.app.machine_head_dict.values():
             self.assertLessEqual(self._dispense_command_count(head.name), 1)

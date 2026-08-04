@@ -205,7 +205,9 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         return OrderedDict(sorted(valid_items, key=get_position_index))
 
     def update_jar_data_position(self, jcode, updated_pos):
-        jdata = dict(self.read_data())
+        # Le mutazioni devono partire dal contenuto grezzo: ``read_data`` e'
+        # soltanto la vista ordinata delle posizioni recuperabili.
+        jdata = dict(self._read_unfiltered_data())
 
         if jcode in jdata:
             jdata[jcode]["pos"] = updated_pos
@@ -223,7 +225,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
                     "dispensation": dispensation
                 }
             }
-            existing_data = self.read_data()
+            existing_data = dict(self._read_unfiltered_data())
             existing_data.update(new_data)
             self.write_data(existing_data)
 
@@ -263,10 +265,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         if not self.parent:
             return
         self.parent.delete_jar_runner(jcode)
-        running_tasks = self.read_data()
-        if jcode in running_tasks:
-            del running_tasks[jcode]
-            self.write_data(running_tasks)
+        self.remove_jar_data(jcode)
 
     def clear_list(self):
         self.write_data({})
@@ -2076,7 +2075,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if self.restore_machine_helper:
                     jar_position = pos if pos is not None else recovery_pos
                     self.restore_machine_helper.store_jar_data(jar, jar_position)
-                    if jar_position == "OUT":
+                    if (
+                            jar_position == "OUT"
+                            or (jar_position == "_" and jar.status == "DONE")):
                         self.restore_machine_helper.remove_jar_data(jar.barcode)
 
             except Exception as e:  # pylint: disable=broad-except

@@ -3,12 +3,15 @@
 """Calcoli applicativi e lifecycle teste senza QApplication o hardware."""
 
 import asyncio
+import json
+import os
+import tempfile
 import types
 import unittest
 from unittest import mock
 
 import alfa_CR6_backend.base_application as app_module
-from alfa_CR6_backend.base_application import BaseApplication
+from alfa_CR6_backend.base_application import BaseApplication, RestoreMachineHelper
 
 
 class _PigmentHead:
@@ -114,6 +117,83 @@ class TestApplicationHardwareFree(unittest.TestCase):
             self.app.build_insufficient_pigments_infos({"RED": 3, "BLUE": 2}),
             [("RED", "A"), ("BLUE", "B")],
         )
+
+
+class TestRestoreMachineHelperRawPersistence(unittest.TestCase):
+
+    VALID_BARCODE = "260804001001"
+    HIDDEN_BARCODE = "260804001002"
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.path = os.path.join(self.temp_dir.name, "running_jars.json")
+        self.parent = types.SimpleNamespace(
+            delete_jar_runner=mock.Mock()
+        )
+        # Evita il singleton globale: ogni test usa un file isolato.
+        self.helper = object.__new__(RestoreMachineHelper)
+        self.helper.json_file_path = self.path
+        self.helper.parent = self.parent
+        self.initial_data = {
+            self.VALID_BARCODE: {
+                "pos": "A", "jar_status": "PROGRESS",
+                "dispensation": None,
+            },
+            self.HIDDEN_BARCODE: {
+                "pos": "_", "jar_status": "ERROR",
+                "dispensation": "dispensation_failure",
+            },
+        }
+        self.helper.write_data(self.initial_data)
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def _read_raw_file(self):
+        with open(self.path, "r") as stream:
+            return json.load(stream)
+
+    def test_public_read_remains_filtered(self):
+        data = self.helper.read_data()
+
+        self.assertEqual(list(data), [self.VALID_BARCODE])
+        self.assertNotIn(self.HIDDEN_BARCODE, data)
+
+    def test_position_update_preserves_hidden_records(self):
+        self.helper.update_jar_data_position(self.VALID_BARCODE, "B")
+
+        data = self._read_raw_file()
+        self.assertEqual(data[self.VALID_BARCODE]["pos"], "B")
+        self.assertEqual(data[self.HIDDEN_BARCODE], self.initial_data[self.HIDDEN_BARCODE])
+
+    def test_store_preserves_hidden_records(self):
+        jar = types.SimpleNamespace(
+            barcode="260804001003", status="PROGRESS"
+        )
+
+        self.helper.store_jar_data(jar, "IN", dispensation=None)
+
+        data = self._read_raw_file()
+        self.assertEqual(data[self.HIDDEN_BARCODE], self.initial_data[self.HIDDEN_BARCODE])
+        self.assertEqual(data[jar.barcode], {
+            "pos": "IN", "jar_status": "PROGRESS", "dispensation": None,
+        })
+
+    def test_runner_deletion_preserves_unrelated_hidden_records(self):
+        self.helper.recovery_task_deletion(self.VALID_BARCODE)
+
+        data = self._read_raw_file()
+        self.parent.delete_jar_runner.assert_called_once_with(self.VALID_BARCODE)
+        self.assertNotIn(self.VALID_BARCODE, data)
+        self.assertEqual(data[self.HIDDEN_BARCODE], self.initial_data[self.HIDDEN_BARCODE])
+
+    def test_runner_deletion_can_remove_a_hidden_record(self):
+        self.helper.recovery_task_deletion(self.HIDDEN_BARCODE)
+
+        data = self._read_raw_file()
+        self.parent.delete_jar_runner.assert_called_once_with(self.HIDDEN_BARCODE)
+        self.assertNotIn(self.HIDDEN_BARCODE, data)
+        self.assertIn(self.VALID_BARCODE, data)
 
 
 class TestMachineTaskSupervision(unittest.TestCase):
