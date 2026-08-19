@@ -482,23 +482,28 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         async def _move_can_to_A():
 
-            self.busy_head_A = True
-
-            if not self.positions_already_engaged(["IN_A", ]):
-                self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
-                await A.crx_outputs_management(1, 2)
-                await A.crx_outputs_management(0, 2)
-                r = await A.wait_for_jar_photocells_status(
-                    "JAR_DISPENSING_POSITION_PHOTOCELL",
-                    on=True, timeout=13.1, show_alert=False)
-                await A.crx_outputs_management(1, 0)
-                await A.crx_outputs_management(0, 0)
-            else:
-                await A.crx_outputs_management(0, 2)
-                r = await A.wait_for_jar_photocells_status(
-                    "JAR_DISPENSING_POSITION_PHOTOCELL",
-                    on=True, timeout=13.2, show_alert=False)
-                await A.crx_outputs_management(0, 0)
+            try:
+                if not self.positions_already_engaged(["IN_A", ]):
+                    self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
+                    await A.crx_outputs_management(1, 2)
+                    await A.crx_outputs_management(0, 2)
+                    r = await A.wait_for_jar_photocells_status(
+                        "JAR_DISPENSING_POSITION_PHOTOCELL",
+                        on=True, timeout=13.1, show_alert=False)
+                else:
+                    await A.crx_outputs_management(0, 2)
+                    r = await A.wait_for_jar_photocells_status(
+                        "JAR_DISPENSING_POSITION_PHOTOCELL",
+                        on=True, timeout=13.2, show_alert=False)
+            finally:
+                # Una cancellazione puo' arrivare dopo che il controller ha
+                # ricevuto uno start ma prima della relativa risposta. Ferma
+                # quindi entrambe le uscite anche se non sappiamo quale start
+                # sia stato effettivamente applicato.
+                try:
+                    await A.crx_outputs_management(1, 0)
+                finally:
+                    await A.crx_outputs_management(0, 0)
 
             if r:
                 self.update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
@@ -514,43 +519,69 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         r = await self.wait_for_dispense_position_available(jar, "A", extra_check=condition)
 
         if r:
-            t0 = time.time()
-            r = await _move_can_to_A()
-            dt = time.time() - t0
+            self.busy_head_A = True
+            busy_head_a_outcome = "running"
+            logging.warning(
+                "busy_head_A=True: IN -> A started; barcode=%s, "
+                "jar_position=%s, machine_variant=%s",
+                getattr(jar, "barcode", None),
+                getattr(jar, "position", None),
+                self.machine_variant,
+            )
+            try:
+                t0 = time.time()
+                r = await _move_can_to_A()
+                dt = time.time() - t0
+                busy_head_a_outcome = "completed" if r else "sensor_timeout_or_move_failed"
 
-            logging.warning(f"j:{jar}, dt:{dt}, self.double_can_alert:{self.double_can_alert}, self.timer_01_02:{self.timer_01_02}")
+                logging.warning(f"j:{jar}, dt:{dt}, self.double_can_alert:{self.double_can_alert}, self.timer_01_02:{self.timer_01_02}")
 
-            if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL") and time_interval_check:
-                timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
+                if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL") and time_interval_check:
+                    timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
 
-                if dt < timeout_ or self.double_can_alert:
-                    msg_ = 'The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!'
-                    while True:
-                        await self.wait_for_carousel_not_frozen(
-                            True,
-                            message_args=(),
-                            message_fmt=msg_,
-                            visibility=2,
-                            show_cancel_btn=False,
-                            error_head=A
-                        )
-                        if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
-                            break
-                    self.double_can_alert = False
-                    # ~ r = await _move_can_to_A()
-                    await self.restore_machine_helper.async_remove_jar_data(jar.barcode)
-                    asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
-                    if not A.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False):
-                        # input roller already empty: DARK->LIGHT won't fire, re-arm manually
-                        self.ready_to_read_a_barcode = True
-                    # else: input roller occupied - hardware DARK->LIGHT will re-arm when operator clears it
-                    if getattr(self, 'id_bc_shuttle', None) and self.id_bc_shuttle != 'DISABLED':
-                        logging.warning("move_01_02 double_can: resetting shuttle barcode state")
-                        self.shuttle_size_from_barcode_scanner = False
-                        self._shuttle_size_ready_evt.clear()
-                        self.shuttle_bc_ready_to_read_a_barcode = True
-
-            self.busy_head_A = False
+                    if dt < timeout_ or self.double_can_alert:
+                        busy_head_a_outcome = "double_can_operator_cleanup"
+                        msg_ = 'The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!'
+                        while True:
+                            await self.wait_for_carousel_not_frozen(
+                                True,
+                                message_args=(),
+                                message_fmt=msg_,
+                                visibility=2,
+                                show_cancel_btn=False,
+                                error_head=A
+                            )
+                            if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
+                                break
+                        self.double_can_alert = False
+                        # ~ r = await _move_can_to_A()
+                        await self.restore_machine_helper.async_remove_jar_data(jar.barcode)
+                        asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
+                        if not A.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False):
+                            # input roller already empty: DARK->LIGHT won't fire, re-arm manually
+                            self.ready_to_read_a_barcode = True
+                        # else: input roller occupied - hardware DARK->LIGHT will re-arm when operator clears it
+                        if getattr(self, 'id_bc_shuttle', None) and self.id_bc_shuttle != 'DISABLED':
+                            logging.warning("move_01_02 double_can: resetting shuttle barcode state")
+                            self.shuttle_size_from_barcode_scanner = False
+                            self._shuttle_size_ready_evt.clear()
+                            self.shuttle_bc_ready_to_read_a_barcode = True
+            except asyncio.CancelledError:
+                busy_head_a_outcome = "cancelled"
+                raise
+            except Exception as exc:
+                busy_head_a_outcome = "error:{}".format(type(exc).__name__)
+                raise
+            finally:
+                self.busy_head_A = False
+                logging.warning(
+                    "busy_head_A=False: IN -> A released; outcome=%s, "
+                    "barcode=%s, jar_position=%s, machine_variant=%s",
+                    busy_head_a_outcome,
+                    getattr(jar, "barcode", None),
+                    getattr(jar, "position", None),
+                    self.machine_variant,
+                )
 
         await asyncio.sleep(0.2)
         return r
