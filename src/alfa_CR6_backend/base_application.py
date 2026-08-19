@@ -411,6 +411,10 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                         if getattr(_settings, 'MANUAL_BARCODE_INPUT', False):
                             continue
                         if keyEvent.keycode == "KEY_ENTER":
+                            # le etichette jar/pigmento sono stampate in EAN-13:
+                            # la pistola trasmette anche il check digit (13a cifra),
+                            # che va scartato prima della validazione a 12.
+                            buffer = buffer[:self.BARCODE_LEN]
                             await self.__on_buffer_read(buffer)
                             buffer = ""
                         else:
