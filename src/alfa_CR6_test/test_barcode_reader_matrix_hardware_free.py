@@ -290,6 +290,27 @@ class TestYokoEnumerationAndNoise(unittest.TestCase):
         self.assertEqual(reads, [VALID_FORMULA_BARCODE])
         self.assertTrue(device.grabbed)
 
+    def test_ean13_check_digit_is_stripped_before_validation(self):
+        # Le etichette jar/pigmento sono stampate in EAN-13: la pistola
+        # trasmette 13 cifre (le 12 del barcode Alfa piu' il check digit,
+        # che per VALID_FORMULA_BARCODE vale 6) e l'eccedenza va scartata
+        # sull'ENTER, prima della validazione a 12.
+        reads = []
+
+        async def handler(value):
+            reads.append(value)
+            return True
+
+        device = _UsbDevice(
+            "Yoko Formula", FORMULA_USB_PORT,
+            _scan_events(VALID_FORMULA_BARCODE + "6"),
+        )
+        reader = BarCodeReader(handler, FORMULA_USB_PORT)
+
+        self._run_readers([reader], {"/dev/input/event9": device})
+
+        self.assertEqual(reads, [VALID_FORMULA_BARCODE])
+
     def test_reader_connected_to_another_physical_port_is_not_selected(self):
         handler = mock.AsyncMock(return_value=True)
         device = _UsbDevice(
