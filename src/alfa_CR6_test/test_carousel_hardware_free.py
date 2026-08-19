@@ -1,6 +1,37 @@
 # coding: utf-8
 
-"""Test di sincronizzazione e trasferimento carosello senza motori o PLC."""
+"""Test di sincronizzazione e trasferimento carosello senza motori o PLC.
+
+Matrice di copertura del bug ``busy_head_A`` e dei cleanup confinanti:
+
++------------------------------------------+----------------------+-----------------------------------------------+
+| Scenario                                 | Coperto              | Comportamento verificato                      |
++==========================================+======================+===============================================+
+| Cancellazione durante ``IN -> A``        | Sì                   | Ferma i rulli, libera ``busy_head_A`` e       |
+|                                          |                      | consente il passaggio dello shuttle.          |
++------------------------------------------+----------------------+-----------------------------------------------+
+| Shuttle rimosso o fotocellula A non      | Sì, sensore simulato | Il timeout ferma i rulli e libera              |
+| raggiunta                                |                      | ``busy_head_A``.                              |
++------------------------------------------+----------------------+-----------------------------------------------+
+| Errore del controller durante l'avvio    | Sì                   | Il cleanup ferma entrambe le uscite e libera  |
+| ``IN -> A``                              |                      | ``busy_head_A``.                              |
++------------------------------------------+----------------------+-----------------------------------------------+
+| Cancellazione durante l'allarme          | Sì                   | Il ``finally`` esterno libera                 |
+| double-can                               |                      | ``busy_head_A``.                              |
++------------------------------------------+----------------------+-----------------------------------------------+
+| Cancellazione durante ``A -> B``         | Sì, cleanup          | Ferma i rulli sorgente e destinazione.        |
+|                                          | preesistente         |                                               |
++------------------------------------------+----------------------+-----------------------------------------------+
+| Errore durante un comando di stop        | Parziale             | Tenta comunque l'altro stop e libera il flag; |
+|                                          |                      | lo stop fisico richiede hardware.             |
++------------------------------------------+----------------------+-----------------------------------------------+
+| Diagnostica ``busy_head_A``              | Sì                   | Logga acquisizione e rilascio del flag,       |
+|                                          |                      | includendo l'esito del movimento.             |
++------------------------------------------+----------------------+-----------------------------------------------+
+| ``kill -9``, power loss o controller     | No                   | Un ``finally`` Python non può garantire       |
+| irraggiungibile                          |                      | l'esecuzione o lo stop fisico.                |
++------------------------------------------+----------------------+-----------------------------------------------+
+"""
 
 import asyncio
 import types
@@ -131,6 +162,21 @@ class TestCarouselTransfers(unittest.TestCase):
             wait_for_available, self.carousel
         )
 
+    def _install_move_01_02_state(self, settings=None):
+        self.carousel.busy_head_A = False
+        self.carousel.machine_variant = "CRX60"
+        self.carousel.settings = settings or types.SimpleNamespace()
+        self.carousel.double_can_alert = False
+        self.carousel.timer_01_02 = 0
+
+        async def wait_for_available(_self, jar, letter, extra_check=None):
+            self.assertEqual(letter, "A")
+            return bool(extra_check is None or extra_check())
+
+        self.carousel.wait_for_dispense_position_available = types.MethodType(
+            wait_for_available, self.carousel
+        )
+
     def test_positions_already_engaged_ignores_current_jar(self):
         current = FakeJar(position="A")
         other = FakeJar(position="B")
@@ -249,6 +295,218 @@ class TestCarouselTransfers(unittest.TestCase):
         )
         self.assertEqual(self.head_b.wait_log, [])
         self.assertEqual(self.position_updates, [])
+
+    def test_cancelled_move_01_02_releases_head_and_allows_next_can(self):
+        first_jar = FakeJar(position="IN")
+        second_jar = FakeJar(position="IN")
+        self._install_move_01_02_state()
+
+        first_wait_started = asyncio.Event()
+        wait_calls = 0
+
+        async def cancellable_photocell_wait(
+                bit_name, on=True, timeout=None, show_alert=True):
+            nonlocal wait_calls
+            wait_calls += 1
+            self.head_a.wait_log.append(
+                (bit_name, on, timeout, show_alert)
+            )
+            if wait_calls == 1:
+                first_wait_started.set()
+                await asyncio.Event().wait()
+            return True
+
+        self.head_a.wait_for_jar_photocells_status = (
+            cancellable_photocell_wait
+        )
+
+        async def cancel_first_then_move_second():
+            first_task = asyncio.create_task(
+                CarouselMotor.move_01_02(self.carousel, first_jar)
+            )
+            await first_wait_started.wait()
+            self.assertTrue(self.carousel.busy_head_A)
+
+            first_task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await first_task
+
+            self.assertFalse(self.carousel.busy_head_A)
+            self.assertEqual(
+                self.head_a.status["crx_outputs_status"], 0
+            )
+
+            return await CarouselMotor.move_01_02(
+                self.carousel, second_jar
+            )
+
+        with self.assertLogs(level="WARNING") as captured_logs:
+            result = self._run(cancel_first_then_move_second())
+
+        self.assertTrue(result)
+        self.assertFalse(self.carousel.busy_head_A)
+        self.assertEqual(wait_calls, 2)
+        self.assertEqual(
+            [(number, action) for number, action, _timeout, _silent
+             in self.head_a.command_log],
+            [
+                (1, 2), (0, 2), (1, 0), (0, 0),
+                (1, 2), (0, 2), (1, 0), (0, 0),
+            ],
+        )
+        self.assertEqual(second_jar.position, "IN")
+        self.assertEqual(self.position_updates[-1]["pos"], "A")
+        logs = "\n".join(captured_logs.output)
+        self.assertIn(
+            "busy_head_A=True: IN -> A started", logs
+        )
+        self.assertIn(
+            "busy_head_A=False: IN -> A released; outcome=cancelled", logs
+        )
+        self.assertIn(
+            "busy_head_A=False: IN -> A released; outcome=completed", logs
+        )
+
+    def test_move_01_02_sensor_timeout_releases_head_and_stops_outputs(self):
+        jar = FakeJar(position="IN")
+        self._install_move_01_02_state()
+        self.head_a.queue_wait_results(False)
+
+        result = self._run(
+            CarouselMotor.move_01_02(self.carousel, jar)
+        )
+
+        self.assertFalse(result)
+        self.assertFalse(self.carousel.busy_head_A)
+        self.assertEqual(self.head_a.status["crx_outputs_status"], 0)
+        self.assertEqual(
+            [(number, action) for number, action, _timeout, _silent
+             in self.head_a.command_log],
+            [(1, 2), (0, 2), (1, 0), (0, 0)],
+        )
+
+    def test_move_01_02_start_error_releases_head_and_stops_outputs(self):
+        jar = FakeJar(position="IN")
+        self._install_move_01_02_state()
+        original_command = self.head_a.crx_outputs_management
+
+        async def fail_input_start(
+                output_number, output_action, timeout=30, silent=True):
+            if (output_number, output_action) == (1, 2):
+                self.head_a.command_log.append(
+                    (output_number, output_action, timeout, silent)
+                )
+                raise RuntimeError("emulated input roller start failure")
+            return await original_command(
+                output_number, output_action, timeout, silent
+            )
+
+        self.head_a.crx_outputs_management = fail_input_start
+
+        with self.assertRaisesRegex(RuntimeError, "start failure"):
+            self._run(CarouselMotor.move_01_02(self.carousel, jar))
+
+        self.assertFalse(self.carousel.busy_head_A)
+        self.assertEqual(self.head_a.status["crx_outputs_status"], 0)
+        self.assertEqual(
+            [(number, action) for number, action, _timeout, _silent
+             in self.head_a.command_log],
+            [(1, 2), (1, 0), (0, 0)],
+        )
+
+    def test_cancelled_double_can_alert_releases_busy_head_a(self):
+        jar = FakeJar(position="IN")
+        self._install_move_01_02_state(
+            types.SimpleNamespace(MOVE_01_02_TIME_INTERVAL=999)
+        )
+        self.head_a.queue_wait_results(True)
+        alert_started = asyncio.Event()
+
+        async def wait_for_operator(*_args, **_kwargs):
+            alert_started.set()
+            await asyncio.Event().wait()
+
+        self.carousel.wait_for_carousel_not_frozen = wait_for_operator
+
+        async def cancel_during_alert():
+            task = asyncio.create_task(
+                CarouselMotor.move_01_02(self.carousel, jar)
+            )
+            await alert_started.wait()
+            self.assertTrue(self.carousel.busy_head_A)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+
+        self._run(cancel_during_alert())
+
+        self.assertFalse(self.carousel.busy_head_A)
+        self.assertEqual(self.head_a.status["crx_outputs_status"], 0)
+
+    def test_move_01_02_input_stop_error_still_stops_head_a_and_releases_flag(self):
+        jar = FakeJar(position="IN")
+        self._install_move_01_02_state()
+        self.head_a.queue_wait_results(True)
+        original_command = self.head_a.crx_outputs_management
+
+        async def fail_input_stop(
+                output_number, output_action, timeout=30, silent=True):
+            if (output_number, output_action) == (1, 0):
+                self.head_a.command_log.append(
+                    (output_number, output_action, timeout, silent)
+                )
+                raise RuntimeError("emulated input roller stop failure")
+            return await original_command(
+                output_number, output_action, timeout, silent
+            )
+
+        self.head_a.crx_outputs_management = fail_input_stop
+
+        with self.assertRaisesRegex(RuntimeError, "stop failure"):
+            self._run(CarouselMotor.move_01_02(self.carousel, jar))
+
+        self.assertFalse(self.carousel.busy_head_A)
+        self.assertEqual(
+            self.head_a.status["crx_outputs_status"] & 0x01, 0
+        )
+        self.assertEqual(
+            [(number, action) for number, action, _timeout, _silent
+             in self.head_a.command_log][-2:],
+            [(1, 0), (0, 0)],
+        )
+
+    def test_cancelled_move_a_to_b_stops_both_heads(self):
+        jar = FakeJar(position="A")
+        self._install_availability_check()
+        wait_started = asyncio.Event()
+
+        async def cancellable_photocell_wait(
+                bit_name, on=True, timeout=None, show_alert=True):
+            self.head_b.wait_log.append(
+                (bit_name, on, timeout, show_alert)
+            )
+            wait_started.set()
+            await asyncio.Event().wait()
+
+        self.head_b.wait_for_jar_photocells_status = (
+            cancellable_photocell_wait
+        )
+
+        async def cancel_transfer():
+            task = asyncio.create_task(
+                CarouselMotor.move_from_to(
+                    self.carousel, jar, "A", "B"
+                )
+            )
+            await wait_started.wait()
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+
+        self._run(cancel_transfer())
+
+        self.assertEqual(self.head_a.status["crx_outputs_status"], 0)
+        self.assertEqual(self.head_b.status["crx_outputs_status"], 0)
 
     def test_panel_interlock_prevents_any_motor_command(self):
         jar = FakeJar(position="A")
