@@ -11,6 +11,8 @@ from unittest import mock
 
 from alfa_CR6_backend.package_label import (
     ShuttleBarcodeLabelError,
+    get_shuttle_barcode_label_config,
+    get_shuttle_barcode_label_info_text,
     get_shuttle_barcode_label_text,
 )
 
@@ -56,6 +58,67 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
         }, name="This name must not be printed")
 
         self.assertEqual(get_shuttle_barcode_label_text(package), "1 LT")
+
+    def test_barcode_info_filters_other_json_info_keys(self):
+        package = {
+            "name": "Package display name",
+            "json_info": json.dumps({
+                "other": "must not be displayed",
+                "label_barcode": {
+                    "quantity": 500.0,
+                    "unit": "ML",
+                    "decimal_separator": ".",
+                },
+            }),
+        }
+
+        expected = {
+            "quantity": 500.0,
+            "unit": "ML",
+            "decimal_separator": ".",
+        }
+        self.assertEqual(get_shuttle_barcode_label_config(package), expected)
+        self.assertEqual(
+            get_shuttle_barcode_label_info_text(package),
+            "Quantity: 500.0\nUnit: ML\nDecimal separator: .",
+        )
+        self.assertNotIn("must not be displayed",
+                         get_shuttle_barcode_label_info_text(package))
+
+    def test_barcode_info_uses_na_for_missing_or_invalid_json_info(self):
+        expected = (
+            "Quantity: N/A\nUnit: N/A\nDecimal separator: N/A")
+        for json_info in (None, "{}", "not-json"):
+            with self.subTest(json_info=json_info):
+                self.assertEqual(
+                    get_shuttle_barcode_label_info_text({
+                        "name": "Package display name",
+                        "json_info": json_info,
+                    }),
+                    expected,
+                )
+
+    def test_integer_unit_info_has_no_decimal_separator(self):
+        package = self.package({
+            "quantity": 12,
+            "unit": "OZ",
+        })
+
+        self.assertEqual(
+            get_shuttle_barcode_label_info_text(package),
+            "Quantity: 12\nUnit: OZ",
+        )
+
+    def test_fl_oz_info_has_no_decimal_separator(self):
+        package = self.package({
+            "quantity": 34,
+            "unit": "FL OZ",
+        })
+
+        self.assertEqual(
+            get_shuttle_barcode_label_info_text(package),
+            "Quantity: 34\nUnit: FL OZ",
+        )
 
     def test_decimal_quantity_with_point(self):
         package = self.package({
@@ -178,20 +241,17 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
 
         with self.assertRaisesRegex(
                 ShuttleBarcodeLabelError,
-                "Quantity must be a floating-point number"):
+                "Quantity must be a number"):
             get_shuttle_barcode_label_text(package)
 
-    def test_integer_quantity_is_rejected(self):
+    def test_integer_quantity_is_accepted_for_regular_units(self):
         package = self.package({
             "quantity": 1,
             "unit": "ML",
             "decimal_separator": ".",
         })
 
-        with self.assertRaisesRegex(
-                ShuttleBarcodeLabelError,
-                "Quantity must be a floating-point number"):
-            get_shuttle_barcode_label_text(package)
+        self.assertEqual(get_shuttle_barcode_label_text(package), "1 ML")
 
     def test_image_generator_passes_fl_oz_text_to_code128(self):
         with self.printing_dependency_stubs():

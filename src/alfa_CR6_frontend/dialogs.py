@@ -50,6 +50,11 @@ from PyQt5.QtWidgets import (
 
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print_jar, dymo_print_package_label, async_dymo_print_jar, async_dymo_print_jars, async_dymo_print_package_label
+from alfa_CR6_backend.package_label import (
+    ShuttleBarcodeLabelError,
+    get_shuttle_barcode_label_info_text,
+    get_shuttle_barcode_label_text,
+)
 
 from alfa_CR6_backend.globals import get_res, tr_, import_settings
 
@@ -1390,8 +1395,13 @@ class PackageSizesDialog(BaseDialog):
 
         self.overlay = None
 
-        self.package_table.setColumnCount(3)
-        self.package_table.setHorizontalHeaderLabels([tr_("Nome"), tr_("Size"), tr_("Barcode")])
+        self.package_table.setColumnCount(4)
+        self.package_table.setHorizontalHeaderLabels([
+            tr_("Nome"),
+            tr_("Size"),
+            tr_("Barcode infos"),
+            tr_("Barcode"),
+        ])
 
         self.package_table.horizontalHeader().setVisible(True)
         self.package_table.horizontalHeader().setStyleSheet("""
@@ -1431,10 +1441,18 @@ class PackageSizesDialog(BaseDialog):
 
         name = package.get("name", "N/A")
         size = package.get("size", "N/A")
-        description = package.get("description", "N/A")
+        barcode_infos = get_shuttle_barcode_label_info_text(package)
+        try:
+            get_shuttle_barcode_label_text(package)
+            barcode_enabled = True
+        except ShuttleBarcodeLabelError:
+            barcode_enabled = False
 
         self.package_table.setItem(row, 0, QTableWidgetItem(str(name)))
         self.package_table.setItem(row, 1, QTableWidgetItem(str(size)))
+        barcode_infos_item = QTableWidgetItem(barcode_infos)
+        barcode_infos_item.setToolTip(barcode_infos)
+        self.package_table.setItem(row, 2, barcode_infos_item)
 
         barcode_widget = QWidget()
         barcode_layout = QHBoxLayout(barcode_widget)
@@ -1445,11 +1463,18 @@ class PackageSizesDialog(BaseDialog):
         scaled_pixmap = barcode_pixmap.scaled(80, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         barcode_label.setPixmap(scaled_pixmap)
         barcode_label.setAlignment(Qt.AlignCenter)
+        barcode_label.setEnabled(barcode_enabled)
 
-        barcode_label.mousePressEvent = lambda event: self._generate_barcode_label(package)
+        if barcode_enabled:
+            barcode_label.mousePressEvent = (
+                lambda event: self._generate_barcode_label(package))
+        else:
+            barcode_label.setToolTip(
+                tr_("SHUTTLE barcode label information is incomplete"))
 
         barcode_layout.addWidget(barcode_label)
-        self.package_table.setCellWidget(row, 2, barcode_widget)
+        barcode_widget.setEnabled(barcode_enabled)
+        self.package_table.setCellWidget(row, 3, barcode_widget)
 
     def _generate_barcode_label(self, package):
 
@@ -1537,6 +1562,7 @@ class PackageSizesDialog(BaseDialog):
             self.package_table.setRowCount(len(packages))
             for row, package in enumerate(packages):
                 self.__set_row(row, package)
+            self.package_table.resizeRowsToContents()
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())

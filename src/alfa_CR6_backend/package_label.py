@@ -27,8 +27,8 @@ class ShuttleBarcodeLabelError(ValueError):
         super().__init__(message)
 
 
-def get_shuttle_barcode_label_text(package):
-    """Return the Code128 value configured in Package.json_info."""
+def get_shuttle_barcode_label_config(package):
+    """Return only the label_barcode object from Package.json_info."""
 
     if not isinstance(package, dict):
         raise ShuttleBarcodeLabelError("", ("Package data is invalid.",))
@@ -60,6 +60,37 @@ def get_shuttle_barcode_label_text(package):
             ("SHUTTLE BARCODE LABEL configuration must be an object.",),
         )
 
+    return label_barcode
+
+
+def get_shuttle_barcode_label_info_text(package):
+    """Return the three label_barcode fields rendered by the package UI."""
+
+    try:
+        label_barcode = get_shuttle_barcode_label_config(package)
+    except ShuttleBarcodeLabelError:
+        label_barcode = {}
+
+    def display_value(key):
+        value = label_barcode.get(key)
+        return "N/A" if value in (None, "") else str(value)
+
+    lines = [
+        "Quantity: {}".format(display_value("quantity")),
+        "Unit: {}".format(display_value("unit")),
+    ]
+    if label_barcode.get("unit") not in SHUTTLE_BARCODE_INTEGER_UNITS:
+        lines.append("Decimal separator: {}".format(
+            display_value("decimal_separator")))
+    return "\n".join(lines)
+
+
+def get_shuttle_barcode_label_text(package):
+    """Return the Code128 value configured in Package.json_info."""
+
+    label_barcode = get_shuttle_barcode_label_config(package)
+    package_name = package.get("name", "")
+
     errors = []
 
     unit = label_barcode.get("unit")
@@ -76,11 +107,12 @@ def get_shuttle_barcode_label_text(package):
     quantity = label_barcode.get("quantity")
     if quantity is None:
         errors.append("Quantity is required.")
-    elif isinstance(quantity, bool) or not isinstance(quantity, float):
-        errors.append("Quantity must be a floating-point number.")
-    elif not math.isfinite(quantity) or quantity <= 0:
+    elif isinstance(quantity, bool) or not isinstance(quantity, (int, float)):
+        errors.append("Quantity must be a number.")
+    elif not math.isfinite(float(quantity)) or quantity <= 0:
         errors.append("Quantity must be greater than zero.")
-    elif unit in SHUTTLE_BARCODE_INTEGER_UNITS and not quantity.is_integer():
+    elif (unit in SHUTTLE_BARCODE_INTEGER_UNITS
+          and not float(quantity).is_integer()):
         errors.append("Quantity must be an integer for {}.".format(unit))
 
     if unit_error:
