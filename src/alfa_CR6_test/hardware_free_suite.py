@@ -36,6 +36,7 @@ CORE_TEST_MODULES = (
     "alfa_CR6_test.test_liner_reminder",
     "alfa_CR6_test.test_browser_page_ws_lifecycle",
     "alfa_CR6_test.test_order_page_rendering",
+    "alfa_CR6_test.test_package_label",
 )
 
 NETWORK_TEST_MODULES = (

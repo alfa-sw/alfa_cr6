@@ -19,6 +19,12 @@ import subprocess
 import os
 
 from alfa_CR6_backend.globals import (create_printable_image_from_jar,create_printable_image_for_pigment,create_printable_image_for_package,create_printable_image_for_low_pigments,extract_jar_print_data,_get_print_label_options)
+from alfa_CR6_backend.package_label import ShuttleBarcodeLabelError
+
+
+def _package_label_error_response(exc):
+    logging.warning(str(exc))
+    return {'result': 'NOK', 'msg': str(exc)}
 
 def _exec_cmd(command, shell=False):
 
@@ -88,15 +94,14 @@ def dymo_print_pigment_label(barcode_txt, pigment_name, pipe_name, fake=False):
 
 def dymo_print_package_label(package, fake=False):
 
-    ret = {}
     try:
         _printable_image_pth = create_printable_image_for_package(package)
-        ret = _dymo_print_tmp_image(_printable_image_pth, fake=fake)
+        return _dymo_print_tmp_image(_printable_image_pth, fake=fake)
+    except ShuttleBarcodeLabelError as exc:
+        return _package_label_error_response(exc)
     except Exception:   # pylint: disable=broad-except
         logging.error(traceback.format_exc())
-        ret = {'result': 'NOK', 'msg': traceback.format_exc()}
-
-    return ret
+        return {'result': 'NOK', 'msg': traceback.format_exc()}
 
 
 def _images_to_pdf(image_paths, pdf_path):
@@ -298,6 +303,8 @@ async def async_dymo_print_package_label(package, fake=False):
     loop = asyncio.get_event_loop()
     try:
         _printable_image_pth = create_printable_image_for_package(package)
+    except ShuttleBarcodeLabelError as exc:
+        return _package_label_error_response(exc)
     except Exception:   # pylint: disable=broad-except
         logging.error(traceback.format_exc())
         return {'result': 'NOK', 'msg': traceback.format_exc()}

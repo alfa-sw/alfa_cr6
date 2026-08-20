@@ -1467,6 +1467,7 @@ class PackageSizesDialog(BaseDialog):
                 QApplication.instance().main_window.open_alert_dialog(
                     (),
                     fmt=error_msg,
+                    title="SHUTTLE BARCODE LABEL ERROR",
                     show_cancel_btn=False
                 )
 

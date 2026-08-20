@@ -29,6 +29,7 @@ from barcode import EAN13, Code128           # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
 
 from alfa_CR6_backend import version
+from alfa_CR6_backend.package_label import get_shuttle_barcode_label_text
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "ui")
@@ -615,17 +616,13 @@ def create_printable_image_from_jar(jar, options=None, output_path=None):
 def create_printable_image_for_package(package):
     # standard Code128
 
+    printable_text = get_shuttle_barcode_label_text(package)
     response = None
 
     try:
         if not os.path.exists(TMP_PACKAGE_BARCODE_IMAGE):
             with open(TMP_PACKAGE_BARCODE_IMAGE, 'w', encoding='UTF-8'):
                 logging.warning(f'empty file created at:{TMP_PACKAGE_BARCODE_IMAGE}')
-
-        pack_name = package.get('name').upper()
-        pack_size = package.get('size')
-        # barcode_text = f'SHUTTLE-{pack_name}'
-        printable_text = f"{pack_name}"
 
         # barcode CODE128
         options = {
@@ -656,7 +653,7 @@ def create_printable_image_for_package(package):
         logging.error(f'Error creating package barcode: {str(e)}')
         logging.error(traceback.format_exc())
         # response = None
-        raise e
+        raise
 
     return response
 
