@@ -11,9 +11,11 @@ from unittest import mock
 
 from alfa_CR6_backend.package_label import (
     ShuttleBarcodeLabelError,
+    build_shuttle_barcode_size_map,
     get_shuttle_barcode_label_config,
     get_shuttle_barcode_label_info_text,
     get_shuttle_barcode_label_text,
+    normalize_shuttle_barcode_label_text,
 )
 
 
@@ -252,6 +254,59 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
         })
 
         self.assertEqual(get_shuttle_barcode_label_text(package), "1 ML")
+
+    def test_scanned_label_grammar_accepts_all_generated_formats(self):
+        cases = {
+            "500 ML": "500 ML",
+            "0.75 L": "0.75 L",
+            "0,75 LT": "0,75 LT",
+            "160 GR": "160 GR",
+            "34 FL OZ": "34 FL OZ",
+            "12 OZ": "12 OZ",
+            " 500 ml ": "500 ML",
+        }
+        for value, expected in cases.items():
+            with self.subTest(value=value):
+                self.assertEqual(
+                    normalize_shuttle_barcode_label_text(value), expected)
+
+    def test_scanned_label_grammar_rejects_noise_and_invalid_units(self):
+        for value in (
+                None, "", "R4ND0M", "500", "ML", "500ML",
+                "500  ML", "500_ML", "12.25 OZ", "12,25 FL OZ",
+                "0 ML", "500 ML500 ML", "260802001001", "12 GAL"):
+            with self.subTest(value=value):
+                self.assertIsNone(
+                    normalize_shuttle_barcode_label_text(value))
+
+    def test_size_map_uses_generated_label_instead_of_package_name(self):
+        package = self.package({
+            "quantity": 0.75,
+            "unit": "LT",
+            "decimal_separator": ",",
+        }, name="Name must not be used")
+        package["size"] = 750
+
+        size_map, duplicates = build_shuttle_barcode_size_map([package])
+
+        self.assertEqual(size_map, {"0,75 LT": 750})
+        self.assertEqual(duplicates, set())
+
+    def test_size_map_removes_ambiguous_generated_labels(self):
+        packages = []
+        for name, size in (("First", 500), ("Second", 750)):
+            package = self.package({
+                "quantity": 500.0,
+                "unit": "ML",
+                "decimal_separator": ".",
+            }, name=name)
+            package["size"] = size
+            packages.append(package)
+
+        size_map, duplicates = build_shuttle_barcode_size_map(packages)
+
+        self.assertEqual(size_map, {})
+        self.assertEqual(duplicates, {"500 ML"})
 
     def test_image_generator_passes_fl_oz_text_to_code128(self):
         with self.printing_dependency_stubs():

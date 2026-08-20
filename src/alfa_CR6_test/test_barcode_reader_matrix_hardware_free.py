@@ -23,6 +23,14 @@ FORMULA_USB_PORT = "usb-0000:01:00.0-1.2.4"
 SHUTTLE_USB_PORT = "usb-0000:01:00.0-1.2.5"
 
 
+def _package(name, size, label_barcode):
+    return {
+        "name": name,
+        "size": size,
+        "json_info": json.dumps({"label_barcode": label_barcode}),
+    }
+
+
 class _UsbEvent:
 
     def __init__(self, keycode, event_type=1, keystate=0):
@@ -251,7 +259,11 @@ class _AlertWindow:
 
 class TestYokoEnumerationAndNoise(unittest.TestCase):
 
-    PACKAGES = {"objects": [{"name": "500 ml", "size": 500}]}
+    PACKAGES = {"objects": [_package(
+        "Package name unrelated to its label",
+        500,
+        {"quantity": 500.0, "unit": "ML", "decimal_separator": "."},
+    )]}
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
@@ -449,7 +461,7 @@ class TestYokoEnumerationAndNoise(unittest.TestCase):
 
         self.assertEqual(reads, [VALID_FORMULA_BARCODE])
 
-    def test_random_shuttle_text_is_rejected_by_authoritative_package_lookup(self):
+    def test_random_shuttle_text_is_discarded_before_package_lookup(self):
         head = _PackageHead([self.PACKAGES])
         window = _AlertWindow()
         app = types.SimpleNamespace(
@@ -476,10 +488,10 @@ class TestYokoEnumerationAndNoise(unittest.TestCase):
         with mock.patch.dict(os.environ, {"MACHINE_VARIANT": "CR6"}):
             self._run_readers([reader], {"/dev/input/event5": device})
 
-        self.assertEqual(len(head.calls), 1)
-        self.assertEqual(len(window.alerts), 1)
-        self.assertFalse(app.shuttle_size_from_barcode_scanner)
-        self.assertFalse(app._shuttle_size_ready_evt.is_set())
+        self.assertEqual(head.calls, [])
+        self.assertEqual(window.alerts, [])
+        self.assertEqual(app.shuttle_size_from_barcode_scanner, 500)
+        self.assertTrue(app._shuttle_size_ready_evt.is_set())
 
     def test_swapped_formula_and_shuttle_inputs_fail_closed(self):
         formula_reads = []
@@ -525,15 +537,32 @@ class TestYokoEnumerationAndNoise(unittest.TestCase):
 
         self.assertEqual(formula_reads, [])
         self.assertFalse(app.shuttle_size_from_barcode_scanner)
-        self.assertEqual(len(window.alerts), 1)
+        self.assertEqual(head.calls, [])
+        self.assertEqual(window.alerts, [])
 
 
 class TestDualYokoShuttleLookup(unittest.TestCase):
 
     PACKAGES = {
         "objects": [
-            {"name": "500 ml   ", "size": 500},
-            {"name": "1 liter", "size": 1000},
+            _package(
+                "Customer package 500",
+                500,
+                {
+                    "quantity": 500.0,
+                    "unit": "ML",
+                    "decimal_separator": ".",
+                },
+            ),
+            _package(
+                "Customer package one litre",
+                1000,
+                {
+                    "quantity": 1.0,
+                    "unit": "L",
+                    "decimal_separator": ".",
+                },
+            ),
         ]
     }
 
@@ -587,6 +616,30 @@ class TestDualYokoShuttleLookup(unittest.TestCase):
         self.assertEqual(kwargs["fmt"], "UNKNOWN SHUTTLE: {}")
         kwargs["callback"]()
         self.assertTrue(self.app.shuttle_bc_ready_to_read_a_barcode)
+
+    def test_duplicate_generated_label_fails_explicitly(self):
+        duplicate = _package(
+            "Another package with the same label",
+            750,
+            {
+                "quantity": 500.0,
+                "unit": "ML",
+                "decimal_separator": ".",
+            },
+        )
+        self.head = _PackageHead([{
+            "objects": self.PACKAGES["objects"] + [duplicate],
+        }])
+
+        self._read("500 ML")
+
+        self.assertFalse(self.app.shuttle_size_from_barcode_scanner)
+        self.assertFalse(self.app._shuttle_size_ready_evt.is_set())
+        self.assertEqual(len(self.window.alerts), 1)
+        _args, kwargs = self.window.alerts[0]
+        self.assertEqual(
+            kwargs["fmt"], "AMBIGUOUS SHUTTLE BARCODE: {}")
+        self.assertEqual(kwargs["title"], "ERROR")
 
     def test_unavailable_package_api_clears_stale_size(self):
         self.head = _PackageHead([None])
@@ -700,7 +753,11 @@ class _ManualWindow(_AlertWindow):
 
 class TestCrxManualBarcodeFlow(unittest.TestCase):
 
-    PACKAGES = {"objects": [{"name": "500 ml", "size": 500}]}
+    PACKAGES = {"objects": [_package(
+        "Package name unrelated to its label",
+        500,
+        {"quantity": 500.0, "unit": "ML", "decimal_separator": "."},
+    )]}
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
@@ -754,6 +811,31 @@ class TestCrxManualBarcodeFlow(unittest.TestCase):
         self.assertEqual(app.shuttle_size_from_barcode_scanner, 500)
         self.assertEqual(len(window.alerts), 1)
         self.assertEqual(len(head.calls), 2)
+        handler.assert_awaited_once_with(VALID_FORMULA_BARCODE)
+
+    def test_ambiguous_manual_shuttle_is_retried(self):
+        duplicate_packages = {"objects": [
+            self.PACKAGES["objects"][0],
+            _package(
+                "Duplicate label",
+                750,
+                {
+                    "quantity": 500.0,
+                    "unit": "ML",
+                    "decimal_separator": ".",
+                },
+            ),
+        ]}
+
+        _app, window, _head, handler = self._run_flow(
+            ["500 ML", "500 ML", VALID_FORMULA_BARCODE],
+            outcomes=[duplicate_packages, self.PACKAGES],
+        )
+
+        self.assertEqual(len(window.alerts), 1)
+        _args, kwargs = window.alerts[0]
+        self.assertEqual(
+            kwargs["fmt"], "AMBIGUOUS SHUTTLE BARCODE: {}")
         handler.assert_awaited_once_with(VALID_FORMULA_BARCODE)
 
     def test_spurious_overlong_and_impossible_date_formulae_are_retried(self):

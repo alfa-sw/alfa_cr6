@@ -4,12 +4,19 @@
 
 import json
 import math
+import re
 from decimal import Decimal
 
 
 SHUTTLE_BARCODE_LABEL_UNITS = ("ML", "L", "LT", "GR", "FL OZ", "OZ")
 SHUTTLE_BARCODE_INTEGER_UNITS = frozenset(("FL OZ", "OZ"))
 SHUTTLE_BARCODE_DECIMAL_SEPARATORS = (".", ",")
+
+_SHUTTLE_BARCODE_LABEL_PATTERN = re.compile(
+    r"^(?P<quantity>[0-9]+(?:[.,][0-9]+)?) "
+    r"(?P<unit>FL OZ|OZ|ML|LT|L|GR)$",
+    re.IGNORECASE | re.ASCII,
+)
 
 
 class ShuttleBarcodeLabelError(ValueError):
@@ -25,6 +32,30 @@ class ShuttleBarcodeLabelError(ValueError):
         message += ":\n- " + "\n- ".join(self.errors)
 
         super().__init__(message)
+
+
+def normalize_shuttle_barcode_label_text(value):
+    """Validate scanned SHUTTLE syntax and return its comparison key."""
+
+    if not isinstance(value, str):
+        return None
+
+    text = value.strip()
+    match = _SHUTTLE_BARCODE_LABEL_PATTERN.fullmatch(text)
+    if match is None:
+        return None
+
+    quantity_text = match.group("quantity")
+    unit = match.group("unit").upper()
+    if (unit in SHUTTLE_BARCODE_INTEGER_UNITS
+            and ("." in quantity_text or "," in quantity_text)):
+        return None
+
+    quantity = Decimal(quantity_text.replace(",", "."))
+    if quantity <= 0:
+        return None
+
+    return "{} {}".format(quantity_text, unit)
 
 
 def get_shuttle_barcode_label_config(package):
@@ -140,3 +171,33 @@ def get_shuttle_barcode_label_text(package):
         quantity_text = quantity_text.replace(".", ",")
 
     return "{} {}".format(quantity_text, unit)
+
+
+def build_shuttle_barcode_size_map(packages):
+    """Return unambiguous generated-label sizes and duplicate label keys."""
+
+    size_map = {}
+    duplicate_labels = set()
+    if not isinstance(packages, (list, tuple)):
+        return size_map, duplicate_labels
+
+    for package in packages:
+        if not isinstance(package, dict) or not package.get("size"):
+            continue
+
+        try:
+            label_text = get_shuttle_barcode_label_text(package)
+        except ShuttleBarcodeLabelError:
+            continue
+
+        label_key = normalize_shuttle_barcode_label_text(label_text)
+        if label_key is None or label_key in duplicate_labels:
+            continue
+        if label_key in size_map:
+            del size_map[label_key]
+            duplicate_labels.add(label_key)
+            continue
+
+        size_map[label_key] = package["size"]
+
+    return size_map, duplicate_labels

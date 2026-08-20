@@ -46,6 +46,10 @@ from alfa_CR6_backend.globals import (
 
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.order_parser import OrderParser
+from alfa_CR6_backend.package_label import (
+    build_shuttle_barcode_size_map,
+    normalize_shuttle_barcode_label_text,
+)
 from alfa_CR6_backend.sound_player import play_refill_alarm, stop_refill_alarm
 from alfa_CR6_backend.ws_server import WsServer
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
@@ -1384,21 +1388,19 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             logging.warning(f"[SHUTTLE] barcode :: '{barcode}'")
 
+            key = normalize_shuttle_barcode_label_text(barcode)
+            if key is None:
+                logging.warning(
+                    f"[SHUTTLE] invalid format, discarded: '{barcode}'")
+                return None
+
             # --- dedup ---
-            key = barcode.lower().rstrip()
             t_now = time.time()
             _last_buf = getattr(self, '_shuttle_last_read_buffer', '')
             _last_t = getattr(self, '_shuttle_last_read_time', 0)
             if key == _last_buf and t_now - _last_t < 5.0:
                 logging.warning(f"[SHUTTLE] DEDUP filter: '{key}' dt={t_now - _last_t:.3f}s")
                 return None
-
-            # --- format validation ---
-            # 20/05/2026 - we decided to comment out the format filtering, accepting possible
-            # spurious reads: the real check now is the package-existence lookup below
-            # if not re.match(r'^\d{2,4}\s(ml|gr|fl[\s_]?oz)$', barcode, re.IGNORECASE):
-            #     logging.warning(f"[SHUTTLE] invalid format, discarded: '{barcode}'")
-            #     return None
 
             A = self.get_machine_head_by_letter("A")
             try:
@@ -1412,7 +1414,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self._shuttle_size_ready_evt.clear()
                     return None
                 packages = ret.get("objects", [])
-                size_map = {p.get("name", "").lower().rstrip(): p.get("size") for p in packages if p.get("name") and p.get("size")}
+                size_map, duplicate_labels = build_shuttle_barcode_size_map(
+                    packages)
                 if key in size_map:
                     self.shuttle_size_from_barcode_scanner = size_map[key]
                     logging.warning(f"SECOND READER: shuttle '{key}' -> size {size_map[key]}")
@@ -1426,15 +1429,24 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     # self.main_window.show_barcode(f"SHUTTLE: {key} -> {size_map[key]}", is_ok=True)
                     # return key
                 else:
-                    logging.warning(f"SHUTTLE BARCODE READER: unknown shuttle '{key}'")
+                    if key in duplicate_labels:
+                        logging.error(
+                            "SHUTTLE BARCODE READER: ambiguous label '%s'", key)
+                        error_format = "AMBIGUOUS SHUTTLE BARCODE: {}"
+                        error_title = "ERROR"
+                    else:
+                        logging.warning(
+                            f"SHUTTLE BARCODE READER: unknown shuttle '{key}'")
+                        error_format = "UNKNOWN SHUTTLE: {}"
+                        error_title = "WARNING"
                     self.shuttle_size_from_barcode_scanner = False
                     self._shuttle_size_ready_evt.clear()
                     def callback():
                         self.shuttle_bc_ready_to_read_a_barcode = True
                     self.main_window.open_alert_dialog(
                         (key,),
-                        fmt="UNKNOWN SHUTTLE: {}",
-                        title="WARNING",
+                        fmt=error_format,
+                        title=error_title,
                         show_cancel_btn=False,
                         callback=callback
                     )
@@ -2234,12 +2246,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.db_session.commit()
 
     async def _handle_crx_barcode_input(self):
-        import re
-
-        BARCODE_NEW_PATTERN = re.compile(
-            r'^\d{2,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$',
-            re.IGNORECASE
-        )
         A = self.get_machine_head_by_letter("A")
 
         shuttle_event = asyncio.Event()
@@ -2250,10 +2256,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         async def validate_shuttle(barcode: str):
             logging.warning(f"barcode: {barcode}")
-            barcode_match = BARCODE_NEW_PATTERN.match(barcode)
-            if not barcode_match:
+            shuttle_label = normalize_shuttle_barcode_label_text(barcode)
+            if shuttle_label is None:
                 return False, "INVALID SHUTTLE BARCODE: {}", barcode
-            shuttle_name = barcode_match.group(0).lower().rstrip()
             try:
                 ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
                 if not ret or ret.get("objects") is None:
@@ -2262,14 +2267,23 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     return False, "HEAD 1 (A): no package data found", ""
 
                 packages = ret["objects"]
-                size_map = {p["name"].lower().rstrip(): p["size"] for p in packages if p.get("name") and p.get("size")}
+                size_map, duplicate_labels = build_shuttle_barcode_size_map(
+                    packages)
 
-                if shuttle_name in size_map:
-                    self.shuttle_size_from_barcode_scanner = size_map[shuttle_name]
-                    logging.warning(f"SHUTTLE - {shuttle_name}: {size_map[shuttle_name]}")
+                if shuttle_label in size_map:
+                    self.shuttle_size_from_barcode_scanner = (
+                        size_map[shuttle_label])
+                    logging.warning(
+                        f"SHUTTLE - {shuttle_label}: "
+                        f"{size_map[shuttle_label]}")
                     return True, "", ""
-                else:
-                    return False, "UNKNOWN SHUTTLE: {}", shuttle_name
+                if shuttle_label in duplicate_labels:
+                    return (
+                        False,
+                        "AMBIGUOUS SHUTTLE BARCODE: {}",
+                        shuttle_label,
+                    )
+                return False, "UNKNOWN SHUTTLE: {}", shuttle_label
 
             except Exception as e:
                 logging.error(f"An unexpected error has been occurred: {e}")
