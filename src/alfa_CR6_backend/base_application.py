@@ -59,6 +59,7 @@ from alfa_CR6_frontend.dialogs import ModalMessageBox
 # Temporarily disabled: do not show the modal while active jar runners reach
 # their next wait point after the carousel has been frozen.
 SHOW_PENDING_OPERATIONS_MODAL = False
+SHUTTLE_BARCODE_WAIT_TIMEOUT = 2.0
 
 
 def get_dict_diff(dict1, dict2):
@@ -301,6 +302,10 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
         "KEY_SPACE": " ",
+        "KEY_COMMA": ",",
+        "KEY_DOT": ".",
+        "KEY_KPCOMMA": ",",
+        "KEY_KPDOT": ".",
         # digits
         "KEY_1": "1",
         "KEY_2": "2",
@@ -418,8 +423,8 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                             # le etichette jar/pigmento sono stampate in EAN-13:
                             # la pistola trasmette anche il check digit (13a cifra),
                             # che va scartato prima della validazione a 12.
-                            buffer = buffer[:self.BARCODE_LEN]
-                            await self.__on_buffer_read(buffer)
+                            value = buffer if self._accept_any_len else buffer[:self.BARCODE_LEN]
+                            await self.__on_buffer_read(value)
                             buffer = ""
                         else:
                             filtered_ch_ = self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode)
@@ -908,7 +913,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.ws_server = WsServer(self, ws_server_addr, ws_server_port)
 
-    async def __jar_task(self, barcode):  # pylint: disable=too-many-statements
+    async def __jar_task(
+            self, barcode, shuttle_size=None):  # pylint: disable=too-many-statements
 
         r = None
         jar = None
@@ -917,7 +923,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             cntr = 0
             while cntr < 3:
                 cntr += 1
-                jar = await self.get_and_check_jar_from_barcode(barcode)
+                if shuttle_size is None:
+                    jar = await self.get_and_check_jar_from_barcode(barcode)
+                else:
+                    jar = await self.get_and_check_jar_from_barcode(
+                        barcode, shuttle_size=shuttle_size)
                 if not jar:
                     break
 
@@ -1102,7 +1112,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.__modal_freeze_msgbox.enable_buttons(True, True)
                 self.__modal_freeze_msgbox.close()
 
-    async def get_and_check_jar_from_barcode(self, barcode):  # pylint: disable=too-many-locals,too-many-branches
+    async def get_and_check_jar_from_barcode(
+            self, barcode, shuttle_size=None):  # pylint: disable=too-many-locals,too-many-branches
 
         logging.debug("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
@@ -1124,18 +1135,30 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if jar:
 
-            variant = os.getenv('MACHINE_VARIANT')
+            variant = (
+                getattr(self, "machine_variant", None)
+                or os.getenv('MACHINE_VARIANT')
+            )
+            physical_shuttle_reader = (
+                self._uses_physical_shuttle_barcode_reader())
             if variant in ['CRX60', 'CRX40', 'CRX80']:
                 jar_size = self.shuttle_size_from_barcode_scanner
                 logging.debug("Using shuttle_size_from_barcode_scanner: %s", jar_size)
+            elif physical_shuttle_reader:
+                jar_size = shuttle_size
+                logging.debug("Using captured SHUTTLE barcode size: %s", jar_size)
             else:
                 A = self.get_machine_head_by_letter("A")
                 await asyncio.sleep(0.5)
-                jar_size = self.shuttle_size_from_barcode_scanner or await A.get_stabilized_jar_size()
+                jar_size = await A.get_stabilized_jar_size()
 
             if jar_size is None:
                 jar = None
-                args, fmt = (barcode, ), "barcode:{} cannot read can size from microswitches.\n"
+                args = (barcode, )
+                if physical_shuttle_reader:
+                    fmt = "barcode:{} cannot read can size from SHUTTLE barcode.\n"
+                else:
+                    fmt = "barcode:{} cannot read can size from microswitches.\n"
                 self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
             else:
 
@@ -1157,19 +1180,18 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 jar_volume = 0
                 if variant in ['CRX60', 'CRX40', 'CRX80']:
                     jar_volume = self.shuttle_size_from_barcode_scanner
+                elif physical_shuttle_reader:
+                    jar_volume = jar_size
                 else:
                     try:
                         p_idx = int(jar_size)
                         jar_volume = package_size_list[p_idx]
                     except IndexError:
-                        if not self.shuttle_size_from_barcode_scanner:
-                            args = ()
-                            fmt = "The selected jar size is not recognised"
-                            self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                            logging.error(fmt)
-                            return None
-                        # CR4/CR6 with physical shuttle size barcode
-                        jar_volume = self.shuttle_size_from_barcode_scanner
+                        args = ()
+                        fmt = "The selected jar size is not recognised"
+                        self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                        logging.error(fmt)
+                        return None
 
                 self.update_jar_properties(jar)
 
@@ -1212,6 +1234,81 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         logging.warning(f"jar:{jar}")
         return jar
+
+    def _uses_physical_shuttle_barcode_reader(self):
+        variant = (
+            getattr(self, "machine_variant", None)
+            or os.getenv("MACHINE_VARIANT", "")
+        )
+        reader_id = str(getattr(self, "id_bc_shuttle", "") or "").strip()
+        return (
+            variant in ("CR4", "CR6")
+            and bool(reader_id)
+            and reader_id.upper() != "DISABLED"
+        )
+
+    def _reset_shuttle_barcode_cycle(self):
+        if not self._uses_physical_shuttle_barcode_reader():
+            return
+        self.shuttle_size_from_barcode_scanner = False
+        self._shuttle_size_ready_evt.clear()
+        self.shuttle_bc_ready_to_read_a_barcode = True
+
+    def _show_missing_shuttle_barcode_error(self, formula_barcode):
+        self.shuttle_size_from_barcode_scanner = False
+        self._shuttle_size_ready_evt.clear()
+        self.shuttle_bc_ready_to_read_a_barcode = False
+        self.ready_to_read_a_barcode = False
+
+        def callback():
+            self.shuttle_size_from_barcode_scanner = False
+            self._shuttle_size_ready_evt.clear()
+            self.shuttle_bc_ready_to_read_a_barcode = True
+            self.ready_to_read_a_barcode = True
+
+        self.main_window.show_barcode(
+            tr_("Waiting for valid SHUTTLE barcode"), is_ok=False)
+        self.main_window.open_alert_dialog(
+            (),
+            fmt="SHUTTLE BARCODE NOT READ",
+            title="ERROR SHUTTLE BARCODE",
+            show_cancel_btn=False,
+            callback=callback,
+        )
+
+    async def _consume_shuttle_size_for_formula(self, formula_barcode):
+        if not self._uses_physical_shuttle_barcode_reader():
+            return None
+
+        try:
+            await asyncio.wait_for(
+                self._shuttle_size_ready_evt.wait(),
+                timeout=SHUTTLE_BARCODE_WAIT_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            logging.error(
+                "No valid SHUTTLE barcode available for order barcode %s",
+                formula_barcode,
+            )
+            # UNKNOWN/AMBIGUOUS already owns the visible popup and its re-arm
+            # callback. Do not open a second dialog for the same read.
+            if getattr(self, "shuttle_bc_ready_to_read_a_barcode", True):
+                self._show_missing_shuttle_barcode_error(formula_barcode)
+            return None
+
+        shuttle_size = self.shuttle_size_from_barcode_scanner
+        if not isinstance(shuttle_size, (int, float)) \
+                or isinstance(shuttle_size, bool) or shuttle_size <= 0:
+            self._show_missing_shuttle_barcode_error(formula_barcode)
+            return None
+
+        # Capture the value for this formula before clearing the shared slot.
+        # The SHUTTLE reader stays disabled until JIN becomes empty, preventing
+        # the same physical can from pre-loading the following formula.
+        self.shuttle_size_from_barcode_scanner = False
+        self._shuttle_size_ready_evt.clear()
+        self.shuttle_bc_ready_to_read_a_barcode = False
+        return shuttle_size
 
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals
 
@@ -1277,7 +1374,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             return
 
                         if self.machine_variant not in ['CRX60', 'CRX40', 'CRX80']:
-                            t = self.__jar_task(barcode)
+                            shuttle_size = None
+                            if self._uses_physical_shuttle_barcode_reader():
+                                shuttle_size = await self._consume_shuttle_size_for_formula(
+                                    barcode)
+                                if shuttle_size is None:
+                                    return None
+
+                            t = self.__jar_task(
+                                barcode, shuttle_size=shuttle_size)
                             self._register_jar_runner(barcode, {
                                 "task": asyncio.ensure_future(t),
                                 "frozen": True
@@ -1394,14 +1499,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     f"[SHUTTLE] invalid format, discarded: '{barcode}'")
                 return None
 
-            # --- dedup ---
-            t_now = time.time()
-            _last_buf = getattr(self, '_shuttle_last_read_buffer', '')
-            _last_t = getattr(self, '_shuttle_last_read_time', 0)
-            if key == _last_buf and t_now - _last_t < 5.0:
-                logging.warning(f"[SHUTTLE] DEDUP filter: '{key}' dt={t_now - _last_t:.3f}s")
-                return None
-
             A = self.get_machine_head_by_letter("A")
             try:
                 ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
@@ -1420,11 +1517,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self.shuttle_size_from_barcode_scanner = size_map[key]
                     logging.warning(f"SECOND READER: shuttle '{key}' -> size {size_map[key]}")
                     self._shuttle_size_ready_evt.set()
-                    # Una lettura entra nella finestra di deduplica soltanto
-                    # dopo che la testa ha confermato il package. Errori REST
-                    # e package ignoti restano quindi immediatamente ritentabili.
-                    self._shuttle_last_read_buffer = key
-                    self._shuttle_last_read_time = t_now
+                    self.shuttle_bc_ready_to_read_a_barcode = False
                     # Feedback to UI
                     # self.main_window.show_barcode(f"SHUTTLE: {key} -> {size_map[key]}", is_ok=True)
                     # return key
@@ -1443,6 +1536,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     self._shuttle_size_ready_evt.clear()
                     def callback():
                         self.shuttle_bc_ready_to_read_a_barcode = True
+                        self.ready_to_read_a_barcode = True
                     self.main_window.open_alert_dialog(
                         (key,),
                         fmt=error_format,
@@ -1451,6 +1545,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         callback=callback
                     )
                     self.shuttle_bc_ready_to_read_a_barcode = False
+                    self.ready_to_read_a_barcode = False
                     return None
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(f"SECOND READER: unexpected error: {e}")

@@ -291,6 +291,22 @@ class TestMachineHeadHardwareFree(unittest.TestCase):
         self.assertEqual(inner["timeout"], 0)
         self.assertEqual(inner["t0"], 0)
 
+    def test_head_a_input_release_rearms_formula_and_shuttle_cycle(self):
+        status = {
+            "status_level": "JAR_POSITIONING",
+            "photocells_status": 0,
+            "jar_photocells_status": 0,
+            "crx_outputs_status": 0,
+        }
+        self.head.status = dict(status, jar_photocells_status=1)
+        self.app.ready_to_read_a_barcode = False
+        self.app._reset_shuttle_barcode_cycle = mock.Mock()
+
+        self._run(self.head.update_status(status))
+
+        self.assertTrue(self.app.ready_to_read_a_barcode)
+        self.app._reset_shuttle_barcode_cycle.assert_called_once_with()
+
     def test_watchdog_stops_an_output_after_its_timeout(self):
         inner_status = self.head._MachineHead__crx_inner_status
         inner_status[2].update({"value": 4, "timeout": 5, "t0": 100})

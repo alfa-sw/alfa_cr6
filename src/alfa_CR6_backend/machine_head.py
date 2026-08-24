@@ -289,6 +289,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if old_flag and not new_flag:
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
+            if self.index == 0:
+                reset_shuttle_cycle = getattr(
+                    self.app, "_reset_shuttle_barcode_cycle", None)
+                if reset_shuttle_cycle:
+                    reset_shuttle_cycle()
 
         old_flag_1 = self.status.get("jar_photocells_status", 0) & 0x100
         new_flag_1 = status.get("jar_photocells_status", 0) & 0x100

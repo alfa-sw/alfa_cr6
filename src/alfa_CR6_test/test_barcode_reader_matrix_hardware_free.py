@@ -6,6 +6,7 @@ import asyncio
 import json
 import os
 import sys
+import threading
 import time
 import types
 import unittest
@@ -41,8 +42,13 @@ class _UsbEvent:
 
 def _scan_events(value):
     events = []
+    special_keycodes = {
+        " ": "KEY_SPACE",
+        ",": "KEY_COMMA",
+        ".": "KEY_DOT",
+    }
     for character in value:
-        keycode = "KEY_SPACE" if character == " " else "KEY_" + character
+        keycode = special_keycodes.get(character, "KEY_" + character)
         events.append(_UsbEvent(keycode))
     events.append(_UsbEvent("KEY_ENTER"))
     return events
@@ -252,9 +258,13 @@ class _AlertWindow:
 
     def __init__(self):
         self.alerts = []
+        self.barcode_updates = []
 
     def open_alert_dialog(self, *args, **kwargs):
         self.alerts.append((args, kwargs))
+
+    def show_barcode(self, *args, **kwargs):
+        self.barcode_updates.append((args, kwargs))
 
 
 class TestYokoEnumerationAndNoise(unittest.TestCase):
@@ -461,6 +471,28 @@ class TestYokoEnumerationAndNoise(unittest.TestCase):
 
         self.assertEqual(reads, [VALID_FORMULA_BARCODE])
 
+    def test_shuttle_reader_preserves_comma_and_point_decimal_separators(self):
+        reads = []
+
+        async def handler(value):
+            reads.append(value)
+            return True
+
+        events = (
+            _scan_events("0,4 L")
+            + _scan_events("0.75 L")
+            + _scan_events("123456,789 ML")
+        )
+        device = _UsbDevice("Yoko Shuttle", SHUTTLE_USB_PORT, events)
+        reader = BarCodeReader(
+            handler, SHUTTLE_USB_PORT,
+            accept_any_len=True, skip_alfa_validation=True,
+        )
+
+        self._run_readers([reader], {"/dev/input/event5": device})
+
+        self.assertEqual(reads, ["0,4 L", "0.75 L", "123456,789 ML"])
+
     def test_random_shuttle_text_is_discarded_before_package_lookup(self):
         head = _PackageHead([self.PACKAGES])
         window = _AlertWindow()
@@ -596,6 +628,7 @@ class TestDualYokoShuttleLookup(unittest.TestCase):
 
         self.assertEqual(self.app.shuttle_size_from_barcode_scanner, 500)
         self.assertTrue(self.app._shuttle_size_ready_evt.is_set())
+        self.assertFalse(self.app.shuttle_bc_ready_to_read_a_barcode)
         self.assertEqual(
             self.head.calls,
             [("apiV1/package", "GET", {}, 1.5)],
@@ -699,11 +732,8 @@ class TestDualYokoShuttleLookup(unittest.TestCase):
         self.assertEqual(self.app.shuttle_size_from_barcode_scanner, 500)
         self.assertTrue(self.app._shuttle_size_ready_evt.is_set())
 
-    def test_normalized_duplicate_within_five_seconds_queries_head_once(self):
-        fake_time = mock.Mock(wraps=time)
-        fake_time.time.side_effect = (100.0, 103.0)
-        with mock.patch.object(app_module, "time", fake_time), \
-                mock.patch.dict(os.environ, {"MACHINE_VARIANT": "CR6"}):
+    def test_valid_shuttle_read_blocks_repeats_until_next_cycle(self):
+        with mock.patch.dict(os.environ, {"MACHINE_VARIANT": "CR6"}):
             self.loop.run_until_complete(
                 BaseApplication.on_shuttle_barcode_read(self.app, "500 ML")
             )
@@ -723,6 +753,126 @@ class TestDualYokoShuttleLookup(unittest.TestCase):
 
         self.assertEqual(self.head.calls, [])
         self.assertFalse(self.app.shuttle_size_from_barcode_scanner)
+
+
+class TestDualYokoFormulaSynchronization(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.window = _AlertWindow()
+        self.app = BaseApplication.__new__(BaseApplication)
+        self.app.machine_variant = "CR6"
+        self.app.id_bc_shuttle = "YOKO-SHUTTLE"
+        self.app.shuttle_bc_ready_to_read_a_barcode = True
+        self.app.ready_to_read_a_barcode = False
+        self.app.shuttle_size_from_barcode_scanner = False
+        self.app._shuttle_size_ready_evt = asyncio.Event()
+        self.app.main_window = self.window
+
+    def tearDown(self):
+        self.loop.close()
+
+    def _consume(self):
+        return BaseApplication._consume_shuttle_size_for_formula(
+            self.app, VALID_FORMULA_BARCODE)
+
+    def test_formula_waits_for_slightly_later_shuttle_reading(self):
+        async def scan_shuttle_after_formula():
+            await asyncio.sleep(0)
+            self.app.shuttle_size_from_barcode_scanner = 650
+            self.app._shuttle_size_ready_evt.set()
+
+        async def run_pair():
+            scan_task = asyncio.create_task(scan_shuttle_after_formula())
+            size = await self._consume()
+            await scan_task
+            return size
+
+        with mock.patch.object(
+                app_module, "SHUTTLE_BARCODE_WAIT_TIMEOUT", 0.05):
+            size = self.loop.run_until_complete(run_pair())
+
+        self.assertEqual(size, 650)
+        self.assertFalse(self.app.shuttle_size_from_barcode_scanner)
+        self.assertFalse(self.app._shuttle_size_ready_evt.is_set())
+        self.assertFalse(self.app.shuttle_bc_ready_to_read_a_barcode)
+        self.assertEqual(self.window.alerts, [])
+
+    def test_formula_without_shuttle_fails_closed_and_rearms_after_ack(self):
+        with mock.patch.object(
+                app_module, "SHUTTLE_BARCODE_WAIT_TIMEOUT", 0.001):
+            size = self.loop.run_until_complete(self._consume())
+
+        self.assertIsNone(size)
+        self.assertFalse(self.app.ready_to_read_a_barcode)
+        self.assertFalse(self.app.shuttle_bc_ready_to_read_a_barcode)
+        self.assertEqual(len(self.window.alerts), 1)
+        _args, kwargs = self.window.alerts[0]
+        self.assertEqual(kwargs["title"], "ERROR SHUTTLE BARCODE")
+        self.assertEqual(kwargs["fmt"], "SHUTTLE BARCODE NOT READ")
+
+        kwargs["callback"]()
+
+        self.assertTrue(self.app.ready_to_read_a_barcode)
+        self.assertTrue(self.app.shuttle_bc_ready_to_read_a_barcode)
+
+    def test_input_release_clears_stale_size_and_rearms_shuttle_reader(self):
+        self.app.shuttle_size_from_barcode_scanner = 500
+        self.app._shuttle_size_ready_evt.set()
+        self.app.shuttle_bc_ready_to_read_a_barcode = False
+
+        BaseApplication._reset_shuttle_barcode_cycle(self.app)
+
+        self.assertFalse(self.app.shuttle_size_from_barcode_scanner)
+        self.assertFalse(self.app._shuttle_size_ready_evt.is_set())
+        self.assertTrue(self.app.shuttle_bc_ready_to_read_a_barcode)
+
+    def test_order_barcode_passes_later_shuttle_size_to_jar_task(self):
+        head = types.SimpleNamespace(
+            wait_for_jar_photocells_and_status_lev=mock.AsyncMock(
+                return_value=True),
+        )
+        app = BaseApplication.__new__(BaseApplication)
+        app.machine_variant = "CR6"
+        app.in_docker = True
+        app.id_bc_shuttle = "YOKO-SHUTTLE"
+        app.shuttle_bc_ready_to_read_a_barcode = True
+        app.ready_to_read_a_barcode = True
+        app.shuttle_size_from_barcode_scanner = False
+        app._shuttle_size_ready_evt = asyncio.Event()
+        app._crx_ja_block_sequence_active = False
+        app.barcode_read_blocked_on_refill = False
+        app.carousel_frozen = False
+        app.main_window = self.window
+        app.get_machine_head_by_letter = lambda _letter: head
+        app._database_cleanup_cancel_event = threading.Event()
+        app._BaseApplication__jar_runners = {}
+        app._BaseApplication__jar_task = mock.AsyncMock(return_value=None)
+        app.handle_exception = lambda exc: (_ for _ in ()).throw(exc)
+
+        async def scan_shuttle_after_formula():
+            await asyncio.sleep(0)
+            app.shuttle_size_from_barcode_scanner = 650
+            app._shuttle_size_ready_evt.set()
+
+        async def run_pair():
+            scan_task = asyncio.create_task(scan_shuttle_after_formula())
+            result = await BaseApplication.on_barcode_read(
+                app, VALID_FORMULA_BARCODE)
+            await scan_task
+            await asyncio.sleep(0)
+            return result
+
+        with mock.patch.object(
+                app_module, "SHUTTLE_BARCODE_WAIT_TIMEOUT", 0.05):
+            result = self.loop.run_until_complete(run_pair())
+
+        self.assertEqual(result, VALID_FORMULA_BARCODE)
+        app._BaseApplication__jar_task.assert_awaited_once_with(
+            VALID_FORMULA_BARCODE, shuttle_size=650)
+        self.assertFalse(app.shuttle_size_from_barcode_scanner)
+        self.assertFalse(app.shuttle_bc_ready_to_read_a_barcode)
 
 
 class _ManualInputDialog:

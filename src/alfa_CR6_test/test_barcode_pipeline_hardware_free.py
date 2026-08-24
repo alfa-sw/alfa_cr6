@@ -33,8 +33,10 @@ class _Head:
     def __init__(self):
         self.package_list = [{"name": "500 ml", "size": 500}]
         self.refresh_calls = 0
+        self.stabilized_size_calls = 0
 
     async def get_stabilized_jar_size(self):
+        self.stabilized_size_calls += 1
         return 0
 
     async def update_tintometer_data(self):
@@ -228,6 +230,8 @@ class TestBarcodeDatabaseLookup(unittest.TestCase):
         self.app = BaseApplication.__new__(BaseApplication)
         self.app.db_session = self.session
         self.app.shuttle_size_from_barcode_scanner = False
+        self.app.machine_variant = "CR6"
+        self.app.id_bc_shuttle = "DISABLED"
         self.app.machine_head_dict = {0: self.head}
         self.app.main_window = _MainWindow()
         self.app.handle_exception = lambda exc: (_ for _ in ()).throw(exc)
@@ -255,6 +259,37 @@ class TestBarcodeDatabaseLookup(unittest.TestCase):
         self.assertEqual(result.id, self.jar.id)
         self.assertEqual(self.head.refresh_calls, 1)
         self.assertEqual(self.app.main_window.alerts, [])
+        self.assertEqual(self.head.stabilized_size_calls, 1)
+
+    def test_physical_shuttle_size_bypasses_microswitch_lookup(self):
+        self.app.id_bc_shuttle = "YOKO-SHUTTLE"
+
+        with mock.patch.object(
+                app_module.asyncio, "sleep", new=mock.AsyncMock()):
+            result = self.loop.run_until_complete(
+                BaseApplication.get_and_check_jar_from_barcode(
+                    self.app, self.valid_barcode, shuttle_size=500)
+            )
+
+        self.assertIsNotNone(result)
+        self.assertEqual(self.head.stabilized_size_calls, 0)
+        self.assertEqual(self.app.main_window.alerts, [])
+
+    def test_physical_shuttle_reader_never_falls_back_to_microswitches(self):
+        self.app.id_bc_shuttle = "YOKO-SHUTTLE"
+
+        with mock.patch.object(
+                app_module.asyncio, "sleep", new=mock.AsyncMock()):
+            result = self.loop.run_until_complete(
+                BaseApplication.get_and_check_jar_from_barcode(
+                    self.app, self.valid_barcode, shuttle_size=None)
+            )
+
+        self.assertIsNone(result)
+        self.assertEqual(self.head.stabilized_size_calls, 0)
+        self.assertEqual(len(self.app.main_window.alerts), 1)
+        self.assertIn(
+            "SHUTTLE barcode", self.app.main_window.alerts[0][1]["fmt"])
 
     def test_valid_today_barcode_for_missing_order_is_reported_not_found(self):
         missing_order_barcode = compile_barcode(self.order_nr + 1000, 1)
