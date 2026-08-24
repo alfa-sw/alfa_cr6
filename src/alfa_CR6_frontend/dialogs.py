@@ -1386,9 +1386,42 @@ class RefillDialog(BaseDialog):
         self.show()
 
 
+class _BarcodePrintButton(QPushButton):
+
+    def resizeEvent(self, event):  # pylint: disable=invalid-name
+        super().resizeEvent(event)
+        self.setIconSize(QSize(
+            max(1, int(self.width() * 0.75)),
+            max(1, int(self.height() * 0.75)),
+        ))
+
+
 class PackageSizesDialog(BaseDialog):
 
     ui_file_name = "package_sizes_dialog.ui"
+    _BARCODE_BUTTON_STYLE = """
+        QPushButton {
+            min-height: 44px;
+            padding: 4px 10px;
+            background-color: #FFFFFF;
+            color: #202020;
+            border: 3px solid #003B66;
+            border-radius: 6px;
+            font-size: 19px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #E6F3FC;
+        }
+        QPushButton:pressed {
+            background-color: #CDE7F7;
+        }
+        QPushButton:disabled {
+            background-color: #D6D6D6;
+            color: #202020;
+            border: 3px dashed #5A5A5A;
+        }
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1400,8 +1433,9 @@ class PackageSizesDialog(BaseDialog):
             tr_("Nome"),
             tr_("Size"),
             tr_("Barcode infos"),
-            tr_("Barcode"),
+            tr_("PRINT LABEL"),
         ])
+        self.package_table.setColumnWidth(2, 240)
 
         self.package_table.horizontalHeader().setVisible(True)
         self.package_table.horizontalHeader().setStyleSheet("""
@@ -1410,7 +1444,7 @@ class PackageSizesDialog(BaseDialog):
                 padding: 4px;
                 border: 1px solid #999999;
                 font-weight: bold;
-                font-size: 24px;
+                font-size: 26px;
             }
         """)
 
@@ -1418,17 +1452,17 @@ class PackageSizesDialog(BaseDialog):
         self.package_table.setStyleSheet("""
             QTableWidget {
                 background-color: #AAFFFFFF;
-                font-size: 20px;
+                font-size: 22px;
             }
             QTableWidget::item {
                 padding: 4px;
-                font-size: 20px;
+                font-size: 22px;
             }
         """)
 
         self.title_lbl.setStyleSheet("""
             QLabel {
-                font-size: 26px;
+                font-size: 28px;
             }
         """)
 
@@ -1458,22 +1492,28 @@ class PackageSizesDialog(BaseDialog):
         barcode_layout = QHBoxLayout(barcode_widget)
         barcode_layout.setContentsMargins(5, 5, 5, 5)
 
-        barcode_label = QLabel()
-        barcode_pixmap = QPixmap(get_res("IMAGE", "barcode_C128.png"))
-        scaled_pixmap = barcode_pixmap.scaled(80, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        barcode_label.setPixmap(scaled_pixmap)
-        barcode_label.setAlignment(Qt.AlignCenter)
-        barcode_label.setEnabled(barcode_enabled)
+        barcode_button = _BarcodePrintButton()
+        barcode_button.setObjectName("package_barcode_print_button")
+        barcode_button.setStyleSheet(self._BARCODE_BUTTON_STYLE)
+        barcode_button.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Preferred)
 
         if barcode_enabled:
-            barcode_label.mousePressEvent = (
-                lambda event: self._generate_barcode_label(package))
+            barcode_pixmap = QPixmap(get_res("IMAGE", "barcode_C128.png"))
+            barcode_button.setIcon(QIcon(barcode_pixmap))
+            barcode_button.setToolTip(
+                tr_("Print SHUTTLE barcode label"))
+            barcode_button.setCursor(Qt.PointingHandCursor)
+            barcode_button.clicked.connect(
+                lambda _checked=False, item=package:
+                self._generate_barcode_label(item))
         else:
-            barcode_label.setToolTip(
+            barcode_button.setText(tr_("LABEL DATA MISSING"))
+            barcode_button.setToolTip(
                 tr_("SHUTTLE barcode label information is incomplete"))
+            barcode_button.setEnabled(False)
 
-        barcode_layout.addWidget(barcode_label)
-        barcode_widget.setEnabled(barcode_enabled)
+        barcode_layout.addWidget(barcode_button)
         self.package_table.setCellWidget(row, 3, barcode_widget)
 
     def _generate_barcode_label(self, package):

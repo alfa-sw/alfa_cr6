@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>960</width>
     <height>600</height>
    </rect>
   </property>
@@ -28,7 +28,7 @@
    </property>
    <property name="geometry">
     <rect>
-     <x>310</x>
+     <x>390</x>
      <y>540</y>
      <width>150</width>
      <height>51</height>
@@ -36,7 +36,7 @@
    </property>
    <property name="font">
     <font>
-     <pointsize>16</pointsize>
+     <pointsize>18</pointsize>
     </font>
    </property>
    <property name="autoFillBackground">
@@ -61,7 +61,7 @@
   <widget class="QPushButton" name="ok_button">
    <property name="geometry">
     <rect>
-     <x>490</x>
+     <x>570</x>
      <y>540</y>
      <width>150</width>
      <height>51</height>
@@ -69,7 +69,7 @@
    </property>
    <property name="font">
     <font>
-     <pointsize>16</pointsize>
+     <pointsize>18</pointsize>
     </font>
    </property>
    <property name="autoFillBackground">
@@ -96,7 +96,7 @@
     <rect>
      <x>10</x>
      <y>69</y>
-     <width>780</width>
+     <width>940</width>
      <height>461</height>
     </rect>
    </property>
@@ -151,13 +151,13 @@
     <rect>
      <x>10</x>
      <y>10</y>
-     <width>780</width>
+     <width>940</width>
      <height>51</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <pointsize>26</pointsize>
+     <pointsize>28</pointsize>
     </font>
    </property>
    <property name="styleSheet">
