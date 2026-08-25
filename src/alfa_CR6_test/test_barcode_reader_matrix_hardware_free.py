@@ -482,6 +482,10 @@ class TestYokoEnumerationAndNoise(unittest.TestCase):
             _scan_events("0,4 L")
             + _scan_events("0.75 L")
             + _scan_events("123456,789 ML")
+            + _scan_events("12,25 FL OZ")
+            + _scan_events("12.25 FL OZ")
+            + _scan_events("8,5 OZ")
+            + _scan_events("8.5 OZ")
         )
         device = _UsbDevice("Yoko Shuttle", SHUTTLE_USB_PORT, events)
         reader = BarCodeReader(
@@ -491,7 +495,11 @@ class TestYokoEnumerationAndNoise(unittest.TestCase):
 
         self._run_readers([reader], {"/dev/input/event5": device})
 
-        self.assertEqual(reads, ["0,4 L", "0.75 L", "123456,789 ML"])
+        self.assertEqual(reads, [
+            "0,4 L", "0.75 L", "123456,789 ML",
+            "12,25 FL OZ", "12.25 FL OZ",
+            "8,5 OZ", "8.5 OZ",
+        ])
 
     def test_random_shuttle_text_is_discarded_before_package_lookup(self):
         head = _PackageHead([self.PACKAGES])

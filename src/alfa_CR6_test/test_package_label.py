@@ -100,26 +100,28 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
                     expected,
                 )
 
-    def test_integer_unit_info_has_no_decimal_separator(self):
+    def test_oz_info_includes_decimal_separator(self):
         package = self.package({
-            "quantity": 12,
+            "quantity": 12.5,
             "unit": "OZ",
+            "decimal_separator": ".",
         })
 
         self.assertEqual(
             get_shuttle_barcode_label_info_text(package),
-            "Quantity: 12\nUnit: OZ",
+            "Quantity: 12.5\nUnit: OZ\nDecimal separator: .",
         )
 
-    def test_fl_oz_info_has_no_decimal_separator(self):
+    def test_fl_oz_info_includes_decimal_separator(self):
         package = self.package({
-            "quantity": 34,
+            "quantity": 34.5,
             "unit": "FL OZ",
+            "decimal_separator": ",",
         })
 
         self.assertEqual(
             get_shuttle_barcode_label_info_text(package),
-            "Quantity: 34\nUnit: FL OZ",
+            "Quantity: 34.5\nUnit: FL OZ\nDecimal separator: ,",
         )
 
     def test_decimal_quantity_with_point(self):
@@ -140,45 +142,31 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
 
         self.assertEqual(get_shuttle_barcode_label_text(package), "0,75 LT")
 
-    def test_integer_units_use_the_common_quantity_format(self):
+    def test_ounce_units_accept_fractional_quantity_and_selected_separator(self):
         for unit in ("FL OZ", "OZ"):
-            with self.subTest(unit=unit):
-                package = self.package({
-                    "quantity": 34.0,
-                    "unit": unit,
-                })
+            for separator, quantity_text in ((".", "12.25"),
+                                             (",", "12,25")):
+                with self.subTest(unit=unit, separator=separator):
+                    package = self.package({
+                        "quantity": 12.25,
+                        "unit": unit,
+                        "decimal_separator": separator,
+                    })
 
-                self.assertEqual(
-                    get_shuttle_barcode_label_text(package),
-                    "34 {}".format(unit),
-                )
+                    self.assertEqual(
+                        get_shuttle_barcode_label_text(package),
+                        "{} {}".format(quantity_text, unit),
+                    )
 
-    def test_integer_units_ignore_decimal_separator(self):
+    def test_ounce_units_require_decimal_separator(self):
         for unit in ("FL OZ", "OZ"):
-            with self.subTest(unit=unit):
-                package = self.package({
-                    "quantity": 12.0,
-                    "unit": unit,
-                    "decimal_separator": ",",
-                })
-
-                self.assertEqual(
-                    get_shuttle_barcode_label_text(package),
-                    "12 {}".format(unit),
-                )
-
-    def test_integer_units_reject_fractional_quantity(self):
-        for unit in ("FL OZ", "OZ"):
-            with self.subTest(unit=unit):
-                package = self.package({
+            with self.subTest(unit=unit), self.assertRaisesRegex(
+                    ShuttleBarcodeLabelError,
+                    "Decimal separator is required"):
+                get_shuttle_barcode_label_text(self.package({
                     "quantity": 12.25,
                     "unit": unit,
-                })
-
-                with self.assertRaisesRegex(
-                        ShuttleBarcodeLabelError,
-                        "Quantity must be an integer for {}".format(unit)):
-                    get_shuttle_barcode_label_text(package)
+                }))
 
     def test_trailing_zeroes_are_not_added(self):
         package = self.package({
@@ -262,7 +250,11 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
             "0,75 LT": "0,75 LT",
             "160 GR": "160 GR",
             "34 FL OZ": "34 FL OZ",
+            "12.25 FL OZ": "12.25 FL OZ",
+            "12,25 FL OZ": "12,25 FL OZ",
             "12 OZ": "12 OZ",
+            "12.25 OZ": "12.25 OZ",
+            "12,25 OZ": "12,25 OZ",
             " 500 ml ": "500 ML",
         }
         for value, expected in cases.items():
@@ -273,7 +265,7 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
     def test_scanned_label_grammar_rejects_noise_and_invalid_units(self):
         for value in (
                 None, "", "R4ND0M", "500", "ML", "500ML",
-                "500  ML", "500_ML", "12.25 OZ", "12,25 FL OZ",
+                "500  ML", "500_ML",
                 "0 ML", "500 ML500 ML", "260802001001", "12 GAL"):
             with self.subTest(value=value):
                 self.assertIsNone(
@@ -308,7 +300,7 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
         self.assertEqual(size_map, {})
         self.assertEqual(duplicates, {"500 ML"})
 
-    def test_image_generator_passes_fl_oz_text_to_code128(self):
+    def test_image_generator_passes_decimal_fl_oz_text_to_code128(self):
         with self.printing_dependency_stubs():
             from alfa_CR6_backend import globals as globals_  # pylint: disable=import-outside-toplevel
 
@@ -342,8 +334,9 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
         pil_stub.Image = pil_image_stub
 
         package = self.package({
-            "quantity": 34.0,
+            "quantity": 34.5,
             "unit": "FL OZ",
+            "decimal_separator": ",",
         })
 
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -358,8 +351,8 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
                 result = globals_.create_printable_image_for_package(package)
 
         self.assertEqual(result, image_path)
-        self.assertEqual(captured["value"], "34 FL OZ")
-        self.assertEqual(captured["printable_text"], "34 FL OZ")
+        self.assertEqual(captured["value"], "34,5 FL OZ")
+        self.assertEqual(captured["printable_text"], "34,5 FL OZ")
         self.assertEqual(captured["rotation"], (90, True))
         self.assertEqual(captured["saved_path"], image_path)
 

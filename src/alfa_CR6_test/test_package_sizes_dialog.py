@@ -91,6 +91,30 @@ class TestPackageSizesDialog(unittest.TestCase):
         button.click()
         self.dialog._generate_barcode_label.assert_called_once_with(package)
 
+    def test_ounce_decimal_configuration_is_shown_and_printable(self):
+        for unit in ("FL OZ", "OZ"):
+            with self.subTest(unit=unit):
+                package = {
+                    "name": "12.25 {}".format(unit),
+                    "size": 362,
+                    "json_info": json.dumps({
+                        "label_barcode": {
+                            "quantity": 12.25,
+                            "unit": unit,
+                            "decimal_separator": ",",
+                        },
+                    }),
+                }
+
+                button = self._set_package(package)
+
+                self.assertEqual(
+                    self.dialog.package_table.item(0, 2).text(),
+                    "Quantity: 12.25\nUnit: {}\nDecimal separator: ,".format(
+                        unit),
+                )
+                self.assertTrue(button.isEnabled())
+
     def test_incomplete_label_has_explicit_disabled_state(self):
         package = {
             "name": "Legacy package",

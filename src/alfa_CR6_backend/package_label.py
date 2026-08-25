@@ -9,7 +9,6 @@ from decimal import Decimal
 
 
 SHUTTLE_BARCODE_LABEL_UNITS = ("ML", "L", "LT", "GR", "FL OZ", "OZ")
-SHUTTLE_BARCODE_INTEGER_UNITS = frozenset(("FL OZ", "OZ"))
 SHUTTLE_BARCODE_DECIMAL_SEPARATORS = (".", ",")
 
 _SHUTTLE_BARCODE_LABEL_PATTERN = re.compile(
@@ -47,10 +46,6 @@ def normalize_shuttle_barcode_label_text(value):
 
     quantity_text = match.group("quantity")
     unit = match.group("unit").upper()
-    if (unit in SHUTTLE_BARCODE_INTEGER_UNITS
-            and ("." in quantity_text or "," in quantity_text)):
-        return None
-
     quantity = Decimal(quantity_text.replace(",", "."))
     if quantity <= 0:
         return None
@@ -109,10 +104,9 @@ def get_shuttle_barcode_label_info_text(package):
     lines = [
         "Quantity: {}".format(display_value("quantity")),
         "Unit: {}".format(display_value("unit")),
+        "Decimal separator: {}".format(
+            display_value("decimal_separator")),
     ]
-    if label_barcode.get("unit") not in SHUTTLE_BARCODE_INTEGER_UNITS:
-        lines.append("Decimal separator: {}".format(
-            display_value("decimal_separator")))
     return "\n".join(lines)
 
 
@@ -142,32 +136,26 @@ def get_shuttle_barcode_label_text(package):
         errors.append("Quantity must be a number.")
     elif not math.isfinite(float(quantity)) or quantity <= 0:
         errors.append("Quantity must be greater than zero.")
-    elif (unit in SHUTTLE_BARCODE_INTEGER_UNITS
-          and not float(quantity).is_integer()):
-        errors.append("Quantity must be an integer for {}.".format(unit))
-
     if unit_error:
         errors.append(unit_error)
 
     decimal_separator = None
-    if unit not in SHUTTLE_BARCODE_INTEGER_UNITS:
-        if ("decimal_separator" not in label_barcode
-                or label_barcode["decimal_separator"] is None):
-            errors.append("Decimal separator is required.")
-        else:
-            decimal_separator = label_barcode["decimal_separator"]
-            if decimal_separator not in SHUTTLE_BARCODE_DECIMAL_SEPARATORS:
-                errors.append(
-                    "Decimal separator {!r} is not supported. Allowed values: "
-                    "point (.) or comma (,).".format(decimal_separator)
-                )
+    if ("decimal_separator" not in label_barcode
+            or label_barcode["decimal_separator"] is None):
+        errors.append("Decimal separator is required.")
+    else:
+        decimal_separator = label_barcode["decimal_separator"]
+        if decimal_separator not in SHUTTLE_BARCODE_DECIMAL_SEPARATORS:
+            errors.append(
+                "Decimal separator {!r} is not supported. Allowed values: "
+                "point (.) or comma (,).".format(decimal_separator)
+            )
 
     if errors:
         raise ShuttleBarcodeLabelError(package_name, errors)
 
     quantity_text = format(Decimal(str(quantity)).normalize(), "f")
-    if (unit not in SHUTTLE_BARCODE_INTEGER_UNITS
-            and decimal_separator == ","):
+    if decimal_separator == ",":
         quantity_text = quantity_text.replace(".", ",")
 
     return "{} {}".format(quantity_text, unit)
