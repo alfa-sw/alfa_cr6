@@ -78,6 +78,7 @@ class FakeWebEngineView:
     def __init__(self, url, page):
         self._url = QUrl(url)
         self._page = page
+        self.zoom_factor = 1.0
 
     def page(self):
         return self._page
@@ -87,6 +88,9 @@ class FakeWebEngineView:
 
     def setUrl(self, url):  # pylint: disable=invalid-name
         self._url = QUrl(url)
+
+    def setZoomFactor(self, factor):  # pylint: disable=invalid-name
+        self.zoom_factor = factor
 
 
 class FakeLabel:
@@ -106,6 +110,8 @@ class BrowserPageHarness:
     blank_webengine_view = BrowserPage.blank_webengine_view
     _suspend_page_ws = BrowserPage._suspend_page_ws
     _resume_page_ws = BrowserPage._resume_page_ws
+    _zoom_factor_for_url = staticmethod(BrowserPage._zoom_factor_for_url)
+    _apply_zoom_for_url = BrowserPage._apply_zoom_for_url
     _BrowserPage__on_load_finish = BrowserPage._BrowserPage__on_load_finish
 
     def __init__(self, url, hooks_available=True, visible=True, defer_callback=False):
@@ -148,6 +154,27 @@ class BrowserPageWarmUpHarness:
 
 
 class BrowserPageWebSocketLifecycleTest(unittest.TestCase):
+
+    def test_local_web_pages_use_touchscreen_zoom(self):
+        browser = BrowserPageHarness("about:blank")
+
+        for url in (
+                "http://127.0.0.1:8090/admin",
+                "http://localhost:8090/settings",
+                "http://[::1]:8090/manual_index"):
+            with self.subTest(url=url):
+                browser._apply_zoom_for_url(QUrl(url))
+                self.assertEqual(browser.webengine_view.zoom_factor, 1.15)
+
+    def test_remote_web_page_restores_default_zoom(self):
+        browser = BrowserPageHarness("http://127.0.0.1:8090/admin")
+
+        browser._apply_zoom_for_url(QUrl(
+            "http://127.0.0.1:8090/admin"))
+        browser._apply_zoom_for_url(QUrl(
+            "https://customer.example/session"))
+
+        self.assertEqual(browser.webengine_view.zoom_factor, 1.0)
 
     def test_suspend_suspend_resume_resume_is_idempotent(self):
         browser = BrowserPageHarness(
