@@ -82,10 +82,22 @@ class TestShuttleBarcodeLabel(unittest.TestCase):
         self.assertEqual(get_shuttle_barcode_label_config(package), expected)
         self.assertEqual(
             get_shuttle_barcode_label_info_text(package),
-            "Quantity: 500.0\nUnit: ML\nDecimal separator: .",
+            "Quantity: 500\nUnit: ML",
         )
         self.assertNotIn("must not be displayed",
                          get_shuttle_barcode_label_info_text(package))
+
+    def test_ml_barcode_info_does_not_truncate_fractional_quantity(self):
+        package = self.package({
+            "quantity": 500.5,
+            "unit": "ML",
+            "decimal_separator": ".",
+        })
+
+        self.assertEqual(
+            get_shuttle_barcode_label_info_text(package),
+            "Quantity: 500.5\nUnit: ML",
+        )
 
     def test_barcode_info_uses_na_for_missing_or_invalid_json_info(self):
         expected = (

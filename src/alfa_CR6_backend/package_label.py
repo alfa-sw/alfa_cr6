@@ -90,7 +90,7 @@ def get_shuttle_barcode_label_config(package):
 
 
 def get_shuttle_barcode_label_info_text(package):
-    """Return the three label_barcode fields rendered by the package UI."""
+    """Return the label_barcode fields rendered by the package UI."""
 
     try:
         label_barcode = get_shuttle_barcode_label_config(package)
@@ -99,14 +99,23 @@ def get_shuttle_barcode_label_info_text(package):
 
     def display_value(key):
         value = label_barcode.get(key)
-        return "N/A" if value in (None, "") else str(value)
+        if value in (None, ""):
+            return "N/A"
+        if (key == "quantity"
+                and label_barcode.get("unit") == "ML"
+                and isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and float(value).is_integer()):
+            return str(int(value))
+        return str(value)
 
     lines = [
         "Quantity: {}".format(display_value("quantity")),
         "Unit: {}".format(display_value("unit")),
-        "Decimal separator: {}".format(
-            display_value("decimal_separator")),
     ]
+    if label_barcode.get("unit") != "ML":
+        lines.append("Decimal separator: {}".format(
+            display_value("decimal_separator")))
     return "\n".join(lines)
 
 

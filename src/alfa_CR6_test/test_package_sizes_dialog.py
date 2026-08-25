@@ -75,6 +75,10 @@ class TestPackageSizesDialog(unittest.TestCase):
 
         button = self._set_package(package)
 
+        self.assertEqual(
+            self.dialog.package_table.item(0, 2).text(),
+            "Quantity: 650\nUnit: ML",
+        )
         self.assertIsNotNone(button)
         self.assertTrue(button.isEnabled())
         self.assertEqual(button.text(), "")
