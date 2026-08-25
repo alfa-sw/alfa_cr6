@@ -59,6 +59,29 @@ class TestPackageSizesDialog(unittest.TestCase):
     def test_barcode_info_column_is_wide_enough_for_its_header(self):
         self.assertEqual(self.dialog.package_table.columnWidth(2), 240)
 
+    def test_ml_row_keeps_print_button_inside_cell_after_auto_resize(self):
+        package = {
+            "name": "650 ml",
+            "size": 650,
+            "json_info": json.dumps({
+                "label_barcode": {
+                    "quantity": 650.0,
+                    "unit": "ML",
+                    "decimal_separator": ".",
+                },
+            }),
+        }
+
+        button = self._set_package(package)
+        self.dialog.package_table.resizeRowsToContents()
+        self.dialog.show()
+        self.app.processEvents()
+        cell = self.dialog.package_table.cellWidget(0, 3)
+
+        self.assertGreaterEqual(self.dialog.package_table.rowHeight(0), 80)
+        self.assertLessEqual(
+            button.geometry().bottom(), cell.rect().bottom())
+
     def test_complete_label_uses_high_contrast_print_button(self):
         package = {
             "name": "650 ml",

@@ -1436,6 +1436,7 @@ class PackageSizesDialog(BaseDialog):
             tr_("PRINT LABEL"),
         ])
         self.package_table.setColumnWidth(2, 240)
+        self.package_table.verticalHeader().setMinimumSectionSize(80)
 
         self.package_table.horizontalHeader().setVisible(True)
         self.package_table.horizontalHeader().setStyleSheet("""
