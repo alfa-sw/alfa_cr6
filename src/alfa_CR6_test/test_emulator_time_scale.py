@@ -3,6 +3,7 @@
 """Regressioni per la scala dei soli tempi fisici dell'emulatore CR6."""
 
 import asyncio
+import json
 import unittest
 from unittest import mock
 
@@ -68,6 +69,47 @@ class TestEmulatorTimeScale(unittest.TestCase):
             "status_level": "JAR_POSITIONING",
             "jar_photocells_status": emulator.INPUT_ROLLER_MASK,
         }])
+
+    def test_dispense_replays_observed_steps_before_engaging_circuit(self):
+        pigment = [{
+            "name": "STBLUE 137",
+            "pipes": [{"name": "C16"}],
+        }]
+        with mock.patch(
+                "builtins.open",
+                mock.mock_open(read_data=json.dumps(pigment))):
+            head = emulator.MachineHeadMockup(0, time_scale=0.001)
+
+        head.status["circuit_engaged"] = 0
+        observed = []
+
+        async def record_status():
+            observed.append((
+                head.status["status_level"],
+                head.status["cycle_step"],
+                head.status["circuit_engaged"],
+            ))
+
+        head.dump_status = record_status
+        self.loop.run_until_complete(head.handle_command({
+            "command": "DISPENSE_FORMULA",
+            "params": {
+                "ingredients": {"STBLUE 137": 0.0096},
+            },
+        }))
+
+        self.assertEqual(observed, [
+            ("DISPENSING", 1, 0),
+            ("DISPENSING", 4, 0),
+            ("DISPENSING", 9, 0),
+            ("DISPENSING", 10, 0),
+            ("DISPENSING", 10, 23),
+            ("DISPENSING", 10, 0),
+            ("DISPENSING", 14, 0),
+            ("DISPENSING", 17, 0),
+            ("DISPENSING", 23, 0),
+            ("STANDBY", 0, 0),
+        ])
 
     def test_physical_call_later_is_scaled(self):
         head = emulator.MachineHeadMockup.__new__(emulator.MachineHeadMockup)

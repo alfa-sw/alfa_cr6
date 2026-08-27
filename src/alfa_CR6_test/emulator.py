@@ -325,12 +325,23 @@ class MachineHeadMockup:
                     await self.update_status(params=pars)
                     await self._machine_sleep(2)
 
-            await self.do_move(duration=0.5, tgt_level="DISPENSING")
+            # Sequenza osservata sui frame MACHINE_STATUS della Head A reale:
+            # lo step 1 dichiara l'avvio della macro, mentre il circuito viene
+            # impegnato soltanto nello step 10. Gli step successivi descrivono
+            # la chiusura della dispensazione prima del ritorno a STANDBY.
+            await self._machine_sleep(0.5)
+            await self.update_status(params={
+                "status_level": "DISPENSING",
+                "cycle_step": 1,
+            })
+            for cycle_step in (4, 9, 10):
+                await self.update_status(params={"cycle_step": cycle_step})
 
             # Un circuito puo' risultare impegnato soltanto dopo che la macro
-            # ha portato la testa in DISPENSING. Pubblicarlo prima introduceva
-            # una race nell'emulatore: il backend ignorava correttamente quel
-            # fronte perche' ricevuto ancora in STANDBY/JAR_POSITIONING.
+            # ha portato la testa in DISPENSING ed e' entrata nello step 10.
+            # Pubblicarlo prima introduceva una race nell'emulatore: il backend
+            # ignorava correttamente quel fronte perche' ricevuto ancora in
+            # STANDBY/JAR_POSITIONING.
             circuit_task = asyncio.ensure_future(simulate_circuit_engagement())
 
             if 'failure' in sys.argv:
@@ -343,7 +354,13 @@ class MachineHeadMockup:
                 # la race tra l'ultimo circuito=0 e il ritorno a riposo senza
                 # cambiare la durata simulata totale (4 s per tubo + 1 s).
                 await circuit_task
-                await self.do_move(duration=1.0, tgt_level="STANDBY")
+                for cycle_step in (14, 17, 23):
+                    await self.update_status(params={"cycle_step": cycle_step})
+                await self._machine_sleep(1.0)
+                await self.update_status(params={
+                    "status_level": "STANDBY",
+                    "cycle_step": 0,
+                })
 
         elif msg_out_dict["command"] == "RESET":
 
