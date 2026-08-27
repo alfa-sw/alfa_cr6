@@ -36,10 +36,6 @@ g_settings = import_settings()
 
 WEBENGINEVIEW_GEOMETRY = (8, 28, 1904, 960)
 
-LOCAL_WEBENGINE_HOSTS = frozenset(("127.0.0.1", "localhost", "::1"))
-LOCAL_WEBENGINE_ZOOM_FACTOR = 1.15
-DEFAULT_WEBENGINE_ZOOM_FACTOR = 1.0
-
 SUSPEND_PAGE_WS_SCRIPT = """
     (function () {
         if (typeof window.alfaSuspendWS !== "function") { return false; }
@@ -319,8 +315,6 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         self.webengine_view.loadStarted.connect(self.__on_load_start)
         self.webengine_view.loadProgress.connect(self.__on_load_progress)
         self.webengine_view.loadFinished.connect(self.__on_load_finish)
-        self.webengine_view.urlChanged.connect(self._apply_zoom_for_url)
-        self._apply_zoom_for_url(self.webengine_view.url())
 
         if self.splitter is None:
             self._setup_devtools_splitter()
@@ -332,18 +326,6 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             self.webengine_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
 
         self.webengine_view.show()
-
-    @staticmethod
-    def _zoom_factor_for_url(url):
-        host = url.host().strip().lower()
-        if host in LOCAL_WEBENGINE_HOSTS:
-            return LOCAL_WEBENGINE_ZOOM_FACTOR
-        return DEFAULT_WEBENGINE_ZOOM_FACTOR
-
-    def _apply_zoom_for_url(self, url):
-        if self.webengine_view is not None:
-            self.webengine_view.setZoomFactor(
-                self._zoom_factor_for_url(url))
 
     def _warm_up_webengine_view(self):
         """Create the Chromium view early without loading application pages."""
