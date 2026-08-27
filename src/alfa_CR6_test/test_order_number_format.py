@@ -48,6 +48,11 @@ class OrderNumberFormatTest(unittest.TestCase):
 
         self.assertEqual(self._generate_for_july_27_2026(), 260727001000)
 
+    def test_future_standard_order_does_not_affect_current_day(self):
+        self._add_order(260728001000)
+
+        self.assertEqual(self._generate_for_july_27_2026(), 260727001000)
+
     def test_sequence_uses_only_standard_orders_from_same_day(self):
         self._add_order(260727001000)
         self._add_order(260727002000)
@@ -55,6 +60,13 @@ class OrderNumberFormatTest(unittest.TestCase):
         self._add_order(990727024600)
 
         self.assertEqual(self._generate_for_july_27_2026(), 260727003000)
+
+    def test_daily_sequence_exhaustion_raises_explicit_error(self):
+        self._add_order(260727999000)
+
+        with self.assertRaisesRegex(
+                RuntimeError, "daily order number sequence exhausted"):
+            self._generate_for_july_27_2026()
 
 
 if __name__ == "__main__":
