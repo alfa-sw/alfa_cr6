@@ -169,6 +169,19 @@ class TestValidateUpdates:
         result = SettingsManager._validate_updates({"MOVE_01_02_TIME_INTERVAL": 8.0})
         assert result["MOVE_01_02_TIME_INTERVAL"] == 8.0
 
+    @pytest.mark.parametrize("value", [7.0, 7.1, 8.1, 8.2, 8.5])
+    def test_accept_move_interval_decimal_steps(self, value):
+        result = SettingsManager._validate_updates({
+            "MOVE_01_02_TIME_INTERVAL": value,
+        })
+        assert result["MOVE_01_02_TIME_INTERVAL"] == value
+
+    def test_accept_move_interval_decimal_string(self):
+        result = SettingsManager._validate_updates({
+            "MOVE_01_02_TIME_INTERVAL": "8.2",
+        })
+        assert result["MOVE_01_02_TIME_INTERVAL"] == 8.2
+
     def test_valid_popup_refill(self):
         result = SettingsManager._validate_updates({"POPUP_REFILL_CHOICES": [500, 1000]})
         assert result["POPUP_REFILL_CHOICES"] == [500, 1000]
@@ -209,6 +222,12 @@ class TestValidateUpdates:
     def test_reject_move_interval_too_low(self):
         with pytest.raises(ValueError):
             SettingsManager._validate_updates({"MOVE_01_02_TIME_INTERVAL": 1.0})
+
+    def test_reject_move_interval_not_on_decimal_step(self):
+        with pytest.raises(ValueError):
+            SettingsManager._validate_updates({
+                "MOVE_01_02_TIME_INTERVAL": 8.25,
+            })
 
     def test_reject_popup_refill_too_few_items(self):
         with pytest.raises(ValueError):

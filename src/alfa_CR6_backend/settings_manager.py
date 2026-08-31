@@ -3,6 +3,7 @@
 import os
 import json
 import logging
+import math
 import sys
 import re
 import traceback
@@ -396,11 +397,32 @@ class SettingsManager:
         errors = []
         for key, val in updates.items():
             for err in validator.iter_errors({key: val}):
+                if (
+                    err.validator == 'multipleOf'
+                    and SettingsManager._is_multiple_with_tolerance(
+                        val, err.validator_value)
+                ):
+                    continue
                 spec = SettingsManager.SCHEMA['properties'].get(key, {})
                 ui_msg = spec.get('ui_error')
                 errors.append(ui_msg if ui_msg else f"{key}: {err.message}")
         if errors:
             raise ValueError('; '.join(errors))
+
+    @staticmethod
+    def _is_multiple_with_tolerance(value, step) -> bool:
+        """Return True when float noise is the only multipleOf mismatch."""
+        try:
+            ratio = float(value) / float(step)
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            return False
+
+        return math.isfinite(ratio) and math.isclose(
+            ratio,
+            round(ratio),
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
 
     @staticmethod
     def _validate_updates(updates: dict) -> dict:
