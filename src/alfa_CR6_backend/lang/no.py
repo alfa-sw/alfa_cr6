@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "MIKROBRYTER 2",
     "OUTPUT ROLLER PHOTOCELL": "FOTOCELLE FOR UTGANGSRULLE", 
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Kontroller at en liner er plassert i PPS",
     "STEP {} +": "TRINN {} +",
     "STEP {} -": "TRINN {} -",
     "Start  input roller": "Start inngangsrulle",
@@ -202,6 +203,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "bekrefte utskrift av etiketten<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "velg en krets for å skrive ut den tilsvarende etiketten.",
+    "LOW LVL PIGMENTS": "PIGMENTER MED LAVT NIVÅ",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "Hodet A oppdaget en boks for raskt. Fjern alle bokser fra inngangsrulle og fra HODE A!",
     "{} product(s) not dispensed:": "{} produkter ikke dosert:",

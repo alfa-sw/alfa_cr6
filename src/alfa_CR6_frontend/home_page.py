@@ -16,6 +16,7 @@ import logging
 import traceback
 import asyncio
 import json
+import time
 
 from PyQt5.QtCore import Qt, QTimer
 
@@ -23,13 +24,16 @@ from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
 from alfa_CR6_backend.globals import (import_settings, get_res, tr_, DEFAULT_DEBUG_PAGE_PWD)
-from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels
+from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels, async_dymo_print_low_pigment_labels
 
 from alfa_CR6_frontend.pages import BaseStackedPage
 from alfa_CR6_frontend.debug_page import simulate_read_barcode
 
 
 g_settings = import_settings()
+
+LINER_REMINDER_MESSAGE = "Please ensure a PPS liner is placed"
+
 
 class PrintException(Exception):
     def __init__(self, message, payload):
@@ -48,7 +52,7 @@ class PrintLabelHelper:
 
         try:
             ret = await async_dymo_print_pigment_labels(self.printables, fake=fake_print)
-            logging.debug(f"print_labels ret: {ret}")
+            logging.debug("print_labels ret: %s", ret)
 
             if ret['result'] != 'OK':
                 raise PrintException("Printing failed", ret)
@@ -76,6 +80,59 @@ class PrintLabelHelper:
                 message="Missing printables ...")
             return
 
+        t = self.print_labels()
+        asyncio.ensure_future(t)
+
+
+class LowPigmentsPrintHelper:
+
+    def __init__(self, parent=None):
+        self.parent = parent
+
+    @staticmethod
+    def collect_low_pigment_heads():
+        # All heads currently in 'Low Pigments' state, with their low pipes.
+        app = QApplication.instance()
+        per_head = []
+        for m in app.machine_head_dict.values():
+            if m and m.low_level_pipes:
+                per_head.append({'head_name': m.name, 'low_pipes': list(m.low_level_pipes)})
+        return per_head
+
+    async def print_labels(self):
+        fake_print = os.getenv("FAKE_DYMO_PRINT", False) in ["1", "true"]
+
+        per_head = self.collect_low_pigment_heads()
+        if not per_head:
+            # Defensive only: the reserve label is shown (hence clickable) just
+            # while a head has low_level_pipes, so reaching here with nothing to
+            # print would require all heads to clear between click and run.
+            logging.warning("print Low Pigments label: no head in low-level state, nothing to print")
+            return
+
+        try:
+            ret = await async_dymo_print_low_pigment_labels(per_head, fake=fake_print)
+            logging.debug("print_low_pigment_labels ret: %s", ret)
+
+            if ret['result'] != 'OK':
+                raise PrintException("Printing failed", ret)
+
+        except PrintException as pexc:
+            error_message = pexc.payload
+            logging.error(f"PrintException: {error_message}")
+            QApplication.instance().main_window.open_input_dialog(
+                icon_name="SP_MessageBoxCritical",
+                message=error_message,
+                content=None)
+            return
+
+        msg_ = tr_("OK")
+        QApplication.instance().main_window.open_input_dialog(
+            icon_name="SP_MessageBoxQuestion",
+            message=msg_,
+            content=None)
+
+    def run(self):
         t = self.print_labels()
         asyncio.ensure_future(t)
 
@@ -604,6 +661,13 @@ class HomePage(BaseStackedPage):
                 """QPushButton { background-color: #00FFFFFF; border: 0px;}"""
             )
 
+            # Prevent stray ENTER (e.g. trailing newline from a barcode gun whose
+            # device isn't grabbed by evdev) from "clicking" the focused action
+            # button — observed firing move_00_01 unintentionally.
+            b.setAutoDefault(False)
+            b.setDefault(False)
+            b.setFocusPolicy(Qt.NoFocus)
+
             if "recovery_btn" in b.objectName():
                 b.setStyleSheet(
                     """QPushButton { background-color: #00FFFFFF; color: #47AE4B; border: 2px solid #000000; font-size: 20px; text-align: center;}"""
@@ -704,13 +768,17 @@ class HomePage(BaseStackedPage):
 
     def on_service_btn_group_clicked(self, btn):
 
+        # timestamp del CLICK: misura la latenza reale click -> pagina caricata
+        # (passato a open_page, loggato in browser_page.__on_load_finish)
+        _clicked_at = time.monotonic()
         btn_name = btn.objectName()
 
         try:
-            service_page_urls = ["http://127.0.0.1:8080/service_page/", ]
+            service_page_query = "?light_service_page=1"
+            service_page_urls = [f"http://127.0.0.1:8080/service_page/{service_page_query}", ]
             for i in QApplication.instance().settings.MACHINE_HEAD_IPADD_PORTS_LIST:
                 if i:
-                    url = "http://{}:{}/service_page/".format(i[0], i[2])
+                    url = "http://{}:{}/service_page/{}".format(i[0], i[2], service_page_query)
                 else:
                     url = None
                 service_page_urls.append(url)
@@ -729,9 +797,9 @@ class HomePage(BaseStackedPage):
             map_ = dict(zip(service_btns, service_page_urls))
 
             head_index = service_btns.index(btn) - 1
-            logging.debug(f"btn_name:{btn_name}, map_[btn]:{map_[btn]}, map_:{map_}, head_index:{head_index}")
+            logging.debug("btn_name:%s, map_[btn]:%s, map_:%s, head_index:%s", btn_name, map_[btn], map_, head_index)
 
-            self.main_window.browser_page.open_page(map_[btn], head_index=head_index)
+            self.main_window.browser_page.open_page(map_[btn], head_index=head_index, requested_at=_clicked_at)
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
@@ -741,11 +809,7 @@ class HomePage(BaseStackedPage):
         btn_name = btn.objectName()
         try:
             if "feed" in btn_name:
-                if hasattr(g_settings, 'SIMULATE_READ_BARCODE') and getattr(g_settings, 'SIMULATE_READ_BARCODE'):
-                    allowed_jar_statuses = g_settings.SIMULATE_READ_BARCODE.get("allowed_jar_statuses", ("NEW", "DONE"))
-                    simulate_read_barcode(allowed_jar_statuses)
-                else:
-                    QApplication.instance().run_a_coroutine_helper("move_00_01")
+                self._on_feed_jar_clicked()
 
             elif "deliver" in btn_name:
                 QApplication.instance().run_a_coroutine_helper("move_12_00")
@@ -790,6 +854,32 @@ class HomePage(BaseStackedPage):
 
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
+
+    def _on_feed_jar_clicked(self):
+        self._start_feed_jar()
+
+        if getattr(g_settings, 'REMINDER_PPS_LINER', False):
+            self.main_window.open_alert_dialog(
+                (),
+                fmt=LINER_REMINDER_MESSAGE,
+                title="REMINDER",
+                show_cancel_btn=False,
+                show_ok_btn=True,
+                image_name="reminder_pps_liner.png",
+                ok_only=True,
+                width_scale=1.5,
+                bold_message=True,
+            )
+
+    @staticmethod
+    def _start_feed_jar():
+        if (hasattr(g_settings, 'SIMULATE_READ_BARCODE')
+                and getattr(g_settings, 'SIMULATE_READ_BARCODE')):
+            allowed_jar_statuses = g_settings.SIMULATE_READ_BARCODE.get(
+                "allowed_jar_statuses", ("NEW", "DONE"))
+            simulate_read_barcode(allowed_jar_statuses)
+        else:
+            QApplication.instance().run_a_coroutine_helper("move_00_01")
 
     def update_expired_products(self, head_index):
 
@@ -952,8 +1042,27 @@ class HomePage(BaseStackedPage):
 
     def update_jar_pixmaps(self):
 
+        runners = QApplication.instance().get_jar_runners()
+
+        # Indici costruiti UNA sola volta per aggiornamento, cosi'
+        # __set_pixmap_by_photocells fa lookup O(1) invece di ricostruire la lista
+        # dei jar e scandire le teste per ogni etichetta:
+        #   position_to_jar: posizione -> jar in lavorazione in quella posizione
+        #   letter_to_head : lettera testa ("A".."F") -> oggetto MachineHead
+        position_to_jar = {}
+        for j in runners.values():
+            jar = j.get('jar')
+            if jar is not None and jar.position:
+                # se due jar avessero la stessa posizione, vince il primo
+                position_to_jar.setdefault(jar.position, jar)
+        letter_to_head = {
+            m.name[0]: m
+            for m in QApplication.instance().machine_head_dict.values()
+            if m
+        }
+
         list_ = []
-        for k, j in QApplication.instance().get_jar_runners().items():
+        for k, j in runners.items():
             if j['jar'].position:
                 if j['jar'].status == 'ERROR':
                     _color = "#990000"
@@ -968,7 +1077,9 @@ class HomePage(BaseStackedPage):
             adjacent_positions = entry[3] if len(entry) > 3 else None
             if lbl and lbl is not self._blink_step_label:
                 self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position,
-                                                adjacent_positions=adjacent_positions)
+                                                adjacent_positions=adjacent_positions,
+                                                position_to_jar=position_to_jar,
+                                                letter_to_head=letter_to_head)
 
     def start_step_blink(self, step_key):
         lbl = getattr(self, f"STEP_{step_key}_label", None)
@@ -983,6 +1094,10 @@ class HomePage(BaseStackedPage):
         if lbl:
             lbl.setStyleSheet("QLabel {}")
             lbl.setText("")
+            # Il lampeggio ha impostato lo stile direttamente, scavalcando la
+            # cache visuale: azzera la chiave-cache cosi' la label viene
+            # ridisegnata al prossimo aggiornamento (altrimenti verrebbe saltata).
+            lbl._alfa_visual_key = None
 
     def _do_blink(self):
         if not self._blink_step_label:
@@ -998,12 +1113,33 @@ class HomePage(BaseStackedPage):
         QTimer.singleShot(500, self._do_blink)
 
     @staticmethod
-    def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
-            lbl, head_letters_bit_names, position=None, icon=None, adjacent_positions=None):
+    def _apply_label_visual(lbl, key, apply_fn):
+        # Applica stile/immagine a una label solo se sono cambiati rispetto
+        # all'ultima volta. 'key' descrive lo stato visuale desiderato; se coincide
+        # con quello gia' applicato (memorizzato in lbl._alfa_visual_key) non si fa
+        # nulla, evitando setStyleSheet/setText/setPixmap ripetuti e costosi.
+        # 'apply_fn' deve produrre esattamente il visual descritto da 'key'.
+        if getattr(lbl, "_alfa_visual_key", None) == key:
+            return
+        apply_fn()
+        lbl._alfa_visual_key = key
 
+    @staticmethod
+    def __set_pixmap_by_photocells(  # pylint: disable=too-many-locals
+            lbl, head_letters_bit_names, position=None, icon=None, adjacent_positions=None,
+            position_to_jar=None, letter_to_head=None):
+
+        # Se position_to_jar/letter_to_head sono forniti (li passa
+        # update_jar_pixmaps, che li costruisce una volta sola), i lookup sono
+        # O(1). I chiamanti che non li passano (es. i lifter in
+        # update_service_btns) usano i metodi originali: poche label, costo
+        # trascurabile.
         if lbl:
             def _get_bit(head_letter, bit_name):
-                m = QApplication.instance().get_machine_head_by_letter(head_letter)
+                if letter_to_head is not None:
+                    m = letter_to_head.get(head_letter)
+                else:
+                    m = QApplication.instance().get_machine_head_by_letter(head_letter)
                 ret = m.jar_photocells_status.get(bit_name) if m else None
                 return ret
 
@@ -1024,34 +1160,51 @@ class HomePage(BaseStackedPage):
                         hide = True
 
                     if hide:
-                        lbl.setStyleSheet("QLabel {}")
-                        lbl.setText("")
+                        HomePage._apply_label_visual(
+                            lbl, ("hidden",),
+                            lambda: (lbl.setStyleSheet("QLabel {}"), lbl.setText("")))
                     else:
                         _text = ""
                         _status = ""
-                        for j in QApplication.instance().get_jar_runners().values():
-                            pos = j["jar"].position
-                            if pos == position:
-                                _status = j["jar"].status
-                                _bc = str(j["jar"].barcode)
+                        if position_to_jar is not None:
+                            jar = position_to_jar.get(position)
+                            if jar is not None:
+                                _status = jar.status
+                                _bc = str(jar.barcode)
                                 _text = _bc[-6:-3] + "\n" + _bc[-3:]
-                                break
+                        else:
+                            for j in QApplication.instance().get_jar_runners().values():
+                                pos = j["jar"].position
+                                if pos == position:
+                                    _status = j["jar"].status
+                                    _bc = str(j["jar"].barcode)
+                                    _text = _bc[-6:-3] + "\n" + _bc[-3:]
+                                    break
 
                         if _status == "ERROR":
-                            _img_url = get_res("IMAGE", "jar-red.png")
+                            _img_name = "jar-red.png"
+                        elif _text:
+                            _img_name = "jar-green.png"
                         else:
-                            if _text:
-                                _img_url = get_res("IMAGE", "jar-green.png")
-                            else:
-                                _img_url = get_res("IMAGE", "jar-gray.png")
+                            _img_name = "jar-gray.png"
 
-                        lbl.setStyleSheet(
-                            'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
-                        lbl.setText(_text)
+                        def _apply_jar():
+                            _img_url = get_res("IMAGE", _img_name)
+                            lbl.setStyleSheet(
+                                'color:#000000; border-image:url("{0}"); font-size: 15px'.format(_img_url))
+                            lbl.setText(_text)
+
+                        # La chiave usa il NOME dell'immagine (non il path risolto):
+                        # cosi' quando nulla e' cambiato non si chiama nemmeno get_res().
+                        HomePage._apply_label_visual(lbl, ("jar", _img_name, _text), _apply_jar)
                 else:
-                    size = [0, 0] if false_condition else [32, 32]
-                    pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
-                    lbl.setPixmap(pixmap)
+                    size = (0, 0) if false_condition else (32, 32)
+
+                    def _apply_icon():
+                        pixmap = icon.scaled(*size, Qt.KeepAspectRatio)
+                        lbl.setPixmap(pixmap)
+
+                    HomePage._apply_label_visual(lbl, ("icon", id(icon), size), _apply_icon)
 
                 lbl.show()
 
@@ -1135,7 +1288,8 @@ class HomePage(BaseStackedPage):
         if m.low_level_pipes:
             QApplication.instance().main_window.open_alert_dialog(
                 (m.name, m.low_level_pipes),
-                fmt="{} Please, Check Pipe Levels: low_level_pipes:{}"
+                fmt="{} Please, Check Pipe Levels: low_level_pipes:{}",
+                print_callback=lambda: LowPigmentsPrintHelper().run(),
             )
 
     @staticmethod
@@ -1205,7 +1359,7 @@ class HomePage(BaseStackedPage):
                 printables.pop("Print All")
                 sorted_printables = {k: printables[k] for k in sorted(printables)}
                 labels = list(sorted_printables.values())
-            logging.debug(f"labels -> {labels}")
+            logging.debug("labels -> %s", labels)
 
             print_helper = PrintLabelHelper(parent=self, printables=labels)
             print_helper.run()

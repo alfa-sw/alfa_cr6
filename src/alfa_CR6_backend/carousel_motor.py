@@ -405,14 +405,24 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if r:
             # ~ self.update_jar_position(jar=jar, pos=f"{letter_from}_{letter_to}")
 
-            await FROM.crx_outputs_management(0, 1)
-            await TO.crx_outputs_management(0, 2)
-            # ~ r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
-            r = await TO.wait_for_jar_photocells_status(
-                "JAR_DISPENSING_POSITION_PHOTOCELL", on=True,
-                timeout=45, show_alert=show_alert)
-            await FROM.crx_outputs_management(0, 0)
-            await TO.crx_outputs_management(0, 0)
+            try:
+                source_started = await FROM.crx_outputs_management(0, 1)
+                destination_started = False
+                if source_started:
+                    destination_started = await TO.crx_outputs_management(0, 2)
+
+                if source_started and destination_started:
+                    # ~ r = await TO.wait_for_jar_photocells_status("JAR_DISPENSING_POSITION_PHOTOCELL", on=True, timeout=27)
+                    r = await TO.wait_for_jar_photocells_status(
+                        "JAR_DISPENSING_POSITION_PHOTOCELL", on=True,
+                        timeout=45, show_alert=show_alert)
+                else:
+                    r = False
+            finally:
+                # Un timeout di protocollo non dice se il controller abbia
+                # ricevuto il comando: arresta quindi entrambe le uscite.
+                await FROM.crx_outputs_management(0, 0)
+                await TO.crx_outputs_management(0, 0)
             if r:
                 self.update_jar_position(jar=jar, machine_head=TO, pos=letter_to)
 
@@ -472,23 +482,28 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         async def _move_can_to_A():
 
-            self.busy_head_A = True
-
-            if not self.positions_already_engaged(["IN_A", ]):
-                self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
-                await A.crx_outputs_management(1, 2)
-                await A.crx_outputs_management(0, 2)
-                r = await A.wait_for_jar_photocells_status(
-                    "JAR_DISPENSING_POSITION_PHOTOCELL",
-                    on=True, timeout=13.1, show_alert=False)
-                await A.crx_outputs_management(1, 0)
-                await A.crx_outputs_management(0, 0)
-            else:
-                await A.crx_outputs_management(0, 2)
-                r = await A.wait_for_jar_photocells_status(
-                    "JAR_DISPENSING_POSITION_PHOTOCELL",
-                    on=True, timeout=13.2, show_alert=False)
-                await A.crx_outputs_management(0, 0)
+            try:
+                if not self.positions_already_engaged(["IN_A", ]):
+                    self.update_jar_position(jar=jar, machine_head=A, pos="IN_A")
+                    await A.crx_outputs_management(1, 2)
+                    await A.crx_outputs_management(0, 2)
+                    r = await A.wait_for_jar_photocells_status(
+                        "JAR_DISPENSING_POSITION_PHOTOCELL",
+                        on=True, timeout=13.1, show_alert=False)
+                else:
+                    await A.crx_outputs_management(0, 2)
+                    r = await A.wait_for_jar_photocells_status(
+                        "JAR_DISPENSING_POSITION_PHOTOCELL",
+                        on=True, timeout=13.2, show_alert=False)
+            finally:
+                # Una cancellazione puo' arrivare dopo che il controller ha
+                # ricevuto uno start ma prima della relativa risposta. Ferma
+                # quindi entrambe le uscite anche se non sappiamo quale start
+                # sia stato effettivamente applicato.
+                try:
+                    await A.crx_outputs_management(1, 0)
+                finally:
+                    await A.crx_outputs_management(0, 0)
 
             if r:
                 self.update_jar_position(jar=jar, machine_head=A, status="PROGRESS", pos="A")
@@ -504,43 +519,69 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         r = await self.wait_for_dispense_position_available(jar, "A", extra_check=condition)
 
         if r:
-            t0 = time.time()
-            r = await _move_can_to_A()
-            dt = time.time() - t0
+            self.busy_head_A = True
+            busy_head_a_outcome = "running"
+            logging.warning(
+                "busy_head_A=True: IN -> A started; barcode=%s, "
+                "jar_position=%s, machine_variant=%s",
+                getattr(jar, "barcode", None),
+                getattr(jar, "position", None),
+                self.machine_variant,
+            )
+            try:
+                t0 = time.time()
+                r = await _move_can_to_A()
+                dt = time.time() - t0
+                busy_head_a_outcome = "completed" if r else "sensor_timeout_or_move_failed"
 
-            logging.warning(f"j:{jar}, dt:{dt}, self.double_can_alert:{self.double_can_alert}, self.timer_01_02:{self.timer_01_02}")
+                logging.warning(f"j:{jar}, dt:{dt}, self.double_can_alert:{self.double_can_alert}, self.timer_01_02:{self.timer_01_02}")
 
-            if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL") and time_interval_check:
-                timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
+                if hasattr(self.settings, "MOVE_01_02_TIME_INTERVAL") and time_interval_check:
+                    timeout_ = float(self.settings.MOVE_01_02_TIME_INTERVAL)
 
-                if dt < timeout_ or self.double_can_alert:
-                    msg_ = 'The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!'
-                    while True:
-                        await self.wait_for_carousel_not_frozen(
-                            True,
-                            message_args=(),
-                            message_fmt=msg_,
-                            visibility=2,
-                            show_cancel_btn=False,
-                            error_head=A
-                        )
-                        if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
-                            break
-                    self.double_can_alert = False
-                    # ~ r = await _move_can_to_A()
-                    await self.restore_machine_helper.async_remove_jar_data(jar.barcode)
-                    asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
-                    if not A.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False):
-                        # input roller already empty: DARK->LIGHT won't fire, re-arm manually
-                        self.ready_to_read_a_barcode = True
-                    # else: input roller occupied - hardware DARK->LIGHT will re-arm when operator clears it
-                    if getattr(self, 'id_bc_shuttle', None) and self.id_bc_shuttle != 'DISABLED':
-                        logging.warning("move_01_02 double_can: resetting shuttle barcode state")
-                        self.shuttle_size_from_barcode_scanner = False
-                        self._shuttle_size_ready_evt.clear()
-                        self.shuttle_bc_ready_to_read_a_barcode = True
-
-            self.busy_head_A = False
+                    if dt < timeout_ or self.double_can_alert:
+                        busy_head_a_outcome = "double_can_operator_cleanup"
+                        msg_ = 'The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!'
+                        while True:
+                            await self.wait_for_carousel_not_frozen(
+                                True,
+                                message_args=(),
+                                message_fmt=msg_,
+                                visibility=2,
+                                show_cancel_btn=False,
+                                error_head=A
+                            )
+                            if not A.jar_photocells_status.get('JAR_DISPENSING_POSITION_PHOTOCELL', True):
+                                break
+                        self.double_can_alert = False
+                        # ~ r = await _move_can_to_A()
+                        await self.restore_machine_helper.async_remove_jar_data(jar.barcode)
+                        asyncio.get_event_loop().call_later(.001, self.delete_entering_jar)
+                        if not A.jar_photocells_status.get('JAR_INPUT_ROLLER_PHOTOCELL', False):
+                            # input roller already empty: DARK->LIGHT won't fire, re-arm manually
+                            self.ready_to_read_a_barcode = True
+                        # else: input roller occupied - hardware DARK->LIGHT will re-arm when operator clears it
+                        if getattr(self, 'id_bc_shuttle', None) and self.id_bc_shuttle != 'DISABLED':
+                            logging.warning("move_01_02 double_can: resetting shuttle barcode state")
+                            self.shuttle_size_from_barcode_scanner = False
+                            self._shuttle_size_ready_evt.clear()
+                            self.shuttle_bc_ready_to_read_a_barcode = True
+            except asyncio.CancelledError:
+                busy_head_a_outcome = "cancelled"
+                raise
+            except Exception as exc:
+                busy_head_a_outcome = "error:{}".format(type(exc).__name__)
+                raise
+            finally:
+                self.busy_head_A = False
+                logging.warning(
+                    "busy_head_A=False: IN -> A released; outcome=%s, "
+                    "barcode=%s, jar_position=%s, machine_variant=%s",
+                    busy_head_a_outcome,
+                    getattr(jar, "barcode", None),
+                    getattr(jar, "position", None),
+                    self.machine_variant,
+                )
 
         await asyncio.sleep(0.2)
         return r
@@ -839,31 +880,33 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 json_properties = json.loads(jar.json_properties)
                 insufficient_pigments = list(json_properties.get("insufficient_pigments", {}).keys())
 
-                if insufficient_pigments:
-                    m_args = (jar.barcode, insufficient_pigments, cntr, nof_retry, )
-                    msg_ = ['Missing material for barcode {}.\n please refill pigments:{}. ({}/{})']
-                    if cntr == nof_retry:
-                        msg_.append("\nOtherwise the can's status will be marked as ERROR.")
-                    logging.warning("".join(msg_))
-                    _refill_led_token = ("dispense_step_refill", jar.barcode, m.name, cntr)
-                    _refill_led_heads = [h for h in self.machine_head_dict.values() if h]
-                    try:
-                        self.request_attention_leds(
-                            _refill_led_heads,
-                            _refill_led_token,
-                            reason=f"missing material for barcode {jar.barcode}",
-                        )
-                        r = await self.wait_for_carousel_not_frozen(
-                            True,
-                            message_args=m_args,
-                            message_fmt=msg_
-                        )
-                    finally:
-                        self.release_attention_leds(
-                            _refill_led_heads,
-                            _refill_led_token,
-                            reason=f"missing material resolved for barcode {jar.barcode}",
-                        )
+                if not insufficient_pigments:
+                    break
+
+                m_args = (jar.barcode, insufficient_pigments, cntr, nof_retry, )
+                msg_ = ['Missing material for barcode {}.\n please refill pigments:{}. ({}/{})']
+                if cntr == nof_retry:
+                    msg_.append("\nOtherwise the can's status will be marked as ERROR.")
+                logging.warning("".join(msg_))
+                _refill_led_token = ("dispense_step_refill", jar.barcode, m.name, cntr)
+                _refill_led_heads = [h for h in self.machine_head_dict.values() if h]
+                try:
+                    self.request_attention_leds(
+                        _refill_led_heads,
+                        _refill_led_token,
+                        reason=f"missing material for barcode {jar.barcode}",
+                    )
+                    r = await self.wait_for_carousel_not_frozen(
+                        True,
+                        message_args=m_args,
+                        message_fmt=msg_
+                    )
+                finally:
+                    self.release_attention_leds(
+                        _refill_led_heads,
+                        _refill_led_token,
+                        reason=f"missing material resolved for barcode {jar.barcode}",
+                    )
 
             await m.update_tintometer_data()
             self.update_jar_properties(jar)
@@ -882,8 +925,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 r = True
             else:
                 r = await m.do_dispense(jar, self.restore_machine_helper)
+                # The device updates pipe levels while dispensing. Refresh the
+                # CR6-side cache afterwards so low-level JSON files and the
+                # reserve icon reflect the quantities just dispensed.
+                await m.update_tintometer_data()
                 logging.warning(f"{m.name}, j:{jar}.")
-                logging.debug(f"jar.json_properties:{jar.json_properties}.")
+                logging.debug("jar.json_properties:%s.", jar.json_properties)
 
         return r
 
@@ -1194,14 +1241,15 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             return
 
         jars_to_restore = await self.restore_machine_helper.async_read_data()
-        logging.debug(f'jars_to_restore --> {dict(jars_to_restore)}')
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.debug('jars_to_restore --> %s', dict(jars_to_restore))
 
         if self.carousel_frozen:
             self.freeze_carousel(False)
 
         for j_code, jv in jars_to_restore.items():
             logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')
-            logging.debug(f"jv: {jv}")
+            logging.debug("jv: %s", jv)
             self.running_recovery_mode = True
 
             try:
@@ -1217,16 +1265,44 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 head_letter = heads_map[last_jar_known_pos]
                 current_head = self.get_machine_head_by_letter(head_letter)
 
-                def skip_condition(jv, _jar):
-                    res = False
-                    if jv.get("dispensation") in ("ongoing", "dispensation_failure"):
-                        _jar.status = "ERROR"
-                        _jar.description = "Uncompleted Jar Order from previous machine shutdown"
-                        self.db_session.commit()
-                        res = True
-                    return res
+                def mark_recovery_error(_jar, description):
+                    _jar.status = "ERROR"
+                    _jar.description = description
+                    _jar.order.update_status()
+                    self.db_session.commit()
 
-                def determine_recovery_actions(
+                def evaluate_dispense_recovery(jv, actions, _jar):
+                    dispensation = jv.get("dispensation")
+                    first_action_is_dispense = bool(
+                        actions and actions[0] == "dispense_step"
+                    )
+                    ambiguous_unmarked_dispense = (
+                        dispensation is None and first_action_is_dispense
+                    )
+                    incomplete_or_unknown = dispensation not in (None, "done")
+
+                    if ambiguous_unmarked_dispense or incomplete_or_unknown:
+                        mark_recovery_error(
+                            _jar,
+                            "Uncompleted or ambiguous Jar Order from previous "
+                            "machine shutdown"
+                        )
+
+                    # Si salta una sola azione soltanto quando essa e'
+                    # effettivamente la dispensazione della posizione
+                    # persistita. Se la prima azione e' un movimento, il jar
+                    # ERROR puo' ancora essere espulso in modo controllato.
+                    return first_action_is_dispense and (
+                        dispensation == "done"
+                        or ambiguous_unmarked_dispense
+                        or incomplete_or_unknown
+                    )
+
+                skip_current_dispense = evaluate_dispense_recovery(
+                    jv, jar_recovery_actions, _jar
+                )
+
+                async def determine_recovery_actions(
                         jv, jar_recovery_actions, current_head, _jar,
                         jar_recovery_position=None,
                         curr_position_senson="JAR_DISPENSING_POSITION_PHOTOCELL",
@@ -1242,7 +1318,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         if curr_head_jar_sts is not None:
                             break
                         else:
-                            time.sleep(delay)
+                            await asyncio.sleep(delay)
 
                     if curr_head_jar_sts is None:
                         raise RuntimeError("[Recovery Mode] Timeout retrieving machine status! Retry again...")
@@ -1260,11 +1336,26 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             next_position_sensor
                         )
 
-                    if curr_head_jar_engagged_photocell:
+                    # Il confronto e' valido soltanto fra due sensori che
+                    # rilevano realmente il jar. I finecorsa dei lifter
+                    # possono essere attivi insieme a un sensore jar senza
+                    # rappresentare una doppia occupazione.
+                    next_sensor_tracks_jar = (
+                        next_position_sensor
+                        and next_position_sensor.startswith("JAR_")
+                    )
+                    if next_sensor_tracks_jar:
                         if (
-                            skip_condition(jv, _jar)
-                            or jv.get("dispensation") == "done"
-                        ):
+                                curr_head_jar_engagged_photocell
+                                and next_photocell_status):
+                            message = (
+                                "[Recovery Mode] Ambiguous jar position: "
+                                "both current and next sensors are occupied"
+                            )
+                            mark_recovery_error(_jar, message)
+                            raise RuntimeError(message)
+                    if curr_head_jar_engagged_photocell:
+                        if skip_current_dispense:
                             return jar_recovery_actions[1:], current_head.name
 
                         # special checks
@@ -1371,18 +1462,19 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     )
                 }
 
-                jar_recovery_actions, deduced_position = determine_actions_map[last_jar_known_pos](jv, jar_recovery_actions, current_head, _jar)
+                jar_recovery_actions, deduced_position = await determine_actions_map[last_jar_known_pos](
+                    jv, jar_recovery_actions, current_head, _jar
+                )
 
                 logging.warning(f"jar_recovery_actions --> {jar_recovery_actions}")
                 
                 _task = asyncio.create_task(
                     self.run_recovery_actions(j_code, _jar, jar_recovery_actions, parametri_movimenti, deduced_position)
                 )
-                # __jar_runners attributo 'name mangled'
-                self._BaseApplication__jar_runners[j_code] = {
+                self._register_jar_runner(j_code, {
                     "jar": _jar,
                     "freeze": False,
-                    "task": _task}
+                    "task": _task})
 
                 await _task
 
@@ -1436,7 +1528,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 jar_dispensation_info = data.get(j_code, {}).get("dispensation", None)
                 jar_last_pos = data.get(j_code, {}).get('pos')
                 pos_ = deduced_position[0] if count == 0 else jar_last_pos
-                logging.debug(f"jar infos -> dispensation: {jar_dispensation_info} - pos: {pos_}")
+                logging.debug("jar infos -> dispensation: %s - pos: %s", jar_dispensation_info, pos_)
                 carousel_action = partial(self.dispense_step, pos_)
 
             _src_letter = self.MOVE_SOURCE_HEAD_MAP.get(r_ac)
@@ -1462,7 +1554,13 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             error_head=_error_head
                         )
                     else:
-                        if "move_11_12" in r_ac:
+                        # Ogni lista di recovery e' un suffisso del percorso
+                        # completo e termina con l'uscita fisica. CR4/CR6
+                        # arrivano qui tramite move_11_12; CRX60/80 terminano
+                        # invece con move_04_05/move_05_06. Limitarsi al nome
+                        # classico lasciava quindi in running_jars.json record
+                        # ormai DONE con posizione "_" sulle varianti CRX.
+                        if count == len(jar_recovery_actions) - 1:
                             await self.restore_machine_helper.async_remove_jar_data(j_code)
                             event_args = {
                                 "name": "MACHINE RECOVERY",

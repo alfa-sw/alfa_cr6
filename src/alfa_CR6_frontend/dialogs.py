@@ -10,6 +10,7 @@
 # pylint: disable=logging-fstring-interpolation, consider-using-f-string
 
 import os
+import html
 import logging
 import json
 import time
@@ -23,7 +24,7 @@ from functools import partial
 
 from PyQt5.uic import loadUi
 from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
-    Qt, QSize, QItemSelectionModel)
+    Qt, QSize, QItemSelectionModel, QTimer)
 
 from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
@@ -44,10 +45,16 @@ from PyQt5.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QLayout,
+    QSpacerItem,
 )
 
 from alfa_CR6_backend.models import Order, Jar
 from alfa_CR6_backend.dymo_printer import dymo_print_jar, dymo_print_package_label, async_dymo_print_jar, async_dymo_print_jars, async_dymo_print_package_label
+from alfa_CR6_backend.package_label import (
+    ShuttleBarcodeLabelError,
+    get_shuttle_barcode_label_info_text,
+    get_shuttle_barcode_label_text,
+)
 
 from alfa_CR6_backend.globals import get_res, tr_, import_settings
 
@@ -55,10 +62,11 @@ from alfa_CR6_backend.globals import get_res, tr_, import_settings
 class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attributes
 
     def enable_buttons(self, flag_ok, flag_esc, flag_hp=True):
-        for i, b in enumerate(self.buttons()):
-            if i == 0:
+        for b in self.buttons():
+            standard_button = self.standardButton(b)
+            if standard_button == QMessageBox.Cancel:
                 b.setEnabled(flag_esc)
-            elif i == 1 and len(self.buttons()) == 3:
+            elif standard_button == QMessageBox.Help:
                 b.setEnabled(flag_hp)
             else:
                 b.setEnabled(flag_ok)
@@ -74,13 +82,31 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
     def __init__(
             self, msg="", title="", parent=None, ok_callback=None,
-            ok_callback_args=None, hp_callback=None
+            ok_callback_args=None, hp_callback=None, print_callback=None,
+            auto_delete=True, cancel_callback=None, show_ok_btn=True,
+            image_name=None, ok_only=False, width_scale=None,
+            bold_message=False,
     ):   # pylint: disable=too-many-arguments
         super().__init__(parent=parent)
+        # NB: deliberately NO WA_DeleteOnClose here. It would conflict with
+        # the `_block_close` mechanism used during the Info/troubleshooting
+        # flow (nested exec_): Qt emits a synthetic Close/deferred-delete on
+        # the parent dialog when the nested modal exits, which would destroy
+        # the modal while the user is still expected to see it. Instead we
+        # schedule deleteLater explicitly when the user presses OK/Cancel
+        # below (see _cleanup_on_close_button).
+        #
+        # auto_delete=False opts out of that deleteLater entirely: it is for
+        # long-lived boxes that the caller caches and reuses across show()
+        # cycles (e.g. BaseApplication.__modal_freeze_msgbox). The caller
+        # then owns the lifecycle.
 
         self.ok_callback = ok_callback
         self.ok_callback_args = ok_callback_args
         self.hp_callback = hp_callback
+        self.print_callback = print_callback
+        self.cancel_callback = cancel_callback
+        self.print_button = None
         self._block_close = False
 
         self.help_icon = QPixmap(get_res("IMAGE", "help.png"))
@@ -104,7 +130,11 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         self.setWindowModality(2)
 
-        if self.hp_callback:
+        if ok_only:
+            self.setStandardButtons(QMessageBox.Ok)
+        elif not show_ok_btn:
+            self.setStandardButtons(QMessageBox.Cancel)
+        elif self.hp_callback:
             self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Help | QMessageBox.Ok)
         else:
             self.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
@@ -112,12 +142,13 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         self.resize(800, 400)
 
-        for i, b in enumerate(self.buttons()):
-            if i == 0:
+        for b in self.buttons():
+            standard_button = self.standardButton(b)
+            if standard_button == QMessageBox.Cancel:
                 b.setObjectName('esc')
                 b.setText(tr_(' Cancel '))
                 icon_ = self.parent().style().standardIcon(getattr(QStyle, "SP_MessageBoxCritical"))
-            elif i == 1 and len(self.buttons()) == 3:
+            elif standard_button == QMessageBox.Help:
                 b.setObjectName('help')
                 b.setText(tr_(' Info '))
                 icon_ = QIcon(self.help_icon)
@@ -130,7 +161,29 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
             b.setIcon(icon_)
             b.resize(300, 80)
 
-        if self.ok_callback or self.hp_callback:
+        # Optional extra "Print" button. Added AFTER the index-based styling
+        # loop above so it does not perturb the Cancel/Info/OK naming logic.
+        # Gated behind print_callback => no behaviour change for existing callers.
+        if self.print_callback:
+            self.print_button = self.addButton(tr_(' Print '), QMessageBox.ActionRole)
+            self.print_button.setObjectName('print')
+            self.print_button.setIcon(QIcon(QPixmap(get_res("IMAGE", "barcode_C128.png"))))
+            self.print_button.setStyleSheet("""QWidget {font-size: 48px; font-family:Monospace;}""")
+            self.print_button.resize(300, 80)
+
+        # Schedule deleteLater when the dialog is closed via OK/Cancel so the
+        # C++ object does not leak as a child of MainWindow.
+        # Use a 0-ms QTimer so the deletion happens after QMessageBox has
+        # finished its own done() handling.
+        # Skipped when auto_delete=False (cached, reusable boxes): deleting
+        # those on the first click leaves the caller with a dead sip wrapper.
+        if auto_delete:
+            def _cleanup_on_close_button(btn):
+                if "help" not in btn.objectName().lower():
+                    QTimer.singleShot(0, self.deleteLater)
+            self.buttonClicked.connect(_cleanup_on_close_button)
+
+        if self.ok_callback or self.hp_callback or self.print_callback or self.cancel_callback:
             def on_button_clicked(btn):
                 btn_name = btn.objectName().lower()
                 logging.warning(f"btn_name:{btn_name}, btn:{btn}, btn.text():{btn.text()}")
@@ -138,6 +191,21 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 if "help" not in btn_name:
                     # Non-Info button: allow the dialog to close normally.
                     self._block_close = False
+
+                if self.print_callback and "print" in btn_name:
+                    try:
+                        self.print_callback()
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(traceback.format_exc())
+
+                if self.cancel_callback and "esc" in btn_name:
+                    # il Cancel e' comunque una presa visione dell'operatore:
+                    # chi apre il dialog puo' agganciarci una reazione (es.
+                    # silenziare la notifica sonora refill lasciando il freeze)
+                    try:
+                        self.cancel_callback()
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(traceback.format_exc())
 
                 if self.ok_callback and "ok" in btn_name:
                     if getattr(self, 'executing_callback', False):
@@ -150,6 +218,11 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
                 if self.hp_callback and "help" in btn_name:
                     # Block the dialog from closing while the troubleshooting
                     # browser is open. setVisible() override honours the flag.
+                    # NB: _block_close is left True after hp_callback returns
+                    # so any deferred setVisible(False) emitted by Qt while
+                    # tearing down the nested exec_() does not hide this
+                    # dialog. It will be reset to False when the user finally
+                    # clicks OK/Cancel (handled above).
                     self._block_close = True
                     try:
                         self.hp_callback()
@@ -160,12 +233,44 @@ class ModalMessageBox(QMessageBox):  # pylint:disable=too-many-instance-attribut
 
         # ~ t = time.asctime()
         t = time.strftime("%Y-%m-%d %H:%M:%S (%Z)")
-        msg = "[{}]: {}\n\n{}\n\n".format(t, title, msg)
+        if bold_message:
+            msg = "[{}]: {}<br><br><b>{}</b><br><br>".format(
+                t, html.escape(title), html.escape(msg),
+            )
+            self.setTextFormat(Qt.RichText)
+        else:
+            msg = "[{}]: {}\n\n{}\n\n".format(t, title, msg)
 
-        self.setIcon(QMessageBox.Information)
+        if image_name:
+            image = QPixmap(get_res("IMAGE", image_name))
+            if image.isNull():
+                logging.warning("Unable to load dialog image: %s", image_name)
+                self.setIcon(QMessageBox.Information)
+            else:
+                self.setIconPixmap(image.scaled(
+                    QSize(300, 360),
+                    Qt.KeepAspectRatio,
+                    Qt.SmoothTransformation,
+                ))
+        else:
+            self.setIcon(QMessageBox.Information)
         self.setText(msg)
         self.setWindowTitle(title)
         self.show()
+
+        if width_scale:
+            desired_width = round(self.width() * width_scale)
+            margins = self.layout().contentsMargins()
+            spacer_width = desired_width - margins.left() - margins.right()
+            self.layout().addItem(
+                QSpacerItem(
+                    spacer_width, 0,
+                    QSizePolicy.Minimum,
+                    QSizePolicy.Expanding,
+                ),
+                self.layout().rowCount(), 0, 1, self.layout().columnCount(),
+            )
+            self.adjustSize()
 
 
 class TroubleshootingDialog(QDialog):
@@ -176,6 +281,7 @@ class TroubleshootingDialog(QDialog):
     def __init__(self, url, title=None, parent=None):
 
         super().__init__(parent)
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.setWindowTitle(title or tr_('Troubleshooting'))
         self.setModal(True)
@@ -969,6 +1075,7 @@ class AliasDialog(BaseDialog):
 class RecoveryInfoDialog(QDialog):
     def __init__(self, parent=None, recovery_items=[], lbl_text=None, app_frozen=False, bottom_lbl_text=[]):
         super(RecoveryInfoDialog, self).__init__(parent)
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.setWindowTitle("Recovery Information")
         self.setModal(True)
         self.setMinimumWidth(520)
@@ -1279,17 +1386,57 @@ class RefillDialog(BaseDialog):
         self.show()
 
 
+class _BarcodePrintButton(QPushButton):
+
+    def resizeEvent(self, event):  # pylint: disable=invalid-name
+        super().resizeEvent(event)
+        self.setIconSize(QSize(
+            max(1, int(self.width() * 0.75)),
+            max(1, int(self.height() * 0.75)),
+        ))
+
+
 class PackageSizesDialog(BaseDialog):
 
     ui_file_name = "package_sizes_dialog.ui"
+    _BARCODE_BUTTON_STYLE = """
+        QPushButton {
+            min-height: 44px;
+            padding: 4px 10px;
+            background-color: #FFFFFF;
+            color: #202020;
+            border: 3px solid #003B66;
+            border-radius: 6px;
+            font-size: 19px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #E6F3FC;
+        }
+        QPushButton:pressed {
+            background-color: #CDE7F7;
+        }
+        QPushButton:disabled {
+            background-color: #D6D6D6;
+            color: #202020;
+            border: 3px dashed #5A5A5A;
+        }
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
 
         self.overlay = None
 
-        self.package_table.setColumnCount(3)
-        self.package_table.setHorizontalHeaderLabels([tr_("Nome"), tr_("Size"), tr_("Barcode")])
+        self.package_table.setColumnCount(4)
+        self.package_table.setHorizontalHeaderLabels([
+            tr_("Nome"),
+            tr_("Size"),
+            tr_("Barcode infos"),
+            tr_("PRINT LABEL"),
+        ])
+        self.package_table.setColumnWidth(2, 240)
+        self.package_table.verticalHeader().setMinimumSectionSize(80)
 
         self.package_table.horizontalHeader().setVisible(True)
         self.package_table.horizontalHeader().setStyleSheet("""
@@ -1298,7 +1445,7 @@ class PackageSizesDialog(BaseDialog):
                 padding: 4px;
                 border: 1px solid #999999;
                 font-weight: bold;
-                font-size: 24px;
+                font-size: 26px;
             }
         """)
 
@@ -1306,17 +1453,17 @@ class PackageSizesDialog(BaseDialog):
         self.package_table.setStyleSheet("""
             QTableWidget {
                 background-color: #AAFFFFFF;
-                font-size: 20px;
+                font-size: 22px;
             }
             QTableWidget::item {
                 padding: 4px;
-                font-size: 20px;
+                font-size: 22px;
             }
         """)
 
         self.title_lbl.setStyleSheet("""
             QLabel {
-                font-size: 26px;
+                font-size: 28px;
             }
         """)
 
@@ -1329,25 +1476,46 @@ class PackageSizesDialog(BaseDialog):
 
         name = package.get("name", "N/A")
         size = package.get("size", "N/A")
-        description = package.get("description", "N/A")
+        barcode_infos = get_shuttle_barcode_label_info_text(package)
+        try:
+            get_shuttle_barcode_label_text(package)
+            barcode_enabled = True
+        except ShuttleBarcodeLabelError:
+            barcode_enabled = False
 
         self.package_table.setItem(row, 0, QTableWidgetItem(str(name)))
         self.package_table.setItem(row, 1, QTableWidgetItem(str(size)))
+        barcode_infos_item = QTableWidgetItem(barcode_infos)
+        barcode_infos_item.setToolTip(barcode_infos)
+        self.package_table.setItem(row, 2, barcode_infos_item)
 
         barcode_widget = QWidget()
         barcode_layout = QHBoxLayout(barcode_widget)
         barcode_layout.setContentsMargins(5, 5, 5, 5)
 
-        barcode_label = QLabel()
-        barcode_pixmap = QPixmap(get_res("IMAGE", "barcode_C128.png"))
-        scaled_pixmap = barcode_pixmap.scaled(80, 40, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        barcode_label.setPixmap(scaled_pixmap)
-        barcode_label.setAlignment(Qt.AlignCenter)
+        barcode_button = _BarcodePrintButton()
+        barcode_button.setObjectName("package_barcode_print_button")
+        barcode_button.setStyleSheet(self._BARCODE_BUTTON_STYLE)
+        barcode_button.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Preferred)
 
-        barcode_label.mousePressEvent = lambda event: self._generate_barcode_label(package)
+        if barcode_enabled:
+            barcode_pixmap = QPixmap(get_res("IMAGE", "barcode_C128.png"))
+            barcode_button.setIcon(QIcon(barcode_pixmap))
+            barcode_button.setToolTip(
+                tr_("Print SHUTTLE barcode label"))
+            barcode_button.setCursor(Qt.PointingHandCursor)
+            barcode_button.clicked.connect(
+                lambda _checked=False, item=package:
+                self._generate_barcode_label(item))
+        else:
+            barcode_button.setText(tr_("LABEL DATA MISSING"))
+            barcode_button.setToolTip(
+                tr_("SHUTTLE barcode label information is incomplete"))
+            barcode_button.setEnabled(False)
 
-        barcode_layout.addWidget(barcode_label)
-        self.package_table.setCellWidget(row, 2, barcode_widget)
+        barcode_layout.addWidget(barcode_button)
+        self.package_table.setCellWidget(row, 3, barcode_widget)
 
     def _generate_barcode_label(self, package):
 
@@ -1365,6 +1533,7 @@ class PackageSizesDialog(BaseDialog):
                 QApplication.instance().main_window.open_alert_dialog(
                     (),
                     fmt=error_msg,
+                    title="SHUTTLE BARCODE LABEL ERROR",
                     show_cancel_btn=False
                 )
 
@@ -1434,6 +1603,7 @@ class PackageSizesDialog(BaseDialog):
             self.package_table.setRowCount(len(packages))
             for row, package in enumerate(packages):
                 self.__set_row(row, package)
+            self.package_table.resizeRowsToContents()
 
         except Exception as e:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())

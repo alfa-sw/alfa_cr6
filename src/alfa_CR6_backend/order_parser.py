@@ -468,7 +468,7 @@ weight:{RealWeight}
 
                 properties["extra_lines_to_print"] = printable_extra_lines
 
-        logging.info(f"properties:{properties}")
+        logging.info("properties:%s", properties)
         return properties
 
     @staticmethod
@@ -630,14 +630,32 @@ weight:{RealWeight}
             if not l:
                 continue
 
-            if not second_coat and ('SECOND' in l and 'COAT' in l):
-                is_double_coat = True
-                double_coat_tag = 'FIRST COAT'
+            upper_line = l.upper()
+            is_second_coat_marker = 'SECOND' in upper_line and 'COAT' in upper_line
+
+            if second_coat:
+                if is_second_coat_marker:
+                    second_coat = False
+                    double_coat_tag = 'SECOND COAT'
+                    section = 0
+                    section_cntr = 0
+                    continue
+
+                if section_separator in l:
+                    section = max(section, 1)
+                    section_cntr = 0
+                    continue
+
+                if section == 0:
+                    toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                    if len(toks) == 2:
+                        meta[toks[0]] = toks[1]
                 continue
 
-            if second_coat and ('SECOND' in l and 'COAT' in l):
-                second_coat = False
-                double_coat_tag = 'SECOND COAT'
+            if is_second_coat_marker:
+                is_double_coat = True
+                double_coat_tag = 'FIRST COAT'
+                break
 
             if section_separator in l:
                 if not second_coat:
@@ -650,6 +668,9 @@ weight:{RealWeight}
                         meta[toks[0]] = toks[1]
                 elif section == 1:
                     toks = [t_ for t_ in [t.strip() for t in l.split(":")] if t_]
+                    if len(toks) < 2:
+                        section_cntr += 1
+                        continue
                     description = toks[0]
                     sub_toks = []
                     for t in toks[1].split("      "):
@@ -1229,7 +1250,7 @@ weight:{RealWeight}
                     "description": description
                 }
 
-            logging.debug(f"l:{l}, ingredient:{ingredient}")
+            logging.debug("l:%s, ingredient:%s", l, ingredient)
 
             return ingredient
 
@@ -1817,7 +1838,7 @@ weight:{RealWeight}
             properties_list = [properties, ]
 
         except Exception as e:           # pylint: disable=broad-except
-            logging.info(traceback.format_exc())
+            logging.info("parse_ini_order failed, falling back to json/xml/pdf", exc_info=True)
             try:
 
                 properties = self.parse_json_order(path_to_file)

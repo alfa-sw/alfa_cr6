@@ -68,8 +68,8 @@ class Application(QApplication):
 
     def handle_exception(self, e):  # pylint:  disable=no-self-use
 
-        if "CancelledError" in traceback.format_exc():
-            logging.warning(traceback.format_exc())
+        if isinstance(e, asyncio.CancelledError):
+            logging.warning("WebEngine page task cancelled", exc_info=True)
             raise e
 
         logging.error(traceback.format_exc())

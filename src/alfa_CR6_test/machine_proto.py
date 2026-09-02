@@ -86,7 +86,7 @@ class Machine(MachineHead):     # pylint: disable=too-many-instance-attributes
         try:
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=.5)
         except concurrent.futures._base.TimeoutError as e:     # pylint: disable=protected-access
-            logging.debug(f"e:{e}")
+            logging.debug("e:%s", e)
 
         self.cntr += 1
 

@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+
+from alfa_CR6_test.hardware_free_suite import main
+
+
+raise SystemExit(main())

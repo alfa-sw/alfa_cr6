@@ -96,14 +96,14 @@ class ActionPage(BaseStackedPage):
             ret = ret and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL')
             ret = ret or F.jar_photocells_status.get('UNLOAD_LIFTER_UP_PHOTOCELL')
 
-        logging.info(f"ret:{ret}, args:{args}")
+        logging.info("ret:%s, args:%s", ret, args)
 
         return ret
 
     def __do_action(self, condition, args):
         logging.warning(f"condition:{condition}, args:{args}")
         if args[0] == 'open_home_page':
-            self.parent().setCurrentWidget(self.main_window.home_page)
+            self.main_window.open_home_page()
         else:
             try:
                 if not self.__check_conditions(args):
@@ -115,7 +115,7 @@ class ActionPage(BaseStackedPage):
                 logging.error(traceback.format_exc())
 
     def __do_show_val(self, w, head_letter, bit_name, text):
-        logging.debug(f"self:{self}")
+        logging.debug("self:%s", self)
         try:
             m = QApplication.instance().get_machine_head_by_letter(head_letter)
             if bit_name.lower() == "container_presence":

@@ -20,6 +20,7 @@ D = {
     "MICROSWITCH 2": "المفتاح الدقيق 2",
     "OUTPUT ROLLER PHOTOCELL": "الخلية الضوئية لبكرة الإخراج",
     "OK": "موافق",
+    "Please ensure a PPS liner is placed": "يرجى التأكد من وجود بطانة داخل PPS",
     "STEP {} +": "الخطوة {} +",
     "STEP {} -": "الخطوة {} -",
     "Start  input roller": "بدء تشغيل بكرة الإدخال",
@@ -203,6 +204,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "يُرجى تأكيد طباعة الملصق<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "يُرجى اختيار دائرة لطباعة الملصق المقابل.",
+    "LOW LVL PIGMENTS": "أصباغ منخفضة المستوى",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "اكتشف الرأس A عبوةً بسرعة فرطة. قم بإزالة جميع العبوات من بكرة الإدخال ومن الرأس A!",
     "{} product(s) not dispensed:": "لم يتم خلط وتوزيع {} منتج(منتجات):",

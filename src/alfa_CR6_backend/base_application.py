@@ -15,9 +15,11 @@ import json
 import logging
 import redis
 import re
+import threading
 
 import logging.handlers
 
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from collections import OrderedDict
 
@@ -28,7 +30,12 @@ from sqlalchemy.orm.exc import NoResultFound  # pylint: disable=import-error
 
 import aiohttp  # pylint: disable=import-error
 
-from alfa_CR6_backend.models import Order, Jar, Event, Document, decompile_barcode
+from alfa_CR6_backend.models import (
+    DATABASE_CLEANUP_MODELS, Order, Jar, Event, Document,
+    decompile_barcode)
+from alfa_CR6_backend.database_cleanup import (
+    cleanup_pending_database, detect_pending_tables,
+    seconds_until_next_local_midnight)
 from alfa_CR6_backend.globals import (
     UI_PATH,
     KEYBOARD_PATH,
@@ -39,9 +46,21 @@ from alfa_CR6_backend.globals import (
 
 from alfa_CR6_backend.machine_head import MachineHead
 from alfa_CR6_backend.order_parser import OrderParser
+from alfa_CR6_backend.package_label import (
+    build_shuttle_barcode_size_map,
+    normalize_shuttle_barcode_label_text,
+)
+from alfa_CR6_backend.sound_player import play_refill_alarm, stop_refill_alarm
 from alfa_CR6_backend.ws_server import WsServer
 from alfa_CR6_frontend.chromium_wrapper import ChromiumWrapper
 from alfa_CR6_frontend.dialogs import ModalMessageBox
+
+
+# Temporarily disabled: do not show the modal while active jar runners reach
+# their next wait point after the carousel has been frozen.
+SHOW_PENDING_OPERATIONS_MODAL = False
+SHUTTLE_BARCODE_WAIT_TIMEOUT = 2.0
+
 
 def get_dict_diff(dict1, dict2):
     set1 = set(dict1.items())
@@ -160,31 +179,40 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         with open(self.json_file_path, 'w') as file:
             json.dump(data, file)
 
-    def read_data(self):
+    def _read_unfiltered_data(self):
         try:
             with open(self.json_file_path, 'r') as file:
-                data = json.load(file)
-                logging.debug(f'>>> data: {dict(data)}')
-
-                ordine_pos = [
-                    "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
-                    "E", "D", "G", "LIFTR_DOWN", "LIFTR_UP",
-                    "C", "B", "A", "IN_A", "IN"
-                ]
-                
-                def get_position_index(item):
-                    return ordine_pos.index(item[1]["pos"])
-
-                valid_items = [(k, v) for k, v in data.items() if v.get("pos") is not None and v.get("pos") in ordine_pos]
-                sorted_items = sorted(valid_items, key=get_position_index)
-                sorted_data = OrderedDict(sorted_items) 
-                
-                return sorted_data
+                return json.load(file)
         except FileNotFoundError:
             return {}
 
+    def read_data(self):
+        data = self._read_unfiltered_data()
+        if not data:
+            return OrderedDict()
+
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.debug('>>> data: %s', dict(data))
+
+        ordine_pos = [
+            "OUT", "LIFTL_UP", "LIFTL_DOWN", "F",
+            "E", "D", "G", "LIFTR_DOWN", "LIFTR_UP",
+            "C", "B", "A", "IN_A", "IN"
+        ]
+
+        def get_position_index(item):
+            return ordine_pos.index(item[1]["pos"])
+
+        valid_items = [
+            (key, value) for key, value in data.items()
+            if value.get("pos") in ordine_pos
+        ]
+        return OrderedDict(sorted(valid_items, key=get_position_index))
+
     def update_jar_data_position(self, jcode, updated_pos):
-        jdata = dict(self.read_data())
+        # Le mutazioni devono partire dal contenuto grezzo: ``read_data`` e'
+        # soltanto la vista ordinata delle posizioni recuperabili.
+        jdata = dict(self._read_unfiltered_data())
 
         if jcode in jdata:
             jdata[jcode]["pos"] = updated_pos
@@ -202,7 +230,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
                     "dispensation": dispensation
                 }
             }
-            existing_data = self.read_data()
+            existing_data = dict(self._read_unfiltered_data())
             existing_data.update(new_data)
             self.write_data(existing_data)
 
@@ -212,28 +240,22 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
 
     async def async_read_data(self):
         loop = asyncio.get_running_loop()
-        data = await loop.run_in_executor(None, self.read_data)
-        return data
+        return await loop.run_in_executor(None, self.read_data)
 
     async def async_write_data(self, new_data):
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self.write_data, new_data)
 
     async def async_remove_jar_data(self, jcode):
-
-        data = await self.async_read_data()
-
-        if jcode not in data:
-            logging.error(f'Jar code {jcode} not found in data.')
-            return
-
-        logging.warning(f'Removing Recovery data for jar {jcode}')
-        del data[jcode]
-
-        await self.async_write_data(data)
+        loop = asyncio.get_running_loop()
+        await loop.run_in_executor(None, self.remove_jar_data, jcode)
 
     def remove_jar_data(self, jcode):
-        data = dict(self.read_data())
+        # La vista pubblica ``read_data`` esclude intenzionalmente le
+        # posizioni non recuperabili (per esempio "_"). La rimozione deve
+        # invece operare sul JSON grezzo, altrimenti proprio quei record non
+        # possono piu' essere cancellati.
+        data = dict(self._read_unfiltered_data())
 
         if jcode not in data:
             logging.error(f'Jar code {jcode} not found in data.')
@@ -248,10 +270,7 @@ class RestoreMachineHelper(metaclass=SingletonMeta):
         if not self.parent:
             return
         self.parent.delete_jar_runner(jcode)
-        running_tasks = self.read_data()
-        if jcode in running_tasks:
-            del running_tasks[jcode]
-            self.write_data(running_tasks)
+        self.remove_jar_data(jcode)
 
     def clear_list(self):
         self.write_data({})
@@ -269,7 +288,7 @@ class RedisOrderPublisher:
             "redis://localhost")
         cmd_channel = self.redis.pubsub(ignore_subscribe_messages=True)
         cmd_channel.subscribe(self.ch_name)
-        logging.info(f"Subscribed to channel: {self.ch_name}")
+        logging.info("Subscribed to channel: %s", self.ch_name)
 
     def publish_messages(self, data_message):
         if not self.redis:
@@ -283,6 +302,10 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     BARCODE_DEVICE_KEY_CODE_MAP = {
         "KEY_SPACE": " ",
+        "KEY_COMMA": ",",
+        "KEY_DOT": ".",
+        "KEY_KPCOMMA": ",",
+        "KEY_KPDOT": ".",
         # digits
         "KEY_1": "1",
         "KEY_2": "2",
@@ -342,11 +365,13 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     async def __on_buffer_read(self, buffer):
         ret = None
-        if not self._accept_any_len and len(buffer) != self.BARCODE_LEN:
+        if not isinstance(buffer, str):
+            logging.warning("format mismatch! barcode is not text: %r", buffer)
+        elif not self._accept_any_len and len(buffer) != self.BARCODE_LEN:
             logging.warning(f"format mismatch! buffer:{buffer}")
         else:
             t = time.time()
-            logging.debug(f"buffer:{buffer}")
+            logging.debug("buffer:%s", buffer)
             if self.last_read_event_buffer == buffer and t - self.last_read_event_time < 5.0:
                 # filter out reading events with the same value, in the time interval of 5 sec
                 pass
@@ -395,8 +420,11 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
                         if getattr(_settings, 'MANUAL_BARCODE_INPUT', False):
                             continue
                         if keyEvent.keycode == "KEY_ENTER":
-                            buffer = buffer[:self.BARCODE_LEN]
-                            await self.__on_buffer_read(buffer)
+                            # le etichette jar/pigmento sono stampate in EAN-13:
+                            # la pistola trasmette anche il check digit (13a cifra),
+                            # che va scartato prima della validazione a 12.
+                            value = buffer if self._accept_any_len else buffer[:self.BARCODE_LEN]
+                            await self.__on_buffer_read(value)
                             buffer = ""
                         else:
                             filtered_ch_ = self.BARCODE_DEVICE_KEY_CODE_MAP.get(keyEvent.keycode)
@@ -427,16 +455,31 @@ class BarCodeReader: # pylint: disable=too-many-instance-attributes, too-few-pub
 
     @staticmethod
     def is_valid_alfa_barcode(buffer):
-        YEARS = [
-            "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30",
-            "30", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40"
-        ]
+        if not isinstance(buffer, str):
+            return False
+        if not re.fullmatch(r"[0-9]{12}", buffer):
+            return False
 
-        check =  buffer[:2] in YEARS and int(buffer[2]) <= 1
-        return check
+        year = int(buffer[:2])
+        if not 20 <= year <= 40:
+            return False
+
+        # Il formato generato da compile_barcode e' YYMMDD + progressivo
+        # ordine (3 cifre) + indice jar (3 cifre). Il DB resta autorevole per
+        # progressivo e indice, mentre qui scartiamo rumore e date impossibili.
+        try:
+            time.strptime(buffer[:6], "%y%m%d")
+        except ValueError:
+            return False
+
+        return True
 
 
 class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attributes,too-many-public-methods
+
+    DATABASE_CLEANUP_BATCH_SIZE = 250
+    DATABASE_CLEANUP_RETRY_SECONDS = 10
+    DATABASE_CLEANUP_CLOCK_CHECK_SECONDS = 60 * 60
 
     MACHINE_HEAD_INDEX_TO_NAME_MAP = {
         0: "A",
@@ -477,8 +520,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         self.__tasks_to_freeze = 0
         self.__modal_freeze_msgbox = None
+        self._database_cleanup_future = None
+        self._database_cleanup_executor = None
+        self._database_cleanup_cancel_event = threading.Event()
         # Attention LEDs are shared across concurrent jar tasks and freeze flows.
         self._attention_led_requests = {}
+        # Token dei refill in attesa di operatore: il suono di notifica parte
+        # col primo e si spegne al rilascio dell'ultimo (o al timeout del setting).
+        self._refill_alarm_tokens = set()
 
         self.chromium_wrapper = None
         self.restore_machine_helper = None
@@ -496,6 +545,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             from alfa_CR6_backend.models import init_models  # pylint: disable=import-outside-toplevel
 
             self.db_session = init_models(self.settings.SQLITE_CONNECT_STRING)
+            self._database_cleanup_executor = ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix="database-cleanup")
 
         self.__init_tasks()
 
@@ -510,6 +561,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def __init_tasks(self):
 
         self.__tasks = [self.__create_inner_loop_task()]
+
+        if self._database_cleanup_executor:
+            self.__tasks.append(self.__database_cleanup_scheduler())
 
         if hasattr(self.settings, 'CHROMIUM_WRAPPER') and self.settings.CHROMIUM_WRAPPER:
             t = self.__create_chromium_wrapper_task()
@@ -535,6 +589,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def __close_tasks(self,):
 
+        self._database_cleanup_cancel_event.set()
+
         for m in self.machine_head_dict.values():
             if m:
                 try:
@@ -552,10 +608,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 asyncio.get_event_loop().run_until_complete(_coro(t))
                 # ~ asyncio.get_event_loop().run_until_complete(t.cancel())
             except asyncio.CancelledError:
-                logging.info(f"{ t } has been canceled now.")
+                logging.info("%s has been canceled now.", t)
 
         self.__runners = []
         self.__jar_runners = {}
+
+        if self._database_cleanup_executor:
+            self._database_cleanup_executor.shutdown(wait=True)
+            self._database_cleanup_executor = None
 
     async def _create_restore_machine_helper_task(self):
         try:
@@ -691,6 +751,139 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
 
+    def _database_cleanup_can_start(self):
+        return (
+            not self.__jar_runners
+            and not getattr(self, "running_recovery_mode", False)
+        )
+
+    def _register_jar_runner(self, barcode, runner):
+        self._database_cleanup_cancel_event.set()
+        self.__jar_runners[barcode] = runner
+
+    async def _wait_for_database_cleanup_date_change(self, last_check_date):
+        logged_next_run = None
+        while self.run_flag:
+            current_date = time.strftime("%Y-%m-%d", time.localtime())
+            if current_date != last_check_date:
+                return True
+
+            delay = seconds_until_next_local_midnight()
+            next_run = time.strftime(
+                "%Y-%m-%d %H:%M:%S %Z",
+                time.localtime(time.time() + delay))
+            if next_run != logged_next_run:
+                logging.warning(
+                    "next database cleanup scheduled at %s", next_run)
+                logged_next_run = next_run
+
+            await asyncio.sleep(max(
+                1.0,
+                min(delay, self.DATABASE_CLEANUP_CLOCK_CHECK_SECONDS),
+            ))
+
+        return False
+
+    async def __database_cleanup_scheduler(self):
+        try:
+            last_check_date = None
+            while self.run_flag:
+                if last_check_date is None:
+                    logging.warning(
+                        "starting database cleanup catch-up check")
+                else:
+                    date_changed = await self._wait_for_database_cleanup_date_change(
+                        last_check_date)
+                    if not date_changed:
+                        break
+                    logging.warning(
+                        "local date changed; starting database cleanup check")
+
+                pending_limits = None
+                waiting_for_machine = False
+                while self.run_flag:
+                    if not self._database_cleanup_can_start():
+                        if not waiting_for_machine:
+                            logging.warning(
+                                "database cleanup waiting for jar "
+                                "runners/recovery to stop")
+                            waiting_for_machine = True
+                        await asyncio.sleep(self.DATABASE_CLEANUP_RETRY_SECONDS)
+                        continue
+
+                    waiting_for_machine = False
+                    if pending_limits is None:
+                        table_limits = {
+                            model_class.__tablename__: model_class.row_count_limt
+                            for model_class in DATABASE_CLEANUP_MODELS
+                        }
+                        detector = partial(
+                            detect_pending_tables,
+                            self.settings.SQLITE_CONNECT_STRING,
+                            table_limits,
+                        )
+                        try:
+                            pending_limits = await asyncio.get_event_loop().run_in_executor(
+                                self._database_cleanup_executor, detector)
+                        except Exception:  # pylint: disable=broad-except
+                            logging.error(
+                                "database cleanup detection failed; retrying",
+                                exc_info=True)
+                            await asyncio.sleep(
+                                self.DATABASE_CLEANUP_RETRY_SECONDS)
+                            continue
+                        if not pending_limits:
+                            logging.info(
+                                "database cleanup: no tables pending")
+                            break
+                        # Re-evaluate machine activity after the database read:
+                        # a jar runner may have started while counting rows.
+                        continue
+
+                    self._database_cleanup_cancel_event.clear()
+                    worker = partial(
+                        cleanup_pending_database,
+                        self.settings.SQLITE_CONNECT_STRING,
+                        pending_limits,
+                        self._database_cleanup_cancel_event,
+                        self.DATABASE_CLEANUP_BATCH_SIZE,
+                    )
+                    self._database_cleanup_future = asyncio.get_event_loop().run_in_executor(
+                        self._database_cleanup_executor, worker)
+                    logging.warning(
+                        "started database cleanup: %s",
+                        sorted(pending_limits))
+                    try:
+                        result = await self._database_cleanup_future
+                    except Exception:  # pylint: disable=broad-except
+                        logging.error(
+                            "database cleanup failed; retrying", exc_info=True)
+                        await asyncio.sleep(
+                            self.DATABASE_CLEANUP_RETRY_SECONDS)
+                        continue
+                    finally:
+                        self._database_cleanup_future = None
+
+                    for table_name in result["completed_tables"]:
+                        pending_limits.pop(table_name, None)
+                    logging.warning("database cleanup result: %s", result)
+
+                    if pending_limits:
+                        logging.info(
+                            "database cleanup yielded; retrying when "
+                            "the machine is stopped")
+                        await asyncio.sleep(self.DATABASE_CLEANUP_RETRY_SECONDS)
+                    else:
+                        break
+
+                if self.run_flag:
+                    last_check_date = time.strftime(
+                        "%Y-%m-%d", time.localtime())
+        except asyncio.CancelledError:
+            self._database_cleanup_cancel_event.set()
+        except Exception:  # pylint: disable=broad-except
+            logging.error("database cleanup scheduler failed", exc_info=True)
+
     async def __create_machine_task(self, head_index, ip_add, ws_port, http_port):
 
         m = MachineHead(
@@ -701,14 +894,27 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             ws_msg_handler=self.on_head_msg_received)
 
         self.machine_head_dict[head_index] = m
-        await m.run()
-        logging.warning(f" *** terminating machine: {m} *** ")
+        while True:
+            try:
+                await m.run()
+                logging.error(
+                    "machine task terminated unexpectedly: %s; restarting", m
+                )
+            except asyncio.CancelledError:
+                raise
+            except Exception:  # pylint: disable=broad-except
+                logging.error(
+                    "machine task failed: %s; restarting", m,
+                    exc_info=True,
+                )
+            await asyncio.sleep(1)
 
     async def __create_ws_server_task(self, ws_server_addr, ws_server_port):
 
         self.ws_server = WsServer(self, ws_server_addr, ws_server_port)
 
-    async def __jar_task(self, barcode):  # pylint: disable=too-many-statements
+    async def __jar_task(
+            self, barcode, shuttle_size=None):  # pylint: disable=too-many-statements
 
         r = None
         jar = None
@@ -717,7 +923,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             cntr = 0
             while cntr < 3:
                 cntr += 1
-                jar = await self.get_and_check_jar_from_barcode(barcode)
+                if shuttle_size is None:
+                    jar = await self.get_and_check_jar_from_barcode(barcode)
+                else:
+                    jar = await self.get_and_check_jar_from_barcode(
+                        barcode, shuttle_size=shuttle_size)
                 if not jar:
                     break
 
@@ -802,10 +1012,26 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             if jar:
                 jar.status = "ERROR"
                 jar.description = traceback.format_exc()
+                # ``jar.status`` viene assegnato direttamente per conservare
+                # posizione e testa del punto di guasto. Manteniamo pero'
+                # sincronizzato anche lo stato materializzato dell'ordine:
+                # senza questo passaggio una latta ERROR lasciava l'ordine in
+                # PROGRESS fino a un successivo aggiornamento accidentale.
+                jar.order.update_status()
                 self.db_session.commit()
 
             self.handle_exception(e)
             logging.error(traceback.format_exc())
+
+    def __on_modal_freeze_msgbox_destroyed(self, *_args):
+        self.__modal_freeze_msgbox = None
+
+    def __enable_freeze_msgbox_buttons(self, flag_ok, flag_esc):
+        # deferred (call_later) counterpart of enable_buttons: goes through
+        # self.__modal_freeze_msgbox instead of capturing the bound method,
+        # so a box destroyed in the meantime is a no-op, not a RuntimeError.
+        if self.__modal_freeze_msgbox:
+            self.__modal_freeze_msgbox.enable_buttons(flag_ok, flag_esc)
 
     def __check_jars_to_freeze(self):
 
@@ -833,43 +1059,61 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if _flag:
                     _tasks_to_freeze.append((_task, k))
 
+            if (self._database_cleanup_future
+                    and not self._database_cleanup_future.done()
+                    and not self._database_cleanup_can_start()):
+                self._database_cleanup_cancel_event.set()
+
             n = len(_tasks_to_freeze)
             if self.__tasks_to_freeze != n:
                 self.__tasks_to_freeze = n
                 # ~ logging.warning(f'__tasks_to_freeze:{self.__tasks_to_freeze}'
                 # ~ f', {[(t.get_name(), k) for t, k in _tasks_to_freeze]}')
 
-                if self.__tasks_to_freeze:
-                    msg = tr_("please, wait while finishing all pending operations ...")
-                    msg += "\n{}".format([k for t, k in _tasks_to_freeze])
+                if SHOW_PENDING_OPERATIONS_MODAL:
+                    if self.__tasks_to_freeze:
+                        msg = tr_("please, wait while finishing all pending operations ...")
+                        msg += "\n{}".format([k for t, k in _tasks_to_freeze])
 
-                    if not self.__modal_freeze_msgbox:
-                        self.__modal_freeze_msgbox = ModalMessageBox(parent=self.main_window, msg=msg, title="ALERT")
-                        self.__modal_freeze_msgbox.move(self.__modal_freeze_msgbox.geometry().x(), 20)
+                        if not self.__modal_freeze_msgbox:
+                            # auto_delete=False: this box is cached and reused across
+                            # freeze cycles, it must survive the OK/Cancel clicks.
+                            self.__modal_freeze_msgbox = ModalMessageBox(
+                                parent=self.main_window, msg=msg, title="ALERT", auto_delete=False)
+                            self.__modal_freeze_msgbox.move(self.__modal_freeze_msgbox.geometry().x(), 20)
+                            # belt and braces: if anything ever destroys the C++ side,
+                            # drop the reference so the box is recreated instead of
+                            # raising RuntimeError on the dead sip wrapper.
+                            self.__modal_freeze_msgbox.destroyed.connect(
+                                self.__on_modal_freeze_msgbox_destroyed)
+                        else:
+                            self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
+                            self.__modal_freeze_msgbox.show()
+                        self.__modal_freeze_msgbox.enable_buttons(False, False)
+
+                        asyncio.get_event_loop().call_later(
+                            10, partial(self.__enable_freeze_msgbox_buttons, False, True))
+
                     else:
-                        self.__modal_freeze_msgbox.setText(f"\n\n{msg}\n\n")
-                        self.__modal_freeze_msgbox.show()
-                    self.__modal_freeze_msgbox.enable_buttons(False, False)
-
-                    asyncio.get_event_loop().call_later(10, partial(self.__modal_freeze_msgbox.enable_buttons, False, True))
-
-                else:
-                    if self.__modal_freeze_msgbox:
-                        msg = "\n\n{}\n\n".format(tr_("all operations are paused"))
-                        self.__modal_freeze_msgbox.setText(msg)
-                logging.warning(
-                    f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
+                        if self.__modal_freeze_msgbox:
+                            msg = "\n\n{}\n\n".format(tr_("all operations are paused"))
+                            self.__modal_freeze_msgbox.setText(msg)
+                    logging.warning(
+                        f'self.__modal_freeze_msgbox:{self.__modal_freeze_msgbox}, __tasks_to_freeze:{self.__tasks_to_freeze}')
 
         except Exception as e:  # pylint: disable=broad-except
             self.handle_exception(e)
             logging.error(traceback.format_exc())
 
         finally:
-            if not _tasks_to_freeze and self.__modal_freeze_msgbox:
+            if (SHOW_PENDING_OPERATIONS_MODAL
+                    and not _tasks_to_freeze
+                    and self.__modal_freeze_msgbox):
                 self.__modal_freeze_msgbox.enable_buttons(True, True)
                 self.__modal_freeze_msgbox.close()
 
-    async def get_and_check_jar_from_barcode(self, barcode):  # pylint: disable=too-many-locals,too-many-branches
+    async def get_and_check_jar_from_barcode(
+            self, barcode, shuttle_size=None):  # pylint: disable=too-many-locals,too-many-branches
 
         logging.debug("barcode:{}".format(barcode))
         order_nr, index = decompile_barcode(barcode)
@@ -891,18 +1135,30 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if jar:
 
-            variant = os.getenv('MACHINE_VARIANT')
+            variant = (
+                getattr(self, "machine_variant", None)
+                or os.getenv('MACHINE_VARIANT')
+            )
+            physical_shuttle_reader = (
+                self._uses_physical_shuttle_barcode_reader())
             if variant in ['CRX60', 'CRX40', 'CRX80']:
                 jar_size = self.shuttle_size_from_barcode_scanner
                 logging.debug("Using shuttle_size_from_barcode_scanner: %s", jar_size)
+            elif physical_shuttle_reader:
+                jar_size = shuttle_size
+                logging.debug("Using captured SHUTTLE barcode size: %s", jar_size)
             else:
                 A = self.get_machine_head_by_letter("A")
                 await asyncio.sleep(0.5)
-                jar_size = self.shuttle_size_from_barcode_scanner or await A.get_stabilized_jar_size()
+                jar_size = await A.get_stabilized_jar_size()
 
             if jar_size is None:
                 jar = None
-                args, fmt = (barcode, ), "barcode:{} cannot read can size from microswitches.\n"
+                args = (barcode, )
+                if physical_shuttle_reader:
+                    fmt = "barcode:{} cannot read can size from SHUTTLE barcode.\n"
+                else:
+                    fmt = "barcode:{} cannot read can size from microswitches.\n"
                 self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
             else:
 
@@ -924,19 +1180,18 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 jar_volume = 0
                 if variant in ['CRX60', 'CRX40', 'CRX80']:
                     jar_volume = self.shuttle_size_from_barcode_scanner
+                elif physical_shuttle_reader:
+                    jar_volume = jar_size
                 else:
                     try:
                         p_idx = int(jar_size)
                         jar_volume = package_size_list[p_idx]
                     except IndexError:
-                        if not self.shuttle_size_from_barcode_scanner:
-                            args = ()
-                            fmt = "The selected jar size is not recognised"
-                            self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
-                            logging.error(fmt)
-                            return None
-                        # CR4/CR6 with physical shuttle size barcode
-                        jar_volume = self.shuttle_size_from_barcode_scanner
+                        args = ()
+                        fmt = "The selected jar size is not recognised"
+                        self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                        logging.error(fmt)
+                        return None
 
                 self.update_jar_properties(jar)
 
@@ -980,6 +1235,81 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         logging.warning(f"jar:{jar}")
         return jar
 
+    def _uses_physical_shuttle_barcode_reader(self):
+        variant = (
+            getattr(self, "machine_variant", None)
+            or os.getenv("MACHINE_VARIANT", "")
+        )
+        reader_id = str(getattr(self, "id_bc_shuttle", "") or "").strip()
+        return (
+            variant in ("CR4", "CR6")
+            and bool(reader_id)
+            and reader_id.upper() != "DISABLED"
+        )
+
+    def _reset_shuttle_barcode_cycle(self):
+        if not self._uses_physical_shuttle_barcode_reader():
+            return
+        self.shuttle_size_from_barcode_scanner = False
+        self._shuttle_size_ready_evt.clear()
+        self.shuttle_bc_ready_to_read_a_barcode = True
+
+    def _show_missing_shuttle_barcode_error(self, formula_barcode):
+        self.shuttle_size_from_barcode_scanner = False
+        self._shuttle_size_ready_evt.clear()
+        self.shuttle_bc_ready_to_read_a_barcode = False
+        self.ready_to_read_a_barcode = False
+
+        def callback():
+            self.shuttle_size_from_barcode_scanner = False
+            self._shuttle_size_ready_evt.clear()
+            self.shuttle_bc_ready_to_read_a_barcode = True
+            self.ready_to_read_a_barcode = True
+
+        self.main_window.show_barcode(
+            tr_("Waiting for valid SHUTTLE barcode"), is_ok=False)
+        self.main_window.open_alert_dialog(
+            (),
+            fmt="SHUTTLE BARCODE NOT READ",
+            title="ERROR SHUTTLE BARCODE",
+            show_cancel_btn=False,
+            callback=callback,
+        )
+
+    async def _consume_shuttle_size_for_formula(self, formula_barcode):
+        if not self._uses_physical_shuttle_barcode_reader():
+            return None
+
+        try:
+            await asyncio.wait_for(
+                self._shuttle_size_ready_evt.wait(),
+                timeout=SHUTTLE_BARCODE_WAIT_TIMEOUT,
+            )
+        except asyncio.TimeoutError:
+            logging.error(
+                "No valid SHUTTLE barcode available for order barcode %s",
+                formula_barcode,
+            )
+            # UNKNOWN/AMBIGUOUS already owns the visible popup and its re-arm
+            # callback. Do not open a second dialog for the same read.
+            if getattr(self, "shuttle_bc_ready_to_read_a_barcode", True):
+                self._show_missing_shuttle_barcode_error(formula_barcode)
+            return None
+
+        shuttle_size = self.shuttle_size_from_barcode_scanner
+        if not isinstance(shuttle_size, (int, float)) \
+                or isinstance(shuttle_size, bool) or shuttle_size <= 0:
+            self._show_missing_shuttle_barcode_error(formula_barcode)
+            return None
+
+        # Capture the value for this formula before clearing the shared slot.
+        # The SHUTTLE reader stays disabled until JIN becomes empty, preventing
+        # the same physical can from pre-loading the following formula.
+        self.shuttle_size_from_barcode_scanner = False
+        self._shuttle_size_ready_evt.clear()
+        self.shuttle_bc_ready_to_read_a_barcode = False
+        return shuttle_size
+
     async def on_barcode_read(self, barcode):  # pylint: disable=too-many-locals
 
         ret = None
@@ -991,7 +1321,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
         if not barcode or (not self.ready_to_read_a_barcode and not self._crx_ja_block_sequence_active):
 
-            logging.debug(f"skipping barcode:{barcode}")
+            logging.debug("skipping barcode:%s", barcode)
             self.main_window.show_barcode(tr_("skipping barcode:{}").format(barcode), is_ok=False)
         elif self._crx_ja_block_sequence_active and self.machine_variant in ['CRX60', 'CRX40', 'CRX80']:
             self._crx_pending_barcode = str(barcode)
@@ -1044,11 +1374,19 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             return
 
                         if self.machine_variant not in ['CRX60', 'CRX40', 'CRX80']:
-                            t = self.__jar_task(barcode)
-                            self.__jar_runners[barcode] = {
+                            shuttle_size = None
+                            if self._uses_physical_shuttle_barcode_reader():
+                                shuttle_size = await self._consume_shuttle_size_for_formula(
+                                    barcode)
+                                if shuttle_size is None:
+                                    return None
+
+                            t = self.__jar_task(
+                                barcode, shuttle_size=shuttle_size)
+                            self._register_jar_runner(barcode, {
                                 "task": asyncio.ensure_future(t),
                                 "frozen": True
-                            }
+                            })
 
                             self.main_window.show_barcode(barcode, is_ok=True)
                             logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), barcode))
@@ -1078,10 +1416,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                                         elif not ja and jin:
                                             bc = self._crx_pending_barcode or barcode
                                             t = self.__jar_task(bc)
-                                            self.__jar_runners[bc] = {
+                                            self._register_jar_runner(bc, {
                                                 "task": asyncio.ensure_future(t),
                                                 "frozen": True
-                                            }
+                                            })
                                             self.main_window.show_barcode(bc, is_ok=True)
                                             logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
                                             ret = bc
@@ -1104,10 +1442,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                             elif not ja and jin:
                                 bc = self._crx_pending_barcode or barcode
                                 t = self.__jar_task(bc)
-                                self.__jar_runners[bc] = {
+                                self._register_jar_runner(bc, {
                                     "task": asyncio.ensure_future(t),
                                     "frozen": True
-                                }
+                                })
                                 self.main_window.show_barcode(bc, is_ok=True)
                                 logging.warning(" NEW JAR TASK({}) barcode:{}".format(len(self.__jar_runners), bc))
                                 ret = bc
@@ -1150,23 +1488,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
             variant = os.getenv('MACHINE_VARIANT')
             if variant in ['CRX60', 'CRX40', 'CRX80']:
+                # TODO - shutdown the BarCodeReader instance (eg device ungrab)
                 return None
 
             logging.warning(f"[SHUTTLE] barcode :: '{barcode}'")
 
-            # --- dedup ---
-            t_now = time.time()
-            _last_buf = getattr(self, '_shuttle_last_read_buffer', '')
-            _last_t = getattr(self, '_shuttle_last_read_time', 0)
-            if barcode == _last_buf and t_now - _last_t < 5.0:
-                logging.warning(f"[SHUTTLE] DEDUP filter: '{barcode}' dt={t_now - _last_t:.3f}s")
-                return None
-            self._shuttle_last_read_buffer = barcode
-            self._shuttle_last_read_time = t_now
-
-            # --- format validation ---
-            if not re.match(r'^\d{2,4}\s(ml|gr|fl[\s_]?oz)$', barcode, re.IGNORECASE):
-                logging.warning(f"[SHUTTLE] invalid format, discarded: '{barcode}'")
+            key = normalize_shuttle_barcode_label_text(barcode)
+            if key is None:
+                logging.warning(
+                    f"[SHUTTLE] invalid format, discarded: '{barcode}'")
                 return None
 
             A = self.get_machine_head_by_letter("A")
@@ -1174,31 +1504,48 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
                 if not ret or ret.get("objects") is None:
                     logging.error("SECOND READER: cannot retrieve packages data")
+                    # Non lasciare valida una misura proveniente da una lettura
+                    # precedente quando la testa non e' in grado di confermare
+                    # il nuovo barcode shuttle.
+                    self.shuttle_size_from_barcode_scanner = False
+                    self._shuttle_size_ready_evt.clear()
                     return None
                 packages = ret.get("objects", [])
-                size_map = {p.get("name", "").lower().rstrip(): p.get("size") for p in packages if p.get("name") and p.get("size")}
-                key = barcode.lower().rstrip()
+                size_map, duplicate_labels = build_shuttle_barcode_size_map(
+                    packages)
                 if key in size_map:
                     self.shuttle_size_from_barcode_scanner = size_map[key]
                     logging.warning(f"SECOND READER: shuttle '{key}' -> size {size_map[key]}")
                     self._shuttle_size_ready_evt.set()
+                    self.shuttle_bc_ready_to_read_a_barcode = False
                     # Feedback to UI
                     # self.main_window.show_barcode(f"SHUTTLE: {key} -> {size_map[key]}", is_ok=True)
                     # return key
                 else:
-                    logging.warning(f"SHUTTLE BARCODE READER: unknown shuttle '{key}'")
+                    if key in duplicate_labels:
+                        logging.error(
+                            "SHUTTLE BARCODE READER: ambiguous label '%s'", key)
+                        error_format = "AMBIGUOUS SHUTTLE BARCODE: {}"
+                        error_title = "ERROR"
+                    else:
+                        logging.warning(
+                            f"SHUTTLE BARCODE READER: unknown shuttle '{key}'")
+                        error_format = "UNKNOWN SHUTTLE: {}"
+                        error_title = "WARNING"
                     self.shuttle_size_from_barcode_scanner = False
                     self._shuttle_size_ready_evt.clear()
                     def callback():
                         self.shuttle_bc_ready_to_read_a_barcode = True
+                        self.ready_to_read_a_barcode = True
                     self.main_window.open_alert_dialog(
                         (key,),
-                        fmt="UNKNOWN SHUTTLE: {}",
-                        title="WARNING",
+                        fmt=error_format,
+                        title=error_title,
                         show_cancel_btn=False,
                         callback=callback
                     )
                     self.shuttle_bc_ready_to_read_a_barcode = False
+                    self.ready_to_read_a_barcode = False
                     return None
             except Exception as e:  # pylint: disable=broad-except
                 logging.error(f"SECOND READER: unexpected error: {e}")
@@ -1315,6 +1662,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                         for j in range(1, n_of_jars + 1):
                             jar = Jar(order=order, index=j, size=0)
                             self.db_session.add(jar)
+                        order.update_status()
+                        order.update_deleted()
                         self.db_session.commit()
 
                 except Exception as e:  # pylint: disable=broad-except
@@ -1429,8 +1778,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def handle_exception(self, e):  # pylint:  disable=no-self-use
 
-        if "CancelledError" in traceback.format_exc():
-            logging.warning(traceback.format_exc())
+        if isinstance(e, asyncio.CancelledError):
+            logging.warning("application task cancelled", exc_info=True)
             raise  # pylint:  disable=misplaced-bare-raise
 
         self.main_window.open_alert_dialog(f"{e}", title="ERROR", visibility=0)
@@ -1655,10 +2004,20 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
     def request_attention_leds(self, heads, token, reason=None):
         for head in heads:
             self.request_attention_led(head, token, reason=reason)
+        # notifica acustica refill: stessa semantica dei led di attenzione
+        # (usata solo dai due flussi refill: check all'ingresso e dispense_step);
+        # ogni nuovo token ri-arma anche il timeout del setting
+        if heads:
+            self._refill_alarm_tokens.add(token)
+            play_refill_alarm()
 
     def release_attention_leds(self, heads, token, reason=None):
         for head in heads:
             self.release_attention_led(head, token, reason=reason)
+        if token in self._refill_alarm_tokens:
+            self._refill_alarm_tokens.discard(token)
+            if not self._refill_alarm_tokens:
+                stop_refill_alarm()
 
     async def wait_for_carousel_not_frozen(
             self, freeze=False, message_args=(), message_fmt=None,
@@ -1827,7 +2186,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if self.restore_machine_helper:
                     jar_position = pos if pos is not None else recovery_pos
                     self.restore_machine_helper.store_jar_data(jar, jar_position)
-                    if jar_position == "OUT":
+                    if (
+                            jar_position == "OUT"
+                            or (jar_position == "_" and jar.status == "DONE")):
                         self.restore_machine_helper.remove_jar_data(jar.barcode)
 
             except Exception as e:  # pylint: disable=broad-except
@@ -1940,7 +2301,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 if ll_pigmnt in insuff_pigmts:
                     info_insuff_pigmts.append((ll_pigmnt, m.name))
 
-        logging.debug(f'>>>> info_insuff_pigmts: {info_insuff_pigmts}')
+        logging.debug('>>>> info_insuff_pigmts: %s', info_insuff_pigmts)
         return info_insuff_pigmts
 
     def get_restorable_jars_for_recovery_mode(self):
@@ -1980,12 +2341,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.db_session.commit()
 
     async def _handle_crx_barcode_input(self):
-        import re
-
-        BARCODE_NEW_PATTERN = re.compile(
-            r'^\d{2,4}\s+[A-Za-z]+(?:\s+[A-Za-z]+)*\s*$',
-            re.IGNORECASE
-        )
         A = self.get_machine_head_by_letter("A")
 
         shuttle_event = asyncio.Event()
@@ -1994,12 +2349,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         shuttle_barcode = ""
         formula_barcode = ""
 
-        async def validate_shuttle(barcode: str) -> (bool, str):
+        async def validate_shuttle(barcode: str):
             logging.warning(f"barcode: {barcode}")
-            barcode_match = BARCODE_NEW_PATTERN.match(barcode)
-            if not barcode_match:
+            shuttle_label = normalize_shuttle_barcode_label_text(barcode)
+            if shuttle_label is None:
                 return False, "INVALID SHUTTLE BARCODE: {}", barcode
-            shuttle_name = barcode_match.group(0).lower().rstrip()
             try:
                 ret = await A.call_api_rest("apiV1/package", "GET", {}, 1.5)
                 if not ret or ret.get("objects") is None:
@@ -2008,18 +2362,27 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     return False, "HEAD 1 (A): no package data found", ""
 
                 packages = ret["objects"]
-                size_map = {p["name"].lower().rstrip(): p["size"] for p in packages if p.get("name") and p.get("size")}
+                size_map, duplicate_labels = build_shuttle_barcode_size_map(
+                    packages)
 
-                if shuttle_name in size_map:
-                    self.shuttle_size_from_barcode_scanner = size_map[shuttle_name]
-                    logging.warning(f"SHUTTLE - {shuttle_name}: {size_map[shuttle_name]}")
+                if shuttle_label in size_map:
+                    self.shuttle_size_from_barcode_scanner = (
+                        size_map[shuttle_label])
+                    logging.warning(
+                        f"SHUTTLE - {shuttle_label}: "
+                        f"{size_map[shuttle_label]}")
                     return True, "", ""
-                else:
-                    return False, "UNKNOWN SHUTTLE: {}", shuttle_name
+                if shuttle_label in duplicate_labels:
+                    return (
+                        False,
+                        "AMBIGUOUS SHUTTLE BARCODE: {}",
+                        shuttle_label,
+                    )
+                return False, "UNKNOWN SHUTTLE: {}", shuttle_label
 
             except Exception as e:
                 logging.error(f"An unexpected error has been occurred: {e}")
-                return False, "An unexpected error has been occurred."
+                return False, "An unexpected error has been occurred.", ""
 
         def on_shuttle_ok():
             nonlocal shuttle_barcode
@@ -2032,7 +2395,6 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             raw = self.main_window.input_dialog.get_content_text()
             formula_barcode = "".join(raw.split())
             formula_event.set()
-            formula_barcode = formula_barcode[:12]
             logging.warning(f"Formula barcode received: {formula_barcode}")
 
         while True:
@@ -2064,14 +2426,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             )
             await formula_event.wait()
 
-            if formula_barcode.isdigit():
+            if BarCodeReader.is_valid_alfa_barcode(formula_barcode):
                 self.main_window.hide_input_dialog()
                 break
 
-            logging.warning(f"Invalid formula barcode: {formula_barcode} (non è solo numeri)")
+            logging.warning(f"Invalid formula barcode: {formula_barcode}")
             self.main_window.hide_input_dialog()
             self.main_window.open_alert_dialog(
-                (formula_barcode),
+                (formula_barcode,),
                 fmt="Invalid order barcode: {}",
                 title="ERROR ORDER BARCODE"
             )

@@ -18,7 +18,7 @@ import time
 from types import SimpleNamespace
 
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.Qt import QUrl
 from PyQt5.QtWebEngineWidgets import (
     QWebEngineView,
@@ -35,6 +35,14 @@ import magic       # pylint: disable=import-error
 g_settings = import_settings()
 
 WEBENGINEVIEW_GEOMETRY = (8, 28, 1904, 960)
+
+SUSPEND_PAGE_WS_SCRIPT = """
+    (function () {
+        if (typeof window.alfaSuspendWS !== "function") { return false; }
+        window.alfaSuspendWS();
+        return true;
+    })();
+"""
 
 SINGLE_POPUP_WIN = SimpleNamespace(
     child_view=None,
@@ -158,12 +166,12 @@ class SingleWebEnginePage(QWebEnginePage):
 
     @classmethod
     def javaScriptConsoleMessage(cls, *args):
-        logging.debug(f"args:{args}.")
+        logging.debug("args:%s.", args)
 
     def acceptNavigationRequest(self, url, _type, isMainFrame):
 
         # ~ logging.warning(f"url:{url}, _type:{_type}, isMainFrame:{isMainFrame}.")
-        logging.warning(f"self:{self}.")
+        logging.debug(f"self:{self}.")
         # ~ if g_settings.WEBENGINE_CUSTOMER_URL not in f"{url}":
         # ~ if QApplication.instance().main_window.open_alert_dialog:
         # ~ args_ = f"BEWARE:\n{g_settings.WEBENGINE_CUSTOMER_URL}\n not in \n{url}"
@@ -175,7 +183,7 @@ class SingleWebEnginePage(QWebEnginePage):
         """
         QStringList QWebEnginePage::chooseFiles(QWebEnginePage::FileSelectionMode mode, const QStringList &oldFiles, const QStringList &acceptedMimeTypes)
         """
-        logging.debug(f"{self} {mode} {oldFiles} {acceptedMimeTypes}")
+        logging.debug("%s %s %s %s", self, mode, oldFiles, acceptedMimeTypes)
         logging.warning("chooseFiles Disabled.")
         return []
 
@@ -218,7 +226,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                 try:
                     SINGLE_POPUP_WIN.profile.downloadRequested.disconnect()
                 except Exception:  # pylint: disable=broad-except
-                    logging.warning(traceback.format_exc())
+                    logging.warning("failed to disconnect previous downloadRequested handler", exc_info=True)
 
                 SINGLE_POPUP_WIN.profile.downloadRequested.connect(self.on_downloadRequested)
 
@@ -226,7 +234,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
             SINGLE_POPUP_WIN.child_view.show()
 
         except Exception:  # pylint: disable=broad-except
-            logging.warning(traceback.format_exc())
+            logging.warning("failed to create popup window", exc_info=True)
 
         logging.warning(
             f"_type:{_type}, _view:{SINGLE_POPUP_WIN.child_view}, _page:{SINGLE_POPUP_WIN.child_page}.")
@@ -246,7 +254,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                 SINGLE_POPUP_WIN.child_view.setUrl(url)
                 SINGLE_POPUP_WIN.child_view.show()
             else:
-                logging.info(f"SINGLE_POPUP_WIN:{SINGLE_POPUP_WIN}")
+                logging.info("SINGLE_POPUP_WIN:%s", SINGLE_POPUP_WIN)
 
         return False
 
@@ -266,7 +274,7 @@ class PopUpWebEnginePage(SingleWebEnginePage):
                     try:
                         self.current_download.stateChanged.disconnect()
                     except Exception:  # pylint: disable=broad-except
-                        logging.warning(traceback.format_exc())
+                        logging.warning("failed to disconnect download stateChanged handler", exc_info=True)
                     self.current_download = None
 
                     # ~ SINGLE_POPUP_WIN.parent.reset_view()
@@ -297,7 +305,7 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
 
     def reset_view(self):
 
-        logging.warning(f"self.q_url:{self.q_url}.")
+        logging.debug(f"self.q_url:{self.q_url}.")
 
         self.webengine_view = QWebEngineView(self)
 
@@ -318,6 +326,19 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             self.webengine_view.setGeometry(*WEBENGINEVIEW_GEOMETRY)
 
         self.webengine_view.show()
+
+    def _warm_up_webengine_view(self):
+        """Create the Chromium view early without loading application pages."""
+        if self.webengine_view is not None:
+            return
+
+        try:
+            self.reset_view()
+            blank = QUrl("about:blank")
+            self.q_url = blank
+            self.webengine_view.setUrl(blank)
+        except Exception:  # pylint: disable=broad-except
+            logging.warning("failed to warm up webengine view", exc_info=True)
 
     def _setup_devtools_splitter(self):
 
@@ -352,6 +373,14 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         else:
             self._webengine_page = SingleWebEnginePage(self)
 
+        # diagnostica: un crash del render process su embedded e' altrimenti silenzioso
+        # (il recovery avviene comunque alla prossima setUrl di open_page)
+        try:
+            self._webengine_page.renderProcessTerminated.connect(
+                self._on_render_process_terminated)
+        except Exception:  # pylint: disable=broad-except
+            logging.warning("cannot connect renderProcessTerminated", exc_info=True)
+
         self.url_lbl.mouseReleaseEvent = lambda event: self.__on_click_url_label()
 
         self.devtools_view = None
@@ -367,15 +396,29 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         self.loading = tr_("loading:")
         self.loaded = tr_("loaded:")
 
-        url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
-        self.q_url = QUrl(url)
+        # NOTE: vestigial loading splash. start_page.html (and images/hourglass.gif)
+        # was meant as a "loading... please wait" placeholder, but it is never loaded:
+        # self.q_url is overwritten by open_page() before any setUrl() in the normal
+        # flow, and no setUrl(self.q_url) exists. Kept commented pending the decision
+        # to remove the assets or restore the splash behavior.
+        # url = QUrl.fromLocalFile((get_res("UI", "start_page.html")))
+        # self.q_url = QUrl(url)
+        self.q_url = QUrl()
         self.webengine_view = None
+        self.__load_started_at = None
+        self.__load_started_url = ""
+        self.__load_requested_url = ""
+        self.__open_requested_at = None
 
         self.current_head_index = None
         if self.refill_label:
             self.refill_label.mouseReleaseEvent = lambda event: self.main_window.home_page.refill_lbl_clicked(self.current_head_index)
         if self.print_label:
             self.print_label.mouseReleaseEvent = lambda event: self.main_window.home_page.print_label_clicked(self.current_head_index)
+
+        # Completa l'inizializzazione di Chromium appena parte l'event loop,
+        # senza ritardare la costruzione della finestra e senza contattare le teste.
+        QTimer.singleShot(0, self._warm_up_webengine_view)
 
     def __on_click_url_label(self):
         if SINGLE_POPUP_WIN.child_view:
@@ -385,6 +428,8 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
     def __on_load_start(self):
         self.__load_progress = 0
         url_ = self.webengine_view.url().toString()
+        self.__load_started_at = time.monotonic()
+        self.__load_started_url = url_
         self.url_lbl.setText('<div style="font-size: 10pt; background-color: #EEEEFF;">{} {} ({})</div>'.format(
             self.start_load, url_, self.__load_progress))
 
@@ -394,10 +439,277 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         self.url_lbl.setText('<div style="font-size: 10pt; background-color: #DDEEFF;">{} {} ... ({})</div>'.format(
             self.loading, url_, "*" * (self.__load_progress % 10)))
 
-    def __on_load_finish(self):
+    def __on_load_finish(self, ok=True):
         url_ = self.webengine_view.url().toString()
+        now = time.monotonic()
+        elapsed_ms = None
+        if self.__load_started_at is not None:
+            elapsed_ms = int((now - self.__load_started_at) * 1000)
+        # Latenza percepita dal CLICK (non solo dalla pagina):
+        #   click_to_loadstart  = click -> loadStarted  (attesa thread GUI + setUrl, invisibile al nav-timing)
+        #   click_to_loadfinish = click -> loadFinished (tempo reale click -> DOM caricato)
+        click_to_loadstart_ms = None
+        click_to_loadfinish_ms = None
+        # consuma il timestamp del click SOLO se questo loadFinished appartiene alla
+        # navigazione richiesta: un load abortito (setUrl sopraggiunto mentre un'altra
+        # pagina stava caricando) emette loadFinished per la pagina VECCHIA e
+        # attribuirebbe il click all'URL sbagliato
+        consume_click = (
+            self.__open_requested_at is not None
+            and self.__load_started_url == self.__load_requested_url)
+        if consume_click:
+            click_to_loadfinish_ms = int((now - self.__open_requested_at) * 1000)
+            if self.__load_started_at is not None:
+                click_to_loadstart_ms = int((self.__load_started_at - self.__open_requested_at) * 1000)
+        if getattr(g_settings, 'WEBENGINE_PERF_LOG', False):
+            logging.warning(
+                "webengine load finished ok:%s elapsed_ms:%s click_to_loadstart_ms:%s "
+                "click_to_loadfinish_ms:%s requested:%s started:%s final:%s",
+                ok, elapsed_ms, click_to_loadstart_ms, click_to_loadfinish_ms,
+                self.__load_requested_url, self.__load_started_url, url_)
+        if consume_click:
+            self.__open_requested_at = None
         self.url_lbl.setText(
             '<div style="font-size: 10pt; background-color: #EEEEEE;">{} {}</div>'.format(self.loaded, url_))
+        self.__log_page_performance(
+            url_, click_to_loadstart_ms, click_to_loadfinish_ms)
+        # il load puo' completarsi quando l'operatore ha gia' lasciato la BrowserPage:
+        # il documento appena nato apre il suo WS e visibilitychange non scatta
+        # (pagina NATA nascosta) -> va risospeso qui, altrimenti il WS resta aperto
+        # ad alimentare il fan-out a pagina invisibile
+        if not self.isVisible():
+            self._suspend_page_ws()
+
+    def __log_page_performance(
+            self, url_, click_to_loadstart_ms=None,
+            click_to_loadfinish_ms=None):
+        # Strumentazione opzionale: di default OFF (zero costo, niente spam a WARNING
+        # in produzione dove LOG_LEVEL=WARNING). Per profilare sulla macchina reale
+        # impostare WEBENGINE_PERF_LOG = True nel conf attivo.
+        if not getattr(g_settings, 'WEBENGINE_PERF_LOG', False):
+            return
+        if url_ == "about:blank" or self.webengine_view is None or self.webengine_view.page() is None:
+            return
+
+        script = """
+            (function () {
+                function roundMs(value) {
+                    if (typeof value !== "number" || !isFinite(value)) {
+                        return null;
+                    }
+                    return Math.round(value);
+                }
+                function delta(end, start) {
+                    if (typeof end !== "number" || typeof start !== "number" ||
+                            !isFinite(end) || !isFinite(start) || end <= 0 || start <= 0) {
+                        return null;
+                    }
+                    return Math.max(0, Math.round(end - start));
+                }
+
+                var nav = null;
+                if (performance.getEntriesByType) {
+                    var navEntries = performance.getEntriesByType("navigation");
+                    if (navEntries && navEntries.length) {
+                        var n = navEntries[0];
+                        nav = {
+                            type: n.type || "",
+                            duration: roundMs(n.duration),
+                            responseEnd: roundMs(n.responseEnd),
+                            domInteractive: roundMs(n.domInteractive),
+                            domContentLoadedEventEnd: roundMs(n.domContentLoadedEventEnd),
+                            loadEventEnd: roundMs(n.loadEventEnd),
+                            transferSize: n.transferSize || 0,
+                            encodedBodySize: n.encodedBodySize || 0,
+                            decodedBodySize: n.decodedBodySize || 0
+                        };
+                    }
+                }
+                if (!nav && performance.timing) {
+                    var t = performance.timing;
+                    var s = t.navigationStart;
+                    nav = {
+                        type: "legacy",
+                        duration: delta(t.loadEventEnd, s),
+                        responseEnd: delta(t.responseEnd, s),
+                        domInteractive: delta(t.domInteractive, s),
+                        domContentLoadedEventEnd: delta(t.domContentLoadedEventEnd, s),
+                        loadEventEnd: delta(t.loadEventEnd, s),
+                        transferSize: 0,
+                        encodedBodySize: 0,
+                        decodedBodySize: 0
+                    };
+                }
+
+                // Milestone di RENDER (mancavano): first-paint / first-contentful-paint.
+                // E' qui che si vede il costo render-bound, non in domContentLoaded.
+                var paint = {firstPaint: null, firstContentfulPaint: null};
+                if (performance.getEntriesByType) {
+                    performance.getEntriesByType("paint").forEach(function (p) {
+                        if (p.name === "first-paint") {
+                            paint.firstPaint = roundMs(p.startTime);
+                        } else if (p.name === "first-contentful-paint") {
+                            paint.firstContentfulPaint = roundMs(p.startTime);
+                        }
+                    });
+                }
+
+                var resources = [];
+                if (performance.getEntriesByType) {
+                    resources = performance.getEntriesByType("resource").map(function (r) {
+                        return {
+                            name: r.name || "",
+                            type: r.initiatorType || "",
+                            startTime: roundMs(r.startTime),
+                            duration: roundMs(r.duration),
+                            responseEnd: roundMs(r.responseEnd),
+                            dns: roundMs(r.domainLookupEnd - r.domainLookupStart),
+                            connect: roundMs(r.connectEnd - r.connectStart),
+                            ttfb: roundMs(r.responseStart - r.requestStart),
+                            download: roundMs(r.responseEnd - r.responseStart),
+                            transferSize: r.transferSize || 0,
+                            encodedBodySize: r.encodedBodySize || 0,
+                            decodedBodySize: r.decodedBodySize || 0
+                        };
+                    });
+                    resources.sort(function (a, b) {
+                        return (b.duration || 0) - (a.duration || 0);
+                    });
+                }
+
+                // Ritardo fino al primo frame compositato dopo il load: se alto, la
+                // main thread e' ancora occupata da layout/paint -> render-bound.
+                // requestAnimationFrame e' asincrono, il valore viene letto in 2a fase.
+                window.__alfaPerfRafMs = null;
+                if (window.requestAnimationFrame) {
+                    var rafT0 = performance.now();
+                    requestAnimationFrame(function () {
+                        window.__alfaPerfRafMs = Math.max(0, Math.round(performance.now() - rafT0));
+                    });
+                }
+
+                return JSON.stringify({
+                    navigation: nav,
+                    paint: paint,
+                    scriptRunAt: roundMs(performance.now()),
+                    resourceCount: resources.length,
+                    slowResources: resources.slice(0, 8)
+                });
+            })();
+        """
+
+        def _on_performance_result(payload):
+            try:
+                data = json.loads(payload or "{}")
+            except Exception as e:  # pylint: disable=broad-except
+                logging.warning("webengine perf parse failed: %s payload:%s", e, payload)
+                return
+
+            nav = data.get("navigation") or {}
+            paint = data.get("paint") or {}
+            response_end_ms = nav.get("responseEnd")
+            dom_interactive_ms = nav.get("domInteractive")
+            load_event_ms = nav.get("loadEventEnd")
+            first_paint_ms = paint.get("firstPaint")
+            first_contentful_paint_ms = paint.get("firstContentfulPaint")
+
+            parse_blocking_ms = None
+            if (response_end_ms is not None
+                    and dom_interactive_ms is not None):
+                parse_blocking_ms = max(
+                    0, dom_interactive_ms - response_end_ms)
+
+            dom_to_load_ms = None
+            if (dom_interactive_ms is not None
+                    and load_event_ms is not None):
+                dom_to_load_ms = max(
+                    0, load_event_ms - dom_interactive_ms)
+
+            click_to_first_paint_ms = None
+            click_to_fcp_ms = None
+            if click_to_loadstart_ms is not None:
+                if first_paint_ms is not None:
+                    click_to_first_paint_ms = (
+                        click_to_loadstart_ms + first_paint_ms)
+                if first_contentful_paint_ms is not None:
+                    click_to_fcp_ms = (
+                        click_to_loadstart_ms
+                        + first_contentful_paint_ms)
+
+            logging.warning(
+                "webengine perf navigation final:%s duration_ms:%s response_end_ms:%s "
+                "dom_interactive_ms:%s dom_content_loaded_ms:%s load_event_ms:%s "
+                "first_paint_ms:%s first_contentful_paint_ms:%s script_run_at_ms:%s "
+                "parse_blocking_ms:%s dom_to_load_ms:%s "
+                "click_to_first_paint_ms:%s click_to_fcp_ms:%s "
+                "click_to_loadfinish_ms:%s resources:%s transfer:%s encoded:%s decoded:%s",
+                url_,
+                nav.get("duration"),
+                response_end_ms,
+                dom_interactive_ms,
+                nav.get("domContentLoadedEventEnd"),
+                load_event_ms,
+                first_paint_ms,
+                first_contentful_paint_ms,
+                data.get("scriptRunAt"),
+                parse_blocking_ms,
+                dom_to_load_ms,
+                click_to_first_paint_ms,
+                click_to_fcp_ms,
+                click_to_loadfinish_ms,
+                data.get("resourceCount"),
+                nav.get("transferSize"),
+                nav.get("encodedBodySize"),
+                nav.get("decodedBodySize"))
+
+            for resource in data.get("slowResources") or []:
+                name = resource.get("name") or ""
+                if len(name) > 140:
+                    name = "{}...".format(name[:137])
+                logging.warning(
+                    "webengine perf resource duration_ms:%s type:%s start_ms:%s "
+                    "response_end_ms:%s ttfb_ms:%s download_ms:%s transfer:%s "
+                    "encoded:%s decoded:%s name:%s",
+                    resource.get("duration"),
+                    resource.get("type"),
+                    resource.get("startTime"),
+                    resource.get("responseEnd"),
+                    resource.get("ttfb"),
+                    resource.get("download"),
+                    resource.get("transferSize"),
+                    resource.get("encodedBodySize"),
+                    resource.get("decodedBodySize"),
+                    name)
+
+            self.__log_raf_after_load(url_)
+
+        try:
+            self.webengine_view.page().runJavaScript(script, _on_performance_result)
+        except Exception as e:  # pylint: disable=broad-except
+            logging.warning("webengine perf runJavaScript failed: %s", e)
+
+    def __log_raf_after_load(self, url_):
+        # Seconda fase: rilegge il timestamp del primo frame dopo il load registrato
+        # dallo script di __log_page_performance. requestAnimationFrame e' asincrono e
+        # non e' disponibile nel return sincrono di runJavaScript, quindi serve un
+        # secondo eval differito (la rAF e' gia' scattata entro ~1 frame).
+        view = self.webengine_view
+        if view is None or view.page() is None:
+            return
+
+        def _read_raf():
+            if view.page() is None:
+                return
+
+            def _on_raf(value):
+                logging.warning("webengine perf raf_next_frame_ms:%s final:%s", value, url_)
+
+            try:
+                view.page().runJavaScript("window.__alfaPerfRafMs", _on_raf)
+            except Exception as e:  # pylint: disable=broad-except
+                logging.warning("webengine perf raf read failed: %s", e)
+
+        QTimer.singleShot(120, _read_raf)
 
     def toggleDevTools(self):
 
@@ -479,7 +791,94 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
         if self._webengine_page:
             del self._webengine_page
 
-    def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL, head_index=None):
+    def _should_blank_without_ws_hook(self, view):
+        """Return True for internal pages whose resources must not stay active."""
+        try:
+            host = view.url().host()
+        except Exception:  # pylint: disable=broad-except
+            return False
+        if not host:
+            return False
+
+        head_hosts = {
+            entry[0]
+            for entry in (getattr(g_settings, "MACHINE_HEAD_IPADD_PORTS_LIST", []) or [])
+            if entry
+        }
+        return host in ("127.0.0.1", "localhost", "::1") or host in head_hosts
+
+    def _blank_internal_page_without_hook(self, view, expected_url):
+        # runJavaScript e' asincrono: al ritorno si blanka solo se siamo ancora
+        # sulla stessa pagina e questa e' effettivamente nascosta.
+        if (view is not self.webengine_view or self.isVisible()
+                or view.url().toString() != expected_url
+                or not self._should_blank_without_ws_hook(view)):
+            return
+        blank = QUrl("about:blank")
+        view.setUrl(blank)
+        self.q_url = blank
+
+    def blank_webengine_view(self, callback=None, timeout_ms=500):  # pylint: disable=unused-argument
+        # Preferisce il contratto cooperativo alfaSuspendWS, che conserva DOM e
+        # render. Se una pagina INTERNA non espone l'hook (versione devices meno
+        # recente, admin/settings locali), torna ad about:blank per non lasciare
+        # WebSocket o timer fantasma. Le pagine cliente esterne restano residenti.
+        self._suspend_page_ws()
+        if callback:
+            QTimer.singleShot(0, callback)
+
+    def _suspend_page_ws(self):
+        # Chiude il WebSocket della pagina corrente tramite alfaSuspendWS. Il
+        # risultato booleano consente il fallback per le pagine interne senza hook.
+        view = self.webengine_view
+        if view is None or view.page() is None:
+            return
+
+        expected_url = view.url().toString()
+
+        def _on_suspend_result(hook_available):
+            if not hook_available:
+                self._blank_internal_page_without_hook(view, expected_url)
+
+        try:
+            view.page().runJavaScript(
+                SUSPEND_PAGE_WS_SCRIPT,
+                _on_suspend_result)
+        except Exception:  # pylint: disable=broad-except
+            logging.warning("failed to suspend page websocket", exc_info=True)
+            self._blank_internal_page_without_hook(view, expected_url)
+
+    def _resume_page_ws(self):
+        view = self.webengine_view
+        if view is not None and view.page() is not None:
+            try:
+                view.page().runJavaScript(
+                    "if (window.alfaResumeWS) { window.alfaResumeWS(); }")
+            except Exception:  # pylint: disable=broad-except
+                logging.warning("failed to resume page websocket", exc_info=True)
+
+    def release_local_ws(self):
+        self.blank_webengine_view()
+
+    def hideEvent(self, event):  # pylint: disable=invalid-name
+        # View residente: niente blank, sospendi solo il WS della pagina.
+        self._suspend_page_ws()
+        super().hideEvent(event)
+
+    def showEvent(self, event):  # pylint: disable=invalid-name
+        # Copre i path di show che NON passano da open_page (es. ritorno dalla
+        # help page via setCurrentWidget diretto): senza questo la pagina
+        # ricomparirebbe con WS sospeso e dati congelati. Idempotente: lato JS
+        # alfaResumeWS e' un no-op se non c'era stata una suspend.
+        self._resume_page_ws()
+        super().showEvent(event)
+
+    def _on_render_process_terminated(self, termination_status, exit_code):
+        logging.error(
+            "webengine render process terminated status:%s exit_code:%s",
+            termination_status, exit_code)
+
+    def open_page(self, url=g_settings.WEBENGINE_CUSTOMER_URL, head_index=None, requested_at=None):
 
         _popup_web_engine_page = hasattr(
             g_settings, 'POPUP_WEB_ENGINE_PAGE') and getattr(
@@ -488,10 +887,22 @@ class BrowserPage(BaseStackedPage): # pylint: disable=too-many-instance-attribut
             self.reset_view()
             time.sleep(.05)
 
-        logging.warning(f"url:{url}.")
+        logging.debug(f"url:{url}.")
         if url:
+            # requested_at: monotonic() catturato sul CLICK (home_page) per misurare
+            # la latenza reale click -> pagina caricata, inclusa l'attesa sul thread
+            # GUI che il Navigation Timing non vede. Armato SOLO se c'e' davvero una
+            # navigazione da misurare: con url=None resterebbe stale e sporcherebbe
+            # la misura del prossimo loadFinished.
+            self.__open_requested_at = requested_at if requested_at is not None else time.monotonic()
             q_url = QUrl(url)
             self.q_url = q_url
+            # Si ricarica SEMPRE l'URL richiesto, anche se identico a quello gia'
+            # mostrato: la pagina e' renderizzata server-side con dati che cambiano
+            # nel tempo (livelli pipe, pigmenti, config) e riusare la pagina
+            # residente mostrerebbe dati stale. La view resta comunque residente
+            # mentre e' nascosta (hideEvent non blanka, sospende solo il WS).
+            self.__load_requested_url = q_url.toString()
             self.webengine_view.setUrl(q_url)
             self.parent().setCurrentWidget(self)
 
