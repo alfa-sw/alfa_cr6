@@ -826,7 +826,7 @@ class _OrderBarcodeDispenseE2EMixin:
             persisted_before_shutdown["dispensation"], dispensation_state
         )
 
-        if physical_position not in ("current", "next", "missing", "ambiguous"):
+        if physical_position not in ("current", "next", "between", "ambiguous"):
             raise ValueError(
                 "unsupported recovery physical position: {}".format(
                     physical_position
@@ -1129,11 +1129,26 @@ class TestCR6OrderBarcodeDispenseE2E(
         self.assertEqual(raw_recovery_data, {})
         self._assert_recovery_invariants(raw_recovery_data)
 
-    def test_recovery_blocks_when_jar_is_missing_from_both_heads(self):
-        self._assert_recovery_blocked_by_physical_state(
-            physical_position="missing",
-            expected_alert_text="Jar not detected",
+    def test_recovery_resumes_when_jar_is_between_head_sensors(self):
+        order, jar, raw_recovery_data = self._run(
+            self._run_recovery_after_shutdown(
+                dispensation_state="done",
+                dispense_before_shutdown=True,
+                physical_position="between",
+            )
         )
+
+        properties = json.loads(jar.json_properties)
+        self.assertEqual(jar.status, "DONE")
+        self.assertEqual(jar.position, "OUT")
+        self.assertEqual(order.status, "DONE")
+        self.assertEqual(
+            properties["visited_head_names"],
+            list(self.spec["carousel_order"]),
+        )
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(raw_recovery_data, {})
+        self._assert_recovery_invariants(raw_recovery_data)
 
     def test_recovery_blocks_on_ambiguous_double_occupancy(self):
         self._assert_recovery_blocked_by_physical_state(

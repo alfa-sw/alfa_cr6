@@ -1354,16 +1354,6 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             )
                             mark_recovery_error(_jar, message)
                             raise RuntimeError(message)
-                        if (
-                                not curr_head_jar_engagged_photocell
-                                and not next_photocell_status):
-                            message = (
-                                "[Recovery Mode] Jar not detected in either "
-                                "the current or next position"
-                            )
-                            mark_recovery_error(_jar, message)
-                            raise RuntimeError(message)
-
                     if curr_head_jar_engagged_photocell:
                         if skip_current_dispense:
                             return jar_recovery_actions[1:], current_head.name
