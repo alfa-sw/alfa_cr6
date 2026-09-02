@@ -116,7 +116,7 @@ def _to_html_table(_obj, rec_lev=0):
 
 def _reformat_head_events_to_csv(temp_pth, db_session):
 
-    logging.info(f"db_session:{db_session}")
+    logging.info("db_session:%s", db_session)
 
     f_name = os.path.join(temp_pth, "head_events.csv")
     with open(f_name, 'w', newline='', encoding='UTF-8') as csvfile:
@@ -295,7 +295,7 @@ class JarModelView(Base_ModelView):
             _html = order and f"""<a href="/order/details/?id={order.id}">{order.order_nr}</a>"""
         except Exception:
             _html = order
-            logging.warning(traceback.format_exc())
+            logging.warning("failed to display order", exc_info=True)
 
         return Markup(_html)
 
@@ -422,7 +422,7 @@ class OrderModelView(Base_ModelView):
         try:
             _html = f"""{obj.status}"""
         except Exception:
-            logging.warning(traceback.format_exc())
+            logging.warning("failed to display order status", exc_info=True)
 
         return Markup(_html)
 
@@ -442,7 +442,7 @@ class OrderModelView(Base_ModelView):
                 _html += f"""<a href="{link}">{'<br/>'.join([str(i) for i in jar_statuses])}</a>"""
             except Exception:
                 _html = jars
-                logging.warning(traceback.format_exc())
+                logging.warning("failed to display jar status", exc_info=True)
 
         return Markup(_html)
 
@@ -458,7 +458,7 @@ class OrderModelView(Base_ModelView):
             _html += f"{'<br/>'.join([str(i) for i in jar_positions])}"
         except Exception:
             _html = jars
-            logging.warning(traceback.format_exc())
+            logging.warning("failed to display jar position", exc_info=True)
 
         return Markup(_html)
 
@@ -548,9 +548,10 @@ class AdminIndexView(flask_admin.AdminIndexView):
 
         try:
             request_data = request.data
-            logging.info(f"request_data({type(request_data)}):{request_data}")
+            if logging.getLogger().isEnabledFor(logging.INFO):
+                logging.info("request_data(%s):%s", type(request_data), request_data)
             formula = json.loads(request_data)
-            logging.info(f"formula:{formula}")
+            logging.info("formula:%s", formula)
             if formula.get("header") == "SW CRx formula file":
 
                 OrderParser.parse_sw_json(formula.copy())

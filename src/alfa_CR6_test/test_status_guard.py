@@ -15,6 +15,7 @@ import sys
 import types
 import unittest
 from types import SimpleNamespace
+from unittest import mock
 
 sys.modules.setdefault("redis", types.SimpleNamespace(from_url=lambda *args, **kwargs: None))
 sys.modules.setdefault("aiohttp", types.SimpleNamespace(ClientSession=object, FormData=object))
@@ -283,6 +284,57 @@ class DoneStatusGuardTests(unittest.TestCase):
         self.assertEqual(session.commit_calls, 1)
         self.assertEqual(len(published), 1)
 
+    def test_recovery_record_cleanup_distinguishes_terminal_underscore(self):
+        cases = (
+            ("DONE", "_", True),
+            ("ERROR", "_", False),
+            ("ERROR", "OUT", True),
+        )
+
+        for status, position, should_remove in cases:
+            with self.subTest(
+                    status=status, position=position,
+                    should_remove=should_remove):
+                jar = FakeJar(status=status, position="A")
+                restore_helper = SimpleNamespace(
+                    store_jar_data=mock.Mock(),
+                    remove_jar_data=mock.Mock(),
+                )
+                app = SimpleNamespace(
+                    machine_head_dict={},
+                    _BaseApplication__jar_runners={},
+                    db_session=FakeCommitSession(),
+                    redis_publisher=SimpleNamespace(
+                        publish_messages=lambda _payload: None
+                    ),
+                    restore_machine_helper=restore_helper,
+                    main_window=SimpleNamespace(
+                        home_page=SimpleNamespace(
+                            update_jar_pixmaps=lambda: None
+                        )
+                    ),
+                    ws_server=SimpleNamespace(
+                        refresh_can_list=lambda: None
+                    ),
+                    handle_exception=lambda exc: (
+                        _ for _ in ()
+                    ).throw(exc),
+                )
+
+                BaseApplication.update_jar_position(
+                    app, jar, status=status, pos=position
+                )
+
+                restore_helper.store_jar_data.assert_called_once_with(
+                    jar, position
+                )
+                if should_remove:
+                    restore_helper.remove_jar_data.assert_called_once_with(
+                        jar.barcode
+                    )
+                else:
+                    restore_helper.remove_jar_data.assert_not_called()
+
     def test_update_jar_position_keeps_partial_order_with_mixed_done_and_new_jars(self):
         session = FakeCommitSession()
         order = FakeOrder()
@@ -321,6 +373,7 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
+            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 
@@ -344,6 +397,7 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
+            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 
@@ -362,6 +416,7 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
+            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 

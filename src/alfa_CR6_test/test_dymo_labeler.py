@@ -35,11 +35,12 @@ def send_cups_cmd(action, params):
     def _format_reply(command, shell=False, loggable=False):
         command_list = command.split(' ')
         logging.info('')
-        logging.info('command_list -> {}'.format(command_list))
+        logging.info('command_list -> %s', command_list)
         os_cmd_reply = subprocess.check_output(command_list, shell=shell).decode()
         reply = [i.strip() for i in os_cmd_reply.split('\n')]
         if loggable:
-            logging.info('reply({}): {}'.format(type(reply), reply))
+            if logging.getLogger().isEnabledFor(logging.INFO):
+                logging.info('reply(%s): %s', type(reply), reply)
         return reply
 
     if action == 'cups_print_label':
@@ -67,7 +68,7 @@ def send_cups_cmd(action, params):
             response.update({'result': 'KO', 'error': 'Dymo not plugged'})
 
 
-    logging.info('response: {}'.format(response))
+    logging.info('response: %s', response)
 
     return response
 

@@ -26,10 +26,8 @@ from sqlalchemy import (      # pylint: disable=import-error
     BigInteger,
     DateTime,
     ForeignKey,
+    Index,
     UniqueConstraint,
-    event,
-    # ~ select,
-    # ~ func,
 )
 
 import sqlalchemy.ext.declarative  # pylint: disable=import-error
@@ -83,10 +81,15 @@ def generate_order_nr():
 
     date_number = (
         today.year % 100 * 10000 + today.month * 100 + today.day) * 1000 * 1000
+    next_date_number = date_number + 1000 * 1000
 
     order = (
         global_session.query(Order)
-        .filter(Order.order_nr > date_number)
+        .filter(
+            Order.order_nr > date_number,
+            Order.order_nr < next_date_number,
+            Order.order_nr % 1000 == 0,
+        )
         .order_by(Order.order_nr.desc())
         .first()
     )
@@ -94,6 +97,9 @@ def generate_order_nr():
         new_number = order.order_nr + 1000
     else:
         new_number = date_number + 1000
+
+    if new_number >= next_date_number:
+        raise RuntimeError("daily order number sequence exhausted")
 
     order_nr = int(new_number)
 
@@ -129,26 +135,6 @@ class BaseModel:  # pylint: disable=too-few-public-methods
             json.loads(value)
 
         return value
-
-    @classmethod
-    def check_size_limit(cls, session):
-
-        exceeding_objects = []
-        if cls.row_count_limt > 0:
-            try:
-                query_ = session.query(cls)
-                row_count = query_.count()
-                exceeding = max(0, row_count - cls.row_count_limt)
-                if exceeding > 0:
-                    exceeding += int(cls.row_count_limt * 0.1)  # below watermark
-                    exceeding_objects = query_.order_by(cls.date_created).limit(exceeding)
-                    msg = "cls:{}, row_count:{}, exceeding:{}, exceeding_objects.count():{}".format(
-                        cls, row_count, exceeding, exceeding_objects.count())
-                    logging.warning(msg)
-            except Exception as e:  # pylint: disable=broad-except
-                logging.error(e)
-
-        return exceeding_objects
 
     def get_json_property(self, key, default):
         value = default
@@ -230,7 +216,7 @@ class BaseModel:  # pylint: disable=too-few-public-methods
                     val = v
                 data_dict_cpy[k] = val
             except Exception:  # pylint: disable=broad-except
-                logging.warning(traceback.format_exc())
+                logging.warning("failed to prepare field %s for %s", k, cls, exc_info=True)
 
         obj = cls(**data_dict_cpy)
 
@@ -282,6 +268,9 @@ class Event(Base, BaseModel):  # pylint: disable=too-few-public-methods
 class Jar(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     __tablename__ = "jar"
+    __table_args__ = (
+        Index("ix_jar_order_id_index", "order_id", "index"),
+    )
 
     row_count_limt = 25 * 1000
 
@@ -441,26 +430,22 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
     @property
     def status(self):
 
-        ret = None
         if hasattr(self, 'inner_status'):
-            if self.inner_status is None:
-                self.update_status(global_session)
-            ret = self.inner_status
-        else:
-            ret = self.update_status()
-        return ret
+            if self.inner_status is not None:
+                return self.inner_status
+            return self._calculate_status()
+
+        return self._calculate_status()
 
     @property
     def deleted(self):
 
-        ret = None
         if hasattr(self, 'is_deleted'):
-            if self.is_deleted is None:
-                self.update_deleted(global_session)
-            ret = self.is_deleted
-        else:
-            ret = self.update_deleted()
-        return ret
+            if self.is_deleted is not None:
+                return self.is_deleted
+            return self._calculate_deleted()
+
+        return self._calculate_deleted()
 
     def update_file_name(self, session=None):
 
@@ -470,12 +455,16 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
             if session:
                 session.commit()
 
-    def update_deleted(self, session=None):
+    def _calculate_deleted(self):
 
         flag = (not self.jars) or [j for j in self.jars if j.position != "DELETED"]
-        ret = '' if flag else 'yes'
+        return '' if flag else 'yes'
 
-        logging.warning(f"flag:{flag}, ret:{ret}")
+    def update_deleted(self, session=None):
+
+        ret = self._calculate_deleted()
+
+        logging.warning(f"ret:{ret}")
 
         if hasattr(self, 'is_deleted'):
             self.is_deleted = ret
@@ -486,7 +475,7 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
         return ret
 
-    def update_status(self, session=None):
+    def _calculate_status(self):
 
         sts_ = "NEW"
 
@@ -505,6 +494,12 @@ class Order(Base, BaseModel):  # pylint: disable=too-few-public-methods
             sts_ = "PARTIAL"
         elif not counters.get("NEW") and counters.get("DONE"):
             sts_ = "DONE"
+
+        return sts_
+
+    def update_status(self, session=None):
+
+        sts_ = self._calculate_status()
 
         if hasattr(self, 'inner_status'):
             self.inner_status = sts_
@@ -530,6 +525,9 @@ class Document(Base, BaseModel):  # pylint: disable=too-few-public-methods
 
     def __str__(self):
         return "{}_{}_{}".format(self.name, self.type, self.date_created)
+
+
+DATABASE_CLEANUP_MODELS = (Event, Jar, Order, Document)
 
 # ~ #######################
 
@@ -557,6 +555,11 @@ def apply_table_alterations(engine):
         ('ALTER TABLE "order" ADD COLUMN reserved VARCHAR;', None),
         ('ALTER TABLE "order" ADD COLUMN inner_status VARCHAR;', None),
         ('ALTER TABLE "order" ADD COLUMN file_name VARCHAR;', update_order_file_names),
+        ('CREATE INDEX IF NOT EXISTS ix_jar_order_id_index ON "jar" (order_id, "index");', None),
+        ('CREATE INDEX IF NOT EXISTS ix_order_date_created_id ON "order" (date_created, id);', None),
+        ('CREATE INDEX IF NOT EXISTS ix_jar_date_created_id ON "jar" (date_created, id);', None),
+        ('CREATE INDEX IF NOT EXISTS ix_event_date_created_id ON "event" (date_created, id);', None),
+        ('CREATE INDEX IF NOT EXISTS ix_document_date_created_id ON "document" (date_created, id);', None),
     ]
 
     successfully_executed = []
@@ -570,74 +573,15 @@ def apply_table_alterations(engine):
                     updater()
             except OperationalError as e:  # pylint: disable=broad-except
                 if "duplicate column name" in str(e):
-                    logging.info(f"Error executing stmt:{stmt}, e:{e}")
+                    logging.info("Error executing stmt:%s, e:%s", stmt, e)
                 else:
-                    logging.warning(traceback.format_exc())
+                    logging.error("Error executing stmt:%s", stmt, exc_info=True)
             except Exception:  # pylint: disable=broad-except
-                logging.error(traceback.format_exc())
+                logging.error("unexpected error executing stmt:%s", stmt, exc_info=True)
     except Exception:  # pylint: disable=broad-except
-        logging.error(traceback.format_exc())
+        logging.error("failed to apply table alterations", exc_info=True)
 
     logging.warning(f"successfully_executed({len(successfully_executed)}):{successfully_executed}")
-
-
-class dbEventManager:
-
-    def __init__(self, session):
-        self.to_be_deleted_object_list = set([])
-        self.session = session
-
-    def do_delete_pending_objects(self, session, flush_context, instances=None):  # pylint: disable=unused-argument
-
-        if self.to_be_deleted_object_list:
-            for item in list(self.to_be_deleted_object_list)[:100]:
-                cls, id_ = item
-                obj = session.query(cls).filter(cls.id == id_).first()
-                if obj:
-                    session.delete(obj)
-                self.to_be_deleted_object_list.remove(item)
-
-            logging.warning(f"objects to be deleted:{len(self.to_be_deleted_object_list)}")
-
-    def receive_after_update(self, mapper, connection, target):  # pylint: disable=unused-argument
-
-        logging.warning(f"self:{self}, mapper({type(mapper)}):{mapper}, target:{target}")
-
-    def receive_before_update(self, mapper, connection, target):  # pylint: disable=unused-argument
-
-        logging.warning(f"self:{self}, mapper({type(mapper)}):{mapper}, target:{target}")
-
-    def receive_before_insert(self, mapper, connection, target):  # pylint: disable=unused-argument
-
-        exceeding_objects = target.check_size_limit(self.session)
-        if exceeding_objects:
-            for o in exceeding_objects:
-                self.to_be_deleted_object_list.add((target.__class__, o.id))
-            logging.warning(f"objects to be deleted:{len(self.to_be_deleted_object_list)}")
-
-    def install_listeners(self):
-
-        event.listen(self.session, 'after_flush', self.do_delete_pending_objects)
-
-        # ~ event.listen(self.session, 'pending_to_persistent', self.receive_pending_to_persistent)
-
-        for n in globals():
-            m = globals().get(n)
-            try:
-                _cls_ = None
-                if hasattr(sqlalchemy.ext.declarative, 'DeclarativeMeta'):
-                    _cls_ = sqlalchemy.ext.declarative.DeclarativeMeta
-                elif hasattr(sqlalchemy.ext.declarative, 'api'):
-                    _cls_ = sqlalchemy.ext.declarative.api.DeclarativeMeta
-
-                if isinstance(m, _cls_) and issubclass(m, BaseModel):
-                    # ~ event.listen(m, 'after_update', self.receive_after_update)
-                    # ~ event.listen(m, 'before_update', self.receive_before_update)
-                    if m.row_count_limt > 0:
-                        event.listen(m, 'before_insert', self.receive_before_insert)
-                        logging.info("m:{}, type(m):{}".format(m, type(m)))
-            except Exception as e:  # pylint: disable=broad-except
-                logging.error(e)
 
 
 def init_models(sqlite_connect_string):
@@ -658,8 +602,5 @@ def init_models(sqlite_connect_string):
     global_session = Session()
 
     apply_table_alterations(engine)
-
-    e = dbEventManager(global_session)
-    e.install_listeners()
 
     return global_session

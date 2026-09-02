@@ -301,7 +301,7 @@ class DebugPage:
 
         jar = app.db_session.query(Jar).filter(Jar.id == jar_id).one()
         logging.warning(f"jar:{jar}")
-        logging.info(f"jar.json_properties:{jar.json_properties}")
+        logging.info("jar.json_properties:%s", jar.json_properties)
 
         # ~ msg_ = "<html>"
         # ~ msg_ += f"jar.json_properties:{jar.json_properties}"
@@ -789,6 +789,5 @@ class DebugPage:
             dialog.show_dialog()
 
         except Exception as e:  # pylint: disable=broad-except
-            logging.error(traceback.format_exc())
+            logging.error("failed to show package sizes dialog", exc_info=True)
             QApplication.instance().main_window.open_alert_dialog(f"Unexpected error: {str(e)}", title="Errore")
-

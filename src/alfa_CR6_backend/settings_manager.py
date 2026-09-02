@@ -3,6 +3,7 @@
 import os
 import json
 import logging
+import math
 import sys
 import re
 import traceback
@@ -14,6 +15,10 @@ CONF_PATH = "/opt/alfa_cr6/conf"
 
 
 class SettingsManager:
+
+    SETTING_RENAMES = {
+        'REMINDER_LINER': 'REMINDER_PPS_LINER',
+    }
 
     SCHEMA = {
         '$schema': 'http://json-schema.org/draft-06/schema#',
@@ -72,6 +77,11 @@ class SettingsManager:
                 'default': False,
                 'description': 'Enables manual entry of an order barcode in case the roller input barcode scanner is not working.',
             },
+            'REMINDER_PPS_LINER': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'When enabled, shows a PPS liner reminder while the shuttle starts feeding a jar.',
+            },
             'SKIP_FREEZE_ON_UNKNOWN_PIGMENTS': {
                 'type': 'boolean',
                 'default': False,
@@ -102,6 +112,27 @@ class SettingsManager:
                 'default': True,
                 'description': 'When enabled, the alarm popup shows an "Info" button that opens a web page with the error description and resolution.',
             },
+            'REFILL_ALARM_NOTIFICATION': {
+                'type': 'object',
+                'docker_only': True,
+                'properties': {
+                    'enabled': {'type': 'boolean'},
+                    'sound': {'type': 'string', 'enum': ['fast_beep', 'slow_beep']},
+                    'timeout': {'type': 'integer', 'minimum': 10, 'maximum': 120},
+                    'sound_level': {'type': 'string', 'enum': ['auto', '100%', '75%', '50%']},
+                },
+                'required': ['enabled', 'sound', 'timeout'],
+                'additionalProperties': False,
+                'default': {'enabled': False, 'sound': 'fast_beep', 'timeout': 30, 'sound_level': 'auto'},
+                'description': 'Refill alarm notification played on the monitor speakers (snowball machines only). '
+                               'sound: "fast_beep" (200ms beep / 300ms pause) or "slow_beep" (800ms beep / 1200ms pause); '
+                               'timeout: seconds (10-120) after which the sound stops by itself; '
+                               'sound_level: for now only "auto" is offered (the host already drives a safe per-monitor '
+                               'volume: QinHeng/0x000F units to 40% via DDC/CI). The percent options are deferred: raising '
+                               'the volume is safe only with the monitor dedicated power supply, so they will be re-enabled '
+                               'once the PSU requirement is handled.',
+                'ui_error': 'Error: expected {"enabled": true|false, "sound": "fast_beep"|"slow_beep", "timeout": 10..120, "sound_level": "auto"|"100%"|"75%"|"50%"}',
+            },
         },
     }
 
@@ -124,6 +155,23 @@ class SettingsManager:
         except:
             logging.error("unable to save user settings")
             traceback.print_exc(file=sys.stderr)
+
+    @staticmethod
+    def migrate_user_settings(user_settings: dict) -> bool:
+        """Rename deprecated persisted settings in place.
+
+        If both names are present, the current name takes precedence.
+        Returns True when at least one deprecated key was removed.
+        """
+        changed = False
+        for old_name, new_name in SettingsManager.SETTING_RENAMES.items():
+            if old_name not in user_settings:
+                continue
+            if new_name not in user_settings:
+                user_settings[new_name] = user_settings[old_name]
+            del user_settings[old_name]
+            changed = True
+        return changed
 
     @staticmethod
     def _update_settings_in_docker(
@@ -171,9 +219,9 @@ class SettingsManager:
         mode: Literal["align", "overwrite"] = "overwrite",
     ) -> bool:
 
-        path_app_settings = "/opt/alfa_cr6/conf/app_settings.py"
+        path_app_settings = os.path.join(CONF_PATH, "app_settings.py")
         if not os.path.exists(path_app_settings):
-            raise RuntimeError("Missing app_settings.py file in path '/opt/alfa_cr6/conf/'")
+            raise RuntimeError(f"Missing app_settings.py file in path {CONF_PATH!r}")
 
         with open(path_app_settings, "r", encoding="utf-8") as f:
             content = f.read()
@@ -209,8 +257,16 @@ class SettingsManager:
             if m:
                 current_val_txt = m.group(2).strip()
                 if current_val_txt != new_val:
-                    replacement = rf'\1{new_val}'
-                    content = re.sub(pattern, replacement, content, count=1, flags=re.MULTILINE)
+                    # A replacement string such as ``\1`` + ``3600`` is parsed
+                    # by re.sub as a (non-existent) group reference ``\13600``.
+                    # A callable also keeps backslashes in string values literal.
+                    content = re.sub(
+                        pattern,
+                        lambda match, value=new_val: match.group(1) + value,
+                        content,
+                        count=1,
+                        flags=re.MULTILINE,
+                    )
                     logging.warning("host: update %r: %s -> %s", k, current_val_txt, new_val)
                     changed = True
             else:
@@ -245,12 +301,25 @@ class SettingsManager:
 
         properties = SettingsManager.SCHEMA.get('properties', {})
         editable_keys = set(properties.keys())
-        visible_keys = {k for k, spec in properties.items() if spec.get('ui_show', True)}
+        visible_keys = {
+            k for k, spec in properties.items()
+            if spec.get('ui_show', True)
+            and (SettingsManager._in_docker() or not spec.get('docker_only'))
+        }
 
         if hasattr(s, "USER_SETTINGS") and isinstance(getattr(s, "USER_SETTINGS"), dict):
             source = dict(getattr(s, "USER_SETTINGS"))
         else:
             source = {k: getattr(s, k) for k in editable_keys if hasattr(s, k)}
+
+        # On legacy hosts, ensure_missing_defaults() may add a newly introduced
+        # setting to app_settings.py after that module has already been imported.
+        # Expose its schema default immediately instead of requiring a second
+        # application restart before the Settings page can render it.
+        for key in visible_keys:
+            spec = properties[key]
+            if key not in source and 'default' in spec:
+                source[key] = spec['default']
 
         filtered = {k: v for k, v in source.items() if k in editable_keys and k in visible_keys}
 
@@ -303,6 +372,12 @@ class SettingsManager:
                 except (json.JSONDecodeError, TypeError):
                     pass
 
+            elif expected_type == 'object' and isinstance(val, str):
+                try:
+                    val = json.loads(val)
+                except (json.JSONDecodeError, TypeError):
+                    pass
+
             normalized[key] = val
 
         return normalized
@@ -322,11 +397,32 @@ class SettingsManager:
         errors = []
         for key, val in updates.items():
             for err in validator.iter_errors({key: val}):
+                if (
+                    err.validator == 'multipleOf'
+                    and SettingsManager._is_multiple_with_tolerance(
+                        val, err.validator_value)
+                ):
+                    continue
                 spec = SettingsManager.SCHEMA['properties'].get(key, {})
                 ui_msg = spec.get('ui_error')
                 errors.append(ui_msg if ui_msg else f"{key}: {err.message}")
         if errors:
             raise ValueError('; '.join(errors))
+
+    @staticmethod
+    def _is_multiple_with_tolerance(value, step) -> bool:
+        """Return True when float noise is the only multipleOf mismatch."""
+        try:
+            ratio = float(value) / float(step)
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            return False
+
+        return math.isfinite(ratio) and math.isclose(
+            ratio,
+            round(ratio),
+            rel_tol=0.0,
+            abs_tol=1e-9,
+        )
 
     @staticmethod
     def _validate_updates(updates: dict) -> dict:
@@ -350,7 +446,13 @@ class SettingsManager:
         if SettingsManager._in_docker():
             SettingsManager._update_settings_in_docker(defaults, "align")
         else:
-            SettingsManager._update_settings_legacy(defaults, "align")
+            # i setting docker_only (es. REFILL_ALARM_NOTIFICATION) non hanno
+            # senso sulle macchine host/legacy: non vanno aggiunti al loro conf
+            host_defaults = {
+                k: v for k, v in defaults.items()
+                if not SettingsManager.SCHEMA['properties'][k].get('docker_only')
+            }
+            SettingsManager._update_settings_legacy(host_defaults, "align")
 
     @staticmethod
     def set_updates(updates: dict):
@@ -361,3 +463,7 @@ class SettingsManager:
         else:
             SettingsManager._set_settings_on_host(safe_updates)
 
+        from alfa_CR6_backend.globals import (  # pylint: disable=import-outside-toplevel
+            invalidate_settings_cache,
+        )
+        invalidate_settings_cache()

@@ -29,6 +29,7 @@ from barcode import EAN13, Code128           # pylint: disable=import-error
 from barcode.writer import ImageWriter      # pylint: disable=import-error
 
 from alfa_CR6_backend import version
+from alfa_CR6_backend.package_label import get_shuttle_barcode_label_text
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UI_PATH = os.path.join(HERE, "..", "alfa_CR6_frontend", "ui")
@@ -68,6 +69,7 @@ LANGUAGE_MAP = {
 _ALFA_SN = None
 
 DEFAULT_DEBUG_PAGE_PWD = 'alfa'
+_SETTINGS_CACHE = None
 
 
 def get_application_instance():
@@ -133,11 +135,47 @@ def set_refill_popup_choices(refill_choices):
     os.system("kill -9 {}".format(os.getpid()))
 
 
+def _load_app_settings_module():
+
+    conf_path_already_present = CONF_PATH in sys.path
+    if not conf_path_already_present:
+        sys.path.append(CONF_PATH)
+
+    try:
+        return importlib.import_module("app_settings")
+    finally:
+        if not conf_path_already_present:
+            sys.path.remove(CONF_PATH)
+
+
+def _ensure_runtime_dirs(app_settings):
+
+    for pth in (app_settings.LOGS_PATH,
+                app_settings.TMP_PATH,
+                app_settings.DATA_PATH,
+                app_settings.CUSTOM_PATH,
+                app_settings.WEBENGINE_DOWNLOAD_PATH,
+                app_settings.WEBENGINE_CACHE_PATH):
+
+        if not os.path.exists(pth):
+            os.makedirs(pth)
+
+
+def invalidate_settings_cache():
+
+    global _SETTINGS_CACHE  # pylint: disable=global-statement
+
+    _SETTINGS_CACHE = None
+
+
 def import_settings(set_missing_app_settings=False):
 
-    sys.path.append(CONF_PATH)
-    import app_settings  # pylint: disable=import-error,import-outside-toplevel
-    sys.path.remove(CONF_PATH)
+    global _SETTINGS_CACHE  # pylint: disable=global-statement
+
+    if _SETTINGS_CACHE is not None and not set_missing_app_settings:
+        return _SETTINGS_CACHE
+
+    app_settings = _load_app_settings_module()
     
     env_in_docker = os.getenv("IN_DOCKER", False) in ['1', 'true']
     if env_in_docker:
@@ -150,6 +188,13 @@ def import_settings(set_missing_app_settings=False):
         except:
             logging.error(f"user setting file {fn} loading failed, use defaults")
             user_settings_dict = app_settings.DEFAULT_USER_SETTINGS
+            save_user_settings(fn, user_settings_dict)
+
+        if SettingsManager.migrate_user_settings(user_settings_dict):
+            logging.warning(
+                "migrated deprecated user settings: %s",
+                SettingsManager.SETTING_RENAMES,
+            )
             save_user_settings(fn, user_settings_dict)
 
         for el_name, value in user_settings_dict.items():
@@ -165,15 +210,10 @@ def import_settings(set_missing_app_settings=False):
     if not env_in_docker and set_missing_app_settings:
         SettingsManager.ensure_missing_defaults()
 
-    for pth in (app_settings.LOGS_PATH,
-                app_settings.TMP_PATH,
-                app_settings.DATA_PATH,
-                app_settings.CUSTOM_PATH,
-                app_settings.WEBENGINE_DOWNLOAD_PATH,
-                app_settings.WEBENGINE_CACHE_PATH):
-
-        if not os.path.exists(pth):
-            os.makedirs(pth)
+    # Cold concurrent calls can rebuild twice; importlib returns the same module
+    # object and directory creation is idempotent, so no lock is needed here.
+    _ensure_runtime_dirs(app_settings)
+    _SETTINGS_CACHE = app_settings
 
     return app_settings
 
@@ -226,7 +266,7 @@ def get_encoding(path_to_file, key=None):
         encoding_ = mime_encoding
 
     except Exception:   # pylint: disable=broad-except
-        logging.warning(traceback.format_exc())
+        logging.warning("failed to detect file encoding with file command", exc_info=True)
 
         encodings = [
             'ascii',
@@ -248,9 +288,9 @@ def get_encoding(path_to_file, key=None):
                     assert key is None or key in fd.read()
                     fd.seek(0)
             except (UnicodeDecodeError, UnicodeError):
-                logging.info(f"skip e:{e}")
+                logging.info("skip e:%s", e)
             except Exception:   # pylint: disable=broad-except
-                logging.warning(traceback.format_exc())
+                logging.warning("failed to try encoding %s", e, exc_info=True)
             else:
                 logging.warning(f"path_to_file:{path_to_file}, e:{e}")
                 encoding_ = e
@@ -268,7 +308,7 @@ def _get_page_label():
         obtain page size from lpoptions' field _PageLabel """
 
     cmd_ = f"lpoptions"
-    logging.info(f'cmd_ : {cmd_}')
+    logging.info('cmd_ : %s', cmd_)
     ret = subprocess.run(
         cmd_.split(),
         check=False,
@@ -309,9 +349,10 @@ def _get_label_options_from_redis_cache():
             field = 'PRINT_LABEL_OPTIONS'
 
             if os.getenv("IN_DOCKER", False) in ['1', 'true']:
-                if "tiny" in _get_page_label():
+                page_label = _get_page_label() or ''
+                if "tiny" in page_label:
                     field = 'PRINT_LABEL_OPTIONS_TINY'
-                elif "small" in _get_page_label():
+                elif "small" in page_label:
                     field = 'PRINT_LABEL_OPTIONS_SMALL'
                 else:
                     field = 'PRINT_LABEL_OPTIONS_BIG'
@@ -404,6 +445,99 @@ def create_printable_image_for_pigment(barcode_txt, pigment_name, pipe_name, opt
 
     return response
 
+_DEFAULT_LABEL_FONT = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
+
+def create_printable_image_for_low_pigments(head_name, low_pipes, options=None, output_path=None):
+    # One DYMO label listing a head's low-level pipes as upright text running down
+    # the LONG (portrait) side of the label.
+    #
+    # head_name : str       -- machine head name (used as label title)
+    # low_pipes : iterable  -- list of (pipe_name, pigment_name) tuples
+    #
+    # We render the text directly with PIL instead of (ab)using the EAN13 writer
+    # with a suppressed barcode. The barcode-driven layout pinned the image width
+    # to the (fixed) barcode footprint, so the raw image flipped orientation with
+    # the number of pipes -- landscape for few pipes, portrait for many -- and no
+    # single rotation printed on the long side for every pipe count. Drawing onto
+    # a portrait canvas matched to the label's aspect ratio prints along the long
+    # side for any number of pipes, with an auto-fitted font.
+    from PIL import Image, ImageDraw, ImageFont   # pylint: disable=import-outside-toplevel
+
+    if options is None:
+        options = _get_print_label_options()
+
+    _image_path = output_path or TMP_PIGMENT_IMAGE
+
+    # Order pipes by circuit name (C01, C02, ... C16). Names are zero-padded, so a
+    # plain lexicographic sort yields the natural circuit order regardless of the
+    # order the API/enumeration returned them in.
+    sorted_pipes = sorted(low_pipes, key=lambda item: item[0])
+
+    line_lenght = options.get('line_lenght', 50)
+    header_lines = [tr_("LOW LVL PIGMENTS"), tr_("HEAD {}").format(head_name)]
+    body_lines = [f"{pipe_name}: {pigment_name}"[:line_lenght]
+                  for pipe_name, pigment_name in sorted_pipes]
+    lines = [process_text(line) for line in header_lines + body_lines]
+
+    # Portrait canvas matched to the DYMO label aspect ratio (54 x 70 mm). Pixels
+    # are derived from dpi for a crisp raster; the exact physical size is handled
+    # downstream by 'lp -o fit-to-page', which scales this portrait image onto the
+    # portrait label so the list runs along the long side.
+    dpi = int(options.get('dpi', 240) or 240)
+    canvas_w = max(200, int(round(dpi * 2.13)))          # ~54 mm at the given dpi
+    canvas_h = int(round(canvas_w * 70.0 / 54.02))       # label is 54 x 70 mm
+    margin = int(round(canvas_w * 0.06))
+    avail_w = canvas_w - 2 * margin
+    avail_h = canvas_h - 2 * margin
+
+    font_path = options.get('font_path') or _DEFAULT_LABEL_FONT
+
+    def _load_font(size):
+        try:
+            return ImageFont.truetype(font_path, size)
+        except Exception:   # pylint: disable=broad-except
+            return ImageFont.load_default()
+
+    probe = ImageDraw.Draw(Image.new('L', (canvas_w, canvas_h), 255))
+
+    def _text_wh(text, font):
+        try:
+            left, top, right, bottom = probe.textbbox((0, 0), text, font=font)
+            return right - left, bottom - top
+        except AttributeError:      # Pillow < 8 has no textbbox
+            return probe.textsize(text, font=font)
+
+    # Largest font size at which every line fits the width AND all lines fit the
+    # height. Dimensions grow monotonically with size, so we can stop at the first
+    # size that no longer fits.
+    best_size = 8
+    for size in range(8, 121):
+        font = _load_font(size)
+        widths_ok = all(_text_wh(line, font)[0] <= avail_w for line in lines)
+        step = int(round(_text_wh("Ag", font)[1] * 1.18))
+        if widths_ok and step * len(lines) <= avail_h:
+            best_size = size
+        else:
+            break
+
+    font = _load_font(best_size)
+    step = int(round(_text_wh("Ag", font)[1] * 1.18))
+    total_h = step * len(lines)
+
+    image = Image.new('L', (canvas_w, canvas_h), 255)
+    draw = ImageDraw.Draw(image)
+    y = max(margin, (canvas_h - total_h) // 2)
+    for line in lines:
+        width, _h = _text_wh(line, font)
+        draw.text(((canvas_w - width) // 2, y), line, fill=0, font=font)
+        y += step
+
+    image.save(_image_path)
+    logging.warning('low_pigments label: %s (%dx%d, font %d, %d lines)',
+                    _image_path, canvas_w, canvas_h, best_size, len(lines))
+
+    return _image_path
+
 def extract_jar_print_data(jar):
 
     return {
@@ -482,17 +616,13 @@ def create_printable_image_from_jar(jar, options=None, output_path=None):
 def create_printable_image_for_package(package):
     # standard Code128
 
+    printable_text = get_shuttle_barcode_label_text(package)
     response = None
 
     try:
         if not os.path.exists(TMP_PACKAGE_BARCODE_IMAGE):
             with open(TMP_PACKAGE_BARCODE_IMAGE, 'w', encoding='UTF-8'):
                 logging.warning(f'empty file created at:{TMP_PACKAGE_BARCODE_IMAGE}')
-
-        pack_name = package.get('name').upper()
-        pack_size = package.get('size')
-        # barcode_text = f'SHUTTLE-{pack_name}'
-        printable_text = f"{pack_name}"
 
         # barcode CODE128
         options = {
@@ -523,17 +653,18 @@ def create_printable_image_for_package(package):
         logging.error(f'Error creating package barcode: {str(e)}')
         logging.error(traceback.format_exc())
         # response = None
-        raise e
+        raise
 
     return response
 
 def store_data_on_restore_machine_helper(restore_helper, _jar, _pos, _disp, disp_type):
     if restore_helper:
-        logging.debug(f"disp_type -> {disp_type}")
+        logging.debug("disp_type -> %s", disp_type)
         if disp_type in (None, "purge"):
             return
 
-        logging.debug(f">>> storing {_pos} - {_disp} for {_jar.barcode}")
+        if logging.getLogger().isEnabledFor(logging.DEBUG):
+            logging.debug(">>> storing %s - %s for %s", _pos, _disp, _jar.barcode)
         restore_helper.store_jar_data(
             jar=_jar,
             pos=_pos,

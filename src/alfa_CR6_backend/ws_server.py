@@ -154,6 +154,21 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
             properties = SettingsManager.SCHEMA.get('properties', {})
             visible_schema = {k: v for k, v in properties.items() if v.get('ui_show', True) and k in data}
 
+            # sound_level: PER ORA la UI espone il solo 'auto' su OGNI monitor.
+            # Le opzioni percentuali (volume monitor via DDC/CI) sono rimandate:
+            # l'impostazione del volume alto e' sicura solo con alimentatore
+            # dedicato del monitor (senza PSU il drive alto fa collassare lo
+            # scaler - misurato), quindi verranno riabilitate quando il
+            # requisito PSU sara' gestito. Il volume di sicurezza lo applica gia'
+            # la policy host per-monitor (0x000F -> 40 via DDC).
+            # Copia profonda per non mutare lo SCHEMA di classe.
+            if 'REFILL_ALARM_NOTIFICATION' in visible_schema:
+                import copy  # pylint: disable=import-outside-toplevel
+                spec_ = copy.deepcopy(visible_schema['REFILL_ALARM_NOTIFICATION'])
+                if 'sound_level' in spec_.get('properties', {}):
+                    spec_['properties']['sound_level']['enum'] = ['auto']
+                visible_schema['REFILL_ALARM_NOTIFICATION'] = spec_
+
             answer = json.dumps({
                 'type': 'ask_settings_json',
                 'value': data,
@@ -302,6 +317,9 @@ class WsServer: # pylint: disable=too-many-instance-attributes
             max_size=2**20))
 
         self.ws_clients = set()
+        self._refresh_can_list_dirty = False
+        self._refresh_can_list_task = None
+        self._refresh_can_list_interval = 0.1
 
         self.__version__ = get_version()
 
@@ -310,8 +328,8 @@ class WsServer: # pylint: disable=too-many-instance-attributes
         html_ = ""
         html_ += '<div>'
 
-        logging.debug(f"self:{self} type_:{type_}")
-        logging.debug(f" msg:{msg}")
+        logging.debug("self:%s type_:%s", self, type_)
+        logging.debug(" msg:%s", msg)
 
         if type_ == "live_can_list" and isinstance(msg, list):
             for i in msg:
@@ -420,7 +438,7 @@ class WsServer: # pylint: disable=too-many-instance-attributes
             logging.warning("removing websocket:{}, path:{}.".format(websocket, path))
             self.ws_clients.discard(websocket)
 
-    def refresh_can_list(self):
+    def _build_live_can_list(self):
 
         live_can_list = []
         for k, j in get_application_instance().get_jar_runners().items():
@@ -434,5 +452,37 @@ class WsServer: # pylint: disable=too-many-instance-attributes
 
                 live_can_list.append(_live_can)
 
-        t = self.broadcast_msg("live_can_list", live_can_list)
-        asyncio.ensure_future(t)
+        return live_can_list
+
+    async def _delayed_refresh_can_list(self):
+
+        try:
+            await asyncio.sleep(self._refresh_can_list_interval)
+
+            if not self.ws_clients:
+                self._refresh_can_list_dirty = False
+                return
+
+            self._refresh_can_list_dirty = False
+            await self.broadcast_msg("live_can_list", self._build_live_can_list())
+
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+        finally:
+            self._refresh_can_list_task = None
+            if not self.ws_clients:
+                self._refresh_can_list_dirty = False
+            elif self._refresh_can_list_dirty:
+                self.refresh_can_list()
+
+    def refresh_can_list(self):
+
+        if not self.ws_clients:
+            self._refresh_can_list_dirty = False
+            return
+
+        self._refresh_can_list_dirty = True
+        if self._refresh_can_list_task and not self._refresh_can_list_task.done():
+            return
+
+        self._refresh_can_list_task = asyncio.ensure_future(self._delayed_refresh_can_list())

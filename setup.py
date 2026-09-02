@@ -84,6 +84,7 @@ def main():
             'bin/alfa_CR6',
             'bin/alfa_CR6_flask',
             'bin/alfa_CR6_test',
+            'bin/alfa_CR6_test_hardware_free',
         ],
         install_requires=INSTALL_REQUIRES,
     )

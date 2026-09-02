@@ -8,6 +8,7 @@
 
 
 import os
+import sys
 import logging
 import asyncio
 import json
@@ -53,6 +54,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         self.mockup_files_path = mockup_files_path
 
         self.websocket = None
+        self.__ws_id = None
+        self.__last_recv_msg = None
+        self.__msg_excp_cntr = 0
         self.last_answer = None
         self.cmd_answers = []
         self.callback_on_macro_answer = None
@@ -285,6 +289,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         if old_flag and not new_flag:
             logging.warning("JAR_INPUT_ROLLER_PHOTOCELL transition DARK -> LIGHT")
             self.app.ready_to_read_a_barcode = True
+            if self.index == 0:
+                reset_shuttle_cycle = getattr(
+                    self.app, "_reset_shuttle_barcode_cycle", None)
+                if reset_shuttle_cycle:
+                    reset_shuttle_cycle()
 
         old_flag_1 = self.status.get("jar_photocells_status", 0) & 0x100
         new_flag_1 = status.get("jar_photocells_status", 0) & 0x100
@@ -293,7 +302,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             self.handle_dispensing_photocell_transition(new_flag)
 
         try:
-            crx_outputs_status = self.status.get('crx_outputs_status')
+            crx_outputs_status = status.get('crx_outputs_status', 0x0)
             for output_number in range(4):
                 mask_ = 0x1 << output_number
                 if not int(crx_outputs_status) & mask_:
@@ -334,7 +343,10 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             # ~ self.app.handle_exception(e)
             logging.debug(e)
 
-        diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
+        if logging.getLogger().isEnabledFor(logging.INFO):
+            diff = {k: status[k] for k in status if status[k] != self.status.get(k)}
+        else:
+            diff = None
 
         self.status = status
 
@@ -355,16 +367,38 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         return diff
 
-    async def handle_ws_recv(self):     # pylint: disable=too-many-branches
+    async def handle_ws_recv(self):
 
-        propagate_to_ws_msg_handler = True
         msg = None
         try:
             msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
         except asyncio.TimeoutError:
             logging.warning(f"{self.name} time out while waiting in websocket.recv.")
 
+        if msg is not None:
+            self.__last_recv_msg = msg
+
         self.cntr += 1
+
+        try:
+            await self.__process_ws_msg(msg)
+        except websockets.exceptions.ConnectionClosed:
+            raise
+        except Exception as e:  # pylint: disable=broad-except
+            # a faulty message must not tear down the websocket:
+            # log, record the first occurrences, keep the connection alive
+            logging.error(f"{self.name} e:{e}")
+            logging.error(traceback.format_exc())
+            self.__msg_excp_cntr += 1
+            if self.__msg_excp_cntr <= 3:
+                extra = self.__exception_log_extra(e, self.websocket)
+                extra["phase"] = "message processing (recovered)"
+                extra["msg_excp_cntr"] = self.__msg_excp_cntr
+                self.__log_document("WS_MSG_EXCP", extra)
+
+    async def __process_ws_msg(self, msg):     # pylint: disable=too-many-branches
+
+        propagate_to_ws_msg_handler = True
 
         if msg:
             msg_dict = dict(json.loads(msg))
@@ -376,7 +410,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 if status:
                     diff = await self.update_status(status)
                     if diff:
-                        logging.info(f"{self.name} diff:{ diff }")
+                        logging.info("%s diff:%s", self.name, diff)
 
             elif msg_type == "answer":
                 answer = msg_dict.get("value")
@@ -502,12 +536,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             # ~ logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_},   LOCKED")
 
             if ret:
+                previous_stop_state = None
+                if output_action == 0:
+                    previous_stop_state = {
+                        key: self.__crx_inner_status[output_number][key]
+                        for key in ('value', 'timeout', 't0')
+                    }
 
                 try:
-                    if output_action == 0:
-                        self.__crx_inner_status[output_number]['timeout'] = 0
-                        self.__crx_inner_status[output_number]['t0'] = 0
-                    elif timeout:
+                    if output_action and timeout:
                         self.__crx_inner_status[output_number]['timeout'] = timeout
                         self.__crx_inner_status[output_number]['t0'] = time.time()
 
@@ -533,6 +570,20 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 except Exception as e:  # pylint: disable=broad-except
                     self.app.handle_exception(e)
+                finally:
+                    if output_action == 0:
+                        output_is_stopped = not (
+                            self.status.get('crx_outputs_status', 0x0)
+                            & mask_
+                        )
+                        if output_is_stopped:
+                            self.__crx_inner_status[output_number].update({
+                                'value': 0, 'timeout': 0, 't0': 0,
+                            })
+                        else:
+                            self.__crx_inner_status[output_number].update(
+                                previous_stop_state
+                            )
 
             self.__crx_inner_status[output_number]['locked'] = False
             # ~ logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_}, UNLOCKED")
@@ -596,6 +647,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     self.callback_on_macro_answer = callback_on_macro_answer
                     ret = True
 
+        except websockets.exceptions.ConnectionClosed as e:
+            # expected during connection teardown (the race window past the
+            # "if self.websocket" guard): record it, do not bother the operator
+            logging.error(f"{self.name} send_command cmd:{cmd_name} on closed websocket, e:{e}")
+            extra = self.__exception_log_extra(e, self.websocket)
+            extra["phase"] = "send_command"
+            extra["cmd_name"] = cmd_name
+            extra["cmd_type"] = type_
+            self.__log_document("WS_SEND_FAIL", extra)
+            ret = None
         except Exception as e:  # pylint: disable=broad-except
             self.app.handle_exception(e)
             ret = None
@@ -651,7 +712,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             if (p_type == 'colorant' and step == 0) or (p_type != 'colorant' and step != 0):
                 pars_copy_["ingredients"].pop(pig_name)
 
-        logging.info(f"step:{step}, ingredients:{json.dumps(pars_copy_['ingredients'])}")
+        if logging.getLogger().isEnabledFor(logging.INFO):
+            logging.info("step:%s, ingredients:%s", step, json.dumps(pars_copy_['ingredients']))
 
         return pars_copy_
 
@@ -832,7 +894,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         logging.warning(f"waiting for head {self.name} to finish dispensing before cleanup")
                         try:
                             await asyncio.shield(
-                                self.wait_for_status_level(["STANDBY"], timeout=timeout_, show_alert=False))
+                                self.wait_for_status_level(
+                                    ["STANDBY"], timeout=dispense_timeout,
+                                    show_alert=False
+                                )
+                            )
                             outcome_ += tr_('success (step:{}) ').format(step)
                             result_ = 'OK'
                         except asyncio.CancelledError:
@@ -956,42 +1022,209 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         except Exception:  # pylint: disable=broad-except
             logging.error(traceback.format_exc())
 
+    @staticmethod
+    def __safe_getattr(obj, name, default=None):
+        try:
+            return getattr(obj, name, default)
+        except Exception:  # pylint: disable=broad-except
+            return default
+
+    @classmethod
+    def __json_safe(cls, value):
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        name = cls.__safe_getattr(value, "name")
+        if name:
+            return name
+        return str(value)
+
+    @classmethod
+    def __close_frame_info(cls, close_frame):
+        if close_frame is None:
+            return None
+        return {
+            "code": cls.__safe_getattr(close_frame, "code"),
+            "reason": cls.__safe_getattr(close_frame, "reason"),
+        }
+
+    @classmethod
+    def __websocket_close_info(cls, websocket):
+        if websocket is None:
+            return {}
+
+        return {
+            "websocket_state": cls.__json_safe(cls.__safe_getattr(websocket, "state")),
+            "websocket_open": cls.__json_safe(cls.__safe_getattr(websocket, "open")),
+            "websocket_closed": cls.__json_safe(cls.__safe_getattr(websocket, "closed")),
+            "websocket_close_code": cls.__safe_getattr(websocket, "close_code"),
+            "websocket_close_reason": cls.__safe_getattr(websocket, "close_reason"),
+            "websocket_close_rcvd": cls.__close_frame_info(cls.__safe_getattr(websocket, "close_rcvd")),
+            "websocket_close_sent": cls.__close_frame_info(cls.__safe_getattr(websocket, "close_sent")),
+            "websocket_close_rcvd_then_sent": cls.__json_safe(
+                cls.__safe_getattr(websocket, "close_rcvd_then_sent")
+            ),
+        }
+
+    @classmethod
+    def __connection_closed_info(cls, exc):
+        rcvd = cls.__safe_getattr(exc, "rcvd")
+        sent = cls.__safe_getattr(exc, "sent")
+        rcvd_frame = cls.__close_frame_info(rcvd)
+        sent_frame = cls.__close_frame_info(sent)
+
+        close_code = rcvd_frame["code"] if rcvd_frame else cls.__safe_getattr(exc, "code")
+        close_reason = rcvd_frame["reason"] if rcvd_frame else cls.__safe_getattr(exc, "reason")
+        if close_code is None:
+            close_code = 1006
+        if close_reason is None and rcvd_frame is None:
+            close_reason = "abnormal closure (no close frame received)"
+
+        return {
+            "close_code": close_code,
+            "close_reason": close_reason,
+            "close_rcvd": rcvd_frame,
+            "close_sent": sent_frame,
+            "close_rcvd_then_sent": cls.__json_safe(cls.__safe_getattr(exc, "rcvd_then_sent")),
+        }
+
+    @staticmethod
+    def __printable_msg(msg, limit=2000):
+        if msg is None:
+            return None
+        if isinstance(msg, bytes):
+            msg = msg.decode("utf-8", errors="replace")
+        if not isinstance(msg, str):
+            msg = str(msg)
+        if len(msg) > limit:
+            msg = msg[:limit] + "...[truncated]"
+        return msg
+
+    def __exception_log_extra(self, exc, websocket=None):
+        extra = {
+            "exception_type": type(exc).__name__,
+            "error": str(exc),
+            "status": self.status,
+            "photocells_status": self.photocells_status,
+            "jar_photocells_status": self.jar_photocells_status,
+            "ws_id": self.__ws_id,
+            "recv_cntr": self.cntr,
+            "last_recv_msg": self.__printable_msg(self.__last_recv_msg),
+            "traceback": traceback.format_exc(),
+        }
+        extra.update(self.__websocket_close_info(websocket))
+        if isinstance(exc, websockets.exceptions.ConnectionClosed):
+            extra.update(self.__connection_closed_info(exc))
+        return extra
+
     async def run(self):
-        t = self.__watch_dog_task()
-        asyncio.ensure_future(t)
+        watchdog_task = asyncio.ensure_future(self.__watch_dog_task())
+        websocket_task = asyncio.ensure_future(self.__run_ws_loop())
+        supervised_tasks = (
+            ("watchdog", watchdog_task),
+            ("websocket", websocket_task),
+        )
+        try:
+            done, _pending = await asyncio.wait(
+                [task for _label, task in supervised_tasks],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            # Entrambi i task sono progettati per essere permanenti. Se uno
+            # termina, anche normalmente, la testa non puo' proseguire con
+            # meta' del proprio runtime attivo.
+            for label, task in supervised_tasks:
+                if task not in done:
+                    continue
+                if task.cancelled():
+                    raise RuntimeError(
+                        "{} task cancelled unexpectedly".format(label)
+                    )
+                try:
+                    task.result()
+                except Exception:  # pylint: disable=broad-except
+                    logging.error(
+                        "%s %s task failed",
+                        getattr(self, "name", "MachineHead"), label,
+                        exc_info=True,
+                    )
+                    raise
+                raise RuntimeError(
+                    "{} task terminated unexpectedly".format(label)
+                )
+        finally:
+            for _label, task in supervised_tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(
+                *(task for _label, task in supervised_tasks),
+                return_exceptions=True,
+            )
+
+    async def __run_ws_loop(self):
 
         ws_url = f"ws://{ self.ip_add }:{ self.ws_port }/device:machine:status"
         while True:
+            ws_body_exception_id = None
             try:
-                async with websockets.connect(ws_url, timeout=40) as websocket:
+                # close_timeout low on purpose: on loopback a healthy peer answers the
+                # close handshake in ms; a mute peer will never answer and each extra
+                # second extends the window in which self.websocket points to a dead socket
+                websocket = await websockets.connect(ws_url, close_timeout=5)
+                try:
                     self.websocket = websocket
                     self.__ws_id = str(id(websocket))
+                    self.__msg_excp_cntr = 0
                     self.__log_document("WS_CONNECTED", {"ws_id": self.__ws_id})
-                    while True:
-                        await self.handle_ws_recv()
+                    try:
+                        while True:
+                            await self.handle_ws_recv()
+                    except asyncio.CancelledError:
+                        raise
+                    except websockets.exceptions.ConnectionClosed:
+                        raise
+                    except Exception as e:  # pylint: disable=broad-except
+                        ws_body_exception_id = id(e)
+                        logging.error(f"{self.name} e:{e}")
+                        logging.error(traceback.format_exc())
+                        extra = self.__exception_log_extra(e, websocket)
+                        extra["phase"] = "websocket message loop"
+                        self.__log_document("WS_EXCP", extra)
+                        raise
+                finally:
+                    # equivalent to the async-with __aexit__ (close()), but timed and
+                    # logged: WS_CTX_EXIT records who triggered the local close (the
+                    # "sent 1000") and whether the peer ever answered the handshake
+                    exit_trigger = sys.exc_info()[1]
+                    close_t0 = time.time()
+                    try:
+                        await websocket.close()
+                    finally:
+                        # fast-fail for send_command during the reconnect window,
+                        # instead of raising on a dead socket
+                        self.websocket = None
+                        extra = self.__websocket_close_info(websocket)
+                        extra.update({
+                            "ws_id": self.__ws_id,
+                            "close_duration": round(time.time() - close_t0, 3),
+                            "exit_trigger": type(exit_trigger).__name__ if exit_trigger is not None else None,
+                            "exit_trigger_error": str(exit_trigger) if exit_trigger is not None else None,
+                        })
+                        self.__log_document("WS_CTX_EXIT", extra)
+            except asyncio.CancelledError:
+                raise
             except (OSError, ConnectionRefusedError,
                     websockets.exceptions.ConnectionClosed) as e:
                 logging.error(f"{self.name} e:{e}")
-                _rcvd = getattr(e, 'rcvd', None)
-                extra = {
-                    "exception_type": type(e).__name__,
-                    "error": str(e),
-                    "close_code": _rcvd.code if _rcvd else (1006 if isinstance(e, websockets.exceptions.ConnectionClosed) else None),
-                    "close_reason": _rcvd.reason if _rcvd else ("abnormal closure (no close frame received)" if isinstance(e, websockets.exceptions.ConnectionClosed) else None),
-                    "description": "TCP connection failure (ECONNREFUSED) - no service listening on target port" if isinstance(e, ConnectionRefusedError) else None,
-                    "status": self.status,
-                    "photocells_status": self.photocells_status,
-                    "jar_photocells_status": self.jar_photocells_status,
-                    "ws_id": getattr(self, '_MachineHead__ws_id', None),
-                    "traceback": traceback.format_exc()
-                }
+                extra = self.__exception_log_extra(e)
+                extra["description"] = "TCP connection failure (ECONNREFUSED) - no service listening on target port" if isinstance(e, ConnectionRefusedError) else None
                 self.__log_document("WS_CLOSED", extra)
                 # self.__reset_state()
                 await asyncio.sleep(5)
             except Exception as e:  # pylint: disable=broad-except
-                logging.error(f"{self.name} e:{e}")
-                logging.error(traceback.format_exc())
-                self.__log_document("WS_EXCP", {"exception_type": type(e).__name__, "error": str(e)})
+                if ws_body_exception_id != id(e):
+                    logging.error(f"{self.name} e:{e}")
+                    logging.error(traceback.format_exc())
+                    self.__log_document("WS_EXCP", self.__exception_log_extra(e))
                 # self.__reset_state()
                 await asyncio.sleep(2)
         logging.warning(" *** exiting *** ")

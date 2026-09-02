@@ -19,6 +19,7 @@ D = {
     "MICROSWITCH 2": "MICROINTERRUPTOR 2",
     "OUTPUT ROLLER PHOTOCELL": "FOTOCÉLULA DO TRANSPORTADOR DE ROLOS DE SAÍDA",
     "OK": "OK",
+    "Please ensure a PPS liner is placed": "Certifique-se de que existe um liner colocado no PPS",
     "STEP {} +": "PASSO {} +",
     "STEP {} -": "PASSO {} -",
     "Start  input roller": "Iniciar transportador de rolos de entrada",
@@ -202,6 +203,7 @@ D = {
 
     "please, confirm printing label<br>{} {} {}.": "Confirme a impressão da etiqueta<br>{} {} {}.",
     "please, choose a circuit to print the corresponding label.": "escolha um circuito para imprimir a etiqueta correspondente.",
+    "LOW LVL PIGMENTS": "PIGMENTOS COM NÍVEL BAIXO",
 
     "The Head A detected a Can too quickly. Remove all Cans from input roller and from HEAD A!": "A cabeça A detetou um recipiente demasiado depressa. Remova todos os recipientes do transportador de rolos de entrada e da CABEÇA A!",
     "{} product(s) not dispensed:": "{} produto(s) não dispensado(s):",
