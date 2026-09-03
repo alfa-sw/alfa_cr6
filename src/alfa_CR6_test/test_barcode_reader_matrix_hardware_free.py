@@ -950,6 +950,16 @@ class TestCrxManualBarcodeFlow(unittest.TestCase):
         self.assertTrue(app.ready_to_read_a_barcode)
         self.assertEqual(window.alerts, [])
 
+    def test_ean13_formula_check_digit_is_stripped_on_crx(self):
+        app, window, _head, handler = self._run_flow([
+            "500 ML", VALID_FORMULA_BARCODE + "6",
+        ])
+
+        self.assertEqual(app.shuttle_size_from_barcode_scanner, 500)
+        handler.assert_awaited_once_with(VALID_FORMULA_BARCODE)
+        self.assertTrue(app.ready_to_read_a_barcode)
+        self.assertEqual(window.alerts, [])
+
     def test_invalid_and_unknown_shuttles_are_retried_before_formula(self):
         app, window, head, handler = self._run_flow([
             "noise", "750 ml", "500 ml", VALID_FORMULA_BARCODE,
@@ -996,20 +1006,19 @@ class TestCrxManualBarcodeFlow(unittest.TestCase):
             kwargs["fmt"], "AMBIGUOUS SHUTTLE BARCODE: {}")
         handler.assert_awaited_once_with(VALID_FORMULA_BARCODE)
 
-    def test_spurious_overlong_and_impossible_date_formulae_are_retried(self):
+    def test_spurious_and_impossible_date_formulae_are_retried(self):
         _app, window, _head, handler = self._run_flow([
             "500 ml",
-            VALID_FORMULA_BARCODE + "9",
             "260231001001",
             "ABC",
             VALID_FORMULA_BARCODE,
         ])
 
-        self.assertEqual(len(window.alerts), 3)
+        self.assertEqual(len(window.alerts), 2)
         handler.assert_awaited_once_with(VALID_FORMULA_BARCODE)
         rejected = [call_args[0][0] for call_args, _kwargs in window.alerts]
         self.assertEqual(rejected, [
-            VALID_FORMULA_BARCODE + "9", "260231001001", "ABC",
+            "260231001001", "ABC",
         ])
 
     def test_failed_order_handler_restores_ready_state_for_a_retry(self):

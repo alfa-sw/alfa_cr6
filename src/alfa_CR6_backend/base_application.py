@@ -2394,6 +2394,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             nonlocal formula_barcode
             raw = self.main_window.input_dialog.get_content_text()
             formula_barcode = "".join(raw.split())
+            formula_barcode = formula_barcode[:12]
             formula_event.set()
             logging.warning(f"Formula barcode received: {formula_barcode}")
 
