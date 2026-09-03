@@ -267,6 +267,28 @@ D = {
     "action 05 (head 7 or G)": "action 05 (head 7 or G)",
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
+
+    "Place the open canister on the scale.<br>Scan its barcode.": "Coloque o recipiente aberto na balança.<br>Leia o respetivo código de barras.",
+    "The scanned barcode does not match<br>any configured product.": "O código de barras lido não corresponde<br>a nenhum produto configurado.",
+    "The product is configured on multiple circuits.": "O produto está configurado em vários circuitos.",
+    "Choose the circuit to refill:": "Selecione o circuito a reabastecer:",
+    "Pause the carousel before starting the refill.": "Pause o carrossel antes de iniciar o reabastecimento.",
+    "Head {} is not ready for refill.": "A cabeça {} não está pronta para o reabastecimento.",
+    "Head {} has an operation in progress.": "A cabeça {} tem uma operação em curso.",
+    "Unable to read a stable weight from the scale.": "Não foi possível obter um peso estável<br>da balança.",
+    "Unable to position the refill circuit.": "Não foi possível posicionar o circuito de reabastecimento.",
+    "Scan the barcode on circuit {}<br>of head {}.": "Leia o código de barras do circuito {}<br>da cabeça {}.",
+    "Refill preparation failed: {}": "Falha na preparação do reabastecimento: {}",
+    "Barcode mismatch: {} != {}": "Os códigos de barras não correspondem: {} != {}",
+    "Remove the canister from the scale and refill the circuit.<br>When finished, put it back on the scale and scan its barcode.": "Retire o recipiente da balança e reabasteça o circuito.<br>No final, volte a colocá-lo na balança e leia o código de barras.",
+    "Refilled quantity: {} g": "Quantidade reabastecida: {} g",
+    "Warning: the measured refill exceeds<br>the configured maximum level.": "Aviso: a quantidade medida excede<br>o nível máximo configurado.",
+    "RESET head: {}?": "REPOR a cabeça {}?",
+    "Unable to display the refill result.": "Não foi possível apresentar o resultado do reabastecimento.",
+    "The measured refill must be greater<br>than zero grams.": "A quantidade medida deve ser<br>superior a zero gramas.",
+    "The product specific weight is not valid.": "O peso específico do produto não é válido.",
+    "Unable to update the product level.": "Não foi possível atualizar o nível do produto.",
+    "Refill failed: {}": "Falha no reabastecimento: {}",
 }
 
 

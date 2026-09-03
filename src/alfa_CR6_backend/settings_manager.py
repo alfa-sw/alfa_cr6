@@ -38,6 +38,11 @@ class SettingsManager:
                 'type': 'boolean',
                 'default': True,
             },
+            'ENABLE_REFILL_BY_SCALE': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'Enables the guided refill procedure that measures the refilled product with the scale.',
+            },
             'LOAD_LIFTER_IS_UP_LONG_TIMEOUT': {
                 'type': 'number',
                 'minimum': 30.3,

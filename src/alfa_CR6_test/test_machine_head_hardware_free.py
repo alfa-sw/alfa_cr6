@@ -85,6 +85,38 @@ class TestMachineHeadHardwareFree(unittest.TestCase):
         self.assertEqual(self.head.get_specific_weight("UNKNOWN"), -1.0)
         self.assertEqual(self.head.get_available_weight("UNKNOWN"), 0)
 
+    def test_read_stable_weight_returns_grams(self):
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.head.last_answer = {
+            "command": "STABLE_WEIGHT_END",
+            "status_code": 0,
+            "params": ["125.75", "g"],
+        }
+
+        self.assertEqual(self._run(self.head.read_stable_weight()), 125.75)
+        self.head.send_command.assert_awaited_once_with(
+            cmd_name="STABLE_WEIGHT", params={}, type_="command", channel="scale")
+
+    def test_read_stable_weight_accepts_scale_reply_without_end_suffix(self):
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.head.last_answer = {
+            "command": "STABLE_WEIGHT",
+            "status_code": 0,
+            "params": ["392.41", "g"],
+        }
+
+        self.assertEqual(self._run(self.head.read_stable_weight()), 392.41)
+
+    def test_read_stable_weight_rejects_invalid_answer(self):
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.head.last_answer = {
+            "command": "STABLE_WEIGHT_END",
+            "status_code": 0,
+            "params": ["125.75", "kg"],
+        }
+
+        self.assertIsNone(self._run(self.head.read_stable_weight()))
+
     def test_dispense_split_separates_bases_from_colorants(self):
         self.head.pigment_list = [
             {"name": "BASE", "type": "base"},

@@ -1,0 +1,86 @@
+sequenceDiagram
+    autonumber
+
+    actor O as Operatore
+    participant P as Pistola barcode
+    participant HMI as HMI
+    participant M as Teste macchina
+    participant S as Bilancia / Dispatcher
+    participant T as Testa selezionata
+    participant DB as Gestione livelli
+
+    O->>HMI: Preme un pulsante refill esistente
+
+    alt ENABLE_REFILL_BY_SCALE = false
+        HMI->>HMI: Avvia il refill manuale attuale
+    else ENABLE_REFILL_BY_SCALE = true
+        HMI->>HMI: Blocca i lettori YOKO
+        HMI-->>O: Posizionare il barattolo aperto sulla bilancia e scansionare il barcode
+        O->>P: Scansiona il barcode del prodotto
+        P->>HMI: Inserimento barcode come tastiera + ENTER
+        HMI->>M: Cerca customer_id in tutte le teste
+        M-->>HMI: Testa, pigmento e circuito
+
+        alt Prodotto non trovato
+            HMI-->>O: Errore prodotto non configurato
+            HMI->>HMI: Sblocca i lettori YOKO
+        else Più circuiti trovati
+            HMI-->>O: Richiede la scelta del circuito
+            O->>HMI: Seleziona circuito
+        end
+
+        HMI->>T: Verifica stato testa
+        Note over HMI,T: Automazione in pausa; STANDBY o DIAGNOSTIC; nessuna uscita attiva
+
+        alt Stato non valido
+            HMI-->>O: Testa non pronta per il refill
+            HMI->>HMI: Sblocca i lettori YOKO
+        else Stato valido
+            HMI->>S: STABLE_WEIGHT
+            Note over HMI,S: Peso iniziale W0 in grammi; non viene eseguita la tara
+            S-->>HMI: W0
+            HMI->>T: DIAG_ROTATING_TABLE_POSITIONING
+            T-->>HMI: Circuito posizionato
+            HMI-->>O: Scansionare il barcode sul circuito X della testa Y
+            O->>P: Scansiona barcode circuito
+            P->>HMI: Barcode circuito
+
+            alt Barcode circuito diverso
+                HMI-->>O: Errore barcode non corrispondente
+                HMI->>HMI: Sblocca i lettori YOKO
+            else Barcode corrispondente
+                HMI-->>O: Rimuovere il barattolo, rabboccare e riposizionarlo
+                O->>O: Esegue fisicamente il rabbocco
+                O->>P: Scansiona nuovamente il barattolo
+                P->>HMI: Barcode finale
+
+                alt Barcode finale diverso
+                    HMI-->>O: Errore barcode non corrispondente
+                    HMI->>HMI: Sblocca i lettori YOKO
+                else Barcode corrispondente
+                    HMI->>S: STABLE_WEIGHT
+                    S-->>HMI: Peso finale W1 in grammi
+                    HMI->>HMI: grammi = W0 - W1
+
+                    alt grammi <= 0
+                        HMI-->>O: Errore pesata non valida
+                        HMI->>HMI: Sblocca i lettori YOKO
+                    else grammi > 0
+                        HMI->>HMI: CC = grammi / peso specifico
+                        HMI->>DB: REFILL(circuito, quantità CC)
+                        DB-->>HMI: Livelli aggiornati
+                        HMI-->>O: Mostra grammi rabboccati e livello in CC, GR o FL
+
+                        alt Operatore conferma RESET
+                            O->>HMI: Conferma
+                            HMI->>T: RESET
+                        else Operatore annulla
+                            O->>HMI: Chiude il messaggio
+                        end
+
+                        HMI->>HMI: Sblocca i lettori YOKO
+                    end
+                end
+            end
+        end
+    end

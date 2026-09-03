@@ -631,11 +631,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 ret = await self.websocket.send(json.dumps(msg))
 
                 if type_ == "command":
+                    expected_commands = {cmd_name + "_END"}
+                    if channel == "scale":
+                        # The scale dispatcher historically replies without
+                        # the _END suffix used by machine commands.
+                        expected_commands.add(cmd_name)
 
                     def condition():
                         if (self.last_answer is not None
                                 and self.last_answer["status_code"] == 0
-                                and self.last_answer["command"] == cmd_name + "_END"):
+                                and self.last_answer["command"] in expected_commands):
                             return True
                         return False
                     msg_ = tr_("{} waiting for answer to cmd:{}").format(self.name, cmd_name)
@@ -662,6 +667,24 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             ret = None
 
         return ret
+
+    async def read_stable_weight(self):
+        """Read a stable scale value and return it in grams."""
+        ret = await self.send_command(
+            cmd_name="STABLE_WEIGHT", params={}, type_="command", channel="scale")
+        answer = self.last_answer
+        try:
+            if (not ret or not answer or answer.get("status_code") != 0
+                    or answer.get("command") not in (
+                        "STABLE_WEIGHT", "STABLE_WEIGHT_END")):
+                return None
+            value, unit = answer.get("params", [])
+            if str(unit).lower() != "g":
+                return None
+            return float(value)
+        except (TypeError, ValueError):
+            logging.error("%s invalid STABLE_WEIGHT answer: %s", self.name, answer)
+            return None
 
     async def get_ingredients_for_purge_all(self, jar):
 

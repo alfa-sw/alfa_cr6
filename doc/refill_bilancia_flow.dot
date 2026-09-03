@@ -1,0 +1,99 @@
+digraph RefillBilancia {
+    graph [
+        label="Procedura di rabbocco con bilancia",
+        labelloc=t,
+        fontsize=26,
+        fontname="DejaVu Sans",
+        bgcolor="white",
+        rankdir=TB,
+        nodesep=0.35,
+        ranksep=0.55,
+        splines=ortho,
+        pad=0.25
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fillcolor="#EAF2F8",
+        color="#2874A6",
+        fontname="DejaVu Sans",
+        fontsize=13,
+        margin="0.18,0.10"
+    ];
+    edge [
+        color="#34495E",
+        fontname="DejaVu Sans",
+        fontsize=11,
+        arrowsize=0.75
+    ];
+
+    start [shape=circle, label="", width=0.28, fillcolor="#2874A6"];
+    stop [shape=doublecircle, label="", width=0.32, fillcolor="#2874A6"];
+
+    click [label="Operatore: preme un pulsante\nrefill già esistente", fillcolor="#FCF3CF", color="#B7950B"];
+    scale_enabled [shape=diamond, label="ENABLE_REFILL_BY_SCALE?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    manual [label="Avvia il refill manuale attuale"];
+    block_yoko [label="HMI: blocca entrambi i lettori YOKO\n(la pistola rimane attiva come tastiera)"];
+
+    message_1 [label="Messaggio 1\nPosizionare il barattolo aperto sulla bilancia\ne scansionare il codice a barre", fillcolor="#FCF3CF", color="#B7950B"];
+    scan_1 [label="Pistola: barcode prodotto + ENTER", fillcolor="#FCF3CF", color="#B7950B"];
+    lookup [label="HMI: cerca customer_id in tutte le teste\ne nei circuiti abilitati e sincronizzati"];
+    product_found [shape=diamond, label="Prodotto trovato?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    multiple [shape=diamond, label="Più circuiti?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    choose [label="Operatore: seleziona il circuito", fillcolor="#FCF3CF", color="#B7950B"];
+    state [shape=diamond, label="Testa pronta?\nAutomazione in pausa\nSTANDBY/DIAGNOSTIC\nNessuna uscita attiva", fillcolor="#FDEBD0", color="#CA6F1E"];
+
+    weight_0 [label="Bilancia: STABLE_WEIGHT\nPeso iniziale W0 in grammi\n(nessuna tara)", fillcolor="#E8E8E8", color="#616A6B"];
+    position [label="Testa: DIAG_ROTATING_TABLE_POSITIONING\nPosiziona il circuito individuato", fillcolor="#E8E8E8", color="#616A6B"];
+
+    message_2 [label="Messaggio 2\nScansionare il barcode presente sul\ncircuito X della testa Y", fillcolor="#FCF3CF", color="#B7950B"];
+    scan_2 [label="Pistola: barcode circuito + ENTER", fillcolor="#FCF3CF", color="#B7950B"];
+    match_2 [shape=diamond, label="Uguale al barcode\ndel prodotto?", fillcolor="#FDEBD0", color="#CA6F1E"];
+
+    message_3 [label="Messaggio 3\nRimuovere il barattolo, eseguire il rabbocco,\nriposizionarlo e scansionarlo nuovamente", fillcolor="#FCF3CF", color="#B7950B"];
+    refill_physical [label="Operatore: esegue fisicamente\nil rabbocco", fillcolor="#FCF3CF", color="#B7950B"];
+    scan_3 [label="Pistola: barcode finale + ENTER", fillcolor="#FCF3CF", color="#B7950B"];
+    match_3 [shape=diamond, label="Uguale al barcode\niniziale?", fillcolor="#FDEBD0", color="#CA6F1E"];
+
+    weight_1 [label="Bilancia: STABLE_WEIGHT\nPeso finale W1 in grammi", fillcolor="#E8E8E8", color="#616A6B"];
+    calculate [label="HMI: grammi rabboccati = W0 - W1"];
+    positive [shape=diamond, label="Grammi > 0 e\npeso specifico valido?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    convert [label="HMI: quantità CC = grammi / peso specifico"];
+    refill_macro [label="Testa: macro REFILL\nAggiorna il livello interno in CC", fillcolor="#E8E8E8", color="#616A6B"];
+
+    message_4 [label="Messaggio 4\nMostra i grammi rabboccati e il livello\nin CC, GR o FL; propone il RESET", fillcolor="#D5F5E3", color="#239B56"];
+    reset [shape=diamond, label="Conferma RESET?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    reset_cmd [label="Testa: comando RESET", fillcolor="#E8E8E8", color="#616A6B"];
+
+    error [label="Mostra errore e interrompe la procedura", fillcolor="#FADBD8", color="#C0392B"];
+    unblock [label="HMI: sblocca i lettori YOKO", fillcolor="#D5F5E3", color="#239B56"];
+
+    start -> click -> scale_enabled;
+    scale_enabled -> manual [label="No"];
+    manual -> stop;
+    scale_enabled -> block_yoko [label="Sì"];
+    block_yoko -> message_1 -> scan_1 -> lookup -> product_found;
+    product_found -> error [label="No"];
+    product_found -> multiple [label="Sì"];
+    multiple -> choose [label="Sì"];
+    choose -> state;
+    multiple -> state [label="No"];
+    state -> error [label="No"];
+    state -> weight_0 [label="Sì"];
+    weight_0 -> position -> message_2 -> scan_2 -> match_2;
+    match_2 -> error [label="No"];
+    match_2 -> message_3 [label="Sì"];
+    message_3 -> refill_physical -> scan_3 -> match_3;
+    match_3 -> error [label="No"];
+    match_3 -> weight_1 [label="Sì"];
+    weight_1 -> calculate -> positive;
+    positive -> error [label="No"];
+    positive -> convert [label="Sì"];
+    convert -> refill_macro -> message_4 -> reset;
+    reset -> reset_cmd [label="Sì"];
+    reset_cmd -> unblock;
+    reset -> unblock [label="No"];
+    error -> unblock;
+    unblock -> stop;
+}

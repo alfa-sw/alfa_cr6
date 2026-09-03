@@ -232,6 +232,36 @@ class TestRealMachineHeadSendCommandRace(unittest.TestCase):
         }])
         self.assertEqual(self.head.last_answer["ref_id"], 999)
 
+    def test_scale_command_accepts_answer_without_end_suffix(self):
+        async def scenario():
+            task = asyncio.ensure_future(self.head.send_command(
+                "STABLE_WEIGHT", {}, channel="scale"
+            ))
+            await self._wait_for_sent_count(1)
+            await self._inject_answer(command="STABLE_WEIGHT", ref_id=1000)
+            return await task
+
+        self.assertTrue(self._run(scenario()))
+
+    def test_machine_command_still_requires_end_suffix(self):
+        async def scenario():
+            task = asyncio.ensure_future(
+                self.head.send_command("CAN_MOVEMENT", {})
+            )
+            await self._wait_for_sent_count(1)
+
+            await self._inject_answer(command="CAN_MOVEMENT", ref_id=1001)
+            await asyncio.sleep(0)
+            completed_without_suffix = task.done()
+
+            await self._inject_answer(command="CAN_MOVEMENT_END", ref_id=1002)
+            return completed_without_suffix, await task
+
+        completed_without_suffix, result = self._run(scenario())
+
+        self.assertFalse(completed_without_suffix)
+        self.assertTrue(result)
+
     def test_real_command_without_answer_times_out(self):
         result = self._run(
             self.head.send_command(self.COMMAND, {"Action": 0})

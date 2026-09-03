@@ -267,6 +267,28 @@ D = {
     "action 05 (head 7 or G)": "action 05 (head 7 or G)",
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
+
+    "Place the open canister on the scale.<br>Scan its barcode.": "Aseta avoin säiliö vaa'alle.<br>Skannaa sen viivakoodi.",
+    "The scanned barcode does not match<br>any configured product.": "Skannattu viivakoodi ei vastaa<br>mitään määritettyä tuotetta.",
+    "The product is configured on multiple circuits.": "Tuote on määritetty usealle piirille.",
+    "Choose the circuit to refill:": "Valitse täytettävä piiri:",
+    "Pause the carousel before starting the refill.": "Pysäytä karuselli ennen täytön aloittamista.",
+    "Head {} is not ready for refill.": "Pää {} ei ole valmis täyttöön.",
+    "Head {} has an operation in progress.": "Päässä {} on toiminto käynnissä.",
+    "Unable to read a stable weight from the scale.": "Vakaata painoa ei voida lukea<br>vaa'alta.",
+    "Unable to position the refill circuit.": "Täyttöpiiriä ei voida asettaa paikalleen.",
+    "Scan the barcode on circuit {}<br>of head {}.": "Skannaa piirin {} viivakoodi<br>päässä {}.",
+    "Refill preparation failed: {}": "Täytön valmistelu epäonnistui: {}",
+    "Barcode mismatch: {} != {}": "Viivakoodit eivät täsmää: {} != {}",
+    "Remove the canister from the scale and refill the circuit.<br>When finished, put it back on the scale and scan its barcode.": "Poista säiliö vaa'alta ja täytä piiri.<br>Aseta se lopuksi takaisin vaa'alle ja skannaa sen viivakoodi.",
+    "Refilled quantity: {} g": "Täytetty määrä: {} g",
+    "Warning: the measured refill exceeds<br>the configured maximum level.": "Varoitus: mitattu täyttömäärä ylittää<br>määritetyn enimmäistason.",
+    "RESET head: {}?": "NOLLAA pää {}?",
+    "Unable to display the refill result.": "Täytön tulosta ei voida näyttää.",
+    "The measured refill must be greater<br>than zero grams.": "Mitatun täyttömäärän on oltava<br>yli nolla grammaa.",
+    "The product specific weight is not valid.": "Tuotteen ominaispaino ei ole kelvollinen.",
+    "Unable to update the product level.": "Tuotteen tasoa ei voida päivittää.",
+    "Refill failed: {}": "Täyttö epäonnistui: {}",
 }
 
 

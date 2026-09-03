@@ -268,6 +268,28 @@ D = {
     "action 05 (head 7 or G)": "action 05 (head 7 or G)",
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
+
+    "Place the open canister on the scale.<br>Scan its barcode.": "Anbring den åbne beholder på vægten.<br>Scan dens stregkode.",
+    "The scanned barcode does not match<br>any configured product.": "Den scannede stregkode matcher ikke<br>et konfigureret produkt.",
+    "The product is configured on multiple circuits.": "Produktet er konfigureret på flere kredsløb.",
+    "Choose the circuit to refill:": "Vælg det kredsløb, der skal fyldes:",
+    "Pause the carousel before starting the refill.": "Sæt karrusellen på pause, før påfyldningen startes.",
+    "Head {} is not ready for refill.": "Hoved {} er ikke klar til påfyldning.",
+    "Head {} has an operation in progress.": "Hoved {} udfører en handling.",
+    "Unable to read a stable weight from the scale.": "En stabil vægt kan ikke aflæses<br>fra vægten.",
+    "Unable to position the refill circuit.": "Påfyldningskredsløbet kan ikke positioneres.",
+    "Scan the barcode on circuit {}<br>of head {}.": "Scan stregkoden på kredsløb {}<br>på hoved {}.",
+    "Refill preparation failed: {}": "Forberedelse af påfyldning mislykkedes: {}",
+    "Barcode mismatch: {} != {}": "Stregkoderne stemmer ikke overens: {} != {}",
+    "Remove the canister from the scale and refill the circuit.<br>When finished, put it back on the scale and scan its barcode.": "Fjern beholderen fra vægten, og fyld kredsløbet.<br>Sæt den tilbage på vægten bagefter, og scan dens stregkode.",
+    "Refilled quantity: {} g": "Påfyldt mængde: {} g",
+    "Warning: the measured refill exceeds<br>the configured maximum level.": "Advarsel: Den målte påfyldning overstiger<br>det konfigurerede maksimumniveau.",
+    "RESET head: {}?": "NULSTIL hoved {}?",
+    "Unable to display the refill result.": "Resultatet af påfyldningen kan ikke vises.",
+    "The measured refill must be greater<br>than zero grams.": "Den målte påfyldningsmængde skal være<br>større end nul gram.",
+    "The product specific weight is not valid.": "Produktets massefylde er ugyldig.",
+    "Unable to update the product level.": "Produktniveauet kan ikke opdateres.",
+    "Refill failed: {}": "Påfyldning mislykkedes: {}",
 }
 
 

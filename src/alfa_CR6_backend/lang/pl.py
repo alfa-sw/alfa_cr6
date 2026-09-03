@@ -258,6 +258,28 @@ D = {
     "action 05 (head 7 or G)": "action 05 (head 7 or G)",
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
+
+    "Place the open canister on the scale.<br>Scan its barcode.": "Umieść otwarty pojemnik na wadze.<br>Zeskanuj jego kod kreskowy.",
+    "The scanned barcode does not match<br>any configured product.": "Zeskanowany kod kreskowy nie odpowiada<br>żadnemu skonfigurowanemu produktowi.",
+    "The product is configured on multiple circuits.": "Produkt jest skonfigurowany w wielu obwodach.",
+    "Choose the circuit to refill:": "Wybierz obwód do uzupełnienia:",
+    "Pause the carousel before starting the refill.": "Wstrzymaj karuzelę przed rozpoczęciem uzupełniania.",
+    "Head {} is not ready for refill.": "Głowica {} nie jest gotowa do uzupełnienia.",
+    "Head {} has an operation in progress.": "Głowica {} wykonuje operację.",
+    "Unable to read a stable weight from the scale.": "Nie można odczytać stabilnej masy<br>z wagi.",
+    "Unable to position the refill circuit.": "Nie można ustawić obwodu do uzupełnienia.",
+    "Scan the barcode on circuit {}<br>of head {}.": "Zeskanuj kod kreskowy obwodu {}<br>głowicy {}.",
+    "Refill preparation failed: {}": "Przygotowanie uzupełniania nie powiodło się: {}",
+    "Barcode mismatch: {} != {}": "Kody kreskowe nie są zgodne: {} != {}",
+    "Remove the canister from the scale and refill the circuit.<br>When finished, put it back on the scale and scan its barcode.": "Zdejmij pojemnik z wagi i uzupełnij obwód.<br>Po zakończeniu umieść go ponownie na wadze i zeskanuj kod kreskowy.",
+    "Refilled quantity: {} g": "Uzupełniona ilość: {} g",
+    "Warning: the measured refill exceeds<br>the configured maximum level.": "Ostrzeżenie: zmierzona ilość przekracza<br>skonfigurowany poziom maksymalny.",
+    "RESET head: {}?": "ZRESETOWAĆ głowicę {}?",
+    "Unable to display the refill result.": "Nie można wyświetlić wyniku uzupełniania.",
+    "The measured refill must be greater<br>than zero grams.": "Zmierzona ilość musi być<br>większa niż zero gramów.",
+    "The product specific weight is not valid.": "Ciężar właściwy produktu jest nieprawidłowy.",
+    "Unable to update the product level.": "Nie można zaktualizować poziomu produktu.",
+    "Refill failed: {}": "Uzupełnianie nie powiodło się: {}",
 }
 
 

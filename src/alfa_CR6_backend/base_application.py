@@ -1479,6 +1479,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         """
         try:
 
+            if getattr(self, "barcode_read_blocked_on_refill", False):
+                return None
+
             if not getattr(self, "shuttle_bc_ready_to_read_a_barcode", False):
                 return None
 

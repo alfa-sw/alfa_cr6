@@ -267,6 +267,28 @@ D = {
     "action 05 (head 7 or G)": "action 05 (head 7 or G)",
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
+
+    "Place the open canister on the scale.<br>Scan its barcode.": "Place the open canister on the scale.<br>Scan its barcode.",
+    "The scanned barcode does not match<br>any configured product.": "The scanned barcode does not match<br>any configured product.",
+    "The product is configured on multiple circuits.": "The product is configured on multiple circuits.",
+    "Choose the circuit to refill:": "Choose the circuit to refill:",
+    "Pause the carousel before starting the refill.": "Pause the carousel before starting the refill.",
+    "Head {} is not ready for refill.": "Head {} is not ready for refill.",
+    "Head {} has an operation in progress.": "Head {} has an operation in progress.",
+    "Unable to read a stable weight from the scale.": "Unable to read a stable weight<br>from the scale.",
+    "Unable to position the refill circuit.": "Unable to position the refill circuit.",
+    "Scan the barcode on circuit {}<br>of head {}.": "Scan the barcode on circuit {}<br>of head {}.",
+    "Refill preparation failed: {}": "Refill preparation failed: {}",
+    "Barcode mismatch: {} != {}": "Barcode mismatch: {} != {}",
+    "Remove the canister from the scale and refill the circuit.<br>When finished, put it back on the scale and scan its barcode.": "Remove the canister from the scale and refill the circuit.<br>When finished, put it back on the scale and scan its barcode.",
+    "Refilled quantity: {} g": "Refilled quantity: {} g",
+    "Warning: the measured refill exceeds<br>the configured maximum level.": "Warning: the measured refill exceeds<br>the configured maximum level.",
+    "RESET head: {}?": "RESET head: {}?",
+    "Unable to display the refill result.": "Unable to display the refill result.",
+    "The measured refill must be greater<br>than zero grams.": "The measured refill must be greater<br>than zero grams.",
+    "The product specific weight is not valid.": "The product specific weight is not valid.",
+    "Unable to update the product level.": "Unable to update the product level.",
+    "Refill failed: {}": "Refill failed: {}",
 }
 
 

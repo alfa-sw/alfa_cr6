@@ -194,6 +194,11 @@ class TestValidateUpdates:
         result = SettingsManager._validate_updates({"ENABLE_BTN_ORDER_NEW": "true"})
         assert result["ENABLE_BTN_ORDER_NEW"] is True
 
+    def test_scale_refill_is_disabled_by_default_and_accepts_boolean(self):
+        assert SettingsManager.DEFAULTS["ENABLE_REFILL_BY_SCALE"] is False
+        result = SettingsManager._validate_updates({"ENABLE_REFILL_BY_SCALE": "true"})
+        assert result["ENABLE_REFILL_BY_SCALE"] is True
+
     def test_reminder_pps_liner_defaults_to_false(self):
         assert SettingsManager.DEFAULTS["REMINDER_PPS_LINER"] is False
 
