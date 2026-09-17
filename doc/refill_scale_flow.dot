@@ -1,0 +1,99 @@
+digraph ScaleRefill {
+    graph [
+        label="Scale-based refill procedure",
+        labelloc=t,
+        fontsize=26,
+        fontname="DejaVu Sans",
+        bgcolor="white",
+        rankdir=TB,
+        nodesep=0.35,
+        ranksep=0.55,
+        splines=ortho,
+        pad=0.25
+    ];
+
+    node [
+        shape=box,
+        style="rounded,filled",
+        fillcolor="#EAF2F8",
+        color="#2874A6",
+        fontname="DejaVu Sans",
+        fontsize=13,
+        margin="0.18,0.10"
+    ];
+    edge [
+        color="#34495E",
+        fontname="DejaVu Sans",
+        fontsize=11,
+        arrowsize=0.75
+    ];
+
+    start [shape=circle, label="", width=0.28, fillcolor="#2874A6"];
+    stop [shape=doublecircle, label="", width=0.32, fillcolor="#2874A6"];
+
+    click [label="Operator: presses an existing\nrefill button", fillcolor="#FCF3CF", color="#B7950B"];
+    scale_enabled [shape=diamond, label="ENABLE_REFILL_BY_SCALE?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    manual [label="Start the current manual refill"];
+    block_yoko [label="HMI: disables both YOKO readers\n(the scanner remains active as a keyboard)"];
+
+    message_1 [label="Message 1\nPlace the open canister on the scale\nand scan its barcode", fillcolor="#FCF3CF", color="#B7950B"];
+    scan_1 [label="Scanner: product barcode + ENTER", fillcolor="#FCF3CF", color="#B7950B"];
+    lookup [label="HMI: searches for customer_id across all heads\nand enabled, synchronized circuits"];
+    product_found [shape=diamond, label="Product found?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    multiple [shape=diamond, label="Multiple circuits?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    choose [label="Operator: selects the circuit", fillcolor="#FCF3CF", color="#B7950B"];
+    state [shape=diamond, label="Head ready?\nAutomation paused\nSTANDBY/DIAGNOSTIC\nNo active outputs", fillcolor="#FDEBD0", color="#CA6F1E"];
+
+    weight_0 [label="Scale: STABLE_WEIGHT\nInitial weight W0 in grams\n(no tare)", fillcolor="#E8E8E8", color="#616A6B"];
+    position [label="Head: DIAG_ROTATING_TABLE_POSITIONING\nPositions the selected circuit", fillcolor="#E8E8E8", color="#616A6B"];
+
+    message_2 [label="Message 2\nScan the barcode on circuit X\nof head Y", fillcolor="#FCF3CF", color="#B7950B"];
+    scan_2 [label="Scanner: circuit barcode + ENTER", fillcolor="#FCF3CF", color="#B7950B"];
+    match_2 [shape=diamond, label="Matches the product\nbarcode?", fillcolor="#FDEBD0", color="#CA6F1E"];
+
+    message_3 [label="Message 3\nRemove the canister, refill the circuit,\nput it back and scan it again", fillcolor="#FCF3CF", color="#B7950B"];
+    refill_physical [label="Operator: physically refills\nthe circuit", fillcolor="#FCF3CF", color="#B7950B"];
+    scan_3 [label="Scanner: final barcode + ENTER", fillcolor="#FCF3CF", color="#B7950B"];
+    match_3 [shape=diamond, label="Matches the initial\nbarcode?", fillcolor="#FDEBD0", color="#CA6F1E"];
+
+    weight_1 [label="Scale: STABLE_WEIGHT\nFinal weight W1 in grams", fillcolor="#E8E8E8", color="#616A6B"];
+    calculate [label="HMI: refilled grams = W0 - W1"];
+    positive [shape=diamond, label="Grams > 0 and valid\nspecific weight?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    convert [label="HMI: quantity CC = grams / specific weight"];
+    refill_macro [label="Head: REFILL macro\nUpdates the internal level in CC", fillcolor="#E8E8E8", color="#616A6B"];
+
+    message_4 [label="Message 4\nDisplays the refilled grams and level\nin CC, GR or FL; offers RESET", fillcolor="#D5F5E3", color="#239B56"];
+    reset [shape=diamond, label="Confirm RESET?", fillcolor="#FDEBD0", color="#CA6F1E"];
+    reset_cmd [label="Head: RESET command", fillcolor="#E8E8E8", color="#616A6B"];
+
+    error [label="Display an error and stop the procedure", fillcolor="#FADBD8", color="#C0392B"];
+    unblock [label="HMI: enables the YOKO readers", fillcolor="#D5F5E3", color="#239B56"];
+
+    start -> click -> scale_enabled;
+    scale_enabled -> manual [label="No"];
+    manual -> stop;
+    scale_enabled -> block_yoko [label="Yes"];
+    block_yoko -> message_1 -> scan_1 -> lookup -> product_found;
+    product_found -> error [label="No"];
+    product_found -> multiple [label="Yes"];
+    multiple -> choose [label="Yes"];
+    choose -> state;
+    multiple -> state [label="No"];
+    state -> error [label="No"];
+    state -> weight_0 [label="Yes"];
+    weight_0 -> position -> message_2 -> scan_2 -> match_2;
+    match_2 -> error [label="No"];
+    match_2 -> message_3 [label="Yes"];
+    message_3 -> refill_physical -> scan_3 -> match_3;
+    match_3 -> error [label="No"];
+    match_3 -> weight_1 [label="Yes"];
+    weight_1 -> calculate -> positive;
+    positive -> error [label="No"];
+    positive -> convert [label="Yes"];
+    convert -> refill_macro -> message_4 -> reset;
+    reset -> reset_cmd [label="Yes"];
+    reset_cmd -> unblock;
+    reset -> unblock [label="No"];
+    error -> unblock;
+    unblock -> stop;
+}
