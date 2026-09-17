@@ -728,12 +728,19 @@ class ScaleRefillProcedureHelper:
         if not QApplication.instance().carousel_frozen:
             return tr_("Pause the carousel before starting the refill.")
         status = machine.status or {}
+        # S05: defensive case, almost impossible to reproduce through the
+        # normal UI because the refill event gate already accepts only a head
+        # in STANDBY or DIAGNOSTIC. A state change during preparation can
+        # still reach this fallback.
         if status.get("status_level") not in ("STANDBY", "DIAGNOSTIC"):
             return tr_("Head {} is not ready for refill.").format(machine.name)
         try:
             outputs_active = int(status.get("crx_outputs_status", 1)) != 0
         except (TypeError, ValueError):
             outputs_active = True
+        # S06: defensive case, almost impossible to reproduce with coherent
+        # telemetry. Active CRX outputs normally move the head out of
+        # STANDBY/DIAGNOSTIC, and the refill event gate also blocks the click.
         if outputs_active:
             return tr_("Head {} has an operation in progress.").format(machine.name)
         return None
@@ -748,6 +755,9 @@ class ScaleRefillProcedureHelper:
             initial_weight = await machine.read_stable_weight()
             if not self._is_active():
                 return
+            # S07: almost impossible to reproduce in the nominal flow after
+            # the scale connection precheck; it requires the scale or its
+            # reply to become unavailable before this first stable reading.
             if initial_weight is None or not math.isfinite(initial_weight):
                 self._show_error(tr_("Unable to read a stable weight from the scale."))
                 return
@@ -779,6 +789,9 @@ class ScaleRefillProcedureHelper:
                 ok_cb=self._on_circuit_barcode,
                 ok_on_enter=1)
         except Exception as exc:  # pylint: disable=broad-except
+            # S10: defensive fallback, almost impossible to reproduce with a
+            # valid configuration; it requires malformed runtime data or an
+            # unexpected exception during preparation.
             logging.error(traceback.format_exc())
             self._show_error(tr_("Refill preparation failed: {}").format(exc))
 
@@ -841,6 +854,9 @@ class ScaleRefillProcedureHelper:
 
         margin_cc = max(0, float(self.pipe_.get("maximum_level", 0))
                         - float(self.pipe_.get("current_level", 0)))
+        # S14: almost impossible to reproduce during the nominal procedure;
+        # it requires the measured refill volume to exceed the configured
+        # remaining capacity of the circuit.
         if refill_cc > margin_cc:
             lines.append(tr_(
                 "Warning: the measured refill exceeds<br>the configured maximum level."))
@@ -875,6 +891,9 @@ class ScaleRefillProcedureHelper:
     async def _complete_refill(self):
         try:
             final_weight = await self.machine_.read_stable_weight()
+            # S07: almost impossible to reproduce in the nominal flow; it
+            # requires the scale connection or response validity to be lost
+            # after the refill procedure has already started.
             if final_weight is None or not math.isfinite(final_weight):
                 self._show_error(tr_("Unable to read a stable weight from the scale."))
                 return
