@@ -258,7 +258,7 @@ D = {
     "Delete": "حذف",
     "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
     "Place the open canister on the scale.<br>Scan its barcode.": "ضع العبوة المفتوحة على الميزان.<br>امسح رمزها الشريطي.",
-    "The scanned barcode does not match<br>any configured product.": "رمز الباركود الممسوح لا يطابق<br>أي منتج مهيأ.",
+    "The scanned barcode does not match<br>any product configured on the machine.": "رمز الباركود الممسوح لا يطابق<br>أي منتج مهيأ على الجهاز.",
     "The product is configured on multiple circuits.": "المنتج مهيأ في عدة دوائر.",
     "Choose the circuit to refill:": "اختر الدائرة المراد إعادة تعبئتها:",
     "Pause the carousel before starting the refill.": "أوقف القرص الدوار مؤقتًا قبل بدء إعادة التعبئة.",

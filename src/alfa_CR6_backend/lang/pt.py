@@ -269,7 +269,7 @@ D = {
     "Start output roller CW": "Start output roller CW",
 
     "Place the open canister on the scale.<br>Scan its barcode.": "Coloque o recipiente aberto na balança.<br>Leia o respetivo código de barras.",
-    "The scanned barcode does not match<br>any configured product.": "O código de barras lido não corresponde<br>a nenhum produto configurado.",
+    "The scanned barcode does not match<br>any product configured on the machine.": "O código de barras lido não corresponde<br>a nenhum produto configurado na máquina.",
     "The product is configured on multiple circuits.": "O produto está configurado em vários circuitos.",
     "Choose the circuit to refill:": "Selecione o circuito a reabastecer:",
     "Pause the carousel before starting the refill.": "Pause o carrossel antes de iniciar o reabastecimento.",

@@ -605,6 +605,13 @@ class ScaleRefillProcedureHelper:
     def main_window(self):
         return self.parent.main_window
 
+    def _open_dialog(self, **kwargs):
+        kwargs["large_message_layout"] = bool(getattr(
+            g_settings,
+            "ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT",
+            False))
+        self.main_window.open_input_dialog(**kwargs)
+
     def _is_active(self):
         return (getattr(self.parent, "scale_refill_helper", None) is self
                 and getattr(QApplication.instance(), "barcode_read_blocked_on_refill", False))
@@ -641,7 +648,7 @@ class ScaleRefillProcedureHelper:
         self.main_window.hide_input_dialog()
 
     def _show_error(self, message):
-        self.main_window.open_input_dialog(
+        self._open_dialog(
             icon_name="SP_MessageBoxCritical",
             message=message,
             content=None,
@@ -652,7 +659,7 @@ class ScaleRefillProcedureHelper:
 
     def run(self):
         self.main_window.toggle_keyboard(on_off=False)
-        self.main_window.open_input_dialog(
+        self._open_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("Place the open canister on the scale.<br>Scan its barcode."),
             content="",
@@ -667,7 +674,7 @@ class ScaleRefillProcedureHelper:
         targets = self._find_targets(QApplication.instance().machine_head_dict, barcode)
         if not targets:
             self._show_error(tr_(
-                "The scanned barcode does not match<br>any configured product."))
+                "The scanned barcode does not match<br>any product configured on the machine."))
             return
 
         self.barcode_ = barcode
@@ -684,7 +691,7 @@ class ScaleRefillProcedureHelper:
                 round(float(pipe.get("maximum_level", 0)), 2))
             choices[label] = (machine, pigment, pipe)
 
-        self.main_window.open_input_dialog(
+        self._open_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("The product is configured on multiple circuits."),
             content=tr_("Choose the circuit to refill:"),
@@ -749,7 +756,7 @@ class ScaleRefillProcedureHelper:
             self.initial_weight_ = initial_weight
             message = tr_("Scan the barcode on circuit {}<br>of head {}.").format(
                 pipe["name"], machine.name)
-            self.main_window.open_input_dialog(
+            self._open_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=message,
                 content="",
@@ -766,7 +773,7 @@ class ScaleRefillProcedureHelper:
                 self.barcode_, scanned))
             return
 
-        self.main_window.open_input_dialog(
+        self._open_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("Remove the canister from the scale and refill the circuit.<br>"
                         "When finished, put it back on the scale and scan its barcode."),
@@ -822,7 +829,7 @@ class ScaleRefillProcedureHelper:
             lines.append(tr_(
                 "Warning: the measured refill exceeds<br>the configured maximum level."))
         lines.append(tr_("RESET head: {}?").format(self.machine_.name))
-        self.main_window.open_input_dialog(
+        self._open_dialog(
             icon_name="SP_MessageBoxInformation",
             message="<br>".join(lines),
             content=None,

@@ -109,6 +109,7 @@ class TestEditableSettings:
         editable = SettingsManager.get_editable_settings()
 
         assert editable["REMINDER_PPS_LINER"] is False
+        assert editable["ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT"] is False
         assert "REFILL_ALARM_NOTIFICATION" not in editable
 
 
@@ -198,6 +199,12 @@ class TestValidateUpdates:
         assert SettingsManager.DEFAULTS["ENABLE_REFILL_BY_SCALE"] is False
         result = SettingsManager._validate_updates({"ENABLE_REFILL_BY_SCALE": "true"})
         assert result["ENABLE_REFILL_BY_SCALE"] is True
+
+    def test_scale_refill_large_message_layout_is_optional(self):
+        key = "ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT"
+        assert SettingsManager.DEFAULTS[key] is False
+        result = SettingsManager._validate_updates({key: "true"})
+        assert result[key] is True
 
     def test_reminder_pps_liner_defaults_to_false(self):
         assert SettingsManager.DEFAULTS["REMINDER_PPS_LINER"] is False

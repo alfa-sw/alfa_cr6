@@ -43,6 +43,11 @@ class SettingsManager:
                 'default': False,
                 'description': 'Enables the guided refill procedure that measures the refilled product with the scale.',
             },
+            'ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'Uses a larger message-focused layout for the guided refill-by-scale popups.',
+            },
             'LOAD_LIFTER_IS_UP_LONG_TIMEOUT': {
                 'type': 'number',
                 'minimum': 30.3,

@@ -269,7 +269,7 @@ D = {
     "Start output roller CW": "Start output roller CW",
 
     "Place the open canister on the scale.<br>Scan its barcode.": "Aseta avoin säiliö vaa'alle.<br>Skannaa sen viivakoodi.",
-    "The scanned barcode does not match<br>any configured product.": "Skannattu viivakoodi ei vastaa<br>mitään määritettyä tuotetta.",
+    "The scanned barcode does not match<br>any product configured on the machine.": "Skannattu viivakoodi ei vastaa mitään<br>koneeseen määritettyä tuotetta.",
     "The product is configured on multiple circuits.": "Tuote on määritetty usealle piirille.",
     "Choose the circuit to refill:": "Valitse täytettävä piiri:",
     "Pause the carousel before starting the refill.": "Pysäytä karuselli ennen täytön aloittamista.",

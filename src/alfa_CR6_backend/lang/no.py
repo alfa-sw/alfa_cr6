@@ -269,7 +269,7 @@ D = {
     "Start output roller CW": "Start output roller CW",
 
     "Place the open canister on the scale.<br>Scan its barcode.": "Plasser den åpne beholderen på vekten.<br>Skann strekkoden.",
-    "The scanned barcode does not match<br>any configured product.": "Den skannede strekkoden samsvarer ikke med<br>noe konfigurert produkt.",
+    "The scanned barcode does not match<br>any product configured on the machine.": "Den skannede strekkoden samsvarer ikke med<br>noe produkt som er konfigurert på maskinen.",
     "The product is configured on multiple circuits.": "Produktet er konfigurert på flere kretser.",
     "Choose the circuit to refill:": "Velg kretsen som skal etterfylles:",
     "Pause the carousel before starting the refill.": "Sett karusellen på pause før etterfyllingen startes.",

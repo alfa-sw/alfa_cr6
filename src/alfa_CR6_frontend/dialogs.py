@@ -711,6 +711,12 @@ class InputDialog(BaseDialog):
 
     ui_file_name = "input_dialog.ui"
 
+    LARGE_MESSAGE_FONT_SCALE = 1.40
+    LARGE_CONTENT_FONT_SCALE = 1.40
+    LARGE_MESSAGE_HEIGHT_SCALE = 2
+    LARGE_CONTENT_HEIGHT = 80
+    LARGE_LAYOUT_GAP = 9
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -725,8 +731,87 @@ class InputDialog(BaseDialog):
         self.choices = []
         self.use_combo_for_choice = False
 
+        # InputDialog is a single, reusable frame.  Keep the .ui geometry so
+        # the special refill-by-scale layout can always be undone before the
+        # next (unrelated) popup is displayed.
+        self._standard_geometry = {
+            widget: (
+                widget.x(), widget.y(), widget.width(), widget.height()
+            )
+            for widget in (
+                self.message_label,
+                self.esc_button,
+                self.ok_button,
+                self.content_container,
+                self.combo_box,
+            )
+        }
+        self._standard_frame_width = self.width()
+        self._standard_message_font_size = self.message_label.font().pointSizeF()
+        self._standard_content_font_size = (
+            self.content_container.font().pointSizeF())
+
         # ~ self.ok_button.clicked.connect(self.hide)
         self.esc_button.clicked.connect(self.close_actions)
+
+    def _restore_standard_layout(self):
+        for widget, geometry in self._standard_geometry.items():
+            widget.setGeometry(*geometry)
+
+        font = self.message_label.font()
+        font.setPointSizeF(self._standard_message_font_size)
+        self.message_label.setFont(font)
+
+        content_font = self.content_container.font()
+        content_font.setPointSizeF(self._standard_content_font_size)
+        self.content_container.setFont(content_font)
+
+    def _apply_large_message_layout(self, has_content, has_choices):
+        """Give refill-by-scale instructions priority over the input area."""
+
+        message_x, message_y, message_width, message_height = (
+            self._standard_geometry[self.message_label]
+        )
+        message_height *= self.LARGE_MESSAGE_HEIGHT_SCALE
+        self.message_label.setGeometry(
+            message_x, message_y, message_width, message_height)
+
+        font = self.message_label.font()
+        font.setPointSizeF(
+            self._standard_message_font_size * self.LARGE_MESSAGE_FONT_SCALE)
+        self.message_label.setFont(font)
+
+        button_y = message_y + message_height + self.LARGE_LAYOUT_GAP
+        for button in (self.esc_button, self.ok_button):
+            x, _, width, height = self._standard_geometry[button]
+            button.setGeometry(x, button_y, width, height)
+
+        content_x, _, content_width, _ = self._standard_geometry[
+            self.content_container]
+        content_y = button_y + self.ok_button.height() + self.LARGE_LAYOUT_GAP
+        content_height = self.LARGE_CONTENT_HEIGHT if has_content else 0
+        self.content_container.setGeometry(
+            content_x, content_y, content_width, content_height)
+
+        content_font = self.content_container.font()
+        content_font.setPointSizeF(
+            self._standard_content_font_size * self.LARGE_CONTENT_FONT_SCALE)
+        self.content_container.setFont(content_font)
+
+        bottom = content_y + content_height
+        if has_choices:
+            combo_x, _, combo_width, combo_height = self._standard_geometry[
+                self.combo_box]
+            if self.use_combo_for_choice:
+                combo_height = max(combo_height, 60)
+            combo_y = bottom + self.LARGE_LAYOUT_GAP
+            self.combo_box.setGeometry(
+                combo_x, combo_y, combo_width, combo_height)
+            bottom = combo_y + combo_height
+
+        self.resize(
+            self._standard_frame_width,
+            bottom + self.LARGE_LAYOUT_GAP)
 
     def get_selected_choice(self):
 
@@ -780,9 +865,12 @@ class InputDialog(BaseDialog):
         to_html=None,
         wide=None,
         content_editable=True,
-        use_combo_for_choice=False):
+        use_combo_for_choice=False,
+        large_message_layout=False):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
+
+        self._restore_standard_layout()
 
         self.ok_on_enter = ok_on_enter
         self.use_combo_for_choice = bool(use_combo_for_choice)
@@ -873,6 +961,11 @@ class InputDialog(BaseDialog):
             self.content_container.resize(self.content_container.width(), 400)
         self.content_container.setStyleSheet(css_)
         logging.warning(f"css_:{css_}")
+
+        if large_message_layout:
+            self._apply_large_message_layout(
+                has_content=content is not None,
+                has_choices=choices is not None)
 
         self.show()
 

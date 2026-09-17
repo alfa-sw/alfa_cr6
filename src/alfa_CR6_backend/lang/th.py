@@ -259,7 +259,7 @@ D = {
 
     "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
     "Place the open canister on the scale.<br>Scan its barcode.": "วางภาชนะที่เปิดฝาบนเครื่องชั่ง<br>สแกนบาร์โค้ดของภาชนะ",
-    "The scanned barcode does not match<br>any configured product.": "บาร์โค้ดที่สแกนไม่ตรงกับ<br>ผลิตภัณฑ์ที่กำหนดค่าไว้",
+    "The scanned barcode does not match<br>any product configured on the machine.": "บาร์โค้ดที่สแกนไม่ตรงกับ<br>ผลิตภัณฑ์ใดที่กำหนดค่าไว้ในเครื่อง",
     "The product is configured on multiple circuits.": "ผลิตภัณฑ์ถูกกำหนดไว้ในหลายวงจร",
     "Choose the circuit to refill:": "เลือกวงจรที่ต้องการเติม:",
     "Pause the carousel before starting the refill.": "หยุดแครูเซลชั่วคราวก่อนเริ่มการเติม",

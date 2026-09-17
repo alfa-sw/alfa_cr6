@@ -193,7 +193,7 @@ D = {
     "adjusted_levels": "livelli aggiornati",
     "please, input barcode for refill": "prego, scannerizza il codice a barre per il rabocco",
     "Place the open canister on the scale.<br>Scan its barcode.": "Posizionare il barattolo aperto sulla bilancia.<br>Scansionare il codice a barre.",
-    "The scanned barcode does not match<br>any configured product.": "Il codice a barre scansionato non corrisponde<br>ad alcun prodotto configurato.",
+    "The scanned barcode does not match<br>any product configured on the machine.": "Il codice a barre scansionato non corrisponde<br>ad alcun prodotto configurato in macchina.",
     "The product is configured on multiple circuits.": "Il prodotto è configurato su più circuiti.",
     "Choose the circuit to refill:": "Scegliere il circuito da rabboccare:",
     "Pause the carousel before starting the refill.": "Mettere in pausa l'automazione prima di avviare il rabbocco.",
