@@ -679,7 +679,8 @@ class ScaleRefillProcedureHelper:
             message=tr_("Place the open canister on the scale.<br>Scan its barcode."),
             content="",
             ok_cb=self._on_initial_barcode,
-            ok_on_enter=1)
+            ok_on_enter=1,
+            ok_requires_content=True)
 
     def _on_initial_barcode(self):
         barcode = self._dialog_barcode()

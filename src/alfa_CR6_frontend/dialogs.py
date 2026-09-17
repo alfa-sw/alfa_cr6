@@ -727,6 +727,7 @@ class InputDialog(BaseDialog):
         self.__ok_cb = None
         self.__ok_cb_args = None
         self.ok_on_enter = None
+        self.ok_requires_content = False
 
         self.choices = []
         self.use_combo_for_choice = False
@@ -836,6 +837,9 @@ class InputDialog(BaseDialog):
     def on_ok_button_clicked(self):
 
         try:
+            if (self.ok_requires_content
+                    and not self.content_container.toPlainText().strip()):
+                return
             if self.__ok_cb:
                 tmp__args_ = self.__ok_cb_args if self.__ok_cb_args is not None else []
                 tmp__ok_cb = self.__ok_cb
@@ -848,9 +852,14 @@ class InputDialog(BaseDialog):
 
     def on_text_cahnged(self):
 
+        cnt_ = self.content_container.toPlainText()
+        content_is_valid = bool(cnt_.strip())
+        if self.ok_requires_content:
+            self.ok_button.setEnabled(content_is_valid)
+
         if self.ok_on_enter and self.on_ok_button_clicked:
-            cnt_ = self.content_container.toPlainText()
-            if "\n" in cnt_:
+            if "\n" in cnt_ and (
+                    not self.ok_requires_content or content_is_valid):
                 self.on_ok_button_clicked()
 
     def show_dialog(self,    # pylint: disable=too-many-arguments
@@ -866,13 +875,15 @@ class InputDialog(BaseDialog):
         wide=None,
         content_editable=True,
         use_combo_for_choice=False,
-        large_message_layout=False):
+        large_message_layout=False,
+        ok_requires_content=False):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
         self._restore_standard_layout()
 
         self.ok_on_enter = ok_on_enter
+        self.ok_requires_content = bool(ok_requires_content)
         self.use_combo_for_choice = bool(use_combo_for_choice)
 
         if icon_name is None:
@@ -953,6 +964,10 @@ class InputDialog(BaseDialog):
         if ok_cb is not None:
             self.__ok_cb = ok_cb
             self.__ok_cb_args = ok_cb_args
+
+        self.ok_button.setEnabled(
+            not self.ok_requires_content
+            or bool(self.content_container.toPlainText().strip()))
 
         if bg_image is None:
             css_ = 'background-image:;'
