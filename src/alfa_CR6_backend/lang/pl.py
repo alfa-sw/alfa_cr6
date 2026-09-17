@@ -259,6 +259,7 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
+    "No scale was detected.<br>Connect the scale and try again.": "Nie wykryto żadnej wagi.<br>Podłącz wagę i spróbuj ponownie.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Umieść otwarty pojemnik na wadze.<br>Zeskanuj jego kod kreskowy.",
     "The scanned barcode does not match<br>any product configured on the machine.": "Zeskanowany kod kreskowy nie odpowiada<br>żadnemu produktowi skonfigurowanemu w maszynie.",
     "The product is configured on multiple circuits.": "Produkt jest skonfigurowany w wielu obwodach.",

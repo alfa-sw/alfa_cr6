@@ -257,6 +257,7 @@ D = {
     "OK": "موافق",
     "Delete": "حذف",
     "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
+    "No scale was detected.<br>Connect the scale and try again.": "لم يتم اكتشاف أي ميزان.<br>قم بتوصيل الميزان وحاول مرة أخرى.",
     "Place the open canister on the scale.<br>Scan its barcode.": "ضع العبوة المفتوحة على الميزان.<br>امسح رمزها الشريطي.",
     "The scanned barcode does not match<br>any product configured on the machine.": "رمز الباركود الممسوح لا يطابق<br>أي منتج مهيأ على الجهاز.",
     "The product is configured on multiple circuits.": "المنتج مهيأ في عدة دوائر.",

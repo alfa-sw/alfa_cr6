@@ -269,6 +269,7 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
+    "No scale was detected.<br>Connect the scale and try again.": "Der blev ikke registreret nogen vægt.<br>Tilslut vægten, og prøv igen.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Anbring den åbne beholder på vægten.<br>Scan dens stregkode.",
     "The scanned barcode does not match<br>any product configured on the machine.": "Den scannede stregkode svarer ikke til noget<br>produkt, der er konfigureret på maskinen.",
     "The product is configured on multiple circuits.": "Produktet er konfigureret på flere kredsløb.",

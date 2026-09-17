@@ -24,7 +24,13 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
-from alfa_CR6_backend.globals import (import_settings, get_res, tr_, DEFAULT_DEBUG_PAGE_PWD)
+from alfa_CR6_backend.globals import (
+    DEFAULT_DEBUG_PAGE_PWD,
+    get_res,
+    import_settings,
+    is_scale_connected,
+    tr_,
+)
 from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels, async_dymo_print_low_pigment_labels
 from alfa_CR6_backend.refill_utils import convert_quantity, get_pipe_index_from_name
 
@@ -659,6 +665,15 @@ class ScaleRefillProcedureHelper:
 
     def run(self):
         self.main_window.toggle_keyboard(on_off=False)
+        if not is_scale_connected():
+            self._open_dialog(
+                icon_name="SP_MessageBoxWarning",
+                message=tr_(
+                    "No scale was detected.<br>Connect the scale and try again."),
+                content=None,
+                ok_cb=self._finish)
+            return
+
         self._open_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("Place the open canister on the scale.<br>Scan its barcode."),

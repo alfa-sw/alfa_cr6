@@ -70,12 +70,40 @@ _ALFA_SN = None
 
 DEFAULT_DEBUG_PAGE_PWD = 'alfa'
 _SETTINGS_CACHE = None
+SCALE_STATUS_REDIS_KEY = "device:scale:status"
 
 
 def get_application_instance():
 
     from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module, import-outside-toplevel
     return QApplication.instance()
+
+
+def is_scale_connected():
+    """Return whether the shared scale serial device is currently connected."""
+    try:
+        raw_status = redis.Redis(
+            socket_connect_timeout=.2,
+            socket_timeout=.2,
+        ).get(SCALE_STATUS_REDIS_KEY)
+        if not raw_status:
+            return False
+
+        status = json.loads(raw_status)
+        if not isinstance(status, dict):
+            return False
+
+        connected = status.get("connected")
+        if connected is not None:
+            return connected is True
+
+        # Compatibility with dispatchers that predate the explicit
+        # connection flag. Their ON state is set after a successful reading.
+        return status.get("status_level") == "ON"
+    except (redis.RedisError, TypeError, ValueError):
+        logging.warning("Unable to read scale connection status", exc_info=True)
+        return False
+
 
 def get_alfa_serialnumber():
 

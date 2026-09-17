@@ -258,6 +258,7 @@ D = {
     "Delete": "ลบ",
 
     "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
+    "No scale was detected.<br>Connect the scale and try again.": "ไม่พบเครื่องชั่ง<br>เชื่อมต่อเครื่องชั่งแล้วลองอีกครั้ง",
     "Place the open canister on the scale.<br>Scan its barcode.": "วางภาชนะที่เปิดฝาบนเครื่องชั่ง<br>สแกนบาร์โค้ดของภาชนะ",
     "The scanned barcode does not match<br>any product configured on the machine.": "บาร์โค้ดที่สแกนไม่ตรงกับ<br>ผลิตภัณฑ์ใดที่กำหนดค่าไว้ในเครื่อง",
     "The product is configured on multiple circuits.": "ผลิตภัณฑ์ถูกกำหนดไว้ในหลายวงจร",
