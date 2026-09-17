@@ -126,5 +126,38 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         self.assertIs(dialog["ok_requires_content"], True)
 
 
+class TestRefillEventGate(unittest.TestCase):
+    def _is_active(self, status_level, crx_outputs_status=0):
+        app = mock.Mock(
+            carousel_frozen=True,
+            machine_head_dict={
+                0: mock.Mock(status={
+                    "status_level": status_level,
+                    "crx_outputs_status": crx_outputs_status,
+                }),
+            },
+        )
+        with mock.patch.object(home_page.QApplication, "instance", return_value=app), \
+                mock.patch.object(
+                    home_page.g_settings,
+                    "USE_PIGMENT_ID_AS_BARCODE",
+                    True,
+                    create=True,
+                ):
+            return home_page.HomePage.refill_lbl_is_active(0)
+
+    def test_standby_head_accepts_refill_event(self):
+        self.assertTrue(self._is_active("STANDBY"))
+
+    def test_positioning_head_ignores_refill_event(self):
+        self.assertFalse(self._is_active("JAR_POSITIONING"))
+
+    def test_alarm_head_ignores_refill_event(self):
+        self.assertFalse(self._is_active("ALARM"))
+
+    def test_active_crx_outputs_ignore_refill_event(self):
+        self.assertFalse(self._is_active("STANDBY", crx_outputs_status=1))
+
+
 if __name__ == "__main__":
     unittest.main()

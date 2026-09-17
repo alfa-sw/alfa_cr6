@@ -1645,10 +1645,17 @@ class HomePage(BaseStackedPage):
         # ~ if head_index is not None and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE') and (
         # ~ g_settings.USE_PIGMENT_ID_AS_BARCODE and QApplication.instance().carousel_frozen):
 
+        app = QApplication.instance()
         flag = head_index is not None
         flag = flag and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE')
         flag = flag and g_settings.USE_PIGMENT_ID_AS_BARCODE
-        flag = flag and QApplication.instance().carousel_frozen
+        flag = flag and app.carousel_frozen
+        machine_head = app.machine_head_dict.get(head_index) if flag else None
+        flag = flag and machine_head is not None
+        if flag:
+            status = machine_head.status
+            flag = not status.get('crx_outputs_status', 0x1)
+            flag = flag and status.get('status_level', '') in ("STANDBY", "DIAGNOSTIC")
         return flag
 
     def refill_lbl_clicked(self, head_index):

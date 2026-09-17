@@ -1,4 +1,4 @@
-# Popup del rabbocco con bilancia: S01-S19
+# Popup del rabbocco con bilancia: precontrollo e S01-S19
 
 Data analisi: 17 settembre 2026
 
@@ -6,6 +6,9 @@ Data analisi: 17 settembre 2026
 
 Le sigle da S01 a S19 sono identificatori usati nelle anteprime grafiche e non
 codici di errore mostrati dall'applicazione.
+
+L'avviso di bilancia non rilevata è un precontrollo aggiunto prima di S01 e non
+ha un identificatore `Sxx` nelle anteprime originali.
 
 - La pagina `/settings` abilita il flusso con
   `ENABLE_REFILL_BY_SCALE` e il layout ingrandito con
@@ -21,6 +24,7 @@ codici di errore mostrati dall'applicazione.
 
 | ID | Tipo | Significato | Riproduzione principale |
 |---|---|---|---|
+| Precontrollo | Avviso disponibilità | Bilancia non rilevata | Hardware o comunicazione |
 | S01 | Richiesta operativa | Avvio del rabbocco con bilancia | Settings e operatore |
 | S02 | Errore configurazione/scansione | Barcode non associato a prodotti validi | Barcode o DB |
 | S03 | Selezione | Più circuiti associati allo stesso barcode | DB |
@@ -40,6 +44,48 @@ codici di errore mostrati dall'applicazione.
 | S17 | Errore configurazione prodotto | Peso specifico non valido | DB |
 | S18 | Errore comunicazione | Comando `REFILL` non inviato | Connessione o testa |
 | S19 | Errore interno generico | Eccezione imprevista finale | Codice o stato incoerente |
+
+## Precontrollo - Bilancia non rilevata
+
+```text
+Non è stata rilevata nessuna bilancia.
+Collegare la bilancia e riprovare.
+```
+
+Compare premendo il comando di rabbocco con bilancia quando
+`is_scale_connected()` restituisce `False`. Il controllo viene eseguito prima
+di S01: non viene aperto il campo barcode e il flusso termina premendo `OK`.
+
+Lo stato viene letto dalla chiave Redis:
+
+```text
+device:scale:status
+```
+
+La bilancia è considerata assente quando si verifica almeno una di queste
+condizioni:
+
+- la chiave non esiste o è scaduta;
+- il contenuto non è JSON valido o non è un oggetto;
+- il dispatcher pubblica `"connected": false`;
+- il campo esplicito `connected` è assente e il dispatcher legacy non pubblica
+  `"status_level": "ON"`;
+- Redis non è raggiungibile o la lettura va in timeout.
+
+Riproduzione:
+
+- scollegare fisicamente la bilancia e attendere l'aggiornamento o la scadenza
+  dello stato;
+- arrestare il dispatcher della bilancia;
+- eliminare `device:scale:status` da Redis;
+- simulare uno stato come `{"connected": false, "status_level": "OFF"}`.
+
+Dopo il collegamento, il dispatcher deve pubblicare `connected: true` oppure,
+per compatibilità con i dispatcher precedenti, `status_level: "ON"`; premendo
+nuovamente il comando di rabbocco viene quindi mostrata S01.
+
+Categoria: **bilancia assente, dispatcher non disponibile o stato Redis non
+valido**.
 
 ## S01 - Posizionamento iniziale
 
@@ -178,6 +224,11 @@ dalla bilancia.
 
 Può comparire durante la pesata iniziale o durante quella finale dopo il
 rabbocco.
+
+Se la bilancia è già assente all'avvio del flusso compare invece il
+precontrollo "Bilancia non rilevata". S07 resta possibile se la connessione
+viene persa dopo S01 oppure se la bilancia è collegata ma non restituisce una
+misura stabile valida.
 
 Condizioni:
 
@@ -523,11 +574,11 @@ Categoria: **errore interno o stato fortemente incoerente**.
 ## Riepilogo per metodo di riproduzione
 
 - Tramite `/settings`: abilita il flusso e il layout; non genera direttamente
-  S02-S19.
+  il precontrollo né S02-S19.
 - Tramite dati backend/DB: S02, S03, S10, S13, S14, S15 e S17.
 - Tramite azioni dell'operatore: S04, S11, S14 e S16.
-- Tramite stato macchina, hardware o comunicazione: S05, S06, S07, S08, S15
-  e S18.
+- Tramite stato macchina, hardware o comunicazione: precontrollo, S05, S06,
+  S07, S08, S15 e S18.
 - Tramite errore interno o fault injection: soprattutto S10, S15 e S19.
 
 ## Riferimenti al codice
@@ -539,4 +590,7 @@ Categoria: **errore interno o stato fortemente incoerente**.
 - Impostazioni: `src/alfa_CR6_backend/settings_manager.py`.
 - Conversione delle quantità: `src/alfa_CR6_backend/refill_utils.py`.
 - Lettura stabile e invio comandi: `src/alfa_CR6_backend/machine_head.py`.
+- Stato di connessione della bilancia: `src/alfa_CR6_backend/globals.py`,
+  funzione `is_scale_connected()`.
+- Test del precontrollo: `src/alfa_CR6_test/test_scale_refill_precheck.py`.
 - Traduzioni italiane: `src/alfa_CR6_backend/lang/it.py`.
