@@ -274,6 +274,7 @@ D = {
     "Refilled quantity: {} g": "الكمية المعاد تعبئتها: {} غ",
     "Warning: the measured refill exceeds<br>the configured maximum level.": "تحذير: كمية إعادة التعبئة المقاسة تتجاوز<br>الحد الأقصى المهيأ.",
     "RESET head: {}?": "هل تريد إعادة تعيين الرأس {}؟",
+    "Continue refill": "متابعة إعادة التعبئة",
     "Unable to display the refill result.": "تعذر عرض نتيجة إعادة التعبئة.",
     "The measured refill must be greater<br>than zero grams.": "يجب أن تكون كمية إعادة التعبئة المقاسة<br>أكبر من صفر غرام.",
     "The product specific weight is not valid.": "الوزن النوعي للمنتج غير صالح.",

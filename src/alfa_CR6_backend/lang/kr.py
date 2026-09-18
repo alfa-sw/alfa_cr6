@@ -196,6 +196,7 @@ D = {
     "adjusted_levels": "adjusted_levels",
     "please, input barcode for refill": "please, input barcode for refill",
     "No scale was detected.<br>Connect the scale and try again.": "감지된 저울이 없습니다.<br>저울을 연결한 후 다시 시도하십시오.",
+    "Continue refill": "리필 계속",
     "The scanned barcode does not match<br>any product configured on the machine.": "스캔한 바코드가 장비에 구성된<br>어떤 제품과도 일치하지 않습니다.",
     ". RESET head: {} ?": ". RESET head: {} ?",
     "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.",

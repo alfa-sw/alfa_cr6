@@ -147,6 +147,33 @@
     <bool>false</bool>
    </property>
   </widget>
+  <widget class="QPushButton" name="action_button">
+   <property name="geometry">
+    <rect>
+     <x>395</x>
+     <y>110</y>
+     <width>400</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>16</pointsize>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background:#FFFFFFFF</string>
+   </property>
+   <property name="text">
+    <string>Action</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+  </widget>
   <widget class="QComboBox" name="combo_box">
    <property name="geometry">
     <rect>

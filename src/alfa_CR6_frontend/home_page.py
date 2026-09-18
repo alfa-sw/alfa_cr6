@@ -606,6 +606,7 @@ class ScaleRefillProcedureHelper:
         self.pipe_ = None
         self.barcode_ = None
         self.initial_weight_ = None
+        self.specific_weight_ = None
 
     @property
     def main_window(self):
@@ -695,8 +696,7 @@ class ScaleRefillProcedureHelper:
 
         self.barcode_ = barcode
         if len(targets) == 1:
-            self.main_window.hide_input_dialog()
-            asyncio.ensure_future(self._prepare_target(*targets[0]))
+            self._start_target(*targets[0])
             return
 
         choices = {}
@@ -720,8 +720,17 @@ class ScaleRefillProcedureHelper:
     def _on_target_selected(self):
         target = self.main_window.input_dialog.get_selected_choice()
         if target:
-            self.main_window.hide_input_dialog()
-            asyncio.ensure_future(self._prepare_target(*target))
+            self._start_target(*target)
+
+    def _start_target(self, machine, pigment, pipe):
+        specific_weight = self._specific_weight(pigment, pipe)
+        if not math.isfinite(specific_weight) or specific_weight <= 0:
+            self._show_error(tr_("The product specific weight is not valid."))
+            return
+
+        self.specific_weight_ = specific_weight
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._prepare_target(machine, pigment, pipe))
 
     @staticmethod
     def _head_refill_error(machine):
@@ -839,6 +848,15 @@ class ScaleRefillProcedureHelper:
         asyncio.ensure_future(machine.send_command(
             cmd_name="RESET", params={"mode": 0}, type_="command", channel="machine"))
 
+    def _continue_refill(self):
+        self.machine_ = None
+        self.pigment_ = None
+        self.pipe_ = None
+        self.barcode_ = None
+        self.initial_weight_ = None
+        self.specific_weight_ = None
+        self.run()
+
     def _show_result(self, answer, refilled_grams, refill_cc, specific_weight):
         lines = [tr_("Refilled quantity: {} g").format(round(refilled_grams, 2))]
         if isinstance(answer, dict):
@@ -865,7 +883,9 @@ class ScaleRefillProcedureHelper:
             icon_name="SP_MessageBoxInformation",
             message="<br>".join(lines),
             content=None,
-            ok_cb=self._confirm_reset)
+            ok_cb=self._confirm_reset,
+            action_text=tr_("Continue refill"),
+            action_cb=self._continue_refill)
         asyncio.ensure_future(self._refresh_after_refill())
 
     def _log_refill(self, refilled_grams, refill_cc, specific_weight):
@@ -904,8 +924,10 @@ class ScaleRefillProcedureHelper:
                     "The measured refill must be greater<br>than zero grams."))
                 return
 
-            specific_weight = self._specific_weight(self.pigment_, self.pipe_)
-            if not math.isfinite(specific_weight) or specific_weight <= 0:
+            specific_weight = self.specific_weight_
+            if (specific_weight is None
+                    or not math.isfinite(specific_weight)
+                    or specific_weight <= 0):
                 self._show_error(tr_("The product specific weight is not valid."))
                 return
 

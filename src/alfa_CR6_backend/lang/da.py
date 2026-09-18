@@ -286,6 +286,7 @@ D = {
     "Refilled quantity: {} g": "Påfyldt mængde: {} g",
     "Warning: the measured refill exceeds<br>the configured maximum level.": "Advarsel: Den målte påfyldning overstiger<br>det konfigurerede maksimumniveau.",
     "RESET head: {}?": "NULSTIL hoved {}?",
+    "Continue refill": "Fortsæt genopfyldning",
     "Unable to display the refill result.": "Resultatet af påfyldningen kan ikke vises.",
     "The measured refill must be greater<br>than zero grams.": "Den målte påfyldningsmængde skal være<br>større end nul gram.",
     "The product specific weight is not valid.": "Produktets massefylde er ugyldig.",

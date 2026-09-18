@@ -275,6 +275,7 @@ D = {
     "Refilled quantity: {} g": "ปริมาณที่เติม: {} กรัม",
     "Warning: the measured refill exceeds<br>the configured maximum level.": "คำเตือน: ปริมาณที่วัดได้สูงกว่า<br>ระดับสูงสุดที่กำหนดไว้",
     "RESET head: {}?": "รีเซ็ตหัว {} หรือไม่?",
+    "Continue refill": "เติมต่อ",
     "Unable to display the refill result.": "ไม่สามารถแสดงผลการเติมได้",
     "The measured refill must be greater<br>than zero grams.": "ปริมาณที่วัดได้ต้อง<br>มากกว่าศูนย์กรัม",
     "The product specific weight is not valid.": "ค่าความถ่วงจำเพาะของผลิตภัณฑ์ไม่ถูกต้อง",

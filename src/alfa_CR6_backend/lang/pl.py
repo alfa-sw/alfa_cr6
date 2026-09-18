@@ -276,6 +276,7 @@ D = {
     "Refilled quantity: {} g": "Uzupełniona ilość: {} g",
     "Warning: the measured refill exceeds<br>the configured maximum level.": "Ostrzeżenie: zmierzona ilość przekracza<br>skonfigurowany poziom maksymalny.",
     "RESET head: {}?": "ZRESETOWAĆ głowicę {}?",
+    "Continue refill": "Kontynuuj uzupełnianie",
     "Unable to display the refill result.": "Nie można wyświetlić wyniku uzupełniania.",
     "The measured refill must be greater<br>than zero grams.": "Zmierzona ilość musi być<br>większa niż zero gramów.",
     "The product specific weight is not valid.": "Ciężar właściwy produktu jest nieprawidłowy.",

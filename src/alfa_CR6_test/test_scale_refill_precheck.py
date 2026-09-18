@@ -2,10 +2,12 @@
 
 import json
 import unittest
+import xml.etree.ElementTree as ElementTree
+from pathlib import Path
 from unittest import mock
 
 from alfa_CR6_backend import globals as globals_module
-from alfa_CR6_frontend import home_page
+from alfa_CR6_frontend import dialogs as dialogs_module, home_page
 from alfa_CR6_frontend.dialogs import InputDialog
 
 
@@ -124,6 +126,119 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         self.assertIn("Place the open canister", dialog["message"])
         self.assertEqual("", dialog["content"])
         self.assertIs(dialog["ok_requires_content"], True)
+
+    def test_invalid_specific_weight_is_rejected_after_first_barcode(self):
+        machine = mock.Mock(name="machine")
+        pigment = {
+            "customer_id": "PRODUCT-1",
+            "specific_weight": 0,
+            "pipes": [],
+        }
+        pipe = {
+            "enabled": True,
+            "sync": True,
+            "effective_specific_weight": 0,
+        }
+        pigment["pipes"].append(pipe)
+        machine.pigment_list = [pigment]
+        app = mock.Mock(machine_head_dict={0: machine})
+        self.helper._dialog_barcode = mock.Mock(return_value="PRODUCT-1")
+        self.helper._show_error = mock.Mock()
+        self.helper._prepare_target = mock.Mock()
+
+        with mock.patch.object(
+                home_page.QApplication, "instance", return_value=app), \
+                mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
+            self.helper._on_initial_barcode()
+
+        self.helper._show_error.assert_called_once_with(
+            "The product specific weight is not valid.")
+        self.helper._prepare_target.assert_not_called()
+        self.assertIsNone(self.helper.specific_weight_)
+
+    def test_result_offers_continue_refill_action(self):
+        self.helper.machine_ = mock.Mock(name="machine", machine_config={})
+        self.helper.machine_.name = "A"
+        self.helper.pipe_ = {"maximum_level": 100, "current_level": 20}
+        self.helper._refresh_after_refill = mock.Mock(
+            return_value=mock.sentinel.refresh)
+
+        with mock.patch.object(home_page, "tr_", side_effect=lambda value: value), \
+                mock.patch.object(home_page.asyncio, "ensure_future"):
+            self.helper._show_result({}, 10, 5, 2)
+
+        dialog = self.main_window.dialogs[-1]
+        self.assertEqual("Continue refill", dialog["action_text"])
+        self.assertEqual(
+            self.helper._continue_refill, dialog["action_cb"])
+
+    def test_continue_refill_restarts_from_first_instruction(self):
+        self.helper.machine_ = mock.sentinel.machine
+        self.helper.pigment_ = mock.sentinel.pigment
+        self.helper.pipe_ = mock.sentinel.pipe
+        self.helper.barcode_ = "PRODUCT-1"
+        self.helper.initial_weight_ = 100
+        self.helper.specific_weight_ = 1.2
+        self.helper.run = mock.Mock()
+
+        self.helper._continue_refill()
+
+        self.assertIsNone(self.helper.machine_)
+        self.assertIsNone(self.helper.pigment_)
+        self.assertIsNone(self.helper.pipe_)
+        self.assertIsNone(self.helper.barcode_)
+        self.assertIsNone(self.helper.initial_weight_)
+        self.assertIsNone(self.helper.specific_weight_)
+        self.helper.run.assert_called_once_with()
+
+
+class TestInputDialogAction(unittest.TestCase):
+    def test_action_callback_is_scheduled_only_once(self):
+        callback = mock.Mock()
+        dialog = mock.Mock()
+        setattr(dialog, "_InputDialog__action_cb", callback)
+        setattr(dialog, "_InputDialog__action_cb_args", ["value"])
+        loop = mock.Mock()
+
+        with mock.patch.object(
+                dialogs_module.asyncio, "get_event_loop", return_value=loop):
+            InputDialog.on_action_button_clicked(dialog)
+            InputDialog.on_action_button_clicked(dialog)
+
+        loop.call_later.assert_called_once()
+        delay, scheduled = loop.call_later.call_args.args
+        self.assertEqual(.05, delay)
+        scheduled()
+        callback.assert_called_once_with("value")
+
+    def test_action_button_is_equidistant_and_has_no_icon(self):
+        ui_path = (
+            Path(__file__).parents[1]
+            / "alfa_CR6_frontend" / "ui" / "input_dialog.ui")
+        root = ElementTree.parse(str(ui_path)).getroot()
+
+        geometries = {}
+        action_widget = None
+        for widget in root.iter("widget"):
+            name = widget.get("name")
+            if name not in ("esc_button", "action_button", "ok_button"):
+                continue
+            rect = widget.find("./property[@name='geometry']/rect")
+            geometries[name] = {
+                key: int(rect.find(key).text)
+                for key in ("x", "width")
+            }
+            if name == "action_button":
+                action_widget = widget
+
+        cancel = geometries["esc_button"]
+        action = geometries["action_button"]
+        ok = geometries["ok_button"]
+        left_gap = action["x"] - (cancel["x"] + cancel["width"])
+        right_gap = ok["x"] - (action["x"] + action["width"])
+
+        self.assertEqual(left_gap, right_gap)
+        self.assertIsNone(action_widget.find("./property[@name='icon']"))
 
 
 class TestRefillEventGate(unittest.TestCase):

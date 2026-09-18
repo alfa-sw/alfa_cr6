@@ -285,6 +285,7 @@ D = {
     "Refilled quantity: {} g": "Quantidade reabastecida: {} g",
     "Warning: the measured refill exceeds<br>the configured maximum level.": "Aviso: a quantidade medida excede<br>o nível máximo configurado.",
     "RESET head: {}?": "REPOR a cabeça {}?",
+    "Continue refill": "Continuar reabastecimento",
     "Unable to display the refill result.": "Não foi possível apresentar o resultado do reabastecimento.",
     "The measured refill must be greater<br>than zero grams.": "A quantidade medida deve ser<br>superior a zero gramas.",
     "The product specific weight is not valid.": "O peso específico do produto não é válido.",

@@ -209,6 +209,7 @@ D = {
     "Refilled quantity: {} g": "Quantità rabboccata: {} g",
     "Warning: the measured refill exceeds<br>the configured maximum level.": "Attenzione: il rabbocco misurato supera<br>il livello massimo configurato.",
     "RESET head: {}?": "Eseguire il RESET della testa {}?",
+    "Continue refill": "Continua il refill",
     "Unable to display the refill result.": "Impossibile visualizzare il risultato del rabbocco.",
     "The measured refill must be greater<br>than zero grams.": "Il rabbocco misurato deve essere<br>maggiore di zero grammi.",
     "The product specific weight is not valid.": "Il peso specifico del prodotto non è valido.",

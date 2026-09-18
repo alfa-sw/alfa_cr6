@@ -285,6 +285,7 @@ D = {
     "Refilled quantity: {} g": "Täytetty määrä: {} g",
     "Warning: the measured refill exceeds<br>the configured maximum level.": "Varoitus: mitattu täyttömäärä ylittää<br>määritetyn enimmäistason.",
     "RESET head: {}?": "NOLLAA pää {}?",
+    "Continue refill": "Jatka täyttöä",
     "Unable to display the refill result.": "Täytön tulosta ei voida näyttää.",
     "The measured refill must be greater<br>than zero grams.": "Mitatun täyttömäärän on oltava<br>yli nolla grammaa.",
     "The product specific weight is not valid.": "Tuotteen ominaispaino ei ole kelvollinen.",

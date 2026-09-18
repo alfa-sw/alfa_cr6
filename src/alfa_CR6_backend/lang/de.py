@@ -282,6 +282,7 @@ D = {
     "Refilled quantity: {} g": "Nachgefüllte Menge: {} g",
     "Warning: the measured refill exceeds<br>the configured maximum level.": "Warnung: Die gemessene Nachfüllmenge überschreitet<br>den konfigurierten Höchststand.",
     "RESET head: {}?": "Kopf {} ZURÜCKSETZEN?",
+    "Continue refill": "Nachfüllen fortsetzen",
     "Unable to display the refill result.": "Das Nachfüllergebnis kann nicht angezeigt werden.",
     "The measured refill must be greater<br>than zero grams.": "Die gemessene Nachfüllmenge muss<br>größer als null Gramm sein.",
     "The product specific weight is not valid.": "Das spezifische Gewicht des Produkts ist ungültig.",

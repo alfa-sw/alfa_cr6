@@ -726,11 +726,15 @@ class InputDialog(BaseDialog):
 
         self.__ok_cb = None
         self.__ok_cb_args = None
+        self.__action_cb = None
+        self.__action_cb_args = None
         self.ok_on_enter = None
         self.ok_requires_content = False
 
         self.choices = []
         self.use_combo_for_choice = False
+        self.action_button.setAutoFillBackground(True)
+        self.action_button.hide()
 
         # InputDialog is a single, reusable frame.  Keep the .ui geometry so
         # the special refill-by-scale layout can always be undone before the
@@ -742,6 +746,7 @@ class InputDialog(BaseDialog):
             for widget in (
                 self.message_label,
                 self.esc_button,
+                self.action_button,
                 self.ok_button,
                 self.content_container,
                 self.combo_box,
@@ -783,7 +788,7 @@ class InputDialog(BaseDialog):
         self.message_label.setFont(font)
 
         button_y = message_y + message_height + self.LARGE_LAYOUT_GAP
-        for button in (self.esc_button, self.ok_button):
+        for button in (self.esc_button, self.action_button, self.ok_button):
             x, _, width, height = self._standard_geometry[button]
             button.setGeometry(x, button_y, width, height)
 
@@ -850,6 +855,20 @@ class InputDialog(BaseDialog):
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
+    def on_action_button_clicked(self):
+        try:
+            if self.__action_cb:
+                tmp__args_ = (
+                    self.__action_cb_args
+                    if self.__action_cb_args is not None else [])
+                tmp__action_cb = self.__action_cb
+                self.__action_cb = None
+                asyncio.get_event_loop().call_later(
+                    .05, partial(tmp__action_cb, *tmp__args_))
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+
     def on_text_cahnged(self):
 
         cnt_ = self.content_container.toPlainText()
@@ -876,7 +895,10 @@ class InputDialog(BaseDialog):
         content_editable=True,
         use_combo_for_choice=False,
         large_message_layout=False,
-        ok_requires_content=False):
+        ok_requires_content=False,
+        action_text=None,
+        action_cb=None,
+        action_cb_args=None):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
@@ -964,6 +986,14 @@ class InputDialog(BaseDialog):
         if ok_cb is not None:
             self.__ok_cb = ok_cb
             self.__ok_cb_args = ok_cb_args
+
+        self.__action_cb = action_cb
+        self.__action_cb_args = action_cb_args
+        if action_text is not None and action_cb is not None:
+            self.action_button.setText(str(action_text))
+            self.action_button.show()
+        else:
+            self.action_button.hide()
 
         self.ok_button.setEnabled(
             not self.ok_requires_content
