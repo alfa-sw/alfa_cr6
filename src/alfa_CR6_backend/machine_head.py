@@ -679,9 +679,12 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         "STABLE_WEIGHT", "STABLE_WEIGHT_END")):
                 return None
             value, unit = answer.get("params", [])
-            if str(unit).lower() != "g":
-                return None
-            return float(value)
+            unit = str(unit).strip().lower()
+            if unit == "g":
+                return float(value)
+            if unit == "kg":
+                return float(value) * 1000
+            return None
         except (TypeError, ValueError):
             logging.error("%s invalid STABLE_WEIGHT answer: %s", self.name, answer)
             return None

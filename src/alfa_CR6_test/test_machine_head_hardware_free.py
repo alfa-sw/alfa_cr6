@@ -107,12 +107,22 @@ class TestMachineHeadHardwareFree(unittest.TestCase):
 
         self.assertEqual(self._run(self.head.read_stable_weight()), 392.41)
 
+    def test_read_stable_weight_converts_kilograms_to_grams(self):
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.head.last_answer = {
+            "command": "STABLE_WEIGHT",
+            "status_code": 0,
+            "params": ["0.0095", "kg"],
+        }
+
+        self.assertEqual(self._run(self.head.read_stable_weight()), 9.5)
+
     def test_read_stable_weight_rejects_invalid_answer(self):
         self.head.send_command = mock.AsyncMock(return_value=True)
         self.head.last_answer = {
             "command": "STABLE_WEIGHT_END",
             "status_code": 0,
-            "params": ["125.75", "kg"],
+            "params": ["125.75", "lb"],
         }
 
         self.assertIsNone(self._run(self.head.read_stable_weight()))
