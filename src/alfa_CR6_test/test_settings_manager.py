@@ -110,6 +110,7 @@ class TestEditableSettings:
 
         assert editable["REMINDER_PPS_LINER"] is False
         assert editable["ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT"] is False
+        assert editable["ENABLE_BTN_CREATE_ALL_ORDERS"] is False
         assert "REFILL_ALARM_NOTIFICATION" not in editable
 
 
@@ -190,6 +191,26 @@ class TestValidateUpdates:
     def test_valid_boolean(self):
         result = SettingsManager._validate_updates({"ENABLE_BTN_ORDER_NEW": True})
         assert result["ENABLE_BTN_ORDER_NEW"] is True
+
+    @pytest.mark.parametrize("current, updates, valid", [
+        ({"FORCE_ORDER_JAR_TO_ONE": False, "ENABLE_BTN_CREATE_ALL_ORDERS": False},
+         {"ENABLE_BTN_CREATE_ALL_ORDERS": True}, False),
+        ({"FORCE_ORDER_JAR_TO_ONE": False, "ENABLE_BTN_CREATE_ALL_ORDERS": False},
+         {"ENABLE_BTN_CREATE_ALL_ORDERS": True, "FORCE_ORDER_JAR_TO_ONE": True}, True),
+        ({"FORCE_ORDER_JAR_TO_ONE": True, "ENABLE_BTN_CREATE_ALL_ORDERS": False},
+         {"ENABLE_BTN_CREATE_ALL_ORDERS": True}, True),
+        ({"FORCE_ORDER_JAR_TO_ONE": True, "ENABLE_BTN_CREATE_ALL_ORDERS": True},
+         {"FORCE_ORDER_JAR_TO_ONE": False}, False),
+        ({"FORCE_ORDER_JAR_TO_ONE": True, "ENABLE_BTN_CREATE_ALL_ORDERS": True},
+         {"FORCE_ORDER_JAR_TO_ONE": False, "ENABLE_BTN_CREATE_ALL_ORDERS": False}, True),
+    ])
+    def test_create_all_orders_requires_one_jar(self, current, updates, valid, monkeypatch):
+        monkeypatch.setattr(SettingsManager, "get_editable_settings", staticmethod(lambda: current))
+        if valid:
+            assert SettingsManager._validate_updates(updates) == updates
+        else:
+            with pytest.raises(ValueError, match="FORCE_ORDER_JAR_TO_ONE"):
+                SettingsManager._validate_updates(updates)
 
     def test_valid_boolean_coerced_from_string(self):
         result = SettingsManager._validate_updates({"ENABLE_BTN_ORDER_NEW": "true"})

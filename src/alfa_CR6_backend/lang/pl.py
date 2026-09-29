@@ -1,5 +1,6 @@
 from alfa_CR6_backend.lang import error_pl
 D = {
+    'Create and print all': 'Utwórz i wydrukuj wszystkie',
     " ?": " ?",
     "alias": "alias",
     " before dispensing. Please check jar.": " Sprawdź pojemnik przed dozowaniem.",

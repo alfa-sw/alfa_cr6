@@ -82,6 +82,11 @@ class SettingsManager:
                 'type': 'boolean',
                 'default': True,
             },
+            'ENABLE_BTN_CREATE_ALL_ORDERS': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'Creates Alfa orders from all pending external files and prints a label for each created order. Requires FORCE_ORDER_JAR_TO_ONE = True.',
+            },
             'MANUAL_BARCODE_INPUT': {
                 'type': 'boolean',
                 'default': False,
@@ -446,6 +451,13 @@ class SettingsManager:
 
         normalized = SettingsManager._normalize_updates(dict(updates))
         SettingsManager._validate_against_schema(normalized)
+        if ('ENABLE_BTN_CREATE_ALL_ORDERS' in normalized or
+                'FORCE_ORDER_JAR_TO_ONE' in normalized):
+            effective = {**SettingsManager.get_editable_settings(), **normalized}
+            if (effective.get('ENABLE_BTN_CREATE_ALL_ORDERS') and
+                    not effective.get('FORCE_ORDER_JAR_TO_ONE')):
+                raise ValueError(
+                    'ENABLE_BTN_CREATE_ALL_ORDERS requires FORCE_ORDER_JAR_TO_ONE = True')
         return normalized
 
     @staticmethod

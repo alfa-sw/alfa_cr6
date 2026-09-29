@@ -1,6 +1,7 @@
 from alfa_CR6_backend.lang import error_ar
 
 D = {
+    'Create and print all': 'إنشاء وطباعة جميع الطلبات',
     " ?": " ؟",
     "alias": "اسم مستعار",
     " before dispensing. Please check jar.": " يُرجى التحقق من العبوة قبل الخلط والتوزيع.",

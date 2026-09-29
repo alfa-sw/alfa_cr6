@@ -1,5 +1,9 @@
 from alfa_CR6_backend.lang import error_en
 D = {
+    'Create and print all': 'Create and print all',
+    'No pending files to create orders from.': 'No pending files to create orders from.',
+    'Create Alfa orders from {} files and print a label for each order? One can per order.': 'Create Alfa orders from {} files and print a label for each order? One can per order.',
+    'Created orders from {} files; printing {} labels. {} files could not be processed and remain in the queue.': 'Created orders from {} files; printing {} labels. {} files could not be processed and remain in the queue.',
     " ?": " ?",
     "alias": "alias",
     " before dispensing. Please check jar.": " Please check the can before dispensing.",

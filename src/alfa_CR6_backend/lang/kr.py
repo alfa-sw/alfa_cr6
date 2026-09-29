@@ -1,5 +1,6 @@
 from alfa_CR6_backend.lang import error_kr
 D = {
+    'Create and print all': '모두 생성하고 인쇄',
     " ?": " ?",
     "alias": "관리",
     "before dispensing. Please check can.": "조색하기 전, 캔을 확인해주세요.",

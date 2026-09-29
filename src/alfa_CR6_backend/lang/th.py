@@ -1,5 +1,6 @@
 from alfa_CR6_backend.lang import error_th
 D = {
+    'Create and print all': 'สร้างและพิมพ์ทั้งหมด',
     " ?": " ?",
     "alias": "ชื่อแทน",
     " before dispensing. Please check jar.": " โปรดตรวจสอบกระป๋องก่อนการจ่าย",
