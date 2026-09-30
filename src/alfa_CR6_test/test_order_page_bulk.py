@@ -126,6 +126,7 @@ class OrderPageBulkTest(unittest.TestCase):
                         page.create_all_orders_btn.click()
                         self.assertEqual(len(converted), 0)
                         self.assertEqual(len(window.confirmation["ok_cb_args"][0]), 52)
+                        self.assertEqual(len(window.confirmation["message"].splitlines()), 3)
                         window.confirmation["ok_cb"](*window.confirmation["ok_cb_args"])
 
                         self.assertEqual(len(converted), 52)
@@ -133,6 +134,7 @@ class OrderPageBulkTest(unittest.TestCase):
                         self.assertEqual(len(printed[0]), 51)
                         self.assertEqual(set(os.listdir(folder)), {"bad.json", "subdirectory"})
                         self.assertEqual(window.alerts[-1][0], (51, 51, 1))
+                        self.assertEqual(len(window.alerts[-1][1]["fmt"].splitlines()), 3)
                         self.assertEqual(page.file_model.rowCount(), 1)
                         page.deleteLater()
                     window.deleteLater()

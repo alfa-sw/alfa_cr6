@@ -1029,7 +1029,7 @@ class OrderPage(BaseStackedPage):
                 self.main_window.open_alert_dialog((), fmt="No pending files to create orders from.", title="INFO")
                 return
             self.main_window.open_input_dialog(
-                message=tr_("Create Alfa orders from {} files and print a label for each order? One can per order.").format(len(file_names)),
+                message=tr_("Create Alfa orders from {} files?\nPrint a label for each order.\nOne can per order.").format(len(file_names)),
                 ok_cb=self.__create_all_orders_cb,
                 ok_cb_args=[file_names],
             )
@@ -1078,7 +1078,7 @@ class OrderPage(BaseStackedPage):
 
         self.main_window.open_alert_dialog(
             (created_from_files, len(jars_to_print), failed_files_count),
-            fmt="Created orders from {} files; printing {} labels. {} files could not be processed and remain in the queue.",
+            fmt="Created orders from {} files.\nPrinting {} labels.\n{} files could not be processed and remain in the queue.",
             title="INFO" if not failed_files_count else "WARNING",
         )
 
