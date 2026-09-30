@@ -566,6 +566,14 @@ def create_printable_image_for_low_pigments(head_name, low_pipes, options=None, 
 
     return _image_path
 
+def _minimum_jar_label_lines(jar):
+    try:
+        meta = json.loads(jar.order.json_properties).get('meta', {})
+        return 4 if isinstance(meta, dict) and meta.get('header') == 'dci' else 0
+    except (AttributeError, TypeError, ValueError):
+        return 0
+
+
 def extract_jar_print_data(jar):
 
     return {
@@ -573,6 +581,7 @@ def extract_jar_print_data(jar):
         'extra_lines_to_print': list(jar.extra_lines_to_print),
         'unknown_pigments': dict(jar.unknown_pigments),
         'not_dispensed_ingredients': dict(jar.not_dispensed_ingredients),
+        'minimum_label_lines': _minimum_jar_label_lines(jar),
     }
 
 
@@ -583,11 +592,13 @@ def create_printable_image_from_jar(jar, options=None, output_path=None):
         extra_lines = jar['extra_lines_to_print']
         unknown_pigments = jar['unknown_pigments']
         not_dispensed = jar['not_dispensed_ingredients']
+        minimum_label_lines = jar.get('minimum_label_lines', 0)
     else:
         recipe_barcode = str(jar.barcode)
         extra_lines = jar.extra_lines_to_print
         unknown_pigments = jar.unknown_pigments
         not_dispensed = jar.not_dispensed_ingredients
+        minimum_label_lines = _minimum_jar_label_lines(jar)
 
     if options is None:
         options = _get_print_label_options()
@@ -604,7 +615,7 @@ def create_printable_image_from_jar(jar, options=None, output_path=None):
         recipe_barcode_text = f'{recipe_barcode}'
 
         l_lenght = options.pop('line_lenght')
-        n_of_lines = options.pop('n_of_lines')
+        n_of_lines = max(options.pop('n_of_lines'), minimum_label_lines)
         rotate = options.pop('rotate')
 
         lines_to_print = [recipe_barcode, ]

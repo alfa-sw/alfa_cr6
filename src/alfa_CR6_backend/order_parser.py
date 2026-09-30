@@ -17,6 +17,7 @@ import copy
 import time
 import configparser
 import re
+import math
 
 import jsonschema
 
@@ -1827,17 +1828,78 @@ weight:{RealWeight}
 
         return properties
 
+    @classmethod
+    def parse_dci_order(cls, path_to_file):
+        # Color Communications exports orders as DCI files with INI-style sections.
+        config = configparser.ConfigParser(interpolation=None)
+        config.optionxform = str  # Ingredient names are the configured pigment names.
+        with codecs.open(path_to_file, encoding=get_encoding(path_to_file)) as fd:
+            config.read_file(fd)
+
+        total_formulas = config.getint('SUMMARY', 'TotalFormulas')
+        if total_formulas < 1:
+            raise ValueError('DCI file contains no formulas')
+
+        properties_list = []
+        for number in range(1, total_formulas + 1):
+            formula = dict(config.items(f'FORMULA{number}'))
+            colorants = list(config.items(f'INGREDIENTS{number}'))
+            if formula['DispenseUnit'].upper() != 'G':
+                raise ValueError(f'unsupported DCI dispense unit: {formula["DispenseUnit"]}')
+            if int(formula['NumColorants']) != len(colorants):
+                raise ValueError(f'DCI formula {number} has an incorrect colorant count')
+
+            ingredients = []
+            for pigment_name, amount in colorants:
+                weight = float(amount)
+                if not math.isfinite(weight) or weight < 0:
+                    raise ValueError(f'invalid DCI amount for {pigment_name}: {amount}')
+                ingredients.append({
+                    'pigment_name': pigment_name,
+                    'weight(g)': weight,
+                    'description': '',
+                })
+
+            color_name = formula.get('ColorName', '').strip()
+            brand = formula.get('Brand', '').strip()
+            collection_name = formula.get('CollectionName', '').strip()
+            ral_match = re.search(r'\bRAL', color_name, flags=re.IGNORECASE)
+            color_name_pt1 = color_name[:ral_match.start()].strip() if ral_match else color_name
+            color_name_pt2 = color_name[ral_match.start():].strip() if ral_match else ''
+            brand = re.split(r'\bRAL', brand, maxsplit=1, flags=re.IGNORECASE)[0].strip()
+            if color_name and collection_name.casefold().endswith(color_name.casefold()):
+                collection_name = collection_name[:-len(color_name)].strip()
+
+            formula['header'] = 'dci'
+            properties_list.append({
+                'meta': formula,
+                'ingredients': ingredients,
+                'extra_lines_to_print': [
+                    brand,
+                    color_name_pt1,
+                    color_name_pt2,
+                    collection_name,
+                ],
+            })
+
+        return properties_list
+
     def _do_parse(self, path_to_file, mime_type, file_extension):
 
         properties_list = [{}]
 
         try:
 
-            properties = self.parse_ini_order(path_to_file)
-            assert properties.get('meta') is not None and not properties['meta'].get('error')
-            properties_list = [properties, ]
+            if file_extension.lower() == '.dci':
+                properties_list = self.parse_dci_order(path_to_file)
+            else:
+                properties = self.parse_ini_order(path_to_file)
+                assert properties.get('meta') is not None and not properties['meta'].get('error')
+                properties_list = [properties, ]
 
         except Exception as e:           # pylint: disable=broad-except
+            if file_extension.lower() == '.dci':
+                raise
             logging.info("parse_ini_order failed, falling back to json/xml/pdf", exc_info=True)
             try:
 
