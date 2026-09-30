@@ -270,6 +270,7 @@ D = {
     "Start output roller CW": "Start output roller CW",
 
     "No scale was detected.<br>Connect the scale and try again.": "Vaakaa ei havaittu.<br>Liitä vaaka ja yritä uudelleen.",
+    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "Vaaka on liitetty, mutta ei vastaa.<br>Tarkista, että se on päällä, ja yritä uudelleen.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Aseta avoin säiliö vaa'alle.<br>Skannaa sen viivakoodi.",
     "The scanned barcode does not match<br>any product configured on the machine.": "Skannattu viivakoodi ei vastaa mitään<br>koneeseen määritettyä tuotetta.",
     "The product is configured on multiple circuits.": "Tuote on määritetty usealle piirille.",

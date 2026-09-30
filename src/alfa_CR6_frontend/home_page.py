@@ -28,7 +28,7 @@ from alfa_CR6_backend.globals import (
     DEFAULT_DEBUG_PAGE_PWD,
     get_res,
     import_settings,
-    is_scale_connected,
+    get_scale_connection_state,
     tr_,
 )
 from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels, async_dymo_print_low_pigment_labels
@@ -666,11 +666,18 @@ class ScaleRefillProcedureHelper:
 
     def run(self):
         self.main_window.toggle_keyboard(on_off=False)
-        if not is_scale_connected():
+        scale_state = get_scale_connection_state()
+        if scale_state != "ready":
+            if scale_state == "not_responding":
+                message = tr_(
+                    "The scale is connected but not responding.<br>"
+                    "Check that it is switched on and try again.")
+            else:
+                message = tr_(
+                    "No scale was detected.<br>Connect the scale and try again.")
             self._open_dialog(
                 icon_name="SP_MessageBoxWarning",
-                message=tr_(
-                    "No scale was detected.<br>Connect the scale and try again."),
+                message=message,
                 content=None,
                 ok_cb=self._finish)
             return

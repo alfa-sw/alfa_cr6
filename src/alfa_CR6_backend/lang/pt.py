@@ -270,6 +270,7 @@ D = {
     "Start output roller CW": "Start output roller CW",
 
     "No scale was detected.<br>Connect the scale and try again.": "Não foi detetada nenhuma balança.<br>Ligue a balança e tente novamente.",
+    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "A balança está conectada, mas não responde.<br>Verifique se está ligada e tente novamente.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Coloque o recipiente aberto na balança.<br>Leia o respetivo código de barras.",
     "The scanned barcode does not match<br>any product configured on the machine.": "O código de barras lido não corresponde<br>a nenhum produto configurado na máquina.",
     "The product is configured on multiple circuits.": "O produto está configurado em vários circuitos.",

@@ -270,6 +270,7 @@ D = {
     "Start output roller CW": "Start output roller CW",
 
     "No scale was detected.<br>Connect the scale and try again.": "Ingen vekt ble oppdaget.<br>Koble til vekten og prøv igjen.",
+    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "Vekten er tilkoblet, men svarer ikke.<br>Kontroller at den er slått på, og prøv igjen.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Plasser den åpne beholderen på vekten.<br>Skann strekkoden.",
     "The scanned barcode does not match<br>any product configured on the machine.": "Den skannede strekkoden samsvarer ikke med<br>noe produkt som er konfigurert på maskinen.",
     "The product is configured on multiple circuits.": "Produktet er konfigurert på flere kretser.",

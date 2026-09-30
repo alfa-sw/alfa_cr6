@@ -22,24 +22,26 @@ class _Redis:
 
 
 class TestScaleConnectionStatus(unittest.TestCase):
-    def _is_connected(self, payload):
+    def _state(self, payload):
         value = None if payload is None else json.dumps(payload).encode()
         with mock.patch.object(
                 globals_module.redis, "Redis", return_value=_Redis(value)):
-            return globals_module.is_scale_connected()
+            return globals_module.get_scale_connection_state()
 
-    def test_explicit_connection_flag_is_authoritative(self):
-        self.assertTrue(self._is_connected({
+    def test_usb_connection_does_not_mean_scale_is_ready(self):
+        self.assertEqual("not_responding", self._state({
             "status_level": "OFF", "connected": True}))
-        self.assertFalse(self._is_connected({
+        self.assertEqual("disconnected", self._state({
             "status_level": "ON", "connected": False}))
+        self.assertEqual("ready", self._state({
+            "status_level": "ON", "connected": True}))
 
-    def test_missing_status_means_not_connected(self):
-        self.assertFalse(self._is_connected(None))
+    def test_missing_status_means_disconnected(self):
+        self.assertEqual("disconnected", self._state(None))
 
     def test_old_dispatcher_on_status_remains_compatible(self):
-        self.assertTrue(self._is_connected({"status_level": "ON"}))
-        self.assertFalse(self._is_connected({"status_level": "OFF"}))
+        self.assertEqual("ready", self._state({"status_level": "ON"}))
+        self.assertEqual("disconnected", self._state({"status_level": "OFF"}))
 
 
 class _MainWindow:
@@ -103,8 +105,9 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         parent = mock.Mock(main_window=self.main_window)
         self.helper = home_page.ScaleRefillProcedureHelper(parent)
 
-    def test_disconnected_scale_shows_warning_instead_of_s1(self):
-        with mock.patch.object(home_page, "is_scale_connected", return_value=False), \
+    def test_disconnected_scale_shows_usb_warning_instead_of_s1(self):
+        with mock.patch.object(home_page, "get_scale_connection_state",
+                               return_value="disconnected"), \
                 mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
             self.helper.run()
 
@@ -115,8 +118,20 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         self.assertIn("No scale was detected", dialog["message"])
         self.assertIsNone(dialog["content"])
 
-    def test_connected_scale_opens_first_instruction(self):
-        with mock.patch.object(home_page, "is_scale_connected", return_value=True), \
+    def test_connected_unresponsive_scale_shows_power_warning(self):
+        with mock.patch.object(home_page, "get_scale_connection_state",
+                               return_value="not_responding"), \
+                mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
+            self.helper.run()
+
+        dialog = self.main_window.dialogs[0]
+        self.assertEqual("SP_MessageBoxWarning", dialog["icon_name"])
+        self.assertIn("Check that it is switched on", dialog["message"])
+        self.assertIsNone(dialog["content"])
+
+    def test_ready_scale_opens_first_instruction(self):
+        with mock.patch.object(home_page, "get_scale_connection_state",
+                               return_value="ready"), \
                 mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
             self.helper.run()
 

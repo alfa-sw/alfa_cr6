@@ -197,6 +197,7 @@ D = {
     "adjusted_levels": "livelli aggiornati",
     "please, input barcode for refill": "prego, scannerizza il codice a barre per il rabocco",
     "No scale was detected.<br>Connect the scale and try again.": "Non è stata rilevata nessuna bilancia.<br>Collegare la bilancia e riprovare.",
+    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "La bilancia è collegata ma non risponde.<br>Verificare che sia accesa e riprovare.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Posizionare il barattolo aperto sulla bilancia.<br>Scansionare il codice a barre.",
     "The scanned barcode does not match<br>any product configured on the machine.": "Il codice a barre scansionato non corrisponde<br>ad alcun prodotto configurato in macchina.",
     "The product is configured on multiple circuits.": "Il prodotto è configurato su più circuiti.",

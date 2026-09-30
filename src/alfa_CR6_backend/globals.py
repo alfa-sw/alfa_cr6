@@ -79,30 +79,34 @@ def get_application_instance():
     return QApplication.instance()
 
 
-def is_scale_connected():
-    """Return whether the shared scale serial device is currently connected."""
+def get_scale_connection_state():
+    """Distinguish a missing USB port from a connected, unresponsive scale."""
     try:
         raw_status = redis.Redis(
             socket_connect_timeout=.2,
             socket_timeout=.2,
         ).get(SCALE_STATUS_REDIS_KEY)
         if not raw_status:
-            return False
+            return "disconnected"
 
         status = json.loads(raw_status)
         if not isinstance(status, dict):
-            return False
+            return "disconnected"
 
         connected = status.get("connected")
-        if connected is not None:
-            return connected is True
+        if connected is False:
+            return "disconnected"
+        if status.get("status_level") == "ON" and (connected is None or connected is True):
+            return "ready"
+        if connected is True:
+            return "not_responding"
 
-        # Compatibility with dispatchers that predate the explicit
-        # connection flag. Their ON state is set after a successful reading.
-        return status.get("status_level") == "ON"
+        # Older dispatchers omit connected. Their ON state confirms a reply,
+        # while OFF cannot distinguish power loss from a missing USB device.
+        return "disconnected"
     except (redis.RedisError, TypeError, ValueError):
         logging.warning("Unable to read scale connection status", exc_info=True)
-        return False
+        return "disconnected"
 
 
 def get_alfa_serialnumber():
