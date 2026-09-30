@@ -48,6 +48,7 @@ class DciOrderTests(unittest.TestCase):
         self.assertEqual([
             {'pigment_name': '101-A Phathalo Blu', 'weight(g)': 2.354, 'description': ''},
             {'pigment_name': '40-A Quin Magenta', 'weight(g)': 25.871, 'description': ''},
+            {'pigment_name': 'CCI-A Gloss Clear', 'weight(g)': 280.0, 'description': ''},
         ], order['ingredients'])
         self.assertEqual([
             'CCI#433868',
@@ -104,7 +105,7 @@ class DciOrderTests(unittest.TestCase):
     def test_dci_does_not_use_ini_order_parser(self):
         with mock.patch.object(OrderParser, 'parse_ini_order', side_effect=AssertionError('INI parser called')):
             orders = self.parse_content(FORMULA)
-        self.assertEqual(2, len(orders[0]['ingredients']))
+        self.assertEqual(3, len(orders[0]['ingredients']))
         self.assertNotIn('error', orders[0]['meta'])
 
     def test_multiple_formulas_produce_separate_orders(self):
@@ -113,6 +114,8 @@ class DciOrderTests(unittest.TestCase):
 NumColorants=1
 ColorName=Second color
 DispenseUnit=G
+Base=CCI-A Gloss Clear
+BaseAmount=100
 [INGREDIENTS2]
 10-A Lamp Black=8.0120
 """
@@ -120,6 +123,27 @@ DispenseUnit=G
         self.assertEqual(2, len(orders))
         self.assertEqual('10-A Lamp Black', orders[1]['ingredients'][0]['pigment_name'])
         self.assertEqual(8.012, orders[1]['ingredients'][0]['weight(g)'])
+        self.assertEqual('CCI-A Gloss Clear', orders[1]['ingredients'][1]['pigment_name'])
+        self.assertEqual(100.0, orders[1]['ingredients'][1]['weight(g)'])
+
+    def test_rejects_missing_or_empty_base(self):
+        for content in (
+                FORMULA.replace('Base=CCI-A Gloss Clear\n', ''),
+                FORMULA.replace('Base=CCI-A Gloss Clear', 'Base= ')):
+            with self.subTest(content=content):
+                orders = self.parse_content(content)
+                self.assertIn('has no Base', orders[0]['meta']['error'])
+
+    def test_rejects_missing_or_invalid_base_amount(self):
+        for content in (
+                FORMULA.replace('BaseAmount=280\n', ''),
+                FORMULA.replace('BaseAmount=280', 'BaseAmount=0'),
+                FORMULA.replace('BaseAmount=280', 'BaseAmount=-1'),
+                FORMULA.replace('BaseAmount=280', 'BaseAmount=nan'),
+                FORMULA.replace('BaseAmount=280', 'BaseAmount=inf')):
+            with self.subTest(content=content):
+                orders = self.parse_content(content)
+                self.assertIn('no valid BaseAmount', orders[0]['meta']['error'])
 
     def test_rejects_colorant_count_mismatch_without_fallback(self):
         with mock.patch.object(OrderParser, 'parse_json_order') as json_fallback:

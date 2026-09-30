@@ -1860,6 +1860,21 @@ weight:{RealWeight}
                     'description': '',
                 })
 
+            base_name = formula.get('Base', '').strip()
+            if not base_name:
+                raise ValueError(f'DCI formula {number} has no Base')
+            try:
+                base_weight = float(formula.get('BaseAmount', ''))
+            except ValueError as exc:
+                raise ValueError(f'DCI formula {number} has no valid BaseAmount') from exc
+            if not math.isfinite(base_weight) or base_weight <= 0:
+                raise ValueError(f'DCI formula {number} has no valid BaseAmount')
+            ingredients.append({
+                'pigment_name': base_name,
+                'weight(g)': base_weight,
+                'description': '',
+            })
+
             color_name = formula.get('ColorName', '').strip()
             brand = formula.get('Brand', '').strip()
             collection_name = formula.get('CollectionName', '').strip()
