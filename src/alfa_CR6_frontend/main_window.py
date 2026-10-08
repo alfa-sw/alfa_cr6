@@ -388,6 +388,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.action_frame_map = {}
 
         super().__init__(parent)
+        self._active_alert_dialogs = {}
 
         if os.getenv("IN_DOCKER", False) in ['1', 'true']:
             loadUi(get_res("UI", "main_window_snowball.ui"), self)
@@ -898,10 +899,17 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             visibility=1, show_cancel_btn=True, traceback=None,
             localize_args=False, extra_properties=None, print_callback=None,
             cancel_callback=None, show_ok_btn=True, image_name=None,
-            ok_only=False, width_scale=None, bold_message=False
+            ok_only=False, width_scale=None, bold_message=False,
+            dedup_key=None,
     ):
         # msg  -> localized msg for UI
         # msg_ -> non localized msg (eng) for db event
+
+        # Suppress repeated popup requests; visibility=0 remains log-only.
+        if (dedup_key is not None and visibility > 0
+                and dedup_key in self._active_alert_dialogs):
+            logging.debug("Alert already open, suppressed: %r", dedup_key)
+            return
 
         if fmt is not None:
             args_ = (args,) if not isinstance(args, (list, tuple)) else tuple(args)
@@ -948,6 +956,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 width_scale=width_scale,
                 bold_message=bold_message,
             )
+            if dedup_key is not None:
+                self._active_alert_dialogs[dedup_key] = _msgbox
+
+                def forget_dialog(*_args):
+                    self._active_alert_dialogs.pop(dedup_key, None)
+
+                # OK/Cancel/Escape use the existing button cleanup. A future
+                # programmatic close must also destroy the dialog to free its key.
+                _msgbox.destroyed.connect(forget_dialog)
             if not show_cancel_btn:
                 _msgbox.enable_buttons(True, False, bool(hp_callback))
 

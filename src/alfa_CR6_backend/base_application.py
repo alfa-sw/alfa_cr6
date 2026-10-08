@@ -1363,7 +1363,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                     if barcode in self.__jar_runners:
                         args, fmt = (barcode, ), "{} already in progress!"
-                        self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                        self.main_window.open_alert_dialog(
+                            args, fmt=fmt, title="ERROR",
+                            dedup_key=("barcode_in_progress", barcode),
+                        )
                         self.main_window.show_barcode(barcode, is_ok=False)
                         self.ready_to_read_a_barcode = True
                     else:
