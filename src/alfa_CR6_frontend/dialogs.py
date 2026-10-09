@@ -944,6 +944,7 @@ class InputDialog(BaseDialog):
                     self.combo_box.setStyleSheet(
                         """
                         QComboBox { font-size: 34px; min-height: 60px; }
+                        QComboBox::drop-down { width: 48px; }
                         QComboBox QAbstractItemView { font-size: 30px; }
                         QAbstractItemView::item { min-height: 48px; }
                         """
