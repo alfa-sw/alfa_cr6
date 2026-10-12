@@ -589,6 +589,49 @@ def extract_jar_print_data(jar):
     }
 
 
+def _wrap_dci_label_lines(lines, barcode, options, line_length):
+    """Fit DCI text to the actual EAN13 canvas without discarding characters."""
+    from PIL import ImageFont   # pylint: disable=import-outside-toplevel
+
+    # Render once without text so EAN13 applies its defaults (including module
+    # width) and the configured writer options before we measure the canvas.
+    canvas = barcode.render(options, text='')
+    writer = barcode.writer
+    margin = max(1, int(round(writer.dpi / 25.4)))  # 1 mm on each side
+    available_width = canvas.width - 2 * margin
+    # python-barcode < 0.14 draws ImageWriter text at twice font_size pixels.
+    font = ImageFont.truetype(writer.font_path, writer.font_size * 2)
+
+    def fits(text):
+        return (len(text) <= line_length
+                and font.getsize(process_text(text))[0] <= available_width)
+
+    wrapped = []
+    for text in lines:
+        for paragraph in str(text).split('\n'):
+            line = ''
+            for word in paragraph.split():
+                candidate = f'{line} {word}' if line else word
+                if fits(candidate):
+                    line = candidate
+                    continue
+                if line:
+                    wrapped.append(line)
+                    line = ''
+                # A single long identifier still needs to print in full. Only
+                # split inside a word when that word cannot fit on its own.
+                for char in word:
+                    if not fits(line + char):
+                        if line:
+                            wrapped.append(line)
+                        line = ''
+                        if not fits(char):
+                            raise ValueError('DCI label font is too large for a single character')
+                    line += char
+            wrapped.append(line)  # Keep intentional empty DCI/RAL lines.
+    return wrapped
+
+
 def create_printable_image_from_jar(jar, options=None, output_path=None):
 
     if isinstance(jar, dict):
@@ -621,18 +664,27 @@ def create_printable_image_from_jar(jar, options=None, output_path=None):
         l_lenght = options.pop('line_lenght')
         n_of_lines = max(options.pop('n_of_lines'), minimum_label_lines)
         rotate = options.pop('rotate')
+        barcode = EAN13(recipe_barcode_text, writer=ImageWriter())
+
+        def label_line(text):
+            return str(text) if minimum_label_lines else str(text)[:l_lenght]
 
         lines_to_print = [recipe_barcode, ]
-        lines_to_print += [f"{l}"[:l_lenght] for l in extra_lines]
+        lines_to_print += [label_line(l) for l in extra_lines]
         if options.get('print_missing_products'):
             logging.warning(f'unknown_pigments:{unknown_pigments}')
             if unknown_pigments:
                 lines_to_print += [tr_("{} product(s) missing:").format(len(unknown_pigments))]
-                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in unknown_pigments.items()]
+                lines_to_print += [label_line(f"{k}: {v}") for k, v in unknown_pigments.items()]
 
             if not_dispensed:
                 lines_to_print += [tr_("{} product(s) not dispensed:").format(len(not_dispensed))]
-                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in not_dispensed.items()]
+                lines_to_print += [label_line(f"{k}: {v}") for k, v in not_dispensed.items()]
+
+        if minimum_label_lines:
+            lines_to_print = [recipe_barcode] + _wrap_dci_label_lines(
+                lines_to_print[1:], barcode, options, l_lenght)
+            n_of_lines = max(n_of_lines, len(lines_to_print) - 1)
 
         if len(lines_to_print) > n_of_lines + 1:
             logging.warning(f"not enough space to print all lines")
@@ -644,7 +696,7 @@ def create_printable_image_from_jar(jar, options=None, output_path=None):
         processed_lines = [process_text(line) for line in lines_to_print]
         printable_text = '\n'.join(processed_lines)
 
-        EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
+        barcode.write(file_, options, printable_text)
 
         response = _image_path
 

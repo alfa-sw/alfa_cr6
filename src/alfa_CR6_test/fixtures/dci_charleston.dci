@@ -1,0 +1,41 @@
+[FORMULA1]
+NumColorants=20
+ColorName=CHARLESTON GRAY 243
+ColorNumber=
+System=DMP
+Brand=Prediction 9 CHARLESTON GRAY 243
+CanSize=
+DispenseUnit=G
+FractionalPart=1
+PartialShots=1000
+Base=CCI-A Gloss Clear
+RGB=9016475
+CollectionName=ALFA - CCI# 85197 CHARLESTON GRAY 243
+BaseAmount=15.51952
+TypeID=1
+
+[INGREDIENTS1]
+1-A Titanium White=63.9170
+10-A Lamp Black=0.0000
+100-A Phath Green=0.5070
+101-A Phath Blue R=0.4780
+120-A Diazo Yellow=0.0000
+14-A Arot Yellow=0.0000
+176-A Red B Carmin=0.0000
+19-A Yellow Oxide=0.0000
+194-A Arylide Yell=0.0000
+22-A Red Oxide=0.0000
+24-A Burnt Umber=19.5790
+33-A Carbazole Vio=0.0000
+40-A Quin Magenta=0.0000
+42-A DPP Red=0.0000
+44-A Benz Yellow H=0.0000
+46-A Vandate Yello=0.0000
+51-A Phath Blue GS=0.0000
+53-A Yellow HR70=0.0000
+54-A Green YS=0.0000
+61-A DPP Orange=0.0000
+[STATUS]
+Cancel=0
+[SUMMARY]
+TotalFormulas=1

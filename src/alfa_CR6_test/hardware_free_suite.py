@@ -28,6 +28,7 @@ CORE_TEST_MODULES = (
     "alfa_CR6_test.test_order_number_format",
     "alfa_CR6_test.test_status_guard",
     "alfa_CR6_test.test_kcc_double_order",
+    "alfa_CR6_test.test_dci_order",
     # Comunicazione e concorrenza.
     "alfa_CR6_test.test_send_command_race",
     "alfa_CR6_test.test_ws_server",
