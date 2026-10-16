@@ -26,7 +26,7 @@ from PyQt5.uic import loadUi
 from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
     Qt, QSize, QItemSelectionModel, QTimer)
 
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor
+from PyQt5.QtGui import QFont, QFontInfo, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
     QApplication,
     QStyle,
@@ -713,9 +713,12 @@ class InputDialog(BaseDialog):
 
     LARGE_MESSAGE_FONT_SCALE = 1.40
     LARGE_CONTENT_FONT_SCALE = 1.40
-    LARGE_MESSAGE_HEIGHT_SCALE = 2
+    LARGE_MESSAGE_HEIGHT = 281
     LARGE_CONTENT_HEIGHT = 80
     LARGE_LAYOUT_GAP = 9
+    # Use the same percentage for portrait and landscape illustrations.
+    MESSAGE_IMAGE_SCALE = 300 / 1024
+    MESSAGE_IMAGE_GAP = 12
 
     def __init__(self, *args, **kwargs):
 
@@ -753,9 +756,23 @@ class InputDialog(BaseDialog):
             )
         }
         self._standard_frame_width = self.width()
-        self._standard_message_font_size = self.message_label.font().pointSizeF()
-        self._standard_content_font_size = (
-            self.content_container.font().pointSizeF())
+        self._standard_frame_height = self.height()
+        # Resolve the inherited stylesheet before saving the effective fonts.
+        # A pixel font has pointSizeF() == -1 and cannot be scaled as points.
+        self.message_label.ensurePolished()
+        self.content_container.ensurePolished()
+        self._standard_message_font = QFont(self.message_label.font())
+        self._standard_content_font = QFont(self.content_container.font())
+        self._standard_message_style_sheet = self.message_label.styleSheet()
+        self._standard_message_word_wrap = self.message_label.wordWrap()
+        self._standard_content_style_sheet = self.content_container.styleSheet()
+        self.message_image_label = QLabel(self)
+        self.message_image_label.setObjectName("message_image_label")
+        self.message_image_label.setStyleSheet(
+            "border: 0px; background: transparent;")
+        self.message_image_label.setAlignment(Qt.AlignCenter)
+        self.message_image_label.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.message_image_label.hide()
 
         # ~ self.ok_button.clicked.connect(self.hide)
         self.esc_button.clicked.connect(self.close_actions)
@@ -764,28 +781,69 @@ class InputDialog(BaseDialog):
         for widget, geometry in self._standard_geometry.items():
             widget.setGeometry(*geometry)
 
-        font = self.message_label.font()
-        font.setPointSizeF(self._standard_message_font_size)
-        self.message_label.setFont(font)
+        self.message_label.setStyleSheet(self._standard_message_style_sheet)
+        self.message_label.setFont(self._standard_message_font)
+        self.message_label.setWordWrap(self._standard_message_word_wrap)
+        self.message_image_label.clear()
+        self.message_image_label.hide()
+        self.content_container.setStyleSheet(self._standard_content_style_sheet)
+        self.content_container.setFont(self._standard_content_font)
 
-        content_font = self.content_container.font()
-        content_font.setPointSizeF(self._standard_content_font_size)
-        self.content_container.setFont(content_font)
+    @staticmethod
+    def _apply_scaled_font(widget, standard_font, scale):
+        # A local stylesheet overrides MainWindow's inherited font-size rule.
+        pixel_size = round(QFontInfo(standard_font).pixelSize() * scale)
+        widget.setStyleSheet(
+            "{} {{ {}; font-size: {}px; }}".format(
+                widget.metaObject().className(),
+                widget.styleSheet().rstrip(";"), pixel_size))
+
+    def _apply_message_image(self, image_path, has_content, has_choices, scale_factor=1.0):
+        if not image_path:
+            return
+        pixmap = QPixmap(image_path)
+        if pixmap.isNull():
+            logging.warning("Unable to load popup image: %s", image_path)
+            return
+
+        scaled = pixmap.scaled(
+            pixmap.size() * (self.MESSAGE_IMAGE_SCALE * scale_factor),
+            Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.message_image_label.setPixmap(scaled)
+        content_x = self.content_container.x()
+        content_width = self.content_container.width()
+        image_y = self.ok_button.y() + self.ok_button.height() + self.LARGE_LAYOUT_GAP
+        self.message_image_label.setGeometry(
+            content_x, image_y, content_width, scaled.height())
+        self.message_image_label.show()
+
+        # Replace the large content area with an illustration and keep a
+        # compact input underneath it for scanning/typing the barcode.
+        bottom = image_y + scaled.height()
+        if has_content:
+            content_y = bottom + self.MESSAGE_IMAGE_GAP
+            self.content_container.setGeometry(
+                content_x, content_y, content_width, self.LARGE_CONTENT_HEIGHT)
+            bottom = content_y + self.LARGE_CONTENT_HEIGHT
+        if has_choices:
+            self.combo_box.move(self.combo_box.x(), bottom + self.LARGE_LAYOUT_GAP)
+            bottom = self.combo_box.y() + self.combo_box.height()
+        self.resize(self._standard_frame_width, bottom + self.LARGE_LAYOUT_GAP)
 
     def _apply_large_message_layout(self, has_content, has_choices):
         """Give refill-by-scale instructions priority over the input area."""
 
-        message_x, message_y, message_width, message_height = (
+        message_x, message_y, message_width, _ = (
             self._standard_geometry[self.message_label]
         )
-        message_height *= self.LARGE_MESSAGE_HEIGHT_SCALE
+        message_height = self.LARGE_MESSAGE_HEIGHT
         self.message_label.setGeometry(
             message_x, message_y, message_width, message_height)
+        self.message_label.setWordWrap(True)
 
-        font = self.message_label.font()
-        font.setPointSizeF(
-            self._standard_message_font_size * self.LARGE_MESSAGE_FONT_SCALE)
-        self.message_label.setFont(font)
+        self._apply_scaled_font(
+            self.message_label, self._standard_message_font,
+            self.LARGE_MESSAGE_FONT_SCALE)
 
         button_y = message_y + message_height + self.LARGE_LAYOUT_GAP
         for button in (self.esc_button, self.action_button, self.ok_button):
@@ -799,10 +857,9 @@ class InputDialog(BaseDialog):
         self.content_container.setGeometry(
             content_x, content_y, content_width, content_height)
 
-        content_font = self.content_container.font()
-        content_font.setPointSizeF(
-            self._standard_content_font_size * self.LARGE_CONTENT_FONT_SCALE)
-        self.content_container.setFont(content_font)
+        self._apply_scaled_font(
+            self.content_container, self._standard_content_font,
+            self.LARGE_CONTENT_FONT_SCALE)
 
         bottom = content_y + content_height
         if has_choices:
@@ -898,7 +955,9 @@ class InputDialog(BaseDialog):
         ok_requires_content=False,
         action_text=None,
         action_cb=None,
-        action_cb_args=None):
+        action_cb_args=None,
+        message_image=None,
+        message_image_scale_factor=1.0):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
@@ -972,10 +1031,10 @@ class InputDialog(BaseDialog):
             cursor.setPosition(cursor.position() + len(str(content)))
             if wide:
                 self.content_container.resize(self.content_container.width(), 700)    
-                self.resize(self.width(), 875)    
+                self.resize(self.width(), self._standard_frame_height + 300)
             else:
                 self.content_container.resize(self.content_container.width(), 400)    
-                self.resize(self.width(), 575)    
+                self.resize(self.width(), self._standard_frame_height)
 
         if hasattr(self.content_container, 'setReadOnly'):
             self.content_container.setReadOnly(not content_editable)
@@ -1013,6 +1072,10 @@ class InputDialog(BaseDialog):
                 has_content=content is not None,
                 has_choices=choices is not None)
 
+        self._apply_message_image(
+            message_image, has_content=content is not None,
+            has_choices=choices is not None,
+            scale_factor=message_image_scale_factor)
         self.show()
 
     def hide_dialog(self):

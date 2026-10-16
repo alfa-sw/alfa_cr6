@@ -6,9 +6,240 @@ import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 from unittest import mock
 
+from PyQt5.QtGui import QFontInfo, QPixmap
+from PyQt5.QtWidgets import QApplication, QMessageBox, QPushButton, QWidget
+
 from alfa_CR6_backend import globals as globals_module
 from alfa_CR6_frontend import dialogs as dialogs_module, home_page
-from alfa_CR6_frontend.dialogs import InputDialog
+from alfa_CR6_frontend.dialogs import InputDialog, RefillDialog
+from alfa_CR6_test.alfa_cr6_refill_popup_preview import (
+    AVAILABLE_LANGUAGES, PopupGallery, main_window_stylesheet,
+)
+
+
+class TestInputDialogLargeMessageFonts(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self):
+        self.parent = QWidget()
+        self.parent.setStyleSheet(main_window_stylesheet())
+        self.dialog = InputDialog(self.parent)
+
+    def tearDown(self):
+        self.parent.close()
+        self.parent.deleteLater()
+        self.app.processEvents()
+
+    def _show(self, large):
+        self.dialog.show_dialog(
+            message="Refill instructions", content="Scan the barcode",
+            large_message_layout=large)
+        self.app.processEvents()
+
+    def _assert_input_font_sizes(self, pixel_size):
+        for widget in (self.dialog.message_label, self.dialog.content_container):
+            self.assertEqual(QFontInfo(widget.font()).pixelSize(), pixel_size)
+        self.assertEqual(
+            QFontInfo(self.dialog.content_container.document().defaultFont())
+            .pixelSize(), pixel_size)
+
+    def test_large_fonts_override_the_main_window_stylesheet(self):
+        self._show(False)
+        self._assert_input_font_sizes(24)
+
+        self._show(True)
+        self._assert_input_font_sizes(34)
+        self.assertEqual(QFontInfo(self.dialog.ok_button.font()).pixelSize(), 24)
+        self.assertEqual(self.dialog.message_label.height(), 281)
+
+    def test_reusing_the_dialog_restores_fonts_without_cumulative_scaling(self):
+        for large in (True, True, False, True, False):
+            self._show(large)
+            self._assert_input_font_sizes(34 if large else 24)
+            self.assertEqual(
+                self.dialog.message_label.height(), 281 if large else 175)
+            self.assertEqual(self.dialog.message_label.wordWrap(), large)
+
+    def test_large_result_wraps_the_complete_overflow_message(self):
+        self.dialog.show_dialog(
+            message=(
+                "Quantità rabboccata: 742.35 g<br>"
+                "livelli aggiornati: B01: 1000.0 (cc)<br>"
+                "Il livello registrato è stato limitato al massimo configurato.<br>"
+                "Eseguire il RESET della testa A?"),
+            content=None, large_message_layout=True)
+        self.app.processEvents()
+        label = self.dialog.message_label
+        self.assertTrue(label.wordWrap())
+        self.assertLessEqual(label.heightForWidth(label.width()), label.height())
+
+    def test_point_fonts_without_a_parent_stylesheet_are_also_scaled(self):
+        self.parent.setStyleSheet("")
+        dialog = InputDialog(self.parent)
+        dialog.show_dialog(message="Instructions", content="Barcode")
+        self.app.processEvents()
+        standard_sizes = {
+            widget: QFontInfo(widget.font()).pixelSize()
+            for widget in (dialog.message_label, dialog.content_container)
+        }
+
+        dialog.show_dialog(
+            message="Instructions", content="Barcode", large_message_layout=True)
+        self.app.processEvents()
+        for widget, size in standard_sizes.items():
+            self.assertEqual(
+                QFontInfo(widget.font()).pixelSize(), round(size * 1.40))
+
+        dialog.show_dialog(message="Instructions", content="Barcode")
+        self.app.processEvents()
+        for widget, size in standard_sizes.items():
+            self.assertEqual(QFontInfo(widget.font()).pixelSize(), size)
+
+    def test_message_image_keeps_its_proportions_and_barcode_validation(self):
+        image_path = globals_module.get_res("IMAGE", "refill_scale_can_full.png")
+        original = QPixmap(image_path)
+        self.assertFalse(original.isNull())
+        for large in (False, True):
+            self.dialog.show_dialog(
+                message="Place the canister on the scale.<br>Scan its barcode.",
+                content="", ok_requires_content=True,
+                large_message_layout=large, message_image=image_path)
+            self.app.processEvents()
+            image = self.dialog.message_image_label
+            pixmap = image.pixmap()
+            self.assertFalse(image.isHidden())
+            self.assertLess(pixmap.height(), original.height())
+            self.assertLessEqual(
+                abs(pixmap.width() - pixmap.height()
+                    * original.width() / original.height()), 1)
+            self.assertFalse(
+                self.dialog.message_label.geometry().intersects(image.geometry()))
+            self.assertFalse(
+                self.dialog.content_container.geometry().intersects(image.geometry()))
+            self.assertGreaterEqual(
+                image.y(), self.dialog.ok_button.y() + self.dialog.ok_button.height())
+            self.assertGreaterEqual(
+                self.dialog.content_container.y(), image.y() + image.height())
+            self.assertLessEqual(
+                self.dialog.message_label.heightForWidth(
+                    self.dialog.message_label.width()),
+                self.dialog.message_label.height())
+            self.assertFalse(self.dialog.ok_button.isEnabled())
+            self.dialog.content_container.setPlainText("123456789")
+            self.assertTrue(self.dialog.ok_button.isEnabled())
+
+    def test_next_popup_removes_the_image_and_restores_input_position(self):
+        original_content_y = self.dialog.content_container.y()
+        self.dialog.show_dialog(
+            message="Instructions", content="", large_message_layout=True,
+            message_image=globals_module.get_res("IMAGE", "refill_scale_can_full.png"))
+        self.app.processEvents()
+        self.assertFalse(self.dialog.message_image_label.isHidden())
+
+        self.dialog.show_dialog(message="Error", content=None)
+        self.app.processEvents()
+        self.assertTrue(self.dialog.message_image_label.isHidden())
+        self.assertEqual(self.dialog.content_container.y(), original_content_y)
+        self.assertEqual(self.dialog.message_label.contentsMargins().left(), 0)
+        self.assertFalse(self.dialog.message_label.wordWrap())
+
+
+class TestRefillPopupPreviewModes(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
+    def setUp(self):
+        settings = globals_module.import_settings()
+        self.addCleanup(setattr, settings, "LANGUAGE", settings.LANGUAGE)
+        self.gallery = PopupGallery(large=True, initial_id="S12", language="it")
+        self.gallery.show()
+        self.app.processEvents()
+
+    def tearDown(self):
+        self.gallery.close()
+        self.gallery.deleteLater()
+        self.app.processEvents()
+
+    def _select(self, popup_id):
+        index = next(i for i, spec in enumerate(self.gallery.specs)
+                     if spec["id"] == popup_id)
+        self.gallery.selector.setCurrentIndex(index)
+        self.app.processEvents()
+
+    def _manual(self):
+        self.gallery.mode_selector.setCurrentIndex(
+            self.gallery.mode_selector.findData("manual"))
+        self.app.processEvents()
+
+    def test_mode_switch_replaces_the_flow_and_restores_the_scale_layout(self):
+        self._manual()
+        self.assertEqual(self.gallery.specs[0]["id"], "M01")
+        self.assertTrue(all(spec["id"].startswith("M") for spec in self.gallery.specs))
+        self.assertEqual(self.gallery.selector.count(), 14)
+        self.assertFalse(self.gallery.large_checkbox.isEnabled())
+        self.assertEqual(self.gallery.dialog.message_label.height(), 175)
+        self.assertEqual(QFontInfo(self.gallery.dialog.message_label.font()).pixelSize(), 24)
+
+        self.gallery.mode_selector.setCurrentIndex(
+            self.gallery.mode_selector.findData("scale"))
+        self.app.processEvents()
+        self.assertEqual(self.gallery.selector.count(), 21)
+        self.assertTrue(all(spec["id"].startswith("S") for spec in self.gallery.specs))
+        self.assertTrue(self.gallery.large_checkbox.isEnabled())
+        self.assertEqual(self.gallery.dialog.message_label.height(), 281)
+        self.assertEqual(QFontInfo(self.gallery.dialog.message_label.font()).pixelSize(), 34)
+
+    def test_manual_quantity_buttons_and_alert_navigation_remain_interactive(self):
+        self._manual()
+        self._select("M06")
+        self.assertIsInstance(self.gallery.dialog, RefillDialog)
+        self.gallery.dialog.findChild(QPushButton, "refill_choice_1").click()
+        self.assertEqual(float(self.gallery.dialog.get_content_text()), 750.0)
+        self.gallery.dialog.ok_button.click()
+        self.app.processEvents()
+        self.assertEqual(self.gallery.specs[self.gallery.selector.currentIndex()]["id"], "M07")
+        self.assertTrue(self.gallery.dialog.isVisible())
+
+        self._select("M02")
+        self.assertIsInstance(self.gallery.dialog, QMessageBox)
+        self.assertIsNone(QApplication.activeModalWidget())
+        self.assertFalse(self.gallery.dialog.button(QMessageBox.Cancel).isEnabled())
+        self.gallery.dialog.button(QMessageBox.Ok).click()
+        self.app.processEvents()
+        self.assertEqual(self.gallery.specs[self.gallery.selector.currentIndex()]["id"], "M03")
+        self.assertTrue(self.gallery.dialog.isVisible())
+
+    def test_language_change_keeps_the_manual_popup_selected(self):
+        self._manual()
+        self._select("M06")
+        italian_text = self.gallery.dialog.message_label.text()
+        self.gallery.language_selector.setCurrentIndex(
+            self.gallery.language_selector.findData("en"))
+        self.app.processEvents()
+        self.assertEqual(self.gallery.mode, "manual")
+        self.assertEqual(self.gallery.specs[self.gallery.selector.currentIndex()]["id"], "M06")
+        self.assertNotEqual(self.gallery.dialog.message_label.text(), italian_text)
+        self.assertIn("please, input quantity", self.gallery.dialog.message_label.text())
+
+    def test_manual_circuit_selection_is_localized_in_every_supported_translation(self):
+        self._manual()
+        self._select("M03")
+        for language in sorted(set(AVAILABLE_LANGUAGES) - {"en", "kr"}):
+            with self.subTest(language=language):
+                self.gallery.language_selector.setCurrentIndex(
+                    self.gallery.language_selector.findData(language))
+                self.app.processEvents()
+                dialog = self.gallery.dialog
+                self.assertNotEqual(
+                    dialog.message_label.text(), "Multiple circuits found for Rosso")
+                self.assertNotEqual(dialog.get_content_text(), "Choose circuit to refill:")
+                self.assertNotIn("level", dialog.combo_box.itemText(0))
+                self.assertEqual(dialog.get_selected_choice(), "B01")
+                dialog.combo_box.setCurrentIndex(1)
+                self.assertEqual(dialog.get_selected_choice(), "B02")
 
 
 class _Redis:
@@ -116,6 +347,9 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         dialog = self.main_window.dialogs[0]
         self.assertEqual("SP_MessageBoxWarning", dialog["icon_name"])
         self.assertIn("No scale was detected", dialog["message"])
+        self.assertEqual(
+            globals_module.get_res("IMAGE", "refill_scale_warn_unplugged.png"),
+            dialog["message_image"])
         self.assertIsNone(dialog["content"])
 
     def test_connected_unresponsive_scale_shows_power_warning(self):
@@ -127,6 +361,9 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         dialog = self.main_window.dialogs[0]
         self.assertEqual("SP_MessageBoxWarning", dialog["icon_name"])
         self.assertIn("Check that it is switched on", dialog["message"])
+        self.assertEqual(
+            globals_module.get_res("IMAGE", "refill_scale_warn_off.png"),
+            dialog["message_image"])
         self.assertIsNone(dialog["content"])
 
     def test_ready_scale_opens_first_instruction(self):

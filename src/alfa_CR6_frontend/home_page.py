@@ -438,7 +438,8 @@ class RefillProcedureHelper:
                         try:
                             curr = round(float(p.get('current_level', 0)), 2)
                             mx = round(float(p.get('maximum_level', 0)), 2)
-                            label = f"{p.get('name', '?')} (level {curr}/{mx})"
+                            label = tr_("{} (level {}/{})").format(
+                                p.get('name', '?'), curr, mx)
                         except Exception:
                             label = str(p.get('name', '?'))
                         choices[label] = p
@@ -672,12 +673,16 @@ class ScaleRefillProcedureHelper:
                 message = tr_(
                     "The scale is connected but not responding.<br>"
                     "Check that it is switched on and try again.")
+                message_image = get_res("IMAGE", "refill_scale_warn_off.png")
             else:
                 message = tr_(
-                    "No scale was detected.<br>Connect the scale and try again.")
+                    "No scale was detected.<br>"
+                    "Connect the scale or check that the USB cable is properly connected.")
+                message_image = get_res("IMAGE", "refill_scale_warn_unplugged.png")
             self._open_dialog(
                 icon_name="SP_MessageBoxWarning",
                 message=message,
+                message_image=message_image,
                 content=None,
                 ok_cb=self._finish)
             return
@@ -685,6 +690,7 @@ class ScaleRefillProcedureHelper:
         self._open_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("Place the open canister on the scale.<br>Scan its barcode."),
+            message_image=get_res("IMAGE", "refill_scale_can_full.png"),
             content="",
             ok_cb=self._on_initial_barcode,
             ok_on_enter=1,
@@ -801,6 +807,7 @@ class ScaleRefillProcedureHelper:
             self._open_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=message,
+                message_image=get_res("IMAGE", "refill_scan_pipe.png"),
                 content="",
                 ok_cb=self._on_circuit_barcode,
                 ok_on_enter=1)
@@ -822,6 +829,8 @@ class ScaleRefillProcedureHelper:
             icon_name="SP_MessageBoxQuestion",
             message=tr_("Remove the canister from the scale and refill the circuit.<br>"
                         "When finished, put it back on the scale and scan its barcode."),
+            message_image=get_res("IMAGE", "refill_sequence_scale.png"),
+            message_image_scale_factor=1.5,
             content="",
             ok_cb=self._on_final_barcode,
             ok_on_enter=1)
@@ -884,7 +893,7 @@ class ScaleRefillProcedureHelper:
         # remaining capacity of the circuit.
         if refill_cc > margin_cc:
             lines.append(tr_(
-                "Warning: the measured refill exceeds<br>the configured maximum level."))
+                "The recorded level has been capped at the configured maximum."))
         lines.append(tr_("RESET head: {}?").format(self.machine_.name))
         self._open_dialog(
             icon_name="SP_MessageBoxInformation",

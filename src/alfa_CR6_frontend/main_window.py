@@ -869,7 +869,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             ok_requires_content=False,
             action_text=None,
             action_cb=None,
-            action_cb_args=None
+            action_cb_args=None,
+            message_image=None,
+            message_image_scale_factor=1.0
     ):
 
         self.input_dialog.show_dialog(
@@ -889,7 +891,9 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             ok_requires_content=ok_requires_content,
             action_text=action_text,
             action_cb=action_cb,
-            action_cb_args=action_cb_args)
+            action_cb_args=action_cb_args,
+            message_image=message_image,
+            message_image_scale_factor=message_image_scale_factor)
 
         logging.warning(str(message))
 

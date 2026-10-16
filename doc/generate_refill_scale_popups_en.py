@@ -19,6 +19,7 @@ from PyQt5.QtGui import (  # pylint: disable=wrong-import-position
 from PyQt5.QtWidgets import (  # pylint: disable=wrong-import-position
     QApplication,
     QFrame,
+    QLabel,
     QStyle,
 )
 from PyQt5.uic import loadUi  # pylint: disable=wrong-import-position
@@ -28,6 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 UI_PATH = ROOT / "src/alfa_CR6_frontend/ui/input_dialog.ui"
 IMAGE_DIR = ROOT / "src/alfa_CR6_frontend/images"
 OUTPUT_DIR = ROOT / "doc/__hidden__/refill_scale_popups_en"
+MESSAGE_IMAGE_SCALE = 300 / 1024
 
 BASE_STYLE = """
 QWidget {background:#CCBBBBBB; border: 1px solid #999999; border-radius: 4px;}
@@ -45,6 +47,7 @@ POPUPS = [
         "message": "Place the open canister on the scale.<br>Scan its barcode.",
         "content": "",
         "requires_content": True,
+        "image": "refill_scale_can_full.png",
     },
     {
         "id": "S02",
@@ -94,6 +97,7 @@ POPUPS = [
         "icon": "SP_MessageBoxQuestion",
         "message": "Scan the barcode on circuit B01<br>of head A.",
         "content": "",
+        "image": "refill_scan_pipe.png",
     },
     {
         "id": "S10",
@@ -113,6 +117,8 @@ POPUPS = [
             "When finished, put it back on the scale and scan its barcode."
         ),
         "content": "",
+        "image": "refill_sequence_scale.png",
+        "image_scale_factor": 1.5,
     },
     {
         "id": "S13",
@@ -128,9 +134,8 @@ POPUPS = [
         "icon": "SP_MessageBoxInformation",
         "message": (
             "Refilled quantity: 742.35 g<br>"
-            "adjusted_levels: B01: 1018.62 (cc)<br>"
-            "Warning: the measured refill exceeds<br>"
-            "the configured maximum level.<br>"
+            "adjusted_levels: B01: 1000.0 (cc)<br>"
+            "The recorded level has been capped at the configured maximum.<br>"
             "RESET head: A?"
         ),
     },
@@ -165,6 +170,7 @@ POPUPS = [
 def build_popup(app, spec, large_layout=True):
     frame = QFrame()
     loadUi(str(UI_PATH), frame)
+    standard_frame_height = frame.height()
     frame.setStyleSheet(BASE_STYLE)
 
     frame.ok_button.setText("OK")
@@ -183,13 +189,15 @@ def build_popup(app, spec, large_layout=True):
         message_font = frame.message_label.font()
         message_font.setPointSizeF(message_font.pointSizeF() * 1.40)
         frame.message_label.setFont(message_font)
-        frame.message_label.setGeometry(120, 10, 951, 182)
+        frame.message_label.resize(
+            frame.message_label.width(), 281)
+        frame.message_label.setWordWrap(True)
 
-        button_y = 201
+        button_y = frame.message_label.y() + frame.message_label.height() + 9
         frame.esc_button.setGeometry(120, button_y, 200, 51)
         frame.ok_button.setGeometry(870, button_y, 201, 51)
 
-        content_y = 261
+        content_y = button_y + frame.ok_button.height() + 9
         if content is None:
             frame.content_container.hide()
             content_height = 0
@@ -223,18 +231,46 @@ def build_popup(app, spec, large_layout=True):
             frame.content_container.hide()
             frame.resize(1078, 275)
         else:
-            frame.content_container.setGeometry(2, 170, 1071, 400)
+            frame.content_container.resize(frame.content_container.width(), 400)
             frame.content_container.setText(content)
-            frame.resize(1078, 575)
+            frame.resize(1078, standard_frame_height)
 
         if choices:
             frame.content_container.setReadOnly(True)
             frame.combo_box.clear()
             frame.combo_box.addItems(sorted(choices))
-            frame.combo_box.setGeometry(80, 510, 891, 60)
+            frame.combo_box.resize(frame.combo_box.width(), 60)
             frame.combo_box.show()
         else:
             frame.combo_box.hide()
+
+    if spec.get("image"):
+        pixmap = QPixmap(str(IMAGE_DIR / spec["image"]))
+        if pixmap.isNull():
+            raise RuntimeError("Unable to load popup image: {}".format(spec["image"]))
+        scaled = pixmap.scaled(
+            pixmap.size() * (MESSAGE_IMAGE_SCALE * spec.get("image_scale_factor", 1.0)),
+            Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        frame.message_image_label = QLabel(frame)
+        frame.message_image_label.setStyleSheet(
+            "border: 0px; background: transparent;")
+        frame.message_image_label.setPixmap(scaled)
+        frame.message_image_label.setAlignment(Qt.AlignCenter)
+        image_y = frame.ok_button.y() + frame.ok_button.height() + 9
+        frame.message_image_label.setGeometry(
+            frame.content_container.x(), image_y,
+            frame.content_container.width(), scaled.height())
+        frame.message_image_label.show()
+        bottom = image_y + scaled.height()
+        if content is not None:
+            frame.content_container.setGeometry(
+                frame.content_container.x(), bottom + 12,
+                frame.content_container.width(), 80)
+            bottom = frame.content_container.y() + 80
+        if choices:
+            frame.combo_box.move(frame.combo_box.x(), bottom + 9)
+            bottom = frame.combo_box.y() + frame.combo_box.height()
+        frame.resize(1078, bottom + 9)
 
     frame.ok_button.setEnabled(not spec.get("requires_content", False))
     frame.show()
