@@ -3,6 +3,7 @@
 """Calcoli applicativi e lifecycle teste senza QApplication o hardware."""
 
 import asyncio
+import copy
 import json
 import os
 import tempfile
@@ -11,7 +12,11 @@ import unittest
 from unittest import mock
 
 import alfa_CR6_backend.base_application as app_module
+import alfa_CR6_backend.models as models_module
+import alfa_CR6_backend.order_parser as parser_module
 from alfa_CR6_backend.base_application import BaseApplication, RestoreMachineHelper
+from alfa_CR6_backend.models import Jar, Order, init_models
+from alfa_CR6_backend.settings_manager import SettingsManager
 
 
 class _PigmentHead:
@@ -117,6 +122,182 @@ class TestApplicationHardwareFree(unittest.TestCase):
             self.app.build_insufficient_pigments_infos({"RED": 3, "BLUE": 2}),
             [("RED", "A"), ("BLUE", "B")],
         )
+
+
+class TestDuplicateOrderIngredients(unittest.TestCase):
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.addCleanup(models_module.set_global_session, models_module.global_session)
+        self.session = init_models('sqlite:///:memory:')
+        self.addCleanup(self.session.bind.dispose)
+        self.addCleanup(self.session.close)
+        self.app = BaseApplication.__new__(BaseApplication)
+        self.app.settings = types.SimpleNamespace(
+            MERGE_DUPLICATE_ORDER_INGREDIENTS=True,
+            DATA_PATH=self.temp_dir.name,
+        )
+        self.app.db_session = self.session
+        self.app.machine_head_dict = {}
+        self.app.handle_exception = mock.Mock()
+        translation = mock.patch.object(app_module, 'tr_', side_effect=lambda text: text)
+        translation.start()
+        self.addCleanup(translation.stop)
+
+    @staticmethod
+    def _properties(*weights):
+        return {
+            'meta': {'quality': '90', 'file name': 'line90.json'},
+            'extra_lines_to_print': ['BASF Line 90'],
+            'ingredients': [
+                {'pigment_name': name, 'weight(g)': weight, 'description': name}
+                for name, weight in weights
+            ],
+        }
+
+    def _create(self, properties):
+        order = self.app._do_create_order(
+            properties, 'BASF Line 90', 2, file_name='line90.json')
+        self.assertIsNotNone(order)
+        self.app.handle_exception.assert_not_called()
+        self.session.expire_all()
+        return self.session.query(Order).one()
+
+    def test_repeated_toners_are_persisted_once_with_total_and_first_metadata(self):
+        properties = self._properties(
+            ('A926', 10.5), ('M4', 20.0), ('A926', 3.2),
+            ('M4', 1.25), ('A926', 0.3))
+        properties['ingredients'][2]['description'] = 'Later description'
+        original = copy.deepcopy(properties)
+
+        order = self._create(properties)
+        stored = json.loads(order.json_properties)
+
+        self.assertEqual(stored['ingredients'], [
+            {'pigment_name': 'A926', 'weight(g)': 14.0, 'description': 'A926'},
+            {'pigment_name': 'M4', 'weight(g)': 21.25, 'description': 'M4'},
+        ])
+        self.assertEqual(stored['meta'], properties['meta'])
+        self.assertEqual(stored['extra_lines_to_print'], properties['extra_lines_to_print'])
+        self.assertEqual(order.file_name, 'line90.json')
+        self.assertEqual(self.session.query(Jar).count(), 2)
+        self.assertEqual(properties, original)
+
+    def test_decimal_totals_keep_precision_without_binary_addition_artifacts(self):
+        order = self._create(self._properties(
+            ('A926', 0.1), ('M4', 0.00001), ('A926', 0.2), ('M4', 0.00002)))
+
+        self.assertEqual(
+            [i['weight(g)'] for i in json.loads(order.json_properties)['ingredients']],
+            [0.3, 0.00003])
+
+    def test_unknown_toners_use_the_total_in_order_and_jar(self):
+        order = self._create(self._properties(('MANUAL', 2.5), ('MANUAL', 3.2)))
+
+        self.assertEqual(json.loads(order.json_properties)['unknown_pigments'], {'MANUAL': 5.7})
+        jar = order.jars[0]
+        self.app.update_jar_properties(jar)
+        self.assertEqual(jar.unknown_pigments, {'MANUAL': 5.7})
+
+    def test_available_toner_uses_total_for_dispensing_and_remaining_quantity(self):
+        self.app.machine_head_dict = {0: _PigmentHead('A', 'A926', 2.0, 100)}
+        order = self._create(self._properties(('A926', 10.5), ('A926', 3.5)))
+        jar = order.jars[0]
+
+        self.app.update_jar_properties(jar)
+        # The machine command uses millilitres: 14 g / 2 g/ml = 7 ml.
+        self.assertEqual(jar.get_ingredients_for_machine(self.app.machine_head_dict[0]), {'A926': 7.0})
+
+        jar.json_properties = json.dumps({'dispensed_quantities_gr': {'A926': 4.0}})
+        self.app.update_jar_properties(jar)
+        self.assertEqual(jar.get_ingredients_for_machine(self.app.machine_head_dict[0]), {'A926': 5.0})
+
+    def test_availability_is_checked_against_the_total(self):
+        self.app.machine_head_dict = {0: _PigmentHead('A', 'A926', 1.0, 10)}
+        order = self._create(self._properties(('A926', 8.0), ('A926', 6.0)))
+        jar = order.jars[0]
+
+        self.app.update_jar_properties(jar)
+
+        self.assertEqual(jar.insufficient_pigments, {'A926': 14.0})
+        self.assertEqual(jar.get_ingredients_for_machine(self.app.machine_head_dict[0]), {})
+
+    def test_unique_toners_and_empty_recipe_are_preserved(self):
+        for properties in (self._properties(('A926', 10.12345), ('M4', 0)), {}):
+            with self.subTest(properties=properties):
+                order = self._create(properties)
+                stored = json.loads(order.json_properties)
+                stored.pop('unknown_pigments')
+                self.assertEqual(stored, properties)
+                self.session.query(Jar).delete()
+                self.session.query(Order).delete()
+                self.session.commit()
+
+    def test_disabled_or_missing_option_keeps_duplicate_rejection(self):
+        properties = self._properties(('A926', 10.5), ('A926', 3.5))
+        for settings in (types.SimpleNamespace(MERGE_DUPLICATE_ORDER_INGREDIENTS=False),
+                         types.SimpleNamespace()):
+            with self.subTest(settings=settings):
+                self.app.settings = settings
+                self.app.handle_exception.reset_mock()
+
+                order = self.app._do_create_order(properties, 'BASF Line 90', 1)
+
+                self.assertIsNone(order)
+                self.assertEqual(self.session.query(Order).count(), 0)
+                self.assertEqual(self.session.query(Jar).count(), 0)
+                self.app.handle_exception.assert_called_once()
+                error = self.app.handle_exception.call_args[0][0]
+                self.assertIsInstance(error, AssertionError)
+                self.assertEqual(str(error), 'duplicated name in ingredient list')
+
+    def test_basf_json_is_merged_after_aliases_without_changing_source_file(self):
+        source = {
+            'header': 'SW CRx formula file', 'version': '1.0.0',
+            'system': 'Refinity', 'batchId': 1234, 'operatorId': '',
+            'jobId': '', 'formulaNumber': '',
+            'meta': {
+                'brand': 'BASF', 'region': '', 'colorCode': 'TEST',
+                'variantCode': '', 'colorName': 'Test', 'secondName': '',
+                'year': '', 'remark': '', 'quality': '90', 'undercoat': '',
+                'pictograms': '', 'dateModified': '', 'quantity': 1.0,
+                'quantityUom': 'l', 'cumulative': 0.0, 'extraInfo': [],
+            },
+            'ingredients': [
+                {'code': 'A926', 'weight(g)': 10.5, 'description': 'First'},
+                {'code': 'M4', 'weight(g)': 20.0, 'description': 'Other'},
+                {'code': 'ALIAS_A926', 'weight(g)': 3.2, 'description': 'Alias'},
+                {'code': 'A926', 'weight(g)': 0.3, 'description': 'Repeated'},
+            ],
+        }
+        path = os.path.join(self.temp_dir.name, 'line90.json')
+        original = json.dumps(source).encode('utf-8')
+        with open(path, 'wb') as stream:
+            stream.write(original)
+        with open(os.path.join(self.temp_dir.name, 'pigment_alias.json'), 'w') as stream:
+            json.dump({'A926': ['ALIAS_A926']}, stream)
+
+        with mock.patch.object(parser_module, 'get_application_instance', return_value=self.app):
+            orders = self.app.create_orders_from_file(path, n_of_jars=1)
+
+        self.assertEqual(len(orders), 1)
+        self.assertIsNotNone(orders[0])
+        self.app.handle_exception.assert_not_called()
+        self.assertEqual(json.loads(orders[0].json_properties)['ingredients'], [
+            {'pigment_name': 'A926', 'weight(g)': 14.0, 'description': 'First'},
+            {'pigment_name': 'M4', 'weight(g)': 20.0, 'description': 'Other'},
+        ])
+        with open(path, 'rb') as stream:
+            self.assertEqual(stream.read(), original)
+
+    def test_setting_is_editable_boolean_and_defaults_to_disabled(self):
+        key = 'MERGE_DUPLICATE_ORDER_INGREDIENTS'
+        self.assertIs(SettingsManager.DEFAULTS[key], False)
+        for value in (True, False):
+            self.assertEqual(SettingsManager._validate_updates({key: value}), {key: value})
+        with mock.patch.dict('sys.modules', {'app_settings': types.ModuleType('app_settings')}):
+            self.assertIs(SettingsManager.get_editable_settings()[key], False)
 
 
 class TestRestoreMachineHelperRawPersistence(unittest.TestCase):

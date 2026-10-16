@@ -22,6 +22,7 @@ import logging.handlers
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from collections import OrderedDict
+from decimal import Decimal
 
 from PyQt5.QtCore import QEventLoop      # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
@@ -1652,6 +1653,23 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         order = None
         if self.db_session:
             try:
+
+                if (getattr(self.settings, 'MERGE_DUPLICATE_ORDER_INGREDIENTS', False)
+                        and properties.get('ingredients')):
+                    ingredients = {}
+                    weights = {}
+                    for ingredient in properties['ingredients']:
+                        name = ingredient['pigment_name']
+                        weight = Decimal(str(ingredient['weight(g)']))
+                        if name not in ingredients:
+                            ingredients[name] = dict(ingredient)
+                            weights[name] = weight
+                        else:
+                            # Sum decimal grams without rounding each addition.
+                            weights[name] += weight
+                            ingredients[name]['weight(g)'] = float(weights[name])
+                    # Keep the caller's recipe and the original file unchanged.
+                    properties = dict(properties, ingredients=list(ingredients.values()))
 
                 name_list = [i["pigment_name"] for i in properties.get('ingredients', [])]
                 assert len(name_list) == len(set(name_list)), tr_("duplicated name in ingredient list")

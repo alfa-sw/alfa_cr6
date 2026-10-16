@@ -70,6 +70,12 @@ class SettingsManager:
                 'default': False,
                 'description': 'When enabled, creating multiple jars for the same order is not more allowed.'
             },
+            'MERGE_DUPLICATE_ORDER_INGREDIENTS': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'Sums the weights of repeated toner codes into one ingredient when creating an order. '
+                               'Enable for BASF Line 90 recipes with intentionally repeated toners.',
+            },
             'ENABLE_BTN_PURGE_ALL': {
                 'type': 'boolean',
                 'default': False,
