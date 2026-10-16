@@ -372,6 +372,7 @@ class RefillProcedureHelper:
             self.parent.main_window.open_input_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=tr_("please, verify barcode {} on canister.").format(barcode_),
+                message_image=get_res("IMAGE", "refill_scan_pipe.png"),
                 content="",
                 ok_cb=self._cb_verify_barcode,
                 ok_cb_args=(pigment_, pipe_, _default_qtity_units, barcode_),
@@ -592,6 +593,7 @@ class RefillProcedureHelper:
         self.parent.main_window.open_input_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("please, input barcode for refill"),
+            message_image=get_res("IMAGE", "refill_scan_can_full.png"),
             content="",
             ok_cb=self._cb_input,
             ok_on_enter=1)
@@ -829,7 +831,7 @@ class ScaleRefillProcedureHelper:
             icon_name="SP_MessageBoxQuestion",
             message=tr_("Remove the canister from the scale and refill the circuit.<br>"
                         "When finished, put it back on the scale and scan its barcode."),
-            message_image=get_res("IMAGE", "refill_sequence_scale.png"),
+            message_image=get_res("IMAGE", "refill_scale_sequence.png"),
             message_image_scale_factor=1.5,
             content="",
             ok_cb=self._on_final_barcode,

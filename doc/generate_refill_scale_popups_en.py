@@ -117,7 +117,7 @@ POPUPS = [
             "When finished, put it back on the scale and scan its barcode."
         ),
         "content": "",
-        "image": "refill_sequence_scale.png",
+        "image": "refill_scale_sequence.png",
         "image_scale_factor": 1.5,
     },
     {

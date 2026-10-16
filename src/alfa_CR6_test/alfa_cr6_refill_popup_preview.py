@@ -15,8 +15,8 @@ absent. Use Previous/Next or the popup menu to select a popup.
 The Larger messages checkbox compares both scale-refill layouts; the manual
 flow uses its production layout. Use Language to switch popup localizations.
 These controls do not change the application's saved configuration.
-S01, S09 and S12 show illustrations below the buttons with a compact barcode input
-beneath them. Images use a base scale of 29.3% of their original dimensions;
+S01, S09, S12, M01 and M04 show illustrations below the buttons with a compact
+barcode input beneath them. Images use a base scale of 29.3% of their original dimensions;
 S12 applies an additional factor of 1.5 to make the sequence easier to see.
 S20 shows the USB connection warning illustration below its buttons.
 S21 shows the power-on warning illustration in the same area and at the same scale.
@@ -126,6 +126,7 @@ def manual_scenarios():
     return [
         popup("M01", "Scansione iniziale del barcode",
               "please, input barcode for refill", "SP_MessageBoxQuestion",
+              message_image=get_res("IMAGE", "refill_scan_can_full.png"),
               content="", ok_on_enter=1),
         alert("M02", "Colorante non configurato",
               tr_("The code entered '{}' does not match any toner on HEAD {} ({})")
@@ -138,7 +139,9 @@ def manual_scenarios():
               content_editable=False, use_combo_for_choice=True),
         popup("M04", "Verifica barcode sulla tanica",
               tr_("please, verify barcode {} on canister.").format("123456789"),
-              "SP_MessageBoxQuestion", content="", ok_on_enter=1),
+              "SP_MessageBoxQuestion",
+              message_image=get_res("IMAGE", "refill_scan_pipe.png"),
+              content="", ok_on_enter=1),
         popup("M05", "Barcode diverso da quello atteso",
               tr_("barcode mismatch <br/>{} != {}").format("123456789", "987654321")),
         popup("M06", "Inserimento della quantità",
@@ -228,7 +231,7 @@ def scenarios(mode="scale"):
               "Remove the canister from the scale and refill the circuit.<br>"
               "When finished, put it back on the scale and scan its barcode.",
               "SP_MessageBoxQuestion", **{
-                  "message_image": get_res("IMAGE", "refill_sequence_scale.png"),
+                  "message_image": get_res("IMAGE", "refill_scale_sequence.png"),
                   "message_image_scale_factor": 1.5,
                   "content": "", "ok_on_enter": 1}),
         popup("S13", "Risultato del rabbocco", result,
