@@ -639,14 +639,19 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                     def condition():
                         if (self.last_answer is not None
-                                and self.last_answer["status_code"] == 0
+                                # A scale error is a completed request, too.
+                                and (channel == "scale" or self.last_answer["status_code"] == 0)
                                 and self.last_answer["command"] in expected_commands):
                             return True
                         return False
                     msg_ = tr_("{} waiting for answer to cmd:{}").format(self.name, cmd_name)
 
                     # ~ ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_)
-                    ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_, show_alert=False)
+                    # Leave room for the scale bus timeout (10 seconds).
+                    timeout = 15 if channel == "scale" and cmd_name == "SEND_IMMEDIATE" else 30
+                    ret = await self.app.wait_for_condition(condition, timeout=timeout, extra_info=msg_, show_alert=False)
+                    if channel == "scale" and ret:
+                        ret = self.last_answer.get("status_code") == 0
                     logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
                 else:
                     self.callback_on_macro_answer = callback_on_macro_answer
@@ -667,6 +672,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             ret = None
 
         return ret
+
+    async def check_scale_connection(self):
+        """Ask the scale for a fresh reply, without requiring a usable weight."""
+        ret = await self.send_command(
+            cmd_name="SEND_IMMEDIATE", params={}, type_="command", channel="scale")
+        answer = self.last_answer
+        return bool(answer and answer.get("command") in (
+            "SEND_IMMEDIATE", "SEND_IMMEDIATE_END") and (
+                answer.get("responding") is True
+                or (ret and answer.get("status_code") == 0)))
 
     async def read_stable_weight(self):
         """Read a stable scale value and return it in grams."""

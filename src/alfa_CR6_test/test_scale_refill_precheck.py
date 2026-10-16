@@ -1,5 +1,6 @@
 """Hardware-free checks for the scale-refill connection precondition."""
 
+import asyncio
 import json
 import unittest
 import xml.etree.ElementTree as ElementTree
@@ -286,6 +287,9 @@ class _MainWindow:
     def open_input_dialog(self, **kwargs):
         self.dialogs.append(kwargs)
 
+    def hide_input_dialog(self):
+        pass
+
 
 class _Content:
     def __init__(self, text=""):
@@ -335,6 +339,21 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         self.main_window = _MainWindow()
         parent = mock.Mock(main_window=self.main_window)
         self.helper = home_page.ScaleRefillProcedureHelper(parent)
+        self.helper._is_active = mock.Mock(return_value=True)
+        self.machine = mock.Mock(last_answer={}, machine_config={})
+        self.machine.name = "A"
+        self.machine.check_scale_connection = mock.AsyncMock(return_value=True)
+        self.machine.read_stable_weight = mock.AsyncMock(return_value=100.)
+        self.machine.send_command = mock.AsyncMock(return_value=True)
+        self.loop = asyncio.new_event_loop()
+        self.addCleanup(self.loop.close)
+
+    def _run_start(self):
+        app = mock.Mock(machine_head_dict={self.helper.head_index: self.machine})
+        with mock.patch.object(home_page.QApplication, "instance", return_value=app), \
+                mock.patch.object(home_page.asyncio, "ensure_future",
+                                  side_effect=self.loop.run_until_complete):
+            self.helper.run()
 
     def test_disconnected_scale_shows_usb_warning_instead_of_s1(self):
         with mock.patch.object(home_page, "get_scale_connection_state",
@@ -353,10 +372,11 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         self.assertIsNone(dialog["content"])
 
     def test_connected_unresponsive_scale_shows_power_warning(self):
+        self.machine.check_scale_connection.return_value = False
         with mock.patch.object(home_page, "get_scale_connection_state",
                                return_value="not_responding"), \
                 mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
-            self.helper.run()
+            self._run_start()
 
         dialog = self.main_window.dialogs[0]
         self.assertEqual("SP_MessageBoxWarning", dialog["icon_name"])
@@ -370,7 +390,7 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         with mock.patch.object(home_page, "get_scale_connection_state",
                                return_value="ready"), \
                 mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
-            self.helper.run()
+            self._run_start()
 
         self.assertEqual(1, len(self.main_window.dialogs))
         dialog = self.main_window.dialogs[0]
@@ -378,6 +398,75 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         self.assertIn("Place the open canister", dialog["message"])
         self.assertEqual("", dialog["content"])
         self.assertIs(dialog["ok_requires_content"], True)
+
+    def test_stale_ready_status_does_not_skip_the_real_check(self):
+        self.machine.check_scale_connection.return_value = False
+        with mock.patch.object(home_page, "get_scale_connection_state", return_value="ready"), \
+                mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
+            self._run_start()
+        self.machine.check_scale_connection.assert_awaited_once()
+        self.assertIn("not responding", self.main_window.dialogs[0]["message"])
+
+    def test_scale_can_recover_from_previous_communication_failure(self):
+        with mock.patch.object(home_page, "get_scale_connection_state", return_value="not_responding"), \
+                mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
+            self._run_start()
+        self.assertIn("Place the open canister", self.main_window.dialogs[0]["message"])
+
+    def test_usb_loss_in_fresh_answer_uses_s20_despite_stale_status(self):
+        self.machine.check_scale_connection.return_value = False
+        self.machine.last_answer = {"connected": False}
+        with mock.patch.object(home_page, "get_scale_connection_state", return_value="ready"), \
+                mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
+            self._run_start()
+        self.assertIn("No scale was detected", self.main_window.dialogs[0]["message"])
+
+    def test_checks_before_each_weight_and_stops_on_lost_communication(self):
+        for stage in ("initial", "final"):
+            for responding in (True, False):
+                with self.subTest(stage=stage, responding=responding):
+                    self.main_window.dialogs.clear()
+                    self.machine.reset_mock()
+                    self.machine.check_scale_connection.return_value = responding
+                    self.helper.machine_ = self.machine
+                    self.helper.initial_weight_ = 200.
+                    self.helper.specific_weight_ = 1.
+                    self.helper.pipe_ = {"name": "B01"}
+                    self.helper._log_refill = mock.Mock()
+                    task = (self.helper._prepare_target(self.machine, {}, {"name": "B01"})
+                            if stage == "initial" else self.helper._complete_refill())
+                    with mock.patch.object(home_page, "get_scale_connection_state", return_value="ready"), \
+                            mock.patch.object(home_page, "tr_", side_effect=lambda value: value), \
+                            mock.patch.object(self.helper, "_head_refill_error", return_value=None):
+                        self.loop.run_until_complete(task)
+                    calls = [call[0] for call in self.machine.mock_calls]
+                    self.assertEqual(calls[0], "check_scale_connection")
+                    if responding:
+                        self.assertEqual(calls[1], "read_stable_weight")
+                        self.machine.send_command.assert_awaited_once()
+                    else:
+                        self.machine.read_stable_weight.assert_not_awaited()
+                        self.machine.send_command.assert_not_awaited()
+                        self.assertIn("not responding", self.main_window.dialogs[-1]["message"])
+
+    def test_unstable_reading_still_uses_s07(self):
+        self.machine.read_stable_weight.return_value = None
+        with mock.patch.object(home_page, "get_scale_connection_state", return_value="ready"), \
+                mock.patch.object(home_page, "tr_", side_effect=lambda value: value), \
+                mock.patch.object(self.helper, "_head_refill_error", return_value=None):
+            self.loop.run_until_complete(self.helper._prepare_target(
+                self.machine, {}, {"name": "B01"}))
+        self.assertIn("Unable to read a stable weight", self.main_window.dialogs[-1]["message"])
+        self.machine.send_command.assert_not_awaited()
+
+    def test_cancelled_procedure_does_not_continue_after_probe(self):
+        self.helper._is_active.side_effect = [True, False]
+        with mock.patch.object(home_page, "get_scale_connection_state", return_value="ready"), \
+                mock.patch.object(self.helper, "_head_refill_error", return_value=None):
+            self.loop.run_until_complete(self.helper._prepare_target(
+                self.machine, {}, {"name": "B01"}))
+        self.machine.read_stable_weight.assert_not_awaited()
+        self.assertEqual([], self.main_window.dialogs)
 
     def test_invalid_specific_weight_is_rejected_after_first_barcode(self):
         machine = mock.Mock(name="machine")

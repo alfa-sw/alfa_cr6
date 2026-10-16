@@ -602,8 +602,9 @@ class RefillProcedureHelper:
 class ScaleRefillProcedureHelper:
     """Guided refill based on the difference between two scale readings."""
 
-    def __init__(self, parent):
+    def __init__(self, parent, head_index=0):
         self.parent = parent
+        self.head_index = head_index
         self.machine_ = None
         self.pigment_ = None
         self.pipe_ = None
@@ -667,26 +668,51 @@ class ScaleRefillProcedureHelper:
     def _dialog_barcode(self):
         return self.main_window.input_dialog.get_content_text().strip()
 
+    def _show_scale_warning(self, disconnected=False):
+        if disconnected:
+            message = tr_(
+                "No scale was detected.<br>"
+                "Connect the scale or check that the USB cable is properly connected.")
+            message_image = get_res("IMAGE", "refill_scale_warn_unplugged.png")
+        else:
+            message = tr_(
+                "The scale is connected but not responding.<br>"
+                "Check that it is switched on and try again.")
+            message_image = get_res("IMAGE", "refill_scale_warn_off.png")
+        self._open_dialog(
+            icon_name="SP_MessageBoxWarning",
+            message=message,
+            message_image=message_image,
+            content=None,
+            ok_cb=self._finish)
+
+    async def _check_scale(self, machine):
+        if not self._is_active():
+            return False
+        if get_scale_connection_state() == "disconnected":
+            self._show_scale_warning(disconnected=True)
+            return False
+        responding = await machine.check_scale_connection() if machine else False
+        if not self._is_active():
+            return False
+        if not responding:
+            answer = (machine.last_answer or {}) if machine else {}
+            disconnected = (answer.get("connected") is False
+                            or get_scale_connection_state() == "disconnected")
+            self._show_scale_warning(disconnected=disconnected)
+        return responding
+
     def run(self):
         self.main_window.toggle_keyboard(on_off=False)
-        scale_state = get_scale_connection_state()
-        if scale_state != "ready":
-            if scale_state == "not_responding":
-                message = tr_(
-                    "The scale is connected but not responding.<br>"
-                    "Check that it is switched on and try again.")
-                message_image = get_res("IMAGE", "refill_scale_warn_off.png")
-            else:
-                message = tr_(
-                    "No scale was detected.<br>"
-                    "Connect the scale or check that the USB cable is properly connected.")
-                message_image = get_res("IMAGE", "refill_scale_warn_unplugged.png")
-            self._open_dialog(
-                icon_name="SP_MessageBoxWarning",
-                message=message,
-                message_image=message_image,
-                content=None,
-                ok_cb=self._finish)
+        if get_scale_connection_state() == "disconnected":
+            self._show_scale_warning(disconnected=True)
+            return
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._start())
+
+    async def _start(self):
+        machine = QApplication.instance().machine_head_dict.get(self.head_index)
+        if not await self._check_scale(machine):
             return
 
         self._open_dialog(
@@ -776,12 +802,12 @@ class ScaleRefillProcedureHelper:
                 self._show_error(error)
                 return
 
+            if not await self._check_scale(machine):
+                return
             initial_weight = await machine.read_stable_weight()
             if not self._is_active():
                 return
-            # S07: almost impossible to reproduce in the nominal flow after
-            # the scale connection precheck; it requires the scale or its
-            # reply to become unavailable before this first stable reading.
+            # A responsive scale can still fail to provide a stable weight.
             if initial_weight is None or not math.isfinite(initial_weight):
                 self._show_error(tr_("Unable to read a stable weight from the scale."))
                 return
@@ -928,10 +954,12 @@ class ScaleRefillProcedureHelper:
 
     async def _complete_refill(self):
         try:
+            if not await self._check_scale(self.machine_):
+                return
             final_weight = await self.machine_.read_stable_weight()
-            # S07: almost impossible to reproduce in the nominal flow; it
-            # requires the scale connection or response validity to be lost
-            # after the refill procedure has already started.
+            if not self._is_active():
+                return
+            # A responsive scale can still fail to provide a stable weight.
             if final_weight is None or not math.isfinite(final_weight):
                 self._show_error(tr_("Unable to read a stable weight from the scale."))
                 return
@@ -1727,7 +1755,7 @@ class HomePage(BaseStackedPage):
             app.barcode_read_blocked_on_refill = True
             logging.warning(f"impostato a barcode_read_blocked_on_refill=True")
             if getattr(g_settings, "ENABLE_REFILL_BY_SCALE", False):
-                self.scale_refill_helper = ScaleRefillProcedureHelper(parent=self)
+                self.scale_refill_helper = ScaleRefillProcedureHelper(parent=self, head_index=head_index)
                 self.scale_refill_helper.run()
             else:
                 RefillProcedureHelper(parent=self, head_index=head_index).run()

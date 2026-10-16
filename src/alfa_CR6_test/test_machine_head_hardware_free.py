@@ -97,6 +97,47 @@ class TestMachineHeadHardwareFree(unittest.TestCase):
         self.head.send_command.assert_awaited_once_with(
             cmd_name="STABLE_WEIGHT", params={}, type_="command", channel="scale")
 
+    def test_scale_probe_accepts_real_responses_and_rejects_missing_or_wrong_answers(self):
+        for answer, expected in (
+                ({"command": "SEND_IMMEDIATE", "status_code": 0,
+                  "params": ["100", "g"]}, True),
+                ({"command": "SEND_IMMEDIATE_END", "status_code": 1,
+                  "responding": True, "params": [["S", "+"]]}, True),
+                ({"command": "SEND_IMMEDIATE", "status_code": 2,
+                  "responding": True}, True),
+                ({"command": "SEND_IMMEDIATE", "status_code": 2}, False),
+                ({"command": "STABLE_WEIGHT", "status_code": 0}, False),
+                (None, False)):
+            with self.subTest(answer=answer):
+                self.head.send_command = mock.AsyncMock(
+                    return_value=bool(answer and answer.get("status_code") == 0))
+                self.head.last_answer = answer
+                self.assertEqual(self._run(self.head.check_scale_connection()), expected)
+                self.head.send_command.assert_awaited_once_with(
+                    cmd_name="SEND_IMMEDIATE", params={}, type_="command", channel="scale")
+
+    def test_scale_error_finishes_wait_immediately_without_becoming_success(self):
+        async def send(_message):
+            self.head.last_answer = {
+                "command": "SEND_IMMEDIATE", "status_code": 2, "error": "time out"}
+
+        self.head.websocket = mock.Mock(send=send)
+        completed = []
+
+        async def wait(condition, **_kwargs):
+            completed.append(bool(condition()))
+            return completed[-1]
+
+        self.app.wait_for_condition = mock.AsyncMock(side_effect=wait)
+        self.assertFalse(self._run(self.head.check_scale_connection()))
+        self.assertEqual(completed, [True])
+        self.assertEqual(self.app.wait_for_condition.call_args.kwargs["timeout"], 15)
+
+    def test_scale_probe_discards_preexisting_success(self):
+        self.head.last_answer = {"command": "SEND_IMMEDIATE", "status_code": 0}
+        self.head.websocket = mock.Mock(send=mock.AsyncMock())
+        self.assertFalse(self._run(self.head.check_scale_connection()))
+
     def test_read_stable_weight_accepts_scale_reply_without_end_suffix(self):
         self.head.send_command = mock.AsyncMock(return_value=True)
         self.head.last_answer = {
