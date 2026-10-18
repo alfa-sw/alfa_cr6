@@ -88,19 +88,6 @@ lancia con:
 
 username: "", password: ""
 
-##### Toner duplicati negli ordini (BASF Linea 90)
-
-L'opzione `MERGE_DUPLICATE_ORDER_INGREDIENTS`, disponibile nella pagina Settings,
-è disattivata per impostazione predefinita. Abilitarla sulle macchine che devono
-accettare ricette con lo stesso toner ripetuto, come quelle BASF Linea 90.
-
-Quando è attiva, alla creazione dell'ordine le righe con lo stesso `pigment_name`
-vengono accorpate sommando le quantità in grammi, dopo la conversione degli alias.
-Si conservano la posizione e i dati descrittivi della prima riga. Il database
-salva la ricetta accorpata; il file originale e gli ordini già salvati restano
-invariati. L'opzione vale per tutti gli ordini creati sulla macchina su cui è
-abilitata, senza un filtro automatico sulla linea di prodotto.
-
 #### F. Run test suite:
 
 1. run test su target e host:
