@@ -272,8 +272,9 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
-    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.",
-    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "The scale is connected but not responding.<br>Check that it is switched on and try again.",
+    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.",
+    "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.",
+    "Refill procedure interrupted.": "Refill procedure interrupted.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Place the open canister on the scale.<br>Scan its barcode.",
     "The scanned barcode does not match<br>any product configured on the machine.": "The scanned barcode does not match<br>any product configured on the machine.",
     "The product is configured on multiple circuits.": "The product is configured on multiple circuits.",

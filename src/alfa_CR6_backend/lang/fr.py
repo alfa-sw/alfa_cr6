@@ -266,8 +266,9 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
-    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "Aucune balance n’a été détectée.<br>Connectez la balance ou vérifiez le branchement du câble USB.",
-    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "La balance est connectée mais ne répond pas.<br>Vérifiez qu'elle est allumée et réessayez.",
+    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "Aucune balance n’a été détectée.<br>Vérifiez le branchement du câble de communication à l’arrière de la balance<br>ou celui du câble USB à la machine.",
+    "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "La balance ne répond pas.<br>Vérifiez qu’elle est allumée et que le câble de communication<br>est bien branché à l’arrière de la balance.",
+    "Refill procedure interrupted.": "Procédure de remplissage interrompue.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Placez le bidon ouvert sur la balance.<br>Scannez son code-barres.",
     "The scanned barcode does not match<br>any product configured on the machine.": "Le code-barres scanné ne correspond à aucun<br>produit configuré sur la machine.",
     "The product is configured on multiple circuits.": "Le produit est configuré sur plusieurs circuits.",

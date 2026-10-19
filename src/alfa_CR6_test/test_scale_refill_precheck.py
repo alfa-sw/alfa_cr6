@@ -1,6 +1,7 @@
 """Hardware-free checks for the scale-refill connection precondition."""
 
 import asyncio
+import importlib
 import json
 import unittest
 import xml.etree.ElementTree as ElementTree
@@ -381,6 +382,8 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         dialog = self.main_window.dialogs[0]
         self.assertEqual("SP_MessageBoxWarning", dialog["icon_name"])
         self.assertIn("Check that it is switched on", dialog["message"])
+        self.assertIn("at the back of the scale", dialog["message"])
+        self.assertNotIn("Refill procedure interrupted.", dialog["message"])
         self.assertEqual(
             globals_module.get_res("IMAGE", "refill_scale_warn_off.png"),
             dialog["message_image"])
@@ -447,7 +450,92 @@ class TestScaleRefillPrecheck(unittest.TestCase):
                     else:
                         self.machine.read_stable_weight.assert_not_awaited()
                         self.machine.send_command.assert_not_awaited()
-                        self.assertIn("not responding", self.main_window.dialogs[-1]["message"])
+                        self._assert_attempt_cancelled()
+
+    def _assert_attempt_cancelled(self, disconnected=False):
+        dialog = self.main_window.dialogs[-1]
+        self.assertIn("No scale was detected" if disconnected else "not responding",
+                      dialog["message"])
+        self.assertTrue(dialog["message"].endswith("<br>Refill procedure interrupted."))
+        self.assertEqual("SP_MessageBoxWarning", dialog["icon_name"])
+        self.assertEqual(globals_module.get_res(
+            "IMAGE", "refill_scale_warn_unplugged.png" if disconnected
+            else "refill_scale_warn_off.png"), dialog["message_image"])
+        self.assertEqual(self.helper._finish, dialog["ok_cb"])
+
+    def test_usb_loss_during_procedure_shows_s20_and_cancels_the_attempt(self):
+        for stage in ("initial", "final"):
+            for state, answer in (("disconnected", {}),
+                                  ("ready", {"connected": False})):
+                with self.subTest(stage=stage, state=state):
+                    self.main_window.dialogs.clear()
+                    self.machine.reset_mock()
+                    self.machine.last_answer = answer
+                    self.machine.check_scale_connection.return_value = False
+                    self.helper.machine_ = self.machine
+                    self.helper.barcode_ = "PRODUCT-1"
+                    self.helper.initial_weight_ = 200.
+                    self.helper.specific_weight_ = 1.
+                    self.helper.pipe_ = {"name": "B01"}
+                    task = (self.helper._prepare_target(self.machine, {}, {"name": "B01"})
+                            if stage == "initial" else self.helper._complete_refill())
+                    with mock.patch.object(home_page, "get_scale_connection_state",
+                                           return_value=state), \
+                            mock.patch.object(home_page, "tr_", side_effect=lambda value: value), \
+                            mock.patch.object(self.helper, "_head_refill_error", return_value=None):
+                        self.loop.run_until_complete(task)
+                    if state == "disconnected":
+                        self.machine.check_scale_connection.assert_not_awaited()
+                    else:
+                        self.machine.check_scale_connection.assert_awaited_once()
+                    self.machine.read_stable_weight.assert_not_awaited()
+                    self.machine.send_command.assert_not_awaited()
+                    self._assert_attempt_cancelled(disconnected=True)
+
+    def test_closing_the_warning_ends_the_attempt(self):
+        app = mock.Mock(barcode_read_blocked_on_refill=True)
+        self.helper.parent.scale_refill_helper = self.helper
+        with mock.patch.object(home_page, "get_scale_connection_state",
+                               return_value="disconnected"), \
+                mock.patch.object(home_page, "tr_", side_effect=lambda value: value), \
+                mock.patch.object(home_page.QApplication, "instance", return_value=app):
+            self.loop.run_until_complete(self.helper._check_scale(
+                self.machine, in_progress=True))
+            self.main_window.dialogs[-1]["ok_cb"]()
+        self.assertIsNone(self.helper.parent.scale_refill_helper)
+        self.assertIs(app.barcode_read_blocked_on_refill, False)
+        self.machine.read_stable_weight.assert_not_awaited()
+        self.machine.send_command.assert_not_awaited()
+
+    def test_failure_before_s01_keeps_the_scale_warnings(self):
+        self.machine.check_scale_connection.return_value = False
+        with mock.patch.object(home_page, "get_scale_connection_state", return_value="ready"), \
+                mock.patch.object(home_page, "tr_", side_effect=lambda value: value):
+            self._run_start()
+        dialog = self.main_window.dialogs[-1]
+        self.assertEqual("SP_MessageBoxWarning", dialog["icon_name"])
+        self.assertNotIn("Refill procedure interrupted.", dialog["message"])
+
+    def test_scale_warning_messages_are_translated_except_korean(self):
+        lemmas = (
+            "No scale was detected.<br>"
+            "Check the communication cable connection at the back of the scale<br>"
+            "or the USB cable connection to the machine.",
+            "The scale is not responding.<br>"
+            "Check that it is switched on and that the communication cable<br>"
+            "is properly connected at the back of the scale.",
+            "Refill procedure interrupted.",
+        )
+        for code in sorted(AVAILABLE_LANGUAGES):
+            module = importlib.import_module("alfa_CR6_backend.lang.{}".format(code))
+            for lemma in lemmas:
+                with self.subTest(language=code, message=lemma):
+                    if code == "kr":
+                        self.assertNotIn(lemma, module.D)
+                        continue
+                    self.assertIn(lemma, module.D)
+                    if code != "en":
+                        self.assertNotEqual(lemma, module.D[lemma])
 
     def test_unstable_reading_still_uses_s07(self):
         self.machine.read_stable_weight.return_value = None
@@ -480,9 +568,10 @@ class TestScaleRefillPrecheck(unittest.TestCase):
             "sync": True,
             "effective_specific_weight": 0,
         }
+        machine.status = {"status_level": "STANDBY", "crx_outputs_status": 0}
         pigment["pipes"].append(pipe)
         machine.pigment_list = [pigment]
-        app = mock.Mock(machine_head_dict={0: machine})
+        app = mock.Mock(machine_head_dict={0: machine}, carousel_frozen=True)
         self.helper._dialog_barcode = mock.Mock(return_value="PRODUCT-1")
         self.helper._show_error = mock.Mock()
         self.helper._prepare_target = mock.Mock()
@@ -531,6 +620,114 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         self.assertIsNone(self.helper.initial_weight_)
         self.assertIsNone(self.helper.specific_weight_)
         self.helper.run.assert_called_once_with()
+
+
+class TestScaleRefillTargetReadiness(unittest.TestCase):
+    def setUp(self):
+        self.main_window = _MainWindow()
+        self.helper = home_page.ScaleRefillProcedureHelper(
+            mock.Mock(main_window=self.main_window))
+        self.helper._dialog_barcode = mock.Mock(return_value="PRODUCT-1")
+        self.helper._start_target = mock.Mock()
+        self.app = mock.Mock(machine_head_dict={}, carousel_frozen=True)
+        app_patch = mock.patch.object(
+            home_page.QApplication, "instance", return_value=self.app)
+        app_patch.start()
+        self.addCleanup(app_patch.stop)
+        tr_patch = mock.patch.object(home_page, "tr_", side_effect=lambda value: value)
+        tr_patch.start()
+        self.addCleanup(tr_patch.stop)
+
+    def _head(self, name, status="STANDBY", outputs=0, circuits=("B01",)):
+        pigment = {
+            "customer_id": "PRODUCT-1", "name": "Red", "specific_weight": 1.2,
+            "pipes": [{"name": circuit, "enabled": True, "sync": True}
+                      for circuit in circuits],
+        }
+        machine = mock.Mock(
+            status={"status_level": status, "crx_outputs_status": outputs},
+            pigment_list=[pigment])
+        machine.name = name
+        self.app.machine_head_dict[name] = machine
+        return machine
+
+    def test_alarm_head_is_reported_before_circuit_selection(self):
+        self._head("A", status="ALARM", circuits=("C01", "C02"))
+
+        self.helper._on_initial_barcode()
+
+        self.assertEqual(len(self.main_window.dialogs), 1)
+        self.assertEqual(self.main_window.dialogs[0]["message"],
+                         "Head A is not ready for refill.")
+        self.assertNotIn("choices", self.main_window.dialogs[0])
+        self.helper._start_target.assert_not_called()
+
+    def test_active_outputs_are_reported_immediately_after_s01(self):
+        self._head("A", outputs=1)
+
+        self.helper._on_initial_barcode()
+
+        self.assertEqual(self.main_window.dialogs[0]["message"],
+                         "Head A has an operation in progress.")
+        self.helper._start_target.assert_not_called()
+
+    def test_resumed_carousel_is_reported_before_circuit_selection(self):
+        self._head("A", circuits=("C01", "C02"))
+        self.app.carousel_frozen = False
+
+        self.helper._on_initial_barcode()
+
+        self.assertEqual(self.main_window.dialogs[0]["message"],
+                         "Pause the carousel before starting the refill.")
+        self.helper._start_target.assert_not_called()
+
+    def test_selector_only_offers_circuits_of_ready_heads(self):
+        self._head("A", status="ALARM", circuits=("C01", "C02"))
+        standby = self._head("B", circuits=("B01", "B02"))
+        diagnostic = self._head("C", status="DIAGNOSTIC", circuits=("C03",))
+
+        self.helper._on_initial_barcode()
+
+        choices = self.main_window.dialogs[0]["choices"]
+        self.assertEqual([(target[0].name, target[2]["name"])
+                          for target in choices.values()],
+                         [(standby.name, "B01"), (standby.name, "B02"),
+                          (diagnostic.name, "C03")])
+        self.helper._start_target.assert_not_called()
+
+    def test_single_ready_target_skips_selector_when_other_head_is_in_alarm(self):
+        self._head("A", status="ALARM")
+        ready = self._head("B")
+
+        self.helper._on_initial_barcode()
+
+        self.assertEqual(self.main_window.dialogs, [])
+        self.helper._start_target.assert_called_once_with(
+            ready, ready.pigment_list[0], ready.pigment_list[0]["pipes"][0])
+
+    def test_state_change_after_selector_is_still_caught_before_weighing(self):
+        machine = self._head("A", circuits=("B01", "B02"))
+        machine.check_scale_connection = mock.AsyncMock()
+        machine.read_stable_weight = mock.AsyncMock()
+        self.helper._on_initial_barcode()
+        machine.status["status_level"] = "ALARM"
+
+        asyncio.run(self.helper._prepare_target(
+            machine, machine.pigment_list[0], machine.pigment_list[0]["pipes"][0]))
+
+        self.assertEqual(self.main_window.dialogs[-1]["message"],
+                         "Head A is not ready for refill.")
+        machine.check_scale_connection.assert_not_awaited()
+        machine.read_stable_weight.assert_not_awaited()
+
+    def test_unknown_barcode_keeps_the_product_not_found_message(self):
+        self._head("A", status="ALARM")
+        self.helper._dialog_barcode.return_value = "UNKNOWN"
+
+        self.helper._on_initial_barcode()
+
+        self.assertIn("does not match", self.main_window.dialogs[0]["message"])
+        self.helper._start_target.assert_not_called()
 
 
 class TestInputDialogAction(unittest.TestCase):

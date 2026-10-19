@@ -1,14 +1,12 @@
-# Popup del rabbocco con bilancia: precontrollo e S01-S19
+# Popup del rabbocco con bilancia: S01-S21
 
 Data analisi: 17 settembre 2026
 
 ## Ambito e origine dei dati
 
-Le sigle da S01 a S19 sono identificatori usati nelle anteprime grafiche e non
-codici di errore mostrati dall'applicazione.
-
-L'avviso di bilancia non rilevata è un precontrollo aggiunto prima di S01 e non
-ha un identificatore `Sxx` nelle anteprime originali.
+Le sigle da S01 a S21 sono identificatori usati nelle anteprime grafiche e non
+codici di errore mostrati dall'applicazione. S20 e S21 segnalano problemi della
+bilancia sia all'avvio sia durante la procedura.
 
 - La pagina `/settings` abilita il flusso con
   `ENABLE_REFILL_BY_SCALE` e il layout ingrandito con
@@ -24,7 +22,6 @@ ha un identificatore `Sxx` nelle anteprime originali.
 
 | ID | Tipo | Significato | Riproduzione principale |
 |---|---|---|---|
-| Precontrollo | Avviso disponibilità | Bilancia non rilevata | Hardware o comunicazione |
 | S01 | Richiesta operativa | Avvio del rabbocco con bilancia | Settings e operatore |
 | S02 | Errore configurazione/scansione | Barcode non associato a prodotti validi | Barcode o DB |
 | S03 | Selezione | Più circuiti associati allo stesso barcode | DB |
@@ -44,16 +41,19 @@ ha un identificatore `Sxx` nelle anteprime originali.
 | S17 | Errore configurazione prodotto | Peso specifico non valido | DB |
 | S18 | Errore comunicazione | Comando `REFILL` non inviato | Connessione o testa |
 | S19 | Errore interno generico | Eccezione imprevista finale | Codice o stato incoerente |
+| S20 | Avviso bilancia | Bilancia non rilevata | Hardware o comunicazione |
+| S21 | Avviso bilancia | Bilancia senza risposta | Hardware o comunicazione |
 
 ## Precontrollo - Bilancia non rilevata
 
 ```text
-Non è stata rilevata nessuna bilancia.
-Collegare la bilancia e riprovare.
+Bilancia non rilevata.
+Verificare il collegamento del cavo di comunicazione
+sul retro della bilancia o del cavo USB alla macchina.
 ```
 
 Compare premendo il comando di rabbocco con bilancia quando
-`is_scale_connected()` restituisce `False`. Il controllo viene eseguito prima
+`get_scale_connection_state()` restituisce `"disconnected"`. Il controllo viene eseguito prima
 di S01: non viene aperto il campo barcode e il flusso termina premendo `OK`.
 
 Lo stato viene letto dalla chiave Redis:
@@ -533,8 +533,8 @@ oppure simulare:
 machine.send_command(...) -> False
 ```
 
-Se la connessione viene interrotta prima della pesata finale, comparirà S07
-invece di S18.
+Se fallisce il controllo di comunicazione prima della pesata finale, compare
+S20 o S21. Se invece fallisce la successiva lettura del peso stabile, compare S07.
 
 Categoria: **comunicazione o disponibilità della testa**.
 
@@ -591,6 +591,64 @@ Categoria: **errore interno o stato fortemente incoerente**.
 - Conversione delle quantità: `src/alfa_CR6_backend/refill_utils.py`.
 - Lettura stabile e invio comandi: `src/alfa_CR6_backend/machine_head.py`.
 - Stato di connessione della bilancia: `src/alfa_CR6_backend/globals.py`,
-  funzione `is_scale_connected()`.
+  funzione `get_scale_connection_state()`.
 - Test del precontrollo: `src/alfa_CR6_test/test_scale_refill_precheck.py`.
 - Traduzioni italiane: `src/alfa_CR6_backend/lang/it.py`.
+
+## S20 e S21 - Disponibilità della bilancia
+
+Aggiornato il 19 ottobre 2026 (issue rm604).
+
+### S20 - Bilancia non rilevata
+
+```text
+Bilancia non rilevata.
+Verificare il collegamento del cavo di comunicazione
+sul retro della bilancia o del cavo USB alla macchina.
+```
+
+Compare quando lo stato Redis indica una disconnessione o la risposta al
+controllo di comunicazione riporta `connected: false`. Usa l'immagine
+`refill_scale_warn_unplugged.png`.
+
+### S21 - Bilancia senza risposta
+
+```text
+La bilancia non risponde.
+Verificare che sia accesa e che il cavo di comunicazione
+sia ben inserito sul retro della bilancia.
+```
+
+Compare quando il collegamento risulta presente ma il controllo
+`SEND_IMMEDIATE` non ottiene una risposta dalla bilancia. Copre anche il caso
+in cui l'adattatore USB è collegato alla macchina ma il cavo sul retro della
+bilancia è scollegato. Usa l'immagine `refill_scale_warn_off.png`.
+
+### Effetto sul flusso
+
+I controlli avvengono all'avvio e prima delle due pesate. Se il controllo
+fallisce dopo S01, S20 o S21 aggiunge questa frase:
+
+```text
+Procedura di rabbocco interrotta.
+```
+
+Il passaggio non prosegue. `OK` chiude il tentativo e libera il blocco delle
+scansioni; la riconnessione non provoca una ripresa automatica. Un nuovo
+rabbocco parte da S01 e acquisisce un nuovo peso iniziale. Se il prodotto è
+già stato versato, la nuova procedura non recupera la quantità versata nel
+tentativo interrotto: il livello deve essere riconciliato separatamente.
+
+Non vengono aggiunti monitoraggi continui, memorizzazione del modello o
+nuovi comandi. Un'interruzione risolta tra due controlli può passare
+inosservata. Se `SEND_IMMEDIATE` riesce ma la lettura `STABLE_WEIGHT` fallisce,
+compare ancora S07.
+
+Riproduzione:
+
+- scollegare la USB dopo S01 e prima di confermare S01 o S12: S20;
+- mantenere la USB collegata e scollegare il lato bilancia prima di una delle
+  due pesate: S21;
+- simulare `check_scale_connection()` che restituisce `False` durante
+  `_prepare_target` o `_complete_refill`: S21, oppure S20 se la risposta o lo
+  stato indicano la disconnessione USB.

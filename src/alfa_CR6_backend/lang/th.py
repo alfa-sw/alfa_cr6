@@ -259,8 +259,9 @@ D = {
     "Delete": "ลบ",
 
     "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
-    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "ไม่พบเครื่องชั่ง<br>เชื่อมต่อเครื่องชั่ง หรือตรวจสอบว่าสาย USB เสียบแน่นดีแล้ว",
-    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "เครื่องชั่งเชื่อมต่ออยู่แต่ไม่ตอบสนอง<br>ตรวจสอบว่าเปิดเครื่องแล้วลองอีกครั้ง",
+    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "ไม่พบเครื่องชั่ง<br>ตรวจสอบการเชื่อมต่อสายสื่อสารที่ด้านหลังเครื่องชั่ง<br>หรือการเชื่อมต่อสาย USB กับเครื่อง",
+    "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "เครื่องชั่งไม่ตอบสนอง<br>ตรวจสอบว่าเปิดเครื่องแล้วและสายสื่อสาร<br>เสียบแน่นที่ด้านหลังเครื่องชั่ง",
+    "Refill procedure interrupted.": "ขั้นตอนการเติมถูกขัดจังหวะ",
     "Place the open canister on the scale.<br>Scan its barcode.": "วางภาชนะที่เปิดฝาบนเครื่องชั่ง<br>สแกนบาร์โค้ดของภาชนะ",
     "The scanned barcode does not match<br>any product configured on the machine.": "บาร์โค้ดที่สแกนไม่ตรงกับ<br>ผลิตภัณฑ์ใดที่กำหนดค่าไว้ในเครื่อง",
     "The product is configured on multiple circuits.": "ผลิตภัณฑ์ถูกกำหนดไว้ในหลายวงจร",

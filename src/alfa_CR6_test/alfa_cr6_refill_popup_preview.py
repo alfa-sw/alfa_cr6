@@ -20,6 +20,8 @@ barcode input beneath them. Images use a base scale of 29.3% of their original d
 S12 applies an additional factor of 1.5 to make the sequence easier to see.
 S20 shows the USB connection warning illustration below its buttons.
 S21 shows the power-on warning illustration in the same area and at the same scale.
+S20 and S21 also stop an ongoing refill; those dialogs additionally show
+"Refill procedure interrupted." in production.
 To add an illustration to another popup, pass
 message_image=get_res("IMAGE", "image.png") in its scenario options and in the
 corresponding production dialog. Images keep their aspect ratio; the message
@@ -249,12 +251,14 @@ def scenarios(mode="scale"):
         popup("S19", "Errore durante il rabbocco", "Refill failed: {}"),
         popup("S20", "Bilancia non rilevata",
               "No scale was detected.<br>"
-              "Connect the scale or check that the USB cable is properly connected.",
+              "Check the communication cable connection at the back of the scale<br>"
+              "or the USB cable connection to the machine.",
               "SP_MessageBoxWarning",
               message_image=get_res("IMAGE", "refill_scale_warn_unplugged.png")),
-        popup("S21", "Bilancia collegata ma senza risposta",
-              "The scale is connected but not responding.<br>"
-              "Check that it is switched on and try again.", "SP_MessageBoxWarning",
+        popup("S21", "Bilancia senza risposta",
+              "The scale is not responding.<br>"
+              "Check that it is switched on and that the communication cable<br>"
+              "is properly connected at the back of the scale.", "SP_MessageBoxWarning",
               message_image=get_res("IMAGE", "refill_scale_warn_off.png")),
     ]
     examples = {

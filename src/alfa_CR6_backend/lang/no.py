@@ -269,8 +269,9 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
-    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "Ingen vekt ble oppdaget.<br>Koble til vekten, eller kontroller at USB-kabelen sitter riktig.",
-    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "Vekten er tilkoblet, men svarer ikke.<br>Kontroller at den er slått på, og prøv igjen.",
+    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "Ingen vekt ble oppdaget.<br>Kontroller tilkoblingen av kommunikasjonskabelen på baksiden av vekten<br>eller tilkoblingen av USB-kabelen til maskinen.",
+    "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "Vekten svarer ikke.<br>Kontroller at den er slått på, og at kommunikasjonskabelen<br>er godt tilkoblet på baksiden av vekten.",
+    "Refill procedure interrupted.": "Påfyllingsprosedyren er avbrutt.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Plasser den åpne beholderen på vekten.<br>Skann strekkoden.",
     "The scanned barcode does not match<br>any product configured on the machine.": "Den skannede strekkoden samsvarer ikke med<br>noe produkt som er konfigurert på maskinen.",
     "The product is configured on multiple circuits.": "Produktet er konfigurert på flere kretser.",

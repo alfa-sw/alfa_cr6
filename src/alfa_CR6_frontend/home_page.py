@@ -668,17 +668,21 @@ class ScaleRefillProcedureHelper:
     def _dialog_barcode(self):
         return self.main_window.input_dialog.get_content_text().strip()
 
-    def _show_scale_warning(self, disconnected=False):
+    def _show_scale_warning(self, disconnected=False, in_progress=False):
         if disconnected:
             message = tr_(
                 "No scale was detected.<br>"
-                "Connect the scale or check that the USB cable is properly connected.")
+                "Check the communication cable connection at the back of the scale<br>"
+                "or the USB cable connection to the machine.")
             message_image = get_res("IMAGE", "refill_scale_warn_unplugged.png")
         else:
             message = tr_(
-                "The scale is connected but not responding.<br>"
-                "Check that it is switched on and try again.")
+                "The scale is not responding.<br>"
+                "Check that it is switched on and that the communication cable<br>"
+                "is properly connected at the back of the scale.")
             message_image = get_res("IMAGE", "refill_scale_warn_off.png")
+        if in_progress:
+            message += "<br>" + tr_("Refill procedure interrupted.")
         self._open_dialog(
             icon_name="SP_MessageBoxWarning",
             message=message,
@@ -686,11 +690,11 @@ class ScaleRefillProcedureHelper:
             content=None,
             ok_cb=self._finish)
 
-    async def _check_scale(self, machine):
+    async def _check_scale(self, machine, in_progress=False):
         if not self._is_active():
             return False
         if get_scale_connection_state() == "disconnected":
-            self._show_scale_warning(disconnected=True)
+            self._show_scale_warning(disconnected=True, in_progress=in_progress)
             return False
         responding = await machine.check_scale_connection() if machine else False
         if not self._is_active():
@@ -699,7 +703,7 @@ class ScaleRefillProcedureHelper:
             answer = (machine.last_answer or {}) if machine else {}
             disconnected = (answer.get("connected") is False
                             or get_scale_connection_state() == "disconnected")
-            self._show_scale_warning(disconnected=disconnected)
+            self._show_scale_warning(disconnected=disconnected, in_progress=in_progress)
         return responding
 
     def run(self):
@@ -734,6 +738,19 @@ class ScaleRefillProcedureHelper:
             self._show_error(tr_(
                 "The scanned barcode does not match<br>any product configured on the machine."))
             return
+
+        ready_targets = []
+        first_error = None
+        for target in targets:
+            error = self._head_refill_error(target[0])
+            if error:
+                first_error = first_error or error
+            else:
+                ready_targets.append(target)
+        if not ready_targets:
+            self._show_error(first_error)
+            return
+        targets = ready_targets
 
         self.barcode_ = barcode
         if len(targets) == 1:
@@ -778,19 +795,15 @@ class ScaleRefillProcedureHelper:
         if not QApplication.instance().carousel_frozen:
             return tr_("Pause the carousel before starting the refill.")
         status = machine.status or {}
-        # S05: defensive case, almost impossible to reproduce through the
-        # normal UI because the refill event gate already accepts only a head
-        # in STANDBY or DIAGNOSTIC. A state change during preparation can
-        # still reach this fallback.
+        # Check every matching head after S01, and recheck the chosen head
+        # after circuit selection in case its state has changed.
         if status.get("status_level") not in ("STANDBY", "DIAGNOSTIC"):
             return tr_("Head {} is not ready for refill.").format(machine.name)
         try:
             outputs_active = int(status.get("crx_outputs_status", 1)) != 0
         except (TypeError, ValueError):
             outputs_active = True
-        # S06: defensive case, almost impossible to reproduce with coherent
-        # telemetry. Active CRX outputs normally move the head out of
-        # STANDBY/DIAGNOSTIC, and the refill event gate also blocks the click.
+        # Outputs may have been activated since the initial barcode scan.
         if outputs_active:
             return tr_("Head {} has an operation in progress.").format(machine.name)
         return None
@@ -802,7 +815,7 @@ class ScaleRefillProcedureHelper:
                 self._show_error(error)
                 return
 
-            if not await self._check_scale(machine):
+            if not await self._check_scale(machine, in_progress=True):
                 return
             initial_weight = await machine.read_stable_weight()
             if not self._is_active():
@@ -954,7 +967,7 @@ class ScaleRefillProcedureHelper:
 
     async def _complete_refill(self):
         try:
-            if not await self._check_scale(self.machine_):
+            if not await self._check_scale(self.machine_, in_progress=True):
                 return
             final_weight = await self.machine_.read_stable_weight()
             if not self._is_active():
