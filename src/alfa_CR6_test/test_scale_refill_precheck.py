@@ -507,6 +507,95 @@ class TestScaleRefillPrecheck(unittest.TestCase):
         self.machine.read_stable_weight.assert_not_awaited()
         self.machine.send_command.assert_not_awaited()
 
+    def test_every_forward_transition_checks_scale_and_stops_on_failure(self):
+        transitions = ("S01-S03", "S01-S09", "S03-S09", "S09-S12",
+                       "S12-result", "result-reset", "result-new-refill")
+        outcomes = (("ready", True, {}), ("disconnected", False, {}),
+                    ("ready", False, {}), ("ready", False, {"connected": False}))
+        for transition in transitions:
+            for state, responding, answer in outcomes:
+                with self.subTest(transition=transition, state=state,
+                                  responding=responding, answer=answer):
+                    self.main_window.dialogs.clear()
+                    self.machine.reset_mock()
+                    self.machine.last_answer = answer
+                    self.machine.check_scale_connection.return_value = responding
+                    self.helper.machine_ = self.machine
+                    self.helper.pipe_ = {"name": "B01"}
+                    self.helper.barcode_ = "PRODUCT-1"
+                    self.helper.initial_weight_ = 200.
+                    self.helper.specific_weight_ = 1.
+                    self.helper.parent.scale_refill_helper = self.helper
+                    self.helper._dialog_barcode = mock.Mock(return_value="PRODUCT-1")
+                    self.helper._log_refill = mock.Mock()
+                    pigment = {"name": "Red", "specific_weight": 1.}
+                    target = (self.machine, pigment, {"name": "B01"})
+                    targets = [target]
+                    if transition == "S01-S03":
+                        targets.append((self.machine, pigment, {"name": "B02"}))
+                    self.main_window.input_dialog = mock.Mock()
+                    self.main_window.input_dialog.get_selected_choice.return_value = target
+                    app = mock.Mock(machine_head_dict={0: self.machine})
+                    callback = {
+                        "S01-S03": self.helper._on_initial_barcode,
+                        "S01-S09": self.helper._on_initial_barcode,
+                        "S03-S09": self.helper._on_target_selected,
+                        "S09-S12": self.helper._on_circuit_barcode,
+                        "S12-result": self.helper._on_final_barcode,
+                        "result-reset": self.helper._confirm_reset,
+                        "result-new-refill": self.helper._continue_refill,
+                    }[transition]
+                    with mock.patch.object(home_page.QApplication, "instance", return_value=app), \
+                            mock.patch.object(home_page, "get_scale_connection_state", return_value=state), \
+                            mock.patch.object(home_page, "tr_", side_effect=lambda value: value), \
+                            mock.patch.object(self.helper, "_find_targets", return_value=targets), \
+                            mock.patch.object(self.helper, "_head_refill_error", return_value=None), \
+                            mock.patch.object(home_page.asyncio, "ensure_future",
+                                              side_effect=self.loop.run_until_complete):
+                        callback()
+                    if state == "disconnected":
+                        self.machine.check_scale_connection.assert_not_awaited()
+                    else:
+                        self.machine.check_scale_connection.assert_awaited_once()
+                    if not responding:
+                        self.machine.read_stable_weight.assert_not_awaited()
+                        self.machine.send_command.assert_not_awaited()
+                        if transition == "result-new-refill":
+                            self.assertNotIn("Refill procedure interrupted.",
+                                             self.main_window.dialogs[-1]["message"])
+                        else:
+                            self._assert_attempt_cancelled(
+                                disconnected=state == "disconnected" or answer.get("connected") is False)
+                    elif transition in ("S01-S09", "S03-S09", "S12-result"):
+                        self.machine.read_stable_weight.assert_awaited_once()
+                        self.machine.send_command.assert_awaited_once()
+                    elif transition == "result-reset":
+                        self.machine.send_command.assert_awaited_once_with(
+                            cmd_name="RESET", params={"mode": 0}, type_="command", channel="machine")
+                    else:
+                        expected = {"S01-S03": "multiple circuits",
+                                    "S09-S12": "Remove the canister",
+                                    "result-new-refill": "Place the open canister"}[transition]
+                        self.assertIn(expected, self.main_window.dialogs[-1]["message"])
+
+    def test_cancel_during_intermediate_probe_does_not_open_the_next_popup(self):
+        for callback in (self.helper._on_initial_barcode, self.helper._on_circuit_barcode):
+            with self.subTest(callback=callback.__name__):
+                self.main_window.dialogs.clear()
+                self.helper._is_active.side_effect = [True, False]
+                self.helper.machine_ = self.machine
+                self.helper.barcode_ = "PRODUCT-1"
+                self.helper._dialog_barcode = mock.Mock(return_value="PRODUCT-1")
+                target = (self.machine, {"name": "Red"}, {"name": "B01"})
+                with mock.patch.object(home_page.QApplication, "instance", return_value=mock.Mock()), \
+                        mock.patch.object(home_page, "get_scale_connection_state", return_value="ready"), \
+                        mock.patch.object(self.helper, "_head_refill_error", return_value=None), \
+                        mock.patch.object(self.helper, "_find_targets", return_value=[target, target]), \
+                        mock.patch.object(home_page.asyncio, "ensure_future",
+                                          side_effect=self.loop.run_until_complete):
+                    callback()
+                self.assertEqual([], self.main_window.dialogs)
+
     def test_failure_before_s01_keeps_the_scale_warnings(self):
         self.machine.check_scale_connection.return_value = False
         with mock.patch.object(home_page, "get_scale_connection_state", return_value="ready"), \
@@ -629,6 +718,16 @@ class TestScaleRefillTargetReadiness(unittest.TestCase):
             mock.Mock(main_window=self.main_window))
         self.helper._dialog_barcode = mock.Mock(return_value="PRODUCT-1")
         self.helper._start_target = mock.Mock()
+        self.helper._is_active = mock.Mock(return_value=True)
+        self.loop = asyncio.new_event_loop()
+        self.addCleanup(self.loop.close)
+        future_patch = mock.patch.object(home_page.asyncio, "ensure_future",
+                                         side_effect=self.loop.run_until_complete)
+        future_patch.start()
+        self.addCleanup(future_patch.stop)
+        state_patch = mock.patch.object(home_page, "get_scale_connection_state", return_value="ready")
+        state_patch.start()
+        self.addCleanup(state_patch.stop)
         self.app = mock.Mock(machine_head_dict={}, carousel_frozen=True)
         app_patch = mock.patch.object(
             home_page.QApplication, "instance", return_value=self.app)
@@ -648,6 +747,7 @@ class TestScaleRefillTargetReadiness(unittest.TestCase):
             status={"status_level": status, "crx_outputs_status": outputs},
             pigment_list=[pigment])
         machine.name = name
+        machine.check_scale_connection = mock.AsyncMock(return_value=True)
         self.app.machine_head_dict[name] = machine
         return machine
 
@@ -710,9 +810,10 @@ class TestScaleRefillTargetReadiness(unittest.TestCase):
         machine.check_scale_connection = mock.AsyncMock()
         machine.read_stable_weight = mock.AsyncMock()
         self.helper._on_initial_barcode()
+        machine.check_scale_connection.reset_mock()
         machine.status["status_level"] = "ALARM"
 
-        asyncio.run(self.helper._prepare_target(
+        self.loop.run_until_complete(self.helper._prepare_target(
             machine, machine.pigment_list[0], machine.pigment_list[0]["pipes"][0]))
 
         self.assertEqual(self.main_window.dialogs[-1]["message"],

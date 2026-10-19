@@ -22,6 +22,8 @@ S20 shows the USB connection warning illustration below its buttons.
 S21 shows the power-on warning illustration in the same area and at the same scale.
 S20 and S21 also stop an ongoing refill; those dialogs additionally show
 "Refill procedure interrupted." in production.
+Production checks scale communication before each forward step, including
+circuit selection, refill instructions and the final reset confirmation.
 To add an illustration to another popup, pass
 message_image=get_res("IMAGE", "image.png") in its scenario options and in the
 corresponding production dialog. Images keep their aspect ratio; the message

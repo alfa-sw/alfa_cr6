@@ -757,6 +757,13 @@ class ScaleRefillProcedureHelper:
             self._start_target(*targets[0])
             return
 
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._show_target_selection(targets))
+
+    async def _show_target_selection(self, targets):
+        if not await self._check_scale(targets[0][0], in_progress=True):
+            return
+
         choices = {}
         for machine, pigment, pipe in targets:
             label = "{} - {} - {} ({}/{})".format(
@@ -866,6 +873,13 @@ class ScaleRefillProcedureHelper:
                 self.barcode_, scanned))
             return
 
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._show_refill_instructions())
+
+    async def _show_refill_instructions(self):
+        if not await self._check_scale(self.machine_, in_progress=True):
+            return
+
         self._open_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("Remove the canister from the scale and refill the circuit.<br>"
@@ -900,10 +914,16 @@ class ScaleRefillProcedureHelper:
         self.main_window.browser_page.reload_page()
 
     def _confirm_reset(self):
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._reset_head())
+
+    async def _reset_head(self):
+        if not await self._check_scale(self.machine_, in_progress=True):
+            return
         machine = self.machine_
         self._finish()
-        asyncio.ensure_future(machine.send_command(
-            cmd_name="RESET", params={"mode": 0}, type_="command", channel="machine"))
+        await machine.send_command(
+            cmd_name="RESET", params={"mode": 0}, type_="command", channel="machine")
 
     def _continue_refill(self):
         self.machine_ = None

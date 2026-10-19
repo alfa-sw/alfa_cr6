@@ -626,8 +626,18 @@ bilancia è scollegato. Usa l'immagine `refill_scale_warn_off.png`.
 
 ### Effetto sul flusso
 
-I controlli avvengono all'avvio e prima delle due pesate. Se il controllo
-fallisce dopo S01, S20 o S21 aggiunge questa frase:
+La comunicazione viene verificata a ogni avanzamento operativo:
+
+- avvio → S01;
+- S01 → S03, quando serve scegliere il circuito;
+- S01 oppure S03 → S09, prima della pesata iniziale e del posizionamento;
+- S09 → S12, prima di mostrare le istruzioni di rabbocco;
+- S12 → S13/S14, prima della pesata finale e dell'aggiornamento del livello;
+- S13/S14 → RESET, prima di inviare il comando alla testa;
+- S13/S14 → «Continua il refill», con il controllo iniziale del nuovo ciclo.
+
+Ogni avanzamento esegue un solo controllo di comunicazione. Se il controllo
+fallisce durante il tentativo, S20 o S21 aggiunge questa frase:
 
 ```text
 Procedura di rabbocco interrotta.
@@ -638,6 +648,8 @@ scansioni; la riconnessione non provoca una ripresa automatica. Un nuovo
 rabbocco parte da S01 e acquisisce un nuovo peso iniziale. Se il prodotto è
 già stato versato, la nuova procedura non recupera la quantità versata nel
 tentativo interrotto: il livello deve essere riconciliato separatamente.
+Se fallisce il controllo prima del RESET, il livello già aggiornato resta
+registrato, ma il comando RESET non viene inviato.
 
 Non vengono aggiunti monitoraggi continui, memorizzazione del modello o
 nuovi comandi. Un'interruzione risolta tra due controlli può passare
@@ -646,9 +658,8 @@ compare ancora S07.
 
 Riproduzione:
 
-- scollegare la USB dopo S01 e prima di confermare S01 o S12: S20;
-- mantenere la USB collegata e scollegare il lato bilancia prima di una delle
-  due pesate: S21;
-- simulare `check_scale_connection()` che restituisce `False` durante
-  `_prepare_target` o `_complete_refill`: S21, oppure S20 se la risposta o lo
-  stato indicano la disconnessione USB.
+- scollegare la USB prima di confermare uno dei passaggi: S20;
+- mantenere la USB collegata e scollegare il lato bilancia prima di
+  confermare uno dei passaggi: S21;
+- simulare `check_scale_connection()` che restituisce `False`: S21, oppure
+  S20 se la risposta o lo stato indicano la disconnessione USB.
