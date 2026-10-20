@@ -269,7 +269,7 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
-    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "Vaakaa ei havaittu.<br>Tarkista tiedonsiirtokaapelin liitäntä vaa’an takaosassa<br>tai USB-kaapelin liitäntä koneeseen.",
+    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "Vaakaa ei havaittu.<br>Liitä vaaka tai tarkista, että USB-kaapeli on kunnolla paikallaan.",
     "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "Vaaka ei vastaa.<br>Tarkista, että vaaka on päällä ja tiedonsiirtokaapeli<br>on kunnolla kytketty vaa’an takaosaan.",
     "Refill procedure interrupted.": "Täyttötoimenpide keskeytetty.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Aseta avoin säiliö vaa'alle.<br>Skannaa sen viivakoodi.",

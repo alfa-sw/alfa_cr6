@@ -196,7 +196,7 @@ D = {
 
     "adjusted_levels": "livelli aggiornati",
     "please, input barcode for refill": "prego, scannerizza il codice a barre per il rabocco",
-    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "Bilancia non rilevata.<br>Verificare il collegamento del cavo di comunicazione<br>sul retro della bilancia o del cavo USB alla macchina.",
+    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "Bilancia non rilevata.<br>Collegare la bilancia o verificare che il cavo USB sia ben inserito.",
     "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "La bilancia non risponde.<br>Verificare che sia accesa e che il cavo di comunicazione<br>sia ben inserito sul retro della bilancia.",
     "Refill procedure interrupted.": "Procedura di rabbocco interrotta.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Posizionare il barattolo aperto sulla bilancia.<br>Scansionare il codice a barre.",

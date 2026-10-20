@@ -266,7 +266,7 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
-    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "Es wurde keine Waage erkannt.<br>Prüfen Sie den Anschluss des Kommunikationskabels an der Rückseite der Waage<br>oder den Anschluss des USB-Kabels an der Maschine.",
+    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "Es wurde keine Waage erkannt.<br>Schließen Sie die Waage an oder prüfen Sie den Sitz des USB-Kabels.",
     "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "Die Waage antwortet nicht.<br>Prüfen Sie, ob sie eingeschaltet ist und das Kommunikationskabel<br>an der Rückseite der Waage richtig angeschlossen ist.",
     "Refill procedure interrupted.": "Nachfüllvorgang unterbrochen.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Stellen Sie den geöffneten Behälter auf die Waage.<br>Scannen Sie seinen Barcode.",

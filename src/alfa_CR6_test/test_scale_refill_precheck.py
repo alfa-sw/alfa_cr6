@@ -608,8 +608,7 @@ class TestScaleRefillPrecheck(unittest.TestCase):
     def test_scale_warning_messages_are_translated_except_korean(self):
         lemmas = (
             "No scale was detected.<br>"
-            "Check the communication cable connection at the back of the scale<br>"
-            "or the USB cable connection to the machine.",
+            "Connect the scale or check that the USB cable is properly connected.",
             "The scale is not responding.<br>"
             "Check that it is switched on and that the communication cable<br>"
             "is properly connected at the back of the scale.",

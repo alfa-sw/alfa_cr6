@@ -253,8 +253,7 @@ def scenarios(mode="scale"):
         popup("S19", "Errore durante il rabbocco", "Refill failed: {}"),
         popup("S20", "Bilancia non rilevata",
               "No scale was detected.<br>"
-              "Check the communication cable connection at the back of the scale<br>"
-              "or the USB cable connection to the machine.",
+              "Connect the scale or check that the USB cable is properly connected.",
               "SP_MessageBoxWarning",
               message_image=get_res("IMAGE", "refill_scale_warn_unplugged.png")),
         popup("S21", "Bilancia senza risposta",

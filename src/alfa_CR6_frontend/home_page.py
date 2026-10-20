@@ -672,8 +672,7 @@ class ScaleRefillProcedureHelper:
         if disconnected:
             message = tr_(
                 "No scale was detected.<br>"
-                "Check the communication cable connection at the back of the scale<br>"
-                "or the USB cable connection to the machine.")
+                "Connect the scale or check that the USB cable is properly connected.")
             message_image = get_res("IMAGE", "refill_scale_warn_unplugged.png")
         else:
             message = tr_(

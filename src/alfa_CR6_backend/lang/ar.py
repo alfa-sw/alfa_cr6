@@ -258,7 +258,7 @@ D = {
     "OK": "موافق",
     "Delete": "حذف",
     "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?": "QR proposes {} ({}) which exceeds maximum level for pipe: {}.<br>Refill will be capped to {} ({}). Confirm?",
-    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "لم يتم اكتشاف أي ميزان.<br>تحقق من توصيل كابل الاتصال في الجزء الخلفي من الميزان<br>أو توصيل كابل USB بالجهاز.",
+    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "لم يتم اكتشاف أي ميزان.<br>قم بتوصيل الميزان أو تحقق من توصيل كابل USB بشكل صحيح.",
     "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "الميزان لا يستجيب.<br>تحقق من تشغيله ومن أن كابل الاتصال<br>موصول بإحكام في الجزء الخلفي من الميزان.",
     "Refill procedure interrupted.": "تم إيقاف إجراء إعادة التعبئة.",
     "Place the open canister on the scale.<br>Scan its barcode.": "ضع العبوة المفتوحة على الميزان.<br>امسح رمزها الشريطي.",

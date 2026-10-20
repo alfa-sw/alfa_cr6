@@ -269,7 +269,7 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
-    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "Não foi detetada nenhuma balança.<br>Verifique a ligação do cabo de comunicação na parte traseira da balança<br>ou a ligação do cabo USB à máquina.",
+    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "Não foi detetada nenhuma balança.<br>Ligue a balança ou verifique se o cabo USB está bem encaixado.",
     "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "A balança não responde.<br>Verifique se está ligada e se o cabo de comunicação<br>está bem conectado na parte traseira da balança.",
     "Refill procedure interrupted.": "Procedimento de reabastecimento interrompido.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Coloque o recipiente aberto na balança.<br>Leia o respetivo código de barras.",

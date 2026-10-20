@@ -270,7 +270,7 @@ D = {
     "action 06 (head 7 or G - output)": "action 06 (head 7 or G - output)",
     "Start output roller CW": "Start output roller CW",
 
-    "No scale was detected.<br>Check the communication cable connection at the back of the scale<br>or the USB cable connection to the machine.": "Der blev ikke registreret nogen vægt.<br>Kontrollér kommunikationskablets tilslutning på bagsiden af vægten<br>eller USB-kablets tilslutning til maskinen.",
+    "No scale was detected.<br>Connect the scale or check that the USB cable is properly connected.": "Der blev ikke registreret nogen vægt.<br>Tilslut vægten, eller kontrollér, at USB-kablet sidder korrekt.",
     "The scale is not responding.<br>Check that it is switched on and that the communication cable<br>is properly connected at the back of the scale.": "Vægten svarer ikke.<br>Kontrollér, at den er tændt, og at kommunikationskablet<br>er korrekt tilsluttet på bagsiden af vægten.",
     "Refill procedure interrupted.": "Genopfyldningsproceduren er afbrudt.",
     "Place the open canister on the scale.<br>Scan its barcode.": "Anbring den åbne beholder på vægten.<br>Scan dens stregkode.",

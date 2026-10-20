@@ -48,8 +48,7 @@ bilancia sia all'avvio sia durante la procedura.
 
 ```text
 Bilancia non rilevata.
-Verificare il collegamento del cavo di comunicazione
-sul retro della bilancia o del cavo USB alla macchina.
+Collegare la bilancia o verificare che il cavo USB sia ben inserito.
 ```
 
 Compare premendo il comando di rabbocco con bilancia quando
@@ -603,8 +602,7 @@ Aggiornato il 19 ottobre 2026 (issue rm604).
 
 ```text
 Bilancia non rilevata.
-Verificare il collegamento del cavo di comunicazione
-sul retro della bilancia o del cavo USB alla macchina.
+Collegare la bilancia o verificare che il cavo USB sia ben inserito.
 ```
 
 Compare quando lo stato Redis indica una disconnessione o la risposta al
