@@ -99,6 +99,10 @@ class _MainWindow:
         return None
 
     @staticmethod
+    def set_carousel_freeze_control_enabled(_enabled, _reason=""):
+        return None
+
+    @staticmethod
     def start_step_blink(_step):
         return None
 
@@ -434,6 +438,9 @@ class _OrderBarcodeDispenseE2EMixin:
         )
         self.app.db_session = self.session
         self.app.machine_head_dict = {}
+        self.app._head_safety_states = {
+            index: "STANDBY" for index, _name in self.spec["heads"]
+        }
         self.app.main_window = _MainWindow()
         self.app.ws_server = _WsServer()
         self.app.redis_publisher = _RedisPublisher()

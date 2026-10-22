@@ -1,5 +1,8 @@
 from alfa_CR6_backend.lang import error_it
 D = {
+    'AUTORECOVERY': 'AUTORECOVERY',
+    'Automatic recovery in progress: heads {}.': 'Autoripristino in corso: teste {}.',
+    'Unlock unavailable: head status not verified ({}).': 'Sblocco non disponibile: stato delle teste non verificato ({}).',
     'Create and print all': 'Crea e stampa tutti',
     'No pending files to create orders from.': 'Nessun file in attesa da cui creare ordini.',
     'Create Alfa orders from {} files?\nPrint a label for each order.\nOne can per order.': 'Creare ordini Alfa da {} file?\nStampare un’etichetta per ogni ordine.\nUn barattolo per ordine.',

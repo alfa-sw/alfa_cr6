@@ -49,6 +49,10 @@ class _CarouselStub:
     def update_jar_properties(_jar):
         return None
 
+    @staticmethod
+    async def wait_for_carousel_not_frozen():
+        return None
+
 
 class PostDispenseTintometerRefreshTest(unittest.IsolatedAsyncioTestCase):
 

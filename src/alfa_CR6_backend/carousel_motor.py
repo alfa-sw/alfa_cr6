@@ -116,14 +116,25 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def wait_for_condition(      # pylint: disable=too-many-arguments
             self, condition, timeout, show_alert=True,
-            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None
+            extra_info="", stability_count=3, step=0.01, callback=None, break_condition=None,
+            pause_on_freeze=False
     ) -> Optional[bool]:
+        # Preconditions may wait indefinitely for the operator. Responses to
+        # commands already sent and watchdog stops retain their own deadlines.
 
         ret = None
         t0 = time.time()
         counter = 0
         try:
-            while time.time() - t0 < timeout:
+            while True:
+                if pause_on_freeze and self.carousel_frozen:
+                    paused_at = time.time()
+                    await self.wait_for_carousel_not_frozen()
+                    t0 += time.time() - paused_at
+                    counter = 0
+
+                if time.time() - t0 >= timeout:
+                    break
 
                 if break_condition and break_condition():
                     ret = False
@@ -201,7 +212,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     flag = flag and extra_check()
                 return flag
 
-            r = await self.wait_for_condition(condition, timeout=2 * DEFAULT_WAIT_FOR_TIMEOUT, show_alert=False)
+            r = await self.wait_for_condition(condition, timeout=2 * DEFAULT_WAIT_FOR_TIMEOUT, show_alert=False, pause_on_freeze=True)
 
             if not r:
                 logging.warning(f"{m.name} jar:{jar}")
@@ -250,7 +261,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         def condition_11():
             return D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
-        r = await self.wait_for_condition(condition_11, show_alert=False, timeout=timeout_)
+        r = await self.wait_for_condition(condition_11, show_alert=False, timeout=timeout_, pause_on_freeze=True)
 
         if not r:  # the lifter is not UP, we must call it
             cntr = 0
@@ -263,7 +274,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     flag = flag and not D.jar_photocells_status.get('LOAD_LIFTER_UP_PHOTOCELL')
                     flag = flag and not _lifter_r_already_engaged()
                     return flag
-                r = await self.wait_for_condition(condition_12, show_alert=False, timeout=10)
+                r = await self.wait_for_condition(condition_12, show_alert=False, timeout=10, pause_on_freeze=True)
                 if r:
                     await D.crx_outputs_management(1, 2)
 
@@ -289,7 +300,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 flag = flag and not self.positions_already_engaged(["LIFTL_UP", "LIFTL_DOWN"], jar)
                 flag = flag and not F.check_alarm_923()
                 return flag
-            r = await self.wait_for_condition(condition_1, show_alert=False, timeout=2.0)
+            r = await self.wait_for_condition(condition_1, show_alert=False, timeout=2.0, pause_on_freeze=True)
 
             if not r:  # the output line is busy
                 def condition_120():
@@ -298,7 +309,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x02
                     return flag
                 # ~ wait for the preceding jar has finished
-                r = await self.wait_for_condition(condition_120, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+                r = await self.wait_for_condition(condition_120, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, pause_on_freeze=True)
                 if r:
                     # ~ try to deliver the preceding jar
                     if F.jar_photocells_status.get('JAR_OUTPUT_ROLLER_PHOTOCELL', False):
@@ -309,7 +320,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             if r:
                 def condition_11():
                     return F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL')
-                r = await self.wait_for_condition(condition_11, show_alert=False, timeout=10)
+                r = await self.wait_for_condition(condition_11, show_alert=False, timeout=10, pause_on_freeze=True)
                 if not r:  # the lifter is not DOWN, we must call it
                     def condition_12():
                         flag = not self.positions_already_engaged(["LIFTL_UP", "LIFTL_DOWN"], jar)
@@ -317,7 +328,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x08
                         flag = flag and not F.jar_photocells_status.get('JAR_UNLOAD_LIFTER_ROLLER_PHOTOCELL', True)
                         return flag
-                    r = await self.wait_for_condition(condition_12, show_alert=False, timeout=34)
+                    r = await self.wait_for_condition(condition_12, show_alert=False, timeout=34, pause_on_freeze=True)
                     if r:
                         # ~ call the lifter
                         await F.crx_outputs_management(3, 5)
@@ -332,7 +343,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         flag = flag and F.jar_photocells_status.get('UNLOAD_LIFTER_DOWN_PHOTOCELL', False)
                         return flag
                     r = await self.wait_for_condition(condition, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-                                                      show_alert=True, extra_info=tr_('waiting for unload lifter to be free, stopped.'))
+                                                      show_alert=True, extra_info=tr_('waiting for unload lifter to be free, stopped.'), pause_on_freeze=True)
             if not r:
                 await self.wait_for_carousel_not_frozen(
                     True,
@@ -356,7 +367,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             def condition():
                 return not C.jar_photocells_status.get('JAR_LOAD_LIFTER_ROLLER_PHOTOCELL', False)
 
-            r = await self.wait_for_condition(condition, show_alert=False, timeout=15)
+            r = await self.wait_for_condition(condition, show_alert=False, timeout=15, pause_on_freeze=True)
             if r:
                 break
 
@@ -456,7 +467,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 r = False
         else:
             r = await self.wait_for_condition(
-                condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info, stability_count=1, step=0.5)
+                condition, timeout=1.2, show_alert=show_alert, extra_info=extra_info, stability_count=1, step=0.5, pause_on_freeze=True)
 
         if r:
             await A.crx_outputs_management(1, 2)
@@ -629,7 +640,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             r = await self.wait_for_condition(
                 condition,
                 show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-                extra_info=tr_('waiting for load_lifter roller available and stopped.'))
+                extra_info=tr_('waiting for load_lifter roller available and stopped.'), pause_on_freeze=True)
             if r:
                 await C.crx_outputs_management(0, 1)
                 await C.crx_outputs_management(1, 2)
@@ -664,7 +675,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
             r = await self.wait_for_condition(
                 condition, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT,
-                extra_info=tr_('waiting for load_lifter roller available and stopped.'))
+                extra_info=tr_('waiting for load_lifter roller available and stopped.'), pause_on_freeze=True)
             if r:
                 await D.crx_outputs_management(0, 1)
                 await D.crx_outputs_management(1, 2)
@@ -683,7 +694,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         def condition_12():
             return not D.status.get('crx_outputs_status', 0x0) & 0x02
-        r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+        r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, pause_on_freeze=True)
         if r:
             await D.crx_outputs_management(1, 5)
             r = await D.wait_for_jar_photocells_status(
@@ -724,7 +735,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
                 def condition_1():
                     return not D.status.get('crx_outputs_status', 0x0) & 0x02
-                r1 = await self.wait_for_condition(condition_1, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+                r1 = await self.wait_for_condition(condition_1, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, pause_on_freeze=True)
                 if r1:
                     await D.crx_outputs_management(1, 2)
 
@@ -776,7 +787,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         def condition_12():
             return not F.status.get('crx_outputs_status', 0x0) & 0x08
-        r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+        r = await self.wait_for_condition(condition_12, show_alert=True, timeout=DEFAULT_WAIT_FOR_TIMEOUT, pause_on_freeze=True)
         if r:
             await F.crx_outputs_management(3, 2)
             r = await F.wait_for_jar_photocells_status(
@@ -796,7 +807,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
         if not r:  # the output position is busy
             def condition_120():
                 return not F.status.get('crx_outputs_status', 0x0) & 0x04
-            r = await self.wait_for_condition(condition_120, show_alert=False, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+            r = await self.wait_for_condition(condition_120, show_alert=False, timeout=DEFAULT_WAIT_FOR_TIMEOUT, pause_on_freeze=True)
             if r:
                 await F.crx_outputs_management(2, 4)
                 r = await F.wait_for_jar_photocells_status("JAR_OUTPUT_ROLLER_PHOTOCELL", on=False, timeout=5.5, show_alert=False)
@@ -807,7 +818,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 flag = not F.status.get('crx_outputs_status', 0x0) & 0x02
                 flag = flag and not F.status.get('crx_outputs_status', 0x0) & 0x04
                 return flag
-            r = await self.wait_for_condition(condition_121, show_alert=False, timeout=DEFAULT_WAIT_FOR_TIMEOUT)
+            r = await self.wait_for_condition(condition_121, show_alert=False, timeout=DEFAULT_WAIT_FOR_TIMEOUT, pause_on_freeze=True)
             if r:
                 await F.crx_outputs_management(1, 4)
                 await F.crx_outputs_management(2, 4)
@@ -823,7 +834,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
                     def condition_12():
                         return not F.status.get('crx_outputs_status', 0x0) & 0x08
-                    r = await self.wait_for_condition(condition_12, show_alert=True, timeout=2.0)
+                    r = await self.wait_for_condition(condition_12, show_alert=True, timeout=2.0, pause_on_freeze=True)
                     if r:
                         await F.crx_outputs_management(3, 5)
 
@@ -837,7 +848,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             return not F.status.get('crx_outputs_status', 0x0) & 0x04
 
         r = await self.wait_for_condition(
-            condition, timeout=5, show_alert=True, extra_info=tr_('output roller is busy.'))
+            condition, timeout=5, show_alert=True, extra_info=tr_('output roller is busy.'), pause_on_freeze=True)
 
         if r:
             await F.crx_outputs_management(2, 4)
@@ -856,6 +867,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
     async def dispense_step(self, machine_letter, jar):
 
+        await self.wait_for_carousel_not_frozen()
         m = self.get_machine_head_by_letter(machine_letter)
 
         if jar.status == "ERROR":
@@ -874,6 +886,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 cntr += 1
 
                 await m.update_tintometer_data()
+                await self.wait_for_carousel_not_frozen()
                 self.update_jar_properties(jar)
                 self.main_window.update_status_data(m.index, m.status)
 
@@ -909,6 +922,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                     )
 
             await m.update_tintometer_data()
+            await self.wait_for_carousel_not_frozen()
             self.update_jar_properties(jar)
             json_properties = json.loads(jar.json_properties)
             insufficient_pigments = json_properties.get("insufficient_pigments", {})
@@ -1016,6 +1030,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
 
         barcode_ = jar and jar.barcode
 
+        await self.wait_for_carousel_not_frozen()
         self.update_jar_position(jar=jar, status="ENTERING", pos="IN")
 
         for step in sequence:
@@ -1245,7 +1260,8 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
             logging.debug('jars_to_restore --> %s', dict(jars_to_restore))
 
         if self.carousel_frozen:
-            self.freeze_carousel(False)
+            if not self.freeze_carousel(False):
+                return
 
         for j_code, jv in jars_to_restore.items():
             logging.warning(f'restoring jar {j_code} from {jv.get("pos")}')

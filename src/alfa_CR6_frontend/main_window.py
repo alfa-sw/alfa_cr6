@@ -827,6 +827,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def stop_step_blink(self):
         self.home_page.stop_step_blink()
 
+    def set_carousel_freeze_control_enabled(self, enabled, reason=""):
+        self.home_page.freeze_carousel_btn.setEnabled(enabled)
+        self.home_page.freeze_carousel_btn.setToolTip(reason)
+
     def show_carousel_frozen(self, flag):
         if flag:
             self.home_page.freeze_carousel_btn.setText(tr_("Carousel Paused"))

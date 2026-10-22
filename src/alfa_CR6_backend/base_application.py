@@ -511,6 +511,14 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         # ~ self.__inner_loop_task_step = 0.02  # secs
 
         self.machine_head_dict = {}
+        # Include configured heads before their asynchronous tasks exist.
+        # None means that no current, usable status has been received.
+        self._head_safety_states = {
+            index: None
+            for index, address in enumerate(settings.MACHINE_HEAD_IPADD_PORTS_LIST)
+            if address
+        }
+        self.carousel_frozen = True
         self.ws_server = None
 
         self.__version = None
@@ -555,8 +563,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if hasattr(self.settings, "BYPASS_LOGIN") and self.settings.BYPASS_LOGIN:
             self.main_window.login_clicked()
 
-        self.carousel_frozen = False
         self.main_window.show_carousel_frozen(self.carousel_frozen)
+        self._update_carousel_freeze_control()
         self.redis_publisher = RedisOrderPublisher()
 
     def __init_tasks(self):
@@ -920,6 +928,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         r = None
         jar = None
         try:
+
+            await self.wait_for_carousel_not_frozen()
 
             cntr = 0
             while cntr < 3:
@@ -1811,14 +1821,52 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def toggle_freeze_carousel(self):
 
-        self.freeze_carousel(not self.carousel_frozen)
+        return self.freeze_carousel(not self.carousel_frozen)
+
+    def update_head_safety(self, head_index, status_level=None):
+        """A fresh status can release the interlock, never the carousel freeze."""
+        previous = self._head_safety_states[head_index]
+        self._head_safety_states[head_index] = status_level
+        if previous != status_level:
+            # Freeze on a new hazard, not on every repeated status. This keeps
+            # the explicit Debug override effective until another hazard occurs.
+            if status_level in (None, "AUTORECOVERY"):
+                self.freeze_carousel(True)
+            self._update_carousel_freeze_control()
+
+    def get_carousel_unlock_block_reason(self):
+        recovering = []
+        unverified = []
+        for index, level in self._head_safety_states.items():
+            name = self.MACHINE_HEAD_INDEX_TO_NAME_MAP[index]
+            if level == "AUTORECOVERY":
+                recovering.append(name)
+            elif level is None:
+                unverified.append(name)
+
+        messages = []
+        if recovering:
+            messages.append(tr_("Automatic recovery in progress: heads {}.").format(
+                ", ".join(recovering)))
+        if unverified:
+            messages.append(tr_("Unlock unavailable: head status not verified ({}).").format(
+                ", ".join(unverified)))
+        return "\n".join(messages)
+
+    def _update_carousel_freeze_control(self):
+        reason = self.get_carousel_unlock_block_reason()
+        self.main_window.set_carousel_freeze_control_enabled(not reason, reason)
 
     def close_modal_freeze_msgbox(self):
 
         if self.__modal_freeze_msgbox:
             self.__modal_freeze_msgbox.close()
 
-    def freeze_carousel(self, flag):
+    def freeze_carousel(self, flag, *, force=False):
+
+        if not flag and not force and self.get_carousel_unlock_block_reason():
+            self._update_carousel_freeze_control()
+            return False
 
         if self.carousel_frozen != flag:
             self.carousel_frozen = flag
@@ -1836,8 +1884,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if self.main_window.debug_page:
             self.main_window.debug_page.update_status()
 
-        t = self.ws_server.broadcast_msg("", None)
-        asyncio.ensure_future(t)
+        if self.ws_server is not None:
+            t = self.ws_server.broadcast_msg("", None)
+            asyncio.ensure_future(t)
+
+        return True
 
     async def stop_all(self):
 

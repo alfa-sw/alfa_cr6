@@ -30,6 +30,8 @@ class _FakeApp:
         self.main_window = _MainWindow()
         self.reserve_updates = []
         self.exceptions = []
+        self.update_head_safety = mock.Mock()
+        self.wait_for_carousel_not_frozen = mock.AsyncMock()
 
     def show_reserve(self, index, enabled):
         self.reserve_updates.append((index, enabled))
@@ -494,6 +496,7 @@ class TestMachineHeadRunLifecycle(unittest.TestCase):
         self.head = machine_head_module.MachineHead.__new__(
             machine_head_module.MachineHead
         )
+        self.head.invalidate_safety_status = mock.Mock()
 
     def tearDown(self):
         pending = asyncio.all_tasks(self.loop)

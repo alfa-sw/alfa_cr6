@@ -1,5 +1,8 @@
 from alfa_CR6_backend.lang import error_en
 D = {
+    'AUTORECOVERY': 'AUTORECOVERY',
+    'Automatic recovery in progress: heads {}.': 'Automatic recovery in progress: heads {}.',
+    'Unlock unavailable: head status not verified ({}).': 'Unlock unavailable: head status not verified ({}).',
     'Create and print all': 'Create and print all',
     'No pending files to create orders from.': 'No pending files to create orders from.',
     'Create Alfa orders from {} files?\nPrint a label for each order.\nOne can per order.': 'Create Alfa orders from {} files?\nPrint a label for each order.\nOne can per order.',

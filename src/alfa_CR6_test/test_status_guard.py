@@ -169,6 +169,9 @@ class DoneStatusGuardTests(unittest.TestCase):
                 }
                 self.execute_calls = 0
 
+            async def wait_for_carousel_not_frozen(self):
+                pass
+
             async def get_and_check_jar_from_barcode(self, _barcode):
                 return self.jar
 
@@ -201,6 +204,9 @@ class DoneStatusGuardTests(unittest.TestCase):
                     barcode: {"task": None, "frozen": True}
                 }
                 self.execute_calls = 0
+
+            async def wait_for_carousel_not_frozen(self):
+                pass
 
             async def get_and_check_jar_from_barcode(self, _barcode):
                 return self.jar

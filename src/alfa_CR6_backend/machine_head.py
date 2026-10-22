@@ -25,6 +25,12 @@ import websockets  # pylint: disable=import-error
 from alfa_CR6_backend.globals import EPSILON, tr_, get_application_instance, store_data_on_restore_machine_helper
 
 DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
+MACHINE_STATUS_TIMEOUT = 30
+MACHINE_STATUS_LEVELS = frozenset((
+    "POWER_OFF", "INIT", "IDLE", "RESET", "STANDBY", "DISPENSING",
+    "ALARM", "DIAGNOSTIC", "POSITIONING", "JUMP_TO_BOOT", "ROTATING",
+    "AUTOTEST", "JAR_POSITIONING", "AUTORECOVERY",
+))
 
 
 class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -224,6 +230,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     async def update_status(self, status):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         logging.debug("status:{}".format(status))
+        # Apply the interlock before any await or modal dialog can let another
+        # coroutine start work. Missing/unrecognised data never releases it.
+        level = status.get("status_level")
+        if (not isinstance(level, str) or level not in MACHINE_STATUS_LEVELS
+                or level == "POWER_OFF" or status.get("expired")):
+            level = None
+        self.app.update_head_safety(self.index, level)
 
         if not self.status:
             asyncio.ensure_future(self.update_tintometer_data(silent=False))
@@ -371,9 +384,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         msg = None
         try:
-            msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
+            msg = await asyncio.wait_for(self.websocket.recv(), timeout=MACHINE_STATUS_TIMEOUT)
         except asyncio.TimeoutError:
             logging.warning(f"{self.name} time out while waiting in websocket.recv.")
+            self.invalidate_safety_status()
+            # Statuses are sent on change, while time messages keep the stream
+            # alive. Reconnect a silent stream to obtain a new status snapshot.
+            raise
 
         if msg is not None:
             self.__last_recv_msg = msg
@@ -401,16 +418,25 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         propagate_to_ws_msg_handler = True
 
         if msg:
-            msg_dict = dict(json.loads(msg))
+            try:
+                msg_dict = dict(json.loads(msg))
+            except (TypeError, ValueError):
+                self.invalidate_safety_status()
+                raise
             msg_type = msg_dict.get("type")
 
             if msg_type == "device:machine:status":
-                status = msg_dict.get("value")
-                status = dict(status)
+                try:
+                    status = dict(msg_dict.get("value"))
+                except (TypeError, ValueError):
+                    self.invalidate_safety_status()
+                    raise
                 if status:
                     diff = await self.update_status(status)
                     if diff:
                         logging.info("%s diff:%s", self.name, diff)
+                else:
+                    self.invalidate_safety_status()
 
             elif msg_type == "answer":
                 answer = msg_dict.get("value")
@@ -456,6 +482,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             if propagate_to_ws_msg_handler and self.ws_msg_handler:
                 await self.ws_msg_handler(self.index, msg_dict)
+        else:
+            self.invalidate_safety_status()
 
     async def call_api_rest(self,   # pylint: disable=too-many-arguments
                             path: str, method: str, data: dict, timeout=40, expected_ret_type='json'):
@@ -514,6 +542,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def crx_outputs_management(self, output_number, output_action, timeout=30, silent=True):
 
+        if output_action:
+            await self.app.wait_for_carousel_not_frozen()
+
         # ~ id_ = random.randint(1, 10000)
         # ~ logging.warning(f" {self.name} owned_barcodes:{self.owned_barcodes}, id_:{id_}")
 
@@ -531,7 +562,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             msg_ = tr_("{} waiting for {} to get unlocked.").format(self.name, output_number)
 
-            ret = await self.app.wait_for_condition(condition_1, timeout=5, extra_info=msg_, stability_count=1)
+            ret = await self.app.wait_for_condition(
+                condition_1, timeout=5, extra_info=msg_, stability_count=1,
+                pause_on_freeze=bool(output_action))
             self.__crx_inner_status[output_number]['locked'] = True
             # ~ logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_},   LOCKED")
 
@@ -619,6 +652,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         """
         ret = None
         try:
+            # Gate actual starts after all upstream awaits. Stops, aborts,
+            # telemetry and scale commands must remain usable while frozen.
+            starts_work = channel == "machine" and (
+                cmd_name in ("DISPENSE_FORMULA", "PURGE")
+                or (cmd_name == "CRX_OUTPUTS_MANAGEMENT"
+                    and params.get("Output_Action", 0) != 0)
+                or (cmd_name == "CAN_MOVEMENT" and any(params.values()))
+            )
+            if starts_work:
+                await self.app.wait_for_carousel_not_frozen()
             msg = {
                 "type": type_,
                 "channel": channel,
@@ -658,6 +701,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     ret = True
 
         except websockets.exceptions.ConnectionClosed as e:
+            self.invalidate_safety_status()
             # expected during connection teardown (the race window past the
             # "if self.websocket" guard): record it, do not bother the operator
             logging.error(f"{self.name} send_command cmd:{cmd_name} on closed websocket, e:{e}")
@@ -760,6 +804,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def do_dispense(self, jar, restore_machine_helper=None):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
+        await self.app.wait_for_carousel_not_frozen()
+
         if jar.order and jar.order.description and "PURGE ALL" in jar.order.description.upper():
             ingredients = await self.get_ingredients_for_purge_all(jar)
         else:
@@ -774,6 +820,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         params_['ref_size'] = 100
         data = {'action': 'get_pipe_formula_from_pigment_formula', 'params': params_}
         ret = await self.call_api_rest("apiV1/ad_hoc", "POST", data, timeout=5)
+        await self.app.wait_for_carousel_not_frozen()
         # ~ logging.warning(f"ret:{ret}")
         pipe_formula_ml = ret.get('result') == 'OK' and ret.get('pipe_formula')
 
@@ -790,7 +837,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 return flag
             r = await self.app.wait_for_condition(
                 before_dispense_condition, timeout=2.5,
-                show_alert=False
+                show_alert=False, pause_on_freeze=True
             )
             if not r:
                 jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
@@ -847,7 +894,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         msg_ = ""
                         r = await self.app.wait_for_condition(
                             before_dispense_condition, timeout=31,
-                            show_alert=False
+                            show_alert=False, pause_on_freeze=True
                         )
                         if r:
                             # ~ jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
@@ -1041,6 +1088,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     logging.warning(f"{self.name}, {output_number}, output:{output}")
                     await self.crx_outputs_management(output_number, 0, timeout=0)
 
+    def invalidate_safety_status(self):
+        self.app.update_head_safety(self.index)
+
     def __reset_state(self):
         self.status = {}
         self.photocells_status = {}
@@ -1193,6 +1243,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     "{} task terminated unexpectedly".format(label)
                 )
         finally:
+            self.invalidate_safety_status()
             for _label, task in supervised_tasks:
                 if not task.done():
                     task.cancel()
@@ -1207,6 +1258,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         while True:
             ws_body_exception_id = None
             try:
+                self.invalidate_safety_status()
                 # close_timeout low on purpose: on loopback a healthy peer answers the
                 # close handshake in ms; a mute peer will never answer and each extra
                 # second extends the window in which self.websocket points to a dead socket
@@ -1232,6 +1284,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         self.__log_document("WS_EXCP", extra)
                         raise
                 finally:
+                    # Invalidate before waiting for the websocket close handshake.
+                    self.invalidate_safety_status()
                     # equivalent to the async-with __aexit__ (close()), but timed and
                     # logged: WS_CTX_EXIT records who triggered the local close (the
                     # "sent 1000") and whether the peer ever answered the handshake

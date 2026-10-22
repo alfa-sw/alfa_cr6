@@ -58,6 +58,7 @@ class TestCarouselWaitForCondition(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.carousel = CarouselMotor.__new__(CarouselMotor)
+        self.carousel.carousel_frozen = False
         self.carousel.main_window = _MainWindow()
         self.carousel.exceptions = []
         self.carousel.handle_exception = self.carousel.exceptions.append
@@ -132,6 +133,7 @@ class TestCarouselTransfers(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.carousel = CarouselMotor.__new__(CarouselMotor)
+        self.carousel.carousel_frozen = False
         self.head_a = FakeMachineHead("A")
         self.head_b = FakeMachineHead("B")
         self.carousel.machine_head_dict = {0: self.head_a, 1: self.head_b}
