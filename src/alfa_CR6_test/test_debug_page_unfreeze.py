@@ -19,6 +19,7 @@ class TestDebugPageUnfreeze(unittest.TestCase):
         window = types.SimpleNamespace(
             home_page=types.SimpleNamespace(
                 freeze_carousel_btn=button,
+                update_autorecovery_indication=mock.Mock(),
             )
         )
 
@@ -37,6 +38,7 @@ class TestDebugPageUnfreeze(unittest.TestCase):
             button.setToolTip.call_args_list,
             [mock.call(reason), mock.call("")],
         )
+        self.assertEqual(window.home_page.update_autorecovery_indication.call_count, 2)
 
     def test_unfreeze_button_unlocks_carousel(self):
         app = types.SimpleNamespace(freeze_carousel=mock.Mock())

@@ -1059,6 +1059,7 @@ class HomePage(BaseStackedPage):
 
         super().__init__(*args, **kwargs)
         self.scale_refill_helper = None
+        self._init_autorecovery_blink()
 
         self.jar_pixmap_map = [
             (self.STEP_01_label,    (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
@@ -1197,6 +1198,17 @@ class HomePage(BaseStackedPage):
     def open_page(self):
 
         self.parent().setCurrentWidget(self)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        # Adding the page to its stack can deliver events before __init__ ends.
+        if hasattr(self, '_autorecovery_blink_timer'):
+            self.update_autorecovery_indication()
+
+    def hideEvent(self, event):
+        if hasattr(self, '_autorecovery_blink_timer'):
+            self._stop_autorecovery_blink()
+        super().hideEvent(event)
 
     def on_service_btn_group_clicked(self, btn):
 
@@ -1405,11 +1417,8 @@ class HomePage(BaseStackedPage):
             if lbl:
                 lbl.setVisible(visible)
 
-    def update_service_btns__presences_and_lifters(self, head_index):
-
-        status = QApplication.instance().machine_head_dict[head_index].status
-
-        map_ = [
+    def _init_autorecovery_blink(self):
+        self._head_status_buttons = [
             self.service_1_btn,
             self.service_2_btn,
             self.service_3_btn,
@@ -1418,8 +1427,68 @@ class HomePage(BaseStackedPage):
             self.service_6_btn,
             self.service_7_btn,
         ]
-        if map_[head_index]:
-            map_[head_index].setText(tr_(f"{status.get('status_level', 'NONE')}"))
+        self._head_status_styles = {
+            index: button.styleSheet()
+            for index, button in enumerate(self._head_status_buttons) if button
+        }
+        self._autorecovery_heads = set()
+        self._autorecovery_blink_on = False
+        self._autorecovery_blink_timer = QTimer(self)
+        self._autorecovery_blink_timer.setInterval(500)
+        self._autorecovery_blink_timer.timeout.connect(self._do_autorecovery_blink)
+
+    def update_autorecovery_indication(self):
+        # Use the verified states: a disconnected head can retain an old raw
+        # AUTORECOVERY snapshot, which must not look like a current recovery.
+        levels = QApplication.instance()._head_safety_states
+        recovering = {
+            index for index, button in enumerate(self._head_status_buttons)
+            if button and levels.get(index) == 'AUTORECOVERY'
+        }
+        previous = self._autorecovery_heads
+        for index in previous - recovering:
+            self._head_status_buttons[index].setStyleSheet(self._head_status_styles[index])
+        self._autorecovery_heads = recovering
+        for index in previous | recovering:
+            self._head_status_buttons[index].setText(tr_(levels.get(index) or 'NONE'))
+
+        if recovering and self.isVisible():
+            if not self._autorecovery_blink_timer.isActive():
+                self._autorecovery_blink_on = True
+                self._autorecovery_blink_timer.start()
+            self._apply_autorecovery_blink()
+        else:
+            self._stop_autorecovery_blink()
+
+    def _apply_autorecovery_blink(self):
+        background = 'background-color: #FFC857;' if self._autorecovery_blink_on else ''
+        for index in self._autorecovery_heads:
+            self._head_status_buttons[index].setStyleSheet(
+                self._head_status_styles[index]
+                + '\nQPushButton { color: #000000; font-weight: bold; ' + background + ' }')
+
+    def _stop_autorecovery_blink(self):
+        self._autorecovery_blink_timer.stop()
+        self._autorecovery_blink_on = False
+        self._apply_autorecovery_blink()
+
+    def _do_autorecovery_blink(self):
+        if not self._autorecovery_heads or not self.isVisible():
+            self._stop_autorecovery_blink()
+            return
+        self._autorecovery_blink_on = not self._autorecovery_blink_on
+        self._apply_autorecovery_blink()
+
+    def update_service_btns__presences_and_lifters(self, head_index):
+
+        app = QApplication.instance()
+        status = app.machine_head_dict[head_index].status
+        button = self._head_status_buttons[head_index]
+        if button:
+            level = status.get('status_level', 'NONE')
+            if level == 'AUTORECOVERY':
+                level = app._head_safety_states.get(head_index) or 'NONE'
+            button.setText(tr_(f"{level}"))
 
         map_ = [
             self.container_presence_1_label,

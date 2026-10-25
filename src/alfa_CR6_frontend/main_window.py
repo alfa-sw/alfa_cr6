@@ -830,6 +830,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
     def set_carousel_freeze_control_enabled(self, enabled, reason=""):
         self.home_page.freeze_carousel_btn.setEnabled(enabled)
         self.home_page.freeze_carousel_btn.setToolTip(reason)
+        self.home_page.update_autorecovery_indication()
 
     def show_carousel_frozen(self, flag):
         if flag:
