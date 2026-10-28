@@ -439,7 +439,7 @@ class EditDialog(BaseDialog):
 
         if len(ret) > 1:
             self.warning_lbl.setText(
-                tr_('<div style="color: red;">WARN: replicated entries {} ({}).</div>'.format(pigment_name, len(ret))))
+                tr_('<div style="color: red;">WARN: replicated entries {} ({}).</div>').format(pigment_name, len(ret)))
 
         return ret
 
@@ -515,7 +515,7 @@ class EditDialog(BaseDialog):
                 # ~ sel_pigment_name = self.formula_table.item(row, 1).data(Qt.DisplayRole)
             else:
                 if len(indexes) >= 1:
-                    raise Exception(tr_(' Pigment {} is already present.'.format(pigment_name)))
+                    raise Exception(tr_(' Pigment {} is already present.').format(pigment_name))
 
                 row = self.formula_table.rowCount()
                 self.formula_table.setRowCount(row + 1)

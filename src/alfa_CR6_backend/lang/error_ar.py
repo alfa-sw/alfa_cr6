@@ -724,5 +724,6 @@ D = {
     'ROLLER_TIMEOUT_MOVE_ERROR': 'خطأ في_مهلة انتظار_تحريك_البكرة',
     'DOSING_ROLLER_OPEN_LOAD_ERROR': 'خطأ في_تحميل_فتح_بكرة_معايرة الكميات',
     'INPUT_ROLLER_OPEN_LOAD_ERROR': 'خطأ في_تحميل_فتح_بكرة_الإدخال',
-    'UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR': 'خطأ في_تحميل_فتح_بكرة_رافعة_التفريغ'
+    'UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR': 'خطأ في_تحميل_فتح_بكرة_رافعة_التفريغ',
+    'SENSOR_Y_AXIS_ERROR': 'خطأ في_حساس_المحور_Y',
 }

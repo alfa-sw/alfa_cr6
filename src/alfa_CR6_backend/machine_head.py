@@ -870,7 +870,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         error_messages.append(tr_("Jar is not in the roller dispensing position."))
 
                     if self.status["status_level"] not in allowed_status_levels_:
-                        error_messages.append(tr_(f"Status '{self.status['status_level']}' is not allowed for dispensing."))
+                        error_messages.append(tr_("Status {} is not allowed for dispensing.").format(repr(self.status["status_level"])))
 
                     if not self.status["container_presence"]:
                         error_messages.append(tr_("Jar not detected from the ultrasonic sensor under nozzle."))

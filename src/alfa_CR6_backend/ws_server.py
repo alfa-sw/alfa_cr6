@@ -228,7 +228,7 @@ class WsMessageHandler: # pylint: disable=too-few-public-methods
             if order_nr_:
                 msg_ = tr_("<h4>created order {} from file:{}</h4>").format(order_nr_, file_name)
             else:
-                msg_ = tr_("<h4>can't create order from file:{}</h4>").format(order_nr_, file_name)
+                msg_ = tr_("<h4>can't create order from file:{}</h4>").format(file_name)
         except Exception as e:  # pylint: disable=broad-except
             msg_ = tr_('<h4>ERROR:{}</h4>').format(e)
 

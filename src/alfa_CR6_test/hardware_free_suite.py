@@ -25,6 +25,7 @@ CORE_TEST_MODULES = (
     "alfa_CR6_test.test_emulator_time_scale",
     "alfa_CR6_test.test_post_dispense_tintometer_refresh",
     "alfa_CR6_test.test_hardware_free_suite_manifest",
+    "alfa_CR6_test.test_translation_catalogs",
     # Persistenza e stato ordini/barattoli.
     "alfa_CR6_test.test_database_cleanup",
     "alfa_CR6_test.test_db_indexes",

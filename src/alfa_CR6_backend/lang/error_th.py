@@ -724,5 +724,6 @@ D = {
     'ROLLER_TIMEOUT_MOVE_ERROR': 'ข้อผิดพลาดหมดเวลาการเคลื่อนที่ของลูกกลิ้ง',
     'DOSING_ROLLER_OPEN_LOAD_ERROR': 'ข้อผิดพลาดวงจรเปิดของลูกกลิ้งจ่ายสาร',
     'INPUT_ROLLER_OPEN_LOAD_ERROR': 'ข้อผิดพลาดวงจรเปิดของลูกกลิ้งป้อนเข้า',
-    'UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR': 'ข้อผิดพลาดวงจรเปิดของลูกกลิ้งตัวยกปลดโหลด'
+    'UNLOAD_LIFTER_ROLLER_OPEN_LOAD_ERROR': 'ข้อผิดพลาดวงจรเปิดของลูกกลิ้งตัวยกปลดโหลด',
+    'SENSOR_Y_AXIS_ERROR': 'ข้อผิดพลาดเซนเซอร์แกน Y',
 }
