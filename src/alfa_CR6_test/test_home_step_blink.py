@@ -68,6 +68,45 @@ class _StepBlinkTestCase(unittest.TestCase):
 
 class TestHomeStepBlink(_StepBlinkTestCase):
 
+    def test_first_draw_failure_leaves_no_request_or_running_timer(self):
+        page = self.page()
+        label = page.STEP_07_08_label
+        with mock.patch.object(label, 'setStyleSheet', side_effect=RuntimeError('draw failed')):
+            with self.assertRaisesRegex(RuntimeError, 'draw failed'):
+                page.start_step_blink('07_08')
+
+        self.assertEqual(page._step_blinks, {})
+        self.assertFalse(page._step_blink_timer.isActive())
+        self.assertOrange(label, False)
+
+        token = page.start_step_blink('07_08')
+        self.assertOrange(label)
+        self.assertTrue(page._step_blink_timer.isActive())
+        page.stop_step_blink(token)
+        self.assertFalse(page._step_blink_timer.isActive())
+
+    def test_draw_failure_preserves_existing_blink(self):
+        page = self.page()
+        existing_label = page.STEP_01_02_label
+        failed_label = page.STEP_07_08_label
+        token = page.start_step_blink('01_02')
+        timer = page._step_blink_timer
+        with mock.patch.object(failed_label, 'setStyleSheet', side_effect=RuntimeError('draw failed')):
+            with self.assertRaisesRegex(RuntimeError, 'draw failed'):
+                page.start_step_blink('07_08')
+
+        self.assertEqual(page._step_blinks, {token: existing_label})
+        self.assertTrue(timer.isActive())
+        self.assertOrange(existing_label)
+        self.assertOrange(failed_label, False)
+        timer.timeout.emit()
+        self.assertOrange(existing_label, False)
+        timer.timeout.emit()
+        self.assertOrange(existing_label)
+        self.assertOrange(failed_label, False)
+        page.stop_step_blink(token)
+        self.assertFalse(timer.isActive())
+
     def test_overlapping_errors_survive_refresh_and_stop_independently(self):
         for reverse in (False, True):
             with self.subTest(reverse=reverse):

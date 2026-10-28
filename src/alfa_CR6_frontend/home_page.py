@@ -1593,12 +1593,14 @@ class HomePage(BaseStackedPage):
         if lbl is None:
             return None
 
+        if not self._step_blinks:
+            self._blink_state = True
+        # Register only after drawing succeeds, so failures cannot orphan a request.
+        self._set_step_blink_visual(lbl)
         token = object()
         self._step_blinks[token] = lbl
         if not self._step_blink_timer.isActive():
-            self._blink_state = True
             self._step_blink_timer.start()
-        self._set_step_blink_visual(lbl)
         return token
 
     def stop_step_blink(self, token):
