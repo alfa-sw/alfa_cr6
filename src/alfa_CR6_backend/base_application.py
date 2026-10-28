@@ -1936,10 +1936,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(f'updated entering_jar_order status: {order_updated_status}')
 
         logging.warning(f'cancelling:{entering_jar["task"]}')
+        # The movement's finally releases only this task's blink request.
         r = entering_jar["task"].cancel()
         logging.warning(f"cancelled. r:{r}")
-
-        self.main_window.stop_step_blink()
 
         logging.warning(f"deleting:{entering_jar}")
         del entering_jar
@@ -1984,10 +1983,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.db_session.commit()
 
                 logging.warning(f'cancelling:{j["task"]}')
+                # The movement's finally releases only this task's blink request.
                 r = j["task"].cancel()
                 logging.warning(f"cancelled. r:{r}")
-
-                self.main_window.stop_step_blink()
 
                 logging.warning(f"deleting:{j}")
                 del j

@@ -107,7 +107,7 @@ class _MainWindow:
         return None
 
     @staticmethod
-    def stop_step_blink():
+    def stop_step_blink(_token):
         return None
 
 

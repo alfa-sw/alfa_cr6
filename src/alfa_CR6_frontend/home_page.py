@@ -1039,9 +1039,6 @@ class HomePage(BaseStackedPage):
     # subclasses declare = None for labels missing from their UI file
     STEP_01_02_label = None
 
-    _blink_step_label = None
-    _blink_state = False
-
     _belt_blink_timer = None
     _belt_blink_state = False
     STEP_02_03_label = None
@@ -1060,6 +1057,7 @@ class HomePage(BaseStackedPage):
         super().__init__(*args, **kwargs)
         self.scale_refill_helper = None
         self._init_autorecovery_blink()
+        self._init_step_blink()
 
         self.jar_pixmap_map = [
             (self.STEP_01_label,    (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
@@ -1573,45 +1571,66 @@ class HomePage(BaseStackedPage):
                 list_.append(f"{_ : >4}")
         self.running_jars_lbl.setText("\n".join(list_))
 
+        blinking_labels = set(self._step_blinks.values())
         for entry in self.jar_pixmap_map:
             lbl, head_letters_bit_names, position = entry[:3]
             adjacent_positions = entry[3] if len(entry) > 3 else None
-            if lbl and lbl is not self._blink_step_label:
+            if lbl and lbl not in blinking_labels:
                 self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position,
                                                 adjacent_positions=adjacent_positions,
                                                 position_to_jar=position_to_jar,
                                                 letter_to_head=letter_to_head)
 
+    def _init_step_blink(self):
+        self._step_blinks = {}  # request token -> label; requests may share a label
+        self._blink_state = False
+        self._step_blink_timer = QTimer(self)
+        self._step_blink_timer.setInterval(500)
+        self._step_blink_timer.timeout.connect(self._do_blink)
+
     def start_step_blink(self, step_key):
         lbl = getattr(self, f"STEP_{step_key}_label", None)
-        if lbl:
-            self._blink_step_label = lbl
-            self._blink_state = False
-            self._do_blink()
+        if lbl is None:
+            return None
 
-    def stop_step_blink(self):
-        lbl = self._blink_step_label
-        self._blink_step_label = None
-        if lbl:
+        token = object()
+        self._step_blinks[token] = lbl
+        if not self._step_blink_timer.isActive():
+            self._blink_state = True
+            self._step_blink_timer.start()
+        self._set_step_blink_visual(lbl)
+        return token
+
+    def stop_step_blink(self, token):
+        # A missing or already released request must not affect another jar.
+        lbl = self._step_blinks.pop(token, None)
+        if lbl is None:
+            return
+        if lbl not in self._step_blinks.values():
             lbl.setStyleSheet("QLabel {}")
             lbl.setText("")
-            # Il lampeggio ha impostato lo stile direttamente, scavalcando la
-            # cache visuale: azzera la chiave-cache cosi' la label viene
-            # ridisegnata al prossimo aggiornamento (altrimenti verrebbe saltata).
             lbl._alfa_visual_key = None
+        if not self._step_blinks:
+            self._step_blink_timer.stop()
+            self._blink_state = False
 
     def _do_blink(self):
-        if not self._blink_step_label:
+        if not self._step_blinks:
             return
         self._blink_state = not self._blink_state
+        for lbl in set(self._step_blinks.values()):
+            self._set_step_blink_visual(lbl)
+
+    def _set_step_blink_visual(self, lbl):
+        # Blinking bypasses normal rendering: never leave its cache valid.
+        lbl._alfa_visual_key = None
+        lbl.setText("")
         if self._blink_state:
             _url = get_res("IMAGE", "jar-orange.png")
-            self._blink_step_label.setStyleSheet(
+            lbl.setStyleSheet(
                 f'color:#000000; border-image:url("{_url}"); font-size: 15px')
         else:
-            self._blink_step_label.setStyleSheet("QLabel {}")
-            self._blink_step_label.setText("")
-        QTimer.singleShot(500, self._do_blink)
+            lbl.setStyleSheet("QLabel {}")
 
     @staticmethod
     def _apply_label_visual(lbl, key, apply_fn):

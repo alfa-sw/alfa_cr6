@@ -1063,11 +1063,12 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                 r = await step(jar)
 
                 if not r:
+                    logging.warning("Movement failed: barcode:%s step:%s", barcode_, _tag)
                     _step_key = _method_name.replace("move_", "") if _method_name else None
 
                     if "move_01_02" in _tag:
 
-                        self.main_window.start_step_blink(_step_key)
+                        blink_token = self.main_window.start_step_blink(_step_key)
                         try:
                             while True:
                                 await self.wait_for_carousel_not_frozen(
@@ -1085,7 +1086,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                                 ):
                                     break
                         finally:
-                            self.main_window.stop_step_blink()
+                            self.main_window.stop_step_blink(blink_token)
 
                         self.delete_entering_jar()
 
@@ -1111,8 +1112,9 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                         _error_head.status.get("status_level") == "ALARM" and
                         _error_head.status.get("error_code") in (1211, "TOO_MANY_JARS_ON_CONVEYOR_ROLLER")
                     )
+                    blink_token = None
                     if not _is_too_many_jars:
-                        self.main_window.start_step_blink(_step_key)
+                        blink_token = self.main_window.start_step_blink(_step_key)
                     try:
                         await self.wait_for_carousel_not_frozen(
                             True,
@@ -1122,7 +1124,7 @@ class CarouselMotor(BaseApplication):  # pylint: disable=too-many-public-methods
                             dest_head=_dst_head
                         )
                     finally:
-                        self.main_window.stop_step_blink()
+                        self.main_window.stop_step_blink(blink_token)
 
                 else:
                     break

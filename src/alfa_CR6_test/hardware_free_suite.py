@@ -16,6 +16,7 @@ CORE_TEST_MODULES = (
     "alfa_CR6_test.test_autorecovery_interlock",
     "alfa_CR6_test.test_debug_page_unfreeze",
     "alfa_CR6_test.test_home_autorecovery_blink",
+    "alfa_CR6_test.test_home_step_blink",
     "alfa_CR6_test.test_refill_shared_helpers",
     "alfa_CR6_test.test_carousel_hardware_free",
     "alfa_CR6_test.test_application_hardware_free",

@@ -822,10 +822,10 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.home_page.show_reserve(head_index, flag=flag)
 
     def start_step_blink(self, step_key):
-        self.home_page.start_step_blink(step_key)
+        return self.home_page.start_step_blink(step_key)
 
-    def stop_step_blink(self):
-        self.home_page.stop_step_blink()
+    def stop_step_blink(self, token):
+        self.home_page.stop_step_blink(token)
 
     def set_carousel_freeze_control_enabled(self, enabled, reason=""):
         self.home_page.freeze_carousel_btn.setEnabled(enabled)
