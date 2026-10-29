@@ -2105,7 +2105,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         _runner = None
 
         try:
-            if freeze and not self.carousel_frozen:
+            if freeze:
+                already_frozen = self.carousel_frozen
 
                 _error_led_claimed = self.request_attention_led(
                     error_head,
@@ -2118,13 +2119,17 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     reason="carousel frozen"
                 )
 
-                self.freeze_carousel(True)
+                if not already_frozen:
+                    self.freeze_carousel(True)
+                # A new failure still needs its own message during an existing
+                # pause. Acknowledging it must not release the earlier alarm.
                 self.main_window.open_frozen_dialog(
                     message_args,
                     message_fmt=message_fmt,
                     visibility=visibility,
                     show_cancel_btn=show_cancel_btn,
-                    extra_properties=extra_properties
+                    extra_properties=extra_properties,
+                    force_explicit_restart=already_frozen,
                 )
 
             if self.carousel_frozen:

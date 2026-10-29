@@ -5,6 +5,8 @@
 No controllers are contacted. Only physical moves and operator input are
 simulated; the sequence, pause waits, task cancellation and UI are production
 code. Timer ticks are emitted explicitly to keep the tests deterministic.
+The alarm/timeout scenarios also exercise the real transfer and photocell wait
+with virtual time, simulated motor commands and an injected head status.
 """
 
 import asyncio
@@ -20,8 +22,12 @@ from PyQt5.QtWidgets import QApplication, QFrame
 from PyQt5.uic import loadUi
 
 from alfa_CR6_backend.carousel_motor import CarouselMotor
+from alfa_CR6_backend.base_application import BaseApplication
+import alfa_CR6_backend.carousel_motor as carousel_module
+import alfa_CR6_backend.machine_head as head_module
 import alfa_CR6_frontend.home_page as home_module
 from alfa_CR6_frontend.main_window import MainWindow
+from alfa_CR6_test.hardware_fakes import FakeMachineHead, VirtualClock
 
 
 class _StepBlinkTestCase(unittest.TestCase):
@@ -286,7 +292,10 @@ class TestCarouselStepBlink(_StepBlinkTestCase):
         self.release_moves.set()
         while not all(runner.get('frozen') for runner in runners.values()):
             await asyncio.sleep(0)
-        self.assertEqual(self.carousel.main_window.open_frozen_dialog.call_count, 1)
+        dialogs = self.carousel.main_window.open_frozen_dialog.call_args_list
+        self.assertEqual(len(dialogs), 2)
+        self.assertEqual([call.args[0][0] for call in dialogs], ['1', '2'])
+        self.assertTrue(dialogs[1].kwargs['force_explicit_restart'])
 
     def run_scenario(self, scenario):
         self.loop.run_until_complete(asyncio.wait_for(scenario, timeout=3))
@@ -321,6 +330,11 @@ class TestCarouselStepBlink(_StepBlinkTestCase):
     def test_entering_jar_cancellation_keeps_other_error_visible(self):
         async def scenario():
             await self._overlap(first='move_01_02')
+            dialog = self.carousel.main_window.open_frozen_dialog.call_args_list[0]
+            self.assertEqual(dialog.kwargs['message_fmt'],
+                             'barcode:{} error in {}. Remove all Cans from input roller and from HEAD A!')
+            self.assertFalse(dialog.kwargs['show_cancel_btn'])
+            self.assertEqual(dialog.kwargs['visibility'], 2)
             self.carousel.delete_entering_jar()
             await asyncio.gather(self.tasks[0], return_exceptions=True)
             self.assertTrue(self.tasks[0].cancelled())
@@ -345,6 +359,170 @@ class TestCarouselStepBlink(_StepBlinkTestCase):
         self.heads['D'].status = {
             'status_level': 'ALARM', 'error_code': 1211}
         self._cancel_error_without_blink('move_07_08')
+
+    def _alarm_during_transfer(self, arrival_before_timeout=False, cancel=False):
+        app = self.carousel
+        app.settings = types.SimpleNamespace(TROUBLESHOOTING=False)
+        app._head_safety_states = {1: 'STANDBY'}
+        app._BaseApplication__modal_freeze_msgbox = None
+        app.ws_server = None
+        app.insert_db_event = mock.Mock()
+        app.main_window.debug_page = None
+        app.main_window.show_carousel_frozen = mock.Mock()
+        app.main_window.set_carousel_freeze_control_enabled = mock.Mock()
+        app.main_window.open_alert_dialog = mock.Mock()
+        app.freeze_carousel = types.MethodType(BaseApplication.freeze_carousel, app)
+        self.heads = {letter: FakeMachineHead(letter) for letter in 'ABCDEF'}
+        app.get_machine_head_by_letter = self.heads.get
+        app.machine_head_dict = {
+            index: self.heads[letter]
+            for index, letter in app.MACHINE_HEAD_INDEX_TO_NAME_MAP.items()
+            if letter in self.heads}
+        source, destination = self.heads['A'], self.heads['B']
+        destination.app = app
+        # Restore the production transfer; other sequence steps stay simulated.
+        app.move_02_03 = types.MethodType(CarouselMotor.move_02_03, app)
+        clock = VirtualClock()
+        arrival_waits = []
+        real_sleep = asyncio.sleep
+
+        async def virtual_sleep(_delay):
+            # Only the scenario advances time; tasks still yield to each other.
+            await real_sleep(0)
+
+        async def wait_for_arrival(head, bit_name, **kwargs):
+            arrival_waits.append((clock.time(), kwargs['timeout']))
+            return await head_module.MachineHead.wait_for_jar_photocells_status(
+                head, bit_name, **kwargs)
+
+        destination.wait_for_jar_photocells_status = types.MethodType(
+            wait_for_arrival, destination)
+
+        async def scenario():
+            alarm_head = head_module.MachineHead(1, 'unused', 0, 0)
+            alarm_head.status = {'status_level': 'STANDBY'}
+            self.heads['F'] = alarm_head
+            app.machine_head_dict[1] = alarm_head
+            jar = types.SimpleNamespace(
+                barcode='3', position='A', status='PROGRESS',
+                machine_head=None, order=mock.Mock())
+            task = asyncio.create_task(app.execute_carousel_steps(6, jar))
+            self.tasks.append(task)
+            runner = {'jar': jar, 'task': task}
+            app._BaseApplication__jar_runners['3'] = runner
+            while not arrival_waits:
+                if task.done():
+                    await task
+                    self.fail('Sequence ended before the transfer wait')
+                await real_sleep(0)
+            started, timeout = arrival_waits[0]
+            self.assertEqual(timeout, 45)
+            self.assertEqual(source.command_log[0][1], 1)
+            self.assertEqual(destination.command_log[0][1], 2)
+
+            clock.now = started + 10
+            await alarm_head.update_status({
+                'status_level': 'ALARM', 'error_code': 1065,
+                'error_message': 'C2_TINTING_VALVE_1_POS0_READ_LIGHT_ERROR',
+                'photocells_status': 0, 'jar_photocells_status': 0,
+                'crx_outputs_status': 0})
+            self.assertTrue(app.carousel_frozen)
+            self.assertEqual(self.page_ui._step_blinks, {})
+            self.assertFalse(task.done())
+            app.main_window.open_frozen_dialog.assert_called_once()
+            self.assertTrue(app.main_window.open_frozen_dialog.call_args.kwargs[
+                'force_explicit_restart'])
+
+            if arrival_before_timeout:
+                clock.now = started + 20
+                destination.jar_photocells_status['JAR_DISPENSING_POSITION_PHOTOCELL'] = True
+            else:
+                clock.now = started + 44
+                for _ in range(3):
+                    await real_sleep(0)
+                self.assertEqual(self.page_ui._step_blinks, {})
+                self.assertFalse(runner.get('frozen'))
+                clock.now = started + 46
+
+            while not runner.get('frozen'):
+                if task.done():
+                    await task
+                    self.fail('Sequence ended before observing the pause')
+                await real_sleep(0)
+            self.assertFalse(task.done())
+            self.assertTrue(app.carousel_frozen)
+            if arrival_before_timeout:
+                app.main_window.open_frozen_dialog.assert_called_once()
+            else:
+                dialogs = app.main_window.open_frozen_dialog.call_args_list
+                self.assertEqual(len(dialogs), 2)
+                movement_dialog = dialogs[1]
+                self.assertEqual(movement_dialog.args[0], (
+                    '3', '\nmove_02_03 (A)\n', '1'))
+                self.assertEqual(movement_dialog.kwargs['message_fmt'], [
+                    'barcode:{} error in {}. I will retry.', '({})'])
+                self.assertTrue(movement_dialog.kwargs['force_explicit_restart'])
+            app.main_window.open_alert_dialog.assert_not_called()
+            self.assertEqual(source.command_log[-1][1], 0)
+            self.assertEqual(destination.command_log[-1][1], 0)
+            self.page_ui.update_jar_pixmaps()
+            self.assertOrange(self.page_ui.STEP_02_03_label, not arrival_before_timeout)
+            if arrival_before_timeout:
+                self.assertEqual(self.page_ui._step_blinks, {})
+                app.update_jar_position.assert_any_call(jar=jar, machine_head=destination, pos='B')
+                self.assertFalse(any(
+                    call.args and call.args[0] == 'Movement failed: barcode:%s step:%s'
+                    for call in movement_log.warning.call_args_list))
+            else:
+                movement_log.warning.assert_any_call(
+                    'Movement failed: barcode:%s step:%s', '3', 'move_02_03 (A)')
+                self.assertEqual(len(self.page_ui._step_blinks), 1)
+
+            if cancel:
+                app.ws_server = types.SimpleNamespace(refresh_can_list=mock.Mock())
+                app.delete_jar_runner('3')
+                await asyncio.gather(task, return_exceptions=True)
+                self.assertTrue(task.cancelled())
+                self.assertTrue(app.carousel_frozen)
+                self.assertEqual(alarm_head.status['status_level'], 'ALARM')
+            else:
+                if not arrival_before_timeout:
+                    original_output = destination.crx_outputs_management
+
+                    async def output_with_arrival(output_number, output_action, **kwargs):
+                        result = await original_output(output_number, output_action, **kwargs)
+                        if output_action == 2:
+                            destination.jar_photocells_status['JAR_DISPENSING_POSITION_PHOTOCELL'] = True
+                        return result
+
+                    destination.crx_outputs_management = output_with_arrival
+                await alarm_head.update_status({
+                    'status_level': 'STANDBY', 'error_code': 0,
+                    'photocells_status': 0, 'jar_photocells_status': 0,
+                    'crx_outputs_status': 0})
+                self.assertTrue(app.carousel_frozen)
+                self.assertTrue(app.freeze_carousel(False))
+                self.assertTrue(await task)
+                self.assertEqual(len(arrival_waits), 1 if arrival_before_timeout else 2)
+            self.page_ui.update_jar_pixmaps()
+            self.assertEqual(self.page_ui._step_blinks, {})
+            self.assertOrange(self.page_ui.STEP_02_03_label, False)
+            self.assertFalse(self.page_ui._step_blink_timer.isActive())
+
+        with mock.patch.object(carousel_module, 'time', clock), \
+                mock.patch.object(carousel_module.asyncio, 'sleep', virtual_sleep), \
+                mock.patch.object(carousel_module, 'logging', wraps=carousel_module.logging) as movement_log, \
+                mock.patch.object(head_module, 'get_application_instance', return_value=app):
+            self.run_scenario(scenario())
+
+    def test_transfer_timeout_during_other_alarm_blinks_until_explicit_resume(self):
+        self._alarm_during_transfer()
+
+    def test_arrival_during_other_alarm_completes_transfer_without_blink(self):
+        self._alarm_during_transfer(arrival_before_timeout=True)
+
+    def test_cancel_after_transfer_timeout_preserves_other_alarm_pause(self):
+        self._alarm_during_transfer(cancel=True)
 
 
 if __name__ == '__main__':

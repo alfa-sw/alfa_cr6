@@ -115,6 +115,18 @@ class TestCancelCallback(unittest.TestCase):
             _btn(box, 'ok').click()
             self.assertEqual(self.app.freeze_calls, [False])
             self.assertEqual(stop_calls, [1])
+
+            # A second failure during an existing alarm is informational:
+            # acknowledging its own text must preserve the earlier pause.
+            self.app.freeze_calls.clear()
+            mw.open_frozen_dialog(
+                ('BC3', 'A -> B'), message_fmt='barcode:{} error in {}',
+                force_explicit_restart=True)
+            box = mw.findChildren(QMessageBox)[-1]
+            self.assertIn('BC3', box.text())
+            self.assertIn('A -> B', box.text())
+            _btn(box, 'ok').click()
+            self.assertEqual(self.app.freeze_calls, [])
         finally:
             main_window_module.stop_refill_alarm = orig
 

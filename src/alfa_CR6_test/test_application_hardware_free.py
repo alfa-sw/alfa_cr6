@@ -377,6 +377,107 @@ class TestRestoreMachineHelperRawPersistence(unittest.TestCase):
         self.assertIn(self.VALID_BARCODE, data)
 
 
+class TestCarouselPauseMessages(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.app = types.SimpleNamespace(
+            carousel_frozen=True,
+            main_window=types.SimpleNamespace(open_frozen_dialog=mock.Mock()),
+            request_attention_led=mock.Mock(return_value=True),
+            release_attention_led=mock.Mock(),
+            _BaseApplication__jar_runners={},
+        )
+        self.app.freeze_carousel = mock.Mock(
+            side_effect=lambda flag: setattr(self.app, 'carousel_frozen', flag))
+
+    def tearDown(self):
+        tasks = asyncio.all_tasks(self.loop)
+        for task in tasks:
+            task.cancel()
+        self.loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+        self.loop.close()
+        asyncio.set_event_loop(None)
+
+    def test_transfer_failure_during_alarm_has_its_own_message_and_keeps_pause(self):
+        async def scenario():
+            source, destination = object(), object()
+            task = asyncio.create_task(BaseApplication.wait_for_carousel_not_frozen(
+                self.app, True, message_args=('BC1', 'A -> B', '1'),
+                message_fmt='barcode:{} error in {}. I will retry. ({})',
+                error_head=source, dest_head=destination))
+            await asyncio.sleep(0)
+
+            dialog = self.app.main_window.open_frozen_dialog
+            dialog.assert_called_once()
+            self.assertEqual(dialog.call_args.args[0], ('BC1', 'A -> B', '1'))
+            self.assertTrue(dialog.call_args.kwargs['force_explicit_restart'])
+            self.app.freeze_carousel.assert_not_called()
+            self.assertTrue(self.app.carousel_frozen)
+            self.assertFalse(task.done())
+
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+            self.assertTrue(self.app.carousel_frozen)
+            released = self.app.release_attention_led.call_args_list
+            self.assertEqual([call.args[0] for call in released], [source, destination])
+
+        self.loop.run_until_complete(scenario())
+
+    def test_first_failure_keeps_normal_resume_dialog(self):
+        async def scenario():
+            self.app.carousel_frozen = False
+            task = asyncio.create_task(BaseApplication.wait_for_carousel_not_frozen(
+                self.app, True, message_fmt='transfer failed'))
+            await asyncio.sleep(0)
+
+            self.app.freeze_carousel.assert_called_once_with(True)
+            self.assertFalse(self.app.main_window.open_frozen_dialog.call_args.kwargs.get(
+                'force_explicit_restart', False))
+            self.app.carousel_frozen = False
+            await task
+            self.assertEqual(self.app.release_attention_led.call_count, 2)
+
+        self.loop.run_until_complete(scenario())
+
+    def test_waiting_for_an_existing_pause_does_not_open_another_dialog(self):
+        async def scenario():
+            task = asyncio.create_task(BaseApplication.wait_for_carousel_not_frozen(
+                self.app, message_fmt='not a new failure'))
+            await asyncio.sleep(0)
+            self.app.main_window.open_frozen_dialog.assert_not_called()
+            self.app.request_attention_led.assert_not_called()
+            self.app.carousel_frozen = False
+            await task
+
+        self.loop.run_until_complete(scenario())
+
+    def test_overlapping_failures_keep_distinct_messages(self):
+        async def scenario():
+            self.app.carousel_frozen = False
+            tasks = []
+            for barcode, route in [('BC1', 'A -> B'), ('BC2', 'D -> E')]:
+                tasks.append(asyncio.create_task(
+                    BaseApplication.wait_for_carousel_not_frozen(
+                        self.app, True, message_args=(barcode, route),
+                        message_fmt='barcode:{} error in {}')))
+                await asyncio.sleep(0)
+
+            calls = self.app.main_window.open_frozen_dialog.call_args_list
+            self.assertEqual([call.args[0] for call in calls], [
+                ('BC1', 'A -> B'), ('BC2', 'D -> E')])
+            self.assertTrue(calls[1].kwargs['force_explicit_restart'])
+            tasks[1].cancel()
+            await asyncio.gather(tasks[1], return_exceptions=True)
+            self.assertFalse(tasks[0].done())
+            self.assertTrue(self.app.carousel_frozen)
+            self.app.carousel_frozen = False
+            await tasks[0]
+
+        self.loop.run_until_complete(scenario())
+
+
 class TestMachineTaskSupervision(unittest.TestCase):
 
     def setUp(self):
