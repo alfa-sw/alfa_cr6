@@ -441,6 +441,8 @@ class _OrderBarcodeDispenseE2EMixin:
         self.app._head_safety_states = {
             index: "STANDBY" for index, _name in self.spec["heads"]
         }
+        self.app._autorecovery_pending_heads = set()
+        self.app._autorecovery_can_resume = False
         self.app.main_window = _MainWindow()
         self.app.ws_server = _WsServer()
         self.app.redis_publisher = _RedisPublisher()

@@ -518,6 +518,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             for index, address in enumerate(settings.MACHINE_HEAD_IPADD_PORTS_LIST)
             if address
         }
+        self._autorecovery_pending_heads = set()
+        self._autorecovery_can_resume = False
         self.carousel_frozen = True
         self.ws_server = None
 
@@ -1824,14 +1826,36 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         return self.freeze_carousel(not self.carousel_frozen)
 
     def update_head_safety(self, head_index, status_level=None):
-        """A fresh status can release the interlock, never the carousel freeze."""
+        """Resume only after every overlapping recovery succeeds in STANDBY."""
         previous = self._head_safety_states[head_index]
         self._head_safety_states[head_index] = status_level
         if previous != status_level:
             # Freeze on a new hazard, not on every repeated status. This keeps
             # the explicit Debug override effective until another hazard occurs.
-            if status_level in (None, "AUTORECOVERY"):
+            if status_level == "AUTORECOVERY":
+                if not self._autorecovery_pending_heads:
+                    self._autorecovery_can_resume = (
+                        not self.carousel_frozen
+                        and all(level not in (None, "ALARM")
+                                for level in self._head_safety_states.values()))
+                    # Include heads still recovering after a Debug override.
+                    self._autorecovery_pending_heads.update(
+                        index for index, level in self._head_safety_states.items()
+                        if level == "AUTORECOVERY")
+                self._autorecovery_pending_heads.add(head_index)
+                self.freeze_carousel(True, autorecovery=True)
+            elif status_level is None:
                 self.freeze_carousel(True)
+            elif status_level == "ALARM":
+                # Remember failures even if the alarm clears before a peer ends.
+                self._autorecovery_can_resume = False
+
+            if status_level in ("STANDBY", "ALARM"):
+                self._autorecovery_pending_heads.discard(head_index)
+
+            if not self._autorecovery_pending_heads and self._autorecovery_can_resume:
+                self._autorecovery_can_resume = False
+                self.freeze_carousel(False)
             self._update_carousel_freeze_control()
 
     def get_carousel_unlock_block_reason(self):
@@ -1862,11 +1886,19 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if self.__modal_freeze_msgbox:
             self.__modal_freeze_msgbox.close()
 
-    def freeze_carousel(self, flag, *, force=False):
+    def freeze_carousel(self, flag, *, force=False, autorecovery=False):
 
         if not flag and not force and self.get_carousel_unlock_block_reason():
             self._update_carousel_freeze_control()
             return False
+
+        if not flag:
+            # An accepted unlock (including Debug) clears recovery bookkeeping.
+            self._autorecovery_pending_heads.clear()
+            self._autorecovery_can_resume = False
+        elif not autorecovery:
+            # A manual pause, refill or independent fault must survive recovery.
+            self._autorecovery_can_resume = False
 
         if self.carousel_frozen != flag:
             self.carousel_frozen = flag
@@ -2119,8 +2151,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                     reason="carousel frozen"
                 )
 
-                if not already_frozen:
-                    self.freeze_carousel(True)
+                self.freeze_carousel(True)
                 # A new failure still needs its own message during an existing
                 # pause. Acknowledging it must not release the earlier alarm.
                 self.main_window.open_frozen_dialog(

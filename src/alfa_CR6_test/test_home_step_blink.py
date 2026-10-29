@@ -364,6 +364,8 @@ class TestCarouselStepBlink(_StepBlinkTestCase):
         app = self.carousel
         app.settings = types.SimpleNamespace(TROUBLESHOOTING=False)
         app._head_safety_states = {1: 'STANDBY'}
+        app._autorecovery_pending_heads = set()
+        app._autorecovery_can_resume = False
         app._BaseApplication__modal_freeze_msgbox = None
         app.ws_server = None
         app.insert_db_event = mock.Mock()

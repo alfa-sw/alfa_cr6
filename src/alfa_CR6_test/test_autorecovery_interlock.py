@@ -4,6 +4,7 @@
 
 import asyncio
 import copy
+import itertools
 import json
 import types
 import unittest
@@ -25,6 +26,8 @@ class TestAutorecoveryInterlock(unittest.TestCase):
         self.app.settings = types.SimpleNamespace(TROUBLESHOOTING=False)
         # A, F and B are all expected, even before MachineHead creation.
         self.app._head_safety_states = {0: None, 1: None, 2: None}
+        self.app._autorecovery_pending_heads = set()
+        self.app._autorecovery_can_resume = False
         self.app.machine_head_dict = {}
         self.app.carousel_frozen = True
         self.app.ws_server = None
@@ -105,7 +108,18 @@ class TestAutorecoveryInterlock(unittest.TestCase):
         self.assertTrue(self.app.freeze_carousel(False))
         self.assertFalse(self.app.carousel_frozen)
 
-    def test_multiple_heads_must_all_leave_autorecovery(self):
+    def test_single_success_resumes_without_an_operator_action(self):
+        self._run(self._ready())
+        for _ in range(2):
+            self._run(self._status(0, "AUTORECOVERY"))
+            self.assertTrue(self.app.carousel_frozen)
+            self._assert_home_enabled(False)
+            self._run(self._status(0, "STANDBY"))
+            self.assertFalse(self.app.carousel_frozen)
+            self._assert_home_enabled(True)
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+
+    def test_multiple_heads_resume_only_if_all_recoveries_succeed(self):
         for first_end, last_end in (
                 ("STANDBY", "STANDBY"), ("STANDBY", "ALARM"),
                 ("ALARM", "STANDBY"), ("ALARM", "ALARM")):
@@ -120,11 +134,95 @@ class TestAutorecoveryInterlock(unittest.TestCase):
                 self.assertFalse(self.app.freeze_carousel(False))
                 self._run(self._status(1, last_end))
                 self._assert_home_enabled(True)
-                self.assertTrue(self.app.carousel_frozen)
-                # The existing home confirmation calls this callback: only an
-                # explicit operator action can now resume the carousel.
-                self.assertTrue(self.app.toggle_freeze_carousel())
+                failed = "ALARM" in (first_end, last_end)
+                self.assertEqual(self.app.carousel_frozen, failed)
+                if failed:
+                    # Mixed outcomes still require the home confirmation.
+                    self.assertTrue(self.app.toggle_freeze_carousel())
                 self.assertFalse(self.app.carousel_frozen)
+
+    def test_three_successful_heads_wait_for_the_last_in_any_completion_order(self):
+        for order in itertools.permutations((0, 1, 2)):
+            with self.subTest(order=order):
+                self._run(self._ready())
+                for index in (0, 1, 2):
+                    self._run(self._status(index, "AUTORECOVERY"))
+                for index in order[:-1]:
+                    self._run(self._status(index, "STANDBY"))
+                    self.assertTrue(self.app.carousel_frozen)
+                    self._assert_home_enabled(False)
+                self._run(self._status(order[-1], "STANDBY"))
+                self.assertFalse(self.app.carousel_frozen)
+                self._assert_home_enabled(True)
+
+    def test_cleared_alarm_is_remembered_until_other_recoveries_finish(self):
+        self._run(self._ready())
+        for index in (0, 1, 2):
+            self._run(self._status(index, "AUTORECOVERY"))
+        self._run(self._status(0, "ALARM"))
+        self._run(self._status(0, "STANDBY"))
+        self._run(self._status(1, "STANDBY"))
+        self.assertTrue(self.app.carousel_frozen)
+        self._assert_home_enabled(False)
+        self._run(self._status(2, "STANDBY"))
+        self._assert_home_enabled(True)
+        self.assertTrue(self.app.carousel_frozen)
+        self.assertTrue(self.app.toggle_freeze_carousel())
+        # An explicit restart permits a later, clean group to resume normally.
+        self._run(self._status(0, "AUTORECOVERY"))
+        self._run(self._status(0, "STANDBY"))
+        self.assertFalse(self.app.carousel_frozen)
+
+    def test_reentering_recovery_waits_for_the_new_attempt_too(self):
+        self._run(self._ready())
+        self._run(self._status(0, "AUTORECOVERY"))
+        self._run(self._status(1, "AUTORECOVERY"))
+        self._run(self._status(0, "STANDBY"))
+        self._run(self._status(0, "AUTORECOVERY"))
+        self._run(self._status(1, "STANDBY"))
+        self.assertTrue(self.app.carousel_frozen)
+        self._run(self._status(0, "STANDBY"))
+        self.assertFalse(self.app.carousel_frozen)
+
+    def test_intermediate_reset_does_not_count_as_success(self):
+        self._run(self._ready())
+        self._run(self._status(0, "AUTORECOVERY"))
+        self._run(self._status(1, "AUTORECOVERY"))
+        self._run(self._status(0, "RESET"))
+        self._run(self._status(1, "STANDBY"))
+        self.assertTrue(self.app.carousel_frozen)
+        self._run(self._status(0, "STANDBY"))
+        self.assertFalse(self.app.carousel_frozen)
+
+    def test_success_preserves_manual_pause_before_or_during_recovery(self):
+        for pause_before in (True, False):
+            with self.subTest(pause_before=pause_before):
+                self._run(self._ready())
+                if pause_before:
+                    self.app.freeze_carousel(True)
+                self._run(self._status(0, "AUTORECOVERY"))
+                if not pause_before:
+                    self.app.freeze_carousel(True)
+                self._run(self._status(0, "STANDBY"))
+                self.assertTrue(self.app.carousel_frozen)
+                self._assert_home_enabled(True)
+
+    def test_success_preserves_an_alarm_from_a_head_not_in_recovery(self):
+        self._run(self._ready())
+        self._run(self._status(0, "AUTORECOVERY"))
+        self._run(self._status(2, "ALARM"))
+        self._run(self._status(2, "STANDBY"))
+        self._run(self._status(0, "STANDBY"))
+        self.assertTrue(self.app.carousel_frozen)
+        self._assert_home_enabled(True)
+
+    def test_startup_during_recovery_does_not_authorize_automatic_resume(self):
+        self._run(self._status(0, "AUTORECOVERY"))
+        self._run(self._status(1, "STANDBY"))
+        self._run(self._status(2, "STANDBY"))
+        self._run(self._status(0, "STANDBY"))
+        self.assertTrue(self.app.carousel_frozen)
+        self._assert_home_enabled(True)
 
     def test_last_head_can_leave_for_alarm_without_automatic_restart(self):
         self._run(self._ready())
@@ -169,17 +267,31 @@ class TestAutorecoveryInterlock(unittest.TestCase):
         self.assertTrue(self.app.carousel_frozen)
 
     def test_missing_and_unknown_states_do_not_release_recovery(self):
-        self._run(self._ready())
         for status in ({}, {"status_level": None}, {"status_level": "UNKNOWN"},
                        {"status_level": 13}, {"status_level": []},
                        {"status_level": "POWER_OFF"},
                        {"status_level": "STANDBY", "expired": True}):
             with self.subTest(status=status):
+                self._run(self._ready())
                 self._run(self._status(0, "AUTORECOVERY"))
                 self._run(self._head(0).update_status(status))
                 self.assertFalse(self.app.freeze_carousel(False))
                 self.assertTrue(self.app.carousel_frozen)
                 self._assert_home_enabled(False)
+                self._run(self._status(0, "STANDBY"))
+                self.assertTrue(self.app.carousel_frozen)
+                self._assert_home_enabled(True)
+
+    def test_communication_loss_on_another_head_prevents_automatic_resume(self):
+        self._run(self._ready())
+        self._run(self._status(0, "AUTORECOVERY"))
+        self._head(2).invalidate_safety_status()
+        self._run(self._status(0, "STANDBY"))
+        self.assertTrue(self.app.carousel_frozen)
+        self._assert_home_enabled(False)
+        self._run(self._status(2, "STANDBY"))
+        self.assertTrue(self.app.carousel_frozen)
+        self._assert_home_enabled(True)
 
     def test_empty_or_malformed_status_message_invalidates_previous_standby(self):
         self._run(self._ready())
@@ -274,10 +386,11 @@ class TestAutorecoveryInterlock(unittest.TestCase):
 
         self._run(scenario())
 
-    def test_queued_command_and_jar_wait_for_explicit_operator_restart(self):
-        async def scenario():
+    def test_queued_work_resumes_after_success_but_waits_for_operator_after_failure(self):
+        async def scenario(failed):
             await self._ready()
             await self._status(1, "AUTORECOVERY")
+            await self._status(2, "AUTORECOVERY")
             head = self._head(0)
             head.websocket = types.SimpleNamespace(send=mock.AsyncMock())
             jar = {"status": "PROGRESS", "position": "A", "dispensed": {"RED": 1.5}}
@@ -289,16 +402,42 @@ class TestAutorecoveryInterlock(unittest.TestCase):
             await asyncio.sleep(0)
             self.assertTrue(runner["frozen"])
             head.websocket.send.assert_not_awaited()
-            await self._status(1, "STANDBY")
+            await self._status(1, "ALARM" if failed else "STANDBY")
             await asyncio.sleep(0)
             self.assertFalse(task.done())
+            head.websocket.send.assert_not_awaited()
             self.assertEqual(jar, snapshot)
             self.assertIs(self.app._BaseApplication__jar_runners["barcode"], runner)
-            self.assertTrue(self.app.freeze_carousel(False))
+            await self._status(2, "STANDBY")
+            self.assertEqual(self.app.carousel_frozen, failed)
+            if failed:
+                await asyncio.sleep(0)
+                self.assertFalse(task.done())
+                head.websocket.send.assert_not_awaited()
+                self.assertTrue(self.app.toggle_freeze_carousel())
             self.assertTrue(await asyncio.wait_for(task, 1))
             head.websocket.send.assert_awaited_once()
             self.assertFalse(runner["frozen"])
             self.assertEqual(jar, snapshot)
+
+        for failed in (False, True):
+            with self.subTest(failed=failed):
+                self._run(scenario(failed))
+
+    def test_movement_failure_during_recovery_requires_manual_restart(self):
+        async def scenario():
+            await self._ready()
+            await self._status(0, "AUTORECOVERY")
+            waiter = asyncio.create_task(self.app.wait_for_carousel_not_frozen(
+                freeze=True, message_fmt="transfer failed"))
+            await asyncio.sleep(0)
+            self.assertTrue(self.app.main_window.open_frozen_dialog.call_args.kwargs[
+                "force_explicit_restart"])
+            await self._status(0, "STANDBY")
+            self.assertTrue(self.app.carousel_frozen)
+            self.assertFalse(waiter.done())
+            self.assertTrue(self.app.toggle_freeze_carousel())
+            await asyncio.wait_for(waiter, 1)
 
         self._run(scenario())
 
@@ -387,7 +526,7 @@ class TestAutorecoveryInterlock(unittest.TestCase):
 
         self._run(scenario())
 
-    def test_operator_wait_does_not_consume_precondition_timeout(self):
+    def test_recovery_wait_does_not_consume_precondition_timeout(self):
         self._run(self._ready())
         clock = VirtualClock()
         condition = mock.Mock(side_effect=[False, True])
@@ -397,16 +536,15 @@ class TestAutorecoveryInterlock(unittest.TestCase):
 
         clock.on_sleep = freeze_on_first_sample
 
-        async def operator_wait():
+        async def recovery_wait():
             # More than the operation timeout elapses while no work is started.
             clock.now += 1000
             self.app.update_head_safety(1, "STANDBY")
-            self.assertTrue(self.app.carousel_frozen)
-            self.app.freeze_carousel(False)
+            self.assertFalse(self.app.carousel_frozen)
 
         with mock.patch.object(carousel_module.time, "time", clock.time), \
                 mock.patch.object(carousel_module.asyncio, "sleep", clock.sleep), \
-                mock.patch.object(self.app, "wait_for_carousel_not_frozen", operator_wait):
+                mock.patch.object(self.app, "wait_for_carousel_not_frozen", recovery_wait):
             result = self._run(self.app.wait_for_condition(
                 condition, timeout=1, stability_count=1, step=0.1,
                 pause_on_freeze=True))

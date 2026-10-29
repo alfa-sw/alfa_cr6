@@ -413,7 +413,8 @@ class TestCarouselPauseMessages(unittest.TestCase):
             dialog.assert_called_once()
             self.assertEqual(dialog.call_args.args[0], ('BC1', 'A -> B', '1'))
             self.assertTrue(dialog.call_args.kwargs['force_explicit_restart'])
-            self.app.freeze_carousel.assert_not_called()
+            # Record the independent fault even when another cause froze first.
+            self.app.freeze_carousel.assert_called_once_with(True)
             self.assertTrue(self.app.carousel_frozen)
             self.assertFalse(task.done())
 
