@@ -33,11 +33,12 @@ I nomi completi dei pigmenti vengono mantenuti, comprese maiuscole e minuscole.
 Le quantità sono espresse in grammi (`DispenseUnit=G`); vengono conservate anche
 le righe con quantità zero. La base indicata in `Base` viene aggiunta agli
 ingredienti con il peso specificato in `BaseAmount`, mantenendone la precisione.
-La base è obbligatoria e deve avere un peso finito e positivo; le quantità dei
-coloranti devono essere finite e non negative, e il loro numero deve coincidere
-con `NumColorants`.
+Se `Base` è vuoto (`Base=`) o assente, si importano soltanto tutte le righe di
+`INGREDIENTSn`, ignorando `BaseAmount`. Quando la base è indicata, il suo peso
+deve essere finito e positivo. Le quantità dei coloranti devono essere finite
+e non negative, e il loro numero deve coincidere con `NumColorants`.
 
-Sono disponibili due campioni:
+Sono disponibili i seguenti campioni:
 
 - `dci_charleston.dci`: ricetta `CHARLESTON GRAY 243`, con 20 coloranti e la base
   `CCI-A Gloss Clear` da 15,51952 g. Verifica anche la rimozione del nome colore
@@ -45,6 +46,10 @@ Sono disponibili due campioni:
 - `dci_test1.dci`: ricetta `test 1`, con 20 coloranti (13 a quantità zero) e la
   stessa base da 5 g, per un totale di 10,985 g. In questo caso il nome colore
   non compare alla fine di `CollectionName`, che viene quindi mantenuto intero.
+- `dci_adirondack_no_base.dci`, `dci_chatsworth_no_base.dci` e
+  `dci_charleston_no_base.dci`: nuovi file ricevuti con `Base=` e `BaseAmount=0`.
+  Devono importare rispettivamente 6, 10 e 20 ingredienti, comprese tutte le
+  righe a zero, senza aggiungere una base.
 
 La suite `DciOrderTests`, in `src/alfa_CR6_test/test_dci_order.py`, verifica
 l'importazione dei campioni, i file con più ricette, i dati non validi e la

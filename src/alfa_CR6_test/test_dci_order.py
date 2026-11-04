@@ -180,6 +180,61 @@ class DciOrderTests(unittest.TestCase):
         self.assertEqual('CCI-A Gloss Clear', order['ingredients'][-1]['pigment_name'])
         self.assertEqual(5, order['ingredients'][-1]['weight(g)'])
 
+    def test_real_files_without_base_import_only_all_listed_ingredients(self):
+        samples = (
+            ('dci_adirondack_no_base.dci', [
+                ('10-A Lamp Black', 0.033),
+                ('101-A Phath Blue R', 0.174),
+                ('24-A Burnt Umber', 0.0),
+                ('40-A Quin Magenta', 0.027),
+                ('CCI-A BM White', 20.491),
+                ('CCI-A Gloss Clear', 0.0),
+            ]),
+            ('dci_chatsworth_no_base.dci', [
+                ('10-A Lamp Black', 0.0),
+                ('19-A Yellow Oxide', 0.0),
+                ('22-A Red Oxide', 0.0),
+                ('CCI-A Behr White', 0.0),
+                ('CCI-A Flat Clear', 0.0),
+                ('CCI-A Gloss White', 10.0),
+                ('CCI-A Gloss Clear', 10.0),
+                ('CCI-A Flat White', 10.0),
+                ('CCI-A BM White', 10.0),
+                ('CCI-A Behr Clear', 10.0),
+            ]),
+            ('dci_charleston_no_base.dci', [
+                ('1-A Titanium White', 63.917),
+                ('10-A Lamp Black', 0.0),
+                ('100-A Phath Green', 0.507),
+                ('101-A Phath Blue R', 0.478),
+                ('120-A Diazo Yellow', 0.0),
+                ('14-A Arot Yellow', 0.0),
+                ('176-A Red B Carmin', 0.0),
+                ('19-A Yellow Oxide', 0.0),
+                ('194-A Arylide Yell', 0.0),
+                ('22-A Red Oxide', 0.0),
+                ('24-A Burnt Umber', 19.579),
+                ('33-A Carbazole Vio', 0.0),
+                ('40-A Quin Magenta', 0.0),
+                ('42-A DPP Red', 0.0),
+                ('44-A Benz Yellow H', 0.0),
+                ('46-A Vandate Yello', 0.0),
+                ('51-A Phath Blue GS', 0.0),
+                ('53-A Yellow HR70', 0.0),
+                ('54-A Green YS', 0.0),
+                ('61-A DPP Orange', 0.0),
+            ]),
+        )
+        for name, expected in samples:
+            with self.subTest(name=name):
+                order = self.parse_fixture(name)
+                self.assertEqual('', order['meta']['Base'])
+                self.assertEqual('0', order['meta']['BaseAmount'])
+                self.assertEqual([
+                    {'pigment_name': pigment, 'weight(g)': weight, 'description': ''}
+                    for pigment, weight in expected
+                ], order['ingredients'])
+
     def test_test1_to_test7_keep_collection_when_color_name_is_absent(self):
         with open(os.path.join(FIXTURES, 'dci_test1.dci')) as stream:
             content = stream.read()
@@ -276,13 +331,33 @@ BaseAmount=100
         self.assertEqual('CCI-A Gloss Clear', orders[1]['ingredients'][1]['pigment_name'])
         self.assertEqual(100.0, orders[1]['ingredients'][1]['weight(g)'])
 
-    def test_rejects_missing_or_empty_base(self):
-        for content in (
-                FORMULA.replace('Base=CCI-A Gloss Clear\n', ''),
-                FORMULA.replace('Base=CCI-A Gloss Clear', 'Base= ')):
-            with self.subTest(content=content):
-                orders = self.parse_content(content)
-                self.assertIn('has no Base', orders[0]['meta']['error'])
+        orders = self.parse_content(content.replace(
+            'Base=CCI-A Gloss Clear\nBaseAmount=100', 'Base=\nBaseAmount=0'))
+        self.assertEqual(2, len(orders))
+        self.assertTrue(all('error' not in order['meta'] for order in orders))
+        self.assertEqual(3, len(orders[0]['ingredients']))
+        self.assertEqual([
+            {'pigment_name': '10-A Lamp Black', 'weight(g)': 8.012, 'description': ''},
+        ], orders[1]['ingredients'])
+
+    def test_missing_or_empty_base_ignores_base_amount(self):
+        for base_line in ('', 'Base=\n', 'Base= \t\n'):
+            for amount_line in ('', 'BaseAmount=\n', 'BaseAmount=0\n',
+                                'BaseAmount=280\n', 'BaseAmount=-1\n',
+                                'BaseAmount=nan\n', 'BaseAmount=inf\n',
+                                'BaseAmount=invalid\n'):
+                with self.subTest(base=base_line, amount=amount_line):
+                    content = FORMULA.replace('Base=CCI-A Gloss Clear\n', base_line)
+                    content = content.replace('BaseAmount=280\n', amount_line)
+                    orders = self.parse_content(content)
+                    self.assertEqual(1, len(orders))
+                    self.assertNotIn('error', orders[0]['meta'])
+                    self.assertEqual([
+                        {'pigment_name': '101-A Phathalo Blu',
+                         'weight(g)': 2.354, 'description': ''},
+                        {'pigment_name': '40-A Quin Magenta',
+                         'weight(g)': 25.871, 'description': ''},
+                    ], orders[0]['ingredients'])
 
     def test_rejects_missing_or_invalid_base_amount(self):
         for content in (
