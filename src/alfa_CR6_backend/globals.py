@@ -570,22 +570,28 @@ def create_printable_image_for_low_pigments(head_name, low_pipes, options=None, 
 
     return _image_path
 
-def _minimum_jar_label_lines(jar):
-    try:
-        meta = json.loads(jar.order.json_properties).get('meta', {})
-        return 4 if isinstance(meta, dict) and meta.get('header') == 'dci' else 0
-    except (AttributeError, TypeError, ValueError):
-        return 0
-
-
 def extract_jar_print_data(jar):
+
+    extra_lines = list(jar.extra_lines_to_print)
+    minimum_label_lines = 0
+    try:
+        properties = json.loads(jar.order.json_properties)
+        meta = properties.get('meta', {})
+    except (AttributeError, TypeError, ValueError):
+        properties, meta = {}, {}
+    if isinstance(meta, dict) and meta.get('header') == 'dci':
+        minimum_label_lines = 4
+        extra_lines.extend(
+            f"{ingredient['pigment_name']}: {ingredient['weight(g)']} g"
+            for ingredient in properties.get('ingredients', [])
+        )
 
     return {
         'barcode': str(jar.barcode),
-        'extra_lines_to_print': list(jar.extra_lines_to_print),
+        'extra_lines_to_print': extra_lines,
         'unknown_pigments': dict(jar.unknown_pigments),
         'not_dispensed_ingredients': dict(jar.not_dispensed_ingredients),
-        'minimum_label_lines': _minimum_jar_label_lines(jar),
+        'minimum_label_lines': minimum_label_lines,
     }
 
 
@@ -634,18 +640,13 @@ def _wrap_dci_label_lines(lines, barcode, options, line_length):
 
 def create_printable_image_from_jar(jar, options=None, output_path=None):
 
-    if isinstance(jar, dict):
-        recipe_barcode = jar['barcode']
-        extra_lines = jar['extra_lines_to_print']
-        unknown_pigments = jar['unknown_pigments']
-        not_dispensed = jar['not_dispensed_ingredients']
-        minimum_label_lines = jar.get('minimum_label_lines', 0)
-    else:
-        recipe_barcode = str(jar.barcode)
-        extra_lines = jar.extra_lines_to_print
-        unknown_pigments = jar.unknown_pigments
-        not_dispensed = jar.not_dispensed_ingredients
-        minimum_label_lines = _minimum_jar_label_lines(jar)
+    if not isinstance(jar, dict):
+        jar = extract_jar_print_data(jar)
+    recipe_barcode = jar['barcode']
+    extra_lines = jar['extra_lines_to_print']
+    unknown_pigments = jar['unknown_pigments']
+    not_dispensed = jar['not_dispensed_ingredients']
+    minimum_label_lines = jar.get('minimum_label_lines', 0)
 
     if options is None:
         options = _get_print_label_options()

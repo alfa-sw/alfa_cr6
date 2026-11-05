@@ -56,6 +56,12 @@ class DciOrderTests(unittest.TestCase):
             order=SimpleNamespace(json_properties=json.dumps(order)),
         )
 
+    @staticmethod
+    def label_lines_for_order(order):
+        return order['extra_lines_to_print'] + [
+            f"{i['pigment_name']}: {i['weight(g)']} g" for i in order['ingredients']
+        ]
+
     def render_label(self, printable, options):
         # Observe the text but still run the real EAN13/Pillow renderer. This
         # catches clipping that a mocked barcode writer cannot detect.
@@ -111,7 +117,7 @@ class DciOrderTests(unittest.TestCase):
             'ALFA - CCI# 84054',
         ], order['extra_lines_to_print'])
 
-    def test_dci_label_prints_all_four_lines(self):
+    def test_dci_label_prints_all_four_lines_and_ingredient_quantities(self):
         order = self.parse_content(FORMULA)[0]
         jar = SimpleNamespace(
             barcode='201027001001',
@@ -134,7 +140,52 @@ class DciOrderTests(unittest.TestCase):
                     printed_text = write.call_args[0][3]
                     self.assertEqual(
                         ['201027001001'] + order['extra_lines_to_print'],
-                        printed_text.split('\n'))
+                        printed_text.split('\n')[:5])
+                    self.assertEqual(
+                        '101-A Phathalo Blu: 2.354 g '
+                        '40-A Quin Magenta: 25.871 g '
+                        'CCI-A Gloss Clear: 280.0 g',
+                        ' '.join(printed_text.split('\n')[5:]))
+
+    def test_all_dci_ingredients_include_zero_quantities_and_optional_base(self):
+        for fixture in ('dci_test1.dci', 'dci_charleston.dci',
+                        'dci_charleston_no_base.dci'):
+            order = self.parse_fixture(fixture)
+            jar = self.jar_for_order(order)
+            for printable in (jar, extract_jar_print_data(jar)):
+                for rotate in (0, 90):
+                    with self.subTest(fixture=fixture, batch=isinstance(printable, dict),
+                                      rotate=rotate):
+                        options = dict(BIG_LABEL_OPTIONS, rotate=rotate)
+                        lines, image = self.render_label(printable, options)
+                        self.assertEqual(
+                            ' '.join(self.label_lines_for_order(order)).split(),
+                            ' '.join(s for s in lines[1:] if s != '.').split())
+                        text = ' '.join(lines)
+                        if fixture == 'dci_test1.dci':
+                            self.assertIn('19-A Yellow Oxide: 0.0 g', text)
+                            self.assertIn('CCI-A Gloss Clear: 5.0 g', text)
+                        elif fixture == 'dci_charleston.dci':
+                            self.assertIn('CCI-A Gloss Clear: 15.51952 g', text)
+                        else:
+                            self.assertNotIn('Gloss Clear', text)
+                        self.assert_text_has_margins(image, options)
+            self.assertEqual(4, len(jar.extra_lines_to_print))
+
+    def test_ingredients_are_not_added_to_other_order_formats(self):
+        order = self.parse_content(FORMULA)[0]
+        for header in ('corob', None):
+            with self.subTest(header=header):
+                order['meta']['header'] = header
+                jar = self.jar_for_order(order)
+                batch_data = extract_jar_print_data(jar)
+                self.assertEqual(0, batch_data['minimum_label_lines'])
+                self.assertEqual(order['extra_lines_to_print'],
+                                 batch_data['extra_lines_to_print'])
+                for printable in (jar, batch_data):
+                    lines, _ = self.render_label(printable, BIG_LABEL_OPTIONS)
+                    self.assertEqual(['261012004001'] + order['extra_lines_to_print'][:3],
+                                     lines)
 
     def test_fourth_line_is_not_added_to_other_label_formats(self):
         order = self.parse_content(FORMULA)[0]
@@ -258,9 +309,11 @@ class DciOrderTests(unittest.TestCase):
                     lines, image = self.render_label(printable, options)
                     self.assertEqual('261012004001', lines[0])
                     self.assertEqual(order['extra_lines_to_print'][:3], lines[1:4])
-                    self.assertEqual(2, len([s for s in lines[4:] if s != '.']))
+                    self.assertEqual(2, len(lines[4:6]))
                     self.assertEqual(order['meta']['CollectionName'],
-                                     ' '.join(s for s in lines[4:] if s != '.'))
+                                     ' '.join(lines[4:6]))
+                    self.assertEqual(self.label_lines_for_order(order)[4:],
+                                     [s for s in lines[6:] if s != '.'])
                     self.assert_text_has_margins(image, options)
 
     def test_long_fields_fit_big_labels_with_different_font_sizes(self):
@@ -271,7 +324,7 @@ class DciOrderTests(unittest.TestCase):
                 lines, image = self.render_label(self.jar_for_order(order), options)
                 actual = [s for s in lines[1:] if s != '.']
                 self.assertIn('', actual)
-                self.assertEqual(' '.join(order['extra_lines_to_print']).split(),
+                self.assertEqual(' '.join(self.label_lines_for_order(order)).split(),
                                  ' '.join(actual).split())
                 self.assertTrue(all(len(s) <= options['line_lenght'] for s in actual))
                 self.assert_text_has_margins(image, options)
@@ -285,7 +338,7 @@ class DciOrderTests(unittest.TestCase):
         options = dict(BIG_LABEL_OPTIONS)
         lines, image = self.render_label(self.jar_for_order(order), options)
         actual = ''.join(s for s in lines[1:] if s != '.')
-        self.assertEqual(''.join(order['extra_lines_to_print']).replace(' ', ''),
+        self.assertEqual(''.join(self.label_lines_for_order(order)).replace(' ', ''),
                          actual.replace(' ', ''))
         self.assertTrue(all(len(s) <= options['line_lenght'] for s in lines[1:]))
         self.assert_text_has_margins(image, options)
