@@ -140,10 +140,24 @@ class _InProcessPhysics(MachineHeadMockup):
         self.receiver = None
         self._pickup_scheduled = False
         self.fail_next_dispense = False
+        self.autorecover_next_dispense = False
         super().__init__(index, time_scale=time_scale)
 
     async def handle_command(self, msg_out_dict):
         command = msg_out_dict["command"]
+        if self.autorecover_next_dispense and command == "DISPENSE_FORMULA":
+            self.autorecover_next_dispense = False
+            # Recovery may be the first published state after accepting a macro.
+            await self._machine_sleep(0.5)
+            await self.update_status({"status_level": "AUTORECOVERY",
+                                      "error_code": 0, "error_message": "NO_ALARM",
+                                      "autorecovery_error_code": 1065,
+                                      "autorecovery_component": 5})
+            await self._machine_sleep(2.0)
+            await self.update_status({"status_level": "STANDBY",
+                                      "autorecovery_error_code": 0,
+                                      "autorecovery_component": 0})
+            return
         if (
                 self.fail_next_dispense
                 and command == "DISPENSE_FORMULA"):
@@ -505,7 +519,7 @@ class _OrderBarcodeDispenseE2EMixin:
         async def fault_aware_wait_for_condition(
                 app, condition, timeout, show_alert=True, extra_info="",
                 stability_count=3, step=0.01, callback=None,
-                break_condition=None):
+                break_condition=None, pause_on_freeze=False):
             for head in app.machine_head_dict.values():
                 if head.websocket.consume_forced_wait_timeout(timeout):
                     await asyncio.sleep(0)
@@ -515,6 +529,7 @@ class _OrderBarcodeDispenseE2EMixin:
                 extra_info=extra_info, stability_count=stability_count,
                 step=step, callback=callback,
                 break_condition=break_condition,
+                pause_on_freeze=pause_on_freeze,
             )
 
         self.app.wait_for_condition = types.MethodType(
@@ -780,6 +795,36 @@ class _OrderBarcodeDispenseE2EMixin:
         self.assertIn("failure during dispensation", outcomes["A"])
         self.assertGreaterEqual(len(self.app.main_window.frozen_dialogs), 1)
 
+    def test_autorecovery_aborts_order_and_ejects_without_popup_acknowledgement(self):
+        physics_a = next(item for item in self.physics if item.letter == "A")
+        physics_a.autorecover_next_dispense = True
+
+        order, jar, _reader, barcode = self._run(self._run_e2e())
+
+        self.assertEqual(jar.status, "ERROR")
+        self.assertEqual(order.status, "ERROR")
+        self.assertEqual(jar.position, "_")
+        self.assertEqual(self._dispense_command_count("A"), 1)
+        self.assertEqual(sum(self._dispense_command_count(name)
+                             for name in self.head_names), 1)
+        properties = json.loads(jar.json_properties)
+        self.assertIn("AUTORECOVERY", dict(properties["dispensation_outcomes"])["A"])
+        self.assertIn("autorecovery_error_code:1065", dict(properties["dispensation_outcomes"])["A"])
+        self.assertNotIn("NO_ALARM", dict(properties["dispensation_outcomes"])["A"])
+        self.assertEqual(properties["dispensation_autorecovery"]["A"],
+                         {"autorecovery_error_code": 1065, "autorecovery_component": 5})
+        self.assertEqual(properties.get("dispensed_quantities_gr", {}), {})
+        self.assertEqual(self.app.main_window.frozen_dialogs, [])
+        self.assertEqual(len(self.app.main_window.alerts), 1)
+        args, kwargs = self.app.main_window.alerts[0]
+        self.assertEqual(args, (("A", barcode, 1065),))
+        self.assertTrue(kwargs["ok_only"])
+        self.assertNotIn("callback", kwargs)
+        self.assertNotIn("cancel_callback", kwargs)
+        self.assertFalse(self.app.carousel_frozen)
+        self.assertEqual(self.exceptions, [])
+        self._assert_runtime_invariants()
+
     @staticmethod
     def _new_restore_helper(app, json_file_path):
         helper = object.__new__(RestoreMachineHelper)
@@ -936,6 +981,10 @@ class _OrderBarcodeDispenseE2EMixin:
             | UNLOAD_LIFTER_ROLLER_MASK
             | DISPENSING_POSITION_MASK
         )
+        if self.spec["in_docker"]:
+            # The barcode gate needs an input presence in every variant, but
+            # the linear CRX emulator never consumes that synthetic input bit.
+            occupancy_mask &= ~INPUT_ROLLER_MASK
 
         def occupied_position_count():
             return sum(

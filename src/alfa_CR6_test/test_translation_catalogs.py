@@ -35,6 +35,10 @@ class TranslationCatalogTest(unittest.TestCase):
     def test_recent_operator_messages_are_localized(self):
         lemmas = (
             "Automatic recovery in progress: heads {}.",
+            "Order aborted",
+            "Autorecovery code: {}",
+            "unknown",
+            "Head {} - BARCODE {}\nThe head entered AUTORECOVERY during dispensing.",
             "Unlock unavailable: head status not verified ({}).",
             "No pending files to create orders from.",
             "Create Alfa orders from {} files?\nPrint a label for each order.\nOne can per order.",

@@ -1,6 +1,10 @@
 from alfa_CR6_backend.lang import error_ar
 
 D = {
+    'Autorecovery code: {}': "رمز الاستعادة التلقائية: {}",
+    'unknown': "غير معروف",
+    'Order aborted': "تم إلغاء الطلب",
+    'Head {} - BARCODE {}\nThe head entered AUTORECOVERY during dispensing.': "الرأس {} - BARCODE {}\nدخل الرأس في حالة AUTORECOVERY أثناء التوزيع.",
     'Create and print all': 'إنشاء وطباعة جميع الطلبات',
     " ?": " ؟",
     "alias": "اسم مستعار",

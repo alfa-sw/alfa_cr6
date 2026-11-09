@@ -1,6 +1,10 @@
 from alfa_CR6_backend.lang import error_fi
 
 D = {
+    'Autorecovery code: {}': "Automaattisen palautuksen koodi: {}",
+    'unknown': "tuntematon",
+    'Order aborted': "Tilaus keskeytetty",
+    'Head {} - BARCODE {}\nThe head entered AUTORECOVERY during dispensing.': "Pää {} - BARCODE {}\nPää siirtyi AUTORECOVERY-tilaan annostelun aikana.",
     'Create and print all': 'Luo ja tulosta kaikki',
     " ?": " ?",
     "alias": "alias",

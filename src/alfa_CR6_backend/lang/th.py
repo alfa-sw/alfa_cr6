@@ -1,5 +1,9 @@
 from alfa_CR6_backend.lang import error_th
 D = {
+    'Autorecovery code: {}': "รหัสการกู้คืนอัตโนมัติ: {}",
+    'unknown': "ไม่ทราบ",
+    'Order aborted': "ยกเลิกคำสั่งแล้ว",
+    'Head {} - BARCODE {}\nThe head entered AUTORECOVERY during dispensing.': "หัว {} - BARCODE {}\nหัวเข้าสู่สถานะ AUTORECOVERY ระหว่างการจ่ายสี",
     'Create and print all': 'สร้างและพิมพ์ทั้งหมด',
     " ?": " ?",
     "alias": "ชื่อแทน",

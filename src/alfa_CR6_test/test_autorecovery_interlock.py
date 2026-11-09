@@ -13,7 +13,9 @@ from unittest import mock
 import alfa_CR6_backend.base_application as app_module
 import alfa_CR6_backend.carousel_motor as carousel_module
 import alfa_CR6_backend.machine_head as head_module
+import alfa_CR6_backend.models as models_module
 from alfa_CR6_backend.carousel_motor import CarouselMotor
+from alfa_CR6_backend.lang.it import D as ITALIAN
 from alfa_CR6_test.hardware_fakes import VirtualClock
 
 
@@ -458,6 +460,273 @@ class TestAutorecoveryInterlock(unittest.TestCase):
                 await task
 
         self._run(scenario())
+
+    async def _dispense_with_recovery(self, final_level=None, fast=False,
+                                     recovery_index=0, purge=False, cancel=False,
+                                     publish_dispensing=True, frames=None,
+                                     queued_recovery=False):
+        await self._ready()
+        head = self._head(0)
+        head.pigment_list = [{
+            "name": "RED", "type": "colorant", "specific_weight": 1,
+            "pipes": [{"name": "C01", "enabled": True,
+                       "effective_specific_weight": 1}],
+        }]
+        order = models_module.Order(
+            order_nr=261109001000, description="PURGE ALL" if purge else "",
+            json_properties="{}")
+        jar = models_module.Jar(
+            order=order, index=1, status="PROGRESS", position="A",
+            json_properties="{}")
+        jar.get_ingredients_for_machine = mock.Mock(return_value={"RED": 1})
+        jar.get_not_dispensed_ingredients = mock.Mock(return_value={})
+        head.get_ingredients_for_purge_all = mock.AsyncMock(return_value={"RED": 1})
+        head.call_api_rest = mock.AsyncMock(return_value={
+            "result": "OK", "pipe_formula": {"RED": 1}})
+        self.app.update_jar_properties = mock.Mock()
+        self.app.main_window.debug_page = mock.Mock()
+        runner = {"jar": jar}
+        self.app._BaseApplication__jar_runners[jar.barcode] = runner
+        restore = mock.Mock()
+        clock = VirtualClock()
+        injected = False
+        cancellation_sent = False
+        gate_calls = 0
+        original_gate = self.app.wait_for_carousel_not_frozen
+
+        async def gate(*args, **kwargs):
+            nonlocal gate_calls
+            gate_calls += 1
+            if queued_recovery and gate_calls == 3:
+                # This is send_command's gate, after do_dispense's two waits.
+                self.app.freeze_carousel(True)
+                head.websocket.send.assert_not_awaited()
+                self.assertFalse(head._dispense_in_progress)
+                await self._status(0, "AUTORECOVERY", autorecovery_error_code=1069)
+                self.assertIsNone(head._dispense_autorecovery)
+                await self._status(0, "STANDBY", container_presence=True,
+                                   jar_photocells_status=0x100)
+                self.assertTrue(self.app.freeze_carousel(False))
+            return await original_gate(*args, **kwargs)
+
+        async def recover():
+            recovery_frames = frames if frames is not None else [
+                {"autorecovery_error_code": 1065, "autorecovery_component": 5},
+                {"autorecovery_error_code": 1065, "autorecovery_component": 1},
+            ]
+            for frame in recovery_frames:
+                await self._status(recovery_index, "AUTORECOVERY",
+                                   error_code=0, error_message="NO_ALARM", **frame)
+            if final_level:
+                await self._status(recovery_index, final_level,
+                                   autorecovery_error_code=0, autorecovery_component=0)
+
+        async def send(_payload):
+            self.assertTrue(head._dispense_in_progress)
+            self.assertIsNone(head._dispense_autorecovery)
+            if publish_dispensing:
+                await self._status(0, "DISPENSING", container_presence=True,
+                                   jar_photocells_status=0x100)
+            if fast:
+                await recover()
+
+        async def sleep(delay):
+            nonlocal injected, cancellation_sent
+            await clock.sleep(delay)
+            self.assertLess(clock.now, 2, "Dispense did not finish promptly")
+            if not fast and not injected and "running_engaged_circuits" in runner:
+                if cancel and not cancellation_sent:
+                    cancellation_sent = True
+                    # delete_jar_runner removes the jar before cancelling its task.
+                    jar.update_live(status="ERROR", pos="REMOVED")
+                    raise asyncio.CancelledError()
+                injected = True
+                if not queued_recovery:
+                    await recover()
+                if recovery_index != 0 or queued_recovery:
+                    await self._status(0, "STANDBY", container_presence=True,
+                                       jar_photocells_status=0x100)
+
+        head.websocket = types.SimpleNamespace(send=mock.AsyncMock(side_effect=send))
+        await self._status(0, "STANDBY", container_presence=True,
+                           jar_photocells_status=0x100)
+        with mock.patch.object(carousel_module.time, "time", clock.time), \
+                mock.patch.object(carousel_module.asyncio, "sleep", sleep), \
+                mock.patch.object(self.app, "wait_for_carousel_not_frozen", gate), \
+                mock.patch.object(models_module, "get_application_instance", return_value=self.app), \
+                mock.patch.object(head_module, "tr_", side_effect=lambda text: ITALIAN.get(text, text)):
+            if cancel:
+                with self.assertRaises(asyncio.CancelledError):
+                    await head.do_dispense(jar, restore)
+            else:
+                self.assertTrue(await head.do_dispense(jar, restore))
+        self.app.handle_exception.assert_not_called()
+        if queued_recovery:
+            self.assertGreaterEqual(gate_calls, 3, "Transport gate was not exercised")
+        return head, jar, restore
+
+    def _assert_autorecovery_abort(self, head, jar):
+        self.assertEqual(jar.status, "ERROR")
+        self.assertEqual(jar.order.status, "ERROR")
+        properties = json.loads(jar.json_properties)
+        recovery = properties["dispensation_autorecovery"]["A"]
+        code = recovery["autorecovery_error_code"]
+        self.assertEqual(properties.get("dispensed_quantities_gr", {}), {})
+        self.assertIn("AUTORECOVERY", properties["dispensation_outcomes"][0][1])
+        self.assertIn("autorecovery_error_code:{}".format(code),
+                      properties["dispensation_outcomes"][0][1])
+        self.assertNotIn("NO_ALARM", properties["dispensation_outcomes"][0][1])
+        self.app.update_jar_properties.assert_called_once_with(
+            jar, dispense_not_successful=True)
+        head.websocket.send.assert_awaited_once()
+        self.app.main_window.open_alert_dialog.assert_called_once_with(
+            ("A", jar.barcode, code or "sconosciuto"), title="Ordine abortito",
+            fmt=["Head {} - BARCODE {}\nThe head entered AUTORECOVERY during dispensing.",
+                 "\n", "Autorecovery code: {}"],
+            ok_only=True)
+        self.assertFalse(head._dispense_in_progress)
+        self.assertIsNone(head._current_runner)
+
+    def test_no_dispensing_frame_before_autorecovery_to_standby(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(
+            final_level="STANDBY", fast=True, publish_dispensing=False))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertFalse(self.app.carousel_frozen)
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+
+    def test_no_dispensing_frame_before_autorecovery_to_alarm(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(
+            final_level="ALARM", fast=True, publish_dispensing=False))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertTrue(self.app.carousel_frozen)
+
+    def test_same_head_autorecovery_while_macro_is_queued_does_not_abort_order(self):
+        for purge in (False, True):
+            with self.subTest(purge=purge):
+                head, jar, _restore = self._run(self._dispense_with_recovery(
+                    queued_recovery=True, purge=purge))
+                self.assertEqual(jar.status, "PROGRESS")
+                self.assertEqual(jar.order.status, "PROGRESS")
+                self.assertEqual(json.loads(jar.json_properties).get("dispensed_quantities_gr", {}),
+                                 {} if purge else {"RED": 1})
+                self.assertIsNone(head._dispense_autorecovery)
+                head.websocket.send.assert_awaited_once()
+                self.app.main_window.open_alert_dialog.assert_not_called()
+                self.app.main_window.open_frozen_dialog.assert_not_called()
+
+    def test_purge_without_dispensing_frame_uses_autorecovery_popup(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(
+            purge=True, fast=True, publish_dispensing=False, final_level="STANDBY"))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertFalse(self.app.carousel_frozen)
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+
+    def test_recovery_snapshot_keeps_first_cause_and_component(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(frames=[
+            {"autorecovery_error_code": 1065, "autorecovery_component": 5},
+            {"autorecovery_error_code": 1069, "autorecovery_component": 1},
+            {"autorecovery_error_code": 0, "autorecovery_component": 0},
+        ]))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertEqual(json.loads(jar.json_properties)["dispensation_autorecovery"]["A"],
+                         {"autorecovery_error_code": 1065, "autorecovery_component": 5})
+
+    def test_recovery_snapshot_upgrades_only_unknown_code(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(frames=[
+            {"autorecovery_error_code": 0, "autorecovery_component": 5},
+            {"autorecovery_error_code": 1065, "autorecovery_component": 1},
+            {"autorecovery_error_code": 1069, "autorecovery_component": 2},
+        ]))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertEqual(json.loads(jar.json_properties)["dispensation_autorecovery"]["A"],
+                         {"autorecovery_error_code": 1065, "autorecovery_component": 5})
+
+    def test_zero_code_is_still_an_autorecovery_event(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(
+            fast=True, publish_dispensing=False, frames=[{"autorecovery_error_code": 0}]))
+        self._assert_autorecovery_abort(head, jar)
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+
+    def test_missing_code_is_still_an_autorecovery_event(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(
+            fast=True, publish_dispensing=False, frames=[{}]))
+        self._assert_autorecovery_abort(head, jar)
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+
+    def test_dispense_recovery_marks_order_error_before_recovery_finishes(self):
+        head, jar, restore = self._run(self._dispense_with_recovery())
+        self._assert_autorecovery_abort(head, jar)
+        restore.store_jar_data.assert_called_with(
+            jar=jar, pos="A", dispensation="dispensation_failure")
+        self.assertTrue(self.app.carousel_frozen)
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+        self._run(self._status(0, "STANDBY"))
+        self.assertFalse(self.app.carousel_frozen)
+        self.assertEqual(jar.order.status, "ERROR")
+
+    def test_fast_recovery_before_start_is_observed_cannot_mark_success(self):
+        head, jar, restore = self._run(self._dispense_with_recovery(
+            final_level="STANDBY", fast=True))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertFalse(self.app.carousel_frozen)
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+        restore.store_jar_data.assert_called_with(
+            jar=jar, pos="A", dispensation="dispensation_failure")
+
+    def test_recovery_to_standby_during_dispense_still_aborts_order(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(
+            final_level="STANDBY"))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertFalse(self.app.carousel_frozen)
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+
+    def test_recovery_to_alarm_keeps_abort_notification_and_firmware_alarm(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(
+            final_level="ALARM"))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertTrue(self.app.carousel_frozen)
+        self.app.main_window.open_frozen_dialog.assert_called_once()
+        self.assertEqual(self.app.main_window.open_frozen_dialog.call_args.kwargs[
+            "message_fmt"], "{} ALARM. {}: {}, {}: {}")
+
+    def test_recovery_on_another_head_does_not_abort_this_dispense(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(
+            final_level="STANDBY", recovery_index=1))
+        self.assertEqual(jar.status, "PROGRESS")
+        self.assertEqual(jar.order.status, "PROGRESS")
+        self.assertEqual(json.loads(jar.json_properties)["dispensed_quantities_gr"],
+                         {"RED": 1})
+        self.app.main_window.open_alert_dialog.assert_not_called()
+        self.app.main_window.open_frozen_dialog.assert_not_called()
+        self.assertIsNone(head._dispense_autorecovery)
+
+    def test_purge_recovery_also_marks_order_error(self):
+        head, jar, _restore = self._run(self._dispense_with_recovery(purge=True))
+        self._assert_autorecovery_abort(head, jar)
+        payload = json.loads(head.websocket.send.call_args.args[0])
+        self.assertEqual(payload["msg_out_dict"]["command"], "PURGE")
+
+    def test_new_dispense_does_not_inherit_previous_autorecovery_failure(self):
+        head, first_jar, _restore = self._run(self._dispense_with_recovery(
+            final_level="STANDBY"))
+        self._assert_autorecovery_abort(head, first_jar)
+        self.app.main_window.open_alert_dialog.reset_mock()
+        _head, next_jar, _restore = self._run(self._dispense_with_recovery(
+            final_level="STANDBY", recovery_index=1))
+        self.assertEqual(next_jar.status, "PROGRESS")
+        self.assertEqual(next_jar.order.status, "PROGRESS")
+        self.app.main_window.open_alert_dialog.assert_not_called()
+
+    def test_recovery_while_cancelled_dispense_waits_for_standby_is_not_success(self):
+        head, jar, restore = self._run(self._dispense_with_recovery(
+            final_level="STANDBY", cancel=True))
+        self._assert_autorecovery_abort(head, jar)
+        self.assertNotIn("success", json.loads(jar.json_properties)[
+            "dispensation_outcomes"][0][1])
+        self.assertEqual(jar.position, "REMOVED")
+        self.assertIsNone(jar.machine_head)
+        self.assertFalse(any(call.kwargs["dispensation"] == "dispensation_failure"
+                             for call in restore.store_jar_data.call_args_list))
 
     def test_every_start_command_waits_at_the_transport_boundary(self):
         async def scenario():

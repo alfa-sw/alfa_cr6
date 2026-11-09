@@ -1,5 +1,9 @@
 from alfa_CR6_backend.lang import error_pl
 D = {
+    'Autorecovery code: {}': "Kod automatycznego odzyskiwania: {}",
+    'unknown': "nieznany",
+    'Order aborted': "Zlecenie przerwane",
+    'Head {} - BARCODE {}\nThe head entered AUTORECOVERY during dispensing.': "Głowica {} - BARCODE {}\nGłowica przeszła w stan AUTORECOVERY podczas dozowania.",
     'Create and print all': 'Utwórz i wydrukuj wszystkie',
     " ?": " ?",
     "alias": "alias",

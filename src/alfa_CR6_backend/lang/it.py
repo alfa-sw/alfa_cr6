@@ -1,6 +1,10 @@
 from alfa_CR6_backend.lang import error_it
 D = {
+    'Autorecovery code: {}': "Codice autorecovery: {}",
+    'unknown': "sconosciuto",
     'AUTORECOVERY': 'AUTORECOVERY',
+    'Order aborted': 'Ordine abortito',
+    'Head {} - BARCODE {}\nThe head entered AUTORECOVERY during dispensing.': "Testa {} - BARCODE {}\nLa testa è entrata in AUTORECOVERY durante la dispensazione.",
     'Automatic recovery in progress: heads {}.': 'Autoripristino in corso: teste {}.',
     'Unlock unavailable: head status not verified ({}).': 'Sblocco non disponibile: stato delle teste non verificato ({}).',
     'Create and print all': 'Crea e stampa tutti',
