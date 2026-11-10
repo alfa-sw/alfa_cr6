@@ -1876,14 +1876,10 @@ weight:{RealWeight}
 
             color_name = formula.get('ColorName', '').strip()
             brand = formula.get('Brand', '').strip()
-            collection_name = formula.get('CollectionName', '').strip()
             ral_match = re.search(r'\bRAL', color_name, flags=re.IGNORECASE)
             color_name_pt1 = color_name[:ral_match.start()].strip() if ral_match else color_name
             color_name_pt2 = color_name[ral_match.start():].strip() if ral_match else ''
             brand = re.split(r'\bRAL', brand, maxsplit=1, flags=re.IGNORECASE)[0].strip()
-            if color_name and collection_name.casefold().endswith(color_name.casefold()):
-                collection_name = collection_name[:-len(color_name)].strip()
-
             formula['header'] = 'dci'
             properties_list.append({
                 'meta': formula,
@@ -1892,7 +1888,6 @@ weight:{RealWeight}
                     brand,
                     color_name_pt1,
                     color_name_pt2,
-                    collection_name,
                 ],
             })
 

@@ -114,10 +114,9 @@ class DciOrderTests(unittest.TestCase):
             'CCI#433868',
             'Trial4',
             'RAL 3009 oxidrot',
-            'ALFA - CCI# 84054',
         ], order['extra_lines_to_print'])
 
-    def test_dci_label_prints_all_four_lines_and_ingredient_quantities(self):
+    def test_dci_label_prints_three_header_lines_and_ingredient_quantities(self):
         order = self.parse_content(FORMULA)[0]
         jar = SimpleNamespace(
             barcode='201027001001',
@@ -127,7 +126,7 @@ class DciOrderTests(unittest.TestCase):
             order=SimpleNamespace(json_properties=json.dumps(order)),
         )
         batch_data = extract_jar_print_data(jar)
-        self.assertEqual(4, batch_data['minimum_label_lines'])
+        self.assertEqual(3, batch_data['minimum_label_lines'])
 
         with tempfile.NamedTemporaryFile(suffix='.png') as output:
             for printable in (jar, batch_data):
@@ -140,12 +139,12 @@ class DciOrderTests(unittest.TestCase):
                     printed_text = write.call_args[0][3]
                     self.assertEqual(
                         ['201027001001'] + order['extra_lines_to_print'],
-                        printed_text.split('\n')[:5])
+                        printed_text.split('\n')[:4])
                     self.assertEqual(
                         '101-A Phathalo Blu: 2.354 g '
                         '40-A Quin Magenta: 25.871 g '
                         'CCI-A Gloss Clear: 280.0 g',
-                        ' '.join(printed_text.split('\n')[5:]))
+                        ' '.join(printed_text.split('\n')[4:]))
 
     def test_all_dci_ingredients_include_zero_quantities_and_optional_base(self):
         for fixture in ('dci_test1.dci', 'dci_charleston.dci',
@@ -170,7 +169,7 @@ class DciOrderTests(unittest.TestCase):
                         else:
                             self.assertNotIn('Gloss Clear', text)
                         self.assert_text_has_margins(image, options)
-            self.assertEqual(4, len(jar.extra_lines_to_print))
+            self.assertEqual(3, len(jar.extra_lines_to_print))
 
     def test_ingredients_are_not_added_to_other_order_formats(self):
         order = self.parse_content(FORMULA)[0]
@@ -191,7 +190,7 @@ class DciOrderTests(unittest.TestCase):
         order = self.parse_content(FORMULA)[0]
         printable = {
             'barcode': '201027001001',
-            'extra_lines_to_print': order['extra_lines_to_print'],
+            'extra_lines_to_print': order['extra_lines_to_print'] + ['Additional line'],
             'unknown_pigments': {},
             'not_dispensed_ingredients': {},
             'minimum_label_lines': 0,
@@ -207,23 +206,22 @@ class DciOrderTests(unittest.TestCase):
             ['201027001001'] + order['extra_lines_to_print'][:3],
             printed_text.split('\n'))
 
-    def test_real_charleston_file_removes_matching_collection_suffix(self):
+    def test_real_charleston_file_omits_collection_from_label(self):
         order = self.parse_fixture('dci_charleston.dci')
         self.assertEqual('CHARLESTON GRAY 243', order['meta']['ColorName'])
         self.assertEqual([
             'Prediction 9 CHARLESTON GRAY 243',
-            'CHARLESTON GRAY 243', '', 'ALFA - CCI# 85197',
+            'CHARLESTON GRAY 243', '',
         ], order['extra_lines_to_print'])
         self.assertEqual(21, len(order['ingredients']))
         self.assertEqual(63.917, order['ingredients'][0]['weight(g)'])
         self.assertEqual(19.579, order['ingredients'][10]['weight(g)'])
         self.assertEqual(15.51952, order['ingredients'][-1]['weight(g)'])
 
-    def test_real_test1_file_keeps_collection_and_zero_ingredients(self):
+    def test_real_test1_file_omits_collection_and_keeps_zero_ingredients(self):
         order = self.parse_fixture('dci_test1.dci')
         self.assertEqual([
             'Prediction 9 CHARLESTON GRAY 243', 'test 1', '',
-            'ALFA - CCI# 85197 CHARLESTON GRAY 243',
         ], order['extra_lines_to_print'])
         self.assertEqual(21, len(order['ingredients']))
         self.assertEqual(13, sum(i['weight(g)'] == 0 for i in order['ingredients']))
@@ -286,7 +284,7 @@ class DciOrderTests(unittest.TestCase):
                     for pigment, weight in expected
                 ], order['ingredients'])
 
-    def test_test1_to_test7_keep_collection_when_color_name_is_absent(self):
+    def test_test1_to_test7_keep_collection_only_in_metadata(self):
         with open(os.path.join(FIXTURES, 'dci_test1.dci')) as stream:
             content = stream.read()
         for number in range(1, 8):
@@ -295,11 +293,14 @@ class DciOrderTests(unittest.TestCase):
                                                           f'ColorName=test {number}'))[0]
                 self.assertNotIn('error', order['meta'])
                 self.assertEqual(f'test {number}', order['extra_lines_to_print'][1])
-                self.assertEqual(order['meta']['CollectionName'],
-                                 order['extra_lines_to_print'][3])
+                self.assertEqual(3, len(order['extra_lines_to_print']))
+                self.assertEqual('ALFA - CCI# 85197 CHARLESTON GRAY 243',
+                                 order['meta']['CollectionName'])
 
-    def test_long_collection_wraps_without_clipping_in_single_and_batch_labels(self):
+    def test_existing_order_collection_is_omitted_from_single_and_batch_labels(self):
         order = self.parse_fixture('dci_test1.dci')
+        # Simulate the four lines saved by the previous importer.
+        order['extra_lines_to_print'].append(order['meta']['CollectionName'])
         jar = self.jar_for_order(order)
         for printable in (jar, extract_jar_print_data(jar)):
             for configured_lines in (3, 15):
@@ -309,12 +310,11 @@ class DciOrderTests(unittest.TestCase):
                     lines, image = self.render_label(printable, options)
                     self.assertEqual('261012004001', lines[0])
                     self.assertEqual(order['extra_lines_to_print'][:3], lines[1:4])
-                    self.assertEqual(2, len(lines[4:6]))
-                    self.assertEqual(order['meta']['CollectionName'],
-                                     ' '.join(lines[4:6]))
                     self.assertEqual(self.label_lines_for_order(order)[4:],
-                                     [s for s in lines[6:] if s != '.'])
+                                     [s for s in lines[4:] if s != '.'])
+                    self.assertNotIn('ALFA - CCI#', ' '.join(lines))
                     self.assert_text_has_margins(image, options)
+        self.assertEqual(4, len(jar.extra_lines_to_print))
 
     def test_long_fields_fit_big_labels_with_different_font_sizes(self):
         order = self.parse_fixture('dci_test1.dci')

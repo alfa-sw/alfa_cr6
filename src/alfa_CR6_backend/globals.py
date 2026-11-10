@@ -580,7 +580,10 @@ def extract_jar_print_data(jar):
     except (AttributeError, TypeError, ValueError):
         properties, meta = {}, {}
     if isinstance(meta, dict) and meta.get('header') == 'dci':
-        minimum_label_lines = 4
+        # Older imported DCI orders also contain CollectionName as line four.
+        # Omit it when reprinting without changing the saved order metadata.
+        extra_lines = extra_lines[:3]
+        minimum_label_lines = 3
         extra_lines.extend(
             f"{ingredient['pigment_name']}: {ingredient['weight(g)']} g"
             for ingredient in properties.get('ingredients', [])
