@@ -1878,7 +1878,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         return "\n".join(messages)
 
     def _update_carousel_freeze_control(self):
-        reason = self.get_carousel_unlock_block_reason()
+        # While running, the Home control can be used to pause the carousel.
+        reason = self.get_carousel_unlock_block_reason() if self.carousel_frozen else ""
         self.main_window.set_carousel_freeze_control_enabled(not reason, reason)
 
     def close_modal_freeze_msgbox(self):
@@ -1904,10 +1905,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             self.carousel_frozen = flag
             if flag:
                 logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
-                self.main_window.show_carousel_frozen(self.carousel_frozen)
             else:
                 logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
-                self.main_window.show_carousel_frozen(self.carousel_frozen)
+            self.main_window.show_carousel_frozen(self.carousel_frozen)
+            self._update_carousel_freeze_control()
 
         if not self.carousel_frozen and self.__modal_freeze_msgbox:
             self.__modal_freeze_msgbox.enable_buttons(True, True)

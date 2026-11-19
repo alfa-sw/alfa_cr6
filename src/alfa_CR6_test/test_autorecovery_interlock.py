@@ -261,12 +261,26 @@ class TestAutorecoveryInterlock(unittest.TestCase):
     def test_debug_override_survives_repeated_status_but_not_a_new_hazard(self):
         self._run(self._ready())
         self._run(self._status(0, "AUTORECOVERY"))
-        self.assertTrue(self.app.freeze_carousel(False, force=True))
         self._assert_home_enabled(False)
+        self.assertTrue(self.app.freeze_carousel(False, force=True))
+        self.assertFalse(self.app.carousel_frozen)
+        self._assert_home_enabled(True)
         self._run(self._status(0, "AUTORECOVERY", autorecovery_component=2))
         self.assertFalse(self.app.carousel_frozen)
+        self._assert_home_enabled(True)
         self._run(self._status(1, "AUTORECOVERY"))
         self.assertTrue(self.app.carousel_frozen)
+        self._assert_home_enabled(False)
+        self.assertFalse(self.app.toggle_freeze_carousel())
+
+    def test_home_can_pause_after_debug_unlock(self):
+        self._run(self._ready())
+        self._run(self._status(0, "AUTORECOVERY"))
+        self.assertTrue(self.app.freeze_carousel(False, force=True))
+        self.assertTrue(self.app.toggle_freeze_carousel())
+        self.assertTrue(self.app.carousel_frozen)
+        self._assert_home_enabled(False)
+        self.assertFalse(self.app.toggle_freeze_carousel())
 
     def test_missing_and_unknown_states_do_not_release_recovery(self):
         for status in ({}, {"status_level": None}, {"status_level": "UNKNOWN"},
