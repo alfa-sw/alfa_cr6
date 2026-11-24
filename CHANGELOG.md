@@ -1,10 +1,21 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## 1.12 branch
+
+### 1.12.0
+ - PR#___ - issues RM#603, RM#604 - added guided pigment refill with a scale (`ENABLE_REFILL_BY_SCALE`). The procedure checks head readiness, uses the barcode to select the circuit, and measures the added pigment from two weighings. It checks scale communication before starting and at each step, with separate warnings for a disconnected USB cable and an unresponsive scale. Refill dialogs now include illustrations, and scale refill offers an optional larger message layout (`ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT`).
+ - PR#___ - issue RM#610 - AUTORECOVERY pauses carousel automation, keeps queued work pending, and highlights recovering heads on the home page. The carousel resumes automatically if it was running when recovery began, all recovering heads return to STANDBY, and no other pause intervenes. If recovery interrupts dispensing, the affected jar and order are marked as failed. The standard unlock requires verified head status and no active recovery. The Debug override keeps the transfer interlock on recovering source heads.
+ - PR#___ - issue RM#613 - added **Create and print all** on the Orders page to create orders from pending external files and print their labels in one job. It requires both `ENABLE_BTN_CREATE_ALL_ORDERS` and `FORCE_ORDER_JAR_TO_ONE`. Files that cannot be processed stay in the queue.
+ - PR#___ - issue RM#614 - added Color Communications DCI order import for formulas with or without a base. DCI order printouts include all ingredients and quantities, and barcode labels wrap long text within the printable width.
+ - PR#___ - issue RM#616 - carousel movement failures display a warning even during an existing pause. Acknowledging the warning preserves the pause, and each movement warning keeps its own blinking indicator.
+ - PR#___ - issue RM#617 - repeated scans of a barcode already in progress no longer open duplicate warnings or record duplicate database events while the warning is open.
+ - PR#___ - issue RM#619 - added the optional `MERGE_DUPLICATE_ORDER_INGREDIENTS` setting to sum repeated toner weights when creating orders, including BASF Line 90 formulas. The setting defaults to off.
+ - added missing translations for operator dialogs and error messages.
+
 ## 1.11 branch
 
 ### 1.11.0
- - PR#___ - issue RM#610 - AUTORECOVERY: freeze automation across all heads, keep queued work pending, require operator confirmation after recovery, and block ordinary unlocks until every head has a current verified status; Debug retains an explicit technical override
  - PR#___ - issue RM#553 - added refill alarm sound notification on monitor speakers via the host audio router (REFILL_ALARM_NOTIFICATION setting, snowball machines only); the sound follows the attention-LED lifecycle and is silenced by OK/Cancel on the frozen dialog or by timeout; sound_level offers only "auto" for now (percent options deferred to monitor PSU handling)
  - PR#___ - issue RM#574 - Low Pigments popup: added print-label button (one DYMO label per head listing its low-level pipes), label rendered vertically on the long side, localized label
  - PR#___ - issue RM#573 - shifted barcode print button to the right in the browser overlay
