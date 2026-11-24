@@ -26,7 +26,7 @@ from PyQt5.uic import loadUi
 from PyQt5.QtCore import (  # ~ QItemSelectionModel, QItemSelection, QRect,
     Qt, QSize, QItemSelectionModel, QTimer)
 
-from PyQt5.QtGui import QFont, QPixmap, QIcon, QColor
+from PyQt5.QtGui import QFont, QFontInfo, QPixmap, QIcon, QColor
 from PyQt5.QtWidgets import (
     QApplication,
     QStyle,
@@ -439,7 +439,7 @@ class EditDialog(BaseDialog):
 
         if len(ret) > 1:
             self.warning_lbl.setText(
-                tr_('<div style="color: red;">WARN: replicated entries {} ({}).</div>'.format(pigment_name, len(ret))))
+                tr_('<div style="color: red;">WARN: replicated entries {} ({}).</div>').format(pigment_name, len(ret)))
 
         return ret
 
@@ -515,7 +515,7 @@ class EditDialog(BaseDialog):
                 # ~ sel_pigment_name = self.formula_table.item(row, 1).data(Qt.DisplayRole)
             else:
                 if len(indexes) >= 1:
-                    raise Exception(tr_(' Pigment {} is already present.'.format(pigment_name)))
+                    raise Exception(tr_(' Pigment {} is already present.').format(pigment_name))
 
                 row = self.formula_table.rowCount()
                 self.formula_table.setRowCount(row + 1)
@@ -711,6 +711,15 @@ class InputDialog(BaseDialog):
 
     ui_file_name = "input_dialog.ui"
 
+    LARGE_MESSAGE_FONT_SCALE = 1.40
+    LARGE_CONTENT_FONT_SCALE = 1.40
+    LARGE_MESSAGE_HEIGHT = 281
+    LARGE_CONTENT_HEIGHT = 80
+    LARGE_LAYOUT_GAP = 9
+    # Use the same percentage for portrait and landscape illustrations.
+    MESSAGE_IMAGE_SCALE = 300 / 1024
+    MESSAGE_IMAGE_GAP = 12
+
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -720,13 +729,152 @@ class InputDialog(BaseDialog):
 
         self.__ok_cb = None
         self.__ok_cb_args = None
+        self.__action_cb = None
+        self.__action_cb_args = None
         self.ok_on_enter = None
+        self.ok_requires_content = False
 
         self.choices = []
         self.use_combo_for_choice = False
+        self.action_button.setAutoFillBackground(True)
+        self.action_button.hide()
+
+        # InputDialog is a single, reusable frame.  Keep the .ui geometry so
+        # the special refill-by-scale layout can always be undone before the
+        # next (unrelated) popup is displayed.
+        self._standard_geometry = {
+            widget: (
+                widget.x(), widget.y(), widget.width(), widget.height()
+            )
+            for widget in (
+                self.message_label,
+                self.esc_button,
+                self.action_button,
+                self.ok_button,
+                self.content_container,
+                self.combo_box,
+            )
+        }
+        self._standard_frame_width = self.width()
+        self._standard_frame_height = self.height()
+        # Resolve the inherited stylesheet before saving the effective fonts.
+        # A pixel font has pointSizeF() == -1 and cannot be scaled as points.
+        self.message_label.ensurePolished()
+        self.content_container.ensurePolished()
+        self._standard_message_font = QFont(self.message_label.font())
+        self._standard_content_font = QFont(self.content_container.font())
+        self._standard_message_style_sheet = self.message_label.styleSheet()
+        self._standard_message_word_wrap = self.message_label.wordWrap()
+        self._standard_content_style_sheet = self.content_container.styleSheet()
+        self.message_image_label = QLabel(self)
+        self.message_image_label.setObjectName("message_image_label")
+        self.message_image_label.setStyleSheet(
+            "border: 0px; background: transparent;")
+        self.message_image_label.setAlignment(Qt.AlignCenter)
+        self.message_image_label.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.message_image_label.hide()
 
         # ~ self.ok_button.clicked.connect(self.hide)
         self.esc_button.clicked.connect(self.close_actions)
+
+    def _restore_standard_layout(self):
+        for widget, geometry in self._standard_geometry.items():
+            widget.setGeometry(*geometry)
+
+        self.message_label.setStyleSheet(self._standard_message_style_sheet)
+        self.message_label.setFont(self._standard_message_font)
+        self.message_label.setWordWrap(self._standard_message_word_wrap)
+        self.message_image_label.clear()
+        self.message_image_label.hide()
+        self.content_container.setStyleSheet(self._standard_content_style_sheet)
+        self.content_container.setFont(self._standard_content_font)
+
+    @staticmethod
+    def _apply_scaled_font(widget, standard_font, scale):
+        # A local stylesheet overrides MainWindow's inherited font-size rule.
+        pixel_size = round(QFontInfo(standard_font).pixelSize() * scale)
+        widget.setStyleSheet(
+            "{} {{ {}; font-size: {}px; }}".format(
+                widget.metaObject().className(),
+                widget.styleSheet().rstrip(";"), pixel_size))
+
+    def _apply_message_image(self, image_path, has_content, has_choices, scale_factor=1.0):
+        if not image_path:
+            return
+        pixmap = QPixmap(image_path)
+        if pixmap.isNull():
+            logging.warning("Unable to load popup image: %s", image_path)
+            return
+
+        scaled = pixmap.scaled(
+            pixmap.size() * (self.MESSAGE_IMAGE_SCALE * scale_factor),
+            Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.message_image_label.setPixmap(scaled)
+        content_x = self.content_container.x()
+        content_width = self.content_container.width()
+        image_y = self.ok_button.y() + self.ok_button.height() + self.LARGE_LAYOUT_GAP
+        self.message_image_label.setGeometry(
+            content_x, image_y, content_width, scaled.height())
+        self.message_image_label.show()
+
+        # Replace the large content area with an illustration and keep a
+        # compact input underneath it for scanning/typing the barcode.
+        bottom = image_y + scaled.height()
+        if has_content:
+            content_y = bottom + self.MESSAGE_IMAGE_GAP
+            self.content_container.setGeometry(
+                content_x, content_y, content_width, self.LARGE_CONTENT_HEIGHT)
+            bottom = content_y + self.LARGE_CONTENT_HEIGHT
+        if has_choices:
+            self.combo_box.move(self.combo_box.x(), bottom + self.LARGE_LAYOUT_GAP)
+            bottom = self.combo_box.y() + self.combo_box.height()
+        self.resize(self._standard_frame_width, bottom + self.LARGE_LAYOUT_GAP)
+
+    def _apply_large_message_layout(self, has_content, has_choices):
+        """Give refill-by-scale instructions priority over the input area."""
+
+        message_x, message_y, message_width, _ = (
+            self._standard_geometry[self.message_label]
+        )
+        message_height = self.LARGE_MESSAGE_HEIGHT
+        self.message_label.setGeometry(
+            message_x, message_y, message_width, message_height)
+        self.message_label.setWordWrap(True)
+
+        self._apply_scaled_font(
+            self.message_label, self._standard_message_font,
+            self.LARGE_MESSAGE_FONT_SCALE)
+
+        button_y = message_y + message_height + self.LARGE_LAYOUT_GAP
+        for button in (self.esc_button, self.action_button, self.ok_button):
+            x, _, width, height = self._standard_geometry[button]
+            button.setGeometry(x, button_y, width, height)
+
+        content_x, _, content_width, _ = self._standard_geometry[
+            self.content_container]
+        content_y = button_y + self.ok_button.height() + self.LARGE_LAYOUT_GAP
+        content_height = self.LARGE_CONTENT_HEIGHT if has_content else 0
+        self.content_container.setGeometry(
+            content_x, content_y, content_width, content_height)
+
+        self._apply_scaled_font(
+            self.content_container, self._standard_content_font,
+            self.LARGE_CONTENT_FONT_SCALE)
+
+        bottom = content_y + content_height
+        if has_choices:
+            combo_x, _, combo_width, combo_height = self._standard_geometry[
+                self.combo_box]
+            if self.use_combo_for_choice:
+                combo_height = max(combo_height, 60)
+            combo_y = bottom + self.LARGE_LAYOUT_GAP
+            self.combo_box.setGeometry(
+                combo_x, combo_y, combo_width, combo_height)
+            bottom = combo_y + combo_height
+
+        self.resize(
+            self._standard_frame_width,
+            bottom + self.LARGE_LAYOUT_GAP)
 
     def get_selected_choice(self):
 
@@ -751,6 +899,9 @@ class InputDialog(BaseDialog):
     def on_ok_button_clicked(self):
 
         try:
+            if (self.ok_requires_content
+                    and not self.content_container.toPlainText().strip()):
+                return
             if self.__ok_cb:
                 tmp__args_ = self.__ok_cb_args if self.__ok_cb_args is not None else []
                 tmp__ok_cb = self.__ok_cb
@@ -761,11 +912,30 @@ class InputDialog(BaseDialog):
             logging.error(traceback.format_exc())
             self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
 
+    def on_action_button_clicked(self):
+        try:
+            if self.__action_cb:
+                tmp__args_ = (
+                    self.__action_cb_args
+                    if self.__action_cb_args is not None else [])
+                tmp__action_cb = self.__action_cb
+                self.__action_cb = None
+                asyncio.get_event_loop().call_later(
+                    .05, partial(tmp__action_cb, *tmp__args_))
+        except Exception as e:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self.parent().open_alert_dialog(f"exception:{e}", title="ERROR")
+
     def on_text_cahnged(self):
 
+        cnt_ = self.content_container.toPlainText()
+        content_is_valid = bool(cnt_.strip())
+        if self.ok_requires_content:
+            self.ok_button.setEnabled(content_is_valid)
+
         if self.ok_on_enter and self.on_ok_button_clicked:
-            cnt_ = self.content_container.toPlainText()
-            if "\n" in cnt_:
+            if "\n" in cnt_ and (
+                    not self.ok_requires_content or content_is_valid):
                 self.on_ok_button_clicked()
 
     def show_dialog(self,    # pylint: disable=too-many-arguments
@@ -780,11 +950,21 @@ class InputDialog(BaseDialog):
         to_html=None,
         wide=None,
         content_editable=True,
-        use_combo_for_choice=False):
+        use_combo_for_choice=False,
+        large_message_layout=False,
+        ok_requires_content=False,
+        action_text=None,
+        action_cb=None,
+        action_cb_args=None,
+        message_image=None,
+        message_image_scale_factor=1.0):
 
         """ 'SP_MessageBoxCritical', 'SP_MessageBoxInformation', 'SP_MessageBoxQuestion', 'SP_MessageBoxWarning' """
 
+        self._restore_standard_layout()
+
         self.ok_on_enter = ok_on_enter
+        self.ok_requires_content = bool(ok_requires_content)
         self.use_combo_for_choice = bool(use_combo_for_choice)
 
         if icon_name is None:
@@ -823,6 +1003,7 @@ class InputDialog(BaseDialog):
                     self.combo_box.setStyleSheet(
                         """
                         QComboBox { font-size: 34px; min-height: 60px; }
+                        QComboBox::drop-down { width: 48px; }
                         QComboBox QAbstractItemView { font-size: 30px; }
                         QAbstractItemView::item { min-height: 48px; }
                         """
@@ -850,10 +1031,10 @@ class InputDialog(BaseDialog):
             cursor.setPosition(cursor.position() + len(str(content)))
             if wide:
                 self.content_container.resize(self.content_container.width(), 700)    
-                self.resize(self.width(), 875)    
+                self.resize(self.width(), self._standard_frame_height + 300)
             else:
                 self.content_container.resize(self.content_container.width(), 400)    
-                self.resize(self.width(), 575)    
+                self.resize(self.width(), self._standard_frame_height)
 
         if hasattr(self.content_container, 'setReadOnly'):
             self.content_container.setReadOnly(not content_editable)
@@ -866,6 +1047,18 @@ class InputDialog(BaseDialog):
             self.__ok_cb = ok_cb
             self.__ok_cb_args = ok_cb_args
 
+        self.__action_cb = action_cb
+        self.__action_cb_args = action_cb_args
+        if action_text is not None and action_cb is not None:
+            self.action_button.setText(str(action_text))
+            self.action_button.show()
+        else:
+            self.action_button.hide()
+
+        self.ok_button.setEnabled(
+            not self.ok_requires_content
+            or bool(self.content_container.toPlainText().strip()))
+
         if bg_image is None:
             css_ = 'background-image:;'
         else:
@@ -874,6 +1067,15 @@ class InputDialog(BaseDialog):
         self.content_container.setStyleSheet(css_)
         logging.warning(f"css_:{css_}")
 
+        if large_message_layout:
+            self._apply_large_message_layout(
+                has_content=content is not None,
+                has_choices=choices is not None)
+
+        self._apply_message_image(
+            message_image, has_content=content is not None,
+            has_choices=choices is not None,
+            scale_factor=message_image_scale_factor)
         self.show()
 
     def hide_dialog(self):

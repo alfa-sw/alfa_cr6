@@ -3,6 +3,7 @@
 """Calcoli applicativi e lifecycle teste senza QApplication o hardware."""
 
 import asyncio
+import copy
 import json
 import os
 import tempfile
@@ -11,7 +12,11 @@ import unittest
 from unittest import mock
 
 import alfa_CR6_backend.base_application as app_module
+import alfa_CR6_backend.models as models_module
+import alfa_CR6_backend.order_parser as parser_module
 from alfa_CR6_backend.base_application import BaseApplication, RestoreMachineHelper
+from alfa_CR6_backend.models import Jar, Order, init_models
+from alfa_CR6_backend.settings_manager import SettingsManager
 
 
 class _PigmentHead:
@@ -119,6 +124,182 @@ class TestApplicationHardwareFree(unittest.TestCase):
         )
 
 
+class TestDuplicateOrderIngredients(unittest.TestCase):
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.addCleanup(models_module.set_global_session, models_module.global_session)
+        self.session = init_models('sqlite:///:memory:')
+        self.addCleanup(self.session.bind.dispose)
+        self.addCleanup(self.session.close)
+        self.app = BaseApplication.__new__(BaseApplication)
+        self.app.settings = types.SimpleNamespace(
+            MERGE_DUPLICATE_ORDER_INGREDIENTS=True,
+            DATA_PATH=self.temp_dir.name,
+        )
+        self.app.db_session = self.session
+        self.app.machine_head_dict = {}
+        self.app.handle_exception = mock.Mock()
+        translation = mock.patch.object(app_module, 'tr_', side_effect=lambda text: text)
+        translation.start()
+        self.addCleanup(translation.stop)
+
+    @staticmethod
+    def _properties(*weights):
+        return {
+            'meta': {'quality': '90', 'file name': 'line90.json'},
+            'extra_lines_to_print': ['BASF Line 90'],
+            'ingredients': [
+                {'pigment_name': name, 'weight(g)': weight, 'description': name}
+                for name, weight in weights
+            ],
+        }
+
+    def _create(self, properties):
+        order = self.app._do_create_order(
+            properties, 'BASF Line 90', 2, file_name='line90.json')
+        self.assertIsNotNone(order)
+        self.app.handle_exception.assert_not_called()
+        self.session.expire_all()
+        return self.session.query(Order).one()
+
+    def test_repeated_toners_are_persisted_once_with_total_and_first_metadata(self):
+        properties = self._properties(
+            ('A926', 10.5), ('M4', 20.0), ('A926', 3.2),
+            ('M4', 1.25), ('A926', 0.3))
+        properties['ingredients'][2]['description'] = 'Later description'
+        original = copy.deepcopy(properties)
+
+        order = self._create(properties)
+        stored = json.loads(order.json_properties)
+
+        self.assertEqual(stored['ingredients'], [
+            {'pigment_name': 'A926', 'weight(g)': 14.0, 'description': 'A926'},
+            {'pigment_name': 'M4', 'weight(g)': 21.25, 'description': 'M4'},
+        ])
+        self.assertEqual(stored['meta'], properties['meta'])
+        self.assertEqual(stored['extra_lines_to_print'], properties['extra_lines_to_print'])
+        self.assertEqual(order.file_name, 'line90.json')
+        self.assertEqual(self.session.query(Jar).count(), 2)
+        self.assertEqual(properties, original)
+
+    def test_decimal_totals_keep_precision_without_binary_addition_artifacts(self):
+        order = self._create(self._properties(
+            ('A926', 0.1), ('M4', 0.00001), ('A926', 0.2), ('M4', 0.00002)))
+
+        self.assertEqual(
+            [i['weight(g)'] for i in json.loads(order.json_properties)['ingredients']],
+            [0.3, 0.00003])
+
+    def test_unknown_toners_use_the_total_in_order_and_jar(self):
+        order = self._create(self._properties(('MANUAL', 2.5), ('MANUAL', 3.2)))
+
+        self.assertEqual(json.loads(order.json_properties)['unknown_pigments'], {'MANUAL': 5.7})
+        jar = order.jars[0]
+        self.app.update_jar_properties(jar)
+        self.assertEqual(jar.unknown_pigments, {'MANUAL': 5.7})
+
+    def test_available_toner_uses_total_for_dispensing_and_remaining_quantity(self):
+        self.app.machine_head_dict = {0: _PigmentHead('A', 'A926', 2.0, 100)}
+        order = self._create(self._properties(('A926', 10.5), ('A926', 3.5)))
+        jar = order.jars[0]
+
+        self.app.update_jar_properties(jar)
+        # The machine command uses millilitres: 14 g / 2 g/ml = 7 ml.
+        self.assertEqual(jar.get_ingredients_for_machine(self.app.machine_head_dict[0]), {'A926': 7.0})
+
+        jar.json_properties = json.dumps({'dispensed_quantities_gr': {'A926': 4.0}})
+        self.app.update_jar_properties(jar)
+        self.assertEqual(jar.get_ingredients_for_machine(self.app.machine_head_dict[0]), {'A926': 5.0})
+
+    def test_availability_is_checked_against_the_total(self):
+        self.app.machine_head_dict = {0: _PigmentHead('A', 'A926', 1.0, 10)}
+        order = self._create(self._properties(('A926', 8.0), ('A926', 6.0)))
+        jar = order.jars[0]
+
+        self.app.update_jar_properties(jar)
+
+        self.assertEqual(jar.insufficient_pigments, {'A926': 14.0})
+        self.assertEqual(jar.get_ingredients_for_machine(self.app.machine_head_dict[0]), {})
+
+    def test_unique_toners_and_empty_recipe_are_preserved(self):
+        for properties in (self._properties(('A926', 10.12345), ('M4', 0)), {}):
+            with self.subTest(properties=properties):
+                order = self._create(properties)
+                stored = json.loads(order.json_properties)
+                stored.pop('unknown_pigments')
+                self.assertEqual(stored, properties)
+                self.session.query(Jar).delete()
+                self.session.query(Order).delete()
+                self.session.commit()
+
+    def test_disabled_or_missing_option_keeps_duplicate_rejection(self):
+        properties = self._properties(('A926', 10.5), ('A926', 3.5))
+        for settings in (types.SimpleNamespace(MERGE_DUPLICATE_ORDER_INGREDIENTS=False),
+                         types.SimpleNamespace()):
+            with self.subTest(settings=settings):
+                self.app.settings = settings
+                self.app.handle_exception.reset_mock()
+
+                order = self.app._do_create_order(properties, 'BASF Line 90', 1)
+
+                self.assertIsNone(order)
+                self.assertEqual(self.session.query(Order).count(), 0)
+                self.assertEqual(self.session.query(Jar).count(), 0)
+                self.app.handle_exception.assert_called_once()
+                error = self.app.handle_exception.call_args[0][0]
+                self.assertIsInstance(error, AssertionError)
+                self.assertEqual(str(error), 'duplicated name in ingredient list')
+
+    def test_basf_json_is_merged_after_aliases_without_changing_source_file(self):
+        source = {
+            'header': 'SW CRx formula file', 'version': '1.0.0',
+            'system': 'Refinity', 'batchId': 1234, 'operatorId': '',
+            'jobId': '', 'formulaNumber': '',
+            'meta': {
+                'brand': 'BASF', 'region': '', 'colorCode': 'TEST',
+                'variantCode': '', 'colorName': 'Test', 'secondName': '',
+                'year': '', 'remark': '', 'quality': '90', 'undercoat': '',
+                'pictograms': '', 'dateModified': '', 'quantity': 1.0,
+                'quantityUom': 'l', 'cumulative': 0.0, 'extraInfo': [],
+            },
+            'ingredients': [
+                {'code': 'A926', 'weight(g)': 10.5, 'description': 'First'},
+                {'code': 'M4', 'weight(g)': 20.0, 'description': 'Other'},
+                {'code': 'ALIAS_A926', 'weight(g)': 3.2, 'description': 'Alias'},
+                {'code': 'A926', 'weight(g)': 0.3, 'description': 'Repeated'},
+            ],
+        }
+        path = os.path.join(self.temp_dir.name, 'line90.json')
+        original = json.dumps(source).encode('utf-8')
+        with open(path, 'wb') as stream:
+            stream.write(original)
+        with open(os.path.join(self.temp_dir.name, 'pigment_alias.json'), 'w') as stream:
+            json.dump({'A926': ['ALIAS_A926']}, stream)
+
+        with mock.patch.object(parser_module, 'get_application_instance', return_value=self.app):
+            orders = self.app.create_orders_from_file(path, n_of_jars=1)
+
+        self.assertEqual(len(orders), 1)
+        self.assertIsNotNone(orders[0])
+        self.app.handle_exception.assert_not_called()
+        self.assertEqual(json.loads(orders[0].json_properties)['ingredients'], [
+            {'pigment_name': 'A926', 'weight(g)': 14.0, 'description': 'First'},
+            {'pigment_name': 'M4', 'weight(g)': 20.0, 'description': 'Other'},
+        ])
+        with open(path, 'rb') as stream:
+            self.assertEqual(stream.read(), original)
+
+    def test_setting_is_editable_boolean_and_defaults_to_disabled(self):
+        key = 'MERGE_DUPLICATE_ORDER_INGREDIENTS'
+        self.assertIs(SettingsManager.DEFAULTS[key], False)
+        for value in (True, False):
+            self.assertEqual(SettingsManager._validate_updates({key: value}), {key: value})
+        with mock.patch.dict('sys.modules', {'app_settings': types.ModuleType('app_settings')}):
+            self.assertIs(SettingsManager.get_editable_settings()[key], False)
+
+
 class TestRestoreMachineHelperRawPersistence(unittest.TestCase):
 
     VALID_BARCODE = "260804001001"
@@ -194,6 +375,108 @@ class TestRestoreMachineHelperRawPersistence(unittest.TestCase):
         self.parent.delete_jar_runner.assert_called_once_with(self.HIDDEN_BARCODE)
         self.assertNotIn(self.HIDDEN_BARCODE, data)
         self.assertIn(self.VALID_BARCODE, data)
+
+
+class TestCarouselPauseMessages(unittest.TestCase):
+
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+        self.app = types.SimpleNamespace(
+            carousel_frozen=True,
+            main_window=types.SimpleNamespace(open_frozen_dialog=mock.Mock()),
+            request_attention_led=mock.Mock(return_value=True),
+            release_attention_led=mock.Mock(),
+            _BaseApplication__jar_runners={},
+        )
+        self.app.freeze_carousel = mock.Mock(
+            side_effect=lambda flag: setattr(self.app, 'carousel_frozen', flag))
+
+    def tearDown(self):
+        tasks = asyncio.all_tasks(self.loop)
+        for task in tasks:
+            task.cancel()
+        self.loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+        self.loop.close()
+        asyncio.set_event_loop(None)
+
+    def test_transfer_failure_during_alarm_has_its_own_message_and_keeps_pause(self):
+        async def scenario():
+            source, destination = object(), object()
+            task = asyncio.create_task(BaseApplication.wait_for_carousel_not_frozen(
+                self.app, True, message_args=('BC1', 'A -> B', '1'),
+                message_fmt='barcode:{} error in {}. I will retry. ({})',
+                error_head=source, dest_head=destination))
+            await asyncio.sleep(0)
+
+            dialog = self.app.main_window.open_frozen_dialog
+            dialog.assert_called_once()
+            self.assertEqual(dialog.call_args.args[0], ('BC1', 'A -> B', '1'))
+            self.assertTrue(dialog.call_args.kwargs['force_explicit_restart'])
+            # Record the independent fault even when another cause froze first.
+            self.app.freeze_carousel.assert_called_once_with(True)
+            self.assertTrue(self.app.carousel_frozen)
+            self.assertFalse(task.done())
+
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+            self.assertTrue(self.app.carousel_frozen)
+            released = self.app.release_attention_led.call_args_list
+            self.assertEqual([call.args[0] for call in released], [source, destination])
+
+        self.loop.run_until_complete(scenario())
+
+    def test_first_failure_keeps_normal_resume_dialog(self):
+        async def scenario():
+            self.app.carousel_frozen = False
+            task = asyncio.create_task(BaseApplication.wait_for_carousel_not_frozen(
+                self.app, True, message_fmt='transfer failed'))
+            await asyncio.sleep(0)
+
+            self.app.freeze_carousel.assert_called_once_with(True)
+            self.assertFalse(self.app.main_window.open_frozen_dialog.call_args.kwargs.get(
+                'force_explicit_restart', False))
+            self.app.carousel_frozen = False
+            await task
+            self.assertEqual(self.app.release_attention_led.call_count, 2)
+
+        self.loop.run_until_complete(scenario())
+
+    def test_waiting_for_an_existing_pause_does_not_open_another_dialog(self):
+        async def scenario():
+            task = asyncio.create_task(BaseApplication.wait_for_carousel_not_frozen(
+                self.app, message_fmt='not a new failure'))
+            await asyncio.sleep(0)
+            self.app.main_window.open_frozen_dialog.assert_not_called()
+            self.app.request_attention_led.assert_not_called()
+            self.app.carousel_frozen = False
+            await task
+
+        self.loop.run_until_complete(scenario())
+
+    def test_overlapping_failures_keep_distinct_messages(self):
+        async def scenario():
+            self.app.carousel_frozen = False
+            tasks = []
+            for barcode, route in [('BC1', 'A -> B'), ('BC2', 'D -> E')]:
+                tasks.append(asyncio.create_task(
+                    BaseApplication.wait_for_carousel_not_frozen(
+                        self.app, True, message_args=(barcode, route),
+                        message_fmt='barcode:{} error in {}')))
+                await asyncio.sleep(0)
+
+            calls = self.app.main_window.open_frozen_dialog.call_args_list
+            self.assertEqual([call.args[0] for call in calls], [
+                ('BC1', 'A -> B'), ('BC2', 'D -> E')])
+            self.assertTrue(calls[1].kwargs['force_explicit_restart'])
+            tasks[1].cancel()
+            await asyncio.gather(tasks[1], return_exceptions=True)
+            self.assertFalse(tasks[0].done())
+            self.assertTrue(self.app.carousel_frozen)
+            self.app.carousel_frozen = False
+            await tasks[0]
+
+        self.loop.run_until_complete(scenario())
 
 
 class TestMachineTaskSupervision(unittest.TestCase):

@@ -25,6 +25,12 @@ import websockets  # pylint: disable=import-error
 from alfa_CR6_backend.globals import EPSILON, tr_, get_application_instance, store_data_on_restore_machine_helper
 
 DEFAULT_WAIT_FOR_TIMEOUT = 6 * 60
+MACHINE_STATUS_TIMEOUT = 30
+MACHINE_STATUS_LEVELS = frozenset((
+    "POWER_OFF", "INIT", "IDLE", "RESET", "STANDBY", "DISPENSING",
+    "ALARM", "DIAGNOSTIC", "POSITIONING", "JUMP_TO_BOOT", "ROTATING",
+    "AUTOTEST", "JAR_POSITIONING", "AUTORECOVERY",
+))
 
 
 class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -78,6 +84,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         self._current_circuit_engaged = None
         self._current_runner = None
+        self._dispense_in_progress = False
+        self._dispense_autorecovery = None
 
     def __str__(self):
         return f"[{self.index}:{self.name}]"
@@ -224,6 +232,27 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
     async def update_status(self, status):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
         logging.debug("status:{}".format(status))
+        # Apply the interlock before any await or modal dialog can let another
+        # coroutine start work. Missing/unrecognised data never releases it.
+        level = status.get("status_level")
+        if (not isinstance(level, str) or level not in MACHINE_STATUS_LEVELS
+                or level == "POWER_OFF" or status.get("expired")):
+            level = None
+        self.app.update_head_safety(self.index, level)
+
+        # Latch the event on receipt: recovery may finish before the dispensing
+        # coroutine samples the next status. Only this head's active jar fails.
+        if (self._current_runner is not None and self._dispense_in_progress
+                and level == "AUTORECOVERY"):
+            code = status.get("autorecovery_error_code") or 0
+            if self._dispense_autorecovery is None:
+                self._dispense_autorecovery = {
+                    "autorecovery_error_code": code,
+                    "autorecovery_component": status.get("autorecovery_component"),
+                }
+            elif not self._dispense_autorecovery["autorecovery_error_code"] and code:
+                # Keep the component seen at entry even if recovery changes it.
+                self._dispense_autorecovery["autorecovery_error_code"] = code
 
         if not self.status:
             asyncio.ensure_future(self.update_tintometer_data(silent=False))
@@ -371,9 +400,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
         msg = None
         try:
-            msg = await asyncio.wait_for(self.websocket.recv(), timeout=30)
+            msg = await asyncio.wait_for(self.websocket.recv(), timeout=MACHINE_STATUS_TIMEOUT)
         except asyncio.TimeoutError:
             logging.warning(f"{self.name} time out while waiting in websocket.recv.")
+            self.invalidate_safety_status()
+            # Statuses are sent on change, while time messages keep the stream
+            # alive. Reconnect a silent stream to obtain a new status snapshot.
+            raise
 
         if msg is not None:
             self.__last_recv_msg = msg
@@ -401,16 +434,25 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         propagate_to_ws_msg_handler = True
 
         if msg:
-            msg_dict = dict(json.loads(msg))
+            try:
+                msg_dict = dict(json.loads(msg))
+            except (TypeError, ValueError):
+                self.invalidate_safety_status()
+                raise
             msg_type = msg_dict.get("type")
 
             if msg_type == "device:machine:status":
-                status = msg_dict.get("value")
-                status = dict(status)
+                try:
+                    status = dict(msg_dict.get("value"))
+                except (TypeError, ValueError):
+                    self.invalidate_safety_status()
+                    raise
                 if status:
                     diff = await self.update_status(status)
                     if diff:
                         logging.info("%s diff:%s", self.name, diff)
+                else:
+                    self.invalidate_safety_status()
 
             elif msg_type == "answer":
                 answer = msg_dict.get("value")
@@ -456,6 +498,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             if propagate_to_ws_msg_handler and self.ws_msg_handler:
                 await self.ws_msg_handler(self.index, msg_dict)
+        else:
+            self.invalidate_safety_status()
 
     async def call_api_rest(self,   # pylint: disable=too-many-arguments
                             path: str, method: str, data: dict, timeout=40, expected_ret_type='json'):
@@ -514,6 +558,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def crx_outputs_management(self, output_number, output_action, timeout=30, silent=True):
 
+        if output_action:
+            await self.app.wait_for_carousel_not_frozen()
+
         # ~ id_ = random.randint(1, 10000)
         # ~ logging.warning(f" {self.name} owned_barcodes:{self.owned_barcodes}, id_:{id_}")
 
@@ -531,7 +578,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
             msg_ = tr_("{} waiting for {} to get unlocked.").format(self.name, output_number)
 
-            ret = await self.app.wait_for_condition(condition_1, timeout=5, extra_info=msg_, stability_count=1)
+            ret = await self.app.wait_for_condition(
+                condition_1, timeout=5, extra_info=msg_, stability_count=1,
+                pause_on_freeze=bool(output_action))
             self.__crx_inner_status[output_number]['locked'] = True
             # ~ logging.warning(f" {self.name} ({output_number}, {output_action}) id_:{id_},   LOCKED")
 
@@ -619,6 +668,16 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         """
         ret = None
         try:
+            # Gate actual starts after all upstream awaits. Stops, aborts,
+            # telemetry and scale commands must remain usable while frozen.
+            starts_work = channel == "machine" and (
+                cmd_name in ("DISPENSE_FORMULA", "PURGE")
+                or (cmd_name == "CRX_OUTPUTS_MANAGEMENT"
+                    and params.get("Output_Action", 0) != 0)
+                or (cmd_name == "CAN_MOVEMENT" and any(params.values()))
+            )
+            if starts_work:
+                await self.app.wait_for_carousel_not_frozen()
             msg = {
                 "type": type_,
                 "channel": channel,
@@ -628,26 +687,44 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 # ~ logging.warning(f"{self.name} cmd:{msg}")
                 self.last_answer = None
+                if (channel == "machine" and type_ == "macro"
+                        and cmd_name in ("DISPENSE_FORMULA", "PURGE")
+                        and self._current_runner is not None):
+                    # Arm only at the transport boundary, after the freeze gate.
+                    # No DISPENSING frame is required to detect a failed start.
+                    self._dispense_autorecovery = None
+                    self._dispense_in_progress = True
                 ret = await self.websocket.send(json.dumps(msg))
 
                 if type_ == "command":
+                    expected_commands = {cmd_name + "_END"}
+                    if channel == "scale":
+                        # The scale dispatcher historically replies without
+                        # the _END suffix used by machine commands.
+                        expected_commands.add(cmd_name)
 
                     def condition():
                         if (self.last_answer is not None
-                                and self.last_answer["status_code"] == 0
-                                and self.last_answer["command"] == cmd_name + "_END"):
+                                # A scale error is a completed request, too.
+                                and (channel == "scale" or self.last_answer["status_code"] == 0)
+                                and self.last_answer["command"] in expected_commands):
                             return True
                         return False
                     msg_ = tr_("{} waiting for answer to cmd:{}").format(self.name, cmd_name)
 
                     # ~ ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_)
-                    ret = await self.app.wait_for_condition(condition, timeout=30, extra_info=msg_, show_alert=False)
+                    # Leave room for the scale bus timeout (10 seconds).
+                    timeout = 15 if channel == "scale" and cmd_name == "SEND_IMMEDIATE" else 30
+                    ret = await self.app.wait_for_condition(condition, timeout=timeout, extra_info=msg_, show_alert=False)
+                    if channel == "scale" and ret:
+                        ret = self.last_answer.get("status_code") == 0
                     logging.warning(f"{self.name} ret:{ret}, answer:{self.last_answer}")
                 else:
                     self.callback_on_macro_answer = callback_on_macro_answer
                     ret = True
 
         except websockets.exceptions.ConnectionClosed as e:
+            self.invalidate_safety_status()
             # expected during connection teardown (the race window past the
             # "if self.websocket" guard): record it, do not bother the operator
             logging.error(f"{self.name} send_command cmd:{cmd_name} on closed websocket, e:{e}")
@@ -662,6 +739,37 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
             ret = None
 
         return ret
+
+    async def check_scale_connection(self):
+        """Ask the scale for a fresh reply, without requiring a usable weight."""
+        ret = await self.send_command(
+            cmd_name="SEND_IMMEDIATE", params={}, type_="command", channel="scale")
+        answer = self.last_answer
+        return bool(answer and answer.get("command") in (
+            "SEND_IMMEDIATE", "SEND_IMMEDIATE_END") and (
+                answer.get("responding") is True
+                or (ret and answer.get("status_code") == 0)))
+
+    async def read_stable_weight(self):
+        """Read a stable scale value and return it in grams."""
+        ret = await self.send_command(
+            cmd_name="STABLE_WEIGHT", params={}, type_="command", channel="scale")
+        answer = self.last_answer
+        try:
+            if (not ret or not answer or answer.get("status_code") != 0
+                    or answer.get("command") not in (
+                        "STABLE_WEIGHT", "STABLE_WEIGHT_END")):
+                return None
+            value, unit = answer.get("params", [])
+            unit = str(unit).strip().lower()
+            if unit == "g":
+                return float(value)
+            if unit == "kg":
+                return float(value) * 1000
+            return None
+        except (TypeError, ValueError):
+            logging.error("%s invalid STABLE_WEIGHT answer: %s", self.name, answer)
+            return None
 
     async def get_ingredients_for_purge_all(self, jar):
 
@@ -719,6 +827,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
     async def do_dispense(self, jar, restore_machine_helper=None):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
 
+        await self.app.wait_for_carousel_not_frozen()
+
         if jar.order and jar.order.description and "PURGE ALL" in jar.order.description.upper():
             ingredients = await self.get_ingredients_for_purge_all(jar)
         else:
@@ -733,10 +843,13 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         params_['ref_size'] = 100
         data = {'action': 'get_pipe_formula_from_pigment_formula', 'params': params_}
         ret = await self.call_api_rest("apiV1/ad_hoc", "POST", data, timeout=5)
+        await self.app.wait_for_carousel_not_frozen()
         # ~ logging.warning(f"ret:{ret}")
         pipe_formula_ml = ret.get('result') == 'OK' and ret.get('pipe_formula')
 
         self._current_runner = self.app._BaseApplication__jar_runners.get(jar.barcode)  # pylint: disable=protected-access
+        self._dispense_in_progress = False
+        self._dispense_autorecovery = None
 
         r = True
 
@@ -749,7 +862,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 return flag
             r = await self.app.wait_for_condition(
                 before_dispense_condition, timeout=2.5,
-                show_alert=False
+                show_alert=False, pause_on_freeze=True
             )
             if not r:
                 jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
@@ -782,7 +895,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         error_messages.append(tr_("Jar is not in the roller dispensing position."))
 
                     if self.status["status_level"] not in allowed_status_levels_:
-                        error_messages.append(tr_(f"Status '{self.status['status_level']}' is not allowed for dispensing."))
+                        error_messages.append(tr_("Status {} is not allowed for dispensing.").format(repr(self.status["status_level"])))
 
                     if not self.status["container_presence"]:
                         error_messages.append(tr_("Jar not detected from the ultrasonic sensor under nozzle."))
@@ -799,6 +912,11 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 engaged_circuits_ = []
                 disp_type_map = {1: "order", 2: "purge"}
                 dispense_timeout = 60 * 24
+
+                def break_condition():
+                    return (self._dispense_autorecovery is not None
+                            or self.status["status_level"] in ['ALARM', 'RESET'])
+
                 try:
                     while step < 2:
                         disp_type = None
@@ -806,7 +924,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         msg_ = ""
                         r = await self.app.wait_for_condition(
                             before_dispense_condition, timeout=31,
-                            show_alert=False
+                            show_alert=False, pause_on_freeze=True
                         )
                         if r:
                             # ~ jar.update_live(machine_head=self, status='DISPENSING', pos=None, t0=None)
@@ -837,22 +955,19 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                             if r:
                                 r = await self.wait_for_status_level(
-                                    ["DISPENSING"], timeout=41, show_alert=False
+                                    ["DISPENSING"], timeout=41, show_alert=False,
+                                    break_condition=lambda: self._dispense_autorecovery is not None
                                 )
                                 msg_ = tr_("Problem during the start of dispensing. Head status not in standby.")
 
                                 if r:
-
                                     store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "ongoing", disp_type)
 
                                     self._current_runner['running_engaged_circuits'] = []
 
-                                    # ~ r = await self.wait_for_status_level(["STANDBY"], timeout=60 * 6)
-                                    def break_condition():
-                                        return self.status["status_level"] in ['ALARM', 'RESET']
-
                                     r = await self.wait_for_status_level(
                                         ["STANDBY"], timeout=dispense_timeout, show_alert=False, break_condition=break_condition)
+                                    self._dispense_in_progress = False
 
                                     engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
                                     self._current_runner['running_engaged_circuits'] = None
@@ -864,8 +979,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                                         store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "done", disp_type)
                                     else:
                                         outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
-                                        outcome_ += "{}, {} ".format(self.status.get("error_code"),
-                                                                     tr_(self.status.get("error_message")))
+                                        if self._dispense_autorecovery is None:
+                                            outcome_ += "{}, {} ".format(self.status.get("error_code"),
+                                                                         tr_(self.status.get("error_message")))
                                         result_ = 'NOK'
                                         store_data_on_restore_machine_helper(restore_machine_helper, jar, self.name, "dispensation_failure", disp_type)
                                         break
@@ -893,14 +1009,18 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     if self.status.get("status_level") == "DISPENSING":
                         logging.warning(f"waiting for head {self.name} to finish dispensing before cleanup")
                         try:
-                            await asyncio.shield(
+                            r = await asyncio.shield(
                                 self.wait_for_status_level(
                                     ["STANDBY"], timeout=dispense_timeout,
-                                    show_alert=False
+                                    show_alert=False, break_condition=break_condition
                                 )
                             )
-                            outcome_ += tr_('success (step:{}) ').format(step)
-                            result_ = 'OK'
+                            if r:
+                                outcome_ += tr_('success (step:{}) ').format(step)
+                                result_ = 'OK'
+                            else:
+                                outcome_ += tr_('failure during dispensation (step:{}) ').format(step)
+                                result_ = 'NOK'
                         except asyncio.CancelledError:
                             logging.warning(f"shield cancelled, head {self.name} may still be dispensing")
                             outcome_ += tr_('cancelled during dispensation (step:{}) ').format(step)
@@ -913,6 +1033,15 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         engaged_circuits_ += self._current_runner['running_engaged_circuits'][:]
                         self._current_runner['running_engaged_circuits'] = None
                     self._current_circuit_engaged = None
+
+                self._dispense_in_progress = False
+                autorecovery = self._dispense_autorecovery
+                autorecovery_aborted = autorecovery is not None
+                if autorecovery_aborted:
+                    outcome_ += 'AUTORECOVERY during dispensation (step:{}) autorecovery_error_code:{} '.format(
+                        step, autorecovery["autorecovery_error_code"])
+                    json_properties.setdefault("dispensation_autorecovery", {})[self.name] = autorecovery.copy()
+                    result_ = 'NOK'
 
                 ingredients = jar.get_ingredients_for_machine(self)
                 if cancelled and result_ == 'OK':
@@ -946,8 +1075,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                             jar.update_live(machine_head=self, status='PROGRESS', pos=None, t0=None)
                 else:
                     error_msg = tr_("ERROR in dispensing:\n") + outcome_
-                    if not cancelled:
-                        jar.update_live(machine_head=self, status='ERROR', pos=None, t0=None)
+                    if not cancelled or autorecovery_aborted:
+                        jar.update_live(machine_head=jar.machine_head if cancelled else self,
+                                        status='ERROR', pos=None, t0=None)
 
                 json_properties.setdefault("dispensation_outcomes", [])
                 json_properties["dispensation_outcomes"].append((self.name, outcome_))
@@ -964,13 +1094,21 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
 
                 json_properties["visited_head_names"] = visited_head_names
                 jar.json_properties = json.dumps(json_properties, indent=2, ensure_ascii=False)
-                if not cancelled:
+                if not cancelled or autorecovery_aborted:
                     dispense_not_successful = True if result_ == 'NOK' else False
                     self.app.update_jar_properties(jar, dispense_not_successful=dispense_not_successful)
 
                 logging.warning(f"error_msg: {error_msg}")
                 logging.warning(f"msg_: {msg_}")
-                if error_msg and not cancelled:
+                if autorecovery_aborted:
+                    self.app.main_window.open_alert_dialog(
+                        (self.name, jar.barcode, autorecovery["autorecovery_error_code"] or tr_("unknown")),
+                        title=tr_("Order aborted"),
+                        fmt=["Head {} - BARCODE {}\nThe head entered AUTORECOVERY during dispensing.",
+                             "\n", "Autorecovery code: {}"],
+                        ok_only=True,
+                    )
+                elif error_msg and not cancelled:
                     await self.app.wait_for_carousel_not_frozen(
                         True,
                         message_args=(),
@@ -999,6 +1137,9 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                 if (timeout > 0 and t0 > 0) and (time.time() - t0 > timeout):
                     logging.warning(f"{self.name}, {output_number}, output:{output}")
                     await self.crx_outputs_management(output_number, 0, timeout=0)
+
+    def invalidate_safety_status(self):
+        self.app.update_head_safety(self.index)
 
     def __reset_state(self):
         self.status = {}
@@ -1152,6 +1293,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                     "{} task terminated unexpectedly".format(label)
                 )
         finally:
+            self.invalidate_safety_status()
             for _label, task in supervised_tasks:
                 if not task.done():
                     task.cancel()
@@ -1166,6 +1308,7 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
         while True:
             ws_body_exception_id = None
             try:
+                self.invalidate_safety_status()
                 # close_timeout low on purpose: on loopback a healthy peer answers the
                 # close handshake in ms; a mute peer will never answer and each extra
                 # second extends the window in which self.websocket points to a dead socket
@@ -1191,6 +1334,8 @@ class MachineHead:  # pylint: disable=too-many-instance-attributes,too-many-publ
                         self.__log_document("WS_EXCP", extra)
                         raise
                 finally:
+                    # Invalidate before waiting for the websocket close handshake.
+                    self.invalidate_safety_status()
                     # equivalent to the async-with __aexit__ (close()), but timed and
                     # logged: WS_CTX_EXIT records who triggered the local close (the
                     # "sent 1000") and whether the peer ever answered the handshake

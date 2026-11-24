@@ -109,6 +109,8 @@ class TestEditableSettings:
         editable = SettingsManager.get_editable_settings()
 
         assert editable["REMINDER_PPS_LINER"] is False
+        assert editable["ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT"] is False
+        assert editable["ENABLE_BTN_CREATE_ALL_ORDERS"] is False
         assert "REFILL_ALARM_NOTIFICATION" not in editable
 
 
@@ -190,9 +192,40 @@ class TestValidateUpdates:
         result = SettingsManager._validate_updates({"ENABLE_BTN_ORDER_NEW": True})
         assert result["ENABLE_BTN_ORDER_NEW"] is True
 
+    @pytest.mark.parametrize("current, updates, valid", [
+        ({"FORCE_ORDER_JAR_TO_ONE": False, "ENABLE_BTN_CREATE_ALL_ORDERS": False},
+         {"ENABLE_BTN_CREATE_ALL_ORDERS": True}, False),
+        ({"FORCE_ORDER_JAR_TO_ONE": False, "ENABLE_BTN_CREATE_ALL_ORDERS": False},
+         {"ENABLE_BTN_CREATE_ALL_ORDERS": True, "FORCE_ORDER_JAR_TO_ONE": True}, True),
+        ({"FORCE_ORDER_JAR_TO_ONE": True, "ENABLE_BTN_CREATE_ALL_ORDERS": False},
+         {"ENABLE_BTN_CREATE_ALL_ORDERS": True}, True),
+        ({"FORCE_ORDER_JAR_TO_ONE": True, "ENABLE_BTN_CREATE_ALL_ORDERS": True},
+         {"FORCE_ORDER_JAR_TO_ONE": False}, False),
+        ({"FORCE_ORDER_JAR_TO_ONE": True, "ENABLE_BTN_CREATE_ALL_ORDERS": True},
+         {"FORCE_ORDER_JAR_TO_ONE": False, "ENABLE_BTN_CREATE_ALL_ORDERS": False}, True),
+    ])
+    def test_create_all_orders_requires_one_jar(self, current, updates, valid, monkeypatch):
+        monkeypatch.setattr(SettingsManager, "get_editable_settings", staticmethod(lambda: current))
+        if valid:
+            assert SettingsManager._validate_updates(updates) == updates
+        else:
+            with pytest.raises(ValueError, match="FORCE_ORDER_JAR_TO_ONE"):
+                SettingsManager._validate_updates(updates)
+
     def test_valid_boolean_coerced_from_string(self):
         result = SettingsManager._validate_updates({"ENABLE_BTN_ORDER_NEW": "true"})
         assert result["ENABLE_BTN_ORDER_NEW"] is True
+
+    def test_scale_refill_is_disabled_by_default_and_accepts_boolean(self):
+        assert SettingsManager.DEFAULTS["ENABLE_REFILL_BY_SCALE"] is False
+        result = SettingsManager._validate_updates({"ENABLE_REFILL_BY_SCALE": "true"})
+        assert result["ENABLE_REFILL_BY_SCALE"] is True
+
+    def test_scale_refill_large_message_layout_is_optional(self):
+        key = "ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT"
+        assert SettingsManager.DEFAULTS[key] is False
+        result = SettingsManager._validate_updates({key: "true"})
+        assert result[key] is True
 
     def test_reminder_pps_liner_defaults_to_false(self):
         assert SettingsManager.DEFAULTS["REMINDER_PPS_LINER"] is False

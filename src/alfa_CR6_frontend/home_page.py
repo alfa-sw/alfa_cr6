@@ -17,14 +17,22 @@ import traceback
 import asyncio
 import json
 import time
+import math
 
 from PyQt5.QtCore import Qt, QTimer
 
 from PyQt5.QtGui import QMovie
 from PyQt5.QtWidgets import QApplication
 
-from alfa_CR6_backend.globals import (import_settings, get_res, tr_, DEFAULT_DEBUG_PAGE_PWD)
+from alfa_CR6_backend.globals import (
+    DEFAULT_DEBUG_PAGE_PWD,
+    get_res,
+    import_settings,
+    get_scale_connection_state,
+    tr_,
+)
 from alfa_CR6_backend.dymo_printer import async_dymo_print_pigment_labels, async_dymo_print_low_pigment_labels
+from alfa_CR6_backend.refill_utils import convert_quantity, get_pipe_index_from_name
 
 from alfa_CR6_frontend.pages import BaseStackedPage
 from alfa_CR6_frontend.debug_page import simulate_read_barcode
@@ -146,11 +154,10 @@ class RefillProcedureHelper:
 
         self.refill_choices = self._get_refill_choices()
 
-        self.units_ = "CC"
-        if self.machine_.machine_config:
-            self.units_ = self.machine_.machine_config.get('UNITS', {}).get('service_page_unit')
-
-        self.fl_oz_unit = self.machine_.machine_config.get('UNITS', {}).get('fl_oz_unit', 1)
+        units = (self.machine_.machine_config or {}).get('UNITS', {})
+        self.units_ = units.get('service_page_unit') or "CC"
+        self.fl_oz_unit = units.get('fl_oz_unit', 1) or 1
+        self.fl_oz_fraction = units.get('fl_oz_fraction', 1) or 1
 
         t = self.machine_.update_tintometer_data()
         asyncio.ensure_future(t)
@@ -167,24 +174,18 @@ class RefillProcedureHelper:
         return sorted(choices, reverse=True)
 
     def __qtity_from_ml(self, val, pigment_name):
-
-        _convert_factor = {
-            "CC": 1.,
-            "GR": self.machine_.get_specific_weight(pigment_name),
-            "FL OZ": 1. / self.fl_oz_unit,
-        }.get(self.units_, 1)
-        logging.warning(f"_convert_factor({type(_convert_factor)}):{_convert_factor}.")
-        return round(_convert_factor * float(val), 2)
+        return round(convert_quantity(
+            val, "CC", self.units_,
+            specific_weight=self.machine_.get_specific_weight(pigment_name),
+            fl_oz_unit=self.fl_oz_unit,
+            fl_oz_fraction=self.fl_oz_fraction), 2)
 
     def __qtity_to_ml(self, val, pigment_name):
-
-        _convert_factor = {
-            "CC": 1.,
-            "GR": 1. / self.machine_.get_specific_weight(pigment_name),
-            "FL OZ": 1. * self.fl_oz_unit,
-        }.get(self.units_, 1)
-        # ~ logging.warning(f"_convert_factor({type(_convert_factor)}):{_convert_factor}.")
-        return _convert_factor * float(val)
+        return convert_quantity(
+            val, self.units_, "CC",
+            specific_weight=self.machine_.get_specific_weight(pigment_name),
+            fl_oz_unit=self.fl_oz_unit,
+            fl_oz_fraction=self.fl_oz_fraction)
 
     def _cb_confirm_reset(self):
 
@@ -360,14 +361,7 @@ class RefillProcedureHelper:
             self, pigment_, pipe_, _default_qtity_units, barcode_,
             skip_verify=False, qrcode_refill_infos={}
     ):
-
-        def __get_pipe_index_from_name(p_name):
-
-            pipe_addresses = {"B%02d" % (i + 1): i for i in range(0, 8)}
-            pipe_addresses.update({"C%02d" % (i - 7): i for i in range(8, 32)})
-            return pipe_addresses[p_name]
-
-        pipe_index = __get_pipe_index_from_name(pipe_['name'])
+        pipe_index = get_pipe_index_from_name(pipe_['name'])
         pars_ = {'Id_color_circuit': pipe_index, 'Refilling_angle': 0, 'Direction': 0}
 
         t = self.machine_.send_command(cmd_name='DIAG_ROTATING_TABLE_POSITIONING',
@@ -378,6 +372,7 @@ class RefillProcedureHelper:
             self.parent.main_window.open_input_dialog(
                 icon_name="SP_MessageBoxQuestion",
                 message=tr_("please, verify barcode {} on canister.").format(barcode_),
+                message_image=get_res("IMAGE", "refill_scan_pipe.png"),
                 content="",
                 ok_cb=self._cb_verify_barcode,
                 ok_cb_args=(pigment_, pipe_, _default_qtity_units, barcode_),
@@ -444,7 +439,8 @@ class RefillProcedureHelper:
                         try:
                             curr = round(float(p.get('current_level', 0)), 2)
                             mx = round(float(p.get('maximum_level', 0)), 2)
-                            label = f"{p.get('name', '?')} (level {curr}/{mx})"
+                            label = tr_("{} (level {}/{})").format(
+                                p.get('name', '?'), curr, mx)
                         except Exception:
                             label = str(p.get('name', '?'))
                         choices[label] = p
@@ -597,9 +593,444 @@ class RefillProcedureHelper:
         self.parent.main_window.open_input_dialog(
             icon_name="SP_MessageBoxQuestion",
             message=tr_("please, input barcode for refill"),
+            message_image=get_res("IMAGE", "refill_scan_can_full.png"),
             content="",
             ok_cb=self._cb_input,
             ok_on_enter=1)
+
+
+class ScaleRefillProcedureHelper:
+    """Guided refill based on the difference between two scale readings."""
+
+    def __init__(self, parent, head_index=0):
+        self.parent = parent
+        self.head_index = head_index
+        self.machine_ = None
+        self.pigment_ = None
+        self.pipe_ = None
+        self.barcode_ = None
+        self.initial_weight_ = None
+        self.specific_weight_ = None
+
+    @property
+    def main_window(self):
+        return self.parent.main_window
+
+    def _open_dialog(self, **kwargs):
+        kwargs["large_message_layout"] = bool(getattr(
+            g_settings,
+            "ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT",
+            False))
+        self.main_window.open_input_dialog(**kwargs)
+
+    def _is_active(self):
+        return (getattr(self.parent, "scale_refill_helper", None) is self
+                and getattr(QApplication.instance(), "barcode_read_blocked_on_refill", False))
+
+    @staticmethod
+    def _specific_weight(pigment, pipe):
+        for value in (pipe.get("effective_specific_weight"), pigment.get("specific_weight")):
+            try:
+                value = float(value)
+                if math.isfinite(value) and value > 0:
+                    return value
+            except (TypeError, ValueError):
+                pass
+        return -1
+
+    @staticmethod
+    def _find_targets(machine_head_dict, barcode):
+        targets = []
+        for machine in machine_head_dict.values():
+            if not machine:
+                continue
+            for pigment in machine.pigment_list:
+                if pigment.get("customer_id") != barcode:
+                    continue
+                for pipe in pigment.get("pipes", []):
+                    if pipe.get("enabled") and pipe.get("sync"):
+                        targets.append((machine, pigment, pipe))
+        return targets
+
+    def _finish(self):
+        QApplication.instance().barcode_read_blocked_on_refill = False
+        if getattr(self.parent, "scale_refill_helper", None) is self:
+            self.parent.scale_refill_helper = None
+        self.main_window.hide_input_dialog()
+
+    def _show_error(self, message):
+        self._open_dialog(
+            icon_name="SP_MessageBoxCritical",
+            message=message,
+            content=None,
+            ok_cb=self._finish)
+
+    def _dialog_barcode(self):
+        return self.main_window.input_dialog.get_content_text().strip()
+
+    def _show_scale_warning(self, disconnected=False, in_progress=False):
+        if disconnected:
+            message = tr_(
+                "No scale was detected.<br>"
+                "Connect the scale or check that the USB cable is properly connected.")
+            message_image = get_res("IMAGE", "refill_scale_warn_unplugged.png")
+        else:
+            message = tr_(
+                "The scale is not responding.<br>"
+                "Check that it is switched on and that the communication cable<br>"
+                "is properly connected at the back of the scale.")
+            message_image = get_res("IMAGE", "refill_scale_warn_off.png")
+        if in_progress:
+            message += "<br>" + tr_("Refill procedure interrupted.")
+        self._open_dialog(
+            icon_name="SP_MessageBoxWarning",
+            message=message,
+            message_image=message_image,
+            content=None,
+            ok_cb=self._finish)
+
+    async def _check_scale(self, machine, in_progress=False):
+        if not self._is_active():
+            return False
+        if get_scale_connection_state() == "disconnected":
+            self._show_scale_warning(disconnected=True, in_progress=in_progress)
+            return False
+        responding = await machine.check_scale_connection() if machine else False
+        if not self._is_active():
+            return False
+        if not responding:
+            answer = (machine.last_answer or {}) if machine else {}
+            disconnected = (answer.get("connected") is False
+                            or get_scale_connection_state() == "disconnected")
+            self._show_scale_warning(disconnected=disconnected, in_progress=in_progress)
+        return responding
+
+    def run(self):
+        self.main_window.toggle_keyboard(on_off=False)
+        if get_scale_connection_state() == "disconnected":
+            self._show_scale_warning(disconnected=True)
+            return
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._start())
+
+    async def _start(self):
+        machine = QApplication.instance().machine_head_dict.get(self.head_index)
+        if not await self._check_scale(machine):
+            return
+
+        self._open_dialog(
+            icon_name="SP_MessageBoxQuestion",
+            message=tr_("Place the open canister on the scale.<br>Scan its barcode."),
+            message_image=get_res("IMAGE", "refill_scale_can_full.png"),
+            content="",
+            ok_cb=self._on_initial_barcode,
+            ok_on_enter=1,
+            ok_requires_content=True)
+
+    def _on_initial_barcode(self):
+        barcode = self._dialog_barcode()
+        if not barcode:
+            return
+
+        targets = self._find_targets(QApplication.instance().machine_head_dict, barcode)
+        if not targets:
+            self._show_error(tr_(
+                "The scanned barcode does not match<br>any product configured on the machine."))
+            return
+
+        ready_targets = []
+        first_error = None
+        for target in targets:
+            error = self._head_refill_error(target[0])
+            if error:
+                first_error = first_error or error
+            else:
+                ready_targets.append(target)
+        if not ready_targets:
+            self._show_error(first_error)
+            return
+        targets = ready_targets
+
+        self.barcode_ = barcode
+        if len(targets) == 1:
+            self._start_target(*targets[0])
+            return
+
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._show_target_selection(targets))
+
+    async def _show_target_selection(self, targets):
+        if not await self._check_scale(targets[0][0], in_progress=True):
+            return
+
+        choices = {}
+        for machine, pigment, pipe in targets:
+            label = "{} - {} - {} ({}/{})".format(
+                machine.name, pipe.get("name", "?"), pigment.get("name", "?"),
+                round(float(pipe.get("current_level", 0)), 2),
+                round(float(pipe.get("maximum_level", 0)), 2))
+            choices[label] = (machine, pigment, pipe)
+
+        self._open_dialog(
+            icon_name="SP_MessageBoxQuestion",
+            message=tr_("The product is configured on multiple circuits."),
+            content=tr_("Choose the circuit to refill:"),
+            choices=choices,
+            ok_cb=self._on_target_selected,
+            ok_on_enter=False,
+            content_editable=False,
+            use_combo_for_choice=True)
+
+    def _on_target_selected(self):
+        target = self.main_window.input_dialog.get_selected_choice()
+        if target:
+            self._start_target(*target)
+
+    def _start_target(self, machine, pigment, pipe):
+        specific_weight = self._specific_weight(pigment, pipe)
+        if not math.isfinite(specific_weight) or specific_weight <= 0:
+            self._show_error(tr_("The product specific weight is not valid."))
+            return
+
+        self.specific_weight_ = specific_weight
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._prepare_target(machine, pigment, pipe))
+
+    @staticmethod
+    def _head_refill_error(machine):
+        if not QApplication.instance().carousel_frozen:
+            return tr_("Pause the carousel before starting the refill.")
+        status = machine.status or {}
+        # Check every matching head after S01, and recheck the chosen head
+        # after circuit selection in case its state has changed.
+        if status.get("status_level") not in ("STANDBY", "DIAGNOSTIC"):
+            return tr_("Head {} is not ready for refill.").format(machine.name)
+        try:
+            outputs_active = int(status.get("crx_outputs_status", 1)) != 0
+        except (TypeError, ValueError):
+            outputs_active = True
+        # Outputs may have been activated since the initial barcode scan.
+        if outputs_active:
+            return tr_("Head {} has an operation in progress.").format(machine.name)
+        return None
+
+    async def _prepare_target(self, machine, pigment, pipe):
+        try:
+            error = self._head_refill_error(machine)
+            if error:
+                self._show_error(error)
+                return
+
+            if not await self._check_scale(machine, in_progress=True):
+                return
+            initial_weight = await machine.read_stable_weight()
+            if not self._is_active():
+                return
+            # A responsive scale can still fail to provide a stable weight.
+            if initial_weight is None or not math.isfinite(initial_weight):
+                self._show_error(tr_("Unable to read a stable weight from the scale."))
+                return
+
+            params = {
+                "Id_color_circuit": get_pipe_index_from_name(pipe["name"]),
+                "Refilling_angle": 0,
+                "Direction": 0,
+            }
+            positioned = await machine.send_command(
+                cmd_name="DIAG_ROTATING_TABLE_POSITIONING",
+                params=params, type_="command", channel="machine")
+            if not self._is_active():
+                return
+            if not positioned:
+                self._show_error(tr_("Unable to position the refill circuit."))
+                return
+
+            self.machine_ = machine
+            self.pigment_ = pigment
+            self.pipe_ = pipe
+            self.initial_weight_ = initial_weight
+            message = tr_("Scan the barcode on circuit {}<br>of head {}.").format(
+                pipe["name"], machine.name)
+            self._open_dialog(
+                icon_name="SP_MessageBoxQuestion",
+                message=message,
+                message_image=get_res("IMAGE", "refill_scan_pipe.png"),
+                content="",
+                ok_cb=self._on_circuit_barcode,
+                ok_on_enter=1)
+        except Exception as exc:  # pylint: disable=broad-except
+            # S10: defensive fallback, almost impossible to reproduce with a
+            # valid configuration; it requires malformed runtime data or an
+            # unexpected exception during preparation.
+            logging.error(traceback.format_exc())
+            self._show_error(tr_("Refill preparation failed: {}").format(exc))
+
+    def _on_circuit_barcode(self):
+        scanned = self._dialog_barcode()
+        if scanned != self.barcode_:
+            self._show_error(tr_("Barcode mismatch: {} != {}").format(
+                self.barcode_, scanned))
+            return
+
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._show_refill_instructions())
+
+    async def _show_refill_instructions(self):
+        if not await self._check_scale(self.machine_, in_progress=True):
+            return
+
+        self._open_dialog(
+            icon_name="SP_MessageBoxQuestion",
+            message=tr_("Remove the canister from the scale and refill the circuit.<br>"
+                        "When finished, put it back on the scale and scan its barcode."),
+            message_image=get_res("IMAGE", "refill_scale_sequence.png"),
+            message_image_scale_factor=1.5,
+            content="",
+            ok_cb=self._on_final_barcode,
+            ok_on_enter=1)
+
+    def _on_final_barcode(self):
+        scanned = self._dialog_barcode()
+        if scanned != self.barcode_:
+            self._show_error(tr_("Barcode mismatch: {} != {}").format(
+                self.barcode_, scanned))
+            return
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._complete_refill())
+
+    def _quantity_from_cc(self, value_cc, specific_weight):
+        units = (self.machine_.machine_config or {}).get("UNITS", {})
+        selected_unit = units.get("service_page_unit", "CC") or "CC"
+        value = convert_quantity(
+            value_cc, "CC", selected_unit,
+            specific_weight=specific_weight,
+            fl_oz_unit=units.get("fl_oz_unit", 1) or 1,
+            fl_oz_fraction=units.get("fl_oz_fraction", 1) or 1)
+        return value, selected_unit
+
+    async def _refresh_after_refill(self):
+        await self.machine_.update_tintometer_data()
+        self.main_window.browser_page.reload_page()
+
+    def _confirm_reset(self):
+        self.main_window.hide_input_dialog()
+        asyncio.ensure_future(self._reset_head())
+
+    async def _reset_head(self):
+        if not await self._check_scale(self.machine_, in_progress=True):
+            return
+        machine = self.machine_
+        self._finish()
+        await machine.send_command(
+            cmd_name="RESET", params={"mode": 0}, type_="command", channel="machine")
+
+    def _continue_refill(self):
+        self.machine_ = None
+        self.pigment_ = None
+        self.pipe_ = None
+        self.barcode_ = None
+        self.initial_weight_ = None
+        self.specific_weight_ = None
+        self.run()
+
+    def _show_result(self, answer, refilled_grams, refill_cc, specific_weight):
+        lines = [tr_("Refilled quantity: {} g").format(round(refilled_grams, 2))]
+        if isinstance(answer, dict):
+            for label, values in answer.items():
+                if not isinstance(values, dict):
+                    continue
+                converted = []
+                for pipe_name, value_cc in values.items():
+                    value, unit = self._quantity_from_cc(float(value_cc), specific_weight)
+                    converted.append("{}: {} ({})".format(pipe_name, round(value, 2), unit.lower()))
+                if converted:
+                    lines.append("{}: {}".format(tr_(label), ", ".join(converted)))
+
+        margin_cc = max(0, float(self.pipe_.get("maximum_level", 0))
+                        - float(self.pipe_.get("current_level", 0)))
+        # S14: almost impossible to reproduce during the nominal procedure;
+        # it requires the measured refill volume to exceed the configured
+        # remaining capacity of the circuit.
+        if refill_cc > margin_cc:
+            lines.append(tr_(
+                "The recorded level has been capped at the configured maximum."))
+        lines.append(tr_("RESET head: {}?").format(self.machine_.name))
+        self._open_dialog(
+            icon_name="SP_MessageBoxInformation",
+            message="<br>".join(lines),
+            content=None,
+            ok_cb=self._confirm_reset,
+            action_text=tr_("Continue refill"),
+            action_cb=self._continue_refill)
+        asyncio.ensure_future(self._refresh_after_refill())
+
+    def _log_refill(self, refilled_grams, refill_cc, specific_weight):
+        info = {
+            "barcode": self.barcode_,
+            "head": self.machine_.name,
+            "pipe": self.pipe_["name"],
+            "initial_weight_g": self.initial_weight_,
+            "refilled_weight_g": refilled_grams,
+            "specific_weight": specific_weight,
+            "refilled_cc": refill_cc,
+        }
+        try:
+            QApplication.instance().insert_db_event(
+                name="UI_DIALOG", level="INFO", severity="",
+                source="ScaleRefillProcedureHelper",
+                json_properties=json.dumps(info, indent=2, ensure_ascii=False),
+                description="Refilled pipe {} with {} g".format(
+                    self.pipe_["name"], round(refilled_grams, 2)))
+        except Exception:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+
+    async def _complete_refill(self):
+        try:
+            if not await self._check_scale(self.machine_, in_progress=True):
+                return
+            final_weight = await self.machine_.read_stable_weight()
+            if not self._is_active():
+                return
+            # A responsive scale can still fail to provide a stable weight.
+            if final_weight is None or not math.isfinite(final_weight):
+                self._show_error(tr_("Unable to read a stable weight from the scale."))
+                return
+
+            refilled_grams = self.initial_weight_ - final_weight
+            if refilled_grams <= 0:
+                self._show_error(tr_(
+                    "The measured refill must be greater<br>than zero grams."))
+                return
+
+            specific_weight = self.specific_weight_
+            if (specific_weight is None
+                    or not math.isfinite(specific_weight)
+                    or specific_weight <= 0):
+                self._show_error(tr_("The product specific weight is not valid."))
+                return
+
+            refill_cc = round(convert_quantity(
+                refilled_grams, "GR", "CC", specific_weight=specific_weight), 5)
+
+            def _on_refill(answer):
+                try:
+                    self._show_result(answer, refilled_grams, refill_cc, specific_weight)
+                except Exception:  # pylint: disable=broad-except
+                    logging.error(traceback.format_exc())
+                    self._show_error(tr_("Unable to display the refill result."))
+
+            sent = await self.machine_.send_command(
+                cmd_name="REFILL",
+                params={"items": [{"name": self.pipe_["name"], "qtity": refill_cc}]},
+                type_="macro",
+                callback_on_macro_answer=_on_refill)
+            if not sent:
+                self._show_error(tr_("Unable to update the product level."))
+                return
+            self._log_refill(refilled_grams, refill_cc, specific_weight)
+        except Exception as exc:  # pylint: disable=broad-except
+            logging.error(traceback.format_exc())
+            self._show_error(tr_("Refill failed: {}").format(exc))
 
 
 class HomePage(BaseStackedPage):
@@ -607,9 +1038,6 @@ class HomePage(BaseStackedPage):
     # in-transit labels: shown when adjacent photocells are simultaneously occupied
     # subclasses declare = None for labels missing from their UI file
     STEP_01_02_label = None
-
-    _blink_step_label = None
-    _blink_state = False
 
     _belt_blink_timer = None
     _belt_blink_state = False
@@ -627,6 +1055,9 @@ class HomePage(BaseStackedPage):
     def __init__(self, *args, **kwargs):  # pylint:disable=too-many-branches, too-many-statements
 
         super().__init__(*args, **kwargs)
+        self.scale_refill_helper = None
+        self._init_autorecovery_blink()
+        self._init_step_blink()
 
         self.jar_pixmap_map = [
             (self.STEP_01_label,    (("A", "JAR_INPUT_ROLLER_PHOTOCELL"),), "IN_A",),
@@ -765,6 +1196,17 @@ class HomePage(BaseStackedPage):
     def open_page(self):
 
         self.parent().setCurrentWidget(self)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        # Adding the page to its stack can deliver events before __init__ ends.
+        if hasattr(self, '_autorecovery_blink_timer'):
+            self.update_autorecovery_indication()
+
+    def hideEvent(self, event):
+        if hasattr(self, '_autorecovery_blink_timer'):
+            self._stop_autorecovery_blink()
+        super().hideEvent(event)
 
     def on_service_btn_group_clicked(self, btn):
 
@@ -973,11 +1415,8 @@ class HomePage(BaseStackedPage):
             if lbl:
                 lbl.setVisible(visible)
 
-    def update_service_btns__presences_and_lifters(self, head_index):
-
-        status = QApplication.instance().machine_head_dict[head_index].status
-
-        map_ = [
+    def _init_autorecovery_blink(self):
+        self._head_status_buttons = [
             self.service_1_btn,
             self.service_2_btn,
             self.service_3_btn,
@@ -986,8 +1425,68 @@ class HomePage(BaseStackedPage):
             self.service_6_btn,
             self.service_7_btn,
         ]
-        if map_[head_index]:
-            map_[head_index].setText(tr_(f"{status.get('status_level', 'NONE')}"))
+        self._head_status_styles = {
+            index: button.styleSheet()
+            for index, button in enumerate(self._head_status_buttons) if button
+        }
+        self._autorecovery_heads = set()
+        self._autorecovery_blink_on = False
+        self._autorecovery_blink_timer = QTimer(self)
+        self._autorecovery_blink_timer.setInterval(500)
+        self._autorecovery_blink_timer.timeout.connect(self._do_autorecovery_blink)
+
+    def update_autorecovery_indication(self):
+        # Use the verified states: a disconnected head can retain an old raw
+        # AUTORECOVERY snapshot, which must not look like a current recovery.
+        levels = QApplication.instance()._head_safety_states
+        recovering = {
+            index for index, button in enumerate(self._head_status_buttons)
+            if button and levels.get(index) == 'AUTORECOVERY'
+        }
+        previous = self._autorecovery_heads
+        for index in previous - recovering:
+            self._head_status_buttons[index].setStyleSheet(self._head_status_styles[index])
+        self._autorecovery_heads = recovering
+        for index in previous | recovering:
+            self._head_status_buttons[index].setText(tr_(levels.get(index) or 'NONE'))
+
+        if recovering and self.isVisible():
+            if not self._autorecovery_blink_timer.isActive():
+                self._autorecovery_blink_on = True
+                self._autorecovery_blink_timer.start()
+            self._apply_autorecovery_blink()
+        else:
+            self._stop_autorecovery_blink()
+
+    def _apply_autorecovery_blink(self):
+        background = 'background-color: #FFC857;' if self._autorecovery_blink_on else ''
+        for index in self._autorecovery_heads:
+            self._head_status_buttons[index].setStyleSheet(
+                self._head_status_styles[index]
+                + '\nQPushButton { color: #000000; font-weight: bold; ' + background + ' }')
+
+    def _stop_autorecovery_blink(self):
+        self._autorecovery_blink_timer.stop()
+        self._autorecovery_blink_on = False
+        self._apply_autorecovery_blink()
+
+    def _do_autorecovery_blink(self):
+        if not self._autorecovery_heads or not self.isVisible():
+            self._stop_autorecovery_blink()
+            return
+        self._autorecovery_blink_on = not self._autorecovery_blink_on
+        self._apply_autorecovery_blink()
+
+    def update_service_btns__presences_and_lifters(self, head_index):
+
+        app = QApplication.instance()
+        status = app.machine_head_dict[head_index].status
+        button = self._head_status_buttons[head_index]
+        if button:
+            level = status.get('status_level', 'NONE')
+            if level == 'AUTORECOVERY':
+                level = app._head_safety_states.get(head_index) or 'NONE'
+            button.setText(tr_(f"{level}"))
 
         map_ = [
             self.container_presence_1_label,
@@ -1072,45 +1571,68 @@ class HomePage(BaseStackedPage):
                 list_.append(f"{_ : >4}")
         self.running_jars_lbl.setText("\n".join(list_))
 
+        blinking_labels = set(self._step_blinks.values())
         for entry in self.jar_pixmap_map:
             lbl, head_letters_bit_names, position = entry[:3]
             adjacent_positions = entry[3] if len(entry) > 3 else None
-            if lbl and lbl is not self._blink_step_label:
+            if lbl and lbl not in blinking_labels:
                 self.__set_pixmap_by_photocells(lbl, head_letters_bit_names, position,
                                                 adjacent_positions=adjacent_positions,
                                                 position_to_jar=position_to_jar,
                                                 letter_to_head=letter_to_head)
 
+    def _init_step_blink(self):
+        self._step_blinks = {}  # request token -> label; requests may share a label
+        self._blink_state = False
+        self._step_blink_timer = QTimer(self)
+        self._step_blink_timer.setInterval(500)
+        self._step_blink_timer.timeout.connect(self._do_blink)
+
     def start_step_blink(self, step_key):
         lbl = getattr(self, f"STEP_{step_key}_label", None)
-        if lbl:
-            self._blink_step_label = lbl
-            self._blink_state = False
-            self._do_blink()
+        if lbl is None:
+            return None
 
-    def stop_step_blink(self):
-        lbl = self._blink_step_label
-        self._blink_step_label = None
-        if lbl:
+        if not self._step_blinks:
+            self._blink_state = True
+        # Register only after drawing succeeds, so failures cannot orphan a request.
+        self._set_step_blink_visual(lbl)
+        token = object()
+        self._step_blinks[token] = lbl
+        if not self._step_blink_timer.isActive():
+            self._step_blink_timer.start()
+        return token
+
+    def stop_step_blink(self, token):
+        # A missing or already released request must not affect another jar.
+        lbl = self._step_blinks.pop(token, None)
+        if lbl is None:
+            return
+        if lbl not in self._step_blinks.values():
             lbl.setStyleSheet("QLabel {}")
             lbl.setText("")
-            # Il lampeggio ha impostato lo stile direttamente, scavalcando la
-            # cache visuale: azzera la chiave-cache cosi' la label viene
-            # ridisegnata al prossimo aggiornamento (altrimenti verrebbe saltata).
             lbl._alfa_visual_key = None
+        if not self._step_blinks:
+            self._step_blink_timer.stop()
+            self._blink_state = False
 
     def _do_blink(self):
-        if not self._blink_step_label:
+        if not self._step_blinks:
             return
         self._blink_state = not self._blink_state
+        for lbl in set(self._step_blinks.values()):
+            self._set_step_blink_visual(lbl)
+
+    def _set_step_blink_visual(self, lbl):
+        # Blinking bypasses normal rendering: never leave its cache valid.
+        lbl._alfa_visual_key = None
+        lbl.setText("")
         if self._blink_state:
             _url = get_res("IMAGE", "jar-orange.png")
-            self._blink_step_label.setStyleSheet(
+            lbl.setStyleSheet(
                 f'color:#000000; border-image:url("{_url}"); font-size: 15px')
         else:
-            self._blink_step_label.setStyleSheet("QLabel {}")
-            self._blink_step_label.setText("")
-        QTimer.singleShot(500, self._do_blink)
+            lbl.setStyleSheet("QLabel {}")
 
     @staticmethod
     def _apply_label_visual(lbl, key, apply_fn):
@@ -1332,19 +1854,33 @@ class HomePage(BaseStackedPage):
         # ~ if head_index is not None and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE') and (
         # ~ g_settings.USE_PIGMENT_ID_AS_BARCODE and QApplication.instance().carousel_frozen):
 
+        app = QApplication.instance()
         flag = head_index is not None
         flag = flag and hasattr(g_settings, 'USE_PIGMENT_ID_AS_BARCODE')
         flag = flag and g_settings.USE_PIGMENT_ID_AS_BARCODE
-        flag = flag and QApplication.instance().carousel_frozen
+        flag = flag and app.carousel_frozen
+        machine_head = app.machine_head_dict.get(head_index) if flag else None
+        flag = flag and machine_head is not None
+        if flag:
+            status = machine_head.status
+            flag = not status.get('crx_outputs_status', 0x1)
+            flag = flag and status.get('status_level', '') in ("STANDBY", "DIAGNOSTIC")
         return flag
 
     def refill_lbl_clicked(self, head_index):
 
         if self.refill_lbl_is_active(head_index):
-            QApplication.instance().barcode_read_blocked_on_refill = True
+            app = QApplication.instance()
+            if getattr(app, "barcode_read_blocked_on_refill", False):
+                return
+
+            app.barcode_read_blocked_on_refill = True
             logging.warning(f"impostato a barcode_read_blocked_on_refill=True")
-            rph = RefillProcedureHelper(parent=self, head_index=head_index)
-            rph.run()
+            if getattr(g_settings, "ENABLE_REFILL_BY_SCALE", False):
+                self.scale_refill_helper = ScaleRefillProcedureHelper(parent=self, head_index=head_index)
+                self.scale_refill_helper.run()
+            else:
+                RefillProcedureHelper(parent=self, head_index=head_index).run()
 
     def print_label_clicked(self, head_index):
 

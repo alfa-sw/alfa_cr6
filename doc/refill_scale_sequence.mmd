@@ -1,0 +1,86 @@
+sequenceDiagram
+    autonumber
+
+    actor O as Operator
+    participant P as Barcode scanner
+    participant HMI as HMI
+    participant M as Machine heads
+    participant S as Scale / Dispatcher
+    participant T as Selected head
+    participant DB as Level management
+
+    O->>HMI: Presses an existing refill button
+
+    alt ENABLE_REFILL_BY_SCALE = false
+        HMI->>HMI: Starts the current manual refill
+    else ENABLE_REFILL_BY_SCALE = true
+        HMI->>HMI: Disables the YOKO readers
+        HMI-->>O: Place the open canister on the scale and scan its barcode
+        O->>P: Scans the product barcode
+        P->>HMI: Enters the barcode as keyboard input + ENTER
+        HMI->>M: Searches for customer_id across all heads
+        M-->>HMI: Head, pigment and circuit
+
+        alt Product not found
+            HMI-->>O: Product not configured error
+            HMI->>HMI: Enables the YOKO readers
+        else Multiple circuits found
+            HMI-->>O: Requests circuit selection
+            O->>HMI: Selects the circuit
+        end
+
+        HMI->>T: Checks the head status
+        Note over HMI,T: Automation paused, STANDBY or DIAGNOSTIC, no active outputs
+
+        alt Invalid status
+            HMI-->>O: Head not ready for refill
+            HMI->>HMI: Enables the YOKO readers
+        else Valid status
+            HMI->>S: STABLE_WEIGHT
+            Note over HMI,S: Initial weight W0 in grams, no tare is performed
+            S-->>HMI: W0
+            HMI->>T: DIAG_ROTATING_TABLE_POSITIONING
+            T-->>HMI: Circuit positioned
+            HMI-->>O: Scan the barcode on circuit X of head Y
+            O->>P: Scans the circuit barcode
+            P->>HMI: Circuit barcode
+
+            alt Circuit barcode mismatch
+                HMI-->>O: Barcode mismatch error
+                HMI->>HMI: Enables the YOKO readers
+            else Barcode matches
+                HMI-->>O: Remove the canister, refill the circuit and put it back
+                O->>O: Physically refills the circuit
+                O->>P: Scans the canister again
+                P->>HMI: Final barcode
+
+                alt Final barcode mismatch
+                    HMI-->>O: Barcode mismatch error
+                    HMI->>HMI: Enables the YOKO readers
+                else Barcode matches
+                    HMI->>S: STABLE_WEIGHT
+                    S-->>HMI: Final weight W1 in grams
+                    HMI->>HMI: grams = W0 - W1
+
+                    alt grams <= 0
+                        HMI-->>O: Invalid weight error
+                        HMI->>HMI: Enables the YOKO readers
+                    else grams > 0
+                        HMI->>HMI: CC = grams / specific weight
+                        HMI->>DB: REFILL(circuit, quantity CC)
+                        DB-->>HMI: Levels updated
+                        HMI-->>O: Displays refilled grams and level in CC, GR or FL
+
+                        alt Operator confirms RESET
+                            O->>HMI: Confirms
+                            HMI->>T: RESET
+                        else Operator cancels
+                            O->>HMI: Closes the message
+                        end
+
+                        HMI->>HMI: Enables the YOKO readers
+                    end
+                end
+            end
+        end
+    end

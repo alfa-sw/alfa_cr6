@@ -25,7 +25,7 @@ import xmltodict
 from sqlalchemy.sql import or_
 
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import (Qt, QVariant, QAbstractTableModel)
+from PyQt5.QtCore import (Qt, QVariant, QAbstractTableModel, QSize)
 
 from PyQt5.QtGui import QPixmap, QTextDocument
 from PyQt5.QtWidgets import (
@@ -616,6 +616,11 @@ class OrderPage(BaseStackedPage):
         self.clone_order_btn.setText(tr_("copy"))
 
         self.edit_aliases_btn.setText(tr_("alias"))
+        self.create_all_orders_btn.setIcon(_get_order_page_icons(self).file_create_order)
+        self.create_all_orders_btn.setIconSize(QSize(32, 32))
+        self.create_all_orders_btn.setToolTip(tr_("Create and print all"))
+        self.create_all_orders_btn.setAccessibleName(tr_("Create and print all"))
+        self.create_all_orders_btn.clicked.connect(self.__on_create_all_orders_clicked)
 
         self.search_order_line.textChanged.connect(self.populate_order_table)
         self.search_jar_line.textChanged.connect(self.populate_jar_table)
@@ -673,6 +678,11 @@ class OrderPage(BaseStackedPage):
 
         if logging.getLogger().isEnabledFor(logging.INFO):
             logging.info("dt:%s", time.time() - t)
+
+    def _pending_file_names(self):
+        """Return the complete queue, independent of the table's display limit/filter."""
+        with os.scandir(g_settings.WEBENGINE_DOWNLOAD_PATH) as entries:
+            return sorted(entry.name for entry in entries if entry.is_file())
 
     def populate_file_table(self):
 
@@ -1010,6 +1020,68 @@ class OrderPage(BaseStackedPage):
         except Exception as e:  # pylint: disable=broad-except
             QApplication.instance().handle_exception(e)
 
+    def __on_create_all_orders_clicked(self):
+        if not self._can_create_all_orders():
+            return
+        try:
+            file_names = self._pending_file_names()
+            if not file_names:
+                self.main_window.open_alert_dialog((), fmt="No pending files to create orders from.", title="INFO")
+                return
+            self.main_window.open_input_dialog(
+                message=tr_("Create Alfa orders from {} files?\nPrint a label for each order.\nOne can per order.").format(len(file_names)),
+                ok_cb=self.__create_all_orders_cb,
+                ok_cb_args=[file_names],
+            )
+        except Exception as exc:  # pylint: disable=broad-except
+            QApplication.instance().handle_exception(exc)
+
+    def __create_all_orders_cb(self, file_names):
+        if not self._can_create_all_orders():
+            return
+        app = QApplication.instance()
+        jars_to_print = []
+        created_from_files = 0
+        failed_files_count = 0
+
+        for file_name in file_names:
+            path_to_file = os.path.join(g_settings.WEBENGINE_DOWNLOAD_PATH, file_name)
+            try:
+                if not os.path.isfile(path_to_file):
+                    failed_files_count += 1
+                    continue
+                orders = app.create_orders_from_file(path_to_file, n_of_jars=1, silent=True)
+                valid_orders = [order for order in orders if order]
+                if not valid_orders:
+                    failed_files_count += 1
+                    continue
+                for order in valid_orders:
+                    jars_to_print.extend(order.jars)
+                os.remove(path_to_file)
+                created_from_files += 1
+                if len(valid_orders) != len(orders):
+                    logging.error("Only some orders were converted from %s", file_name)
+            except Exception:  # pylint: disable=broad-except
+                logging.error("Failed to convert file %s:\n%s", file_name, traceback.format_exc())
+                failed_files_count += 1
+
+        self.search_file_table_last_time = 0
+        self.search_order_table_last_time = 0
+        self.search_jar_table_last_time = 0
+        self.populate_file_table()
+        self.populate_order_table()
+        self.populate_jar_table()
+
+        if jars_to_print:
+            jars_to_print.sort(key=lambda jar: str(jar.barcode))
+            asyncio.ensure_future(async_dymo_print_jars(jars_to_print))
+
+        self.main_window.open_alert_dialog(
+            (created_from_files, len(jars_to_print), failed_files_count),
+            fmt="Created orders from {} files.\nPrinting {} labels.\n{} files could not be processed and remain in the queue.",
+            title="INFO" if not failed_files_count else "WARNING",
+        )
+
     def __create_order_cb(self, model, file_name):
 
         app = QApplication.instance()
@@ -1069,7 +1141,16 @@ class OrderPage(BaseStackedPage):
 
         QApplication.instance().update_tintometer_data_on_all_heads()
 
+    @staticmethod
+    def _can_create_all_orders():
+        return (getattr(g_settings, "ENABLE_BTN_CREATE_ALL_ORDERS", False) is True and
+                getattr(g_settings, "FORCE_ORDER_JAR_TO_ONE", False) is True)
+
     def toggle_order_and_purge_btns(self):
+        show_create_all = self._can_create_all_orders()
+        self.create_all_orders_btn.setVisible(show_create_all)
+        self.search_file_line.setGeometry(0, 40, 331 if show_create_all else 461, 50)
+
         show_purgeall = getattr(g_settings, "ENABLE_BTN_PURGE_ALL", True)
         self.purge_all_btn.setEnabled(show_purgeall)
 

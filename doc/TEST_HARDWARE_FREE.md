@@ -90,8 +90,8 @@ del polling produttivo.
 
 ### Matrice E2E ordine-barcode-dispensazione
 
-I cinque scenari seguenti vengono eseguiti separatamente su CR4, CR6, CRX60 e
-CRX80, per un totale di 20 test. Ogni test ricrea database, teste, websocket e
+I sei scenari seguenti vengono eseguiti separatamente su CR4, CR6, CRX60 e
+CRX80, per un totale di 24 test. Ogni test ricrea database, teste, websocket e
 stato fisico, quindi un guasto non puo' contaminare lo scenario successivo.
 
 | Scenario | Iniezione | Risultato verificato |
@@ -100,7 +100,16 @@ stato fisico, quindi un guasto non puo' contaminare lo scenario successivo.
 | Barcode inesistente | barcode Alfa formalmente valido, ma assente da SQLite | nessun comando di movimento o dispensazione; ordine originale e jar restano `NEW`; alert di lookup |
 | Errore movimento | eccezione del controller sul primo trasferimento dopo la dispensazione A | A risulta visitata una sola volta; nessuna testa successiva dispensa; jar e ordine terminano `ERROR` nella posizione fisica A |
 | Errore dispensazione | allarme 9901 durante la macro sulla testa A, con sblocco operatore simulato | outcome `failure during dispensation`; nessuna seconda testa dispensa; jar viene comunque espulsa e jar/ordine restano `ERROR` |
+| AUTORECOVERY durante dispensazione | dopo l'invio della macro A pubblica direttamente `AUTORECOVERY`, senza frame `DISPENSING`, e torna a `STANDBY` | jar/ordine `ERROR` fino all'uscita, causa 1065 conservata nell'esito e nel popup `Ordine abortito` con testa e barcode; nessuna conferma del popup necessaria per l'espulsione |
 | Recovery dopo spegnimento | A viene dispensata realmente e salvata come `done`; runner e sessione vengono poi eliminati e ricreati prima di chiamare la vera `machine_recovery()` | A non viene ridispensata; il percorso riparte dalla testa successiva; ordine `DONE`; file `running_jars.json` vuoto; lettura barcode riabilitata |
+
+I test interlock verificano anche l'autorecovery della stessa testa prima
+dell'invio, dentro l'attesa di sblocco: la macro ancora accodata non deve
+abortire l'ordine. La fotografia conserva il componente iniziale e il primo
+codice valido; durante l'attesa si puo' completare soltanto un codice ancora
+sconosciuto. Codice zero o assente identifica comunque un evento e il popup
+riporta `Codice autorecovery: sconosciuto` se la causa non e' disponibile alla
+chiusura della dispensazione. Le verifiche coprono `DISPENSE_FORMULA` e `PURGE`.
 
 Nel recovery il confine di spegnimento conserva cio' che sopravvive a un vero
 riavvio (SQLite, `running_jars.json` e stato delle fotocellule) e scarta lo

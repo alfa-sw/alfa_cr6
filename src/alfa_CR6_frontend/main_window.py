@@ -388,6 +388,7 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.action_frame_map = {}
 
         super().__init__(parent)
+        self._active_alert_dialogs = {}
 
         if os.getenv("IN_DOCKER", False) in ['1', 'true']:
             loadUi(get_res("UI", "main_window_snowball.ui"), self)
@@ -821,10 +822,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
         self.home_page.show_reserve(head_index, flag=flag)
 
     def start_step_blink(self, step_key):
-        self.home_page.start_step_blink(step_key)
+        return self.home_page.start_step_blink(step_key)
 
-    def stop_step_blink(self):
-        self.home_page.stop_step_blink()
+    def stop_step_blink(self, token):
+        self.home_page.stop_step_blink(token)
+
+    def set_carousel_freeze_control_enabled(self, enabled, reason=""):
+        self.home_page.freeze_carousel_btn.setEnabled(enabled)
+        self.home_page.freeze_carousel_btn.setToolTip(reason)
+        self.home_page.update_autorecovery_indication()
 
     def show_carousel_frozen(self, flag):
         if flag:
@@ -863,7 +869,14 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             ok_cb=None, ok_cb_args=None, ok_on_enter=False,
             choices=None, bg_image=None, to_html=None, wide=None,
             content_editable=True,
-            use_combo_for_choice=False
+            use_combo_for_choice=False,
+            large_message_layout=False,
+            ok_requires_content=False,
+            action_text=None,
+            action_cb=None,
+            action_cb_args=None,
+            message_image=None,
+            message_image_scale_factor=1.0
     ):
 
         self.input_dialog.show_dialog(
@@ -878,7 +891,14 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             to_html=to_html,
             wide=wide,
             content_editable=content_editable,
-            use_combo_for_choice=use_combo_for_choice)
+            use_combo_for_choice=use_combo_for_choice,
+            large_message_layout=large_message_layout,
+            ok_requires_content=ok_requires_content,
+            action_text=action_text,
+            action_cb=action_cb,
+            action_cb_args=action_cb_args,
+            message_image=message_image,
+            message_image_scale_factor=message_image_scale_factor)
 
         logging.warning(str(message))
 
@@ -888,10 +908,17 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
             visibility=1, show_cancel_btn=True, traceback=None,
             localize_args=False, extra_properties=None, print_callback=None,
             cancel_callback=None, show_ok_btn=True, image_name=None,
-            ok_only=False, width_scale=None, bold_message=False
+            ok_only=False, width_scale=None, bold_message=False,
+            dedup_key=None,
     ):
         # msg  -> localized msg for UI
         # msg_ -> non localized msg (eng) for db event
+
+        # Suppress repeated popup requests; visibility=0 remains log-only.
+        if (dedup_key is not None and visibility > 0
+                and dedup_key in self._active_alert_dialogs):
+            logging.debug("Alert already open, suppressed: %r", dedup_key)
+            return
 
         if fmt is not None:
             args_ = (args,) if not isinstance(args, (list, tuple)) else tuple(args)
@@ -938,6 +965,15 @@ class MainWindow(QMainWindow):  # pylint:  disable=too-many-instance-attributes
                 width_scale=width_scale,
                 bold_message=bold_message,
             )
+            if dedup_key is not None:
+                self._active_alert_dialogs[dedup_key] = _msgbox
+
+                def forget_dialog(*_args):
+                    self._active_alert_dialogs.pop(dedup_key, None)
+
+                # OK/Cancel/Escape use the existing button cleanup. A future
+                # programmatic close must also destroy the dialog to free its key.
+                _msgbox.destroyed.connect(forget_dialog)
             if not show_cancel_btn:
                 _msgbox.enable_buttons(True, False, bool(hp_callback))
 

@@ -38,6 +38,16 @@ class SettingsManager:
                 'type': 'boolean',
                 'default': True,
             },
+            'ENABLE_REFILL_BY_SCALE': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'Enables the guided refill procedure that measures the refilled product with the scale.',
+            },
+            'ENABLE_REFILL_BY_SCALE_LARGE_MESSAGE_LAYOUT': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'Uses a larger message-focused layout for the guided refill-by-scale popups.',
+            },
             'LOAD_LIFTER_IS_UP_LONG_TIMEOUT': {
                 'type': 'number',
                 'minimum': 30.3,
@@ -60,6 +70,12 @@ class SettingsManager:
                 'default': False,
                 'description': 'When enabled, creating multiple jars for the same order is not more allowed.'
             },
+            'MERGE_DUPLICATE_ORDER_INGREDIENTS': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'Sums the weights of repeated toner codes into one ingredient when creating an order. '
+                               'Enable for BASF Line 90 recipes with intentionally repeated toners.',
+            },
             'ENABLE_BTN_PURGE_ALL': {
                 'type': 'boolean',
                 'default': False,
@@ -71,6 +87,11 @@ class SettingsManager:
             'ENABLE_BTN_ORDER_CLONE': {
                 'type': 'boolean',
                 'default': True,
+            },
+            'ENABLE_BTN_CREATE_ALL_ORDERS': {
+                'type': 'boolean',
+                'default': False,
+                'description': 'Creates Alfa orders from all pending external files and prints a label for each created order. Requires FORCE_ORDER_JAR_TO_ONE = True.',
             },
             'MANUAL_BARCODE_INPUT': {
                 'type': 'boolean',
@@ -436,6 +457,13 @@ class SettingsManager:
 
         normalized = SettingsManager._normalize_updates(dict(updates))
         SettingsManager._validate_against_schema(normalized)
+        if ('ENABLE_BTN_CREATE_ALL_ORDERS' in normalized or
+                'FORCE_ORDER_JAR_TO_ONE' in normalized):
+            effective = {**SettingsManager.get_editable_settings(), **normalized}
+            if (effective.get('ENABLE_BTN_CREATE_ALL_ORDERS') and
+                    not effective.get('FORCE_ORDER_JAR_TO_ONE')):
+                raise ValueError(
+                    'ENABLE_BTN_CREATE_ALL_ORDERS requires FORCE_ORDER_JAR_TO_ONE = True')
         return normalized
 
     @staticmethod

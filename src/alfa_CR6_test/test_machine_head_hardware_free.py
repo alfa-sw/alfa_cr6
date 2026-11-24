@@ -30,6 +30,8 @@ class _FakeApp:
         self.main_window = _MainWindow()
         self.reserve_updates = []
         self.exceptions = []
+        self.update_head_safety = mock.Mock()
+        self.wait_for_carousel_not_frozen = mock.AsyncMock()
 
     def show_reserve(self, index, enabled):
         self.reserve_updates.append((index, enabled))
@@ -84,6 +86,89 @@ class TestMachineHeadHardwareFree(unittest.TestCase):
         self.assertEqual(self.head.get_available_weight("RED"), 10.0)
         self.assertEqual(self.head.get_specific_weight("UNKNOWN"), -1.0)
         self.assertEqual(self.head.get_available_weight("UNKNOWN"), 0)
+
+    def test_read_stable_weight_returns_grams(self):
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.head.last_answer = {
+            "command": "STABLE_WEIGHT_END",
+            "status_code": 0,
+            "params": ["125.75", "g"],
+        }
+
+        self.assertEqual(self._run(self.head.read_stable_weight()), 125.75)
+        self.head.send_command.assert_awaited_once_with(
+            cmd_name="STABLE_WEIGHT", params={}, type_="command", channel="scale")
+
+    def test_scale_probe_accepts_real_responses_and_rejects_missing_or_wrong_answers(self):
+        for answer, expected in (
+                ({"command": "SEND_IMMEDIATE", "status_code": 0,
+                  "params": ["100", "g"]}, True),
+                ({"command": "SEND_IMMEDIATE_END", "status_code": 1,
+                  "responding": True, "params": [["S", "+"]]}, True),
+                ({"command": "SEND_IMMEDIATE", "status_code": 2,
+                  "responding": True}, True),
+                ({"command": "SEND_IMMEDIATE", "status_code": 2}, False),
+                ({"command": "STABLE_WEIGHT", "status_code": 0}, False),
+                (None, False)):
+            with self.subTest(answer=answer):
+                self.head.send_command = mock.AsyncMock(
+                    return_value=bool(answer and answer.get("status_code") == 0))
+                self.head.last_answer = answer
+                self.assertEqual(self._run(self.head.check_scale_connection()), expected)
+                self.head.send_command.assert_awaited_once_with(
+                    cmd_name="SEND_IMMEDIATE", params={}, type_="command", channel="scale")
+
+    def test_scale_error_finishes_wait_immediately_without_becoming_success(self):
+        async def send(_message):
+            self.head.last_answer = {
+                "command": "SEND_IMMEDIATE", "status_code": 2, "error": "time out"}
+
+        self.head.websocket = mock.Mock(send=send)
+        completed = []
+
+        async def wait(condition, **_kwargs):
+            completed.append(bool(condition()))
+            return completed[-1]
+
+        self.app.wait_for_condition = mock.AsyncMock(side_effect=wait)
+        self.assertFalse(self._run(self.head.check_scale_connection()))
+        self.assertEqual(completed, [True])
+        self.assertEqual(self.app.wait_for_condition.call_args.kwargs["timeout"], 15)
+
+    def test_scale_probe_discards_preexisting_success(self):
+        self.head.last_answer = {"command": "SEND_IMMEDIATE", "status_code": 0}
+        self.head.websocket = mock.Mock(send=mock.AsyncMock())
+        self.assertFalse(self._run(self.head.check_scale_connection()))
+
+    def test_read_stable_weight_accepts_scale_reply_without_end_suffix(self):
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.head.last_answer = {
+            "command": "STABLE_WEIGHT",
+            "status_code": 0,
+            "params": ["392.41", "g"],
+        }
+
+        self.assertEqual(self._run(self.head.read_stable_weight()), 392.41)
+
+    def test_read_stable_weight_converts_kilograms_to_grams(self):
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.head.last_answer = {
+            "command": "STABLE_WEIGHT",
+            "status_code": 0,
+            "params": ["0.0095", "kg"],
+        }
+
+        self.assertEqual(self._run(self.head.read_stable_weight()), 9.5)
+
+    def test_read_stable_weight_rejects_invalid_answer(self):
+        self.head.send_command = mock.AsyncMock(return_value=True)
+        self.head.last_answer = {
+            "command": "STABLE_WEIGHT_END",
+            "status_code": 0,
+            "params": ["125.75", "lb"],
+        }
+
+        self.assertIsNone(self._run(self.head.read_stable_weight()))
 
     def test_dispense_split_separates_bases_from_colorants(self):
         self.head.pigment_list = [
@@ -411,6 +496,7 @@ class TestMachineHeadRunLifecycle(unittest.TestCase):
         self.head = machine_head_module.MachineHead.__new__(
             machine_head_module.MachineHead
         )
+        self.head.invalidate_safety_status = mock.Mock()
 
     def tearDown(self):
         pending = asyncio.all_tasks(self.loop)

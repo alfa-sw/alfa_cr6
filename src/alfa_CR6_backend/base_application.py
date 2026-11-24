@@ -22,6 +22,7 @@ import logging.handlers
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from collections import OrderedDict
+from decimal import Decimal
 
 from PyQt5.QtCore import QEventLoop      # pylint: disable=no-name-in-module
 from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module
@@ -510,6 +511,16 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         # ~ self.__inner_loop_task_step = 0.02  # secs
 
         self.machine_head_dict = {}
+        # Include configured heads before their asynchronous tasks exist.
+        # None means that no current, usable status has been received.
+        self._head_safety_states = {
+            index: None
+            for index, address in enumerate(settings.MACHINE_HEAD_IPADD_PORTS_LIST)
+            if address
+        }
+        self._autorecovery_pending_heads = set()
+        self._autorecovery_can_resume = False
+        self.carousel_frozen = True
         self.ws_server = None
 
         self.__version = None
@@ -554,8 +565,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if hasattr(self.settings, "BYPASS_LOGIN") and self.settings.BYPASS_LOGIN:
             self.main_window.login_clicked()
 
-        self.carousel_frozen = False
         self.main_window.show_carousel_frozen(self.carousel_frozen)
+        self._update_carousel_freeze_control()
         self.redis_publisher = RedisOrderPublisher()
 
     def __init_tasks(self):
@@ -919,6 +930,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         r = None
         jar = None
         try:
+
+            await self.wait_for_carousel_not_frozen()
 
             cntr = 0
             while cntr < 3:
@@ -1363,7 +1376,10 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
                     if barcode in self.__jar_runners:
                         args, fmt = (barcode, ), "{} already in progress!"
-                        self.main_window.open_alert_dialog(args, fmt=fmt, title="ERROR")
+                        self.main_window.open_alert_dialog(
+                            args, fmt=fmt, title="ERROR",
+                            dedup_key=("barcode_in_progress", barcode),
+                        )
                         self.main_window.show_barcode(barcode, is_ok=False)
                         self.ready_to_read_a_barcode = True
                     else:
@@ -1478,6 +1494,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         Handle barcode coming from the SHUTTLE_BARCODE_READER to set jar size.
         """
         try:
+
+            if getattr(self, "barcode_read_blocked_on_refill", False):
+                return None
 
             if not getattr(self, "shuttle_bc_ready_to_read_a_barcode", False):
                 return None
@@ -1647,6 +1666,23 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if self.db_session:
             try:
 
+                if (getattr(self.settings, 'MERGE_DUPLICATE_ORDER_INGREDIENTS', False)
+                        and properties.get('ingredients')):
+                    ingredients = {}
+                    weights = {}
+                    for ingredient in properties['ingredients']:
+                        name = ingredient['pigment_name']
+                        weight = Decimal(str(ingredient['weight(g)']))
+                        if name not in ingredients:
+                            ingredients[name] = dict(ingredient)
+                            weights[name] = weight
+                        else:
+                            # Sum decimal grams without rounding each addition.
+                            weights[name] += weight
+                            ingredients[name]['weight(g)'] = float(weights[name])
+                    # Keep the caller's recipe and the original file unchanged.
+                    properties = dict(properties, ingredients=list(ingredients.values()))
+
                 name_list = [i["pigment_name"] for i in properties.get('ingredients', [])]
                 assert len(name_list) == len(set(name_list)), tr_("duplicated name in ingredient list")
 
@@ -1787,23 +1823,92 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
 
     def toggle_freeze_carousel(self):
 
-        self.freeze_carousel(not self.carousel_frozen)
+        return self.freeze_carousel(not self.carousel_frozen)
+
+    def update_head_safety(self, head_index, status_level=None):
+        """Resume only after every overlapping recovery succeeds in STANDBY."""
+        previous = self._head_safety_states[head_index]
+        self._head_safety_states[head_index] = status_level
+        if previous != status_level:
+            # Freeze on a new hazard, not on every repeated status. This keeps
+            # the explicit Debug override effective until another hazard occurs.
+            if status_level == "AUTORECOVERY":
+                if not self._autorecovery_pending_heads:
+                    self._autorecovery_can_resume = (
+                        not self.carousel_frozen
+                        and all(level not in (None, "ALARM")
+                                for level in self._head_safety_states.values()))
+                    # Include heads still recovering after a Debug override.
+                    self._autorecovery_pending_heads.update(
+                        index for index, level in self._head_safety_states.items()
+                        if level == "AUTORECOVERY")
+                self._autorecovery_pending_heads.add(head_index)
+                self.freeze_carousel(True, autorecovery=True)
+            elif status_level is None:
+                self.freeze_carousel(True)
+            elif status_level == "ALARM":
+                # Remember failures even if the alarm clears before a peer ends.
+                self._autorecovery_can_resume = False
+
+            if status_level in ("STANDBY", "ALARM"):
+                self._autorecovery_pending_heads.discard(head_index)
+
+            if not self._autorecovery_pending_heads and self._autorecovery_can_resume:
+                self._autorecovery_can_resume = False
+                self.freeze_carousel(False)
+            self._update_carousel_freeze_control()
+
+    def get_carousel_unlock_block_reason(self):
+        recovering = []
+        unverified = []
+        for index, level in self._head_safety_states.items():
+            name = self.MACHINE_HEAD_INDEX_TO_NAME_MAP[index]
+            if level == "AUTORECOVERY":
+                recovering.append(name)
+            elif level is None:
+                unverified.append(name)
+
+        messages = []
+        if recovering:
+            messages.append(tr_("Automatic recovery in progress: heads {}.").format(
+                ", ".join(recovering)))
+        if unverified:
+            messages.append(tr_("Unlock unavailable: head status not verified ({}).").format(
+                ", ".join(unverified)))
+        return "\n".join(messages)
+
+    def _update_carousel_freeze_control(self):
+        # While running, the Home control can be used to pause the carousel.
+        reason = self.get_carousel_unlock_block_reason() if self.carousel_frozen else ""
+        self.main_window.set_carousel_freeze_control_enabled(not reason, reason)
 
     def close_modal_freeze_msgbox(self):
 
         if self.__modal_freeze_msgbox:
             self.__modal_freeze_msgbox.close()
 
-    def freeze_carousel(self, flag):
+    def freeze_carousel(self, flag, *, force=False, autorecovery=False):
+
+        if not flag and not force and self.get_carousel_unlock_block_reason():
+            self._update_carousel_freeze_control()
+            return False
+
+        if not flag:
+            # An accepted unlock (including Debug) clears recovery bookkeeping.
+            self._autorecovery_pending_heads.clear()
+            self._autorecovery_can_resume = False
+        elif not autorecovery:
+            # A manual pause, refill or independent fault must survive recovery.
+            self._autorecovery_can_resume = False
 
         if self.carousel_frozen != flag:
             self.carousel_frozen = flag
             if flag:
                 logging.error(f"self.carousel_frozen:{self.carousel_frozen}")
-                self.main_window.show_carousel_frozen(self.carousel_frozen)
             else:
                 logging.warning(f"self.carousel_frozen:{self.carousel_frozen}")
-                self.main_window.show_carousel_frozen(self.carousel_frozen)
+            self.main_window.show_carousel_frozen(self.carousel_frozen)
+            self._update_carousel_freeze_control()
 
         if not self.carousel_frozen and self.__modal_freeze_msgbox:
             self.__modal_freeze_msgbox.enable_buttons(True, True)
@@ -1812,8 +1917,11 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         if self.main_window.debug_page:
             self.main_window.debug_page.update_status()
 
-        t = self.ws_server.broadcast_msg("", None)
-        asyncio.ensure_future(t)
+        if self.ws_server is not None:
+            t = self.ws_server.broadcast_msg("", None)
+            asyncio.ensure_future(t)
+
+        return True
 
     async def stop_all(self):
 
@@ -1861,10 +1969,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             logging.warning(f'updated entering_jar_order status: {order_updated_status}')
 
         logging.warning(f'cancelling:{entering_jar["task"]}')
+        # The movement's finally releases only this task's blink request.
         r = entering_jar["task"].cancel()
         logging.warning(f"cancelled. r:{r}")
-
-        self.main_window.stop_step_blink()
 
         logging.warning(f"deleting:{entering_jar}")
         del entering_jar
@@ -1909,10 +2016,9 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 self.db_session.commit()
 
                 logging.warning(f'cancelling:{j["task"]}')
+                # The movement's finally releases only this task's blink request.
                 r = j["task"].cancel()
                 logging.warning(f"cancelled. r:{r}")
-
-                self.main_window.stop_step_blink()
 
                 logging.warning(f"deleting:{j}")
                 del j
@@ -2032,7 +2138,8 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
         _runner = None
 
         try:
-            if freeze and not self.carousel_frozen:
+            if freeze:
+                already_frozen = self.carousel_frozen
 
                 _error_led_claimed = self.request_attention_led(
                     error_head,
@@ -2046,12 +2153,15 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
                 )
 
                 self.freeze_carousel(True)
+                # A new failure still needs its own message during an existing
+                # pause. Acknowledging it must not release the earlier alarm.
                 self.main_window.open_frozen_dialog(
                     message_args,
                     message_fmt=message_fmt,
                     visibility=visibility,
                     show_cancel_btn=show_cancel_btn,
-                    extra_properties=extra_properties
+                    extra_properties=extra_properties,
+                    force_explicit_restart=already_frozen,
                 )
 
             if self.carousel_frozen:
@@ -2394,6 +2504,7 @@ class BaseApplication(QApplication):  # pylint:  disable=too-many-instance-attri
             nonlocal formula_barcode
             raw = self.main_window.input_dialog.get_content_text()
             formula_barcode = "".join(raw.split())
+            formula_barcode = formula_barcode[:12]
             formula_event.set()
             logging.warning(f"Formula barcode received: {formula_barcode}")
 

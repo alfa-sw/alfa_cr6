@@ -58,16 +58,20 @@ The tests are complementary:
 """
 
 import os
+import asyncio
 import ctypes
 import logging
+import types
 import unittest
 from collections import Counter
+from unittest import mock
 
 # must be set before any QApplication is constructed
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QApplication, QWidget, QMessageBox
 
 try:
@@ -330,6 +334,160 @@ class DialogLeakTest(unittest.TestCase):
             sip.isdeleted(box),
             "default (auto_delete=True) boxes must self-destruct on OK",
         )
+
+    def _alert_window(self):
+        if MAIN_WINDOW_CLS is None:
+            self.skipTest("MainWindow / QtWebEngineWidgets unavailable")
+
+        class _AlertWindow(QWidget):
+            open_alert_dialog = MAIN_WINDOW_CLS.open_alert_dialog
+
+            def __init__(self):
+                super().__init__()
+                self._active_alert_dialogs = {}
+
+        return _AlertWindow()
+
+    def test_deduplicated_alert_releases_key_and_resources_on_close(self):
+        """Same-key requests share a box/DB event until actual destruction."""
+        barcode = "261007002001"
+        key = ("barcode_in_progress", barcode)
+        for close_method in ("ok", "cancel", "escape"):
+            with self.subTest(close_method=close_method):
+                window = self._alert_window()
+                try:
+                    with mock.patch.object(
+                            self.app, "insert_db_event", create=True) as record, \
+                            mock.patch("alfa_CR6_frontend.main_window.logging.debug") as debug:
+                        for _ in range(2):
+                            window.open_alert_dialog(
+                                (barcode,), fmt="{} already in progress!",
+                                title="ERROR", dedup_key=key,
+                            )
+                        self.assertEqual(count_msgboxes(window), 1)
+                        self.assertEqual(record.call_count, 1)
+                        debug.assert_any_call("Alert already open, suppressed: %r", key)
+                        box = window._active_alert_dialogs[key]
+
+                        if close_method == "ok":
+                            self._click_ok(box)
+                        elif close_method == "cancel":
+                            box.button(QMessageBox.Cancel).click()
+                        else:
+                            QTest.keyClick(box, Qt.Key_Escape)
+                        drain_deferred_deletes(self.app)
+                        self.assertTrue(sip.isdeleted(box))
+                        self.assertNotIn(key, window._active_alert_dialogs)
+                        self.assertEqual(count_msgboxes(window), 0)
+
+                        window.open_alert_dialog(
+                            (barcode,), fmt="{} already in progress!",
+                            title="ERROR", dedup_key=key,
+                        )
+                        self.assertEqual(count_msgboxes(window), 1)
+                        self.assertEqual(record.call_count, 2)
+                        self.assertIsNot(window._active_alert_dialogs[key], box)
+
+                        other_barcode = "261007003001"
+                        window.open_alert_dialog(
+                            (other_barcode,), fmt="{} already in progress!",
+                            title="ERROR",
+                            dedup_key=("barcode_in_progress", other_barcode),
+                        )
+                        self.assertEqual(count_msgboxes(window), 2)
+                        self.assertEqual(record.call_count, 3)
+                finally:
+                    window.deleteLater()
+                    drain_deferred_deletes(self.app)
+
+    def test_log_only_alerts_are_recorded_even_with_matching_popup(self):
+        window = self._alert_window()
+        key = ("barcode_in_progress", "261007002001")
+        try:
+            with mock.patch.object(self.app, "insert_db_event", create=True) as record:
+                window.open_alert_dialog("log only", dedup_key=key, visibility=0)
+                self.assertEqual(count_msgboxes(window), 0)
+                self.assertEqual(window._active_alert_dialogs, {})
+                self.assertEqual(record.call_count, 1)
+
+                window.open_alert_dialog("visible", dedup_key=key)
+                box = window._active_alert_dialogs[key]
+                window.open_alert_dialog("log only", dedup_key=key, visibility=0)
+                self.assertEqual(count_msgboxes(window), 1)
+                self.assertIs(window._active_alert_dialogs[key], box)
+                self.assertEqual(record.call_count, 3)
+        finally:
+            window.deleteLater()
+            drain_deferred_deletes(self.app)
+
+    def test_alerts_without_key_keep_independent_callbacks_and_events(self):
+        window = self._alert_window()
+        callbacks = [mock.Mock(), mock.Mock()]
+        try:
+            with mock.patch.object(self.app, "insert_db_event", create=True) as record:
+                for callback in callbacks:
+                    window.open_alert_dialog("same text", callback=callback)
+                self.assertEqual(count_msgboxes(window), 2)
+                self.assertEqual(window._active_alert_dialogs, {})
+                self.assertEqual(record.call_count, 2)
+                for box in window.findChildren(QMessageBox):
+                    self._click_ok(box)
+                drain_deferred_deletes(self.app)
+                self.assertEqual(count_msgboxes(window), 0)
+                for callback in callbacks:
+                    callback.assert_called_once_with()
+        finally:
+            window.deleteLater()
+            drain_deferred_deletes(self.app)
+
+    def test_duplicate_barcode_storm_keeps_one_dialog_with_single_or_dual_reader(self):
+        from alfa_CR6_backend.base_application import BaseApplication
+
+        async def head_ready(*_args, **_kwargs):
+            return True
+
+        def unexpected_exception(exc):
+            raise exc
+
+        barcode = "261007002001"
+        key = ("barcode_in_progress", barcode)
+        for variant in ("CR4", "CR6"):
+            for dual_reader in (False, True):
+                with self.subTest(variant=variant, dual_reader=dual_reader):
+                    window = self._alert_window()
+                    window.show_barcode = mock.Mock()
+                    head = types.SimpleNamespace(
+                        wait_for_jar_photocells_and_status_lev=head_ready)
+                    app = types.SimpleNamespace(
+                        ready_to_read_a_barcode=True,
+                        _crx_ja_block_sequence_active=False,
+                        main_window=window,
+                        shuttle_size_from_barcode_scanner=500 if dual_reader else False,
+                        id_bc_shuttle="TEST-SHUTTLE" if dual_reader else "DISABLED",
+                        in_docker=True,
+                        machine_variant=variant,
+                        get_machine_head_by_letter=lambda _letter: head,
+                        _BaseApplication__jar_runners={barcode: {}},
+                        handle_exception=unexpected_exception,
+                    )
+
+                    async def repeated_reads():
+                        for _ in range(1000):
+                            await BaseApplication.on_barcode_read(app, barcode)
+
+                    try:
+                        with mock.patch.object(
+                                self.app, "insert_db_event", create=True) as record:
+                            asyncio.run(repeated_reads())
+                            self.assertEqual(count_msgboxes(window), 1)
+                            self.assertEqual(record.call_count, 1)
+                            self.assertEqual(list(window._active_alert_dialogs), [key])
+                            self.assertTrue(app.ready_to_read_a_barcode)
+                            self.assertEqual(app.shuttle_size_from_barcode_scanner,
+                                             500 if dual_reader else False)
+                    finally:
+                        window.deleteLater()
+                        drain_deferred_deletes(self.app)
 
     def test_cached_freeze_msgbox_survives_button_click(self):
         """Regression for the freeze-carousel crash (dev 1.11.0.dev4 field log).
