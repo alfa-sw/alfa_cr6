@@ -58,6 +58,7 @@ class TestCarouselWaitForCondition(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.carousel = CarouselMotor.__new__(CarouselMotor)
+        self.carousel.carousel_frozen = False
         self.carousel.main_window = _MainWindow()
         self.carousel.exceptions = []
         self.carousel.handle_exception = self.carousel.exceptions.append
@@ -132,6 +133,7 @@ class TestCarouselTransfers(unittest.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         self.carousel = CarouselMotor.__new__(CarouselMotor)
+        self.carousel.carousel_frozen = False
         self.head_a = FakeMachineHead("A")
         self.head_b = FakeMachineHead("B")
         self.carousel.machine_head_dict = {0: self.head_a, 1: self.head_b}
@@ -220,6 +222,27 @@ class TestCarouselTransfers(unittest.TestCase):
         )
         self.assertEqual(self.position_updates[0]["pos"], "B")
         self.assertIs(self.position_updates[0]["machine_head"], self.head_b)
+
+    def test_transfer_waits_for_source_autorecovery_with_carousel_unfrozen(self):
+        jar = FakeJar(position="A", status="ERROR")
+        self.head_a.status["status_level"] = "AUTORECOVERY"
+        self.head_b.queue_wait_results(True)
+
+        def monitor_recovery(samples):
+            if samples == 4:
+                self.assertEqual(self.head_a.command_log, [])
+                self.assertEqual(self.head_b.command_log, [])
+                clock.now += 4 * 60
+                self.head_a.status["status_level"] = "STANDBY"
+
+        clock = VirtualClock(on_sleep=monitor_recovery)
+        with mock.patch.object(carousel_module.time, "time", clock.time), \
+                mock.patch.object(carousel_module.asyncio, "sleep", clock.sleep):
+            result = self._run(self.carousel.move_02_03(jar))
+
+        self.assertTrue(result)
+        self.assertGreaterEqual(clock.time(), 4 * 60)
+        self.assertEqual(self.position_updates[0]["pos"], "B")
 
     def test_sensor_timeout_still_stops_both_rollers(self):
         jar = FakeJar(position="A")

@@ -1,0 +1,27 @@
+[FORMULA1]
+NumColorants=6
+ColorName=ADIRONDACK BLUE (cools card)
+ColorNumber=
+System=DMP
+Brand=Prediction 2 ADIRONDACK BLUE (cools card)
+CanSize=
+DispenseUnit=G
+FractionalPart=1
+PartialShots=1000
+Base=
+RGB=9603187
+CollectionName=ALFA - CCI# cci4242 ADIRONDACK BLUE (cools card)
+BaseAmount=0
+TypeID=3
+
+[INGREDIENTS1]
+10-A Lamp Black=0.0330
+101-A Phath Blue R=0.1740
+24-A Burnt Umber=0.0000
+40-A Quin Magenta=0.0270
+CCI-A BM White=20.4910
+CCI-A Gloss Clear=0.0000
+[STATUS]
+Cancel=0
+[SUMMARY]
+TotalFormulas=1

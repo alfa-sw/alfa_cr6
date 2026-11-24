@@ -57,6 +57,9 @@ class FakeApp:
     def handle_exception(self, e):
         self.exceptions.append(e)
 
+    def update_head_safety(self, _index, _status_level=None):
+        pass
+
     async def wait_for_condition(self, condition=None, **kwargs):  # pylint: disable=unused-argument
         # come la vera: polla la condition fino al timeout (qui tagliato a 1s)
         for _ in range(20):

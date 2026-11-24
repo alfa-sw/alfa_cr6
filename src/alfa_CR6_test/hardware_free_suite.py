@@ -13,6 +13,11 @@ CORE_TEST_MODULES = (
     # Hardware abstraction e flusso macchina.
     "alfa_CR6_test.test_machine_head_jar_size",
     "alfa_CR6_test.test_machine_head_hardware_free",
+    "alfa_CR6_test.test_autorecovery_interlock",
+    "alfa_CR6_test.test_debug_page_unfreeze",
+    "alfa_CR6_test.test_home_autorecovery_blink",
+    "alfa_CR6_test.test_home_step_blink",
+    "alfa_CR6_test.test_refill_shared_helpers",
     "alfa_CR6_test.test_carousel_hardware_free",
     "alfa_CR6_test.test_application_hardware_free",
     "alfa_CR6_test.test_barcode_pipeline_hardware_free",
@@ -21,12 +26,14 @@ CORE_TEST_MODULES = (
     "alfa_CR6_test.test_emulator_time_scale",
     "alfa_CR6_test.test_post_dispense_tintometer_refresh",
     "alfa_CR6_test.test_hardware_free_suite_manifest",
+    "alfa_CR6_test.test_translation_catalogs",
     # Persistenza e stato ordini/barattoli.
     "alfa_CR6_test.test_database_cleanup",
     "alfa_CR6_test.test_db_indexes",
     "alfa_CR6_test.test_order_number_format",
     "alfa_CR6_test.test_status_guard",
     "alfa_CR6_test.test_kcc_double_order",
+    "alfa_CR6_test.test_dci_order",
     # Comunicazione e concorrenza.
     "alfa_CR6_test.test_send_command_race",
     "alfa_CR6_test.test_ws_server",

@@ -1,0 +1,31 @@
+[FORMULA1]
+NumColorants=10
+ColorName=CHATSWORTH
+ColorNumber=
+System=DMP
+Brand=Formula For Trial2 CHATSWORTH
+CanSize=
+DispenseUnit=G
+FractionalPart=1
+PartialShots=1000
+Base=
+RGB=9607339
+CollectionName=ALFA - CCI# 389047 CHATSWORTH CHATSWORTH
+BaseAmount=0
+TypeID=3
+
+[INGREDIENTS1]
+10-A Lamp Black=0.0000
+19-A Yellow Oxide=0.0000
+22-A Red Oxide=0.0000
+CCI-A Behr White=0.0000
+CCI-A Flat Clear=0.0000
+CCI-A Gloss White=10.0000
+CCI-A Gloss Clear=10.0000
+CCI-A Flat White=10.0000
+CCI-A BM White=10.0000
+CCI-A Behr Clear=10.0000
+[STATUS]
+Cancel=0
+[SUMMARY]
+TotalFormulas=1

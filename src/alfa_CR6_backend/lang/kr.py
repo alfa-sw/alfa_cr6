@@ -1,5 +1,6 @@
 from alfa_CR6_backend.lang import error_kr
 D = {
+    'Create and print all': '모두 생성하고 인쇄',
     " ?": " ?",
     "alias": "관리",
     "before dispensing. Please check can.": "조색하기 전, 캔을 확인해주세요.",
@@ -195,6 +196,10 @@ D = {
 
     "adjusted_levels": "adjusted_levels",
     "please, input barcode for refill": "please, input barcode for refill",
+    "No scale was detected.<br>Connect the scale and try again.": "감지된 저울이 없습니다.<br>저울을 연결한 후 다시 시도하십시오.",
+    "The scale is connected but not responding.<br>Check that it is switched on and try again.": "저울이 연결되어 있지만 응답하지 않습니다.<br>전원이 켜져 있는지 확인한 후 다시 시도하십시오.",
+    "Continue refill": "리필 계속",
+    "The scanned barcode does not match<br>any product configured on the machine.": "스캔한 바코드가 장비에 구성된<br>어떤 제품과도 일치하지 않습니다.",
     ". RESET head: {} ?": ". RESET head: {} ?",
     "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.": "please, confirm refilling pipe: {} <br>with {} ({}) of product: {}?.",
     "refilling with {} ({}) would exceed maximum level! Aborting.": "refilling with {} ({}) would exceed maximum level! Aborting.",

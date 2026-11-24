@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1078</width>
-    <height>575</height>
+    <height>659</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -50,7 +50,7 @@
      <x>120</x>
      <y>10</y>
      <width>951</width>
-     <height>91</height>
+     <height>175</height>
     </rect>
    </property>
    <property name="font">
@@ -72,7 +72,7 @@
    <property name="geometry">
     <rect>
      <x>2</x>
-     <y>170</y>
+     <y>254</y>
      <width>1071</width>
      <height>321</height>
     </rect>
@@ -85,7 +85,7 @@
    <property name="geometry">
     <rect>
      <x>120</x>
-     <y>110</y>
+     <y>194</y>
      <width>200</width>
      <height>51</height>
     </rect>
@@ -118,7 +118,7 @@
    <property name="geometry">
     <rect>
      <x>870</x>
-     <y>110</y>
+     <y>194</y>
      <width>201</width>
      <height>51</height>
     </rect>
@@ -147,11 +147,38 @@
     <bool>false</bool>
    </property>
   </widget>
+  <widget class="QPushButton" name="action_button">
+   <property name="geometry">
+    <rect>
+     <x>395</x>
+     <y>194</y>
+     <width>400</width>
+     <height>51</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>16</pointsize>
+    </font>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">background:#FFFFFFFF</string>
+   </property>
+   <property name="text">
+    <string>Action</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>32</width>
+     <height>32</height>
+    </size>
+   </property>
+  </widget>
   <widget class="QComboBox" name="combo_box">
    <property name="geometry">
     <rect>
      <x>80</x>
-     <y>510</y>
+     <y>594</y>
      <width>891</width>
      <height>51</height>
     </rect>

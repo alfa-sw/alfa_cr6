@@ -35,6 +35,19 @@
      </rect>
     </property>
    </widget>
+   <widget class="QPushButton" name="create_all_orders_btn">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>40</y>
+      <width>121</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>ALL</string>
+    </property>
+   </widget>
    <widget class="QPushButton" name="edit_aliases_btn">
     <property name="geometry">
      <rect>

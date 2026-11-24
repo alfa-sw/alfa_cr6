@@ -1,50 +1,17 @@
 """
 Regression tests for DONE/ERROR jar transit behavior.
 
-Run from the project root with:
-PYTHONPATH=/opt/PROJECTS/alfa_cr6/src python3 -m unittest \
-    /opt/PROJECTS/alfa_cr6/src/alfa_CR6_test/test_done_status_guard.py -v
+Run from the project root using the application environment:
+PYTHONPATH=src python -m unittest alfa_CR6_test.test_status_guard -v
 
-This module stubs optional runtime dependencies so it can run even in a
-lightweight development environment.
+Import production modules without replacing shared entries in sys.modules.
 """
 
 import asyncio
 import json
-import sys
-import types
 import unittest
 from types import SimpleNamespace
 from unittest import mock
-
-sys.modules.setdefault("redis", types.SimpleNamespace(from_url=lambda *args, **kwargs: None))
-sys.modules.setdefault("aiohttp", types.SimpleNamespace(ClientSession=object, FormData=object))
-sys.modules.setdefault(
-    "alfa_CR6_backend.models",
-    types.SimpleNamespace(
-        Order=object,
-        Jar=object,
-        Event=object,
-        Document=object,
-        decompile_barcode=lambda barcode: (int(barcode) // 1000 * 1000, int(barcode) % 1000),
-    ),
-)
-sys.modules.setdefault(
-    "alfa_CR6_backend.globals",
-    types.SimpleNamespace(
-        UI_PATH="",
-        KEYBOARD_PATH="",
-        EPSILON=0.0002,
-        get_version=lambda: "test",
-        tr_=lambda value: value,
-        import_settings=lambda: SimpleNamespace(),
-    ),
-)
-sys.modules.setdefault("alfa_CR6_backend.machine_head", types.SimpleNamespace(MachineHead=object))
-sys.modules.setdefault("alfa_CR6_backend.order_parser", types.SimpleNamespace(OrderParser=object))
-sys.modules.setdefault("alfa_CR6_backend.ws_server", types.SimpleNamespace(WsServer=object))
-sys.modules.setdefault("alfa_CR6_frontend.chromium_wrapper", types.SimpleNamespace(ChromiumWrapper=object))
-sys.modules.setdefault("alfa_CR6_frontend.dialogs", types.SimpleNamespace(ModalMessageBox=object))
 
 from alfa_CR6_backend.base_application import BaseApplication
 
@@ -169,6 +136,9 @@ class DoneStatusGuardTests(unittest.TestCase):
                 }
                 self.execute_calls = 0
 
+            async def wait_for_carousel_not_frozen(self):
+                pass
+
             async def get_and_check_jar_from_barcode(self, _barcode):
                 return self.jar
 
@@ -201,6 +171,9 @@ class DoneStatusGuardTests(unittest.TestCase):
                     barcode: {"task": None, "frozen": True}
                 }
                 self.execute_calls = 0
+
+            async def wait_for_carousel_not_frozen(self):
+                pass
 
             async def get_and_check_jar_from_barcode(self, _barcode):
                 return self.jar
@@ -373,7 +346,6 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
-            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 
@@ -397,7 +369,6 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
-            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 
@@ -416,7 +387,6 @@ class DoneStatusGuardTests(unittest.TestCase):
 
         app = SimpleNamespace(
             db_session=session,
-            main_window=SimpleNamespace(stop_step_blink=lambda: None),
             ws_server=SimpleNamespace(refresh_can_list=lambda: None),
         )
 

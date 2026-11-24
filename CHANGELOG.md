@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## 1.11 branch
 
 ### 1.11.0
+ - PR#___ - issue RM#610 - AUTORECOVERY: freeze automation across all heads, keep queued work pending, require operator confirmation after recovery, and block ordinary unlocks until every head has a current verified status; Debug retains an explicit technical override
  - PR#___ - issue RM#553 - added refill alarm sound notification on monitor speakers via the host audio router (REFILL_ALARM_NOTIFICATION setting, snowball machines only); the sound follows the attention-LED lifecycle and is silenced by OK/Cancel on the frozen dialog or by timeout; sound_level offers only "auto" for now (percent options deferred to monitor PSU handling)
  - PR#___ - issue RM#574 - Low Pigments popup: added print-label button (one DYMO label per head listing its low-level pipes), label rendered vertically on the long side, localized label
  - PR#___ - issue RM#573 - shifted barcode print button to the right in the browser overlay

@@ -259,6 +259,23 @@
           tr.appendChild(tdKey); tr.appendChild(tdVal);
           tbody.appendChild(tr);
         }
+
+        const forceTrue = tbody.querySelector('input.bool-ck[data-key="FORCE_ORDER_JAR_TO_ONE"][data-value="true"]');
+        const forceFalse = tbody.querySelector('input.bool-ck[data-key="FORCE_ORDER_JAR_TO_ONE"][data-value="false"]');
+        const createTrue = tbody.querySelector('input.bool-ck[data-key="ENABLE_BTN_CREATE_ALL_ORDERS"][data-value="true"]');
+        const createFalse = tbody.querySelector('input.bool-ck[data-key="ENABLE_BTN_CREATE_ALL_ORDERS"][data-value="false"]');
+        if (forceTrue && createTrue && createFalse) {
+          const syncCreateAllAvailability = () => {
+            createTrue.disabled = !forceTrue.checked;
+            if (!forceTrue.checked) {
+              createTrue.checked = false;
+              createFalse.checked = true;
+            }
+          };
+          forceTrue.addEventListener('change', syncCreateAllAvailability);
+          forceFalse.addEventListener('change', syncCreateAllAvailability);
+          syncCreateAllAvailability();
+        }
       }
 
       function requestSettingsJson() {

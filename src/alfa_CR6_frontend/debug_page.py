@@ -393,7 +393,7 @@ class DebugPage:
 
         elif cmd_txt == "unfreeze\ncarousel":
 
-            app.freeze_carousel(False)
+            app.freeze_carousel(False, force=True)
 
         elif cmd_txt == "freeze\ncarousel":
 

@@ -643,6 +643,14 @@ class TestDualYokoShuttleLookup(unittest.TestCase):
         )
         self.assertEqual(self.window.alerts, [])
 
+    def test_shuttle_reader_is_ignored_during_refill(self):
+        self.app.barcode_read_blocked_on_refill = True
+
+        self.assertIsNone(self._read("500 ML"))
+        self.assertEqual(self.head.calls, [])
+        self.assertFalse(self.app.shuttle_size_from_barcode_scanner)
+        self.assertFalse(self.app._shuttle_size_ready_evt.is_set())
+
     def test_unknown_shuttle_clears_size_and_requires_dialog_acknowledgement(self):
         self.app.shuttle_size_from_barcode_scanner = 500
         self.app._shuttle_size_ready_evt.set()

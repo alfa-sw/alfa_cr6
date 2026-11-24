@@ -70,12 +70,44 @@ _ALFA_SN = None
 
 DEFAULT_DEBUG_PAGE_PWD = 'alfa'
 _SETTINGS_CACHE = None
+SCALE_STATUS_REDIS_KEY = "device:scale:status"
 
 
 def get_application_instance():
 
     from PyQt5.QtWidgets import QApplication  # pylint: disable=no-name-in-module, import-outside-toplevel
     return QApplication.instance()
+
+
+def get_scale_connection_state():
+    """Distinguish a missing USB port from a connected, unresponsive scale."""
+    try:
+        raw_status = redis.Redis(
+            socket_connect_timeout=.2,
+            socket_timeout=.2,
+        ).get(SCALE_STATUS_REDIS_KEY)
+        if not raw_status:
+            return "disconnected"
+
+        status = json.loads(raw_status)
+        if not isinstance(status, dict):
+            return "disconnected"
+
+        connected = status.get("connected")
+        if connected is False:
+            return "disconnected"
+        if status.get("status_level") == "ON" and (connected is None or connected is True):
+            return "ready"
+        if connected is True:
+            return "not_responding"
+
+        # Older dispatchers omit connected. Their ON state confirms a reply,
+        # while OFF cannot distinguish power loss from a missing USB device.
+        return "disconnected"
+    except (redis.RedisError, TypeError, ValueError):
+        logging.warning("Unable to read scale connection status", exc_info=True)
+        return "disconnected"
+
 
 def get_alfa_serialnumber():
 
@@ -540,26 +572,84 @@ def create_printable_image_for_low_pigments(head_name, low_pipes, options=None, 
 
 def extract_jar_print_data(jar):
 
+    extra_lines = list(jar.extra_lines_to_print)
+    minimum_label_lines = 0
+    try:
+        properties = json.loads(jar.order.json_properties)
+        meta = properties.get('meta', {})
+    except (AttributeError, TypeError, ValueError):
+        properties, meta = {}, {}
+    if isinstance(meta, dict) and meta.get('header') == 'dci':
+        # Older imported DCI orders also contain CollectionName as line four.
+        # Omit it when reprinting without changing the saved order metadata.
+        extra_lines = extra_lines[:3]
+        minimum_label_lines = 3
+        extra_lines.extend(
+            f"{ingredient['pigment_name']}: {ingredient['weight(g)']} g"
+            for ingredient in properties.get('ingredients', [])
+        )
+
     return {
         'barcode': str(jar.barcode),
-        'extra_lines_to_print': list(jar.extra_lines_to_print),
+        'extra_lines_to_print': extra_lines,
         'unknown_pigments': dict(jar.unknown_pigments),
         'not_dispensed_ingredients': dict(jar.not_dispensed_ingredients),
+        'minimum_label_lines': minimum_label_lines,
     }
+
+
+def _wrap_dci_label_lines(lines, barcode, options, line_length):
+    """Fit DCI text to the actual EAN13 canvas without discarding characters."""
+    from PIL import ImageFont   # pylint: disable=import-outside-toplevel
+
+    # Render once without text so EAN13 applies its defaults (including module
+    # width) and the configured writer options before we measure the canvas.
+    canvas = barcode.render(options, text='')
+    writer = barcode.writer
+    margin = max(1, int(round(writer.dpi / 25.4)))  # 1 mm on each side
+    available_width = canvas.width - 2 * margin
+    # python-barcode < 0.14 draws ImageWriter text at twice font_size pixels.
+    font = ImageFont.truetype(writer.font_path, writer.font_size * 2)
+
+    def fits(text):
+        return (len(text) <= line_length
+                and font.getsize(process_text(text))[0] <= available_width)
+
+    wrapped = []
+    for text in lines:
+        for paragraph in str(text).split('\n'):
+            line = ''
+            for word in paragraph.split():
+                candidate = f'{line} {word}' if line else word
+                if fits(candidate):
+                    line = candidate
+                    continue
+                if line:
+                    wrapped.append(line)
+                    line = ''
+                # A single long identifier still needs to print in full. Only
+                # split inside a word when that word cannot fit on its own.
+                for char in word:
+                    if not fits(line + char):
+                        if line:
+                            wrapped.append(line)
+                        line = ''
+                        if not fits(char):
+                            raise ValueError('DCI label font is too large for a single character')
+                    line += char
+            wrapped.append(line)  # Keep intentional empty DCI/RAL lines.
+    return wrapped
 
 
 def create_printable_image_from_jar(jar, options=None, output_path=None):
 
-    if isinstance(jar, dict):
-        recipe_barcode = jar['barcode']
-        extra_lines = jar['extra_lines_to_print']
-        unknown_pigments = jar['unknown_pigments']
-        not_dispensed = jar['not_dispensed_ingredients']
-    else:
-        recipe_barcode = str(jar.barcode)
-        extra_lines = jar.extra_lines_to_print
-        unknown_pigments = jar.unknown_pigments
-        not_dispensed = jar.not_dispensed_ingredients
+    if not isinstance(jar, dict):
+        jar = extract_jar_print_data(jar)
+    recipe_barcode = jar['barcode']
+    extra_lines = jar['extra_lines_to_print']
+    unknown_pigments = jar['unknown_pigments']
+    not_dispensed = jar['not_dispensed_ingredients']
+    minimum_label_lines = jar.get('minimum_label_lines', 0)
 
     if options is None:
         options = _get_print_label_options()
@@ -576,20 +666,29 @@ def create_printable_image_from_jar(jar, options=None, output_path=None):
         recipe_barcode_text = f'{recipe_barcode}'
 
         l_lenght = options.pop('line_lenght')
-        n_of_lines = options.pop('n_of_lines')
+        n_of_lines = max(options.pop('n_of_lines'), minimum_label_lines)
         rotate = options.pop('rotate')
+        barcode = EAN13(recipe_barcode_text, writer=ImageWriter())
+
+        def label_line(text):
+            return str(text) if minimum_label_lines else str(text)[:l_lenght]
 
         lines_to_print = [recipe_barcode, ]
-        lines_to_print += [f"{l}"[:l_lenght] for l in extra_lines]
+        lines_to_print += [label_line(l) for l in extra_lines]
         if options.get('print_missing_products'):
             logging.warning(f'unknown_pigments:{unknown_pigments}')
             if unknown_pigments:
                 lines_to_print += [tr_("{} product(s) missing:").format(len(unknown_pigments))]
-                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in unknown_pigments.items()]
+                lines_to_print += [label_line(f"{k}: {v}") for k, v in unknown_pigments.items()]
 
             if not_dispensed:
                 lines_to_print += [tr_("{} product(s) not dispensed:").format(len(not_dispensed))]
-                lines_to_print += [f"{k}: {v}"[:l_lenght] for k, v in not_dispensed.items()]
+                lines_to_print += [label_line(f"{k}: {v}") for k, v in not_dispensed.items()]
+
+        if minimum_label_lines:
+            lines_to_print = [recipe_barcode] + _wrap_dci_label_lines(
+                lines_to_print[1:], barcode, options, l_lenght)
+            n_of_lines = max(n_of_lines, len(lines_to_print) - 1)
 
         if len(lines_to_print) > n_of_lines + 1:
             logging.warning(f"not enough space to print all lines")
@@ -601,7 +700,7 @@ def create_printable_image_from_jar(jar, options=None, output_path=None):
         processed_lines = [process_text(line) for line in lines_to_print]
         printable_text = '\n'.join(processed_lines)
 
-        EAN13(recipe_barcode_text, writer=ImageWriter()).write(file_, options, printable_text)
+        barcode.write(file_, options, printable_text)
 
         response = _image_path
 
